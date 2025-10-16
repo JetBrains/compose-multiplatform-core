@@ -242,7 +242,7 @@ internal class UIKitInstrumentedTest {
     fun AccessibilityTestNode.doubleTap(): UITouch {
         val frame = frame ?: error("Internal error. Frame is missing.")
         tap(frame.center())
-        delay(100)
+        delay(50)
         return tap(frame.center())
     }
 

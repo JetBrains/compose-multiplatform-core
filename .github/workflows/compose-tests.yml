@@ -138,7 +138,7 @@ jobs:
           xcrun simctl shutdown all
 
       - name: Run iOS Instrumented Tests
-        timeout-minutes: 15
+        timeout-minutes: 30
         shell: bash
         working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
         run: |

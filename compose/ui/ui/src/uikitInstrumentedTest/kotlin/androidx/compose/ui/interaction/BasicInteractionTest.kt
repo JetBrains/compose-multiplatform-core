@@ -130,18 +130,11 @@ class BasicInteractionTest {
         UIPasteboard.generalPasteboard().string = "Paste text"
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
-                var value by remember { mutableStateOf(TextFieldValue("Hello-LongLongLongLongLong-text")) }
-                BasicTextField(value, {
-                    println("onValueChange $it")
-                    value = it
-                }, modifier = Modifier.testTag("TextField"))
+                BasicTextField("Hello-LongLongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
             }
         }
 
-        findNodeWithTag("TextField").tap()
-        waitForIdle()
-        delay(1000)
-        findNodeWithTag("TextField").doubleTap()
+        openToolbar(textFieldTag = "TextField")
 
         verifyFullToolbarPresent()
     }
@@ -156,7 +149,7 @@ class BasicInteractionTest {
             }
         }
 
-        findNodeWithTag("TextField").doubleTap()
+        openToolbar(textFieldTag = "TextField")
 
         verifyFullToolbarPresent()
     }
@@ -170,7 +163,7 @@ class BasicInteractionTest {
             }
         }
 
-        findNodeWithTag("TextField").doubleTap()
+        openToolbar(textFieldTag = "TextField")
 
         verifyFullToolbarPresent()
     }
@@ -185,7 +178,7 @@ class BasicInteractionTest {
             }
         }
 
-        findNodeWithTag("TextField").doubleTap()
+        openToolbar(textFieldTag = "TextField")
 
         verifyFullToolbarPresent()
     }
@@ -206,7 +199,7 @@ class BasicInteractionTest {
         fun MutableState<TextFieldValue>.isFullySelected(): Boolean =
             value.selection.start == 0 && value.selection.end == value.text.length
 
-        findNodeWithTag("TextField").doubleTap()
+        openToolbar(textFieldTag = "TextField")
 
         waitForContextMenu()
         assertFalse(textFieldValue.isFullySelected())
@@ -229,7 +222,7 @@ class BasicInteractionTest {
         fun TextFieldState.isFullySelected(): Boolean =
             selection.start == 0 && selection.end == text.length
 
-        findNodeWithTag("TextField").doubleTap()
+        openToolbar(textFieldTag = "TextField")
 
         waitForContextMenu()
         assertFalse(textFieldState.isFullySelected())
@@ -238,6 +231,13 @@ class BasicInteractionTest {
 
         waitForIdle()
         assertTrue(textFieldState.isFullySelected())
+    }
+
+    private fun UIKitInstrumentedTest.openToolbar(textFieldTag: String) {
+        findNodeWithTag("TextField").tap()
+        delay(500)
+        findNodeWithTag("TextField").doubleTap()
+        waitForContextMenu()
     }
 
     @OptIn(ExperimentalFoundationApi::class)
@@ -256,9 +256,6 @@ class BasicInteractionTest {
 
     @OptIn(ExperimentalForeignApi::class)
     private fun UIKitInstrumentedTest.verifyFullToolbarPresent() {
-        // Verify elements from context menu present
-        waitForContextMenu()
-
         findNodeWithLabel("Cut").let {
             it.assertVisibleInContainer()
             assertTrue(it.isAccessibilityElement ?: false)
