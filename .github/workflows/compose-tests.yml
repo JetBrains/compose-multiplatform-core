@@ -142,8 +142,7 @@ jobs:
           xcodebuild test \
             -scheme Launcher \
             -project Launcher.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17' \
-            | xcpretty --report junit
+            -destination 'platform=iOS Simulator,name=iPhone 17'
 
       - name: Test Summary
         uses: test-summary/action@v2
