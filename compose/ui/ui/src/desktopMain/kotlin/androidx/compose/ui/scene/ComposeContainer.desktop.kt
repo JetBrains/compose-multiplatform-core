@@ -30,10 +30,9 @@ import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.navigationevent.DesktopNavigationEventInput
 import androidx.compose.ui.platform.DisposableSaveableStateRegistry
-import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
+import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
@@ -208,7 +207,6 @@ internal class ComposeContainer(
     override val viewModelStore = ViewModelStore()
 
     override val navigationEventDispatcher = NavigationEventDispatcher()
-    private val navigationEventInput = DesktopNavigationEventInput()
 
     private var isDisposed = false
     private var isDetached = true
@@ -219,7 +217,6 @@ internal class ComposeContainer(
         savedStateController.performAttach()
         savedStateController.performRestore(savedState)
         enableSavedStateHandles()
-        navigationEventDispatcher.addInput(navigationEventInput)
 
         setWindow(window)
         this.windowContainer = windowContainer
@@ -245,7 +242,6 @@ internal class ComposeContainer(
         isDisposed = true
         updateLifecycleState()
         viewModelStore.clear()
-        navigationEventDispatcher.removeInput(navigationEventInput)
 
         _windowContainer?.removeComponentListener(windowContainerComponentListener)
         mediator.dispose()
@@ -332,6 +328,10 @@ internal class ComposeContainer(
         mediator.onRenderApiChanged(action)
     }
 
+    fun renderImmediately() {
+        mediator.renderImmediately()
+    }
+
     fun addNotify() {
         mediator.onComponentAttached()
         setWindow(SwingUtilities.getWindowAncestor(container))
@@ -386,10 +386,7 @@ internal class ComposeContainer(
     ) {
         mediator.setKeyEventListeners(
             onPreviewKeyEvent = onPreviewKeyEvent,
-            onKeyEvent = {
-                // FIXME: It won't work for window layers + the order is different from other platforms
-                onKeyEvent(it) || navigationEventInput.onKeyEvent(it)
-            }
+            onKeyEvent = onKeyEvent
         )
     }
 

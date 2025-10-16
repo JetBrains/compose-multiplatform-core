@@ -42,16 +42,17 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.navigationevent.DesktopNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.DelegateRootForTestListener
 import androidx.compose.ui.platform.DesktopTextInputService
 import androidx.compose.ui.platform.DesktopTextInputService2
 import androidx.compose.ui.platform.EmptyViewConfiguration
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
-import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ViewConfiguration
@@ -137,6 +138,8 @@ internal class ComposeSceneMediator(
     val accessible: Accessible = ComposeSceneAccessible {
         semanticsOwnerListener.accessibilityControllers
     }
+
+    private val navigationEventInput = DesktopNavigationEventInput()
 
     private val platformComponent = DesktopPlatformComponent()
     private val textInputService = DesktopTextInputService(platformComponent)
@@ -540,7 +543,8 @@ internal class ComposeSceneMediator(
         windowContext.setKeyboardModifiers(composeEvent.internal.modifiers)
         if (onPreviewKeyEvent(composeEvent) ||
             scene.sendKeyEvent(composeEvent) ||
-            onKeyEvent(composeEvent)
+            onKeyEvent(composeEvent) ||
+            navigationEventInput.onKeyEvent(composeEvent)
         ) {
             event.consume()
         }
@@ -571,12 +575,17 @@ internal class ComposeSceneMediator(
         isComponentAttached = true
         onChangeDensity()
 
+        architectureComponentsOwner.navigationEventDispatcherOwner
+            .navigationEventDispatcher.addInput(navigationEventInput)
+
         _onComponentAttached?.invoke()
         _onComponentAttached = null
     }
 
     fun onComponentDetached() {
         isComponentAttached = false
+        architectureComponentsOwner.navigationEventDispatcherOwner
+            .navigationEventDispatcher.addInput(navigationEventInput)
         scene.focusManager.releaseFocus()
     }
 
@@ -683,6 +692,10 @@ internal class ComposeSceneMediator(
 
     fun onRenderApiChanged(action: () -> Unit) {
         skiaLayerComponent.onRenderApiChanged(action)
+    }
+
+    fun renderImmediately() {
+        skiaLayerComponent.renderImmediately()
     }
 
     fun onWindowFocusChanged() {
