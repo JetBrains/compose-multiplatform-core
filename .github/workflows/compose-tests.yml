@@ -126,7 +126,7 @@ jobs:
           xcrun simctl list devices
 
           # Boot a test simulator
-          xcrun simctl boot "iPhone 17"
+          xcrun simctl boot "iPhone 16"
 
           # Write the accessibility flags inside the Simulator:
           xcrun simctl spawn booted defaults write com.apple.Accessibility AccessibilityEnabled -bool true
@@ -135,6 +135,7 @@ jobs:
 
           # Restart SpringBoard (so system services pick up the change)
           xcrun simctl spawn booted launchctl stop com.apple.SpringBoard
+          xcrun simctl shutdown all
 
       - name: Run iOS Instrumented Tests
         timeout-minutes: 15
@@ -144,7 +145,7 @@ jobs:
           xcodebuild test \
             -scheme Launcher \
             -project Launcher.xcodeproj \
-            -destination 'platform=iOS Simulator,name=iPhone 17'
+            -destination 'platform=iOS Simulator,name=iPhone 16'
 
       - name: Test Summary
         uses: test-summary/action@v2
