@@ -52,7 +52,7 @@ internal abstract class WebDragAndDropManager(eventListener: EventTargetListener
         dataTransfer?.setDragImage(ghostImage, 0, 0)
 
         // After browser made a snapshot we can safely remove ghostImage from document
-        // But it should be done in different frame
+        // But it should be done in a different frame
         window.requestAnimationFrame {
             ghostImage.remove()
         }
@@ -96,7 +96,7 @@ internal abstract class WebDragAndDropManager(eventListener: EventTargetListener
         eventListener.addDisposableEvent("dragstart") { event ->
             // Both internal (starting from within the application)
             // and external (triggered by dragging something for the outer world)
-            // trigger the "dragenter" event but we can not set drag image anywhere apart dragstart
+            // trigger the "dragenter" event, but we cannot set drag image anywhere apart dragstart
             previousDragEventIsStart = true
             event as DragEvent
 
