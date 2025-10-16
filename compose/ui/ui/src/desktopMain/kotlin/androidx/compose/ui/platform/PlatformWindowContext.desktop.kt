@@ -66,11 +66,9 @@ internal class PlatformWindowContext {
         _windowContainer = windowContainer
     }
 
-    fun setContainerSize(size: Size) {
-        _windowInfo.containerSize = IntSize(
-            width = size.width.roundToInt(),
-            height = size.height.roundToInt()
-        )
+    fun setContainerSizeFromComponent(component: Component) {
+        _windowInfo.containerSize = component.sizeInPx.roundToIntSize()
+        _windowInfo.containerDpSize = component.size.asDpSize()
     }
 
     fun convertLocalToWindowPosition(container: Component, localPosition: Offset) =
