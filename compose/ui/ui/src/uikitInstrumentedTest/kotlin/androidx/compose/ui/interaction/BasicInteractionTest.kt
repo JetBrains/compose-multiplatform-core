@@ -138,6 +138,9 @@ class BasicInteractionTest {
             }
         }
 
+        findNodeWithTag("TextField").tap()
+        waitForIdle()
+        delay(1000)
         findNodeWithTag("TextField").doubleTap()
 
         verifyFullToolbarPresent()
