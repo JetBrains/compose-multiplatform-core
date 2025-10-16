@@ -60,13 +60,9 @@ private const val DEBUG_CLASS = "AndroidLegacyPlatformTextInputServiceAdapter"
 @VisibleForTesting
 internal var inputMethodManagerFactory: (View) -> InputMethodManager = ::InputMethodManagerImpl
 
-@Composable
-internal actual fun legacyTextInputServiceAdapterAndService():
-    Pair<LegacyPlatformTextInputServiceAdapter, TextInputService> {
-    val adapter = remember { AndroidLegacyPlatformTextInputServiceAdapter() }
-    val service = remember { TextInputService(adapter) }
-    return adapter to service
-}
+internal actual fun createLegacyPlatformTextInputServiceAdapter():
+    LegacyPlatformTextInputServiceAdapter = AndroidLegacyPlatformTextInputServiceAdapter()
+
 
 internal class AndroidLegacyPlatformTextInputServiceAdapter :
     LegacyPlatformTextInputServiceAdapter() {
