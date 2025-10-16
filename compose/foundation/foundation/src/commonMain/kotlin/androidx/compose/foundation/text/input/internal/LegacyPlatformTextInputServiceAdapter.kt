@@ -21,13 +21,11 @@ package androidx.compose.foundation.text.input.internal
 import androidx.compose.foundation.internal.checkPrecondition
 import androidx.compose.foundation.text.LegacyTextFieldState
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.PlatformTextInputSession
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.text.input.PlatformTextInputService
-import androidx.compose.ui.text.input.TextInputService
 import kotlinx.coroutines.Job
 
 internal expect fun createLegacyPlatformTextInputServiceAdapter():
