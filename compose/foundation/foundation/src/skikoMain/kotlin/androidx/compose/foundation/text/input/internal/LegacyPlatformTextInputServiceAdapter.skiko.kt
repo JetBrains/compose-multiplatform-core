@@ -40,7 +40,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TextInputService
 import kotlinx.coroutines.Job
 
-// TODO remove after https://youtrack.jetbrains.com/issue/COMPOSE-740/Implement-BasicTextField2
 @OptIn(ExperimentalComposeUiApi::class)
 internal actual fun createLegacyPlatformTextInputServiceAdapter():
     LegacyPlatformTextInputServiceAdapter {
