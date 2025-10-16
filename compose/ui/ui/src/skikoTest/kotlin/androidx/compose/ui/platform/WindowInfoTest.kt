@@ -25,6 +25,7 @@ import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.runSkikoComposeUiTest
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,16 +35,21 @@ class WindowInfoTest {
 
     @Test
     fun windowContainerSize() = runSkikoComposeUiTest(
-        size = Size(123f, 321f)
+        size = Size(234f, 432f),
+        density = Density(2f),
     ) {
         setContent {
             Box(Modifier.fillMaxSize().testTag("box"))
 
             val containerSize = LocalWindowInfo.current.containerSize
-            assertEquals(123, containerSize.width)
-            assertEquals(321, containerSize.height)
+            assertEquals(234, containerSize.width)
+            assertEquals(432, containerSize.height)
+
+            val containerDpSize = LocalWindowInfo.current.containerDpSize
+            assertEquals(117.dp, containerDpSize.width)
+            assertEquals(216.dp, containerDpSize.height)
         }
-        onNodeWithTag("box").assertWidthIsEqualTo(123.dp)
-        onNodeWithTag("box").assertHeightIsEqualTo(321.dp)
+        onNodeWithTag("box").assertWidthIsEqualTo(117.dp)
+        onNodeWithTag("box").assertHeightIsEqualTo(216.dp)
     }
 }

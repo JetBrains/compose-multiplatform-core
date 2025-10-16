@@ -840,6 +840,23 @@ class WindowStateTest {
     }
 
     @Test
+    fun windowContainerSizeIsSet() = runApplicationTest {
+        lateinit var windowInfo: WindowInfo
+        launchTestWindowApplication {
+            windowInfo = LocalWindowInfo.current
+        }
+        awaitIdle()
+
+        val containerSize = windowInfo.containerSize
+        assertThat(containerSize.width).isGreaterThan(0)
+        assertThat(containerSize.height).isGreaterThan(0)
+
+        val containerDpSize = windowInfo.containerDpSize
+        assertThat(containerDpSize.width).isGreaterThan(0.dp)
+        assertThat(containerDpSize.height).isGreaterThan(0.dp)
+    }
+
+    @Test
     fun `start invisible undecorated window`() = runApplicationTest {
         val receivedNumbers = mutableListOf<Int>()
 
