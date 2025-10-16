@@ -22,7 +22,10 @@ import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -127,7 +130,11 @@ class BasicInteractionTest {
         UIPasteboard.generalPasteboard().string = "Paste text"
         setContent {
             Column(modifier = Modifier.safeDrawingPadding()) {
-                BasicTextField("Hello-LongLongLongLongLongLong-text", {}, modifier = Modifier.testTag("TextField"))
+                var value by remember { mutableStateOf(TextFieldValue("Hello-LongLongLongLongLong-text")) }
+                BasicTextField(value, {
+                    println("onValueChange $it")
+                    value = it
+                }, modifier = Modifier.testTag("TextField"))
             }
         }
 
