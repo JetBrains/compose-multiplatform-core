@@ -41,7 +41,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     interopContainer: InteropContainer,
     private val interopWrappingView: InteropWrappingView,
     properties: UIKitInteropProperties,
-    compositeKeyHashCode: CompositeKeyHashCode
+    compositeKeyHashCode: CompositeKeyHashCode,
 ) : TypedInteropViewHolder<T>(
     factory = factory,
     interopContainer = interopContainer,

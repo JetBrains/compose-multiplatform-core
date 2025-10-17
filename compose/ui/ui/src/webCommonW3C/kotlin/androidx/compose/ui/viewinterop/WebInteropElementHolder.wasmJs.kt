@@ -34,7 +34,7 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
     factory: () -> T,
     interopContainer: InteropContainer,
     private val interopWrapper: HTMLElement,
-    compositeKeyHashCode: CompositeKeyHashCode
+    compositeKeyHashCode: CompositeKeyHashCode,
 ) : TypedInteropViewHolder<T>(
     factory = factory,
     interopContainer = interopContainer,

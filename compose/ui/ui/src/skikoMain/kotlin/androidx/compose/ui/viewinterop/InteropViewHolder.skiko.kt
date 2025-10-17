@@ -36,7 +36,7 @@ import kotlin.jvm.JvmName
 internal abstract class InteropViewHolder(
     val container: InteropContainer,
     open val group: InteropViewGroup,
-    private val compositeKeyHashCode: CompositeKeyHashCode
+    private val compositeKeyHashCode: CompositeKeyHashCode,
 ) : InteropViewFactoryHolder() {
     private var onModifierChanged: (() -> Unit)? = null
 
