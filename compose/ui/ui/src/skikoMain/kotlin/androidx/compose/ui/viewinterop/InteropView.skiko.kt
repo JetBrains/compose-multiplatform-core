@@ -49,7 +49,7 @@ internal abstract class TypedInteropViewHolder<T : InteropView>(
 ) : InteropViewHolder(
     interopContainer,
     group,
-    compositeKeyHashCode
+    compositeKeyHashCode,
 ) {
     @Suppress("INAPPLICABLE_JVM_NAME")
     @get:JvmName("interopView")

@@ -31,7 +31,7 @@ internal class UIKitInteropViewHolder<T : UIView>(
     factory,
     interopContainer,
     properties,
-    compositeKeyHashCode
+    compositeKeyHashCode,
 ) {
     init {
         // Group will be placed to hierarchy in [InteropContainer.placeInteropView]

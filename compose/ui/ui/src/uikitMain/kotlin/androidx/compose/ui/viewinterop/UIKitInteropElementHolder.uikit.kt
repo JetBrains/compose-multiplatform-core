@@ -46,7 +46,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     factory = factory,
     interopContainer = interopContainer,
     group = interopWrappingView,
-    compositeKeyHashCode = compositeKeyHashCode
+    compositeKeyHashCode = compositeKeyHashCode,
 ) {
     constructor(
         factory: () -> T,

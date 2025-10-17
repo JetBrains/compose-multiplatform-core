@@ -39,7 +39,7 @@ internal abstract class WebInteropElementHolder<T : HTMLElement>(
     factory = factory,
     interopContainer = interopContainer,
     group = InteropViewGroup(interopWrapper),
-    compositeKeyHashCode = compositeKeyHashCode
+    compositeKeyHashCode = compositeKeyHashCode,
 ) {
     constructor(
         factory: () -> T,

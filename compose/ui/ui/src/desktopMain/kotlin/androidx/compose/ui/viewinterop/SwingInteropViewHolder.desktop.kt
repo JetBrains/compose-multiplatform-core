@@ -53,7 +53,7 @@ internal class SwingInteropViewHolder<T : Component>(
     factory = factory,
     interopContainer = container,
     group = group,
-    compositeKeyHashCode = compositeKeyHashCode
+    compositeKeyHashCode = compositeKeyHashCode,
 ), ClipRectangle {
 
     private var clipBounds: IntRect? = null
