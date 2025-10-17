@@ -21,9 +21,10 @@ import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.asCGSize
 import androidx.compose.ui.unit.dp
 import kotlinx.cinterop.useContents
-import platform.CoreGraphics.CGSizeMake
 import platform.UIKit.UILayoutPriorityFittingSizeLevel
 import platform.UIKit.UIView
 
@@ -34,14 +35,12 @@ internal class UIKitInteropViewMeasurePolicy<T: UIView>(
         measurables: List<Measurable>,
         constraints: Constraints
     ): MeasureResult {
-        val targetSize by lazy {
-            CGSizeMake(
-                constraints.maxWidth.toDp().value.toDouble(),
-                constraints.maxHeight.toDp().value.toDouble()
-            )
-        }
-
         val measuredSize by lazy {
+            val targetSize = DpSize(
+                constraints.maxWidth.toDp(),
+                constraints.maxHeight.toDp()
+            ).asCGSize()
+
             interopView.systemLayoutSizeFittingSize(
                 targetSize,
                 withHorizontalFittingPriority = UILayoutPriorityFittingSizeLevel,
