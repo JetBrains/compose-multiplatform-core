@@ -25,7 +25,7 @@ import kotlinx.coroutines.test.runTest
 class WebWindowInfoTest : OnCanvasTests {
 
     @Test
-    fun windowContainerSizeIsSet() = runTest {
+    fun windowInfoContainerSizeIsSet() = runTest {
         lateinit var windowInfo: WindowInfo
         createComposeWindow {
             windowInfo = LocalWindowInfo.current

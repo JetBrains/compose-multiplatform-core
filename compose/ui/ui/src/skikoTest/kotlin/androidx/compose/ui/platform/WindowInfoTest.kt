@@ -34,21 +34,24 @@ import kotlin.test.assertEquals
 class WindowInfoTest {
 
     @Test
-    fun windowContainerSize() = runSkikoComposeUiTest(
+    fun windowInfoContainerSize() = runSkikoComposeUiTest(
         size = Size(234f, 432f),
         density = Density(2f),
     ) {
+        lateinit var windowInfo: WindowInfo
         setContent {
             Box(Modifier.fillMaxSize().testTag("box"))
-
-            val containerSize = LocalWindowInfo.current.containerSize
-            assertEquals(234, containerSize.width)
-            assertEquals(432, containerSize.height)
-
-            val containerDpSize = LocalWindowInfo.current.containerDpSize
-            assertEquals(117.dp, containerDpSize.width)
-            assertEquals(216.dp, containerDpSize.height)
+            windowInfo = LocalWindowInfo.current
         }
+
+        val containerSize = windowInfo.containerSize
+        assertEquals(234, containerSize.width)
+        assertEquals(432, containerSize.height)
+
+        val containerDpSize = windowInfo.containerDpSize
+        assertEquals(117.dp, containerDpSize.width)
+        assertEquals(216.dp, containerDpSize.height)
+
         onNodeWithTag("box").assertWidthIsEqualTo(117.dp)
         onNodeWithTag("box").assertHeightIsEqualTo(216.dp)
     }
