@@ -116,11 +116,7 @@ jobs:
 
       - name: Setup Xcode
         uses: ./.github/actions/setup-xcode
-#
-#      - name: Building Framework with XCTests
-#        run: |
-#          ./gradlew :compose:ui:ui:linkInstrumentedTestDebugFrameworkUikitSimArm64
-#
+
       - name: Configure Simulator
         run: |
           xcrun simctl list devices
