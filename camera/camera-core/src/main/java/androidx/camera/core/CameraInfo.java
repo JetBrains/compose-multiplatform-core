@@ -390,7 +390,6 @@ public interface CameraInfo {
      * config.
      * @see SessionConfig.Builder#setFrameRateRange(Range)
      */
-    @ExperimentalSessionConfig
     default @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(
             @NonNull SessionConfig sessionConfig) {
         return Collections.emptySet();
@@ -620,7 +619,6 @@ public interface CameraInfo {
      *   different values for the same feature type and can thus never be supported together.
      * @see androidx.camera.core.featuregroup.GroupableFeature
      */
-    @ExperimentalSessionConfig
     default boolean isFeatureGroupSupported(@NonNull SessionConfig sessionConfig) {
         return false;
     }

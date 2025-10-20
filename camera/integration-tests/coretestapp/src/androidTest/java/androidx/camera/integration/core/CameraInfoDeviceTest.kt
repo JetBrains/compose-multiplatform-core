@@ -28,7 +28,6 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
@@ -39,7 +38,6 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
-import androidx.camera.video.ExperimentalHighSpeedVideo
 import androidx.camera.video.HighSpeedVideoSessionConfig
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
@@ -194,7 +192,6 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
             .isEqualTo(CameraInfo.TORCH_STRENGTH_LEVEL_UNSUPPORTED)
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun getSupportedFrameRateRanges_withPreviewAndImageCapture_returnsValidSubset() {
         // Arrange.
@@ -213,7 +210,6 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
         assertThat(allSupportedFps).containsAtLeastElementsIn(supportedFpsForSessionConfig)
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun getSupportedFrameRateRanges_withTargetFrameRateSet_returnsValidSubset() {
         // Arrange.
@@ -232,7 +228,6 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
         assertThat(allSupportedFps).containsAtLeastElementsIn(supportedFpsForSessionConfig)
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun getSupportedFrameRateRanges_withPreviewAndVideoCaptureUhd_returnsValidSubset() {
         // Arrange.
@@ -254,7 +249,6 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
         assertThat(allSupportedFps).containsAtLeastElementsIn(supportedFpsForSessionConfig)
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun getSupportedFrameRateRanges_withStreamSharing_returnsValidSubset() {
         // Arrange.
@@ -275,7 +269,6 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
         assertThat(allSupportedFps).containsAtLeastElementsIn(supportedFpsForSessionConfig)
     }
 
-    @OptIn(ExperimentalSessionConfig::class, ExperimentalHighSpeedVideo::class)
     @Test
     fun getSupportedFrameRateRanges_withHighSpeedVideoSessionConfig() {
         // Arrange.

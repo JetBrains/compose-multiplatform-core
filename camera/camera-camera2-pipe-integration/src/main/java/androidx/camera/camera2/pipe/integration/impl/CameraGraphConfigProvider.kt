@@ -31,6 +31,7 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.InputStream
 import androidx.camera.camera2.pipe.OutputStream
+import androidx.camera.camera2.pipe.OutputStream.DynamicRangeProfile
 import androidx.camera.camera2.pipe.OutputStream.OutputType
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamFormat
@@ -85,6 +86,14 @@ constructor(
     private val cameraMetadata: CameraMetadata?,
 ) {
     private val closeCameraOnCameraGraphClose = CloseCameraOnCameraGraphClose()
+    private val supportedDynamicRangeProfiles =
+        if (Build.VERSION.SDK_INT >= 33) {
+            cameraMetadata
+                ?.let { DynamicRangeProfilesCompat.fromCameraMetaData(it) }
+                ?.toDynamicRangeProfiles()
+        } else {
+            null
+        }
 
     public data class CameraGraphCreationResult(
         val config: CameraGraph.Config,
@@ -131,7 +140,7 @@ constructor(
                 val mirrorMode = outputConfig.mirrorMode
                 val outputStreamConfig =
                     OutputStream.Config.create(
-                        dynamicRangeProfile = dynamicRange.toDynamicRangeProfiles(cameraMetadata),
+                        dynamicRangeProfile = dynamicRange.toDynamicRangeProfile(),
                         size = deferrableSurface.prescribedSize,
                         format = StreamFormat(deferrableSurface.prescribedStreamFormat),
                         camera =
@@ -444,25 +453,17 @@ constructor(
         )
     }
 
-    private fun DynamicRange.toDynamicRangeProfiles(
-        cameraMetadata: CameraMetadata?
-    ): OutputStream.DynamicRangeProfile? {
-        var dynamicRangeProfile: OutputStream.DynamicRangeProfile? = null
+    private fun DynamicRange.toDynamicRangeProfile(): DynamicRangeProfile? {
+        var dynamicRangeProfile: DynamicRangeProfile? = null
 
         if (Build.VERSION.SDK_INT >= 33) {
-            dynamicRangeProfile = OutputStream.DynamicRangeProfile.STANDARD
+            dynamicRangeProfile = DynamicRangeProfile.STANDARD
 
-            val dynamicRangeProfilesCompat =
-                cameraMetadata?.let { metadata ->
-                    DynamicRangeProfilesCompat.fromCameraMetaData(metadata)
-                }
-            val supportedProfiles = dynamicRangeProfilesCompat?.toDynamicRangeProfiles()
-
-            if (supportedProfiles != null) {
+            if (supportedDynamicRangeProfiles != null) {
                 val firstSupportedProfile =
-                    dynamicRangeToFirstSupportedProfile(this, supportedProfiles)
+                    dynamicRangeToFirstSupportedProfile(this, supportedDynamicRangeProfiles)
                 if (firstSupportedProfile != null) {
-                    dynamicRangeProfile = OutputStream.DynamicRangeProfile(firstSupportedProfile)
+                    dynamicRangeProfile = DynamicRangeProfile(firstSupportedProfile)
                 } else {
                     Camera2Logger.error {
                         "Requested dynamic range is not supported. Defaulting to STANDARD" +

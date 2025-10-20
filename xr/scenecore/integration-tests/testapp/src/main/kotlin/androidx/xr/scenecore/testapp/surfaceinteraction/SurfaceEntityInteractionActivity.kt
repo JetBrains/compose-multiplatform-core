@@ -38,6 +38,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Hand
 import androidx.xr.arcore.HandJointType
 import androidx.xr.runtime.Config
@@ -79,6 +80,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
     private lateinit var session: Session
 
     private lateinit var scene: Scene
+    private lateinit var device: ArDevice
 
     private lateinit var videoInputManager: VideoInputManager
     private lateinit var pointerLogManager: PointerLogManager
@@ -112,6 +114,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
                 handTracking = Config.HandTrackingMode.BOTH,
             )
         )
+        device = ArDevice.getInstance(session)
 
         surfaceParent = GroupEntity.create(session, "SurfaceParent", Pose.Identity)
         videoInputManager = VideoInputManager()
@@ -186,7 +189,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
     private fun onAnimation() {
         if (surfaceParent == null) return
 
-        val headPose = scene.spatialUser.head?.transformPoseTo(Pose.Identity, scene.activitySpace)
+        val headPose = device.state.value.devicePose
 
         val rightState = Hand.right(session)?.state?.value
         val rightPose =
@@ -208,14 +211,14 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
 
         // Place video canvas on the head (gravity aligned)
         val videoAttr = videoAttrSelected
-        if (videoAttr != null && videoAttr.stickToHead && headPose != null) {
+        if (videoAttr != null && videoAttr.stickToHead) {
             surfaceParent!!.setPose(Pose(headPose.translation, surfaceParent!!.getPose().rotation))
         }
 
         val followingPortion = 0.3f
         // Place default pointer debug panel
         val debugPanelDefault = pointerLogManager.default.validPanel
-        if (headPose != null && debugPanelDefault != null) {
+        if (debugPanelDefault != null) {
             val oldPose = debugPanelDefault.getPose()
             val newPose =
                 headPose.compose(
@@ -226,7 +229,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
 
         // Place left pointer debug panel
         val debugPanelLeft = pointerLogManager.left.validPanel
-        if (headPose != null && leftPose != null && debugPanelLeft != null) {
+        if (leftPose != null && debugPanelLeft != null) {
             val oldPose = debugPanelLeft.getPose()
             val newPos = leftPose.translation + Vector3(0f, 0.05f, 0f)
             val newRot = Quaternion.fromLookTowards(headPose.translation - newPos, Vector3.Up)
@@ -235,7 +238,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
 
         // Place right pointer debug panel
         val debugPanelRight = pointerLogManager.right.validPanel
-        if (headPose != null && rightPose != null && debugPanelRight != null) {
+        if (rightPose != null && debugPanelRight != null) {
             val oldPose = debugPanelRight.getPose()
             val newPos = rightPose.translation + Vector3(0f, 0.05f, 0f)
             val newRot = Quaternion.fromLookTowards(headPose.translation - newPos, Vector3.Up)

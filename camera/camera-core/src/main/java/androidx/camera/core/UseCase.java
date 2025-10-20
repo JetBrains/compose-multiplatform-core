@@ -47,7 +47,6 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntRange;
 import androidx.annotation.MainThread;
-import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.featuregroup.GroupableFeature;
@@ -124,7 +123,6 @@ public abstract class UseCase {
      */
     private @NonNull UseCaseConfig<?> mUseCaseConfig;
 
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     private @Nullable Set<@NonNull GroupableFeature> mFeatureGroup;
 
     /**
@@ -1179,13 +1177,11 @@ public abstract class UseCase {
      * @see androidx.camera.core.SessionConfig#getRequiredFeatureGroup()
      * @see androidx.camera.core.SessionConfig#getPreferredFeatureGroup()
      */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @RestrictTo(Scope.LIBRARY_GROUP)
     public void setFeatureGroup(@Nullable Set<@NonNull GroupableFeature> features) {
         mFeatureGroup = features != null ? new HashSet<>(features) : null;
     }
 
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @RestrictTo(Scope.LIBRARY_GROUP)
     public @Nullable Set<@NonNull GroupableFeature> getFeatureGroup() {
         return mFeatureGroup;

@@ -46,6 +46,7 @@ import androidx.xr.scenecore.runtime.SpatialVisibility as RuntimeSpatialVisibili
 import androidx.xr.scenecore.runtime.TextureSampler as RuntimeTextureSampler
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
@@ -770,7 +771,7 @@ class UtilsTest {
         val rtHitTestResult =
             RuntimeHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
         val hitTestResult = rtHitTestResult.toHitTestResult()
-        assertThat(hitTestResult.hitPosition).isEqualTo(hitPosition)
+        assertThat(hitTestResult!!.hitPosition).isEqualTo(hitPosition)
         assertThat(hitTestResult.surfaceNormal).isEqualTo(surfaceNormal)
         assertThat(hitTestResult.surfaceType).isEqualTo(HitTestResult.SurfaceType.PLANE)
         assertThat(hitTestResult.distance).isEqualTo(distance)
@@ -788,10 +789,7 @@ class UtilsTest {
 
         val hitTestResult = rtHitTestResult.toHitTestResult()
 
-        assertThat(hitTestResult.hitPosition).isEqualTo(hitPosition)
-        assertThat(hitTestResult.surfaceNormal).isEqualTo(surfaceNormal)
-        assertThat(hitTestResult.surfaceType).isEqualTo(HitTestResult.SurfaceType.UNKNOWN)
-        assertThat(hitTestResult.distance).isEqualTo(distance)
+        assertNull(hitTestResult)
     }
 
     @Test

@@ -22,7 +22,10 @@ import static androidx.compose.remote.integration.view.demos.ExperimentRecyclerA
 import androidx.compose.remote.integration.view.demos.examples.CountdownKt;
 import androidx.compose.remote.integration.view.demos.examples.Cube3DKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoAnchorText;
+import androidx.compose.remote.integration.view.demos.examples.DemoAttributedString;
+import androidx.compose.remote.integration.view.demos.examples.DemoMetalClockKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths;
+import androidx.compose.remote.integration.view.demos.examples.ExampleTimerKt;
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendarKt;
 import androidx.compose.remote.integration.view.demos.examples.TextKt;
 import androidx.compose.remote.integration.view.demos.utils.RCDoc;
@@ -38,9 +41,11 @@ public abstract class DemosCreation {
      *
      * @return a list of RCDoc
      */
-    public static @NonNull  ArrayList<RCDoc> getDemos() {
+    public static @NonNull ArrayList<RCDoc> getDemos() {
         return new ArrayList<>(Arrays.asList(
-
+                getp("Java/AttributeString", DemoAttributedString::demo),
+                getp("Java/pathTest", ExampleTimerKt::basicTimer),
+                getp("fancyClock2", DemoMetalClockKt::fancyClock2),
                 getp("Java/pathTest", DemoAnchorText::anchoredText),
                 getp("Java/pathTest", DemoPaths::pathTest),
                 getpc("Procedural/Text baseline", TextKt::RcTextDemo),

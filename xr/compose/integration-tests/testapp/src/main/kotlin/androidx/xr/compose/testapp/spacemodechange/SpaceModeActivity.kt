@@ -116,6 +116,7 @@ class SpaceModeActivity : ComponentActivity() {
         Subspace {
             FixedSizeFullSpaceLayout(getString(R.string.space_mode_change_test)) {
                 TestResultsDisplay(testResults)
+                @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
                 Text(
                     testStatus,
                     fontSize = 30.sp,

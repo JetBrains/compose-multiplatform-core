@@ -24,6 +24,7 @@ import androidx.concurrent.futures.ResolvableFuture;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.webkit.internal.StartupFeatures;
 import androidx.webkit.internal.WebViewFeatureInternal;
 import androidx.webkit.internal.WebViewGlueCommunicator;
@@ -81,6 +82,7 @@ public class AsyncStartUpTest {
      * {@link WebViewCompat#startUpWebView(android.content.Context, WebViewStartUpConfig, WebViewCompat.WebViewStartUpCallback)}
      * returns timing info as part of the startup result.
      */
+    @SdkSuppress(minSdkVersion = 24) // b/452708695
     @Test
     @MediumTest
     public void testAsyncStartUp_onSuccessReturnsTimingInfo() throws Throwable {

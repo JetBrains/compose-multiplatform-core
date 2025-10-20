@@ -18,7 +18,7 @@
 package androidx.compose.remote.creation
 
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.core.Platform
+import androidx.compose.remote.core.RcPlatformServices
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.BitmapFontData
@@ -57,7 +57,12 @@ public open class RemoteComposeContext {
         content()
     }
 
-    public constructor(width: Int, height: Int, contentDescription: String, platform: Platform) {
+    public constructor(
+        width: Int,
+        height: Int,
+        contentDescription: String,
+        platform: RcPlatformServices,
+    ) {
         mRemoteWriter = RemoteComposeWriter(width, height, contentDescription, platform)
     }
 
@@ -65,7 +70,7 @@ public open class RemoteComposeContext {
         width: Int,
         height: Int,
         contentDescription: String,
-        platform: Platform,
+        platform: RcPlatformServices,
         content: RemoteComposeContext.() -> Unit,
     ) {
         mRemoteWriter = RemoteComposeWriter(width, height, contentDescription, platform)
@@ -78,7 +83,7 @@ public open class RemoteComposeContext {
         contentDescription: String,
         apiLevel: Int,
         profiles: Int,
-        platform: Platform,
+        platform: RcPlatformServices,
         content: RemoteComposeContext.() -> Unit,
     ) {
         mRemoteWriter =
@@ -92,7 +97,7 @@ public open class RemoteComposeContext {
         contentDescription: String,
         apiLevel: Int,
         profiles: Int,
-        platform: Platform,
+        platform: RcPlatformServices,
     ) {
         mRemoteWriter =
             RemoteComposeWriter(width, height, contentDescription, apiLevel, profiles, platform)
@@ -100,7 +105,7 @@ public open class RemoteComposeContext {
 
     public constructor(
         vararg tags: RemoteComposeWriter.HTag,
-        platform: Platform,
+        platform: RcPlatformServices,
         content: RemoteComposeContext.() -> Unit,
     ) {
         mRemoteWriter = RemoteComposeWriter(platform, *tags)

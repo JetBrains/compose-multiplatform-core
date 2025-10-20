@@ -19,6 +19,7 @@ package androidx.xr.arcore.testapp.eyetracking
 import android.widget.TextView
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Eye
 import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.runtime.Config
@@ -49,6 +50,8 @@ class GazeRenderer(val session: Session, val lifecycleScope: CoroutineScope, var
         private val view: TextView,
         private val left: Boolean,
     ) {
+        private val arDevice = ArDevice.getInstance(session)
+
         companion object {
             fun create(session: Session, name: String, isLeft: Boolean): EyeWidget {
                 val entity = GroupEntity.create(session, name)
@@ -82,10 +85,12 @@ class GazeRenderer(val session: Session, val lifecycleScope: CoroutineScope, var
 
             entity.setEnabled(gazePose != null)
             gazePose?.let {
-                session.scene.spatialUser.head?.let {
-                    val pose = it.transformPoseTo(gazePose, session.scene.activitySpace)
-                    entity.setPose(pose)
-                }
+                val headScenePose =
+                    session.scene.perceptionSpace.getScenePoseFromPerceptionPose(
+                        arDevice.state.value.devicePose
+                    )
+                val pose = headScenePose.transformPoseTo(gazePose, session.scene.activitySpace)
+                entity.setPose(pose)
             }
 
             getEyeState(config, eye)?.let { view.setBackgroundColor(getColor(it)) }

@@ -56,6 +56,7 @@ import androidx.xr.scenecore.runtime.PlaneType;
 import androidx.xr.scenecore.runtime.PointerCaptureComponent;
 import androidx.xr.scenecore.runtime.RenderingEntityFactory;
 import androidx.xr.scenecore.runtime.ResizableComponent;
+import androidx.xr.scenecore.runtime.ScenePose;
 import androidx.xr.scenecore.runtime.SceneRuntime;
 import androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper;
 import androidx.xr.scenecore.runtime.Space;
@@ -393,6 +394,13 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             return null;
         }
         return cameraViewScenePose;
+    }
+
+    @Override
+    public @NonNull ScenePose getScenePoseFromPerceptionPose(@NonNull Pose perceptionPose) {
+        return new OpenXrScenePose(
+                (ActivitySpaceImpl) getActivitySpace(), (AndroidXrEntity) getActivitySpace(),
+                perceptionPose);
     }
 
     @Override

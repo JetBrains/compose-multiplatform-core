@@ -178,28 +178,27 @@ public interface ImpressApi {
 
     /**
      * This method loads an image based lighting asset from the assets folder and returns a future
-     * with a token that can be used to reference the asset in other JNI calls.
+     * with an ExrImage that can be used to reference the asset in other JNI calls.
      */
-    public fun loadImageBasedLightingAsset(path: String): ListenableFuture<Long>
+    public fun loadImageBasedLightingAsset(path: String): ListenableFuture<ExrImage>
 
     /**
-     * This method loads an image based lighting asset from a byte array and returns a future with a
-     * token that can be used to reference the asset in other JNI calls.
+     * This method loads an image based lighting asset from a byte array and returns a future with
+     * an ExrImage that can be used to reference the asset in other JNI calls.
      */
-    public fun loadImageBasedLightingAsset(data: ByteArray, key: String): ListenableFuture<Long>
+    public fun loadImageBasedLightingAsset(data: ByteArray, key: String): ListenableFuture<ExrImage>
 
     /**
      * This method loads a glTF model from the local assets folder or a remote URL, and returns a
-     * future with the model token that can be used to reference the model in other JNI calls.
+     * future with the GltfModel that can be used to reference the model in other JNI calls.
      */
-    public fun loadGltfAsset(path: String): ListenableFuture<Long>
+    public fun loadGltfAsset(path: String): ListenableFuture<GltfModel>
 
     /**
-     * This method loads a glTF model from a byte array and returns a future with the model token
-     * that can be used to reference the model in other JNI calls.
+     * This method loads a glTF model from a byte array and returns a future with the GltfModel that
+     * can be used to reference the model in other JNI calls.
      */
-    // TODO(b/397500220): Add an accessor which gets the model token from a name.
-    public fun loadGltfAsset(data: ByteArray, key: String): ListenableFuture<Long>
+    public fun loadGltfAsset(data: ByteArray, key: String): ListenableFuture<GltfModel>
 
     /** This method releases the asset pointer of a previously loaded glTF model. */
     // TODO(b/374216912) - Add support for cancellation of loading operations (GLTF, EXR, etc.)

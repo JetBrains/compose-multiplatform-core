@@ -31,6 +31,7 @@ import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
 import com.google.ar.core.Config as ArConfig
+import com.google.ar.core.Config.DepthMode
 import com.google.ar.core.Config.GeospatialMode
 import com.google.ar.core.Config.PlaneFindingMode
 import com.google.ar.core.Config.TextureUpdateMode
@@ -105,9 +106,15 @@ internal constructor(
             throw UnsupportedOperationException()
         }
 
-        if (config.depthEstimation != Config.DepthEstimationMode.DISABLED) {
-            throw UnsupportedOperationException()
-        }
+        arConfig.depthMode =
+            when (config.depthEstimation) {
+                Config.DepthEstimationMode.SMOOTH_ONLY,
+                Config.DepthEstimationMode.SMOOTH_AND_RAW -> DepthMode.AUTOMATIC
+                Config.DepthEstimationMode.RAW_ONLY -> DepthMode.RAW_DEPTH_ONLY
+                else -> DepthMode.DISABLED
+            }
+
+        perceptionManager.setDepthEstimationMode(config.depthEstimation)
 
         if (config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
             throw UnsupportedOperationException()
@@ -163,6 +170,7 @@ internal constructor(
     }
 
     override fun stop() {
+        perceptionManager.dispose()
         _session.close()
     }
 

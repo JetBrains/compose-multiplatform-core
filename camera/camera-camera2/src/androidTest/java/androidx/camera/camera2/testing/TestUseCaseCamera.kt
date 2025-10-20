@@ -161,7 +161,6 @@ class TestUseCaseCamera(
                 state =
                     UseCaseCameraState(
                         useCaseCameraGraphConfig,
-                        threads,
                         templateParamsOverride = NoOpTemplateParamsOverride,
                     ),
                 useCaseGraphConfig = useCaseCameraGraphConfig,

@@ -33,7 +33,6 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ConcurrentCamera
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.InitializationException
@@ -76,7 +75,7 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
 
     /**
      * Returns `true` if this [UseCase] is bound to a lifecycle or included in a bound
-     * [SessionConfig]. Otherwise returns `false`.
+     * [SessionConfig], `false` otherwise.
      *
      * After binding a use case, use cases remain bound until the lifecycle reaches a
      * [Lifecycle.State.DESTROYED] state or if is unbound by calls to [unbind] or [unbindAll].
@@ -86,13 +85,13 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
     }
 
     /**
-     * Returns `true` if the [SessionConfig] is bound to a lifecycle. Otherwise returns `false`.
+     * Returns `true` if the exact same instance of [SessionConfig] is bound to a lifecycle, `false`
+     * otherwise.
      *
      * After binding a [SessionConfig], this [SessionConfig] remains bound until the lifecycle
      * reaches a [Lifecycle.State.DESTROYED] state or if is unbound by calls to [unbind] or
      * [unbindAll].
      */
-    @ExperimentalSessionConfig
     public fun isBound(sessionConfig: SessionConfig): Boolean {
         return lifecycleCameraProvider.isBound(sessionConfig)
     }
@@ -118,7 +117,10 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
     }
 
     /**
-     * Unbinds the [SessionConfig] from the lifecycle provider.
+     * Unbinds the specified [SessionConfig] instance from the lifecycle provider.
+     *
+     * This method will only unbind the session if the provided `sessionConfig` is the exact same
+     * instance that was previously used for binding.
      *
      * This [SessionConfig] contains the [UseCase]s to be detached from the camera. This will
      * initiate a close of every open camera which has zero [UseCase] associated with it at the end
@@ -131,7 +133,6 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
      * @throws IllegalStateException If not called on main thread.
      * @throws UnsupportedOperationException If called in concurrent mode.
      */
-    @ExperimentalSessionConfig
     public fun unbind(sessionConfig: SessionConfig) {
         return lifecycleCameraProvider.unbind(sessionConfig)
     }
@@ -285,7 +286,6 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
      * - A [UseCase] contained within the [SessionConfig] is already bound to a different
      *   [LifecycleOwner].
      */
-    @ExperimentalSessionConfig
     public fun bindToLifecycle(
         lifecycleOwner: LifecycleOwner,
         cameraSelector: CameraSelector,
@@ -391,6 +391,14 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
 
     override fun getCameraInfo(cameraSelector: CameraSelector): CameraInfo {
         return lifecycleCameraProvider.getCameraInfo(cameraSelector)
+    }
+
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    override fun getCameraInfo(
+        cameraSelector: CameraSelector,
+        sessionConfig: SessionConfig,
+    ): CameraInfo {
+        return lifecycleCameraProvider.getCameraInfo(cameraSelector, sessionConfig)
     }
 
     override fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener) {

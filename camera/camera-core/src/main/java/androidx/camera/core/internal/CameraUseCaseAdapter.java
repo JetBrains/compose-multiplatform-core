@@ -51,7 +51,6 @@ import android.util.Size;
 import android.view.Surface;
 
 import androidx.annotation.GuardedBy;
-import androidx.annotation.OptIn;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
@@ -61,7 +60,6 @@ import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CompositionSettings;
 import androidx.camera.core.DynamicRange;
-import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Logger;
 import androidx.camera.core.Preview;
@@ -365,7 +363,6 @@ public final class CameraUseCaseAdapter implements Camera {
      *                         currently added UseCases exceed the capability of the camera, or
      *                         if the frame rate is not supported by the camera.
      */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     public void addUseCases(@NonNull Collection<UseCase> appUseCasesToAdd,
             @Nullable ResolvedFeatureGroup featureGroup) throws CameraException {
         Logger.d(TAG, "addUseCases: appUseCasesToAdd = " + appUseCasesToAdd
@@ -416,7 +413,6 @@ public final class CameraUseCaseAdapter implements Camera {
      * @throws CameraException Thrown if the combination of newly added UseCases and the
      *                         currently added UseCases exceed the capability of the camera.
      */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @NonNull
     public CalculatedUseCaseInfo simulateAddUseCases(
             @NonNull Collection<UseCase> appUseCasesToAdd,
@@ -672,7 +668,6 @@ public final class CameraUseCaseAdapter implements Camera {
         }
     }
 
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @NonNull
     private static Map<UseCase, Set<GroupableFeature>> applyFeatureGroup(
             @NonNull Collection<UseCase> useCases,
@@ -686,7 +681,6 @@ public final class CameraUseCaseAdapter implements Camera {
         return previousFeatureComboMap;
     }
 
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     private static void restoreFeatureGroup(
             Map<UseCase, @Nullable Set<@NonNull GroupableFeature>> previousFeatureComboMap) {
         for (Map.Entry<UseCase, Set<GroupableFeature>> entry : previousFeatureComboMap.entrySet()) {

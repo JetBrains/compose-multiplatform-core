@@ -24,6 +24,7 @@ import androidx.xr.compose.subspace.node.CompositionLocalConsumerSubspaceModifie
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.subspace.node.currentValueOf
+import androidx.xr.compose.subspace.node.invalidateMeasurement
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.VolumeConstraints
@@ -264,7 +265,7 @@ internal class ResizableNode(
                     return
                 }
                 userSize = nextSize
-                requestRelayout()
+                invalidateMeasurement()
             }
         }
     }

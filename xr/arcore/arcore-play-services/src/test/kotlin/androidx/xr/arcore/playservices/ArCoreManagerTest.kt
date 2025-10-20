@@ -186,7 +186,9 @@ class ArCoreManagerTest {
         whenever(mockSession.config).thenReturn(mockArConfig)
 
         val config = Config(depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW)
-        assertFailsWith<UnsupportedOperationException> { underTest.configure(config) }
+        underTest.configure(config)
+
+        assertThat(underTest.config.depthEstimation).isEqualTo(DepthEstimationMode.SMOOTH_AND_RAW)
     }
 
     @Test

@@ -55,7 +55,7 @@ public final class FakeImpressApiImplTest {
 
     @Test
     public void loadImageBasedLightingAsset_returnsImageFuture() {
-        ListenableFuture<Long> modelFuture =
+        ListenableFuture<ExrImage> modelFuture =
                 mFakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment");
         assertThat(modelFuture).isNotNull();
     }
@@ -63,21 +63,21 @@ public final class FakeImpressApiImplTest {
     @Test
     public void loadImageBasedLightingAsset_withByteArrayAndKey_returnsFuture() {
         byte[] byteArray = new byte[] {};
-        ListenableFuture<Long> modelFuture =
+        ListenableFuture<ExrImage> imageFuture =
                 mFakeImpressApi.loadImageBasedLightingAsset(byteArray, "fakeEnvironment");
-        assertThat(modelFuture).isNotNull();
+        assertThat(imageFuture).isNotNull();
     }
 
     @Test
     public void releaseImageBasedLightingAsset_releasesImage()
             throws ExecutionException, InterruptedException {
-        ListenableFuture<Long> imageFuture =
+        ListenableFuture<ExrImage> imageFuture =
                 mFakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment");
         List<Long> images = mFakeImpressApi.getImageBasedLightingAssets();
         assertThat(images).isNotNull();
         assertThat(images).hasSize(1);
 
-        Long imageToken = imageFuture.get();
+        Long imageToken = imageFuture.get().getNativeHandle();
         mFakeImpressApi.releaseImageBasedLightingAsset(imageToken);
 
         images = mFakeImpressApi.getImageBasedLightingAssets();
@@ -86,14 +86,14 @@ public final class FakeImpressApiImplTest {
 
     @Test
     public void loadGltfAsset_returnsModelFuture() {
-        ListenableFuture<Long> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
+        ListenableFuture<GltfModel> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
         assertThat(modelFuture).isNotNull();
     }
 
     @Test
     public void loadGltfAsset_withByteArrayAndKey_returnsModelFuture() {
         byte[] byteArray = new byte[] {};
-        ListenableFuture<Long> modelFuture =
+        ListenableFuture<GltfModel> modelFuture =
                 mFakeImpressApi.loadGltfAsset(byteArray, "FakeAsset.glb");
         assertThat(modelFuture).isNotNull();
     }
@@ -101,16 +101,16 @@ public final class FakeImpressApiImplTest {
     @Test
     public void getImpressNodesForToken_returnsNodes()
             throws ExecutionException, InterruptedException {
-        ListenableFuture<Long> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
-        Long modelToken = modelFuture.get();
+        ListenableFuture<GltfModel> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
+        Long modelToken = modelFuture.get().getNativeHandle();
         List<Integer> nodes = mFakeImpressApi.getImpressNodesForToken(modelToken);
         assertThat(nodes).isNotNull();
     }
 
     @Test
     public void releaseGltfAsset_releasesModel() throws ExecutionException, InterruptedException {
-        ListenableFuture<Long> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
-        Long modelToken = modelFuture.get();
+        ListenableFuture<GltfModel> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
+        Long modelToken = modelFuture.get().getNativeHandle();
         List<Integer> nodes = mFakeImpressApi.getImpressNodesForToken(modelToken);
         assertThat(nodes).isNotNull();
         mFakeImpressApi.releaseGltfAsset(modelToken);
@@ -121,8 +121,8 @@ public final class FakeImpressApiImplTest {
     @Test
     public void instanceGltfModel_withCollider_returnsEntityId()
             throws ExecutionException, InterruptedException {
-        ListenableFuture<Long> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
-        Long modelToken = modelFuture.get();
+        ListenableFuture<GltfModel> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
+        Long modelToken = modelFuture.get().getNativeHandle();
         ImpressNode entityNode =
                 mFakeImpressApi.instanceGltfModel(modelToken, /* enableCollider= */ true);
         assertThat(entityNode.getHandle()).isNotEqualTo(0);
@@ -131,8 +131,8 @@ public final class FakeImpressApiImplTest {
     @Test
     public void instanceGltfModel_withoutCollider_returnsEntityId()
             throws ExecutionException, InterruptedException {
-        ListenableFuture<Long> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
-        Long modelToken = modelFuture.get();
+        ListenableFuture<GltfModel> modelFuture = mFakeImpressApi.loadGltfAsset("FakeAsset.glb");
+        Long modelToken = modelFuture.get().getNativeHandle();
         ImpressNode entityNode =
                 mFakeImpressApi.instanceGltfModel(modelToken, /* enableCollider= */ false);
         assertThat(entityNode.getHandle()).isNotEqualTo(0);
@@ -950,10 +950,10 @@ public final class FakeImpressApiImplTest {
 
     @Test
     public void disposeAllResources_disposesAllResources() {
-        ListenableFuture<Long> unused =
+        ListenableFuture<ExrImage> unused =
                 mFakeImpressApi.loadImageBasedLightingAsset("fakeEnvironment");
         ImpressNode unused2 = mFakeImpressApi.createImpressNode();
-        ListenableFuture<Long> unused3 = mFakeImpressApi.loadGltfAsset("fakeAsset");
+        ListenableFuture<GltfModel> unused3 = mFakeImpressApi.loadGltfAsset("fakeAsset");
         ListenableFuture<Texture> unused4 = mFakeImpressApi.loadTexture("FakeAsset.exr");
         ListenableFuture<WaterMaterial> unused5 = mFakeImpressApi.createWaterMaterial(false);
         mFakeImpressApi.disposeAllResources();

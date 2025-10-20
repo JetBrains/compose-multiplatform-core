@@ -40,8 +40,8 @@ internal interface CoreEntityNode : DelegatableSubspaceNode {
  * [CoreEntityNode.modifyCoreEntity] is called during layout and [requestRelayout] will cause a
  * relayout loop.
  */
-internal fun CoreEntityNode.requestRelayout() {
-    (this as SubspaceModifier.Node).layoutNode?.requestRelayout()
+internal fun CoreEntityNode.invalidatePlacement() {
+    (this as SubspaceModifier.Node).layoutNode?.requestLayout()
 }
 
 /**
