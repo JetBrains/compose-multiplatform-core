@@ -492,6 +492,7 @@ internal class ScrollGestureRecognizer(
 }
 
 /**
+ * TODO: Update doc
  * [UIView] subclass that handles touches and keyboard presses events and forwards them
  * to the Compose runtime.
  *
@@ -636,6 +637,7 @@ internal class OverlayInputView(
 
 
 /**
+ * TODO: Update doc
  * [UIView] subclass that handles touches and keyboard presses events and forwards them
  * to the Compose runtime.
  *
@@ -708,6 +710,7 @@ internal class BackgroundInputView(
         setAccessibilityElements(emptyList<Any>())
     }
 
+// TODO: Verify pointer input manually
 //    override fun canBecomeFirstResponder() = true
 //    override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
 //        onKeyboardPresses(presses)
@@ -741,11 +744,9 @@ internal class BackgroundInputView(
         endEditing(force = true)
         removeGestureRecognizer(touchesGestureRecognizer)
         touchesGestureRecognizer.dispose()
-        // onHoverEvent = { _, _, _ -> }
 
         hitTestInteropView = { null }
         isPointInsideInteractionBounds = { false }
-        // onKeyboardPresses = {}
         onLayoutSubviews = {}
         onAppeared = null
     }
