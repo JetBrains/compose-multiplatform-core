@@ -26,6 +26,7 @@ expect fun createClipEntryWithPlainText(text: String): ClipEntry
 // Setting the colors to indicate the presence of the backing textarea or input, and its focus state
 internal fun setupBackingTextAreaDebugHints() {
     val shadowRootStyle = document.createElement("style")
+    // language=css
     shadowRootStyle.textContent = """
         :host {
             --input-mode-indicator: transparent;
