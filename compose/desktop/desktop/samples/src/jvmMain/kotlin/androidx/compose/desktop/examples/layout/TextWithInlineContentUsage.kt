@@ -31,7 +31,7 @@ package androidx.compose.desktop.examples.layout
 //import androidx.compose.ui.unit.em
 //
 //@Composable
-//fun NoriaContext.TextWithInlineContentUsage() {
+//fun TextWithInlineContentUsage() {
 //    val myId = "inlineContent"
 //    val text = buildAnnotatedString {
 //        append("Hello")

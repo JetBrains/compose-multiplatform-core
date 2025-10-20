@@ -60,7 +60,7 @@ package androidx.compose.desktop.examples.layout
 // * Iterate given [views] with [periodMs] delay
 // */
 //@Composable
-//fun NoriaContext.IterateViews(periodMs: Long, vararg views: @Composable () -> Unit) {
+//fun IterateViews(periodMs: Long, vararg views: @Composable () -> Unit) {
 //    var currentIndex by remember { mutableStateOf(0) }
 //    if (currentIndex < views.size) {
 //        views[currentIndex]()

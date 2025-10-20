@@ -201,7 +201,7 @@ package androidx.compose.desktop.examples.swingexample
 //
 //@OptIn(ExperimentalFoundationApi::class)
 //@Composable
-//fun NoriaContext.JPopupTextMenuProvider(owner: Component, content: @Composable NoriaContext.() -> Unit) {
+//fun JPopupTextMenuProvider(owner: Component, content: @Composable () -> Unit) {
 //    val localization = LocalLocalization.current
 //    CompositionLocalProvider(
 //        LocalTextContextMenu provides JPopupTextMenu(owner) { textManager, items ->
@@ -234,16 +234,16 @@ package androidx.compose.desktop.examples.swingexample
 //
 //@OptIn(ExperimentalFoundationApi::class)
 //@Composable
-//fun NoriaContext.CustomTextMenuProvider(content: @Composable NoriaContext.() -> Unit) {
+//fun CustomTextMenuProvider(content: @Composable () -> Unit) {
 //    val textMenu = LocalTextContextMenu.current
 //    val uriHandler = LocalUriHandler.current
 //    CompositionLocalProvider(
 //        LocalTextContextMenu provides object : TextContextMenu {
 //            @Composable
-//            override fun NoriaContext.Area(
+//            override fun Area(
 //                textManager: TextContextMenu.TextManager,
 //                state: ContextMenuState,
-//                content: @Composable NoriaContext.() -> Unit
+//                content: @Composable () -> Unit
 //            ) {
 //                ContextMenuDataProvider({
 //                    val shortText = textManager.selectedText.crop()
@@ -292,7 +292,7 @@ package androidx.compose.desktop.examples.swingexample
 //}
 //
 //@Composable
-//fun NoriaContext.ComposeContent(background: Color = Color.White) {
+//fun ComposeContent(background: Color = Color.White) {
 //    val rememberClicks = remember { mutableStateOf(0) }
 //    val rememberSaveableClicks = rememberSaveable { mutableStateOf(0) }
 //    Box(
@@ -381,7 +381,7 @@ package androidx.compose.desktop.examples.swingexample
 //}
 //
 //@Composable
-//fun NoriaContext.Counter(text: String, counter: MutableState<Int>) {
+//fun Counter(text: String, counter: MutableState<Int>) {
 //    Surface(
 //        modifier = Modifier.size(130.dp, 130.dp),
 //        color = Color(180, 180, 180),

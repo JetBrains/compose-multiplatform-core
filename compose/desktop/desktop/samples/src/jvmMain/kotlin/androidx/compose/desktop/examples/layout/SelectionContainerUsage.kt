@@ -21,7 +21,7 @@ package androidx.compose.desktop.examples.layout
 //import androidx.compose.runtime.Composable
 //
 //@Composable
-//fun NoriaContext.SelectionContainerUsage() {
+//fun SelectionContainerUsage() {
 //    SelectionContainer {
 //        Text("Text inside SelectionContainer")
 //    }

@@ -30,7 +30,7 @@ package androidx.compose.desktop.examples.layout
 //import androidx.compose.ui.Modifier
 //
 //@Composable
-//fun NoriaContext.TabRowUsage() {
+//fun TabRowUsage() {
 //    var state by remember { mutableStateOf(0) }
 //    val titles = listOf("TAB 1", "TAB 2", "TAB 3 WITH LOTS OF TEXT")
 //    Column {

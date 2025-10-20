@@ -24,7 +24,7 @@ package androidx.compose.desktop.examples.layout
 //import javax.swing.JLabel
 //
 //@Composable
-//fun NoriaContext.SwingPanelUsage() {
+//fun SwingPanelUsage() {
 //    SwingPanel(
 //        modifier = Modifier.size(200.dp, 39.dp),
 //        factory = {

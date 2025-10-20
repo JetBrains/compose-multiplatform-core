@@ -31,7 +31,6 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.util.setPositionSafely
 import androidx.compose.ui.util.setSizeSafely
 import javax.swing.JMenuBar
-import noria.ClosureContext
 import noria.ui.core.WindowData
 
 // TODO(demin): support focus management
@@ -126,7 +125,7 @@ fun Window(
     systemTheme: SystemTheme = LocalSystemTheme.current,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onLayout: ClosureContext.(WindowData) -> Unit = {},
+    onLayout: (WindowData) -> Unit = {},
     content: @Composable FrameWindowScope.() -> Unit,
 ) {
     SwingWindow(

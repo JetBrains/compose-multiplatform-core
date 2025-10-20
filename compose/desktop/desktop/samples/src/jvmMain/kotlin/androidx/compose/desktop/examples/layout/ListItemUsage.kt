@@ -32,7 +32,7 @@ package androidx.compose.desktop.examples.layout
 //
 //@OptIn(ExperimentalMaterialApi::class)
 //@Composable
-//fun NoriaContext.ListItemUsage() {
+//fun ListItemUsage() {
 //    Column {
 //        ListItem(
 //            text = { Text("One line list item with no icon") },

@@ -21,7 +21,7 @@ package androidx.compose.desktop.examples.layout
 //import androidx.compose.runtime.Composable
 //
 //@Composable
-//fun NoriaContext.BottomNavigationUsage() {
+//fun BottomNavigationUsage() {
 //    BottomNavigation {
 //        BottomNavigationItem(true, onClick = {}, icon = {})
 //        BottomNavigationItem(false, onClick = {}, icon = {})
