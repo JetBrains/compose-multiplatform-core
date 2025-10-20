@@ -57,10 +57,6 @@ internal fun setupBackingTextAreaDebugHints() {
 
     val shadowRoot = document.getElementById("composeApplication")?.shadowRoot!!
 
-    shadowRoot.addEventListener("touchstart", { evt ->
-        evt.preventDefault()
-    })
-
     shadowRoot.prepend(shadowRootStyle)
     shadowRoot.appendChild(document.createElement("div").apply {
         id = "debugBackingInputIndicator"
