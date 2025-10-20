@@ -42,6 +42,7 @@ internal val LocalInteropContainer = staticCompositionLocalOf<InteropContainer> 
  * An interface for container that controls interop views/components.
  */
 internal interface InteropContainer {
+    val root: InteropViewGroup
     var rootModifier: TrackInteropPlacementModifierNode?
     val snapshotObserver: SnapshotStateObserver
 

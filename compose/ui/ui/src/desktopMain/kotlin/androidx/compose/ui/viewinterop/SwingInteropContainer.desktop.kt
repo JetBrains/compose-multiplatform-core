@@ -114,7 +114,7 @@ private class ScheduledUpdatesSwapchain(
  * a redraw, so we need to request it explicitly.
  */
 internal class SwingInteropContainer(
-    val root: InteropViewGroup,
+    override val root: InteropViewGroup,
     placeInteropAbove: Boolean,
     requestRedraw: () -> Unit
 ) : InteropContainer {

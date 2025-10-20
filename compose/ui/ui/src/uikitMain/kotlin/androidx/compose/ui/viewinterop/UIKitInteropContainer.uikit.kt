@@ -25,11 +25,13 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
  * changes with Compose rendering.
  */
 internal class UIKitInteropContainer(
-    val backgroundContainer: InteropViewGroup,
     val overlayContainer: InteropViewGroup,
+    val backgroundContainer: InteropViewGroup,
     private var requestRedraw: () -> Unit
 ) : InteropContainer {
     override var rootModifier: TrackInteropPlacementModifierNode? = null
+    override val root: InteropViewGroup get() = backgroundContainer
+
     private var interopViews = mutableMapOf<InteropView, UIKitInteropElementHolder<*>>()
     private var transaction = UIKitInteropMutableTransaction(isInteropActive = false)
 

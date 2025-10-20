@@ -298,8 +298,8 @@ internal class ComposeSceneMediator(
      * Container for managing UIKitView and UIKitViewController
      */
     private val interopContainer = UIKitInteropContainer(
+        overlayContainer = _overlayView,
         backgroundContainer = _backgroundView,
-        overlayContainer = overlayView,
         requestRedraw = redrawer::setNeedsRedraw
     )
 
