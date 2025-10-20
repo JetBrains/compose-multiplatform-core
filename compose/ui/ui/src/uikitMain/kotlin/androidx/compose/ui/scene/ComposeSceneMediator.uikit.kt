@@ -85,10 +85,11 @@ import androidx.compose.ui.viewinterop.UIKitInteropContainer
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.ComposeSceneKeyboardOffsetManager
 import androidx.compose.ui.window.FocusedViewsList
+import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.TouchesEventKind
-import androidx.compose.ui.window.UserInputView
+import androidx.compose.ui.window.OverlayInputView
 import kotlin.Boolean
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
@@ -264,9 +265,7 @@ internal class ComposeSceneMediator(
      * Primary view to handle user input.
      * Also, it is used as a root container view for accessibility and text input.
      */
-    private val _overlayView = UserInputView(
-        ignoreNonInteropTouches = false,
-        onLayoutSubviews = ::updateLayout,
+    private val _overlayView = OverlayInputView(
         hitTestInteropView = ::hitTestInteropView,
         isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
         onTouchesEvent = ::onTouchesEvent,
@@ -284,17 +283,12 @@ internal class ComposeSceneMediator(
      * View that handles user touches that happened over interop views that located under the
      * metal layer.
      */
-    private val _backgroundView = UserInputView(
-        ignoreNonInteropTouches = true,
-        onLayoutSubviews = {},
+    private val _backgroundView = BackgroundInputView(
+        onLayoutSubviews = ::updateLayout,
         hitTestInteropView = ::hitTestInteropView,
         isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
         onTouchesEvent = ::onTouchesEvent,
         onCancelAllTouches = ::onCancelAllTouches,
-        onScrollEvent = { _, _, _, _ -> },
-        onCancelScroll = {},
-        onHoverEvent = { _, _, _ -> },
-        onKeyboardPresses = {},
         ignoreTouchChanges = navigationEventInput::isBackGestureActive
     )
 

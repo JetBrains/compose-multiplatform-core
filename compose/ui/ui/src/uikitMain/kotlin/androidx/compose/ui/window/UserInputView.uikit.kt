@@ -21,6 +21,7 @@ import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPHoverGestureHandler
 import androidx.compose.ui.uikit.utils.CMPPanGestureRecognizer
+import androidx.compose.ui.uikit.utils.CMPScrollView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.asDpOffset
 import androidx.compose.ui.viewinterop.InteropView
@@ -375,7 +376,7 @@ private class TouchesGestureRecognizer(
      * all tracked touches are forwarded to runtime as
      * and stop receiving touches from the system.
      *
-     * This only happens if the hitTest is not the [UserInputView] itself.
+     * This only happens if the hitTest is not the [OverlayInputView] itself.
      *
      * @see [cancelTouchesFailure]
      */
@@ -502,9 +503,7 @@ internal class ScrollGestureRecognizer(
  * The parameter is a [Set] of [UIPress] objects. Erasure happens due to K/N not supporting Obj-C
  * lightweight generics.
  */
-internal class UserInputView(
-    private val ignoreNonInteropTouches: Boolean,
-    private var onLayoutSubviews: () -> Unit,
+internal class OverlayInputView(
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
     onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
@@ -514,38 +513,7 @@ internal class UserInputView(
     private var onHoverEvent: (position: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onKeyboardPresses: (Set<*>) -> Unit,
     ignoreTouchChanges: () -> Boolean,
-) : UIView(CGRectZero.readValue()) {
-
-    private var onAppeared: (() -> Unit)? = null
-
-    fun runOnceOnAppeared(block: () -> Unit) {
-        onAppeared = {
-            block()
-            onAppeared = null
-        }
-
-        runOnAppearedIfEligible()
-    }
-
-    private fun runOnAppearedIfEligible() {
-        if (window != null && !CGRectIsEmpty(frame)) {
-            onAppeared?.invoke()
-        }
-    }
-
-    override fun layoutSubviews() {
-        super.layoutSubviews()
-
-        onLayoutSubviews()
-        runOnAppearedIfEligible()
-    }
-
-    override fun didMoveToWindow() {
-        super.didMoveToWindow()
-
-        setNeedsLayout()
-    }
-
+) : CMPScrollView(CGRectZero.readValue()) {
     /**
      * Gesture recognizer responsible for processing touches
      * and sending them to the Compose runtime.
@@ -587,7 +555,10 @@ internal class UserInputView(
         }
         hoverGestureHandler.attachToView(this)
 
-        setAccessibilityElements(emptyList<Any>())
+        showsHorizontalScrollIndicator = false
+        showsVerticalScrollIndicator = false
+        panGestureRecognizer.setEnabled(false)
+        bounces = false
     }
 
     override fun canBecomeFirstResponder() = true
@@ -607,26 +578,11 @@ internal class UserInputView(
             return null
         }
         val interopViewHitTest = hitTestInteropView(point)
-
-        if (interopViewHitTest == null) {
-            if (ignoreNonInteropTouches) {
-                return null
-            } else {
-                return super.hitTest(point, withEvent)
-            }
-        } else {
-            if (interopViewHitTest.superview != this) {
-                return null
-            }
-            return if (ignoreNonInteropTouches) {
-                interopViewHitTest.hitTest(
-                    point = convertPoint(point, toView = interopViewHitTest),
-                    withEvent = withEvent
-                )
-            } else {
-                super.hitTest(point, withEvent)
-            }
+        if (interopViewHitTest != null && interopViewHitTest.superview != this) {
+            // Interop view is located inside another container.
+            return null
         }
+        return super.hitTest(point, withEvent)
     }
 
     private var lastHoverPosition: DpOffset? = null
@@ -675,6 +631,121 @@ internal class UserInputView(
         isPointInsideInteractionBounds = { false }
         canIgnoreDragGesture = { false }
         onKeyboardPresses = {}
+    }
+}
+
+
+/**
+ * [UIView] subclass that handles touches and keyboard presses events and forwards them
+ * to the Compose runtime.
+ *
+ * @param hitTestInteropView A callback to find an [InteropView] at the given point.
+ * @param onTouchesEvent A callback to notify the Compose runtime about touch events.
+ * @param isPointInsideInteractionBounds A callback to check if the given point is within the interaction
+ * bounds as defined by the owning implementation.
+ * @param onKeyboardPresses A callback to notify the Compose runtime about keyboard presses.
+ * The parameter is a [Set] of [UIPress] objects. Erasure happens due to K/N not supporting Obj-C
+ * lightweight generics.
+ */
+internal class BackgroundInputView(
+    private var onLayoutSubviews: () -> Unit,
+    private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
+    private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
+    onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
+    onCancelAllTouches: (touches: Set<*>) -> Unit,
+    ignoreTouchChanges: () -> Boolean,
+) : UIView(CGRectZero.readValue()) {
+
+    private var onAppeared: (() -> Unit)? = null
+
+    fun runOnceOnAppeared(block: () -> Unit) {
+        onAppeared = {
+            block()
+            onAppeared = null
+        }
+
+        runOnAppearedIfEligible()
+    }
+
+    private fun runOnAppearedIfEligible() {
+        if (window != null && !CGRectIsEmpty(frame)) {
+            onAppeared?.invoke()
+        }
+    }
+
+    override fun layoutSubviews() {
+        super.layoutSubviews()
+
+        onLayoutSubviews()
+        runOnAppearedIfEligible()
+    }
+
+    override fun didMoveToWindow() {
+        super.didMoveToWindow()
+
+        setNeedsLayout()
+    }
+
+    /**
+     * Gesture recognizer responsible for processing touches
+     * and sending them to the Compose runtime.
+     *
+     * Also involved in the decision-making process of whether the touch sequence should be
+     * passed to the Compose runtime or to the interop view.
+     */
+    private val touchesGestureRecognizer = TouchesGestureRecognizer(
+        onTouchesEvent = onTouchesEvent,
+        onCancelAllTouches = onCancelAllTouches,
+        canIgnoreDragGesture = { false },
+        ignoreTouchesChanges = ignoreTouchChanges
+    )
+
+    init {
+        multipleTouchEnabled = true
+
+        addGestureRecognizer(touchesGestureRecognizer)
+
+        setAccessibilityElements(emptyList<Any>())
+    }
+
+//    override fun canBecomeFirstResponder() = true
+//    override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
+//        onKeyboardPresses(presses)
+//        super.pressesBegan(presses, withEvent)
+//    }
+//
+//    override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
+//        onKeyboardPresses(presses)
+//        super.pressesEnded(presses, withEvent)
+//    }
+
+    override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
+        if (!isPointInsideInteractionBounds(point)) {
+            return null
+        }
+        return hitTestInteropView(point)
+            ?.takeIf { it.superview == this }
+            ?.let {
+                it.hitTest(
+                    point = convertPoint(point, toView = it),
+                    withEvent = withEvent
+                )
+            }
+    }
+
+    /**
+     * Intentionally clean up all dependencies of InteractionUIView to prevent retain cycles that
+     * can be caused by implicit capture of the view by UIKit objects (such as UIEvent).
+     */
+    fun dispose() {
+        endEditing(force = true)
+        removeGestureRecognizer(touchesGestureRecognizer)
+        touchesGestureRecognizer.dispose()
+        // onHoverEvent = { _, _, _ -> }
+
+        hitTestInteropView = { null }
+        isPointInsideInteractionBounds = { false }
+        // onKeyboardPresses = {}
         onLayoutSubviews = {}
         onAppeared = null
     }

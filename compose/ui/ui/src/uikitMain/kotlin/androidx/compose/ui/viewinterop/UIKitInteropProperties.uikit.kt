@@ -63,6 +63,16 @@ class UIKitInteropProperties(
     val isInteractive: Boolean
         get() = interactionMode != null
 
+    /**
+     * Properties that are used to configure the behavior of the interop view.
+     *
+     * @property interactionMode The strategy on how the touches are processed when user interacts with
+     * the interop view.
+     *
+     * @property isNativeAccessibilityEnabled Indicates whether a11y services should traverse the
+     * native view itself, instead of parsing Compose semantics properties.
+     *
+     */
     constructor(
         interactionMode: UIKitInteropInteractionMode? = UIKitInteropInteractionMode.Cooperative(),
         isNativeAccessibilityEnabled: Boolean = false,
