@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import noria.ClosureContext
 
 @Composable
 fun eagerCompleteExpensiveColumn(
@@ -30,7 +29,7 @@ fun eagerCompleteExpensiveColumn(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     overscrollPolicy: LazyColumnOverscrollPolicy = { 0 },
     spacing: Int,
-    nth: ClosureContext.(Int) -> Row,
+    nth: (Int) -> Row,
 ): (Int) -> ItemVerticalPosition {
     // TODO
     return approximatingLazyColumn(

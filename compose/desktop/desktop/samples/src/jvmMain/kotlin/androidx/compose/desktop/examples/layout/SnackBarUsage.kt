@@ -22,7 +22,7 @@ package androidx.compose.desktop.examples.layout
 //
 //@Suppress("SpellCheckingInspection")
 //@Composable
-//fun NoriaContext.SnackBarUsage() {
+//fun SnackBarUsage() {
 //    Snackbar(action = null) {
 //        Text("Snackbar without action")
 //    }

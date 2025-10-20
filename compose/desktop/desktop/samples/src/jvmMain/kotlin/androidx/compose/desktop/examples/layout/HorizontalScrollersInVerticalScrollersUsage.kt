@@ -50,7 +50,7 @@ package androidx.compose.desktop.examples.layout
 // */
 //@Suppress("SpellCheckingInspection")
 //@Composable
-//fun NoriaContext.HorizontalScrollersInVerticalScrollersUsage() {
+//fun HorizontalScrollersInVerticalScrollersUsage() {
 //    Column {
 //        Text("Demonstrates scroll orientation locking.")
 //        Text(

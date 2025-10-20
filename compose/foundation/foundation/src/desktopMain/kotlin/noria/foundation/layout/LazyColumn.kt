@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
-import noria.ClosureContext
 
 data class Row(
     val key: Any,
@@ -48,7 +47,7 @@ fun heightKeyBasedLazyColumn(
     overscrollPolicy: LazyColumnOverscrollPolicy = { 0 },
     measureItemsWithWidthConstraints: Boolean = false,
     spacing: Int = 0,
-    nth: ClosureContext.(Int) -> Row,
+    nth: (Int) -> Row,
 ): (Int) -> ItemVerticalPosition {
     // TODO
     return approximatingLazyColumn(

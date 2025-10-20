@@ -21,7 +21,7 @@
 //import androidx.compose.ui.res.painterResource
 //
 //@Composable
-//fun NoriaContext.ImageUsage() {
+//fun ImageUsage() {
 //    Image(
 //        painterResource("androidx/compose/desktop/example/star.svg"),
 //        contentDescription = "Star"

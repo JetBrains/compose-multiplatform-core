@@ -627,7 +627,7 @@ package androidx.compose.desktop.examples.example1
 //}
 //
 //@Composable
-//fun NoriaContext.Animations(isCircularEnabled: Boolean) = Row {
+//fun Animations(isCircularEnabled: Boolean) = Row {
 //    if (isCircularEnabled) {
 //        CircularProgressIndicator(Modifier.padding(10.dp))
 //    }
@@ -673,7 +673,7 @@ package androidx.compose.desktop.examples.example1
 //
 //@OptIn(ExperimentalTextApi::class)
 //@Composable
-//fun NoriaContext.BrushTextGradient(text: String) {
+//fun BrushTextGradient(text: String) {
 //    Text(
 //        text = text,
 //        style = TextStyle(
@@ -688,7 +688,7 @@ package androidx.compose.desktop.examples.example1
 //
 //@OptIn(ExperimentalTextApi::class)
 //@Composable
-//fun NoriaContext.BrushTextImage(text: String) {
+//fun BrushTextImage(text: String) {
 //    val image = remember {
 //        useResource("androidx/compose/desktop/example/tray.png", ::loadImageBitmap)
 //    }
