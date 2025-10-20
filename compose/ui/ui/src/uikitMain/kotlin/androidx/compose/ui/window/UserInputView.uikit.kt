@@ -27,6 +27,7 @@ import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
 import kotlin.math.abs
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.ObjCAction
 import kotlinx.cinterop.readValue
@@ -40,6 +41,7 @@ import org.jetbrains.skiko.OS
 import org.jetbrains.skiko.OSVersion
 import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
+import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSSelectorFromString
 import platform.UIKit.UIEvent
@@ -134,12 +136,12 @@ private class TouchesGestureRecognizer(
             return
         }
 
-        val touchesToInteractionMode = touches.map { touch ->
+        val touchesToInteractionMode = touches.associate { touch ->
             touch as UITouch
             val point = touch.locationInView(view)
             val hitTestResult = view?.hitTest(point, withEvent)?.takeIf { it != view }
             touch to hitTestResult
-        }.toMap()
+        }
 
         fun startTouchesEvent() {
             val isInitialTouches = trackedTouches.isEmpty()
@@ -405,7 +407,7 @@ private class TouchesGestureRecognizer(
     }
 }
 
-private class ScrollGestureRecognizer(
+internal class ScrollGestureRecognizer(
     private var onScrollEvent: (position: DpOffset, delta: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onCancelScroll: () -> Unit
 ) : CMPPanGestureRecognizer(target = null, action = null) {
@@ -422,6 +424,7 @@ private class ScrollGestureRecognizer(
     private var previousPosition: DpOffset? = null
     private var event: UIEvent? = null
 
+    @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onPan(gestureRecognizer: UIPanGestureRecognizer) {
         val position = gestureRecognizer.locationInView(view).asDpOffset()
@@ -500,6 +503,8 @@ private class ScrollGestureRecognizer(
  * lightweight generics.
  */
 internal class UserInputView(
+    private val ignoreNonInteropTouches: Boolean,
+    private var onLayoutSubviews: () -> Unit,
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
     private var isPointInsideInteractionBounds: (CValue<CGPoint>) -> Boolean,
     onTouchesEvent: (touches: Set<*>, event: UIEvent?, phase: TouchesEventKind) -> PointerEventResult,
@@ -510,6 +515,37 @@ internal class UserInputView(
     private var onKeyboardPresses: (Set<*>) -> Unit,
     ignoreTouchChanges: () -> Boolean,
 ) : UIView(CGRectZero.readValue()) {
+
+    private var onAppeared: (() -> Unit)? = null
+
+    fun runOnceOnAppeared(block: () -> Unit) {
+        onAppeared = {
+            block()
+            onAppeared = null
+        }
+
+        runOnAppearedIfEligible()
+    }
+
+    private fun runOnAppearedIfEligible() {
+        if (window != null && !CGRectIsEmpty(frame)) {
+            onAppeared?.invoke()
+        }
+    }
+
+    override fun layoutSubviews() {
+        super.layoutSubviews()
+
+        onLayoutSubviews()
+        runOnAppearedIfEligible()
+    }
+
+    override fun didMoveToWindow() {
+        super.didMoveToWindow()
+
+        setNeedsLayout()
+    }
+
     /**
      * Gesture recognizer responsible for processing touches
      * and sending them to the Compose runtime.
@@ -566,19 +602,35 @@ internal class UserInputView(
         super.pressesEnded(presses, withEvent)
     }
 
-    override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? =
-        if (isPointInsideInteractionBounds(point)) {
-            hitTestInteropView(point)?.let { interopView ->
-                interopView.hitTest(
-                    point = convertPoint(point, toView = interopView),
+    override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
+        if (!isPointInsideInteractionBounds(point)) {
+            return null
+        }
+        val interopViewHitTest = hitTestInteropView(point)
+
+        if (interopViewHitTest == null) {
+            if (ignoreNonInteropTouches) {
+                return null
+            } else {
+                return super.hitTest(point, withEvent)
+            }
+        } else {
+            if (interopViewHitTest.superview != this) {
+                return null
+            }
+            return if (ignoreNonInteropTouches) {
+                interopViewHitTest.hitTest(
+                    point = convertPoint(point, toView = interopViewHitTest),
                     withEvent = withEvent
                 )
-            } ?: this
-        } else {
-            null
+            } else {
+                super.hitTest(point, withEvent)
+            }
         }
+    }
 
     private var lastHoverPosition: DpOffset? = null
+    @OptIn(BetaInteropApi::class)
     @ObjCAction
     fun onHover(gestureRecognizer: UIPanGestureRecognizer) {
         val position = gestureRecognizer.locationInView(this).asDpOffset()
@@ -623,6 +675,8 @@ internal class UserInputView(
         isPointInsideInteractionBounds = { false }
         canIgnoreDragGesture = { false }
         onKeyboardPresses = {}
+        onLayoutSubviews = {}
+        onAppeared = null
     }
 }
 

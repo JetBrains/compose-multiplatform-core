@@ -89,6 +89,7 @@ import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.TouchesEventKind
 import androidx.compose.ui.window.UserInputView
+import kotlin.Boolean
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -184,7 +185,7 @@ private class SemanticsOwnerListenerImpl(
 
 internal class ComposeSceneMediator(
     private val onFocusBehavior: OnFocusBehavior,
-    private val focusedViewsList: FocusedViewsList?,
+    focusedViewsList: FocusedViewsList?,
     private val windowContext: PlatformWindowContext,
     private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     private val coroutineContext: CoroutineContext,
@@ -260,41 +261,58 @@ internal class ComposeSceneMediator(
     val hasInteropViews: Boolean get() = interopContainer.hasInteropViews
 
     /**
-     * View wrapping the hierarchy managed by this Mediator.
+     * Primary view to handle user input.
+     * Also, it is used as a root container view for accessibility and text input.
      */
-    private val _overlayView = UIKitTransparentContainerView(onLayoutSubviews = ::updateLayout)
+    private val _overlayView = UserInputView(
+        ignoreNonInteropTouches = false,
+        onLayoutSubviews = ::updateLayout,
+        hitTestInteropView = ::hitTestInteropView,
+        isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
+        onTouchesEvent = ::onTouchesEvent,
+        onCancelAllTouches = ::onCancelAllTouches,
+        onScrollEvent = ::onScrollEvent,
+        onCancelScroll = ::onCancelScroll,
+        onHoverEvent = ::onHoverEvent,
+        onKeyboardPresses = ::onKeyboardPresses,
+        ignoreTouchChanges = navigationEventInput::isBackGestureActive
+    )
 
     val overlayView: UIView get() = _overlayView
 
     /**
-     * View that handles the user input events and hosts interop views.
+     * View that handles user touches that happened over interop views that located under the
+     * metal layer.
      */
-    private val userInputView = UserInputView(
-        ::hitTestInteropView,
-        ::isPointInsideInteractionBounds,
-        ::onTouchesEvent,
-        ::onCancelAllTouches,
-        ::onScrollEvent,
-        ::onCancelScroll,
-        ::onHoverEvent,
-        ::onKeyboardPresses,
-        navigationEventInput::isBackGestureActive
+    private val _backgroundView = UserInputView(
+        ignoreNonInteropTouches = true,
+        onLayoutSubviews = {},
+        hitTestInteropView = ::hitTestInteropView,
+        isPointInsideInteractionBounds = ::isPointInsideInteractionBounds,
+        onTouchesEvent = ::onTouchesEvent,
+        onCancelAllTouches = ::onCancelAllTouches,
+        onScrollEvent = { _, _, _, _ -> },
+        onCancelScroll = {},
+        onHoverEvent = { _, _, _ -> },
+        onKeyboardPresses = {},
+        ignoreTouchChanges = navigationEventInput::isBackGestureActive
     )
 
-    val inputView: UIView get() = userInputView
+    val backgroundView: UIView get() = _backgroundView
 
     /**
      * Container for managing UIKitView and UIKitViewController
      */
     private val interopContainer = UIKitInteropContainer(
-        root = userInputView,
+        backgroundContainer = _backgroundView,
+        overlayContainer = overlayView,
         requestRedraw = redrawer::setNeedsRedraw
     )
 
     var interactionBounds = IntRect.Zero
 
     private val dragAndDropManager = UIKitDragAndDropManager(
-        view = userInputView,
+        view = _overlayView,
         getComposeRootDragAndDropNode = { scene.rootDragAndDropNode },
     )
 
@@ -306,7 +324,7 @@ internal class ComposeSceneMediator(
      * @param point Point in the interaction view coordinate space.
      */
     private fun isPointInsideInteractionBounds(point: CValue<CGPoint>) =
-        interactionBounds.contains(point.asDpOffset().toOffset(_overlayView.density).round())
+        interactionBounds.contains(point.asDpOffset().toOffset(overlayView.density).round())
 
     private val semanticsOwnerListener by lazy {
         SemanticsOwnerListenerImpl(
@@ -460,7 +478,7 @@ internal class ComposeSceneMediator(
 
         val pointers = touches.mapIndexed { index, touch ->
             touch as UITouch
-            val position = touch.offsetInView(userInputView, density.density)
+            val position = touch.offsetInView(_backgroundView, density.density)
             val pointerType = when (touch.type) {
                 UITouchTypeDirect -> PointerType.Touch
                 UITouchTypeIndirect, UITouchTypeIndirectPointer -> PointerType.Mouse
@@ -516,7 +534,7 @@ internal class ComposeSceneMediator(
     }
 
     fun setContent(content: @Composable () -> Unit) {
-        _overlayView.runOnceOnAppeared {
+        _backgroundView.runOnceOnAppeared {
             scene.setContent {
                 ProvideComposeSceneMediatorCompositionLocals {
                     FocusAboveKeyboardIfNeeded {
@@ -609,10 +627,10 @@ internal class ComposeSceneMediator(
         _overlayView.dispose()
         textInputService.stopInput()
         keyboardManager.dispose()
-        userInputView.dispose()
+        _backgroundView.dispose()
 
         _overlayView.removeFromSuperview()
-        userInputView.removeFromSuperview()
+        _backgroundView.removeFromSuperview()
 
         scene.close()
         interopContainer.dispose()

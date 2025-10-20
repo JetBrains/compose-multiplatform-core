@@ -21,7 +21,7 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 
 internal class WebInteropContainer(
-    override val root: InteropViewGroup = InteropViewGroup(document.body as HTMLElement),
+    val root: InteropViewGroup = InteropViewGroup(document.body as HTMLElement),
 ) : InteropContainer {
     override var rootModifier: TrackInteropPlacementModifierNode? = null
     private var interopViews = mutableMapOf<InteropView, InteropViewHolder>()

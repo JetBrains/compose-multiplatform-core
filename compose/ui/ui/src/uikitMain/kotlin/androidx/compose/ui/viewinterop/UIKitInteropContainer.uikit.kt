@@ -25,11 +25,12 @@ import androidx.compose.runtime.snapshots.SnapshotStateObserver
  * changes with Compose rendering.
  */
 internal class UIKitInteropContainer(
-    override val root: InteropViewGroup,
+    val backgroundContainer: InteropViewGroup,
+    val overlayContainer: InteropViewGroup,
     private var requestRedraw: () -> Unit
 ) : InteropContainer {
     override var rootModifier: TrackInteropPlacementModifierNode? = null
-    private var interopViews = mutableMapOf<InteropView, InteropViewHolder>()
+    private var interopViews = mutableMapOf<InteropView, UIKitInteropElementHolder<*>>()
     private var transaction = UIKitInteropMutableTransaction(isInteropActive = false)
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
@@ -84,6 +85,7 @@ internal class UIKitInteropContainer(
     }
 
     override fun place(holder: InteropViewHolder) {
+        holder as UIKitInteropElementHolder<*>
         val interopView = checkNotNull(holder.interopView)
 
         if (interopViews.isEmpty()) {
@@ -92,16 +94,16 @@ internal class UIKitInteropContainer(
         }
 
         val isAdded = interopViews.put(interopView, holder) == null
-
         val countBelow = countInteropComponentsBelow(holder)
+        val container = if (holder.isOverlay) overlayContainer else backgroundContainer
 
         if (isAdded) {
             scheduleUpdate {
-                holder.insertInteropView(root = root, index = countBelow)
+                holder.insertInteropView(root = container, index = countBelow)
             }
         } else {
             scheduleUpdate {
-                holder.changeInteropViewIndex(root = root, index = countBelow)
+                holder.changeInteropViewIndex(root = container, index = countBelow)
             }
         }
     }
@@ -117,7 +119,7 @@ internal class UIKitInteropContainer(
         }
 
         scheduleUpdate {
-            holder.removeInteropView(root = root)
+            holder.removeInteropView(root = backgroundContainer)
         }
     }
 

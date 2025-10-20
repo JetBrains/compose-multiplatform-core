@@ -54,13 +54,23 @@ import androidx.compose.ui.semantics.semantics
 @Immutable
 class UIKitInteropProperties(
     val interactionMode: UIKitInteropInteractionMode? = UIKitInteropInteractionMode.Cooperative(),
-    val isNativeAccessibilityEnabled: Boolean = false
+    val isNativeAccessibilityEnabled: Boolean = false,
+    val placeAsOverlay: Boolean = false
 ) {
     /**
      * Indicates whether the user can interact with the interop component.
      */
     val isInteractive: Boolean
         get() = interactionMode != null
+
+    constructor(
+        interactionMode: UIKitInteropInteractionMode? = UIKitInteropInteractionMode.Cooperative(),
+        isNativeAccessibilityEnabled: Boolean = false,
+    ) : this(
+        interactionMode = interactionMode,
+        isNativeAccessibilityEnabled,
+        placeAsOverlay = false,
+    )
 
     /**
      * @param isInteractive Indicates whether the affected interop component should process touches
@@ -75,7 +85,8 @@ class UIKitInteropProperties(
         isNativeAccessibilityEnabled: Boolean
     ) : this(
         interactionMode = if (isInteractive) UIKitInteropInteractionMode.Cooperative() else null,
-        isNativeAccessibilityEnabled
+        isNativeAccessibilityEnabled,
+        placeAsOverlay = false,
     )
 
     internal companion object {
