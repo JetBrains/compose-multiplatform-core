@@ -32,7 +32,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import noria.ClosureContext
 
 @Composable
 fun approximatingLazyColumn(
@@ -43,7 +42,7 @@ fun approximatingLazyColumn(
     spacing: Int = 0,
     maxViewportHeight: Int = 0,
     startLayoutFromBottom: Boolean = false,
-    nth: ClosureContext.(Int) -> Row
+    nth: (Int) -> Row
 ): (Int) -> ItemVerticalPosition {
     var maxSeenWidth by remember(state) { mutableStateOf(0.dp) }
     // TODO custom VerticalArrangement to respect overscrollPolicy or translate it into an OverscrollEffect
@@ -60,9 +59,9 @@ fun approximatingLazyColumn(
     ) {
         items(
             count,
-            key = { index -> ClosureContext.nth(index).key },
+            key = { index -> nth(index).key },
             contentType = { index ->
-                ClosureContext.nth(index).heightKey.takeIf { it != Unit }
+                nth(index).heightKey.takeIf { it != Unit }
             }
         ) { index ->
             val density = LocalDensity.current
@@ -77,7 +76,7 @@ fun approximatingLazyColumn(
                     .widthIn(min = maxSeenWidth),
                 propagateMinConstraints = true
             ) {
-                ClosureContext.nth(index).render()
+                nth(index).render()
             }
         }
     }

@@ -31,7 +31,7 @@ package androidx.compose.desktop.examples.layout
 //import androidx.compose.runtime.setValue
 //
 //@Composable
-//fun NoriaContext.NavigationRailUsage() {
+//fun NavigationRailUsage() {
 //    var selectedItem by remember { mutableStateOf(0) }
 //    val items = listOf("Home", "Search", "Settings")
 //    val icons = listOf(Icons.Filled.Home, Icons.Filled.Search, Icons.Filled.Settings)

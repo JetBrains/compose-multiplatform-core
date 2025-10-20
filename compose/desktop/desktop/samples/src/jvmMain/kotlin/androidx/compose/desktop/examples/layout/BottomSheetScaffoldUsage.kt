@@ -23,7 +23,7 @@ package androidx.compose.desktop.examples.layout
 //
 //@OptIn(ExperimentalMaterialApi::class)
 //@Composable
-//fun NoriaContext.BottomSheetScaffoldUsage() {
+//fun BottomSheetScaffoldUsage() {
 //    BottomSheetScaffold(
 //        sheetContent = { Text("sheetContent") },
 //        content = { Text("content") }

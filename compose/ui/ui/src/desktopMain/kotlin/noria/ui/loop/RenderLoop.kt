@@ -49,7 +49,6 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import noria.CallbackInterceptorCompositionLocal
-import noria.ClosureContext
 import noria.impl.EffectCoroutineContextCompositionLocal
 import org.jetbrains.skiko.MainUIDispatcher
 
@@ -83,11 +82,11 @@ fun tryToInvalidateCurrentFrame(composer: Composer, f: () -> Boolean) {
 
 @OptIn(InternalComposeApi::class)
 @Composable
-fun onFrameCompletion(block: ClosureContext.(RenderLoop.FrameInfo) -> Unit) {
+fun onFrameCompletion(block: (RenderLoop.FrameInfo) -> Unit) {
     val interceptor = CallbackInterceptorCompositionLocal.current
     currentComposer.recordSideEffect {
         interceptor.execute {
-            ClosureContext.block(
+            block(
                 RenderLoop.FrameInfo(
                     0L
                 )
