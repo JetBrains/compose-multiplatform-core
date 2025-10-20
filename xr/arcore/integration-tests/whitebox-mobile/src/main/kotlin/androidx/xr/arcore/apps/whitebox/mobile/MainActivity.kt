@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.arcore.apps.whitebox.mobile.anchors.AnchorsActivity
+import androidx.xr.arcore.apps.whitebox.mobile.depthmaps.DepthMapsActivity
 import androidx.xr.arcore.apps.whitebox.mobile.geospatial.GeospatialActivity
 import androidx.xr.arcore.apps.whitebox.mobile.hittest.HitTestActivity
 import androidx.xr.arcore.apps.whitebox.mobile.planes.PlanesActivity
@@ -114,6 +115,11 @@ fun WhiteboxSessionMenu() {
             onClick = { context.startActivity(Intent(context, GeospatialActivity::class.java)) }
         ) {
             Text("Geospatial")
+        }
+        TextButton(
+            onClick = { context.startActivity(Intent(context, DepthMapsActivity::class.java)) }
+        ) {
+            Text("Depth Maps")
         }
     }
 }

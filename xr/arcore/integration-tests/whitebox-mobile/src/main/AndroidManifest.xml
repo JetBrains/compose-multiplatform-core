@@ -50,8 +50,13 @@
         android:exported="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
     </activity>
-        <activity
+    <activity
         android:name=".geospatial.GeospatialActivity"
+        android:exported="true"
+        android:theme="@style/Theme.AppCompat.NoActionBar">
+    </activity>
+    <activity
+        android:name=".depthmaps.DepthMapsActivity"
         android:exported="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
     </activity>

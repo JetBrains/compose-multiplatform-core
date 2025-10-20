@@ -26,6 +26,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.CameraControl;
+import androidx.camera.core.CameraFilter;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraProvider;
 import androidx.camera.core.CameraSelector;
@@ -83,37 +84,40 @@ import java.util.concurrent.ExecutionException;
  * void bindUseCasesWithBokehMode() {
  *     // Create a camera provider
  *     ProcessCameraProvider cameraProvider = ... // Get the provider instance
- *     // Call the getInstance function to retrieve a ListenableFuture object
- *     ListenableFuture future = ExtensionsManager.getInstance(context, cameraProvider);
+ *     // Call the getInstanceAsync function to retrieve a ListenableFuture object
+ *     ListenableFuture&lt;ExtensionsManager&gt; extensionsManagerFuture =
+ *             ExtensionsManager.getInstanceAsync(context, cameraProvider);
  *
  *     // Obtain the ExtensionsManager instance from the returned ListenableFuture object
- *     future.addListener(() -> {
+ *     extensionsManagerFuture.addListener(() -> {
  *         try {
- *             ExtensionsManager extensionsManager = future.get()
+ *             ExtensionsManager extensionsManager = extensionsManagerFuture.get();
  *
+ *             CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
  *             // Query if extension is available.
- *             if (mExtensionsManager.isExtensionAvailable(DEFAULT_BACK_CAMERA,
+ *             if (extensionsManager.isExtensionAvailable(cameraSelector,
  *                        ExtensionMode.BOKEH)) {
- *                 // Needs to unbind all use cases before enabling different extension mode.
- *                 cameraProvider.unbindAll();
  *
- *                 // Retrieve extension enabled camera selector
- *                 CameraSelector extensionCameraSelector;
- *                 extensionCameraSelector = extensionsManager.getExtensionEnabledCameraSelector(
- *                         DEFAULT_BACK_CAMERA, ExtensionMode.BOKEH);
- *
- *                 // Bind image capture and preview use cases with the extension enabled camera
- *                 // selector.
+ *                 // Create an ExtensionSessionConfig
  *                 ImageCapture imageCapture = new ImageCapture.Builder().build();
  *                 Preview preview = new Preview.Builder().build();
- *                 cameraProvider.bindToLifecycle(lifecycleOwner, extensionCameraSelector,
- *                         imageCapture, preview);
+ *                 ExtensionSessionConfig sessionConfig = new ExtensionSessionConfig.Builder(
+ *                         ExtensionMode.BOKEH,
+ *                         extensionsManager,
+ *                         imageCapture,
+ *                         preview
+ *                 ).build();
+ *
+ *                 // Bind the extension session config with the lifecycle owner and camera
+ *                 // selector.
+ *                 cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector,
+ *                         sessionConfig);
  *             }
  *         } catch (ExecutionException | InterruptedException e) {
  *             // This should not happen unless the future is cancelled or the thread is
  *             // interrupted by applications.
  *         }
- *     }, ContextCompact.getMainExecutor(context));
+ *     }, ContextCompat.getMainExecutor(context));
  * }
  * </pre>
  *
@@ -433,6 +437,29 @@ public final class ExtensionsManager {
 
         return mExtensionsInfo.getExtensionCameraSelectorAndInjectCameraConfig(baseCameraSelector,
                 mode);
+    }
+
+    /**
+     * Obtains the {@link CameraFilter} to filter out the cameras for the specified extension mode.
+     */
+    @Nullable
+    CameraFilter getExtensionCameraFilterAndInjectCameraConfig(int mode) {
+        // Directly return the input baseCameraSelector if the target extension mode is NONE.
+        if (mode == ExtensionMode.NONE) {
+            return null;
+        }
+
+        if (mExtensionsAvailability != ExtensionsAvailability.LIBRARY_AVAILABLE) {
+            throw new IllegalArgumentException("This device doesn't support extensions function! "
+                    + "isExtensionAvailable should be checked first before calling "
+                    + "getExtensionEnabledCameraSelector.");
+        }
+
+        // Injects CameraConfigProvider for the extension mode to the
+        // ExtendedCameraConfigProviderStore.
+        mExtensionsInfo.injectExtensionCameraConfig(mode);
+
+        return mExtensionsInfo.getCameraFilter(mode);
     }
 
     /**

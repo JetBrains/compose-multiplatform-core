@@ -80,8 +80,8 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.referentialEqualityPolicy
-import androidx.compose.runtime.retain.ForgetfulRetainScope
-import androidx.compose.runtime.retain.RetainScope
+import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
+import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
@@ -298,9 +298,11 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     override val view: View
         get() = this
 
-    internal var frameEndScheduler: LifecycleRetainScopeOwner.FrameEndScheduler? = null
-    private var lifecycleRetainScopeOwnerEntry: LifecycleRetainScopeOwner.RetainScopeEntry? = null
-    override var retainScope: RetainScope = ForgetfulRetainScope
+    internal var frameEndScheduler: LifecycleRetainedValuesStoreOwner.FrameEndScheduler? = null
+    private var lifecycleRetainedValuesStoreOwnerEntry:
+        LifecycleRetainedValuesStoreOwner.RetainedValuesStoreEntry? =
+        null
+    override var retainedValuesStore: RetainedValuesStore = ForgetfulRetainedValuesStore
         private set
 
     // Out of frame scheduler currently has different semantics compared to the frame end scheduler
@@ -912,9 +914,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     /** Set to `true` when [sendHoverExitEvent] has been posted. */
     private var hoverExitReceived = false
 
-    // Enables event stream tracking for indirect pointer navigation gestures.
-    private var indirectPointerNavigationGestureDetectorActiveForEventStream = false
-    // Determines scroll/swipe to next or previous focusable element for indirect pointer events.
+    // Determines scroll/swipe to next or previous focusable element for indirect touch events.
     private val indirectPointerNavigationGestureDetector =
         IndirectPointerNavigationGestureDetector(context) {
             focusOwner.moveFocus(focusDirection = it, wrapAroundForOneDimensionalFocus = false)
@@ -1060,11 +1060,11 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         if (SDK_INT < 30) {
             showLayoutBounds = getIsShowingLayoutBounds()
         }
-        lifecycleRetainScopeOwnerEntry?.stopKeepingExitedValues(frameEndScheduler!!)
+        lifecycleRetainedValuesStoreOwnerEntry?.stopRetainingExitedValues(frameEndScheduler!!)
     }
 
     override fun onStop(owner: LifecycleOwner) {
-        lifecycleRetainScopeOwnerEntry?.startKeepingExitedValues()
+        lifecycleRetainedValuesStoreOwnerEntry?.startRetainingExitedValues()
     }
 
     override fun focusSearch(focused: View?, direction: Int): View? {
@@ -1301,7 +1301,6 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     }
 
     override fun onFocusChanged(gainFocus: Boolean, direction: Int, previouslyFocusedRect: Rect?) {
-        // TODO (jjw): Add logic for indirect cancel for active streams
         super.onFocusChanged(gainFocus, direction, previouslyFocusedRect)
         if (!gainFocus && !hasFocus()) {
             focusOwner.releaseFocus()
@@ -1783,6 +1782,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
     override fun measureAndLayoutForTest() {
         measureAndLayout()
+        handler?.removeCallbacks(outOfFrameRunnable)
         outOfFrameRunnable.run()
     }
 
@@ -2181,8 +2181,9 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         val savedStateRegistryOwner = findViewTreeSavedStateRegistryOwner()
         val viewModelStoreOwner = findViewTreeViewModelStoreOwner()
 
-        retainScope =
-            installLocalRetainScope(lifecycleOwner, viewModelStoreOwner) ?: ForgetfulRetainScope
+        retainedValuesStore =
+            installLocalRetainedValuesStore(lifecycleOwner, viewModelStoreOwner)
+                ?: ForgetfulRetainedValuesStore
 
         val oldViewTreeOwners = viewTreeOwners
         // We need to change the ViewTreeOwner if there isn't one yet (null)
@@ -2238,27 +2239,28 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         }
     }
 
-    private fun installLocalRetainScope(
+    private fun installLocalRetainedValuesStore(
         lifecycleOwner: LifecycleOwner?,
         viewModelStoreOwner: ViewModelStoreOwner?,
-    ): RetainScope? {
+    ): RetainedValuesStore? {
         val frameEndScheduler = frameEndScheduler
         if (lifecycleOwner == null || viewModelStoreOwner == null || frameEndScheduler == null)
             return null
 
-        val retainScopeOwner =
+        val retainedValuesStoreOwner =
             ViewModelProvider.create(
                     store = viewModelStoreOwner.viewModelStore,
                     factory = ViewModelProvider.NewInstanceFactory(),
                 )
-                .get<LifecycleRetainScopeOwner>()
+                .get<LifecycleRetainedValuesStoreOwner>()
 
         // If we have a unique View Id, its on our parent ComposeView, not the AndroidComposeView
         // implementation child view.
         val viewId = (parent as View).id
-        val retainScopeEntry = retainScopeOwner.getOrCreateRetainScopeEntry(viewId)
-        lifecycleRetainScopeOwnerEntry = retainScopeEntry
-        return retainScopeEntry.retainScope
+        val retainedValuesStoreEntry =
+            retainedValuesStoreOwner.getOrCreateRetainedValuesStoreEntry(viewId)
+        lifecycleRetainedValuesStoreOwnerEntry = retainedValuesStoreEntry
+        return retainedValuesStoreEntry.retainedValuesStore
     }
 
     @OptIn(ExperimentalComposeUiApi::class)
@@ -2291,8 +2293,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         viewTreeObserver.removeOnScrollChangedListener(this)
         viewTreeObserver.removeOnTouchModeChangeListener(this)
 
-        lifecycleRetainScopeOwnerEntry?.release()
-        lifecycleRetainScopeOwnerEntry = null
+        lifecycleRetainedValuesStoreOwnerEntry?.release()
+        lifecycleRetainedValuesStoreOwnerEntry = null
 
         if (SDK_INT >= S) AndroidComposeViewTranslationCallbackS.clearViewTranslationCallback(this)
         _autofillManager?.let {
@@ -2387,37 +2389,19 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     }
 
     private fun handleIndirectPointerEvent(indirectPointerEvent: IndirectPointerEvent): Boolean {
-        val motionEvent = indirectPointerEvent.nativeEvent
+        val isConsumed = focusOwner.dispatchIndirectPointerEvent(indirectPointerEvent)
 
-        val handled = focusOwner.dispatchIndirectPointerEvent(indirectPointerEvent)
+        @OptIn(ExperimentalComposeUiApi::class)
+        if (isIndirectPointerNavigationGestureDetectorEnabled) {
+            indirectPointerNavigationGestureDetector.onIndirectPointerEvent(
+                indirectPointerEvent = indirectPointerEvent,
+                isConsumed = isConsumed,
+            )
 
-        if (handled) {
-            // Turns off all navigation gestures for this event stream since an app is
-            // handling the event stream and also resets the preferred Axis.
-            indirectPointerNavigationGestureDetectorActiveForEventStream = false
-            indirectPointerNavigationGestureDetector.primaryDirectionalMotionAxis =
-                IndirectPointerEventPrimaryDirectionalMotionAxis.None
             return true
-        } else {
-            @OptIn(ExperimentalComposeUiApi::class)
-            if (isIndirectPointerNavigationGestureDetectorEnabled) { // Flag for feature
-                if (motionEvent.action == ACTION_DOWN) {
-                    // Starts tracking only with ACTION_DOWN (start of event stream).
-                    indirectPointerNavigationGestureDetectorActiveForEventStream = true
-                    indirectPointerNavigationGestureDetector.primaryDirectionalMotionAxis =
-                        indirectPointerEvent.primaryDirectionalMotionAxis
-                }
-
-                if (indirectPointerNavigationGestureDetectorActiveForEventStream) {
-                    indirectPointerNavigationGestureDetector.onTouchEvent(motionEvent)
-                }
-                // If the isIndirectPointerNavigationGestureDetectorEnabled flag is
-                // enabled, it means that we don't want to pass the event up to the
-                // platform's handler for SOURCE_TOUCH_NAVIGATION, so we return true.
-                return true
-            }
         }
-        return false
+
+        return isConsumed
     }
 
     // TODO(shepshapard): Test this method.
@@ -3811,6 +3795,10 @@ internal class IndirectPointerNavigationGestureDetector(
 ) {
     var primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.None
 
+    // If true, subsequent events in the current gesture stream are ignored.
+    // This is set if a move event is consumed by another component.
+    private var ignoreCurrentGestureStream = false
+
     private val gestureDetector: GestureDetector =
         GestureDetector(
             context,
@@ -3836,6 +3824,8 @@ internal class IndirectPointerNavigationGestureDetector(
                     velocityX: Float,
                     velocityY: Float,
                 ): Boolean {
+                    if (ignoreCurrentGestureStream) return true
+
                     if (
                         primaryDirectionalMotionAxis ==
                             IndirectPointerEventPrimaryDirectionalMotionAxis.X
@@ -3863,8 +3853,28 @@ internal class IndirectPointerNavigationGestureDetector(
             },
         )
 
-    fun onTouchEvent(event: MotionEvent): Boolean {
-        return gestureDetector.onTouchEvent(event)
+    fun onIndirectPointerEvent(
+        indirectPointerEvent: IndirectPointerEvent,
+        isConsumed: Boolean,
+    ): Boolean {
+        val motionEvent = indirectPointerEvent.nativeEvent
+        when (motionEvent.action) {
+            MotionEvent.ACTION_DOWN -> {
+                // Reset state at the start of a new gesture stream.
+                primaryDirectionalMotionAxis = indirectPointerEvent.primaryDirectionalMotionAxis
+                ignoreCurrentGestureStream = false
+            }
+            MotionEvent.ACTION_MOVE,
+            MotionEvent.ACTION_UP -> {
+                // If another component consumes a move or up event, we should ignore the
+                // rest of the gesture to prevent conflicting actions on the final fling.
+                if (isConsumed) {
+                    ignoreCurrentGestureStream = true
+                }
+            }
+        }
+
+        return gestureDetector.onTouchEvent(motionEvent)
     }
 }
 

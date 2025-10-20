@@ -23,6 +23,7 @@ import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -75,6 +76,7 @@ public class FeatureNotAvailableTestAppTest {
         WebkitTestHelpers.clickMenuListItemWithString(mTitleResourceId);
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/452717095
     @Test
     public void testFeatureNotAvailable() {
         onView(withText(R.string.webkit_api_not_available)).check(matches(isDisplayed()));

@@ -28,6 +28,7 @@ import androidx.xr.arcore.runtime.HitResult
 import androidx.xr.arcore.runtime.PerceptionManager
 import androidx.xr.arcore.runtime.RenderViewpoint
 import androidx.xr.arcore.runtime.Trackable
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.VpsAvailabilityAvailable
 import androidx.xr.runtime.VpsAvailabilityErrorInternal
 import androidx.xr.runtime.VpsAvailabilityNetworkError
@@ -72,6 +73,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     internal fun timeSinceLastFrame(): Duration = lastFrameTimeMark?.elapsedNow() ?: Duration.ZERO
 
     private val xrResources: XrResources = XrResources()
+    internal var depthEstimationMode = Config.DepthEstimationMode.DISABLED
 
     private var displayRotation = Surface.ROTATION_0
     private var displayWidth = 0
@@ -269,12 +271,9 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
      */
     override val rightDepthMap: DepthMap? = null
 
-    /**
-     * Returns the mono [androidx.xr.arcore.runtime.DepthMap] object.
-     *
-     * This is not available in ARCore.
-     */
-    override val monoDepthMap: DepthMap? = null
+    /** Returns the mono [androidx.xr.arcore.runtime.DepthMap] object. */
+    override val monoDepthMap: DepthMap?
+        get() = xrResources.depthMap
 
     /**
      * Updates the perception manager.
@@ -304,6 +303,11 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         planes.forEach { xrResources.addTrackable(it, ArCorePlane(it, xrResources)) }
 
         arDevice.update(_latestFrame)
+
+        if (depthEstimationMode != Config.DepthEstimationMode.DISABLED) {
+            xrResources.depthMap.update(_latestFrame)
+        }
+
         earth.update(session)
     }
 
@@ -323,5 +327,24 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
             displayHeight = height
             displayChanged = true
         }
+    }
+
+    /**
+     * Sets the Depth Estimation Mode for the Perception Manager and the [xrResources.depthMap]
+     *
+     * @param depthMode The desired [Config.DepthEstimationMode].
+     */
+    public fun setDepthEstimationMode(depthMode: Config.DepthEstimationMode) {
+        depthEstimationMode = depthMode
+        xrResources.depthMap.updateDepthEstimationMode(depthMode)
+    }
+
+    /**
+     * Clears any lingering resources within [xrResources].
+     *
+     * @see ArCoreDepthMap.dispose
+     */
+    public fun dispose() {
+        xrResources.depthMap.dispose()
     }
 }

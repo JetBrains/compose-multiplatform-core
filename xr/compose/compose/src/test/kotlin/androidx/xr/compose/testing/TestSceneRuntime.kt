@@ -19,7 +19,9 @@ package androidx.xr.compose.testing
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.compose.R
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
@@ -50,6 +52,19 @@ private object SubspaceAndroidComposeTestRuleConstants {
     const val DEFAULT_DP_PER_METER = 1151.856f
 
     const val USE_REAL_RUNTIME = "androidx.xr.compose.testing.USE_REAL_RUNTIME"
+
+    val DISABLED_SESSION_FACTORY: () -> Session? = { null }
+}
+
+/**
+ * Simulate a non-XR environment by returning null from the session provider used by
+ * `ComposeXrOwnerLocals`.
+ */
+fun AndroidComposeTestRule<*, *>.disableXr() {
+    activity.window.decorView.setTag(
+        R.id.compose_xr_session_factory,
+        SubspaceAndroidComposeTestRuleConstants.DISABLED_SESSION_FACTORY,
+    )
 }
 
 /**
@@ -199,6 +214,10 @@ private constructor(
         }
     }
 
+    override fun getScenePoseFromPerceptionPose(pose: Pose): ScenePose {
+        TODO("Not yet implemented")
+    }
+
     val scalesInZ = mutableListOf<Boolean>()
 
     override fun createMovableComponent(
@@ -296,15 +315,41 @@ class TestCameraViewScenePose(
 }
 
 /**
- * A test implementation of a SceneCore [androidx.xr.scenecore.runtime.ActivitySpace] that allows
- * for setting custom values.
+ * A test implementation of [ScenePose] that allows for setting custom values for the activity space
+ * pose and scales.
+ *
+ * @param activitySpacePose The pose of the head in ActivitySpace.
+ * @param worldSpaceScale The scale of the head in WorldSpace.
+ * @param activitySpaceScale The scale of the head in ActivitySpace.
+ */
+class TestScenePose(
+    override var activitySpacePose: Pose = Pose.Identity,
+    override var worldSpaceScale: Vector3 = Vector3(1f, 1f, 1f),
+    override var activitySpaceScale: Vector3 = Vector3(1f, 1f, 1f),
+) : ScenePose {
+    override fun transformPoseTo(pose: Pose, destination: ScenePose): Pose {
+        throw NotImplementedError("Intentionally left unimplemented for these test scenarios")
+    }
+
+    @Suppress("AsyncSuffixFuture")
+    override fun hitTest(
+        origin: Vector3,
+        direction: Vector3,
+        hitTestFilter: Int,
+    ): ListenableFuture<HitTestResult> {
+        throw NotImplementedError("Intentionally left unimplemented for these test scenarios")
+    }
+}
+
+/**
+ * A test implementation of a SceneCore [ActivitySpace] that allows for setting custom values.
  *
  * This class delegates non-overridden functionality to a base ActivitySpace instance but provides
  * direct control over key properties like [activitySpacePose] and [activitySpaceScale] (via the
  * overridden [getScale] method).
  *
  * @param fakeRuntimeActivitySpaceBase The base [androidx.xr.scenecore.runtime.ActivitySpace] to use
- *   for the [androidx.xr.scenecore.runtime.ActivitySpace] implementation.
+ *   for the [ActivitySpace] implementation.
  * @param activitySpacePose The pose of the ActivitySpace. Defaults to [Pose.Identity].
  * @param activitySpaceScale The scale of the ActivitySpace. Defaults to one.
  */

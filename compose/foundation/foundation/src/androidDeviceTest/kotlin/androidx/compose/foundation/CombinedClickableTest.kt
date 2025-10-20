@@ -3041,6 +3041,135 @@ class CombinedClickableTest {
             assertThat(doubleClicks).isEqualTo(0)
         }
     }
+
+    @Test
+    fun indirectPointerDrag_cancelsPressInteraction() {
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(
+                                indication = null,
+                                interactionSource = interactionSource,
+                            ) {},
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerPressEvent(
+                rule = rule,
+                currentTime = 0L,
+                currentValue = Offset.Zero,
+            )
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerMoveEvents(
+                rule = rule,
+                stepCount = 3,
+                currentTime = 16L,
+                currentValue = Offset.Zero,
+                delayTimeMills = 16L,
+                stepSize = Offset(50f, 0f),
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            )
+
+        // The press should fire, and then the drag should instantly cancel it
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
+            assertThat((interactions[1] as PressInteraction.Cancel).press)
+                .isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun immediateIndirectDrag_doesNotTriggerCallbacks() {
+        var clickCounter = 0
+
+        val interactionSource = MutableInteractionSource()
+        lateinit var inputModeManager: InputModeManager
+        val focusRequester = FocusRequester()
+
+        lateinit var scope: CoroutineScope
+
+        rule.setContent {
+            inputModeManager = LocalInputModeManager.current
+            scope = rememberCoroutineScope()
+            Box {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable")
+                            .focusRequester(focusRequester)
+                            .combinedClickable(onClick = { clickCounter++ }),
+                )
+            }
+        }
+
+        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
+        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerPressEvent(
+                rule = rule,
+                currentTime = 0L,
+                currentValue = Offset.Zero,
+            )
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerMoveEvents(
+                rule = rule,
+                stepCount = 3,
+                currentTime = 16L,
+                currentValue = Offset.Zero,
+                delayTimeMills = 16L,
+                stepSize = Offset(50f, 0f),
+                primaryDirectionalMotionAxis = IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            )
+
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectPointerReleaseEvent(
+                rule,
+                currentTime = 48L,
+                currentValue = Offset(150f, 0f),
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+            )
+
+        rule.runOnIdle { assertThat(clickCounter).isEqualTo(0) }
+    }
 }
 
 private fun SemanticsNodeInteraction.assertOnLongClickLabelMatches(

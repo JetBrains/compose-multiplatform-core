@@ -19,6 +19,7 @@ package com.example.androidx.webkit;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.webkit.WebViewFeature;
 
 import org.junit.Before;
@@ -43,6 +44,7 @@ public class WebStorageCompatActivityTestAppTest {
         WebkitTestHelpers.enableJavaScript(R.id.web_storage_webview);
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/452717394
     @Test
     public void testWebStorageCompatActivityLoadsCurrentDate() {
         // This may be flaky right around midnight.

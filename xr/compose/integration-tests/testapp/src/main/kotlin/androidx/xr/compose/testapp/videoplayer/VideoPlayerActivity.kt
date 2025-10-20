@@ -71,6 +71,7 @@ import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import androidx.xr.arcore.ArDevice
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MovePolicy
@@ -116,6 +117,7 @@ class VideoPlayerActivity : ComponentActivity() {
     private var controlPanelEntity: PanelEntity? = null
 
     private lateinit var session: Session
+    private lateinit var arDevice: ArDevice
 
     private var alphaMaskTexture: Texture? = null
 
@@ -128,6 +130,7 @@ class VideoPlayerActivity : ComponentActivity() {
         session = (Session.create(this) as SessionCreateSuccess).session
         session.scene.spatialEnvironment.preferredPassthroughOpacity = 0.0f
         session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
+        arDevice = ArDevice.getInstance(session)
 
         checkExternalStoragePermission()
 
@@ -250,10 +253,10 @@ class VideoPlayerActivity : ComponentActivity() {
         surfaceEntity!!.shape = SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f))
         // Move the Quad-shaped canvas to a spot in front of the User.
         surfaceEntity!!.setPose(
-            session.scene.spatialUser.head?.transformPoseTo(
-                Pose(Vector3(0.0f, 0.0f, -1.5f), Quaternion(0.0f, 0.0f, 0.0f, 1.0f)),
+            session.scene.perceptionSpace.transformPoseTo(
+                arDevice.state.value.devicePose.translate(Vector3(0.0f, 0.0f, -1.5f)),
                 session.scene.activitySpace,
-            )!!
+            )
         )
     }
 

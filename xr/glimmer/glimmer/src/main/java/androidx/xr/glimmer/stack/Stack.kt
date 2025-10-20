@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastMap
@@ -67,15 +66,7 @@ public fun VerticalStack(
 
     VerticalPager(
         state = state.pagerState,
-        modifier =
-            modifier.onGloballyPositioned {
-                val currentPage = state.pagerState.currentPage
-                val pageRange = currentPage - 1..(currentPage + 2).coerceAtMost(state.itemCount - 1)
-                // Clean up heights for pages that are not in the close range to the current page.
-                state.layoutInfoInternal.measuredHeights.removeIf { index, _ ->
-                    index !in pageRange
-                }
-            },
+        modifier = modifier,
         contentPadding = PaddingValues(bottom = RevealAreaSize),
         key = { page -> stackItemHolderState.value.getKey(page) },
         beyondViewportPageCount = MaxNextVisibleItemCount,
@@ -107,12 +98,7 @@ internal fun StackItemLayout(
             }
 
         if (!isLookingAhead) {
-            // TODO(b/446933128): consider removing the range check once next pages are visible.
-            val currentPage = state.pagerState.currentPage
-            val pageRange = currentPage - 1..(currentPage + 2).coerceAtMost(state.itemCount - 1)
-            if (page in pageRange) {
-                state.layoutInfoInternal.measuredHeights.put(page, maxHeight)
-            }
+            state.layoutInfoInternal.updateMeasuredHeight(index = page, height = maxHeight)
         }
 
         layout(maxWidth, maxHeight) { placeables.fastForEach { it.placeRelative(x = 0, y = 0) } }

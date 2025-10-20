@@ -1006,7 +1006,8 @@ package androidx.xr.compose.subspace.node {
   }
 
   public final class SubspaceLayoutModifierNodeKt {
-    method public static void requestRelayout(androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode);
+    method public static void invalidateMeasurement(androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode);
+    method public static void invalidatePlacement(androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode);
   }
 
   public abstract class SubspaceModifierNodeElement<N extends androidx.xr.compose.subspace.layout.SubspaceModifier.Node> implements androidx.xr.compose.subspace.layout.SubspaceModifier {

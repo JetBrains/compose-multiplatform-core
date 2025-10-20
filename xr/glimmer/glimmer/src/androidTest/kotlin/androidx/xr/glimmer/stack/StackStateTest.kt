@@ -437,18 +437,28 @@ class StackStateTest {
     fun scrollBackward_updatesMeasuredItemHeights() = runTest {
         val state = StackState()
         val layoutInfo = state.layoutInfoInternal
-        val itemHeights = listOf(10.dp, 20.dp, 30.dp, 40.dp, 50.dp)
+        val itemHeights =
+            listOf(10.dp, 20.dp, 30.dp, 40.dp, 50.dp, 60.dp, 70.dp, 80.dp, 90.dp, 100.dp)
         rule.setContent {
-            VerticalStack(modifier = Modifier.size(100.dp), state = state) {
-                items(5) { index -> StackItem("Item $index", Modifier.height(itemHeights[index])) }
+            VerticalStack(modifier = Modifier.size(200.dp), state = state) {
+                items(10) { index -> StackItem("Item $index", Modifier.height(itemHeights[index])) }
             }
         }
-        runOnUiThread { state.scrollToItem(4) }
+        runOnUiThread { state.scrollToItem(8) }
         rule.waitForIdle()
         with(rule.density) {
-            assertThat(layoutInfo.measuredTopItemHeight).isEqualTo(50.dp.roundToPx())
-            assertThat(layoutInfo.measuredNextItemHeight).isEqualTo(0)
+            assertThat(layoutInfo.measuredTopItemHeight).isEqualTo(90.dp.roundToPx())
+            assertThat(layoutInfo.measuredNextItemHeight).isEqualTo(100.dp.roundToPx())
             assertThat(layoutInfo.measuredNextNextItemHeight).isEqualTo(0)
+        }
+
+        runOnUiThread { state.scrollToItem(4) }
+        rule.waitForIdle()
+
+        with(rule.density) {
+            assertThat(layoutInfo.measuredTopItemHeight).isEqualTo(50.dp.roundToPx())
+            assertThat(layoutInfo.measuredNextItemHeight).isEqualTo(60.dp.roundToPx())
+            assertThat(layoutInfo.measuredNextNextItemHeight).isEqualTo(70.dp.roundToPx())
         }
 
         runOnUiThread { state.scrollToItem(1) }

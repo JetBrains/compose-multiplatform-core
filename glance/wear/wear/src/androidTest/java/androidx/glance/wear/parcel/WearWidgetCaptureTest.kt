@@ -32,7 +32,7 @@ import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.onClick
 import androidx.compose.remote.creation.compose.modifier.size
-import androidx.compose.remote.player.core.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -123,7 +123,7 @@ class WearWidgetCaptureTest {
                         androidx.compose.ui.Modifier.semantics { contentDescription = "Document" },
                     text =
                         data.value?.rcDocument?.let { rcDoc ->
-                            RemoteComposeDocument(rcDoc).document.displayHierarchy()
+                            RemoteDocument(rcDoc).document.displayHierarchy()
                         } ?: "",
                 )
                 BasicText(

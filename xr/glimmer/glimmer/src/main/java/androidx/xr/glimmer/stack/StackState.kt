@@ -35,6 +35,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.unit.IntSize
 import androidx.xr.glimmer.stack.StackState.Companion.Saver
 
@@ -245,5 +246,21 @@ internal constructor(private val pagerState: PagerState, private val topItemStat
 
     /** The backing storage for measured item heights keyed by item index. */
     // TODO(b/446933128): remove this once PageInfo exposes page sizes.
-    internal val measuredHeights: MutableIntIntMap = MutableIntIntMap()
+    private val measuredHeights: MutableIntIntMap = MutableIntIntMap()
+
+    /**
+     * Updates the measured height of the item at the specified index and trims heights for items
+     * outside of the close range to the top item.
+     */
+    internal fun updateMeasuredHeight(index: Int, height: Int) {
+        measuredHeights.put(index, height)
+
+        // Clean up measured heights for items that are not in the close range to the top item.
+        Snapshot.withoutReadObservation {
+            val topItem = topItemState.value
+            val itemCount = pagerState.pageCount
+            val itemRange = topItem - 2..(topItem + 3).coerceAtMost(itemCount - 1)
+            measuredHeights.removeIf { index, _ -> index !in itemRange }
+        }
+    }
 }

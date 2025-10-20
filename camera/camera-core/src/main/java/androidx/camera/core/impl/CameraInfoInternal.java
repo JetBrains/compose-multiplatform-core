@@ -37,7 +37,6 @@ import androidx.camera.core.CameraSelector;
 import androidx.camera.core.CameraUseCaseAdapterProvider;
 import androidx.camera.core.DynamicRange;
 import androidx.camera.core.ExperimentalLensFacing;
-import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.Logger;
 import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
@@ -183,7 +182,6 @@ public interface CameraInfoInternal extends CameraInfo {
     Rect getSensorRect();
 
     @SuppressWarnings("MixedMutabilityReturnType")
-    @ExperimentalSessionConfig
     @Override
     default @NonNull Set<Range<Integer>> getSupportedFrameRateRanges(
             @NonNull SessionConfig sessionConfig) {
@@ -314,7 +312,6 @@ public interface CameraInfoInternal extends CameraInfo {
     }
 
     /** {@inheritDoc} */
-    @ExperimentalSessionConfig
     @Override
     default boolean isFeatureGroupSupported(@NonNull SessionConfig sessionConfig) {
         try {
@@ -343,7 +340,6 @@ public interface CameraInfoInternal extends CameraInfo {
      * {@link CameraInfoInternal#setCameraUseCaseAdapterProvider(CameraUseCaseAdapterProvider)} has
      * not been called yet.
      */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     default boolean isResolvedFeatureGroupSupported(
             @NonNull ResolvedFeatureGroup resolvedFeatureGroup,
             @NonNull SessionConfig sessionConfig) {
