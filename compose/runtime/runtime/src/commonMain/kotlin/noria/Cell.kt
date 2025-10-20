@@ -96,7 +96,7 @@ inline fun <T> state(crossinline init: () -> T): StateCell<T> {
 @Suppress("NOTHING_TO_INLINE")
 @Composable
 inline fun <T> state(
-    noinline reader: ClosureContext.() -> T,
+    noinline reader: () -> T,
     noinline updater: ((T) -> T) -> Unit
 ): StateCell<T> {
     val readerState = rememberUpdatedState(reader)
@@ -105,7 +105,7 @@ inline fun <T> state(
         remember {
             object : StateCell<T> {
                 override fun read(): T {
-                    return readerState.value(ClosureContext)
+                    return readerState.value()
                 }
 
                 override fun update(f: (T) -> T) {
@@ -197,7 +197,7 @@ fun <T> StateCell<T?>.notNull(default: () -> T): StateCell<T> {
 @Composable
 fun <T, U> lens(
     state: StateCell<T>,
-    extract: ClosureContext.(T) -> U,
+    extract: (T) -> U,
     imprint: (T, U) -> T,
 ): StateCell<U> {
     val state1 = rememberUpdatedState(state)
@@ -206,14 +206,14 @@ fun <T, U> lens(
     return remember {
         object : StateCell<U> {
             override fun read(): U {
-                return extract1.value.invoke(ClosureContext, state1.value.read())
+                return extract1.value.invoke(state1.value.read())
             }
 
             override fun update(f: (U) -> U) {
                 val state2 = Snapshot.withoutReadObservation { state1.value }
                 state2.update { t ->
                     val extract2 = Snapshot.withoutReadObservation { extract1.value }
-                    imprint1.value(t, f(extract2.invoke(ClosureContext, t)))
+                    imprint1.value(t, f(extract2(t)))
                 }
             }
         }

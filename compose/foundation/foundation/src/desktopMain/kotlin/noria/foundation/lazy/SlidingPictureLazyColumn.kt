@@ -21,11 +21,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import noria.Cell
-import noria.ClosureContext
 
 data class SlideAnimation(val toggledIndices: IntRange, val slideProgress: State<Float>, val isExpansion: Boolean)
 
-fun slidingPictureLazyColumn(slideAnimationCell: Cell<SlideAnimation?>, state: LazyListState, contentPadding: PaddingValues, spacing: Int): @Composable (size: Int, nth: ClosureContext.(Int) -> Row) -> (Int) -> ItemVerticalPosition = { size, nth ->
+fun slidingPictureLazyColumn(slideAnimationCell: Cell<SlideAnimation?>, state: LazyListState, contentPadding: PaddingValues, spacing: Int): @Composable (size: Int, nth: (Int) -> Row) -> (Int) -> ItemVerticalPosition = { size, nth ->
   // TODO
   approximatingLazyColumn(size, state, contentPadding, spacing = spacing, nth = nth)
 }

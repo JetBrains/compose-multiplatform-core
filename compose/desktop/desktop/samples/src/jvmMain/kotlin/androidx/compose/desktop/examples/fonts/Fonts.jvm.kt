@@ -95,7 +95,7 @@ package androidx.compose.desktop.examples.fonts
 //}
 //
 //@Composable
-//fun NoriaContext.Fonts() {
+//fun Fonts() {
 //    Column {
 //        var fontFamilyInfo by remember { mutableStateOf(FontFamilyInfo.Default) }
 //        var fontSize by remember { mutableStateOf(48) }

@@ -21,7 +21,6 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import noria.ClosureContext
 import noria.ui.withModifier
 
 @JvmInline
@@ -38,7 +37,7 @@ fun ScrollTarget(
     }
 }
 
-fun ClosureContext.latestScrollAuthor(scrollTarget: ScrollTarget): Any {
+fun latestScrollAuthor(scrollTarget: ScrollTarget): Any {
     // TODO
     return Any()
 }

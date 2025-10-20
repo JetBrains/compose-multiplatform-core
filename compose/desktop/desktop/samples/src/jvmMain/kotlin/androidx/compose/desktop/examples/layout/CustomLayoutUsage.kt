@@ -24,7 +24,7 @@ package androidx.compose.desktop.examples.layout
 //import androidx.compose.ui.unit.dp
 //
 //@Composable
-//fun NoriaContext.CustomLayoutUsage(modifier: Modifier = Modifier) {
+//fun CustomLayoutUsage(modifier: Modifier = Modifier) {
 //    CustomLayout(modifier.padding(8.dp)) {
 //        Text("MyBasicColumn")
 //        Text("places items")
@@ -35,7 +35,7 @@ package androidx.compose.desktop.examples.layout
 //
 //@Suppress("SpellCheckingInspection")
 //@Composable
-//fun NoriaContext.CustomLayout(
+//fun CustomLayout(
 //    modifier: Modifier = Modifier,
 //    content: @Composable () -> Unit
 //) {
