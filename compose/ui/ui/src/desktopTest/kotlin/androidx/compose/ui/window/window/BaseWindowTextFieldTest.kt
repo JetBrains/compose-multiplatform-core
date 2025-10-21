@@ -97,9 +97,7 @@ open class BaseWindowTextFieldTest {
         abstract val text: String
         abstract val selection: TextRange
         abstract val composition: TextRange?
-
-        var textLayoutResult: TextLayoutResult? = null
-            protected set
+        abstract val textLayoutResult: TextLayoutResult?
 
         var textBoundingBox: Rect = Rect.Zero
             protected set
@@ -125,7 +123,8 @@ open class BaseWindowTextFieldTest {
             assertThat(this.composition).isEqualTo(composition)
         }
 
-        fun clickBeforeIndex(index: Int) {
+        suspend fun clickBeforeIndex(index: Int) {
+            awaitIdle() // To get the latest textLayoutResult
             val localLocation = textLayoutResult!!.let {
                 if (index == text.length)
                     it.getBoundingBox(index-1).centerRight
@@ -167,6 +166,9 @@ open class BaseWindowTextFieldTest {
         override val composition: TextRange?
             get() = textFieldValue.composition
 
+        override var textLayoutResult: TextLayoutResult? = null
+            protected set
+
         override fun toString() = "TextField1"
     }
 
@@ -185,6 +187,10 @@ open class BaseWindowTextFieldTest {
 
         override val composition: TextRange?
             get() = textFieldState.composition
+
+        protected var textLayoutResultGetter: (() -> TextLayoutResult?)? = null
+        override val textLayoutResult: TextLayoutResult?
+            get() = textLayoutResultGetter?.invoke()
     }
 
     internal abstract class SecureTextFieldScope(
@@ -241,7 +247,7 @@ open class BaseWindowTextFieldTest {
                     BasicTextField(
                         state = textFieldState,
                         inputTransformation = inputTransformation,
-                        onTextLayout = { textLayoutResult = it() },
+                        onTextLayout = { textLayoutResultGetter = it },
                         modifier = Modifier
                             .focusRequester(focusRequester)
                             .onPlaced {
@@ -269,7 +275,7 @@ open class BaseWindowTextFieldTest {
                     BasicSecureTextField(
                         state = textFieldState,
                         textObfuscationMode = textObfuscationMode,
-                        onTextLayout = { textLayoutResult = it() },
+                        onTextLayout = { textLayoutResultGetter = it },
                         modifier = Modifier
                             .focusRequester(focusRequester)
                             .onPlaced {

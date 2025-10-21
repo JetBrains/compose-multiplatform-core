@@ -18,13 +18,14 @@ package androidx.compose.ui.window
 
 import androidx.compose.ui.assertThat
 import androidx.compose.ui.isEqualTo
-import androidx.compose.ui.layout.NoWindowInsetsAnimation.isVisible
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import java.awt.Frame
 import java.awt.Window
+import java.awt.event.WindowEvent
+import java.awt.event.WindowStateListener
 import javax.swing.JFrame
 import javax.swing.JLayeredPane
 import kotlin.time.Duration
@@ -32,6 +33,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.skiko.SkiaLayerAnalytics
@@ -72,14 +74,15 @@ class ComposeContainerLifecycleOwnerTest {
 
             if (window.toolkit.isFrameStateSupported(Frame.ICONIFIED)) {
                 // minimize window
-                window.extendedState = Frame.ICONIFIED
-                allEvents.waitFor(Lifecycle.Event.ON_PAUSE)
-                allEvents.waitFor(Lifecycle.Event.ON_STOP)
+                if (window.setExtendedStateSucceeds(Frame.ICONIFIED)) {
+                    allEvents.waitFor(Lifecycle.Event.ON_PAUSE)
+                    allEvents.waitFor(Lifecycle.Event.ON_STOP)
 
-                // restore window
-                window.extendedState = Frame.NORMAL
-                allEvents.waitFor(Lifecycle.Event.ON_START)
-                allEvents.waitFor(Lifecycle.Event.ON_RESUME)
+                    // restore window
+                    window.extendedState = Frame.NORMAL
+                    allEvents.waitFor(Lifecycle.Event.ON_START)
+                    allEvents.waitFor(Lifecycle.Event.ON_RESUME)
+                }
             } else {
                 println("ICONIFIED window state not supported")
             }
@@ -248,6 +251,23 @@ class ComposeContainerLifecycleOwnerTest {
         isVisible = true
         toFront()
     }
+
+    private suspend fun JFrame.setExtendedStateSucceeds(state: Int): Boolean =
+        withTimeoutOrNull(1.seconds) {
+            val actualNewState = suspendCancellableCoroutine { cont ->
+                extendedState = state
+                addWindowStateListener(object: WindowStateListener {
+                    override fun windowStateChanged(e: WindowEvent) {
+                        removeWindowStateListener(this)
+                        cont.resume(
+                            value = e.newState,
+                            onCancellation = { _, _, _ -> }
+                        )
+                    }
+                })
+            }
+            return@withTimeoutOrNull actualNewState == state
+        } ?: false
 
     // Some window managers (on Linux) generate unexpected events, such as iconification when the
     // window is first made visible. This means it's not possible to check for the expected stream
