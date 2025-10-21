@@ -257,6 +257,7 @@ MEDIA = { group = "androidx.media" }
 MEDIAROUTER = { group = "androidx.mediarouter", atomicGroupVersion = "versions.MEDIAROUTER" }
 METRICS = { group = "androidx.metrics", atomicGroupVersion = "versions.METRICS" }
 NAVIGATION = { group = "androidx.navigation", atomicGroupVersion = "versions.NAVIGATION" }
+NAVIGATION_3 = { group = "androidx.navigation3", atomicGroupVersion = "versions.NAVIGATION_3" }
 PAGING = { group = "androidx.paging", atomicGroupVersion = "versions.PAGING" }
 PALETTE = { group = "androidx.palette", atomicGroupVersion = "versions.PALETTE" }
 PDF = { group = "androidx.pdf", atomicGroupVersion = "versions.PDF" }

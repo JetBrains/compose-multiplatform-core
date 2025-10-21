@@ -16,6 +16,9 @@
 
 package androidx.compose.runtime
 
+import androidx.compose.runtime.internal.SnapshotThreadLocal
+import androidx.compose.runtime.platform.makeSynchronizedObject
+import androidx.compose.runtime.platform.synchronized
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -281,8 +284,8 @@ class DataSourceTests {
                     latestChangeRecorder = recordChange
                 }
             }
-        var outerChanges = mutableListOf<Any>()
-        var innerChanges = mutableListOf<Any>()
+        val outerChanges = mutableListOf<Any>()
+        val innerChanges = mutableListOf<Any>()
         val dataSourceRegistration = DataSource.register(testDataSource)
         try {
             DataSource.isolate({ outerChanges.add(it) }) {
@@ -300,7 +303,7 @@ class DataSourceTests {
     @Test
     fun invalidationsCanBeMade() {
         val testIdentifier = "testIdentifier"
-        var invalidations = mutableListOf<Any>()
+        val invalidations = mutableListOf<Any>()
         DataSource.registerInvalidator { invalidations.add(it) }
         DataSource.invalidateDependants(setOf(testIdentifier))
         assertEquals(listOf(setOf(testIdentifier)), invalidations.toList())
@@ -810,7 +813,7 @@ private class KeyValueDataSource() : DataSource<((Any) -> Boolean)?, KeyValueDat
             if (it != null) {
                 it[key]
             } else {
-                synchronized(globalSnapshot) { globalSnapshot[key] }
+                synchronized(globalSnapshotLock) { globalSnapshot[key] }
             }
         }
     }
@@ -820,7 +823,7 @@ private class KeyValueDataSource() : DataSource<((Any) -> Boolean)?, KeyValueDat
             if (it != null) {
                 it[key] = value
             } else {
-                synchronized(globalSnapshot) { globalSnapshot[key] = value }
+                synchronized(globalSnapshotLock) { globalSnapshot[key] = value }
             }
         }
     }
@@ -862,7 +865,7 @@ private class KeyValueDataSource() : DataSource<((Any) -> Boolean)?, KeyValueDat
         val previousSnapshot = threadSnapshot.get()
         val newSnapshot =
             previousSnapshot?.takeNestedMutableSnapshot(recordChange)
-                ?: synchronized(globalSnapshot) {
+                ?: synchronized(globalSnapshotLock) {
                     globalSnapshot.takeNestedMutableSnapshot(recordChange)
                 }
         newSnapshot.makeCurrent()
@@ -882,7 +885,7 @@ private class KeyValueDataSource() : DataSource<((Any) -> Boolean)?, KeyValueDat
 
     fun takeMutableSnapshot(recordChange: ((Any) -> Unit)? = null): Snapshot {
         return threadSnapshot.get()?.takeNestedMutableSnapshot(recordChange)
-            ?: synchronized(globalSnapshot) {
+            ?: synchronized(globalSnapshotLock) {
                 globalSnapshot.takeNestedMutableSnapshot(recordChange)
             }
     }
@@ -896,11 +899,12 @@ private class KeyValueDataSource() : DataSource<((Any) -> Boolean)?, KeyValueDat
     }
 
     private val globalSnapshot = Snapshot(parent = null) {}
-    private val threadSnapshot = ThreadLocal<Snapshot>()
+    private val globalSnapshotLock = makeSynchronizedObject(globalSnapshot)
+    private val threadSnapshot = SnapshotThreadLocal<Snapshot>()
     val currentSnapshot: Snapshot
         get() = threadSnapshot.get() ?: globalSnapshot
 
-    private val threadDependencyRecorder = ThreadLocal<((Any) -> Boolean)?>()
+    private val threadDependencyRecorder = SnapshotThreadLocal<((Any) -> Boolean)?>()
 
     inner class Snapshot(
         private val parent: Snapshot?,
@@ -957,7 +961,7 @@ private class KeyValueDataSource() : DataSource<((Any) -> Boolean)?, KeyValueDat
         fun apply() {
             checkPrecondition(!applied) { "A snapshot may not be applied multiple times" }
             if (parent === globalSnapshot) {
-                synchronized(globalSnapshot) { mergeIntoParent() }
+                synchronized(globalSnapshotLock) { mergeIntoParent() }
             } else {
                 mergeIntoParent()
             }
@@ -988,7 +992,7 @@ private class KeyValueDataSource() : DataSource<((Any) -> Boolean)?, KeyValueDat
             checkPrecondition(this === globalSnapshot) {
                 "Only the global snapshot may flush its changes as invalidations"
             }
-            synchronized(globalSnapshot) {
+            synchronized(globalSnapshotLock) {
                 DataSource.invalidateDependants(changes)
                 changes.clear()
             }

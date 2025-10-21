@@ -484,7 +484,7 @@ public class SnapshotStateObserver(private val onChangedExecutor: (callback: () 
             }
 
             observeDerivedStateRecalculations(derivedStateObserver) {
-                DataSource.observeInternal(
+                DataSource.observe(
                     recordDependency = readObserver,
                     block = block,
                 )

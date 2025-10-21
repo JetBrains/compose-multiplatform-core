@@ -22,31 +22,47 @@
  * modifying its settings.
  */
 
-import androidx.build.SoftwareType
+
+import androidx.build.AndroidXComposePlugin
+import androidx.build.LibraryType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
+    id("com.android.library")
     id("AndroidXComposePlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
-androidXMultiplatform {
-    androidLibrary {
-        namespace = "androidx.compose.runtime.retain"
+AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
-    }
+androidXComposeMultiplatform {
+    android()
     desktop()
-    mingwX64()
     linux()
-    mac()
-    ios()
-    tvos()
-    watchos()
+    darwin()
     js()
-    wasmJs()
+    wasm()
 
-    defaultPlatform(PlatformIdentifier.ANDROID)
+//    defaultPlatform(PlatformIdentifier.ANDROID)
+}
+
+android {
+    namespace = "androidx.compose.runtime.retain"
+}
+
+kotlin {
+    watchosArm64()
+    watchosArm32()
+    watchosX64()
+    watchosSimulatorArm64()
+    tvosArm64()
+    tvosX64()
+    tvosSimulatorArm64()
+    mingwX64()
 
     sourceSets {
         commonMain {
@@ -195,15 +211,15 @@ androidXMultiplatform {
 }
 
 dependencies {
-    lintChecks(project(":compose:runtime:runtime-retain-lint"))
-    lintPublish(project(":compose:runtime:runtime-retain-lint"))
+//    lintChecks(project(":compose:runtime:runtime-retain-lint"))
+//    lintPublish(project(":compose:runtime:runtime-retain-lint"))
 }
 
 androidx {
     name = "Compose Runtime Retain"
-    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    type = LibraryType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Preserve state in composable methods across configuration changes and other transient content destruction scenarios"
-    samples(project(":compose:runtime:runtime-retain:runtime-retain-samples"))
-    enableRobolectric()
+//    samples(project(":compose:runtime:runtime-retain:runtime-retain-samples"))
+//    enableRobolectric()
 }

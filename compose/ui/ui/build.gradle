@@ -164,10 +164,11 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
                 // when updating the runtime version please also update the runtime-saveable version
                 implementation(project(":compose:runtime:runtime"))
-                // We do not publish runtime-retain from the fork (it's KMP-compatible from the start)
-                // api(project(":compose:runtime:runtime-retain"))
-                def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
-                api("androidx.compose.runtime:runtime-retain:$composeVersion")
+                // We do not normally publish runtime-retain from the fork (it's KMP-compatible from
+                // the start) - but we need to here for the DataSource API to be pulled in
+                 api(project(":compose:runtime:runtime-retain"))
+                // def composeVersion = project.findProperty('artifactRedirection.version.androidx.compose')
+                // api("androidx.compose.runtime:runtime-retain:$composeVersion")
                 api(project(":compose:runtime:runtime-saveable"))
 
                 api project(":compose:ui:ui-geometry")
