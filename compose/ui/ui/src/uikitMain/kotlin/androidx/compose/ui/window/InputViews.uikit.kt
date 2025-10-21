@@ -558,7 +558,10 @@ internal class OverlayInputView(
 
         showsHorizontalScrollIndicator = false
         showsVerticalScrollIndicator = false
+        delaysContentTouches = false
         panGestureRecognizer.setEnabled(false)
+        panGestureRecognizer.delaysTouchesBegan = false
+        panGestureRecognizer.delaysTouchesEnded = false
         bounces = false
     }
 
