@@ -65,12 +65,17 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.runApplicationTest
+import androidx.compose.ui.window.waitForFocusGain
 import androidx.savedstate.SavedState
 import com.google.common.truth.Truth.assertThat
 import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.GraphicsEnvironment
 import java.awt.event.MouseEvent
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
+import java.awt.event.WindowFocusListener
+import java.awt.event.WindowListener
 import javax.swing.BoxLayout
 import javax.swing.JFrame
 import javax.swing.JPanel
@@ -82,6 +87,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.suspendCancellableCoroutine
 import org.jetbrains.skiko.ExperimentalSkikoApi
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.MainUIDispatcher
@@ -668,7 +674,12 @@ class ComposePanelTest {
         val composePanel = ComposePanel()
         var isTextFieldFocused = false
         composePanel.setContent {
-            TextField(rememberTextFieldState(), Modifier.onFocusChanged { isTextFieldFocused = it.isFocused })
+            TextField(
+                state = rememberTextFieldState(),
+                Modifier.onFocusChanged {
+                    isTextFieldFocused = it.isFocused
+                }
+            )
         }
 
         val window = JFrame()
@@ -676,6 +687,8 @@ class ComposePanelTest {
             window.size = Dimension(200, 200)
             window.contentPane.add(composePanel, BorderLayout.CENTER)
             window.isVisible = true
+            window.toFront()
+            window.waitForFocusGain()
 
             awaitIdle()
 

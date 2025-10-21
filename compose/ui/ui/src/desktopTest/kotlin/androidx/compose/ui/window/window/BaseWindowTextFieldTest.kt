@@ -48,10 +48,12 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 import androidx.compose.ui.window.WindowTestScope
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.runApplicationTest
+import androidx.compose.ui.window.waitForFocusGain
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import org.junit.experimental.theories.DataPoint
@@ -61,31 +63,30 @@ open class BaseWindowTextFieldTest {
         textFieldKind: TextFieldKind<S>,
         name: String,
         body: suspend S.() -> Unit
-    ) = runApplicationTest(
-        hasAnimations = true,
-        animationsDelayMillis = 100
-    ) {
+    ) = runApplicationTest {
         var scope: S? = null
-        launchTestApplication {
-            Window(onCloseRequest = ::exitApplication) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    if (scope == null) {
-                        scope = textFieldKind.createScope(this@runApplicationTest, window)
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("$name ($scope)")
-                        Box(Modifier.border(1.dp, Color.Black).padding(8.dp)) {
-                            scope!!.TextField()
-                        }
+        launchTestWindowApplication(
+            state = WindowState(position = WindowPosition(200.dp, 200.dp)),
+            undecorated = true
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                if (scope == null) {
+                    scope = textFieldKind.createScope(this@runApplicationTest, window)
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("$name ($scope)")
+                    Box(Modifier.border(1.dp, Color.Black).padding(8.dp)) {
+                        scope.TextField()
                     }
                 }
             }
         }
 
         awaitIdle()
+        window.waitForFocusGain()
         scope!!.body()
     }
 
