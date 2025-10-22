@@ -72,6 +72,7 @@ internal class ComposeWebSemanticsListener(
                  |---------- 1200ms ---------|             |--- 100 ms ---| -> sync after changes settle
                                              | No forced sync here, because the debouncing has just started
          */
+
         coroutineScope.launch {
             var timeSpentDebouncing = 0L
             var lastDebouncedTime = 0L

@@ -55,6 +55,11 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import org.w3c.dom.DataTransfer
 import androidx.compose.ui.draganddrop.domDataTransferOrNull
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 
 @Composable
 @OptIn(ExperimentalComposeUiApi::class)
@@ -121,8 +126,15 @@ actual fun DragAndDropExample() {
         var showTargetBorder by remember { mutableStateOf(false) }
         var showHovered by remember { mutableStateOf(false) }
         var dragCounter by remember { mutableStateOf(0) }
-        var targetText by remember { mutableStateOf("Drop Here") }
         val pieSlices = remember { mutableStateListOf<Color>() }
+
+        val rotation by rememberInfiniteTransition(label = "segmentedHoverRotation").animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(animation = tween(durationMillis = 8000, easing = LinearEasing)),
+            label = "rotationDegrees"
+        )
+        val effectiveRotation = if (showTargetBorder) rotation else 0f
 
         val dragAndDropTarget = remember {
             object: DragAndDropTarget {
@@ -160,14 +172,6 @@ actual fun DragAndDropExample() {
 
         // Drag target stays centered in the viewport independently of the sources above
         val glowPadding = 24.dp
-        val glowColor = if (pieSlices.isEmpty()) {
-            Color.Black
-        } else {
-            var r = 0f; var g = 0f; var b = 0f
-            pieSlices.forEach { c -> r += c.red; g += c.green; b += c.blue }
-            val n = pieSlices.size
-            Color(r / n, g / n, b / n)
-        }
 
         Box(
             modifier = Modifier
@@ -177,12 +181,11 @@ actual fun DragAndDropExample() {
                     if (showTargetBorder) {
                         val glowPaddingPx = glowPadding.toPx()
                         val outerR = size.minDimension / 2f
-                        val innerR = outerR - glowPaddingPx
                         if (pieSlices.isNotEmpty()) {
                             // Segmented glow: draw a colored ring mirroring the pie chart segments
                             val counts = pieSlices.groupingBy { it }.eachCount()
                             val total = pieSlices.size.toFloat()
-                            var start = -90f
+                            var start = -90f + effectiveRotation
                             val arcSize = Size(outerR * 2f, outerR * 2f)
                             val topLeft = Offset(center.x - outerR, center.y - outerR)
                             counts.entries.forEach { (color, count) ->
@@ -199,16 +202,12 @@ actual fun DragAndDropExample() {
                                 start += sweep
                             }
                         } else {
-                            // Fallback soft radial glow when there are no segments yet
-                            val ratio = if (outerR > 0f) innerR / outerR else 0f
-                            val brush = Brush.radialGradient(
-                                (maxOf(0f, ratio - 0.05f)) to Color.Transparent,
-                                ratio to glowColor.copy(alpha = 0.5f),
-                                1f to Color.Transparent,
+                            drawCircle(
+                                color = Color.Gray,
+                                radius = outerR - glowPaddingPx / 2f,
                                 center = center,
-                                radius = outerR
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = glowPaddingPx)
                             )
-                            drawCircle(brush = brush, radius = outerR, center = center)
                         }
                     }
                 },
@@ -225,6 +224,7 @@ actual fun DragAndDropExample() {
                     ),
                 contentAlignment = Alignment.Center
             ) {
+
                 // Draw pie chart based on dropped colors
                 Canvas(Modifier.fillMaxSize()) {
                     if (pieSlices.isNotEmpty()) {
@@ -244,8 +244,6 @@ actual fun DragAndDropExample() {
                         }
                     }
                 }
-
-                Text(targetText + " [" + dragCounter + "]", Modifier.align(Alignment.Center))
             }
         }
     }
