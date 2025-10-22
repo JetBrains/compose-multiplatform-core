@@ -46,7 +46,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.drawBehind
 import org.w3c.dom.DataTransfer
@@ -119,7 +118,7 @@ actual fun DragAndDropExample() {
                         val droppedColor = if (dataText.startsWith("color:")) {
                             Color(dataText.removePrefix("color:").toULong(16))
                         } else {
-                            Color.LightGray
+                            Color.Cyan
                         }
                         pieSlices.add(droppedColor)
                     }
@@ -173,7 +172,7 @@ actual fun DragAndDropExample() {
             Box(
                 modifier = Modifier
                     .size(200.dp)
-                    .background(if (showHovered) Color.Magenta else Color.LightGray, shape = CircleShape)
+                    .background(Color.LightGray, shape = CircleShape)
                     .clip(CircleShape)
                     .dragAndDropTarget(
                         shouldStartDragAndDrop = { true },
