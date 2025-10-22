@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
 import androidx.compose.foundation.Canvas
@@ -59,9 +60,7 @@ import androidx.compose.ui.draganddrop.domDataTransferOrNull
 @OptIn(ExperimentalComposeUiApi::class)
 actual fun DragAndDropExample() {
     val exportedText = "Hello, DnD!"
-    Row(
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
         modifier = Modifier.fillMaxSize()
     ) {
         val textMeasurer = rememberTextMeasurer()
@@ -77,7 +76,13 @@ actual fun DragAndDropExample() {
             "violet" to Color(0xFF8A2BE2)
         )
 
-        Column(modifier = Modifier.height(300.dp), verticalArrangement = Arrangement.SpaceEvenly) {
+        // Sources row pinned to the top, centered horizontally
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 colorSources.forEach { (name, color) ->
                     Box(
@@ -153,8 +158,10 @@ actual fun DragAndDropExample() {
             }
         }
 
+        // Drag target stays centered in the viewport independently of the sources above
         Box(
-            Modifier
+            modifier = Modifier
+                .align(Alignment.Center)
                 .size(200.dp)
                 .background(if (showHovered) Color.Magenta else Color.LightGray, shape = CircleShape)
                 .border(border = BorderStroke(3.dp, if (showTargetBorder) Color.Black else Color.Transparent), shape = CircleShape)
@@ -163,7 +170,7 @@ actual fun DragAndDropExample() {
                     shouldStartDragAndDrop = { true },
                     target = dragAndDropTarget
                 ),
-                contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center
         ) {
             // Draw pie chart based on dropped colors
             Canvas(Modifier.fillMaxSize()) {
