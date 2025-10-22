@@ -24,7 +24,6 @@ import androidx.compose.ui.uikit.utils.CMPPanGestureRecognizer
 import androidx.compose.ui.uikit.utils.CMPScrollView
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.asDpOffset
-import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.viewinterop.InteropWrappingView
 import androidx.compose.ui.viewinterop.UIKitInteropInteractionMode
 import kotlin.math.abs
@@ -46,6 +45,7 @@ import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
 import platform.Foundation.NSSelectorFromString
 import platform.UIKit.UIEvent
+import platform.UIKit.UIEventTypeTouches
 import platform.UIKit.UIGestureRecognizer
 import platform.UIKit.UIGestureRecognizerState
 import platform.UIKit.UIGestureRecognizerStateBegan
@@ -55,7 +55,6 @@ import platform.UIKit.UIGestureRecognizerStateEnded
 import platform.UIKit.UIGestureRecognizerStateFailed
 import platform.UIKit.UIGestureRecognizerStatePossible
 import platform.UIKit.UIPanGestureRecognizer
-import platform.UIKit.UIPress
 import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIScreenEdgePanGestureRecognizer
 import platform.UIKit.UIScrollTypeMaskAll
@@ -492,17 +491,11 @@ internal class ScrollGestureRecognizer(
 }
 
 /**
- * TODO: Update doc
- * [UIView] subclass that handles touches and keyboard presses events and forwards them
- * to the Compose runtime.
- *
- * @param hitTestInteropView A callback to find an [InteropView] at the given point.
- * @param onTouchesEvent A callback to notify the Compose runtime about touch events.
- * @param isPointInsideInteractionBounds A callback to check if the given point is within the interaction
- * bounds as defined by the owning implementation.
- * @param onKeyboardPresses A callback to notify the Compose runtime about keyboard presses.
- * The parameter is a [Set] of [UIPress] objects. Erasure happens due to K/N not supporting Obj-C
- * lightweight generics.
+ * The application can place interop views above and below the rendering canvas which is implemented
+ * by using [OverlayInputView] and [BackgroundInputView].
+ * The [OverlayInputView] is used to intercept all interaction events except the touches that
+ * addressed to the interop views located below the rendering canvas (see [OverlayInputView.hitTest]
+ * and  [BackgroundInputView.hitTest] for more details).
  */
 internal class OverlayInputView(
     private var hitTestInteropView: (point: CValue<CGPoint>) -> UIView?,
@@ -544,7 +537,9 @@ internal class OverlayInputView(
         CMPHoverGestureHandler(this, NSSelectorFromString(::onHover.name + ":"))
     }
 
-    // See [UIKitDragAndDropManager] for more context
+    /**
+     * See [androidx.compose.ui.draganddrop.UIKitDragAndDropManager] for more context
+     */
     var canIgnoreDragGesture: (UIGestureRecognizer) -> Boolean = { false }
 
     init {
@@ -580,6 +575,9 @@ internal class OverlayInputView(
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
         if (!isPointInsideInteractionBounds(point)) {
             return null
+        }
+        if (withEvent?.type != UIEventTypeTouches) {
+            return super.hitTest(point, withEvent)
         }
         val interopViewHitTest = hitTestInteropView(point)
         if (interopViewHitTest != null && interopViewHitTest.superview != this) {
@@ -638,19 +636,10 @@ internal class OverlayInputView(
     }
 }
 
-
 /**
- * TODO: Update doc
- * [UIView] subclass that handles touches and keyboard presses events and forwards them
- * to the Compose runtime.
- *
- * @param hitTestInteropView A callback to find an [InteropView] at the given point.
- * @param onTouchesEvent A callback to notify the Compose runtime about touch events.
- * @param isPointInsideInteractionBounds A callback to check if the given point is within the interaction
- * bounds as defined by the owning implementation.
- * @param onKeyboardPresses A callback to notify the Compose runtime about keyboard presses.
- * The parameter is a [Set] of [UIPress] objects. Erasure happens due to K/N not supporting Obj-C
- * lightweight generics.
+ * The [BackgroundInputView] handles only touch events that occur in the areas of the interop views
+ * located below the rendering canvas.
+ * All other user input events should be handled by the [OverlayInputView] or with its help.
  */
 internal class BackgroundInputView(
     private var onLayoutSubviews: () -> Unit,
@@ -712,18 +701,6 @@ internal class BackgroundInputView(
 
         setAccessibilityElements(emptyList<Any>())
     }
-
-// TODO: Verify pointer input manually
-//    override fun canBecomeFirstResponder() = true
-//    override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
-//        onKeyboardPresses(presses)
-//        super.pressesBegan(presses, withEvent)
-//    }
-//
-//    override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
-//        onKeyboardPresses(presses)
-//        super.pressesEnded(presses, withEvent)
-//    }
 
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
         if (!isPointInsideInteractionBounds(point)) {
