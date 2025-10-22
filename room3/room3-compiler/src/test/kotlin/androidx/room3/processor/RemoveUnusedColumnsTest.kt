@@ -17,11 +17,11 @@
 package androidx.room3.processor
 
 import COMMON
-import androidx.room3.DatabaseProcessingStep
 import androidx.room3.RewriteQueriesToDropUnusedColumns
+import androidx.room3.RoomProcessor
 import androidx.room3.compiler.processing.util.CompilationResultSubject
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspProcessorTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -66,18 +66,14 @@ class RemoveUnusedColumnsTest {
                 annotateMethod = annotateMethod,
             ) + COMMON.USER
 
-        runProcessorTest(
+        runKspProcessorTest(
             sources = sources,
-            createProcessingSteps = { listOf(DatabaseProcessingStep()) },
-            options =
-                mapOf(
-                    "room.expandProjection" to enableExpandProjection.toString(),
-                    "room.generateKotlin" to "false",
-                ),
+            options = mapOf("room.expandProjection" to enableExpandProjection.toString()),
+            symbolProcessorProviders = listOf(RoomProcessor.Provider()),
         ) { result ->
             validate(result)
-            result.generatedSourceFileWithPath("foo/bar/MyDao_Impl.java")
-            result.generatedSourceFileWithPath("foo/bar/MyDb_Impl.java")
+            result.generatedSourceFileWithPath("foo/bar/MyDao_Impl.kt")
+            result.generatedSourceFileWithPath("foo/bar/MyDb_Impl.kt")
         }
     }
 

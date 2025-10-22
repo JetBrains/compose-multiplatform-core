@@ -208,6 +208,20 @@ internal constructor(
          * [GuavaDataStore] will be sequenced by the underlying [DataStore]. It is thread-safe.
          *
          * @param dataStore the DataStore used to create GuavaDataStore
+         * @param executor the Executor used to launch the calls to DataStore.
+         * @return the GuavaDataStore created with the provided parameters
+         */
+        @JvmStatic
+        public fun <T : Any> from(dataStore: DataStore<T>, executor: Executor): GuavaDataStore<T> {
+            return from(dataStore, executor.asCoroutineDispatcher())
+        }
+
+        /**
+         * Wraps a [GuavaDataStore] around a [DataStore]. This method does not create a new
+         * [DataStore], so all [getDataAsync] and [updateDataAsync] called from the resulting
+         * [GuavaDataStore] will be sequenced by the underlying [DataStore]. It is thread-safe.
+         *
+         * @param dataStore the DataStore used to create GuavaDataStore
          * @param coroutineContext the CoroutineContext used to launch the calls to DataStore. The
          *   default value is [Dispatchers.IO]
          * @return the GuavaDataStore created with the provided parameters

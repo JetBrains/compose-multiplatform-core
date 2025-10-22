@@ -74,7 +74,6 @@ dependencies {
         exclude group: "org.glassfish"
     }
     implementation(libs.sqliteJdbc)
-    implementation(libs.apacheCommonsCodec)
     implementation(libs.intellijAnnotations)
     testImplementation(libs.truth)
     testImplementation(project(":kruth:kruth"))

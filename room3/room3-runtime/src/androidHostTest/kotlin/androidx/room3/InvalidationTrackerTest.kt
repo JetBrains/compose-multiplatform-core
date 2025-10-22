@@ -21,6 +21,8 @@ import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.room3.concurrent.AtomicBoolean
 import androidx.room3.concurrent.AtomicInt
+import androidx.room3.migration.AutoMigrationSpec
+import androidx.room3.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
@@ -29,6 +31,7 @@ import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.collections.removeFirst as removeFirstKt
+import kotlin.reflect.KClass
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelAndJoin
@@ -659,6 +662,20 @@ class InvalidationTrackerTest {
         }
 
         override fun clearAllTables() {}
+
+        override fun createAutoMigrations(
+            autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
+        ): List<Migration> {
+            return emptyList()
+        }
+
+        override fun getRequiredAutoMigrationSpecClasses(): Set<KClass<out AutoMigrationSpec>> {
+            return emptySet()
+        }
+
+        override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
+            return emptyMap()
+        }
     }
 
     private class FakeSQLiteDriver : SQLiteDriver {

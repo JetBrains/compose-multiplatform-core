@@ -18,20 +18,14 @@ package androidx.xr.scenecore.spatial.core;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import android.app.Activity;
 
-import androidx.xr.runtime.NodeHolder;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.XrExtensions;
-import com.android.extensions.xr.node.Node;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +45,6 @@ public final class SubspaceNodeEntityImplTest {
         mXrExtensions = XrExtensionsProvider.getXrExtensions();
         EntityManager entityManager = new EntityManager();
         FakeScheduledExecutorService executor = new FakeScheduledExecutorService();
-        /* unscaledGravityAlignedActivitySpace= */
         ActivitySpaceImpl activitySpace =
                 new ActivitySpaceImpl(
                         mXrExtensions.createNode(),

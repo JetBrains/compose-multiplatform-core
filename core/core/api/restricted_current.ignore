@@ -1,6 +1,4 @@
 // Baseline format: 1.0
-RemovedFromKotlin: androidx.core.app.ComponentActivity#getLifecycle():
-    Source breaking change: method androidx.core.app.ComponentActivity.getLifecycle() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.core.app.MultiWindowModeChangedInfo#getNewConfig():
     Source breaking change: method androidx.core.app.MultiWindowModeChangedInfo.getNewConfig() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.core.app.MultiWindowModeChangedInfo#isInMultiWindowMode():

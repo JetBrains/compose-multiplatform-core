@@ -29,6 +29,8 @@ import kotlinx.coroutines.withTimeout
 internal class ProjectedServiceConnection(private val context: Context) {
 
     private var serviceConnection: ServiceConnection? = null
+    private var serviceBinder: IBinder? = null
+    private val deathRecipient = IBinder.DeathRecipient { disconnect() }
 
     /**
      * Connects to the projected service and returns an [IProjectedService] instance.
@@ -49,6 +51,8 @@ internal class ProjectedServiceConnection(private val context: Context) {
             object : ServiceConnection {
                 override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
                     serviceDeferred.complete(IProjectedService.Stub.asInterface(service))
+                    serviceBinder = service
+                    service?.linkToDeath(deathRecipient, /* flags= */ 0)
                 }
 
                 override fun onServiceDisconnected(name: ComponentName?) {}
@@ -75,6 +79,8 @@ internal class ProjectedServiceConnection(private val context: Context) {
      */
     internal fun disconnect() {
         context.unbindService(checkNotNull(serviceConnection, { "Service connection is null" }))
+        serviceBinder?.unlinkToDeath(deathRecipient, /* flags= */ 0)
+        serviceBinder = null
     }
 
     private companion object {

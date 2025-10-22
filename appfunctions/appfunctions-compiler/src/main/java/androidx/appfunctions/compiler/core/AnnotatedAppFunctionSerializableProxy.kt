@@ -16,11 +16,20 @@
 
 package androidx.appfunctions.compiler.core
 
+import androidx.appfunctions.compiler.AppFunctionCompiler
+import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass
+import androidx.appfunctions.compiler.core.IntrospectionHelper.RESTRICT_API_TO_33_ANNOTATION
+import androidx.appfunctions.compiler.processors.AppFunctionSerializableFactoryCodeBuilderHelper
+import androidx.appfunctions.compiler.processors.AppFunctionSerializableFactoryCodeBuilderHelper.Companion.buildFromAppFunctionDataFunction
+import androidx.appfunctions.compiler.processors.AppFunctionSerializableFactoryCodeBuilderHelper.Companion.buildToAppFunctionDataFunction
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.TypeSpec
 
 /**
  * A class that represents a class annotated with @AppFunctionSerializableProxy.
@@ -208,6 +217,60 @@ data class AnnotatedAppFunctionSerializableProxy(
                         as KSClassDeclaration)
                     .toClassName()
             return proxyTargetToSerializableProxy.getValue(targetClassName)
+        }
+    }
+
+    override fun getFactoryCodeBuilder(
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
+    ): AppFunctionSerializableType.FactoryCodeBuilder {
+        return AppFunctionSerializableProxyFactoryCodeBuilder(
+            this,
+            resolvedAnnotatedSerializableProxies,
+        )
+    }
+
+    private class AppFunctionSerializableProxyFactoryCodeBuilder(
+        val annotatedProxyClass: AnnotatedAppFunctionSerializableProxy,
+        val resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
+    ) : AppFunctionSerializableType.FactoryCodeBuilder {
+        override fun buildAppFunctionSerializableFactoryClass(): FileSpec {
+
+            val proxySuperInterfaceClass =
+                AppFunctionSerializableFactoryClass.CLASS_NAME.parameterizedBy(
+                    annotatedProxyClass.targetClassDeclaration.toClassName()
+                )
+
+            val serializableProxyClassBuilder =
+                TypeSpec.classBuilder(annotatedProxyClass.factoryClassName)
+            val factoryCodeBuilder =
+                AppFunctionSerializableFactoryCodeBuilderHelper(
+                    annotatedProxyClass,
+                    resolvedAnnotatedSerializableProxies,
+                )
+            serializableProxyClassBuilder.addAnnotation(RESTRICT_API_TO_33_ANNOTATION)
+            serializableProxyClassBuilder.addAnnotation(AppFunctionCompiler.GENERATED_ANNOTATION)
+            serializableProxyClassBuilder.addSuperinterface(proxySuperInterfaceClass)
+            annotatedProxyClass.targetClassDeclaration.toClassName()
+            serializableProxyClassBuilder.addFunction(
+                buildFromAppFunctionDataFunction(
+                    factoryCodeBuilder.buildFromAppFunctionDataMethodBodyForProxy(),
+                    returnType = annotatedProxyClass.targetClassDeclaration.toClassName(),
+                )
+            )
+            serializableProxyClassBuilder.addFunction(
+                buildToAppFunctionDataFunction(
+                    factoryCodeBuilder.buildToAppFunctionDataMethodBodyForProxy(),
+                    parameterType = annotatedProxyClass.targetClassDeclaration.toClassName(),
+                )
+            )
+            return FileSpec.builder(
+                    annotatedProxyClass.appFunctionSerializableTypeClassDeclaration
+                        .originalClassName
+                        .packageName,
+                    annotatedProxyClass.factoryClassName.simpleName,
+                )
+                .addType(serializableProxyClassBuilder.build())
+                .build()
         }
     }
 }

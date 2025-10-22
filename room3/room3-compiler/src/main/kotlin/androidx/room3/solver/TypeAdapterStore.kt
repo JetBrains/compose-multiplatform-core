@@ -23,6 +23,7 @@ import androidx.room3.compiler.processing.XNullability
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.isArray
 import androidx.room3.compiler.processing.isEnum
+import androidx.room3.compiler.processing.isKotlinUnit
 import androidx.room3.ext.CollectionTypeNames.ARRAY_MAP
 import androidx.room3.ext.CollectionTypeNames.INT_SPARSE_ARRAY
 import androidx.room3.ext.CollectionTypeNames.LONG_SPARSE_ARRAY
@@ -913,7 +914,11 @@ private constructor(
         }
 
         val typeElement = typeMirror.typeElement
-        if (typeElement != null && !typeMirror.asTypeName().isPrimitive) {
+        if (
+            typeElement != null &&
+                !typeMirror.asTypeName().isPrimitive &&
+                !typeMirror.isKotlinUnit()
+        ) {
             if (typeMirror.typeArguments.isNotEmpty()) {
                 // TODO one day support this
                 return null

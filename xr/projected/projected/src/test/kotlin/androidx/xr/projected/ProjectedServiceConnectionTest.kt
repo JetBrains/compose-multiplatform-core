@@ -39,6 +39,9 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
+import org.mockito.kotlin.any
+import org.mockito.kotlin.doAnswer
+import org.mockito.kotlin.mock
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
@@ -89,6 +92,26 @@ class ProjectedServiceConnectionTest {
             val unused =
                 assertFailsWith<IllegalStateException> { projectedServiceConnection.connect() }
         }
+
+    @Test
+    fun connect_serviceDies_disconnects() = runTest {
+        lateinit var deathRecipient: IBinder.DeathRecipient
+        val binder =
+            mock<IBinder> {
+                on { linkToDeath(any(), any()) } doAnswer
+                    { invocation ->
+                        deathRecipient = invocation.getArgument(0)
+                        null
+                    }
+            }
+        shadowOf(context).setComponentNameAndServiceForBindService(COMPONENT_NAME, binder)
+        shadowOf(context).setBindServiceCallsOnServiceConnectedDirectly(true)
+        projectedServiceConnection.connect()
+
+        deathRecipient.binderDied()
+
+        assertThat(shadowOf(context).unboundServiceConnections).hasSize(1)
+    }
 
     @Test
     fun disconnect_unbinds() =

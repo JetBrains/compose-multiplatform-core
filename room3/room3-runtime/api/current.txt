@@ -90,22 +90,18 @@ package androidx.room3 {
   }
 
   public abstract class RoomDatabase {
-    ctor public RoomDatabase();
     method @Deprecated public void beginTransaction();
     method @WorkerThread public abstract void clearAllTables();
     method public void close();
     method public androidx.sqlite.db.SupportSQLiteStatement compileStatement(String sql);
     method protected abstract androidx.room3.InvalidationTracker createInvalidationTracker();
-    method @Deprecated protected androidx.sqlite.db.SupportSQLiteOpenHelper createOpenHelper(androidx.room3.DatabaseConfiguration config);
     method @Deprecated public void endTransaction();
     method @InaccessibleFromKotlin public androidx.room3.InvalidationTracker getInvalidationTracker();
     method @InaccessibleFromKotlin public androidx.sqlite.db.SupportSQLiteOpenHelper getOpenHelper();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor getQueryExecutor();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor getTransactionExecutor();
-    method @Deprecated public <T> T? getTypeConverter(Class<T> klass);
     method public boolean inTransaction();
     method @CallSuper public void init(androidx.room3.DatabaseConfiguration configuration);
-    method @Deprecated protected void internalInitInvalidationTracker(androidx.sqlite.db.SupportSQLiteDatabase db);
     method @InaccessibleFromKotlin public boolean isOpen();
     method public android.database.Cursor query(androidx.sqlite.db.SupportSQLiteQuery query);
     method public android.database.Cursor query(androidx.sqlite.db.SupportSQLiteQuery query, optional android.os.CancellationSignal? signal);
@@ -196,7 +192,6 @@ package androidx.room3 {
   }
 
   public final class RoomDatabaseKt {
-    method @Deprecated public static kotlinx.coroutines.flow.Flow<java.util.Set<java.lang.String>> invalidationTrackerFlow(androidx.room3.RoomDatabase, String[] tables, optional boolean emitInitialState);
     method public static suspend <R> Object? useReaderConnection(androidx.room3.RoomDatabase, kotlin.jvm.functions.Function2<? super androidx.room3.Transactor,? super kotlin.coroutines.Continuation<? super R>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super R>);
     method public static suspend <R> Object? useWriterConnection(androidx.room3.RoomDatabase, kotlin.jvm.functions.Function2<? super androidx.room3.Transactor,? super kotlin.coroutines.Continuation<? super R>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super R>);
     method @SuppressCompatibility @androidx.room3.ExperimentalRoomApi public static suspend <R> Object? withReadTransaction(androidx.room3.RoomDatabase, kotlin.jvm.functions.Function2<? super androidx.room3.TransactionScope<R>,? super kotlin.coroutines.Continuation<? super R>,? extends java.lang.Object?> block, kotlin.coroutines.Continuation<? super R>);

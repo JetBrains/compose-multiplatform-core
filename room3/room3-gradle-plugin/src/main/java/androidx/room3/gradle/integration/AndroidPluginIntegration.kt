@@ -20,7 +20,6 @@ import androidx.room3.gradle.RoomArgumentProvider
 import androidx.room3.gradle.RoomExtension
 import androidx.room3.gradle.RoomExtension.SchemaConfiguration
 import androidx.room3.gradle.RoomSimpleCopyTask
-import androidx.room3.gradle.toOptions
 import androidx.room3.gradle.util.capitalize
 import androidx.room3.gradle.util.check
 import androidx.room3.gradle.util.kspOneTaskClass
@@ -98,11 +97,7 @@ internal class AndroidPluginIntegration(private val common: CommonIntegration) {
             }
 
             apTask.finalizedBy(config.copyTask)
-            common.createArgumentProvider(
-                schemaConfiguration = config,
-                roomOptions = roomExtension.toOptions(),
-                task = apTask,
-            )
+            common.createArgumentProvider(schemaConfiguration = config, task = apTask)
         }
         configureJavaTasks(project, androidVariantTaskNames, argProviderFactory)
         configureKaptTasks(project, androidVariantTaskNames, argProviderFactory)

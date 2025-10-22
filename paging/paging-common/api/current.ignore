@@ -117,8 +117,6 @@ RemovedFromKotlin: androidx.paging.PagingDataPresenter#getOnPagesUpdatedFlow():
     Source breaking change: method androidx.paging.PagingDataPresenter.getOnPagesUpdatedFlow() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.paging.PagingDataPresenter#getSize():
     Source breaking change: method androidx.paging.PagingDataPresenter.getSize() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.paging.PagingDataTransforms#filter(androidx.paging.PagingData<T>, java.util.concurrent.Executor, kotlin.jvm.functions.Function1<? super T,java.lang.Boolean>):
-    Source breaking change: method androidx.paging.PagingDataTransforms.filter(androidx.paging.PagingData<T>,java.util.concurrent.Executor,kotlin.jvm.functions.Function1<? super T,java.lang.Boolean>) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.paging.PagingSource#getInvalid():
     Source breaking change: method androidx.paging.PagingSource.getInvalid() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.paging.PagingSource#getJumpingSupported():

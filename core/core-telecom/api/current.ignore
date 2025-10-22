@@ -27,5 +27,3 @@ RemovedFromKotlin: androidx.core.telecom.CallEndpointCompat#getType():
     Source breaking change: method androidx.core.telecom.CallEndpointCompat.getType() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.core.telecom.CallException#getCode():
     Source breaking change: method androidx.core.telecom.CallException.getCode() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.core.telecom.InCallServiceCompat#getLifecycle():
-    Source breaking change: method androidx.core.telecom.InCallServiceCompat.getLifecycle() can no longer be resolved from Kotlin source

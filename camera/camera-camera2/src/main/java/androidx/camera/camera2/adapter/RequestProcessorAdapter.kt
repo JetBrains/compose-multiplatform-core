@@ -19,6 +19,7 @@ package androidx.camera.camera2.adapter
 import androidx.camera.camera2.config.UseCaseGraphConfig
 import androidx.camera.camera2.impl.CAMERAX_TAG_BUNDLE
 import androidx.camera.camera2.impl.Camera2ImplConfig
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.CameraCallbackMap
 import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.impl.toParameters
@@ -32,7 +33,6 @@ import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.core.CoroutineMutex
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.withLockLaunch
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.RequestProcessor
@@ -134,7 +134,7 @@ public class RequestProcessorAdapter(
         requests: MutableList<RequestProcessor.Request>,
         callback: RequestProcessor.Callback,
     ): Int {
-        Log.debug { "$this#submit" }
+        Camera2Logger.debug { "$this#submit" }
         val sequenceId = sequenceIds.incrementAndGet()
         val requestsToSubmit =
             requests.mapIndexed { index, request ->
@@ -184,7 +184,7 @@ public class RequestProcessorAdapter(
         request: RequestProcessor.Request,
         callback: RequestProcessor.Callback,
     ): Int {
-        Log.debug { "$this#setRepeating" }
+        Camera2Logger.debug { "$this#setRepeating" }
         val sequenceId = sequenceIds.incrementAndGet()
         val requestsToSubmit =
             Request(
@@ -222,14 +222,14 @@ public class RequestProcessorAdapter(
     }
 
     override fun abortCaptures() {
-        Log.debug { "$this#abortCaptures" }
+        Camera2Logger.debug { "$this#abortCaptures" }
         coroutineMutex.withLockLaunch(threads.scope) {
             useCaseGraphConfig.graph.acquireSession().use { it.abort() }
         }
     }
 
     override fun stopRepeating() {
-        Log.debug { "$this#stopRepeating" }
+        Camera2Logger.debug { "$this#stopRepeating" }
         coroutineMutex.withLockLaunch(threads.scope) {
             useCaseGraphConfig.graph.acquireSession().use { it.stopRepeating() }
         }

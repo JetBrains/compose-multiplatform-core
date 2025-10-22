@@ -43,7 +43,8 @@ public class NavigationAdapter implements Navigation {
             WebViewPageBoundaryInterface boundaryInterface =
                     BoundaryInterfaceReflectionUtil.castToSuppLibClass(
                             WebViewPageBoundaryInterface.class, mImpl.getPage());
-            mPage = new PageImpl(boundaryInterface);
+            mPage = (PageImpl) boundaryInterface.getOrCreatePeer(
+                () -> new PageImpl(boundaryInterface));
         }
         return mPage;
     }

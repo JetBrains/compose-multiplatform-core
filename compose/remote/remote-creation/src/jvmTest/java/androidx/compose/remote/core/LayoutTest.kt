@@ -37,7 +37,14 @@ class LayoutTest : LayoutTestPlayer() {
 
     @Rule @JvmField var name = TestName()
 
-    private fun checkLayout(w: Int, h: Int, description: String, ops: ArrayList<TestOperation?>) {
+    private fun checkLayout(
+        w: Int,
+        h: Int,
+        apiLevel: Int,
+        profile: Int,
+        description: String,
+        ops: ArrayList<TestOperation?>,
+    ) {
         if (ops.size == 0) {
             return
         }
@@ -47,7 +54,15 @@ class LayoutTest : LayoutTestPlayer() {
         val function = (ops[0] as TestLayout).layout
         val testParameters = TestParameters(name.getMethodName(), GENERATE_GOLD_FILES)
         val writer =
-            RemoteComposeContext(w, h, description, platform, { root { function.invoke(this) } })
+            RemoteComposeContext(
+                    w,
+                    h,
+                    description,
+                    apiLevel,
+                    profile,
+                    platform,
+                    { root { function.invoke(this) } },
+                )
                 .writer
         play(writer, ops, testParameters)
     }
@@ -98,6 +113,33 @@ class LayoutTest : LayoutTestPlayer() {
                 TestComponentVisibility(2, Component.Visibility.VISIBLE),
                 CaptureComponentTree(),
             )
-        checkLayout(1000, 1000, "Layout", ops)
+        checkLayout(1000, 1000, 7, Profiles.PROFILE_ANDROIDX, "Layout", ops)
+    }
+
+    @Test
+    fun testBaselineRowLayout() {
+        val ops =
+            arrayListOf<TestOperation?>(
+                TestLayout {
+                    row(
+                        Modifier.fillMaxSize().background(Color.YELLOW).padding(8),
+                        horizontal = RowLayout.SPACE_EVENLY,
+                        vertical = RowLayout.CENTER,
+                    ) {
+                        text("the", modifier = Modifier.alignByBaseline())
+                        text("quick", fontSize = 100f, modifier = Modifier.alignByBaseline())
+                        text("brown", fontSize = 30f, modifier = Modifier.alignByBaseline())
+                        text("fox", modifier = Modifier.alignByBaseline())
+                    }
+                }
+            )
+        checkLayout(
+            1000,
+            1000,
+            7,
+            Profiles.PROFILE_ANDROIDX or Profiles.PROFILE_EXPERIMENTAL,
+            "Layout",
+            ops,
+        )
     }
 }

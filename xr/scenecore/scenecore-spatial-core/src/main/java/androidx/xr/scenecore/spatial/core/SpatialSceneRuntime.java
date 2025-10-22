@@ -100,7 +100,7 @@ import java.util.function.Supplier;
 // Suppress BanSynchronizedMethods for onSpatialStateChanged().
 // Suppress BanConcurrentHashMap for mSpatialCapabilitiesChangedListeners since XR minSdk is 24.
 @SuppressWarnings({"BanSynchronizedMethods", "BanConcurrentHashMap"})
- @RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory {
     private @Nullable Activity mActivity;
     private final ScheduledExecutorService mExecutor;
@@ -232,16 +232,16 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
             @NonNull EntityManager entityManager,
             @NonNull PerceptionLibrary perceptionLibrary,
             boolean unscaledGravityAlignedActivitySpace) {
-                return create(
-                        activity,
-                        executor,
-                        extensions,
-                        entityManager,
-                        perceptionLibrary,
-                        unscaledGravityAlignedActivitySpace,
-                        /* sceneRootNode = */ extensions.createNode(),
-                        /* taskWindowLeashNode = */ extensions.createNode());
-            }
+        return create(
+                activity,
+                executor,
+                extensions,
+                entityManager,
+                perceptionLibrary,
+                unscaledGravityAlignedActivitySpace,
+                /* sceneRootNode= */ extensions.createNode(),
+                /* taskWindowLeashNode= */ extensions.createNode());
+    }
 
     public static @NonNull SpatialSceneRuntime create(
             @NonNull Activity activity,
@@ -254,9 +254,9 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                 Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
                 new EntityManager(),
                 new PerceptionLibrary(),
-                /* unscaledGravityAlignedActivitySpace = */ false,
-                /* sceneRootNode = */ sceneRootNode,
-                /* taskWindowLeashNode = */ taskWindowLeashNode);
+                /* unscaledGravityAlignedActivitySpace= */ false,
+                /* sceneRootNode= */ sceneRootNode,
+                /* taskWindowLeashNode= */ taskWindowLeashNode);
     }
 
     static @NonNull SpatialSceneRuntime create(
@@ -409,7 +409,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
 
     @Override
     public void setSpatialModeChangeListener(
-        @NonNull SpatialModeChangeListener spatialModeChangeListener) {
+            @NonNull SpatialModeChangeListener spatialModeChangeListener) {
         mSpatialModeChangeListener = spatialModeChangeListener;
         mActivitySpace.setSpatialModeChangeListener(spatialModeChangeListener);
     }
@@ -560,7 +560,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     public SubspaceNodeEntity createSubspaceNodeEntity(
             @NonNull Node node, @NonNull Dimensions size) {
         SubspaceNodeEntity entity =
-            new SubspaceNodeEntityImpl(mActivity, mExtensions, node, mEntityManager, mExecutor);
+                new SubspaceNodeEntityImpl(mActivity, mExtensions, node, mEntityManager, mExecutor);
         entity.setSize(size);
         return entity;
     }
@@ -597,8 +597,8 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
         boolean spatialCapabilitiesChanged =
                 previousSpatialState == null
                         || !newSpatialState
-                        .getSpatialCapabilities()
-                        .equals(previousSpatialState.getSpatialCapabilities());
+                                .getSpatialCapabilities()
+                                .equals(previousSpatialState.getSpatialCapabilities());
 
         boolean hasBoundsChanged =
                 previousSpatialState == null
@@ -850,4 +850,3 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
         return session.getStereoViews();
     }
 }
-

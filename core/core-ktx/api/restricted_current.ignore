@@ -3,8 +3,6 @@ RemovedFromBytecode: androidx.core.content.ContextKt#getSystemService(android.co
     Binary breaking change: method androidx.core.content.ContextKt.getSystemService(android.content.Context) has been removed from bytecode
 RemovedFromBytecode: androidx.core.text.SpannedStringKt#getSpans(android.text.Spanned, int, int):
     Binary breaking change: method androidx.core.text.SpannedStringKt.getSpans(android.text.Spanned,int,int) has been removed from bytecode
-RemovedFromBytecode: androidx.core.view.ViewKt#updateLayoutParams(android.view.View, kotlin.jvm.functions.Function1<? super android.view.ViewGroup.LayoutParams,kotlin.Unit>):
-    Binary breaking change: method androidx.core.view.ViewKt.updateLayoutParams(android.view.View,kotlin.jvm.functions.Function1<T,kotlin.Unit>) has been removed from bytecode
 
 
 RemovedFromKotlin: androidx.core.graphics.ColorKt#getAlpha(int):

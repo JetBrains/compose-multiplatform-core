@@ -42,7 +42,8 @@ public class MainThreadAsyncHandlerTest {
         handler.post(() -> didRun.set(true));
 
         boolean ranBeforeTrigger = didRun.get();
-        ShadowLooper.runMainLooperOneTask();
+        // Drain the main looper's message queue to ensure our posted task is executed.
+        ShadowLooper.idleMainLooper();
         boolean ranAfterTrigger = didRun.get();
 
         assertThat(ranBeforeTrigger).isFalse();

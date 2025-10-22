@@ -19,11 +19,11 @@ package androidx.xr.compose.subspace
 import androidx.annotation.IntRange
 import androidx.xr.arcore.ArDevice
 import androidx.xr.compose.spatial.ExperimentalUserSubspaceApi
+import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.scene
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -43,7 +43,7 @@ public abstract class LockingBehavior internal constructor() {
 
     internal abstract suspend fun configure(
         session: Session,
-        trailingEntity: Entity,
+        trailingEntity: CoreGroupEntity,
         lockTo: BodyPart = BodyPart.Head,
         lockDimensions: LockDimensions = LockDimensions.All,
     )
@@ -97,7 +97,7 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
         totalFrames = (durationMs / TIME_BETWEEN_ANIMATION_TICKS).toInt().coerceAtLeast(1)
     }
 
-    private var trailingEntity: Entity? = null
+    private var trailingEntity: CoreGroupEntity? = null
     private var animationCounter: Int = 999
     private var startPose: Pose = Pose.Identity
 
@@ -106,7 +106,7 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
         var t: Float = animationCounter.toFloat() / totalFrames
         t = t * t * (HERMITE_CONSTANT1 - HERMITE_CONSTANT2 * t)
         val nextPose = Pose.lerp(startPose, targetCurrentPose, t)
-        trailingEntity?.setPose(nextPose)
+        trailingEntity?.poseInMeters = nextPose
         animationCounter++
         if (animationCounter <= totalFrames) {
             CoroutineScope(Dispatchers.Main).launch {
@@ -117,7 +117,7 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
     }
 
     fun startAnimationCriteria(): Boolean {
-        val trailingEntityCurrentPose = trailingEntity?.getPose() ?: Pose.Identity
+        val trailingEntityCurrentPose = trailingEntity?.poseInMeters ?: Pose.Identity
 
         val translationDelta =
             (trailingEntityCurrentPose.translation - targetCurrentPose.translation).length
@@ -135,7 +135,7 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
         // If the target has moved significantly enough, start the animation over.
         else {
             if (startAnimationCriteria()) {
-                val trailingEntityCurrentPose = trailingEntity?.getPose() ?: Pose.Identity
+                val trailingEntityCurrentPose = trailingEntity?.poseInMeters ?: Pose.Identity
                 startPose = trailingEntityCurrentPose
                 animationCounter = 1
                 animate()
@@ -145,7 +145,7 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
 
     override suspend fun configure(
         session: Session,
-        trailingEntity: Entity,
+        trailingEntity: CoreGroupEntity,
         lockTo: BodyPart,
         lockDimensions: LockDimensions,
     ) {
@@ -225,7 +225,7 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
 internal class StaticLockingBehavior() : LockingBehavior() {
     override suspend fun configure(
         session: Session,
-        trailingEntity: Entity,
+        trailingEntity: CoreGroupEntity,
         lockTo: BodyPart,
         lockDimensions: LockDimensions,
     ) {
@@ -242,8 +242,8 @@ internal class StaticLockingBehavior() : LockingBehavior() {
                 )
 
             // Update the trailingEntity just once.
-            if (trailingEntity.getPose() == Pose.Identity) {
-                trailingEntity.setPose(targetCurrentPose)
+            if (trailingEntity.poseInMeters == Pose.Identity) {
+                trailingEntity.poseInMeters = targetCurrentPose
                 coroutineContext.cancel()
             }
         }

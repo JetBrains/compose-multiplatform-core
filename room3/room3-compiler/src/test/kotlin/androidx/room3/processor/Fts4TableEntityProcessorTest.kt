@@ -20,7 +20,7 @@ import androidx.room3.FtsOptions
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.parser.FtsVersion
 import androidx.room3.parser.SQLTypeAffinity
 import androidx.room3.testing.context
@@ -86,7 +86,7 @@ class Fts4TableEntityProcessorTest : BaseFtsEntityParserTest() {
 
     @Test
     fun missingEntityAnnotation() {
-        runProcessorTest(
+        runKspTest(
             sources =
                 listOf(
                     Source.java(

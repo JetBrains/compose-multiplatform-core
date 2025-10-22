@@ -19,6 +19,7 @@ package androidx.slidingpanelayout.widget
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Canvas
+import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -2258,7 +2259,26 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             }
 
             val bounds = computeDividerTargetRect(tmpRect, visualDividerPosition)
-            if (parent.getChildVisibleRect(this@SlidingPaneLayout, bounds, null)) {
+            val center = Point(bounds.centerX(), bounds.centerY())
+            if (parent.getChildVisibleRect(this@SlidingPaneLayout, bounds, center)) {
+                // The bounds is still visible, but it's too small after clip.
+                // Enlarge the bounds so that A11y services won't ignore it.
+                // We have to use the center of the unclipped bounds, so that it's still aligned
+                // with the divider position.
+                if (bounds.width() < touchTargetMin) {
+                    val left = center.x - touchTargetMin / 2
+                    val right = left + touchTargetMin
+                    bounds.left = left
+                    bounds.right = right
+                }
+
+                if (bounds.height() < touchTargetMin) {
+                    val top = center.y - touchTargetMin / 2
+                    val bottom = top + touchTargetMin
+                    bounds.top = top
+                    bounds.bottom = bottom
+                }
+
                 val windowLocation = IntArray(2)
                 val screenLocation = IntArray(2)
                 getLocationInWindow(windowLocation)

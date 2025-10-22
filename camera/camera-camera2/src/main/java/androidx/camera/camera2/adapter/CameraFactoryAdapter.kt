@@ -20,13 +20,13 @@ import androidx.camera.camera2.config.CameraAppComponent
 import androidx.camera.camera2.config.CameraAppConfig
 import androidx.camera.camera2.config.CameraConfig
 import androidx.camera.camera2.config.DaggerCameraAppComponent
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.CameraInteropStateCallbackRepository
 import androidx.camera.camera2.internal.CameraCompatibilityFilter
 import androidx.camera.camera2.internal.CameraSelectionOptimizer
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.core.Debug
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.core.SystemTimeSource
 import androidx.camera.camera2.pipe.core.Timestamps
 import androidx.camera.camera2.pipe.core.Timestamps.formatMs
@@ -78,7 +78,9 @@ internal class CameraFactoryAdapter(
                     )
                 )
                 .build()
-        debug { "Created CameraFactoryAdapter in ${start.measureNow(timeSource).formatMs()}" }
+        Camera2Logger.debug {
+            "Created CameraFactoryAdapter in ${start.measureNow(timeSource).formatMs()}"
+        }
         Debug.traceStop()
         result
     }
@@ -114,7 +116,9 @@ internal class CameraFactoryAdapter(
             if (availableCameraIds == filteredIds) {
                 return // No change
             }
-            debug { "Updated available camera list: $availableCameraIds -> $filteredIds" }
+            Camera2Logger.debug {
+                "Updated available camera list: $availableCameraIds -> $filteredIds"
+            }
             availableCameraIds = filteredIds
         }
     }

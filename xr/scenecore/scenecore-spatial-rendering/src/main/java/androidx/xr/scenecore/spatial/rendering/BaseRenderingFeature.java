@@ -68,8 +68,9 @@ abstract class BaseRenderingFeature implements RenderingFeature {
         ImpressNode subspaceImpressNode = mImpressApi.createImpressNode();
         subspaceName += subspaceImpressNode.getHandle();
 
-        mSubspace = mSplitEngineSubspaceManager.createSubspace(
-                subspaceName, subspaceImpressNode.getHandle());
+        mSubspace =
+                mSplitEngineSubspaceManager.createSubspace(
+                        subspaceName, subspaceImpressNode.getHandle());
 
         // If mSplitEngineSubspaceManager is mock version, createSubspace might return null.
         if (mSubspace != null) {

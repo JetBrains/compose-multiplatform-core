@@ -378,6 +378,15 @@ public class Component extends PaintOperation
         // Nothing here
     }
 
+    /**
+     * Returns the value for the given alignment line
+     *
+     * @param line type of line
+     */
+    public float getAlignValue(@NonNull PaintContext context, float line) {
+        return 0f;
+    }
+
     public static class Visibility {
 
         public static final int GONE = 0;

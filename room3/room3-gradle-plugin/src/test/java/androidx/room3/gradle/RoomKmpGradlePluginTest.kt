@@ -30,7 +30,7 @@ class RoomKmpGradlePluginTest {
         projectSetup.getLibraryLatestVersionInLocalRepo("androidx/room3/room3-compiler")
     }
 
-    private fun setup(projectRoot: File = projectSetup.rootDir, generateKotlin: String = "true") {
+    private fun setup(projectRoot: File = projectSetup.rootDir) {
         // copy test project
         File("src/test/test-data/multiplatform-project").copyRecursively(projectRoot)
 
@@ -96,7 +96,6 @@ class RoomKmpGradlePluginTest {
             |  schemaDirectory("android", "${'$'}projectDir/schemas/android")
             |  schemaDirectory("linuxX64", "${'$'}projectDir/schemas/native")
             |  schemaDirectory("jvm", "${'$'}projectDir/schemas/jvm")
-            |  generateKotlin = $generateKotlin
             |}
             |
             |ksp {
@@ -138,41 +137,8 @@ class RoomKmpGradlePluginTest {
     }
 
     @Test
-    fun `Generate Java with Non-Android targets error`() {
-        setup(generateKotlin = "false")
-
-        // Common should fail with Kotlin codegen off as there are JVM and Native targets from it
-        runGradle(COMMON_KSP_TASK, projectSetup = projectSetup, expectFailure = true).let { result
-            ->
-            assertThat(result.output)
-                .contains("Cannot generate Java targeting a non-Android platform")
-            result.assertTaskOutcome(COMMON_KSP_TASK, TaskOutcome.FAILED)
-        }
-
-        // Native should fail with Kotlin codegen off
-        runGradle(NATIVE_COMPILE_TASK, projectSetup = projectSetup, expectFailure = true).let {
-            result ->
-            assertThat(result.output)
-                .contains("Cannot generate Java targeting a non-Android platform")
-            result.assertTaskOutcome(NATIVE_KSP_TASK, TaskOutcome.FAILED)
-        }
-
-        // JVM should fail with Kotlin codegen off
-        runGradle(JVM_COMPILE_TASK, projectSetup = projectSetup, expectFailure = true).let { result
-            ->
-            assertThat(result.output)
-                .contains("Cannot generate Java targeting a non-Android platform")
-            result.assertTaskOutcome(JVM_KSP_TASK, TaskOutcome.FAILED)
-        }
-
-        // Android is OK when Kotlin codegen is off
-        runGradle(ANDROID_COMPILE_TASK, projectSetup = projectSetup, expectFailure = false)
-            .assertTaskOutcome(ANDROID_KSP_TASK, TaskOutcome.SUCCESS)
-    }
-
-    @Test
     fun `Blocking query DAO function in non-Android source set`() {
-        setup(generateKotlin = "true")
+        setup()
 
         searchAndReplace(
             file = projectSetup.rootDir.resolve("src/nativeMain/kotlin/room/testapp/MyDatabase.kt"),
@@ -196,7 +162,7 @@ class RoomKmpGradlePluginTest {
 
     @Test
     fun `Blocking shortcut DAO function in non-Android source set`() {
-        setup(generateKotlin = "true")
+        setup()
 
         searchAndReplace(
             file = projectSetup.rootDir.resolve("src/nativeMain/kotlin/room/testapp/MyDatabase.kt"),
@@ -220,7 +186,7 @@ class RoomKmpGradlePluginTest {
 
     @Test
     fun `Blocking transaction wrapper DAO function in non-Android source set`() {
-        setup(generateKotlin = "true")
+        setup()
 
         searchAndReplace(
             file = projectSetup.rootDir.resolve("src/nativeMain/kotlin/room/testapp/MyDatabase.kt"),

@@ -16,7 +16,6 @@
 
 package androidx.room3.paging.rxjava2
 
-import android.database.Cursor
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
@@ -35,6 +34,7 @@ import androidx.room3.RoomDatabase
 import androidx.room3.RoomSQLiteQuery
 import androidx.room3.paging.util.ThreadSafeInvalidationObserver
 import androidx.room3.util.getColumnIndexOrThrow
+import androidx.sqlite.SQLiteStatement
 import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -462,8 +462,8 @@ class LimitOffsetRxPagingSourceTest {
                     supportSQLiteQuery =
                         SimpleSQLiteQuery("SELECT * FROM $tableName ORDER BY id ASC"),
                 ) {
-                override fun convertRows(cursor: Cursor): List<TestItem> {
-                    return convertRowsHelper(cursor)
+                override fun convertRows(statement: SQLiteStatement): List<TestItem> {
+                    return convertRowsHelper(statement)
                 }
             }
 
@@ -482,8 +482,8 @@ class LimitOffsetRxPagingSourceTest {
                     supportSQLiteQuery =
                         SimpleSQLiteQuery("SELECT * FROM $tableName ORDER BY id ASC"),
                 ) {
-                override fun convertRows(cursor: Cursor): List<TestItem> {
-                    return convertRowsHelper(cursor)
+                override fun convertRows(statement: SQLiteStatement): List<TestItem> {
+                    return convertRowsHelper(statement)
                 }
             }
 
@@ -502,8 +502,8 @@ class LimitOffsetRxPagingSourceTest {
                     supportSQLiteQuery =
                         SimpleSQLiteQuery("SELECT * FROM $tableName ORDER BY id ASC"),
                 ) {
-                override fun convertRows(cursor: Cursor): List<TestItem> {
-                    return convertRowsHelper(cursor)
+                override fun convertRows(statement: SQLiteStatement): List<TestItem> {
+                    return convertRowsHelper(statement)
                 }
             }
 
@@ -561,14 +561,16 @@ private class LimitOffsetRxPagingSourceImpl(
         sourceQuery = RoomSQLiteQuery.acquire(query, 0),
         tables = arrayOf(tableName),
     ) {
-    override fun convertRows(cursor: Cursor): List<TestItem> = convertRowsHelper(cursor)
+    override fun convertRows(statement: SQLiteStatement): List<TestItem> {
+        return convertRowsHelper(statement)
+    }
 }
 
-private fun convertRowsHelper(cursor: Cursor): List<TestItem> {
-    val cursorIndexOfId = getColumnIndexOrThrow(cursor, "id")
+private fun convertRowsHelper(statement: SQLiteStatement): List<TestItem> {
+    val cursorIndexOfId = getColumnIndexOrThrow(statement, "id")
     val data = mutableListOf<TestItem>()
-    while (cursor.moveToNext()) {
-        val tmpId = cursor.getInt(cursorIndexOfId)
+    while (statement.step()) {
+        val tmpId = statement.getInt(cursorIndexOfId)
         data.add(TestItem(tmpId))
     }
     return data

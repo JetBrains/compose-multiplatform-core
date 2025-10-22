@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -85,6 +86,7 @@ import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasPerformImeAction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
@@ -1481,6 +1483,29 @@ internal class BasicTextFieldTest {
                 rememberTextFieldState("A".repeat(100_000)),
                 onTextLayout = { textLayoutProvider = it },
             )
+        }
+
+        rule.runOnIdle {
+            assertThat(textLayoutProvider?.invoke()?.layoutInput?.text?.length).isEqualTo(100_000)
+        }
+    }
+
+    @Test
+    fun longText_doesNotCrash_singleLine() {
+        var textLayoutProvider: (() -> TextLayoutResult?)? = null
+        inputMethodInterceptor.setTextFieldTestContent {
+            BasicTextField(
+                rememberTextFieldState("A".repeat(100_000)),
+                lineLimits = TextFieldLineLimits.SingleLine,
+                onTextLayout = { textLayoutProvider = it },
+                modifier = Modifier.height(56.dp).fillMaxWidth(),
+            )
+        }
+
+        rule.onNode(hasSetTextAction()).requestFocus()
+
+        inputMethodInterceptor.withInputConnection {
+            requestCursorUpdates(InputConnection.CURSOR_UPDATE_IMMEDIATE)
         }
 
         rule.runOnIdle {

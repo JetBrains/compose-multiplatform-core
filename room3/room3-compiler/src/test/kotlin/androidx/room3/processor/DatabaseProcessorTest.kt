@@ -19,7 +19,6 @@ package androidx.room3.processor
 import COMMON
 import androidx.kruth.assertThat
 import androidx.room3.DatabaseProcessingStep
-import androidx.room3.RoomKspProcessor
 import androidx.room3.RoomProcessor
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.processing.XType
@@ -29,8 +28,8 @@ import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.compileFiles
 import androidx.room3.compiler.processing.util.compileFilesIntoJar
+import androidx.room3.compiler.processing.util.runKspProcessorTest
 import androidx.room3.compiler.processing.util.runKspTest
-import androidx.room3.compiler.processing.util.runProcessorTest
 import androidx.room3.parser.ParsedQuery
 import androidx.room3.parser.QueryType
 import androidx.room3.parser.Table
@@ -511,17 +510,16 @@ class DatabaseProcessorTest {
                 }
                 """,
             )
-        runProcessorTest(
+        runKspProcessorTest(
             sources = listOf(BOOK, BOOK_DAO, DB1, DB2, db1_2),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-            createProcessingSteps = { listOf(DatabaseProcessingStep()) },
+            symbolProcessorProviders = listOf(RoomProcessor.Provider()),
         ) { result ->
-            result.generatedSourceFileWithPath("foo/bar/Db1_Impl.java")
-            result.generatedSourceFileWithPath("foo/bar/Db2_Impl.java")
-            result.generatedSourceFileWithPath("foo/barx/Db1_Impl.java")
-            result.generatedSourceFileWithPath("foo/bar/BookDao_Db1_0_Impl.java")
-            result.generatedSourceFileWithPath("foo/bar/BookDao_Db1_1_Impl.java")
-            result.generatedSourceFileWithPath("foo/bar/BookDao_Db2_Impl.java")
+            result.generatedSourceFileWithPath("foo/bar/Db1_Impl.kt")
+            result.generatedSourceFileWithPath("foo/bar/Db2_Impl.kt")
+            result.generatedSourceFileWithPath("foo/barx/Db1_Impl.kt")
+            result.generatedSourceFileWithPath("foo/bar/BookDao_Db1_0_Impl.kt")
+            result.generatedSourceFileWithPath("foo/bar/BookDao_Db1_1_Impl.kt")
+            result.generatedSourceFileWithPath("foo/bar/BookDao_Db2_Impl.kt")
         }
     }
 
@@ -1260,7 +1258,7 @@ class DatabaseProcessorTest {
                 }
                 """,
             )
-        runProcessorTest(sources = listOf(badDaoType)) { invocation ->
+        runKspTest(sources = listOf(badDaoType)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("foo.bar.MyDb")
             val result =
                 DatabaseProcessor(baseContext = invocation.context, element = element).process()
@@ -1284,7 +1282,7 @@ class DatabaseProcessorTest {
                 }
                 """,
             )
-        runProcessorTest(listOf(badDaoType)) { invocation ->
+        runKspTest(listOf(badDaoType)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("foo.bar.MyDb")
             val result =
                 DatabaseProcessor(baseContext = invocation.context, element = element).process()
@@ -1506,9 +1504,9 @@ class DatabaseProcessorTest {
             """
                     .trimIndent(),
             )
-        runProcessorTest(
+        runKspTest(
             sources = listOf(dbSource, USER),
-            options = mapOf("room.schemaLocation" to "schemas/", "room.generateKotlin" to "false"),
+            options = mapOf("room.schemaLocation" to "schemas/"),
         ) { invocation ->
             val dbAnnotationName = "androidx.room3.Database"
             val roundElements =
@@ -1564,10 +1562,9 @@ class DatabaseProcessorTest {
                         .trimIndent(),
                 )
             }
-        runProcessorTest(
+        runKspProcessorTest(
             sources = listOf(dbSource, USER),
-            javacProcessors = listOf(RoomProcessor()),
-            symbolProcessorProviders = listOf(RoomKspProcessor.Provider()),
+            symbolProcessorProviders = listOf(RoomProcessor.Provider()),
             options = mapOf("room.exportSchemaResource" to "true"),
         ) {
             it.generatedTextResourceFileWithPath("schemas/foo.bar.MyDb/1.json").isNotEmpty()
@@ -1594,10 +1591,7 @@ class DatabaseProcessorTest {
                 }
                 """,
             )
-        runProcessorTest(
-            sources = listOf(jvmNameInDaoGetter),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        ) { invocation ->
+        runKspTest(sources = listOf(jvmNameInDaoGetter)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("foo.bar.MyDb")
             DatabaseProcessor(baseContext = invocation.context, element = element).process()
             invocation.assertCompilationResult {
@@ -1633,10 +1627,7 @@ class DatabaseProcessorTest {
             """
                     .trimIndent(),
             )
-        runKspTest(
-            sources = listOf(src),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-        ) { invocation ->
+        runKspTest(sources = listOf(src)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement("MyDatabase")
             DatabaseProcessor(baseContext = invocation.context, element = element).process()
             invocation.assertCompilationResult { hasNoWarnings() }
@@ -1666,10 +1657,7 @@ class DatabaseProcessorTest {
         views: Map<String, Set<String>>,
         body: (List<DatabaseView>, XTestInvocation) -> Unit,
     ) {
-        runProcessorTest(
-            sources = listOf(DB3, BOOK),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        ) { invocation ->
+        runKspTest(sources = listOf(DB3, BOOK)) { invocation ->
             val database =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(androidx.room3.Database::class.qualifiedName!!)
@@ -1719,10 +1707,9 @@ class DatabaseProcessorTest {
                 }
                 """,
             )
-        runProcessorTest(
+        runKspProcessorTest(
             sources = listOf(BOOK, bookDao) + dbs,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-            createProcessingSteps = { listOf(DatabaseProcessingStep()) },
+            symbolProcessorProviders = listOf(RoomProcessor.Provider()),
         ) {
             onCompilationResult?.invoke(it)
         }
@@ -1734,14 +1721,10 @@ class DatabaseProcessorTest {
         classpath: List<File> = emptyList(),
         handler: (Database, XTestInvocation) -> Unit,
     ) {
-        runProcessorTest(
+        runKspTest(
             sources = otherFiles.toList() + Source.java("foo.bar.MyDb", DATABASE_PREFIX + input),
             classpath = classpath,
-            options =
-                mapOf(
-                    "room.schemaLocation" to schemaFolder.root.absolutePath,
-                    Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false",
-                ),
+            options = mapOf("room.schemaLocation" to schemaFolder.root.absolutePath),
         ) { invocation ->
             val entity =
                 invocation.roundEnv

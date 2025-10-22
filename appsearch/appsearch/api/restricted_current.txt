@@ -107,7 +107,7 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.AppSearchBatchResult.Builder<KeyType!,ValueType!> setSuccess(KeyType, ValueType?);
   }
 
-  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class AppSearchBlobHandle {
+  public final class AppSearchBlobHandle {
     method public static androidx.appsearch.app.AppSearchBlobHandle createWithSha256(byte[], String, String, String);
     method public String getDatabaseName();
     method public String getNamespace();
@@ -151,14 +151,14 @@ package androidx.appsearch.app {
     method public String getSchemaType();
   }
 
-  @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name="BLOB_STORAGE") @androidx.appsearch.app.ExperimentalAppSearchApi public static final class AppSearchSchema.BlobHandlePropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
+  @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public static final class AppSearchSchema.BlobHandlePropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
   }
 
-  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final class AppSearchSchema.BlobHandlePropertyConfig.Builder {
+  public static final class AppSearchSchema.BlobHandlePropertyConfig.Builder {
     ctor public AppSearchSchema.BlobHandlePropertyConfig.Builder(String);
     method public androidx.appsearch.app.AppSearchSchema.BlobHandlePropertyConfig build();
     method public androidx.appsearch.app.AppSearchSchema.BlobHandlePropertyConfig.Builder setCardinality(int);
-    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) public androidx.appsearch.app.AppSearchSchema.BlobHandlePropertyConfig.Builder setDescription(String);
+    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_SET_DESCRIPTION) @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchSchema.BlobHandlePropertyConfig.Builder setDescription(String);
   }
 
   public static final class AppSearchSchema.BooleanPropertyConfig extends androidx.appsearch.app.AppSearchSchema.PropertyConfig {
@@ -295,27 +295,27 @@ package androidx.appsearch.app {
 
   public interface AppSearchSession extends java.io.Closeable {
     method public void close();
-    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name="BLOB_STORAGE") @androidx.appsearch.app.ExperimentalAppSearchApi public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.CommitBlobResponse!> commitBlobAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.CommitBlobResponse!> commitBlobAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,androidx.appsearch.app.GenericDocument!>!> getByDocumentIdAsync(androidx.appsearch.app.GetByDocumentIdRequest);
     method public androidx.appsearch.app.Features getFeatures();
     method public com.google.common.util.concurrent.ListenableFuture<java.util.Set<java.lang.String!>!> getNamespacesAsync();
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.GetSchemaResponse!> getSchemaAsync();
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.StorageInfo!> getStorageInfoAsync();
-    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name="BLOB_STORAGE") @androidx.appsearch.app.ExperimentalAppSearchApi public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.OpenBlobForReadResponse!> openBlobForReadAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
-    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name="BLOB_STORAGE") @androidx.appsearch.app.ExperimentalAppSearchApi public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.OpenBlobForWriteResponse!> openBlobForWriteAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.OpenBlobForReadResponse!> openBlobForReadAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.OpenBlobForWriteResponse!> openBlobForWriteAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> putAsync(androidx.appsearch.app.PutDocumentsRequest);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,java.lang.Void!>!> removeAsync(androidx.appsearch.app.RemoveByDocumentIdRequest);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> removeAsync(String, androidx.appsearch.app.SearchSpec);
-    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name="BLOB_STORAGE") @androidx.appsearch.app.ExperimentalAppSearchApi public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.RemoveBlobResponse!> removeBlobAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.RemoveBlobResponse!> removeBlobAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> reportUsageAsync(androidx.appsearch.app.ReportUsageRequest);
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> requestFlushAsync();
     method public androidx.appsearch.app.SearchResults search(String, androidx.appsearch.app.SearchSpec);
     method public com.google.common.util.concurrent.ListenableFuture<java.util.List<androidx.appsearch.app.SearchSuggestionResult!>!> searchSuggestionAsync(String, androidx.appsearch.app.SearchSuggestionSpec);
-    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name="BLOB_STORAGE") @androidx.appsearch.app.ExperimentalAppSearchApi public default com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> setBlobVisibilityAsync(androidx.appsearch.app.SetBlobVisibilityRequest);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> setBlobVisibilityAsync(androidx.appsearch.app.SetBlobVisibilityRequest);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.SetSchemaResponse!> setSchemaAsync(androidx.appsearch.app.SetSchemaRequest);
   }
 
-  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class CommitBlobResponse {
+  public final class CommitBlobResponse {
     ctor public CommitBlobResponse(androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,java.lang.Void!>);
     method public androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,java.lang.Void!> getResult();
     method public void writeToParcel(android.os.Parcel, int);
@@ -368,6 +368,7 @@ package androidx.appsearch.app {
     field public static final String NUMERIC_SEARCH = "NUMERIC_SEARCH";
     field public static final String SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES";
     field public static final String SCHEMA_ADD_PARENT_TYPE = "SCHEMA_ADD_PARENT_TYPE";
+    field public static final String SCHEMA_BLOB_HANDLE = "SCHEMA_BLOB_HANDLE";
     field public static final String SCHEMA_EMBEDDING_PROPERTY_CONFIG = "SCHEMA_EMBEDDING_PROPERTY_CONFIG";
     field @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final String SCHEMA_EMBEDDING_QUANTIZATION = "SCHEMA_EMBEDDING_QUANTIZATION";
     field public static final String SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES";
@@ -402,8 +403,8 @@ package androidx.appsearch.app {
     method public String getId();
     method public String getNamespace();
     method public Object? getProperty(String);
-    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchBlobHandle? getPropertyBlobHandle(String);
-    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.AppSearchBlobHandle![]? getPropertyBlobHandleArray(String);
+    method public androidx.appsearch.app.AppSearchBlobHandle? getPropertyBlobHandle(String);
+    method public androidx.appsearch.app.AppSearchBlobHandle![]? getPropertyBlobHandleArray(String);
     method public boolean getPropertyBoolean(String);
     method public boolean[]? getPropertyBooleanArray(String);
     method public byte[]? getPropertyBytes(String);
@@ -434,7 +435,7 @@ package androidx.appsearch.app {
     method public BuilderType setCreationTimestampMillis(long);
     method public BuilderType setId(String);
     method public BuilderType setNamespace(String);
-    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name="BLOB_STORAGE") @androidx.appsearch.app.ExperimentalAppSearchApi public BuilderType setPropertyBlobHandle(String, androidx.appsearch.app.AppSearchBlobHandle!...);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public BuilderType setPropertyBlobHandle(String, androidx.appsearch.app.AppSearchBlobHandle!...);
     method public BuilderType setPropertyBoolean(String, boolean...);
     method public BuilderType setPropertyBytes(String, byte[]!...);
     method public BuilderType setPropertyDocument(String, androidx.appsearch.app.GenericDocument!...);
@@ -499,7 +500,7 @@ package androidx.appsearch.app {
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.GLOBAL_SEARCH_SESSION_GET_BY_ID) public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.AppSearchBatchResult<java.lang.String!,androidx.appsearch.app.GenericDocument!>!> getByDocumentIdAsync(String, String, androidx.appsearch.app.GetByDocumentIdRequest);
     method public androidx.appsearch.app.Features getFeatures();
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.GLOBAL_SEARCH_SESSION_GET_SCHEMA) public com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.GetSchemaResponse!> getSchemaAsync(String, String);
-    method @SuppressCompatibility @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name="BLOB_STORAGE") @androidx.appsearch.app.ExperimentalAppSearchApi public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.OpenBlobForReadResponse!> openBlobForReadAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
+    method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.SCHEMA_BLOB_HANDLE) public default com.google.common.util.concurrent.ListenableFuture<androidx.appsearch.app.OpenBlobForReadResponse!> openBlobForReadAsync(java.util.Set<androidx.appsearch.app.AppSearchBlobHandle!>);
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.GLOBAL_SEARCH_SESSION_REGISTER_OBSERVER_CALLBACK) public void registerObserverCallback(String, androidx.appsearch.observer.ObserverSpec, java.util.concurrent.Executor, androidx.appsearch.observer.ObserverCallback) throws androidx.appsearch.exceptions.AppSearchException;
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> reportSystemUsageAsync(androidx.appsearch.app.ReportSystemUsageRequest);
     method public androidx.appsearch.app.SearchResults search(String, androidx.appsearch.app.SearchSpec);
@@ -542,7 +543,7 @@ package androidx.appsearch.app {
     method public abstract boolean shouldMigrate(int, int);
   }
 
-  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class OpenBlobForReadResponse implements java.io.Closeable {
+  public final class OpenBlobForReadResponse implements java.io.Closeable {
     ctor public OpenBlobForReadResponse(androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,android.os.ParcelFileDescriptor!>);
     method public void close();
     method public androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,android.os.ParcelFileDescriptor!> getResult();
@@ -550,7 +551,7 @@ package androidx.appsearch.app {
     field public static final android.os.Parcelable.Creator<androidx.appsearch.app.OpenBlobForReadResponse!> CREATOR;
   }
 
-  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class OpenBlobForWriteResponse implements java.io.Closeable {
+  public final class OpenBlobForWriteResponse implements java.io.Closeable {
     ctor public OpenBlobForWriteResponse(androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,android.os.ParcelFileDescriptor!>);
     method public void close();
     method public androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,android.os.ParcelFileDescriptor!> getResult();
@@ -596,7 +597,7 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.PutDocumentsRequest build();
   }
 
-  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public final class RemoveBlobResponse {
+  public final class RemoveBlobResponse {
     ctor public RemoveBlobResponse(androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,java.lang.Void!>);
     method public androidx.appsearch.app.AppSearchBatchResult<androidx.appsearch.app.AppSearchBlobHandle!,java.lang.Void!> getResult();
     method public void writeToParcel(android.os.Parcel, int);
@@ -900,12 +901,12 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.SearchSuggestionSpec.Builder setRankingStrategy(int);
   }
 
-  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public class SetBlobVisibilityRequest {
+  public class SetBlobVisibilityRequest {
     method public java.util.Set<java.lang.String!> getNamespacesNotDisplayedBySystem();
     method public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.SchemaVisibilityConfig!>!> getNamespacesVisibleToConfigs();
   }
 
-  @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static final class SetBlobVisibilityRequest.Builder {
+  public static final class SetBlobVisibilityRequest.Builder {
     ctor public SetBlobVisibilityRequest.Builder();
     method public androidx.appsearch.app.SetBlobVisibilityRequest.Builder addNamespaceVisibleToConfig(String, androidx.appsearch.app.SchemaVisibilityConfig);
     method public androidx.appsearch.app.SetBlobVisibilityRequest build();
@@ -992,8 +993,8 @@ package androidx.appsearch.app {
   public final class StorageInfo {
     method public int getAliveDocumentsCount();
     method public int getAliveNamespacesCount();
-    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public int getBlobsCount();
-    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public long getBlobsSizeBytes();
+    method public int getBlobsCount();
+    method public long getBlobsSizeBytes();
     method public long getSizeBytes();
   }
 
@@ -1002,8 +1003,8 @@ package androidx.appsearch.app {
     method public androidx.appsearch.app.StorageInfo build();
     method public androidx.appsearch.app.StorageInfo.Builder setAliveDocumentsCount(int);
     method public androidx.appsearch.app.StorageInfo.Builder setAliveNamespacesCount(int);
-    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.StorageInfo.Builder setBlobsCount(int);
-    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.StorageInfo.Builder setBlobsSizeBytes(long);
+    method public androidx.appsearch.app.StorageInfo.Builder setBlobsCount(int);
+    method public androidx.appsearch.app.StorageInfo.Builder setBlobsSizeBytes(long);
     method public androidx.appsearch.app.StorageInfo.Builder setSizeBytes(long);
   }
 

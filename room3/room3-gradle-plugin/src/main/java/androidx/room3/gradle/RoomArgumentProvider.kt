@@ -20,8 +20,6 @@ import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Nested
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -39,7 +37,6 @@ class RoomArgumentProvider(
     @get:PathSensitive(PathSensitivity.RELATIVE)
     val schemaInputDir: Provider<Directory>,
     @get:OutputDirectory val schemaOutputDir: Provider<Directory>,
-    @get:Nested val options: RoomOptions,
 ) : CommandLineArgumentProvider {
     override fun asArguments() = buildList {
         val prefix = if (forKsp) "" else "-A"
@@ -48,14 +45,5 @@ class RoomArgumentProvider(
         val outputPath = schemaOutputDir.get().asFile.path.replace(" ", "%20")
         add("${prefix}room.internal.schemaInput=$inputPath")
         add("${prefix}room.internal.schemaOutput=$outputPath")
-        if (options.generateKotlin != null) {
-            add("${prefix}room.generateKotlin=${options.generateKotlin}")
-        }
     }
-}
-
-class RoomOptions(@Optional @get:Input val generateKotlin: Boolean?)
-
-internal fun RoomExtension.toOptions(): RoomOptions {
-    return RoomOptions(generateKotlin = this.generateKotlin)
 }

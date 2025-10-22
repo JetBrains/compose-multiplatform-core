@@ -427,7 +427,11 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
         val itemSize = screenHeight / 4
 
-        val result = strategy.measure(listOf(itemSize, itemSize))
+        val result =
+            strategy.measure(
+                itemHeights = listOf(itemSize, itemSize),
+                lastMeasuredAnchorItemHeight = itemSize,
+            )
         assertThat(result.visibleItems.size).isEqualTo(2)
     }
 
@@ -549,6 +553,67 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         assertThat(finalResult.visibleItems.map { it.key }).isEqualTo(listOf("B", "D", "E"))
     }
 
+    @Test
+    fun initialLayout_normalLayout_hasCorrectLogicalOffset() {
+        val topPadding = 10.dp
+        val strategy = measurementStrategy(PaddingValues(top = topPadding), reverseLayout = false)
+
+        val result = strategy.measure(listOf(screenHeight / 2))
+
+        // For a normal layout, the logical offset of the first item should be the top padding.
+        val item = result.visibleItems.first()
+        assertThat(item.offset).isEqualTo(with(density) { topPadding.roundToPx() })
+    }
+
+    @Test
+    fun initialLayout_reverseLayout_hasCorrectLogicalOffset() {
+        val bottomPadding = 15.dp
+        val strategy =
+            measurementStrategy(PaddingValues(bottom = bottomPadding), reverseLayout = true)
+
+        val result =
+            strategy.measure(
+                itemHeights = listOf(screenHeight / 2),
+                verticalArrangement = Arrangement.Bottom,
+            )
+
+        // For a reverse layout, the logical offset of the first item should still be the
+        // `beforeContentPadding`, which is the bottom padding in this case.
+        val item = result.visibleItems.first()
+        assertThat(item.offset).isEqualTo(with(density) { bottomPadding.roundToPx() })
+    }
+
+    @Test
+    fun contentPadding_reverseLayout_isAppliedCorrectly() {
+        val topPadding = 5.dp
+        val bottomPadding = 10.dp
+        val topPaddingPx = with(density) { topPadding.roundToPx() }
+        val bottomPaddingPx = with(density) { bottomPadding.roundToPx() }
+        val strategyWithPadding =
+            measurementStrategy(
+                PaddingValues(top = topPadding, bottom = bottomPadding),
+                reverseLayout = true,
+            )
+
+        val result = strategyWithPadding.measure(listOf(screenHeight / 2, screenHeight / 2))
+
+        // In reverseLayout, 'before' padding is at the bottom, 'after' is at the top.
+        assertThat(result.beforeContentPadding).isEqualTo(bottomPaddingPx)
+        assertThat(result.afterContentPadding).isEqualTo(topPaddingPx)
+    }
+
+    @Test
+    fun scrolling_reverseLayout_reportsCorrectCanScrollFlags() {
+        val result =
+            measurementStrategy(reverseLayout = true)
+                .measure(listOf(screenHeight, screenHeight, screenHeight))
+
+        // At the start of a reversed list (bottom), we can scroll forward (up) but not backward
+        // (down).
+        assertThat(result.canScrollForward).isTrue()
+        assertThat(result.canScrollBackward).isFalse()
+    }
+
     private val mockGraphicContext =
         object : GraphicsContext {
             override fun createGraphicsLayer(): GraphicsLayer {
@@ -562,7 +627,10 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
 
     private val mockItemAnimator = LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>()
 
-    private fun measurementStrategy(contentPadding: PaddingValues) =
+    private fun measurementStrategy(
+        contentPadding: PaddingValues = PaddingValues(),
+        reverseLayout: Boolean = false,
+    ) =
         TransformingLazyColumnContentPaddingMeasurementStrategy(
             contentPadding,
             density = density,
@@ -570,6 +638,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             mockGraphicContext,
             mockItemAnimator,
             isScrollInProgress = { false },
+            reverseLayout = reverseLayout,
         )
 
     private val strategy = measurementStrategy(PaddingValues())
@@ -584,10 +653,12 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         anchorItemScrollOffset: Int = 0,
         lastMeasuredAnchorItemHeight: Int = Int.MIN_VALUE,
         scrollToBeConsumed: Float = 0f,
+        reverseLayout: Boolean = false,
     ): TransformingLazyColumnMeasureResult =
         measure(
             itemsCount = itemHeights.size,
-            measuredItemProvider = makeMeasuredItemProvider(itemHeights, keys, transformedHeight),
+            measuredItemProvider =
+                makeMeasuredItemProvider(itemHeights, keys, transformedHeight, reverseLayout),
             keyIndexMap =
                 object : LazyLayoutKeyIndexMap {
                     override fun getIndex(key: Any): Int = keys.indexOf(key)
@@ -640,6 +711,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         itemHeights: List<Int>,
         keys: List<Any>,
         transformedHeight: ((Int, TransformingLazyColumnItemScrollProgress) -> Int)? = null,
+        reverseLayout: Boolean = false,
     ) = MeasuredItemProvider { index, offset, measurementDirection, progressProvider ->
         TransformingLazyColumnMeasuredItem(
             index = index,
@@ -660,6 +732,7 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
             layoutDirection = LayoutDirection.Ltr,
             key = keys[index],
             contentType = null,
+            reverseLayout = reverseLayout,
         )
     }
 }

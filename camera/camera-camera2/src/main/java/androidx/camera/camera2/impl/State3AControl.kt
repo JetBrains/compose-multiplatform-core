@@ -23,7 +23,6 @@ import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.adapter.propagateTo
 import androidx.camera.camera2.compat.workaround.AutoFlashAEModeDisabler
 import androidx.camera.camera2.config.CameraScope
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.CameraControl
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.UseCase
@@ -149,7 +148,7 @@ constructor(
         // Overwrite AE mode to ON_EXTERNAL_FLASH only if required and explicitly supported
         if (tryExternalFlashAeMode) {
             val isSupported = cameraProperties.metadata.isExternalFlashAeModeSupported()
-            debug {
+            Camera2Logger.debug {
                 "State3AControl.invalidate: trying external flash AE mode" +
                     ", supported = $isSupported"
             }
@@ -158,7 +157,9 @@ constructor(
             }
         }
 
-        debug { "State3AControl.getFinalPreferredAeMode: preferAeMode = $preferAeMode" }
+        Camera2Logger.debug {
+            "State3AControl.getFinalPreferredAeMode: preferAeMode = $preferAeMode"
+        }
 
         return preferAeMode
     }

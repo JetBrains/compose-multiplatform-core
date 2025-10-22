@@ -169,12 +169,15 @@ class HeadLockedUiActivity : AppCompatActivity() {
                 pose = Pose(Vector3(0f, -0.8f, -0.05f)),
             )
         mDebugPanel.panelEntity.sizeInPixels = IntSize2d(1500, 1000)
+
+        // Create the head locked star image panel.
+        createHeadLockedPanel()
     }
 
     override fun onResume() {
         super.onResume()
-        // Create the head locked star image panel.
-        createHeadLockedPanel()
+        // Register the animation runnable to update the head locked panel.
+        this.mHeadLockedPanelView.postOnAnimation(animationRunnable)
     }
 
     override fun onStop() {
@@ -191,7 +194,6 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
     private fun createHeadLockedPanel() {
         this.mHeadLockedPanelView = layoutInflater.inflate(R.layout.headlocked_star, null, false)
-        this.mHeadLockedPanelView.postOnAnimation(animationRunnable)
         this.mHeadLockedPanel =
             PanelEntity.create(
                 session = session!!,

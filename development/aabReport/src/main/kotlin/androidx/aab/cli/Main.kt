@@ -29,6 +29,7 @@ import kotlinx.coroutines.runBlocking
 
 var VERBOSE = false
 const val OUTPUT_PATH_PREFIX = "--out="
+const val SO_PATTERN_PREFIX = "--soPatterns="
 
 // this is a simple way to abstract the difference between the two, but should probably define
 // interfaces
@@ -82,6 +83,8 @@ fun usageAndDie() {
                  java -jar <path-to-jar> [--verbose] <path-to-aab> [<path-to-aab2>...]
             CSV Usage:
                  java -jar <path-to-jar> [--verbose] --out=<output_dir_path> --csv <path-to-aab> [<path-to-aab2>...]
+
+            When --out is passed, can also specify --mappingInfo to analyze obfuscation stats.
             """
             .trimIndent()
     )
@@ -98,9 +101,16 @@ fun main(args: Array<String>) = runBlocking {
                     .singleOrNull { it.startsWith(OUTPUT_PATH_PREFIX) }
                     ?.substringAfter(OUTPUT_PATH_PREFIX)
                     ?.replaceFirst("~", System.getProperty("user.home")),
-            verbose = args.contains("--verbose") || args.contains("-v"),
             csv = args.contains("--csv"),
+            dumpMappingDebug = args.contains("--mappingInfo"),
+            soMatchPatterns =
+                args
+                    .singleOrNull { it.startsWith(SO_PATTERN_PREFIX) }
+                    ?.substringAfter(SO_PATTERN_PREFIX)
+                    ?.split(",") ?: emptyList(),
         )
+
+    VERBOSE = args.contains("--verbose") || args.contains("-v")
 
     val pathArgs = args.filter { !it.startsWith("--") }
     if (pathArgs.isEmpty()) {

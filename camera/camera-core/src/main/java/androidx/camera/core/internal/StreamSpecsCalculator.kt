@@ -19,7 +19,6 @@ package androidx.camera.core.internal
 import android.util.Pair
 import android.util.Range
 import android.util.Size
-import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraConfig
@@ -277,11 +276,13 @@ public class StreamSpecsCalculatorImpl(
                     supportedOutputSizesSorter.getSortedSupportedOutputSizes(combinedUseCaseConfig),
                 )
 
-                if (useCase is Preview || useCase is StreamSharing) {
-                    // Let isPreviewStabilizationOn be true only if stabilization mode of Preview
-                    // or StreamSharing (wrapping Preview) is on.
-                    isPreviewStabilizationOn =
-                        combinedUseCaseConfig.previewStabilizationMode == StabilizationMode.ON
+                // Let isPreviewStabilizationOn be true only if stabilization mode of combined use
+                // case config is on for any use case. Preview stabilization can be enabled through
+                // either the Preview use case (which can propagate to StreamSharing) or through
+                // groupable feature in session config (which can be used with VideoCapture as
+                // well).
+                if (combinedUseCaseConfig.previewStabilizationMode == StabilizationMode.ON) {
+                    isPreviewStabilizationOn = true
                 }
             }
 

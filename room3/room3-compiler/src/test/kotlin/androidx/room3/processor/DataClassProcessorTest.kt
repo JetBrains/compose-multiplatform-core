@@ -23,7 +23,7 @@ import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.processing.XFieldElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.parser.SQLTypeAffinity
 import androidx.room3.processor.ProcessorErrors.CANNOT_FIND_GETTER_FOR_PROPERTY
@@ -85,7 +85,7 @@ class DataClassProcessorTest {
                 public void setBaseProperty(String baseProperty){ }
             }
         """
-        runProcessorTest(
+        runKspTest(
             sources =
                 listOf(
                     Source.java(
@@ -1073,7 +1073,7 @@ class DataClassProcessorTest {
             $FOOTER
             """,
             )
-        runProcessorTest(sources = listOf(dataClass)) { invocation ->
+        runKspTest(sources = listOf(dataClass)) { invocation ->
             val element = invocation.processingEnv.requireTypeElement(MY_DATA_CLASS)
             val dataClass1 =
                 DataClassProcessor.createFor(
@@ -1733,7 +1733,7 @@ class DataClassProcessorTest {
                 "foo.bar.TestData.WithJvmOverloads",
             )
             .forEach {
-                runProcessorTest(sources = listOf(TEST_DATA)) { invocation ->
+                runKspTest(sources = listOf(TEST_DATA)) { invocation ->
                     DataClassProcessor.createFor(
                             context = invocation.context,
                             element = invocation.processingEnv.requireTypeElement(it),
@@ -1748,7 +1748,7 @@ class DataClassProcessorTest {
 
     @Test
     fun dataClass_withJvmOverloads_primaryConstructor() {
-        runProcessorTest(sources = listOf(TEST_DATA)) { invocation ->
+        runKspTest(sources = listOf(TEST_DATA)) { invocation ->
             DataClassProcessor.createFor(
                     context = invocation.context,
                     element =
@@ -1778,7 +1778,7 @@ class DataClassProcessorTest {
             }
             """,
             )
-        runProcessorTest(sources = listOf(source)) { invocation ->
+        runKspTest(sources = listOf(source)) { invocation ->
             val dataClass =
                 DataClassProcessor.createFor(
                         context = invocation.context,
@@ -1794,7 +1794,7 @@ class DataClassProcessorTest {
 
     @Test
     fun ignoredColumns_noConstructor() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1833,7 +1833,7 @@ class DataClassProcessorTest {
 
     @Test
     fun ignoredColumns_noSetterGetter() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1870,7 +1870,7 @@ class DataClassProcessorTest {
 
     @Test
     fun ignoredColumns_columnInfo() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1902,7 +1902,7 @@ class DataClassProcessorTest {
 
     @Test
     fun ignoredColumns_missing() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1936,7 +1936,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noSetter_scopeBindStmt() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1965,7 +1965,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noSetter_scopeTwoWay() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -1997,7 +1997,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noSetter_scopeReadFromCursor() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -2029,7 +2029,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noGetter_scopeBindStmt() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -2061,7 +2061,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noGetter_scopeTwoWay() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -2093,7 +2093,7 @@ class DataClassProcessorTest {
 
     @Test
     fun noGetter_scopeReadCursor() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.java(
                     MY_DATA_CLASS.canonicalName,
@@ -2122,7 +2122,7 @@ class DataClassProcessorTest {
 
     @Test
     fun setterStartsWithIs() {
-        runProcessorTest(
+        runKspTest(
             listOf(
                 Source.kotlin(
                     "Book.kt",
@@ -2190,7 +2190,7 @@ class DataClassProcessorTest {
     @Test
     fun embedded_nullability() {
         listOf("foo.bar.TestData.SomeEmbeddedVals").forEach {
-            runProcessorTest(sources = listOf(TEST_DATA)) { invocation ->
+            runKspTest(sources = listOf(TEST_DATA)) { invocation ->
                 val result =
                     DataClassProcessor.createFor(
                             context = invocation.context,
@@ -2238,7 +2238,7 @@ class DataClassProcessorTest {
     ) {
         val dataClassSource = Source.java(MY_DATA_CLASS.canonicalName, code)
         val all = sources.toList() + dataClassSource
-        runProcessorTest(sources = all, classpath = classpath) { invocation ->
+        runKspTest(sources = all, classpath = classpath) { invocation ->
             handler.invoke(
                 DataClassProcessor.createFor(
                         context = invocation.context,

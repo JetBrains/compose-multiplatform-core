@@ -35,8 +35,6 @@ RemovedFromJava: androidx.collection.SparseArrayKt#remove(androidx.collection.Sp
 
 RemovedFromKotlin: androidx.collection.ArraySet#getSize():
     Source breaking change: method androidx.collection.ArraySet.getSize() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.collection.ArraySet#size():
-    Source breaking change: method androidx.collection.ArraySet.size() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.collection.CircularArray#getFirst():
     Source breaking change: method androidx.collection.CircularArray.getFirst() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.collection.CircularArray#getLast():

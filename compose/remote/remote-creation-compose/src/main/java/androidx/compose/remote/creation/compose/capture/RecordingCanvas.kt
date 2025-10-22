@@ -81,7 +81,7 @@ import androidx.compose.ui.graphics.asAndroidPath
  * - the way paint instances are used in normal android views begs for a post-process pass in origmi
  *   to identify reuse (eg if cycling between 3-4 different paint objects, we should identify this
  *   instead of serializing the deltas). On the flip side, this might not be as critical/useful in a
- *   compose perspective (are paint objecs reused this way?)
+ *   compose perspective (are paint objects reused this way?)
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {

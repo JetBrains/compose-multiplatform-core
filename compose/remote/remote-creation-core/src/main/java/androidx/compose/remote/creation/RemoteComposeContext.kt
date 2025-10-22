@@ -25,6 +25,7 @@ import androidx.compose.remote.core.operations.BitmapFontData
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
+import androidx.compose.remote.core.operations.layout.managers.TextLayout
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.actions.Action
 import androidx.compose.remote.creation.modifiers.RecordingModifier
@@ -1334,6 +1335,33 @@ public open class RemoteComposeContext {
 
     public fun rf(v: Number): RFloat {
         return mRemoteWriter.rf(v)
+    }
+
+    public fun text(
+        string: String,
+        modifier: RecordingModifier = RecordingModifier(),
+        color: Int = -16777216,
+        fontSize: Float = 36f,
+        fontStyle: Int = 0,
+        fontWeight: Float = 400f,
+        fontFamily: String? = null,
+        textAlign: Int = TextLayout.TEXT_ALIGN_LEFT,
+        overflow: Int = TextLayout.OVERFLOW_CLIP,
+        maxLines: Int = Int.MAX_VALUE,
+    ) {
+        val textId = mRemoteWriter.textCreateId(string)
+        mRemoteWriter.textComponent(
+            modifier,
+            textId,
+            color,
+            fontSize,
+            fontStyle,
+            fontWeight,
+            fontFamily,
+            textAlign,
+            overflow,
+            maxLines,
+        ) {}
     }
 }
 

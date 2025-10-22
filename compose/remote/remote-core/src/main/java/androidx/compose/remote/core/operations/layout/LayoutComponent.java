@@ -28,6 +28,7 @@ import androidx.compose.remote.core.operations.MatrixRestore;
 import androidx.compose.remote.core.operations.MatrixSave;
 import androidx.compose.remote.core.operations.MatrixTranslate;
 import androidx.compose.remote.core.operations.layout.animation.AnimationSpec;
+import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentModifiers;
 import androidx.compose.remote.core.operations.layout.modifiers.ComponentVisibilityOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation;
@@ -181,6 +182,9 @@ public class LayoutComponent extends Component {
             } else if (op instanceof ModifierOperation) {
                 if (op instanceof ComponentVisibilityOperation) {
                     ((ComponentVisibilityOperation) op).setParent(this);
+                }
+                if (op instanceof AlignByModifierOperation) {
+                    ((AlignByModifierOperation) op).setParent(this);
                 }
                 if (op instanceof ScrollModifierOperation) {
                     ((ScrollModifierOperation) op).inflate(this);

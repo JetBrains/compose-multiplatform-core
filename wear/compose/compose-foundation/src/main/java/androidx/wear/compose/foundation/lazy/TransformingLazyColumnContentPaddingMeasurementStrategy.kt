@@ -43,6 +43,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
     private val graphicsContext: GraphicsContext,
     private val itemAnimator: LazyLayoutItemAnimator<TransformingLazyColumnMeasuredItem>,
     private val isScrollInProgress: () -> Boolean,
+    private val reverseLayout: Boolean,
 ) : TransformingLazyColumnMeasurementStrategy {
     override val rightContentPadding: Int =
         with(density) { contentPadding.calculateRightPadding(layoutDirection).roundToPx() }
@@ -57,11 +58,12 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         var afterContentPadding: Int,
         var itemsCount: Int,
         var maxHeight: Int,
+        var reverseLayout: Boolean,
     ) {
-        val isAtTopOrOverscrolledBackwards: Boolean
+        val isAtStartOrOverscrolledBackwards: Boolean
             get() = with(visibleItems.first()) { index == 0 && offset >= beforeContentPadding }
 
-        val isAtBottomOrOverscrolledForward: Boolean
+        val isAtEndOrOverscrolledForward: Boolean
             get() =
                 with(visibleItems.last()) {
                     index == itemsCount - 1 &&
@@ -176,13 +178,33 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 }
             }
 
-        fun restoreLayoutTopToBottom(): Unit = gradientDescent {
-            first().offset - beforeContentPadding
-        }
+        /**
+         * Pins the content to the start of the scrollable area. This is used to correct overscroll
+         * at the beginning of the list or when content fits the screen.
+         */
+        fun pinToStart(): Unit = gradientDescent { first().offset - beforeContentPadding }
 
-        fun restoreLayoutBottomToTop(): Unit = gradientDescent {
+        /**
+         * Pins the content to the end of the scrollable area. This is used to correct overscroll at
+         * the end of the list.
+         */
+        fun pinToEnd(): Unit = gradientDescent {
             last().offset + last().transformedHeight - maxHeight + afterContentPadding
         }
+
+        fun restoreLayoutTopToBottom(): Unit =
+            if (!reverseLayout) {
+                pinToStart()
+            } else {
+                pinToEnd()
+            }
+
+        fun restoreLayoutBottomToTop(): Unit =
+            if (!reverseLayout) {
+                pinToEnd()
+            } else {
+                pinToStart()
+            }
 
         fun restoreLayoutCentered(): Unit = gradientDescent {
             val topSpace = first().offset - beforeContentPadding
@@ -204,7 +226,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
             }
     }
 
-    private var measurementScope = MeasurementScope(ArrayDeque(), 0, 0, 0, 0, 0)
+    private var measurementScope = MeasurementScope(ArrayDeque(), 0, 0, 0, 0, 0, reverseLayout)
 
     override fun measure(
         itemsCount: Int,
@@ -347,16 +369,16 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                     }
                     canScrollBackward = false
                     canScrollForward = false
-                } else if (isAtTopOrOverscrolledBackwards) {
+                } else if (isAtStartOrOverscrolledBackwards) {
                     // Top item moved where it is not supposed to be.
                     // Pinning top item to the top most position.
-                    restoreLayoutTopToBottom()
+                    pinToStart()
                     addVisibleItemsAfter(measuredItemProvider)
                     canScrollBackward = false
-                } else if (isAtBottomOrOverscrolledForward) {
+                } else if (isAtEndOrOverscrolledForward) {
                     // Bottom item moved where it is not supposed to be.
                     // Pinning top item to the bottom most position.
-                    restoreLayoutBottomToTop()
+                    pinToEnd()
                     addVisibleItemsBefore(measuredItemProvider)
                     canScrollForward = false
                 }
@@ -424,6 +446,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 beforeContentPadding = beforeContentPadding,
                 afterContentPadding = afterContentPadding,
                 childConstraints = childConstraints,
+                reverseLayout = reverseLayout,
                 measureResult =
                     layout(containerConstraints.maxWidth, containerConstraints.maxHeight) {
                         actuallyVisibleItems.fastForEach { it.place(this) }
@@ -437,10 +460,22 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
     }
 
     private val beforeContentPadding: Int =
-        with(density) { contentPadding.calculateTopPadding().roundToPx() }
+        with(density) {
+            if (!reverseLayout) {
+                contentPadding.calculateTopPadding().roundToPx()
+            } else {
+                contentPadding.calculateBottomPadding().roundToPx()
+            }
+        }
 
     private val afterContentPadding: Int =
-        with(density) { contentPadding.calculateBottomPadding().roundToPx() }
+        with(density) {
+            if (!reverseLayout) {
+                contentPadding.calculateBottomPadding().roundToPx()
+            } else {
+                contentPadding.calculateTopPadding().roundToPx()
+            }
+        }
 
     private companion object {
         const val GRADIENT_DESCENT_REPETITIONS = 4

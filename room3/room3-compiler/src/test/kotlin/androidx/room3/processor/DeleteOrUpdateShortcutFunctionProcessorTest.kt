@@ -28,7 +28,7 @@ import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.GuavaUtilConcurrentTypeNames
 import androidx.room3.ext.KotlinTypeNames
@@ -120,7 +120,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User"))
+                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User?"))
             }
         }
     }
@@ -176,7 +176,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User"))
+                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User?"))
                 hasErrorCount(2)
             }
         }
@@ -233,7 +233,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.nullableParamInShortcutFunction(
-                        "java.util.List<? extends foo.bar.User>"
+                        "kotlin.collections.List<foo.bar.User?>"
                     )
                 )
             }
@@ -280,7 +280,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User[]")
+                    ProcessorErrors.nullableParamInShortcutFunction("kotlin.Array<foo.bar.User?>")
                 )
             }
         }
@@ -321,7 +321,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.nullableParamInShortcutFunction(
-                        "java.util.Set<? extends foo.bar.User>"
+                        "kotlin.collections.Set<foo.bar.User?>"
                     )
                 )
             }
@@ -390,7 +390,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.nullableParamInShortcutFunction(
-                        "foo.bar.MyClass.MyList<java.lang.String, foo.bar.User>"
+                        "foo.bar.MyClass.MyList<kotlin.String?, foo.bar.User?>"
                     )
                 )
             }
@@ -445,8 +445,8 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User"))
-                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.Book"))
+                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.User?"))
+                hasErrorContaining(ProcessorErrors.nullableParamInShortcutFunction("foo.bar.Book?"))
                 hasErrorCount(2)
             }
         }
@@ -713,7 +713,9 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.shortcutFunctionArgumentMustBeAClass("long"))
+                hasErrorContaining(
+                    ProcessorErrors.shortcutFunctionArgumentMustBeAClass("kotlin.Long")
+                )
             }
         }
     }
@@ -784,10 +786,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 COMMON.LISTENABLE_FUTURE,
                 COMMON.GUAVA_ROOM,
             )
-        runProcessorTest(
-            sources = commonSources + additionalSources + inputSource,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        ) { invocation ->
+        runKspTest(sources = commonSources + additionalSources + inputSource) { invocation ->
             val (owner, methods) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)
@@ -840,10 +839,7 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 COMMON.GUAVA_ROOM,
             )
 
-        runProcessorTest(
-            sources = commonSources + additionalSources + inputSource,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        ) { invocation ->
+        runKspTest(sources = commonSources + additionalSources + inputSource) { invocation ->
             val (owner, functions) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)

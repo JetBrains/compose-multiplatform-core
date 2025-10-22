@@ -275,7 +275,7 @@ public class TestUtils {
         }
         name = toCamelCase(name);
         String fileName = name + ".rcd";
-        System.out.println("saveing " + fileName);
+        System.out.println("saving " + fileName);
         TestUtils.saveDoc(fileName, doc, appContext);
         RemoteComposeDocument fileDoc = TestUtils.getDoc(fileName, appContext);
         Bitmap fromFileBitmap = docToBitmap(600, 600, appContext, fileDoc);

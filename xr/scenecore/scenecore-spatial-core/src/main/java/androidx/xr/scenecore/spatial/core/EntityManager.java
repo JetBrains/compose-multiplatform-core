@@ -78,9 +78,7 @@ final class EntityManager {
 
     /** Returns a collection of all {@link Entity}s. */
     Collection<Entity> getAllEntities() {
-        return mNodeEntityMap.values().stream()
-                .distinct()
-                .collect(toCollection(ArrayList::new));
+        return mNodeEntityMap.values().stream().distinct().collect(toCollection(ArrayList::new));
     }
 
     /** Removes the given {@link Node} from the map. */

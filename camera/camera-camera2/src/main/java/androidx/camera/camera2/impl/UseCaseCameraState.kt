@@ -35,7 +35,6 @@ import androidx.camera.camera2.pipe.RequestFailure
 import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.impl.SessionConfig
 import javax.inject.Inject
 import kotlin.collections.removeFirst as removeFirstKt
@@ -204,7 +203,7 @@ constructor(
     ) {
         // TODO: Consider if this should detect changes and only invoke an update if state has
         //  actually changed.
-        debug {
+        Camera2Logger.debug {
             "UseCaseCameraState#updateState: parameters = $parameters, internalParameters = " +
                 "$internalParameters, streams = $streams, template = $template"
         }
@@ -257,7 +256,9 @@ constructor(
             try {
                     cameraGraph.acquireSession()
                 } catch (e: CancellationException) {
-                    debug(e) { "Cannot acquire session at ${this@UseCaseCameraState}" }
+                    Camera2Logger.debug(e) {
+                        "Cannot acquire session at ${this@UseCaseCameraState}"
+                    }
                     null
                 }
                 .let { session ->
@@ -299,7 +300,7 @@ constructor(
                                     )
                                 }
                             }
-                            debug { "Update RepeatingRequest: $request" }
+                            Camera2Logger.debug { "Update RepeatingRequest: $request" }
                             it.startRepeating(request)
                             // TODO: Invoke update3A only if required e.g. a 3A value has changed
                             it.update3A(request.parameters)

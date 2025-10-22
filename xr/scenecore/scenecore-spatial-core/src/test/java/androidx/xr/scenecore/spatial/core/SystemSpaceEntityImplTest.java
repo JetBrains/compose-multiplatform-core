@@ -33,7 +33,6 @@ import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 import com.android.extensions.xr.node.FakeCloseable;
 import com.android.extensions.xr.node.Mat4f;
 import com.android.extensions.xr.node.Node;
-import com.android.extensions.xr.node.NodeRepository;
 import com.android.extensions.xr.node.NodeTransform;
 import com.android.extensions.xr.node.ShadowNode;
 import com.android.extensions.xr.node.ShadowNodeTransform;
@@ -277,24 +276,6 @@ public abstract class SystemSpaceEntityImplTest {
         assertThat(systemSpaceEntity.mOpenXrReferenceSpacePose).isEqualTo(expectedPose);
         assertThat(systemSpaceEntity.mWorldSpaceScale).isEqualTo(expectedScale);
         verify(listener, Mockito.never()).run();
-    }
-
-    @Test
-    public void dispose_disposesChildren() throws Exception {
-        SystemSpaceEntityImpl systemSpaceEntity = getSystemSpaceEntityImpl();
-        AndroidXrEntity childEntity = createChildAndroidXrEntity();
-
-        systemSpaceEntity.addChild(childEntity);
-
-        // Verify the parent of the child node is the space node before disposing it.
-        Node systemSpaceNode = systemSpaceEntity.getNode();
-        assertThat(NodeRepository.getInstance().getParent(childEntity.getNode()))
-                .isEqualTo(systemSpaceNode);
-
-        // Dispose the space entity and verify that the children were disposed.
-        systemSpaceEntity.dispose();
-
-        assertThat(NodeRepository.getInstance().getParent(childEntity.getNode())).isNull();
     }
 
     @Test

@@ -27,11 +27,11 @@ import androidx.camera.camera2.compat.quirk.CameraQuirks
 import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.config.CameraAppComponent
 import androidx.camera.camera2.config.CameraModule
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.FeatureCombinationQueryImpl
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.DoNotDisturbException
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.InitializationException
 import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.AttachedSurfaceInfo
@@ -84,7 +84,7 @@ public class CameraSurfaceAdapter(
         }
 
         if (combinationsToCreate.isNotEmpty()) {
-            debug { "Creating new surface combinations for: $combinationsToCreate" }
+            Camera2Logger.debug { "Creating new surface combinations for: $combinationsToCreate" }
         }
 
         // This heavy work can throw CameraUpdateException, which is the signal to the coordinator.
@@ -106,7 +106,7 @@ public class CameraSurfaceAdapter(
 
             // 3. Atomically replace the map.
             supportedSurfaceCombinationMap = finalCombinations
-            debug {
+            Camera2Logger.debug {
                 "Committed new surface combination map. Total cameras: ${finalCombinations.size}"
             }
         }

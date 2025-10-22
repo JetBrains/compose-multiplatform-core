@@ -24,7 +24,7 @@ import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.config.CameraScope
-import androidx.camera.camera2.pipe.core.Log.warn
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.core.Logger
 import javax.inject.Inject
 
@@ -195,7 +195,9 @@ constructor(map: StreamConfigurationMap?, private val outputSizesCorrector: Outp
         try {
             return impl.getOutputMinFrameDuration(format, size)
         } catch (e: RuntimeException) {
-            warn(e) { "Unable to get min frame duration for format = $format and size = $size" }
+            Camera2Logger.warn(e) {
+                "Unable to get min frame duration for format = $format and size = $size"
+            }
         }
         return 0
     }

@@ -153,7 +153,7 @@ internal object Nodes {
 
     @JvmStatic
     inline val Unplaced
-        get() = NodeKind<UnplacedStateAwareModifierNode>(0b1 shl 20)
+        get() = NodeKind<UnplacedAwareModifierNode>(0b1 shl 20)
 
     @JvmStatic
     inline val IndirectTouchInput
@@ -282,7 +282,7 @@ internal fun calculateNodeKindSetFrom(node: Modifier.Node): Int {
         if (node is BringIntoViewModifierNode) {
             mask = mask or Nodes.BringIntoView
         }
-        if (node is UnplacedStateAwareModifierNode) {
+        if (node is UnplacedAwareModifierNode) {
             mask = mask or Nodes.Unplaced
         }
         if (node is IndirectTouchInputModifierNode) {

@@ -123,6 +123,7 @@ import androidx.compose.remote.core.operations.layout.managers.ImageLayout;
 import androidx.compose.remote.core.operations.layout.managers.RowLayout;
 import androidx.compose.remote.core.operations.layout.managers.StateLayout;
 import androidx.compose.remote.core.operations.layout.managers.TextLayout;
+import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BackgroundModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ClipRectModifierOperation;
@@ -1551,6 +1552,13 @@ public class RemoteComposeBuffer {
         float b = (color & 0xff) / 255.0f;
         float a = (color >> 24 & 0xff) / 255.0f;
         BackgroundModifierOperation.apply(mBuffer, 0f, 0f, 0f, 0f, r, g, b, a, shape);
+    }
+
+    /**
+     * Add an align modifier
+     */
+    public void addModifierAlignBy(float line) {
+        AlignByModifierOperation.apply(mBuffer, line, 0);
     }
 
     /**

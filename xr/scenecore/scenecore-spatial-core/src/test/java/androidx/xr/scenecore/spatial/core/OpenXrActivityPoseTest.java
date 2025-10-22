@@ -100,8 +100,8 @@ public final class OpenXrActivityPoseTest {
     public static List<Object> data() throws Exception {
         return Arrays.asList(
                 new Object[] {
-                    OpenXrActivityPoseType.HEAD_ACTIVITY_POSE,
-                    OpenXrActivityPoseType.CAMERA_ACTIVITY_POSE
+                        OpenXrActivityPoseType.HEAD_ACTIVITY_POSE,
+                        OpenXrActivityPoseType.CAMERA_ACTIVITY_POSE
                 });
     }
 
@@ -536,7 +536,7 @@ public final class OpenXrActivityPoseTest {
         int surfaceType = com.android.extensions.xr.space.HitTestResult.SURFACE_PANEL;
         com.android.extensions.xr.space.HitTestResult extensionsHitTestResult =
                 new com.android.extensions.xr.space.HitTestResult.Builder(
-                                distance, hitPosition, true, surfaceType)
+                        distance, hitPosition, true, surfaceType)
                         .setSurfaceNormal(surfaceNormal)
                         .build();
         ShadowXrExtensions.extract(mXrExtensions)
@@ -572,7 +572,7 @@ public final class OpenXrActivityPoseTest {
         int surfaceType = com.android.extensions.xr.space.HitTestResult.SURFACE_PANEL;
         com.android.extensions.xr.space.HitTestResult extensionsHitTestResult =
                 new com.android.extensions.xr.space.HitTestResult.Builder(
-                                distance, hitPosition, true, surfaceType)
+                        distance, hitPosition, true, surfaceType)
                         .setSurfaceNormal(surfaceNormal)
                         .build();
         ShadowXrExtensions.extract(mXrExtensions)

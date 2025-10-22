@@ -17,7 +17,6 @@
 package androidx.room3.processor
 
 import androidx.kruth.assertThat
-import androidx.room3.RoomKspProcessor
 import androidx.room3.RoomProcessor
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.VisibilityModifier
@@ -33,11 +32,11 @@ import androidx.room3.compiler.processing.XFiler
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.XProcessingEnvConfig
 import androidx.room3.compiler.processing.XProcessingStep
-import androidx.room3.compiler.processing.javac.JavacBasicAnnotationProcessor
 import androidx.room3.compiler.processing.ksp.KspBasicAnnotationProcessor
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.CommonTypeNames.MUTABLE_LIST
 import androidx.room3.ext.CommonTypeNames.STRING
@@ -266,7 +265,7 @@ class CustomConverterProcessorTest {
                         .build()
                         .toString(CodeLanguage.JAVA),
             )
-        runProcessorTest(sources = listOf(baseConverter, extendingClass)) { invocation ->
+        runKspTest(sources = listOf(baseConverter, extendingClass)) { invocation ->
             val element =
                 invocation.processingEnv.requireTypeElement(extendingClassName.canonicalName)
             val converter =
@@ -349,7 +348,7 @@ class CustomConverterProcessorTest {
                 public class Container {}
                 """,
             )
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             val result =
                 CustomConverterProcessor.findConverters(
                     invocation.context,
@@ -452,15 +451,6 @@ class CustomConverterProcessorTest {
             }
         }
 
-        val typeConverterProcessor =
-            object :
-                JavacBasicAnnotationProcessor(
-                    config =
-                        XProcessingEnvConfig.DEFAULT.copy(disableAnnotatedElementValidation = true)
-                ) {
-                override fun processingSteps() =
-                    listOf(GenerateTypeConverterStep(CodeLanguage.JAVA))
-            }
         val typeConverterKspProvider = SymbolProcessorProvider {
             object :
                 KspBasicAnnotationProcessor(
@@ -498,12 +488,11 @@ class CustomConverterProcessorTest {
             """
                     .trimIndent(),
             )
-        runProcessorTest(
+        runKspProcessorTest(
             sources = listOf(databaseSrc),
             kotlincArguments =
                 listOf("-P", "plugin:org.jetbrains.kotlin.kapt3:correctErrorTypes=true"),
-            javacProcessors = listOf(RoomProcessor(), typeConverterProcessor),
-            symbolProcessorProviders = listOf(RoomKspProcessor.Provider(), typeConverterKspProvider),
+            symbolProcessorProviders = listOf(RoomProcessor.Provider(), typeConverterKspProvider),
         ) {
             it.hasErrorCount(0)
         }
@@ -550,7 +539,7 @@ class CustomConverterProcessorTest {
         vararg sources: Source,
         handler: (CustomTypeConverter?, XTestInvocation) -> Unit,
     ) {
-        runProcessorTest(sources = sources.toList() + CONTAINER) { invocation ->
+        runKspTest(sources = sources.toList() + CONTAINER) { invocation ->
             val processed =
                 CustomConverterProcessor.findConverters(
                     invocation.context,

@@ -60,10 +60,8 @@ import org.robolectric.android.controller.ActivityController;
 
 @RunWith(RobolectricTestRunner.class)
 public class PanelEntityImplTest {
-    private static final Dimensions K_VGA_RESOLUTION_PX =
-            new Dimensions(640f, 480f, 0f);
-    private static final Dimensions K_HD_RESOLUTION_PX =
-            new Dimensions(1280f, 720f, 0f);
+    private static final Dimensions K_VGA_RESOLUTION_PX = new Dimensions(640f, 480f, 0f);
+    private static final Dimensions K_HD_RESOLUTION_PX = new Dimensions(1280f, 720f, 0f);
     private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
     private final ActivityController<Activity> mActivityController =
             Robolectric.buildActivity(Activity.class);
@@ -138,8 +136,7 @@ public class PanelEntityImplTest {
                         (float) Math.atan(1.0));
         when(cameraView.getFov()).thenReturn(fov);
         // Standard display resolution for calculations
-        when(cameraView.getDisplayResolutionInPixels()).thenReturn(
-                new PixelDimensions(1000, 1000));
+        when(cameraView.getDisplayResolutionInPixels()).thenReturn(new PixelDimensions(1000, 1000));
         // Clear the EntityManager to ensure LeftEye is the only entity inside it
         mEntityManager.clear();
         mEntityManager.addSystemSpaceActivityPose(cameraView);
@@ -197,14 +194,12 @@ public class PanelEntityImplTest {
         // The (FakeXrExtensions) test default pixel density is 1 pixel per meter.
         // Validate that the corner radius is set to 32dp.
         assertThat(panelEntity.getCornerRadius()).isEqualTo(32.0f);
-        assertThat(mNodeRepository.getCornerRadius(panelEntity.getNode()))
-                .isEqualTo(32.0f);
+        assertThat(mNodeRepository.getCornerRadius(panelEntity.getNode())).isEqualTo(32.0f);
     }
 
     @Test
     public void createPanel_smallPanelWidth_setsCornerRadiusToPanelSize() {
-        PanelEntityImpl panelEntity = createPanelEntity(
-                new Dimensions(40f, 1000f, 0f));
+        PanelEntityImpl panelEntity = createPanelEntity(new Dimensions(40f, 1000f, 0f));
 
         // The (FakeXrExtensions) test default pixel density is 1 pixel per meter.
         // Validate that the corner radius is set to 32dp.
@@ -214,8 +209,7 @@ public class PanelEntityImplTest {
 
     @Test
     public void createPanel_smallPanelHeight_setsCornerRadiusToPanelSize() {
-        PanelEntityImpl panelEntity = createPanelEntity(
-                new Dimensions(1000f, 40f, 0f));
+        PanelEntityImpl panelEntity = createPanelEntity(new Dimensions(1000f, 40f, 0f));
 
         // The (FakeXrExtensions) test default pixel density is 1 pixel per meter.
         // Validate that the corner radius is set to 32dp.
@@ -225,8 +219,7 @@ public class PanelEntityImplTest {
 
     @Test
     public void getPerceivedResolution_noCameraView_returnsInvalidCameraView() {
-        PanelEntityImpl panelEntity = createPanelEntity(
-                new Dimensions(2f, 1f, 0f));
+        PanelEntityImpl panelEntity = createPanelEntity(new Dimensions(2f, 1f, 0f));
         // Ensure mEntityManager is empty or has no left-eye camera
         mEntityManager.clear(); // Make sure no camera views are present
 
@@ -238,8 +231,7 @@ public class PanelEntityImplTest {
     @Test
     public void getPerceivedResolution_validCameraAndPanelInFront_returnsSuccess() {
         // Panel created with PixelDimensions(2,1). With pixel density 1.0, size is 2m x 1m.
-        PanelEntityImpl panelEntity = createPanelEntity(
-                new Dimensions(2f, 1f, 0f));
+        PanelEntityImpl panelEntity = createPanelEntity(new Dimensions(2f, 1f, 0f));
         setupDefaultMockCameraView();
 
         // Place panel 2m in front of camera. Camera is at (0,0,0). Panel at (0,0,-2).
@@ -279,8 +271,7 @@ public class PanelEntityImplTest {
 
         // Place panel very close to the camera (distance < EPSILON)
         float veryCloseDistance = PerceivedResolutionUtils.PERCEIVED_RESOLUTION_EPSILON / 2f;
-        panelEntity.setPose(new Pose(
-                new Vector3(0f, 0f, -veryCloseDistance), Quaternion.Identity));
+        panelEntity.setPose(new Pose(new Vector3(0f, 0f, -veryCloseDistance), Quaternion.Identity));
 
         PerceivedResolutionResult result = panelEntity.getPerceivedResolution();
 
@@ -289,15 +280,13 @@ public class PanelEntityImplTest {
 
     @Test
     public void getPerceivedResolution_panelAtEpsilonDistance_returnsEntityTooClose() {
-        PanelEntityImpl panelEntity = createPanelEntity(
-                new Dimensions(2f, 1f, 0f));
+        PanelEntityImpl panelEntity = createPanelEntity(new Dimensions(2f, 1f, 0f));
         setupDefaultMockCameraView();
 
         // Place panel exactly at EPSILON distance
         panelEntity.setPose(
                 new Pose(
-                        new Vector3(0f, 0f,
-                                -PerceivedResolutionUtils.PERCEIVED_RESOLUTION_EPSILON),
+                        new Vector3(0f, 0f, -PerceivedResolutionUtils.PERCEIVED_RESOLUTION_EPSILON),
                         Quaternion.Identity));
 
         PerceivedResolutionResult result = panelEntity.getPerceivedResolution();
@@ -307,8 +296,7 @@ public class PanelEntityImplTest {
 
     @Test
     public void getPerceivedResolution_panelWithScale_calculatesCorrectly() {
-        PanelEntityImpl panelEntity = createPanelEntity(
-                new Dimensions(1f, 1f, 0f)); // 1m x 1m
+        PanelEntityImpl panelEntity = createPanelEntity(new Dimensions(1f, 1f, 0f)); // 1m x 1m
         // local size
         setupDefaultMockCameraView();
 

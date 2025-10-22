@@ -19,4 +19,10 @@
     <string name="discard_changes_dialog_message">Your changes are not saved.</string>
     <string name="keep_editing_button">Keep Editing</string>
     <string name="discard_button">Discard</string>
+    <string name="annotation_pen_button_content_desc">Pen</string>
+    <string name="annotation_highlighter_button_content_desc">Highlighter</string>
+    <string name="annotation_eraser_button_content_desc">Eraser</string>
+    <string name="annotation_undo_button_content_desc">Undo</string>
+    <string name="annotation_redo_button_content_desc">Redo</string>
+    <string name="annotation_toggle_annotation_button_content_desc">Toggle Annotation</string>
 </resources>

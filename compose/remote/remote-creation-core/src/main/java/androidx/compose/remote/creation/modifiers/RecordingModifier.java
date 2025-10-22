@@ -18,6 +18,7 @@ package androidx.compose.remote.creation.modifiers;
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation;
+import androidx.compose.remote.creation.Rc;
 import androidx.compose.remote.creation.RemoteComposeWriter;
 import androidx.compose.remote.creation.actions.Action;
 
@@ -187,6 +188,16 @@ public class RecordingModifier {
      */
     public @NonNull RecordingModifier background(int color) {
         mList.add(new SolidBackgroundModifier(color));
+        return this;
+    }
+
+    /**
+     * Add an align by baseline modifier
+     *
+     * @return
+     */
+    public @NonNull RecordingModifier alignByBaseline() {
+        mList.add(new AlignByModifier(Rc.Layout.FIRST_BASELINE));
         return this;
     }
 

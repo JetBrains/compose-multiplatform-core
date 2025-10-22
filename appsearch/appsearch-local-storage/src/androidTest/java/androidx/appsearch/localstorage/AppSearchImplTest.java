@@ -4314,7 +4314,8 @@ public class AppSearchImplTest {
                         "package", "db1", ImmutableList.of(config),
                         /*callStatsBuilder=*/null));
         assertThat(exception).hasMessageThat().contains(
-                Features.BLOB_STORAGE + " is not available on this AppSearch implementation.");
+                Features.SCHEMA_BLOB_HANDLE
+                        + " is not available on this AppSearch implementation.");
     }
 
     @Test
@@ -4493,7 +4494,8 @@ public class AppSearchImplTest {
                 () -> mAppSearchImpl.globalOpenReadBlob(handle, mSelfCallerAccess,
                 /*callStatsBuilder=*/null));
         assertThat(exception).hasMessageThat().contains(
-                Features.BLOB_STORAGE + " is not available on this AppSearch implementation.");
+                Features.SCHEMA_BLOB_HANDLE
+                        + " is not available on this AppSearch implementation.");
     }
 
     @Test

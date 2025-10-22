@@ -19,9 +19,6 @@
 
 package androidx.room3.util
 
-import android.database.AbstractWindowedCursor
-import android.database.Cursor
-import android.os.CancellationSignal
 import androidx.annotation.RestrictTo
 import androidx.room3.RoomDatabase
 import androidx.room3.TransactionElement
@@ -30,7 +27,6 @@ import androidx.room3.coroutines.runBlockingUninterruptible
 import androidx.room3.withTransactionContext
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteQuery
 import androidx.sqlite.driver.SupportSQLiteConnection
 import java.io.File
 import java.io.FileInputStream
@@ -161,80 +157,6 @@ internal actual suspend fun RoomDatabase.getCoroutineContext(
 }
 
 /**
- * Performs the SQLiteQuery on the given database.
- *
- * This util method encapsulates copying the cursor if the `maybeCopy` parameter is `true` and
- * either the api level is below a certain threshold or the full result of the query does not fit in
- * a single window.
- *
- * @param db The database to perform the query on.
- * @param sqLiteQuery The query to perform.
- * @param maybeCopy True if the result cursor should maybe be copied, false otherwise.
- * @return Result of the query.
- */
-@Deprecated("This is only used in the generated code and shouldn't be called directly.")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public fun query(db: RoomDatabase, sqLiteQuery: SupportSQLiteQuery, maybeCopy: Boolean): Cursor {
-    return query(db, sqLiteQuery, maybeCopy, null)
-}
-
-/**
- * Performs the SQLiteQuery on the given database.
- *
- * This util method encapsulates copying the cursor if the `maybeCopy` parameter is `true` and
- * either the api level is below a certain threshold or the full result of the query does not fit in
- * a single window.
- *
- * @param db The database to perform the query on.
- * @param sqLiteQuery The query to perform.
- * @param maybeCopy True if the result cursor should maybe be copied, false otherwise.
- * @param signal The cancellation signal to be attached to the query.
- * @return Result of the query.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public fun query(
-    db: RoomDatabase,
-    sqLiteQuery: SupportSQLiteQuery,
-    maybeCopy: Boolean,
-    signal: CancellationSignal?,
-): Cursor {
-    val cursor = db.query(sqLiteQuery, signal)
-    if (maybeCopy && cursor is AbstractWindowedCursor) {
-        val rowsInCursor = cursor.count // Should fill the window.
-        val rowsInWindow =
-            if (cursor.hasWindow()) {
-                cursor.window.numRows
-            } else {
-                rowsInCursor
-            }
-        if (rowsInWindow < rowsInCursor) {
-            return copyAndClose(cursor)
-        }
-    }
-    return cursor
-}
-
-/**
- * Drops all FTS content sync triggers created by Room.
- *
- * FTS content sync triggers created by Room are those that are found in the sqlite_master table
- * who's names start with 'room_fts_content_sync_'.
- *
- * @param db The database.
- */
-@Deprecated("Replaced by dropFtsSyncTriggers(connection: SQLiteConnection)")
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public fun dropFtsSyncTriggers(db: SupportSQLiteDatabase) {
-    dropFtsSyncTriggers(SupportSQLiteConnection(db))
-}
-
-/** Checks for foreign key violations by executing a PRAGMA foreign_key_check. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public fun foreignKeyCheck(db: SupportSQLiteDatabase, tableName: String) {
-    foreignKeyCheck(SupportSQLiteConnection(db), tableName)
-}
-
-/**
  * Reads the user version number out of the database header from the given file.
  *
  * @param databaseFile the database file.
@@ -257,17 +179,6 @@ public fun readVersion(databaseFile: File): Int {
         buffer.rewind()
         return buffer.int // ByteBuffer is big-endian by default
     }
-}
-
-/**
- * This function will create a new instance of [CancellationSignal].
- *
- * @return A new instance of CancellationSignal.
- */
-@Deprecated("Use constructor", ReplaceWith("CancellationSignal()", "android.os.CancellationSignal"))
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public fun createCancellationSignal(): CancellationSignal {
-    return CancellationSignal()
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code

@@ -74,6 +74,8 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(project(":test:screenshot:screenshot"))
 }
 
 androidx {
@@ -81,4 +83,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2025"
     description = "Provide annotations support for PDF document using ink library"
+    addGoldenImageAssets()
 }

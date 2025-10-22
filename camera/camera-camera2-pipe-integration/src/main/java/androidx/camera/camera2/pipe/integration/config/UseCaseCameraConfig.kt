@@ -19,9 +19,9 @@ package androidx.camera.camera2.pipe.integration.config
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.compat.workaround.CapturePipelineTorchCorrection
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
 import androidx.camera.camera2.pipe.integration.impl.CapturePipeline
 import androidx.camera.camera2.pipe.integration.impl.CapturePipelineImpl
@@ -100,7 +100,7 @@ public class UseCaseCameraConfig(
             cameraGraph.streams[streamConfig]?.let { surfaceToStreamMap[deferrableSurface] = it.id }
         }
 
-        Log.debug { "Prepared UseCaseGraphConfig: $cameraGraph " }
+        Camera2Logger.debug { "Prepared UseCaseGraphConfig: $cameraGraph " }
         return UseCaseGraphConfig(graph = cameraGraph, surfaceToStreamMap = surfaceToStreamMap)
     }
 }

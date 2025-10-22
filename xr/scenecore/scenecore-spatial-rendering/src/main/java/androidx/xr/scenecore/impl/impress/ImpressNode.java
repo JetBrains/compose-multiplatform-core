@@ -52,5 +52,4 @@ public final class ImpressNode {
     public int hashCode() {
         return Objects.hash(mHandle);
     }
-
 }

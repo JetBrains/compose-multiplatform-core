@@ -18,7 +18,7 @@ package androidx.appfunctions.compiler.core
 
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 
-/** Represents a class annotated with [androidx.appfunctions.AppFunctionSerializableInterface]. */
+/** Represents a class annotated with `androidx.appfunctions.AppFunctionSerializableInterface`. */
 class AnnotatedAppFunctionSerializableInterface(override val classDeclaration: KSClassDeclaration) :
     AppFunctionSerializableType {
 
@@ -48,5 +48,15 @@ class AnnotatedAppFunctionSerializableInterface(override val classDeclaration: K
                 )
             }
             .toList()
+    }
+
+    override fun getFactoryCodeBuilder(
+        resolvedAnnotatedSerializableProxies:
+            AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
+    ): AppFunctionSerializableType.FactoryCodeBuilder {
+        throw ProcessingException(
+            "@AppFunctionSerializableInterface doesn't need a factory.",
+            this.appFunctionSerializableTypeClassDeclaration.attributeNode,
+        )
     }
 }

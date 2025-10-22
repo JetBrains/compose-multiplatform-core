@@ -75,7 +75,7 @@ public fun MaterialScope.backgroundImage(
     overlayColor: LayoutColor? = defaultBackgroundImageStyle.overlayColor,
     @ContentScaleMode contentScaleMode: Int = defaultBackgroundImageStyle.contentScaleMode,
 ): LayoutElement {
-    require(protoLayoutScope != null) {
+    require(hasProtoLayoutScope) {
         "APIs for automatic resource registration must have ProtoLayoutScope in MaterialScope."
     }
     return backgroundImageHelper(
@@ -124,7 +124,7 @@ public fun MaterialScope.avatarImage(
     modifier: LayoutModifier = LayoutModifier,
     @ContentScaleMode contentScaleMode: Int = defaultAvatarImageStyle.contentScaleMode,
 ): LayoutElement {
-    require(protoLayoutScope != null) {
+    require(hasProtoLayoutScope) {
         "APIs for automatic resource registration must have ProtoLayoutScope in MaterialScope."
     }
     return protoLayoutScope.basicImage(

@@ -23,7 +23,7 @@ import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.compat.XConverters.toString
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.RoomTypeNames.ROOM_SQL_QUERY
 import androidx.room3.ext.RoomTypeNames.STRING_UTIL
 import androidx.room3.processor.QueryFunctionProcessor
@@ -362,7 +362,7 @@ class QueryWriterTest {
     fun singleQueryMethod(vararg input: String, handler: (Boolean, QueryWriter) -> Unit) {
         val source =
             Source.java("foo.bar.MyClass", DAO_PREFIX + input.joinToString("\n") + DAO_SUFFIX)
-        runProcessorTest(sources = listOf(source)) { invocation ->
+        runKspTest(sources = listOf(source)) { invocation ->
             val (owner, methods) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)

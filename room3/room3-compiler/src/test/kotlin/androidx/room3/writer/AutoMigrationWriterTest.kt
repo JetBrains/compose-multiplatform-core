@@ -20,32 +20,15 @@ import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runJavaProcessorTest
 import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.migration.bundle.FieldBundle
-import androidx.room3.processor.Context
 import androidx.room3.util.SchemaDiffResult
 import androidx.room3.vo.AutoMigration
 import loadTestSource
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@RunWith(Parameterized::class)
-class AutoMigrationWriterTest(private val codeLanguage: CodeLanguage) {
-
-    private val javaDatabaseSource =
-        Source.java(
-            "foo.bar.MyDatabase",
-            """
-        package foo.bar;
-        import androidx.room3.*;
-        @Database(entities = {}, version = 1)
-        public abstract class MyDatabase extends RoomDatabase {
-        }
-        """
-                .trimIndent(),
-        )
+class AutoMigrationWriterTest() {
 
     private val kotlinDatabaseSource =
         Source.kotlin(
@@ -63,32 +46,18 @@ class AutoMigrationWriterTest(private val codeLanguage: CodeLanguage) {
     @Test
     fun validAutoMigrationWithDefaultValue() {
         val specSource =
-            when (codeLanguage) {
-                CodeLanguage.JAVA ->
-                    Source.java(
-                        "foo.bar.ValidAutoMigrationWithDefault",
-                        """
-                package foo.bar;
-                import androidx.room3.migration.AutoMigrationSpec;
-                import androidx.sqlite.db.SupportSQLiteDatabase;
-                public class ValidAutoMigrationWithDefault implements AutoMigrationSpec {}
+            Source.kotlin(
+                "ValidAutoMigrationWithDefault.kt",
                 """
-                            .trimIndent(),
-                    )
-                CodeLanguage.KOTLIN ->
-                    Source.kotlin(
-                        "ValidAutoMigrationWithDefault.kt",
-                        """
                 package foo.bar
                 import androidx.room3.migration.AutoMigrationSpec
                 import androidx.sqlite.db.SupportSQLiteDatabase
                 class ValidAutoMigrationWithDefault : AutoMigrationSpec {}
                 """
-                            .trimIndent(),
-                    )
-            }
+                    .trimIndent(),
+            )
 
-        runProcessorTest(sources = listOf(specSource)) { invocation ->
+        runKspTest(sources = listOf(specSource)) { invocation ->
             val autoMigrationResultWithNewAddedColumn =
                 AutoMigration(
                     from = 1,
@@ -121,18 +90,14 @@ class AutoMigrationWriterTest(private val codeLanguage: CodeLanguage) {
                     dbElement = invocation.processingEnv.requireTypeElement("foo.bar.MyDatabase"),
                     writerContext =
                         TypeWriter.WriterContext(
-                            codeLanguage = codeLanguage,
+                            codeLanguage = CodeLanguage.KOTLIN,
                             javaLambdaSyntaxAvailable = false,
                             targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
                         ),
                 )
                 .write(invocation.processingEnv)
 
-            val expectedFile =
-                when (codeLanguage) {
-                    CodeLanguage.JAVA -> "java/ValidAutoMigrationWithDefault.java"
-                    CodeLanguage.KOTLIN -> "kotlin/ValidAutoMigrationWithDefault.kt"
-                }
+            val expectedFile = "kotlin/ValidAutoMigrationWithDefault.kt"
             invocation.assertCompilationResult {
                 generatedSource(
                     loadTestSource(
@@ -147,32 +112,18 @@ class AutoMigrationWriterTest(private val codeLanguage: CodeLanguage) {
     @Test
     fun validAutoMigrationWithoutDefaultValue() {
         val specSource =
-            when (codeLanguage) {
-                CodeLanguage.JAVA ->
-                    Source.java(
-                        "foo.bar.ValidAutoMigrationWithoutDefault",
-                        """
-                package foo.bar;
-                import androidx.room3.migration.AutoMigrationSpec;
-                import androidx.sqlite.db.SupportSQLiteDatabase;
-                public class ValidAutoMigrationWithoutDefault implements AutoMigrationSpec {}
+            Source.kotlin(
+                "ValidAutoMigrationWithoutDefault.kt",
                 """
-                            .trimIndent(),
-                    )
-                CodeLanguage.KOTLIN ->
-                    Source.kotlin(
-                        "ValidAutoMigrationWithoutDefault.kt",
-                        """
                 package foo.bar
                 import androidx.room3.migration.AutoMigrationSpec
                 import androidx.sqlite.db.SupportSQLiteDatabase
                 class ValidAutoMigrationWithoutDefault : AutoMigrationSpec {}
                 """
-                            .trimIndent(),
-                    )
-            }
+                    .trimIndent(),
+            )
 
-        runProcessorTest(listOf(specSource)) { invocation ->
+        runKspTest(listOf(specSource)) { invocation ->
             val autoMigrationResultWithNewAddedColumn =
                 AutoMigration(
                     from = 1,
@@ -205,18 +156,15 @@ class AutoMigrationWriterTest(private val codeLanguage: CodeLanguage) {
                     dbElement = invocation.processingEnv.requireTypeElement("foo.bar.MyDatabase"),
                     writerContext =
                         TypeWriter.WriterContext(
-                            codeLanguage = codeLanguage,
+                            codeLanguage = CodeLanguage.KOTLIN,
                             javaLambdaSyntaxAvailable = false,
                             targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
                         ),
                 )
                 .write(invocation.processingEnv)
 
-            val expectedFile =
-                when (codeLanguage) {
-                    CodeLanguage.JAVA -> "java/ValidAutoMigrationWithoutDefault.java"
-                    CodeLanguage.KOTLIN -> "kotlin/ValidAutoMigrationWithoutDefault.kt"
-                }
+            val expectedFile = "kotlin/ValidAutoMigrationWithoutDefault.kt"
+
             invocation.assertCompilationResult {
                 generatedSource(
                     loadTestSource(
@@ -231,27 +179,9 @@ class AutoMigrationWriterTest(private val codeLanguage: CodeLanguage) {
     @Test
     fun validAutoMigrationWithProvidedSpec() {
         val specSource =
-            when (codeLanguage) {
-                CodeLanguage.JAVA ->
-                    Source.java(
-                        "foo.bar.AutoMigrationWithProvidedSpec",
-                        """
-                package foo.bar;
-                import androidx.room3.ProvidedAutoMigrationSpec;
-                import androidx.room3.migration.AutoMigrationSpec;
-                import androidx.sqlite.db.SupportSQLiteDatabase;
-                
-                @ProvidedAutoMigrationSpec
-                public class AutoMigrationWithProvidedSpec implements AutoMigrationSpec {
-                    public AutoMigrationWithProvidedSpec(String data) {}
-                }
+            Source.kotlin(
+                "AutoMigrationWithProvidedSpec.kt",
                 """
-                            .trimIndent(),
-                    )
-                CodeLanguage.KOTLIN ->
-                    Source.kotlin(
-                        "AutoMigrationWithProvidedSpec.kt",
-                        """
                 package foo.bar
                 import androidx.room3.ProvidedAutoMigrationSpec
                 import androidx.room3.migration.AutoMigrationSpec
@@ -260,11 +190,10 @@ class AutoMigrationWriterTest(private val codeLanguage: CodeLanguage) {
                 @ProvidedAutoMigrationSpec
                 class AutoMigrationWithProvidedSpec(val data: String) : AutoMigrationSpec {}
                 """
-                            .trimIndent(),
-                    )
-            }
+                    .trimIndent(),
+            )
 
-        runProcessorTest(listOf(specSource)) { invocation ->
+        runKspTest(listOf(specSource)) { invocation ->
             val autoMigrationResultWithNewAddedColumn =
                 AutoMigration(
                     from = 1,
@@ -297,18 +226,14 @@ class AutoMigrationWriterTest(private val codeLanguage: CodeLanguage) {
                     dbElement = invocation.processingEnv.requireTypeElement("foo.bar.MyDatabase"),
                     writerContext =
                         TypeWriter.WriterContext(
-                            codeLanguage = codeLanguage,
+                            codeLanguage = CodeLanguage.KOTLIN,
                             javaLambdaSyntaxAvailable = false,
                             targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
                         ),
                 )
                 .write(invocation.processingEnv)
 
-            val expectedFile =
-                when (codeLanguage) {
-                    CodeLanguage.JAVA -> "java/AutoMigrationWithProvidedSpec.java"
-                    CodeLanguage.KOTLIN -> "kotlin/AutoMigrationWithProvidedSpec.kt"
-                }
+            val expectedFile = "kotlin/AutoMigrationWithProvidedSpec.kt"
             invocation.assertCompilationResult {
                 generatedSource(
                     loadTestSource(
@@ -320,24 +245,12 @@ class AutoMigrationWriterTest(private val codeLanguage: CodeLanguage) {
         }
     }
 
-    private fun runProcessorTest(sources: List<Source>, handler: (XTestInvocation) -> Unit) {
-        when (codeLanguage) {
-            CodeLanguage.JAVA ->
-                runJavaProcessorTest(
-                    sources = sources + javaDatabaseSource,
-                    options =
-                        mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-                    handler = handler,
-                )
-            CodeLanguage.KOTLIN ->
-                runKspTest(
-                    sources = sources + kotlinDatabaseSource,
-                    options =
-                        mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-                    kotlincArguments = listOf("-jvm-target=11"),
-                    handler = handler,
-                )
-        }
+    private fun runKspTest(sources: List<Source>, handler: (XTestInvocation) -> Unit) {
+        runKspTest(
+            sources = sources + kotlinDatabaseSource,
+            kotlincArguments = listOf("-jvm-target=11"),
+            handler = handler,
+        )
     }
 
     companion object {

@@ -36,12 +36,19 @@ import okio.Path.Companion.toPath
  * Common usage of this helper is to create a database at an older version first and then attempt a
  * migration and validation:
  * ```
+ * private val filename = "/tmp/test-${Random.nextInt()}.db"
+ *
  * private val migrationTestHelper = MigrationTestHelper(
- *    schemaDirectoryPath = Path("schemas")
+ *    schemaDirectoryPath = Path("schemas"),
+ *    fileName = databaseFileName,
  *    driver = sqliteDriver,
  *    databaseClass = PetDatabase::class,
- *    databaseFactory = { PetDatabase::class.instantiateImpl() }
  * )
+ *
+ * @BeforeTest
+ * fun before() {
+ *   delete(databaseFileName)
+ * }
  *
  * @AfterTest
  * fun after() {

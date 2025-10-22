@@ -22,14 +22,23 @@ import android.os.CancellationSignal;
 
 import androidx.room3.InvalidationTracker;
 import androidx.room3.RoomDatabase;
+import androidx.room3.RoomOpenDelegateMarker;
 import androidx.room3.RoomSQLiteQuery;
+import androidx.room3.migration.AutoMigrationSpec;
+import androidx.room3.migration.Migration;
 import androidx.test.filters.SmallTest;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import kotlin.reflect.KClass;
+
 import org.jspecify.annotations.NonNull;
 import org.junit.Test;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 @SmallTest
@@ -64,14 +73,34 @@ public class GuavaRoomTest {
         }
 
         @Override
+        protected @NonNull RoomOpenDelegateMarker createOpenDelegate() {
+            throw new UnsupportedOperationException("Shouldn't be called!");
+        }
+
+        @Override
         protected @NonNull InvalidationTracker createInvalidationTracker() {
-            return null;
+            throw new UnsupportedOperationException("Shouldn't be called!");
         }
 
         @Override
         public void clearAllTables() {
             throw new UnsupportedOperationException("Shouldn't be called!");
         }
-    }
 
+        @Override
+        public @NonNull List<Migration> createAutoMigrations(
+                @NonNull Map<KClass<? extends AutoMigrationSpec>, ? extends AutoMigrationSpec> autoMigrationSpecs) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        protected @NonNull Map<KClass<?>, List<KClass<?>>> getRequiredTypeConverterClasses() {
+            return Collections.emptyMap();
+        }
+
+        @Override
+        public @NonNull Set<KClass<? extends AutoMigrationSpec>> getRequiredAutoMigrationSpecClasses() {
+            return Collections.emptySet();
+        }
+    }
 }

@@ -53,6 +53,7 @@ class TransformingLazyColumnScreenshotTest(
     @TestParameter val screenSize: ScreenSize,
     @TestParameter val component: ComponentType,
     @TestParameter val isAnimated: IsAnimated,
+    @TestParameter val isReverseLayout: IsReverseLayout,
 ) {
     @get:Rule val rule = createComposeRule()
 
@@ -137,6 +138,11 @@ class TransformingLazyColumnScreenshotTest(
         NOT_ANIMATED,
     }
 
+    enum class IsReverseLayout {
+        REVERSE_LAYOUT,
+        NOT_REVERSE_LAYOUT,
+    }
+
     data class TestContext(
         val transformationSpec: TransformationSpec,
         val isAnimated: Boolean,
@@ -202,7 +208,10 @@ class TransformingLazyColumnScreenshotTest(
         itemsCount: Int = 100,
         contentPadding: PaddingValues = PaddingValues(),
         verticalArrangement: Arrangement.Vertical =
-            Arrangement.spacedBy(4.dp, alignment = Alignment.Top),
+            Arrangement.spacedBy(
+                4.dp,
+                alignment = if (!reverseLayout) Alignment.Top else Alignment.Bottom,
+            ),
         onIdle: suspend TransformingLazyColumnState.() -> Unit = {},
     ) {
         lateinit var state: TransformingLazyColumnState
@@ -218,6 +227,7 @@ class TransformingLazyColumnScreenshotTest(
                     contentPadding = contentPadding,
                     verticalArrangement = verticalArrangement,
                     modifier = Modifier.testTag(TEST_TAG),
+                    reverseLayout = reverseLayout,
                 ) {
                     with(
                         TestContext(
@@ -239,4 +249,7 @@ class TransformingLazyColumnScreenshotTest(
 
         rule.verifyScreenshot(testName, screenshotRule)
     }
+
+    private val reverseLayout
+        get() = isReverseLayout == IsReverseLayout.REVERSE_LAYOUT
 }

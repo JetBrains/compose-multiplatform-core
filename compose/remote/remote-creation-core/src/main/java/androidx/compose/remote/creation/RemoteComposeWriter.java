@@ -3776,6 +3776,13 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Add an align modifier
+     */
+    public void addAlignByModifier(float line) {
+        mBuffer.addModifierAlignBy(line);
+    }
+
+    /**
      * Add a clip rect modifier
      */
     public void addClipRectModifier() {

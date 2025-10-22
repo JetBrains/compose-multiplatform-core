@@ -41,7 +41,9 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -181,6 +183,27 @@ class ScrollIndicatorScreenshotTest {
                     state = state,
                     reverseLayout = true,
                     horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    items(20) { Text("item $it", modifier = Modifier.height(50.dp)) }
+                }
+                ScrollIndicator(state = state, modifier = Modifier.testTag(TEST_TAG))
+            }
+        }
+
+        rule.waitForIdle()
+
+        rule.verifyScreenshot(testName, screenshotRule)
+    }
+
+    @Test
+    fun position_indicator_round_with_tlc_reverseLayout() {
+        rule.setContentWithTheme {
+            ScreenConfiguration(SCREEN_SIZE_LARGE, isRound = true) {
+                val state = rememberTransformingLazyColumnState()
+                TransformingLazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    reverseLayout = true,
                 ) {
                     items(20) { Text("item $it", modifier = Modifier.height(50.dp)) }
                 }

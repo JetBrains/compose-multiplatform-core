@@ -61,8 +61,6 @@ RemovedFromBytecode: androidx.wear.compose.foundation.HierarchicalFocusCoordinat
     Binary breaking change: method androidx.wear.compose.foundation.HierarchicalFocusCoordinatorKt.rememberActiveFocusRequester() has been removed from bytecode
 RemovedFromBytecode: androidx.wear.compose.foundation.lazy.ScalingLazyListStateKt#rememberScalingLazyListState(int, int):
     Binary breaking change: method androidx.wear.compose.foundation.lazy.ScalingLazyListStateKt.rememberScalingLazyListState(int,int) has been removed from bytecode
-RemovedFromBytecode: androidx.wear.compose.foundation.lazy.TransformingLazyColumnKt#TransformingLazyColumn(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.TransformingLazyColumnState, androidx.compose.foundation.layout.PaddingValues, androidx.compose.foundation.layout.Arrangement.Vertical, androidx.compose.ui.Alignment.Horizontal, androidx.compose.foundation.gestures.FlingBehavior, boolean, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior, androidx.compose.foundation.OverscrollEffect, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope,kotlin.Unit>):
-    Binary breaking change: method androidx.wear.compose.foundation.lazy.TransformingLazyColumnKt.TransformingLazyColumn(androidx.compose.ui.Modifier,androidx.wear.compose.foundation.lazy.TransformingLazyColumnState,androidx.compose.foundation.layout.PaddingValues,androidx.compose.foundation.layout.Arrangement.Vertical,androidx.compose.ui.Alignment.Horizontal,androidx.compose.foundation.gestures.FlingBehavior,boolean,androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior,androidx.compose.foundation.OverscrollEffect,kotlin.jvm.functions.Function1<androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope,kotlin.Unit>) has been removed from bytecode
 RemovedFromBytecode: androidx.wear.compose.foundation.lazy.TransformingLazyColumnStateKt#rememberTransformingLazyColumnState(int, int):
     Binary breaking change: method androidx.wear.compose.foundation.lazy.TransformingLazyColumnStateKt.rememberTransformingLazyColumnState(int,int) has been removed from bytecode
 RemovedFromBytecode: androidx.wear.compose.foundation.pager.PagerDefaults#gestureInclusion(androidx.wear.compose.foundation.pager.PagerState, float):
@@ -171,8 +169,6 @@ RemovedFromKotlin: androidx.wear.compose.foundation.lazy.ScalingLazyListState#ge
     Source breaking change: method androidx.wear.compose.foundation.lazy.ScalingLazyListState.getCenterItemScrollOffset() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.foundation.lazy.ScalingLazyListState#getLayoutInfo():
     Source breaking change: method androidx.wear.compose.foundation.lazy.ScalingLazyListState.getLayoutInfo() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.wear.compose.foundation.lazy.ScalingLazyListState#isScrollInProgress():
-    Source breaking change: method androidx.wear.compose.foundation.lazy.ScalingLazyListState.isScrollInProgress() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.foundation.lazy.ScalingLazyListState.Companion#getSaver():
     Source breaking change: method androidx.wear.compose.foundation.lazy.ScalingLazyListState.Companion.getSaver() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.foundation.lazy.ScalingParams#getEdgeAlpha():
@@ -203,8 +199,6 @@ RemovedFromKotlin: androidx.wear.compose.foundation.lazy.TransformingLazyColumnS
     Source breaking change: method androidx.wear.compose.foundation.lazy.TransformingLazyColumnState.getAnchorItemScrollOffset() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.foundation.lazy.TransformingLazyColumnState#getLayoutInfo():
     Source breaking change: method androidx.wear.compose.foundation.lazy.TransformingLazyColumnState.getLayoutInfo() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.wear.compose.foundation.lazy.TransformingLazyColumnState#isScrollInProgress():
-    Source breaking change: method androidx.wear.compose.foundation.lazy.TransformingLazyColumnState.isScrollInProgress() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.foundation.lazy.TransformingLazyColumnVisibleItemInfo#getContentType():
     Source breaking change: method androidx.wear.compose.foundation.lazy.TransformingLazyColumnVisibleItemInfo.getContentType() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.foundation.lazy.TransformingLazyColumnVisibleItemInfo#getIndex():
@@ -241,8 +235,6 @@ RemovedFromKotlin: androidx.wear.compose.foundation.pager.PagerState#getSettledP
     Source breaking change: method androidx.wear.compose.foundation.pager.PagerState.getSettledPage() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.foundation.pager.PagerState#getTargetPage():
     Source breaking change: method androidx.wear.compose.foundation.pager.PagerState.getTargetPage() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.wear.compose.foundation.pager.PagerState#isScrollInProgress():
-    Source breaking change: method androidx.wear.compose.foundation.pager.PagerState.isScrollInProgress() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.foundation.pager.PagerState.Companion#getSaver():
     Source breaking change: method androidx.wear.compose.foundation.pager.PagerState.Companion.getSaver() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.foundation.rotary.RotarySnapLayoutInfoProvider#getAverageItemSize():
@@ -313,6 +305,8 @@ RemovedMethod: androidx.wear.compose.foundation.lazy.ScalingLazyColumnKt#Scaling
     Binary breaking change: Removed method androidx.wear.compose.foundation.lazy.ScalingLazyColumnKt.ScalingLazyColumn(androidx.compose.ui.Modifier,androidx.wear.compose.foundation.lazy.ScalingLazyListState,androidx.compose.foundation.layout.PaddingValues,boolean,androidx.compose.foundation.layout.Arrangement.Vertical,androidx.compose.ui.Alignment.Horizontal,androidx.compose.foundation.gestures.FlingBehavior,boolean,androidx.wear.compose.foundation.lazy.ScalingParams,int,androidx.wear.compose.foundation.lazy.AutoCenteringParams,androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior,androidx.compose.foundation.OverscrollEffect,kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.ScalingLazyListScope,kotlin.Unit>)
 RemovedMethod: androidx.wear.compose.foundation.lazy.ScalingParams#resolveViewportVerticalOffset(long):
     Binary breaking change: Removed method androidx.wear.compose.foundation.lazy.ScalingParams.resolveViewportVerticalOffset(long)
+RemovedMethod: androidx.wear.compose.foundation.lazy.TransformingLazyColumnKt#TransformingLazyColumn(androidx.compose.ui.Modifier, androidx.wear.compose.foundation.lazy.TransformingLazyColumnState, androidx.compose.foundation.layout.PaddingValues, androidx.compose.foundation.layout.Arrangement.Vertical, androidx.compose.ui.Alignment.Horizontal, androidx.compose.foundation.gestures.FlingBehavior, boolean, androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior, androidx.compose.foundation.OverscrollEffect, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope,kotlin.Unit>):
+    Binary breaking change: Removed method androidx.wear.compose.foundation.lazy.TransformingLazyColumnKt.TransformingLazyColumn(androidx.compose.ui.Modifier,androidx.wear.compose.foundation.lazy.TransformingLazyColumnState,androidx.compose.foundation.layout.PaddingValues,androidx.compose.foundation.layout.Arrangement.Vertical,androidx.compose.ui.Alignment.Horizontal,androidx.compose.foundation.gestures.FlingBehavior,boolean,androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior,androidx.compose.foundation.OverscrollEffect,kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnScope,kotlin.Unit>)
 RemovedMethod: androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults#snapBehavior(androidx.compose.foundation.gestures.ScrollableState, androidx.wear.compose.foundation.rotary.RotarySnapLayoutInfoProvider, float, boolean):
     Binary breaking change: Removed method androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults.snapBehavior(androidx.compose.foundation.gestures.ScrollableState,androidx.wear.compose.foundation.rotary.RotarySnapLayoutInfoProvider,float,boolean)
 RemovedMethod: androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults#snapBehavior(androidx.wear.compose.foundation.lazy.ScalingLazyListState, float, boolean):

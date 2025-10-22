@@ -120,24 +120,21 @@ The tool produces four forms of output: a human-readable summary, a machine-read
 The summary provides descriptive statistics for the benchmark timings (in nanoseconds) from both datasets (revisions) and an analysis of their difference.
 
 ```
---- Comparison for: withTrailingLambdas_compose ---
-                       Dataset 1 (Branch A) | Dataset 2 (Branch B)
-----------------------------------------------------------------
-Count                | 100                  | 100
-Min (ns)             | 160768.30            | 160433.01
-Mean (ns)            | 167300.93            | 167229.12
-Median (ns)          | 164604.77            | 164904.08
-Std. Dev. (ns)       | 8627.72              | 7774.46
-Min Difference:      | -335.28 ns (-0.21%)
-Mean Difference:     | -71.81 ns (-0.04%)
-Median Difference:   | 299.31 ns (0.18%)
-95% CI of Diff:      | [-678.86, 1390.19] ns ([-0.41%, 0.84%])
+--- Comparison for: fetchAccessibilityNodeInfo ---
+                             Dataset 1 (Branch A)   | Dataset 2 (Branch B)
+--------------------------------------------------------------------------
+Count                        | 100                  | 100
+Min (ns)                     | 170276.08            | 171739.96
+Mean (ns)                    | 180593.75            | 180930.72
+Median (ns)                  | 181528.44            | 182427.48
+Std. Dev. (ns)               | 4490.37              | 5726.01
+Min Difference:              | 1463.88 ns (0.86%)
+Mean Difference:             | 336.98 ns (0.19%)
+Median Difference:           | 899.04 ns (0.50%)
+95% CI of Diff:              | [-555.54, 2070.51] ns ([-0.31%, 1.14%])
+P-value (Mann-Whitney U):    | 0.4954
 
 The confidence interval contains zero, suggesting no statistically significant difference between the medians.
-
---- MannWhitneyUTest Results (Branch B vs. Branch A) ---
-P-value:                 0.5675
-Result:                  No statistically significant difference.
 
 -------------------------------------------------------
 ```

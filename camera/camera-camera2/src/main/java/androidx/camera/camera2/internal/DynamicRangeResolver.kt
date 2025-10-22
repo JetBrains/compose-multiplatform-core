@@ -19,8 +19,8 @@ import android.hardware.camera2.CameraCharacteristics
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.compat.DynamicRangeProfilesCompat
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.UseCaseConfig
@@ -215,7 +215,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
                 combinedConstraints,
             )
         if (resolvedDynamicRange != null) {
-            Log.debug {
+            Camera2Logger.debug {
                 "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel " +
                     "from existing attached surface.\n" +
                     "$requestedDynamicRange\n->\n$resolvedDynamicRange"
@@ -233,7 +233,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
                 combinedConstraints,
             )
         if (resolvedDynamicRange != null) {
-            Log.debug {
+            Camera2Logger.debug {
                 "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel from " +
                     "concurrently bound use case." +
                     "\n$requestedDynamicRange\n->\n$resolvedDynamicRange"
@@ -253,7 +253,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
                 combinedConstraints,
             )
         ) {
-            Log.debug {
+            Camera2Logger.debug {
                 "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel to " +
                     "no compatible HDR dynamic ranges.\n$requestedDynamicRange\n" +
                     "->\n${DynamicRange.SDR}"
@@ -284,7 +284,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
             resolvedDynamicRange =
                 findSupportedHdrMatch(requestedDynamicRange, hdrDefaultRanges, combinedConstraints)
             if (resolvedDynamicRange != null) {
-                Log.debug {
+                Camera2Logger.debug {
                     "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel" +
                         "from ${
                             if ((resolvedDynamicRange == recommendedRange)) "recommended"
@@ -313,7 +313,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
                 continue
             }
             if (canResolveDynamicRange(requestedDynamicRange, candidateRange)) {
-                Log.debug {
+                Camera2Logger.debug {
                     "DynamicRangeResolver: Resolved dynamic range for use case $rangeOwnerLabel " +
                         "from validated dynamic range constraints or supported HDR dynamic " +
                         "ranges.\n$requestedDynamicRange\n->\n$candidateRange"
@@ -423,7 +423,7 @@ public class DynamicRangeResolver(public val cameraMetadata: CameraMetadata) {
         constraints: Set<DynamicRange>,
     ): Boolean {
         if (!constraints.contains(candidateRange)) {
-            Log.debug {
+            Camera2Logger.debug {
                 "DynamicRangeResolver: Candidate Dynamic range is not within constraints.\n" +
                     "Dynamic range to resolve:\n" +
                     "  $rangeToResolve\n" +

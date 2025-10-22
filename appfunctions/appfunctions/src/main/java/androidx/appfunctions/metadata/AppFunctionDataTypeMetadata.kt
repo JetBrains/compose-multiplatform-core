@@ -18,6 +18,7 @@ package androidx.appfunctions.metadata
 
 import android.annotation.SuppressLint
 import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
 import androidx.appsearch.annotation.Document
 import java.util.Objects
 
@@ -35,6 +36,7 @@ import java.util.Objects
     AppFunctionDataTypeMetadata.TYPE_REFERENCE,
     AppFunctionDataTypeMetadata.TYPE_ALL_OF,
     AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT,
+    AppFunctionDataTypeMetadata.TYPE_ONE_OF,
 )
 @Retention(AnnotationRetention.SOURCE)
 internal annotation class AppFunctionDataType
@@ -85,6 +87,11 @@ internal constructor(
         internal const val TYPE_ALL_OF: Int = 12
         /** Pending Intent type. */
         internal const val TYPE_PENDING_INTENT: Int = 13
+
+        /**
+         * One of type. The schema of the one of type is defined in a [AppFunctionOneOfTypeMetadata]
+         */
+        internal const val TYPE_ONE_OF: Int = 14
     }
 
     override fun equals(other: Any?): Boolean {
@@ -319,6 +326,119 @@ constructor(
          * * An [AppFunctionReferenceTypeMetadata] to an outer object metadata.
          */
         internal const val TYPE: Int = TYPE_ALL_OF
+    }
+}
+
+/**
+ * Defines the schema for a data type that can be one of several possible types, representing a form
+ * of polymorphism or a sealed hierarchy.
+ *
+ * An object of this type must match exactly one of the schemas defined in the [matchOneOf] list.
+ * This is useful for modeling sealed classes or interfaces where an object can be one of a limited
+ * set of subtypes. This implies a hierarchical relationship between the parent type (represented by
+ * this `OneOfTypeMetadata`) and its possible concrete implementations in [matchOneOf].
+ *
+ * For example, consider the following sealed interface and its implementations:
+ * ```
+ * sealed interface Animal {
+ *     val name: String
+ * }
+ *
+ * data class Dog(
+ *     override val name: String,
+ *     val breed: String,
+ * ) : Animal
+ *
+ * data class Cat(
+ *     override val name: String,
+ *     val livesLeft: Int,
+ * ) : Animal
+ *
+ * ```
+ *
+ * The following [AppFunctionOneOfTypeMetadata] can be used to define a data type that matches any
+ * object implementing the `Animal` interface (i.e., either a `Dog` or a `Cat`).
+ *
+ * ```
+ * val animalType = AppFunctionOneOfTypeMetadata(
+ *     qualifiedName = "androidx.appfunctions.metadata.Animal",
+ *     matchOneOf = listOf(
+ *         AppFunctionObjectTypeMetadata(
+ *             qualifiedName = "androidx.appfunctions.metadata.Dog",
+ *             properties = mapOf(
+ *                 "name" to AppFunctionStringTypeMetadata(...),
+ *                 "breed" to AppFunctionStringTypeMetadata(...),
+ *             ),
+ *             required = listOf("name", "breed"),
+ *             isNullable = false,
+ *         ),
+ *         AppFunctionObjectTypeMetadata(
+ *             qualifiedName = "androidx.appfunctions.metadata.Cat",
+ *             properties = mapOf(
+ *                 "name" to AppFunctionStringTypeMetadata(...),
+ *                 "livesLeft" to AppFunctionIntTypeMetadata(...),
+ *             ),
+ *             required = listOf("name", "livesLeft"),
+ *             isNullable = false,
+ *         ),
+ *     ),
+ *     isNullable = false,
+ * )
+ * ```
+ *
+ * This data type can be used to define the schema of an input or output type.
+ */
+@RestrictTo(
+    // TODO: b/449915612 - Make it public
+    RestrictTo.Scope.LIBRARY_GROUP
+)
+public class AppFunctionOneOfTypeMetadata(
+    /** The list of possible data types that an object can match. */
+    public val matchOneOf: List<AppFunctionDataTypeMetadata>,
+    /**
+     * The parent object's qualified name if available. For example,
+     * "androidx.appfunctions.metadata.Animal".
+     *
+     * Use this value to set [androidx.appfunctions.AppFunctionData.qualifiedName] when trying to
+     * build the parameters for [androidx.appfunctions.ExecuteAppFunctionRequest].
+     */
+    public val qualifiedName: String?,
+    /** Whether this data type is nullable. */
+    isNullable: Boolean,
+    /** A description of the data type and its intended use. */
+    description: String = "",
+) : AppFunctionDataTypeMetadata(isNullable = isNullable, description = description) {
+    override fun toAppFunctionDataTypeMetadataDocument() =
+        AppFunctionDataTypeMetadataDocument(
+            type = TYPE,
+            oneOf = matchOneOf.map { it.toAppFunctionDataTypeMetadataDocument() },
+            isNullable = isNullable,
+            objectQualifiedName = qualifiedName,
+            description = description.ifEmpty { null },
+        )
+
+    override fun equals(other: Any?): Boolean {
+        if (!super.equals(other)) return false
+        if (other !is AppFunctionOneOfTypeMetadata) return false
+        if (qualifiedName != other.qualifiedName) return false
+        return matchOneOf == other.matchOneOf
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + matchOneOf.hashCode()
+        if (qualifiedName != null) {
+            result = 31 * result + qualifiedName.hashCode()
+        }
+        return result
+    }
+
+    override fun toString(): String {
+        return "AppFunctionOneOfTypeMetadata(matchOneOf=$matchOneOf, isNullable=$isNullable, description=$description)"
+    }
+
+    public companion object {
+        internal const val TYPE: Int = TYPE_ONE_OF
     }
 }
 
@@ -883,6 +1003,12 @@ internal data class AppFunctionDataTypeMetadataDocument(
     @Document.DocumentProperty val allOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
 
     /**
+     * If the [type] is [AppFunctionDataTypeMetadata.TYPE_ONE_OF], this specifies the types
+     * supported by this one of.
+     */
+    @Document.DocumentProperty val oneOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
+
+    /**
      * If the [type] is [AppFunctionDataTypeMetadata.TYPE_OBJECT], this specified the object's
      * required properties' names.
      */
@@ -945,6 +1071,13 @@ internal data class AppFunctionDataTypeMetadataDocument(
             AppFunctionDataTypeMetadata.TYPE_ALL_OF ->
                 AppFunctionAllOfTypeMetadata(
                     matchAll = allOf.map { it.toAppFunctionDataTypeMetadata() },
+                    qualifiedName = objectQualifiedName,
+                    isNullable = isNullable,
+                    description = description ?: "",
+                )
+            AppFunctionDataTypeMetadata.TYPE_ONE_OF ->
+                AppFunctionOneOfTypeMetadata(
+                    matchOneOf = oneOf.map { it.toAppFunctionDataTypeMetadata() },
                     qualifiedName = objectQualifiedName,
                     isNullable = isNullable,
                     description = description ?: "",

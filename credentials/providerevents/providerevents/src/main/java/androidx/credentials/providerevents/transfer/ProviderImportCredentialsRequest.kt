@@ -30,6 +30,9 @@ import androidx.credentials.provider.CallingAppInfo
  * @property request a request to import the provider's credentials
  * @property callingAppInfo the caller's app info
  * @property uri the FileProvider uri that the importer will read the response from
+ * @property credId the secret id that is used to identify the [ExportEntry]. This is set while
+ *   registering export entries. This can be used to validate that the platform that registered
+ *   [ExportEntry] and the platform that is requesting the credentials are the same.
  */
 public class ProviderImportCredentialsRequest(
     public val request: ImportCredentialsRequest,

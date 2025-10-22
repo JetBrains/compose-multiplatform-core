@@ -71,6 +71,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -88,6 +89,7 @@ class EntityTest {
     private val mockRenderingRuntime = mock<RenderingRuntime>()
     private val mockGltfModelEntityImpl = mock<RtGltfEntity>()
     private val mockPanelEntityImpl = mock<RtPanelEntity>()
+    private val mockMainPanelEntity = mock<RtPanelEntity>()
     private val mockAnchorEntityImpl = mock<RtAnchorEntity>()
     private val mockActivityPanelEntity = mock<RtActivityPanelEntity>()
     private val mockGroupEntity = mock<RtEntity>()
@@ -104,13 +106,6 @@ class EntityTest {
     private lateinit var activityPanelEntity: ActivityPanelEntity
     private lateinit var groupEntity: Entity
     private lateinit var surfaceEntity: SurfaceEntity
-
-    private val entityActivity =
-        Robolectric.buildActivity(ComponentActivity::class.java).create().start().get()
-    private val mockEntitySceneRuntime = mock<SceneRuntime>()
-    private val mockEntityRenderingRuntime = mock<RenderingRuntime>()
-
-    private lateinit var entitySession: Session
 
     interface FakeComponent : Component
 
@@ -258,33 +253,16 @@ class EntityTest {
     @RequiresApi(Build.VERSION_CODES.O)
     @Before
     fun setUp() = runBlocking {
-        whenever(mockEntitySceneRuntime.spatialEnvironment).thenReturn(mock())
-        val mockActivitySpace = mock<RtActivitySpace>()
-        whenever(mockEntitySceneRuntime.activitySpace).thenReturn(mockActivitySpace)
-        whenever(mockEntitySceneRuntime.headActivityPose).thenReturn(mock())
-        whenever(mockEntitySceneRuntime.mainPanelEntity).thenReturn(mock())
-        whenever(mockEntitySceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockAnchorEntity.state).thenReturn(RtAnchorEntity.State.UNANCHORED)
-        whenever(mockEntitySceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
-        entitySession =
-            Session(
-                entityActivity,
-                runtimes =
-                    listOf(
-                        mFakePerceptionRuntimeFactory.createRuntime(entityActivity),
-                        mockEntitySceneRuntime,
-                        mockEntityRenderingRuntime,
-                    ),
-            )
-        entitySession.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
-
         whenever(mockSceneRuntime.spatialEnvironment).thenReturn(mock())
         whenever(mockSceneRuntime.activitySpace).thenReturn(testActivitySpace)
         whenever(mockSceneRuntime.headActivityPose).thenReturn(mock())
         whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
+        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mockMainPanelEntity)
+        val mockGltfModelResource = mock<RtGltfModelResource>()
         whenever(mockRenderingRuntime.loadGltfByAssetName(anyString()))
-            .thenReturn(Futures.immediateFuture(mock()))
+            .thenReturn(Futures.immediateFuture(mockGltfModelResource))
         whenever(mockRenderingRuntime.createGltfEntity(any(), any(), any()))
             .thenReturn(mockGltfModelEntityImpl)
         whenever(
@@ -306,13 +284,12 @@ class EntityTest {
             .thenReturn(mockGroupEntity)
         whenever(mockRenderingRuntime.createSurfaceEntity(any(), any(), any(), any(), any(), any()))
             .thenReturn(mockSurfaceEntity)
-        whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mockPanelEntityImpl)
         session =
             Session(
                 activity,
                 runtimes =
                     listOf(
-                        mFakePerceptionRuntimeFactory.createRuntime(entityActivity),
+                        mFakePerceptionRuntimeFactory.createRuntime(activity),
                         mockSceneRuntime,
                         mockRenderingRuntime,
                     ),
@@ -320,7 +297,7 @@ class EntityTest {
         lifecycleManager = session.perceptionRuntime.lifecycleManager
         session.configure(
             Config(
-                planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
+                planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
                 headTracking = Config.HeadTrackingMode.LAST_KNOWN,
             )
         )
@@ -331,10 +308,7 @@ class EntityTest {
             GltfModelEntity.create(mockSceneRuntime, mockRenderingRuntime, entityManager, gltfModel)
         panelEntity =
             PanelEntity.create(
-                lifecycleManager = lifecycleManager,
-                context = activity,
-                sceneRuntime = mockSceneRuntime,
-                entityManager = entityManager,
+                session,
                 view = TextView(activity),
                 pixelDimensions = IntSize2d(720, 480),
                 name = "test",
@@ -347,31 +321,19 @@ class EntityTest {
                 PlaneSemanticType.ANY,
                 10.seconds.toJavaDuration(),
             )
-        activityPanelEntity =
-            ActivityPanelEntity.create(
-                lifecycleManager = lifecycleManager,
-                mockSceneRuntime,
-                entityManager = entityManager,
-                IntSize2d(640, 480),
-                "test",
-                activity,
-            )
-        groupEntity = GroupEntity.create(mockSceneRuntime, entityManager, "test")
+        activityPanelEntity = ActivityPanelEntity.create(session, IntSize2d(640, 480), "test")
+        groupEntity = GroupEntity.create(session, "test")
         surfaceEntity =
             SurfaceEntity.create(
-                lifecycleManager = lifecycleManager,
-                mockSceneRuntime,
-                mockRenderingRuntime,
-                entityManager,
-                SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE,
+                session,
                 Pose.Identity,
                 SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
+                SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE,
             )
     }
 
     @Test
     fun anchorEntityCreateWithNullTimeout_passesNullToImpl() {
-        whenever(mockSceneRuntime.createAnchorEntity()).thenReturn(mockAnchorEntityImpl)
         anchorEntity =
             AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
 
@@ -1170,11 +1132,11 @@ class EntityTest {
     }
 
     @Test
-    fun SurfaceEntity_redirectsCallsToRtEntity() {
+    fun surfaceEntity_redirectsCallsToRtEntity() {
         surfaceEntity.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
         verify(mockSurfaceEntity).stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
 
-        @Suppress("UNUSED_VARIABLE") var unusedMode = surfaceEntity.stereoMode
+        @Suppress("UNUSED_VARIABLE") val unusedMode = surfaceEntity.stereoMode
         verify(mockSurfaceEntity).stereoMode
 
         surfaceEntity.shape = SurfaceEntity.Shape.Sphere(1.0f)
@@ -1209,30 +1171,25 @@ class EntityTest {
     @Test
     fun createGltfResourceAsync_callsRuntimeLoadGltf() {
         runBlocking {
-            val mockGltfModelResource = mock<RtGltfModelResource>()
-            whenever(mockEntityRenderingRuntime.loadGltfByAssetName(anyString()))
-                .thenReturn(Futures.immediateFuture(mockGltfModelResource))
-            @Suppress("UNUSED_VARIABLE", "NewApi")
-            val unused = GltfModel.create(entitySession, Paths.get("test.glb"))
+            @Suppress("NewApi") val unused = GltfModel.create(session, Paths.get("intest.glb"))
 
-            verify(mockEntityRenderingRuntime).loadGltfByAssetName("test.glb")
+            verify(mockRenderingRuntime).loadGltfByAssetName("intest.glb")
         }
     }
 
     @Test
     fun createGltfEntity_callsRuntimeCreateGltfEntity() {
         runBlocking {
-            whenever(mockEntityRenderingRuntime.loadGltfByAssetName(anyString()))
-                .thenReturn(Futures.immediateFuture(mock()))
-            whenever(mockEntityRenderingRuntime.createGltfEntity(any(), any(), any()))
-                .thenReturn(mock())
-            @Suppress("NewApi")
-            val gltfModel = GltfModel.create(entitySession, Paths.get("test.glb"))
-            @Suppress("UNUSED_VARIABLE")
-            val unused = GltfModelEntity.create(entitySession, gltfModel)
+            val mockInTestglTFModelResource = mock<RtGltfModelResource>()
+            whenever(mockRenderingRuntime.loadGltfByAssetName("intest.glb"))
+                .thenReturn(Futures.immediateFuture(mockInTestglTFModelResource))
 
-            verify(mockEntityRenderingRuntime).loadGltfByAssetName(eq("test.glb"))
-            verify(mockEntityRenderingRuntime).createGltfEntity(any(), any(), any())
+            @Suppress("NewApi") val gltfModel = GltfModel.create(session, Paths.get("intest.glb"))
+            val unused = GltfModelEntity.create(session, gltfModel)
+
+            verify(mockRenderingRuntime).loadGltfByAssetName(eq("intest.glb"))
+            verify(mockRenderingRuntime)
+                .createGltfEntity(any(), eq(mockInTestglTFModelResource), any())
         }
     }
 
@@ -1240,7 +1197,7 @@ class EntityTest {
     fun createPanelEntity_callsRuntimeCreatePanelEntity() {
         val view = TextView(activity)
         whenever(
-                mockEntitySceneRuntime.createPanelEntity(
+                mockSceneRuntime.createPanelEntity(
                     any<Context>(),
                     any<Pose>(),
                     any<View>(),
@@ -1251,14 +1208,14 @@ class EntityTest {
             )
             .thenReturn(mock())
         @Suppress("UNUSED_VARIABLE")
-        val unused = PanelEntity.create(entitySession, view, IntSize2d(720, 480), "test")
+        val unused = PanelEntity.create(session, view, IntSize2d(640, 480), "test")
 
-        verify(mockEntitySceneRuntime)
+        verify(mockSceneRuntime)
             .createPanelEntity(
                 any<Context>(),
                 any<Pose>(),
                 any<View>(),
-                any<RtPixelDimensions>(),
+                eq(RtPixelDimensions(640, 480)),
                 any<String>(),
                 any<RtEntity>(),
             )
@@ -1266,29 +1223,19 @@ class EntityTest {
 
     @Test
     fun createAnchorEntity_callsRuntimeCreateAnchorEntity() {
-        whenever(mockEntitySceneRuntime.createAnchorEntity()).thenReturn(mockAnchorEntityImpl)
-        @Suppress("UNUSED_VARIABLE")
-        val unused =
-            AnchorEntity.create(
-                entitySession,
-                FloatSize2d(),
-                PlaneOrientation.ANY,
-                PlaneSemanticType.ANY,
-            )
-
-        verify(mockEntitySceneRuntime).createAnchorEntity()
+        // setUp creates the anchor entity, make sure it calls the runtime factory.
+        verify(mockSceneRuntime).createAnchorEntity()
     }
 
     @Test
     fun createActivityPanelEntity_callsRuntimeCreateActivityPanelEntity() {
-        whenever(
-                mockEntitySceneRuntime.createActivityPanelEntity(any(), any(), any(), any(), any())
-            )
+        whenever(mockSceneRuntime.createActivityPanelEntity(any(), any(), any(), any(), any()))
             .thenReturn(mock())
         @Suppress("UNUSED_VARIABLE")
-        val unused = ActivityPanelEntity.create(entitySession, IntSize2d(640, 480), "test")
+        val unused = ActivityPanelEntity.create(session, IntSize2d(320, 240), "test")
 
-        verify(mockEntitySceneRuntime).createActivityPanelEntity(any(), any(), any(), any(), any())
+        verify(mockSceneRuntime)
+            .createActivityPanelEntity(any(), eq(RtPixelDimensions(320, 240)), any(), any(), any())
     }
 
     @Test
@@ -1330,5 +1277,93 @@ class EntityTest {
         gltfModelEntity.dispose()
         activitySpace.dispose()
         activitySpace.dispose()
+    }
+
+    @Test
+    fun getChildren_noChildren_returnsEmptyList() {
+        // Configure the mock RtEntity to have no children.
+        whenever(mockGroupEntity.children).thenReturn(emptyList())
+
+        // Call the getChildren method on the wrapper entity.
+        val children = groupEntity.children
+
+        // Verify the returned list is empty and the underlying property was accessed.
+        assertThat(children).isEmpty()
+        verify(mockGroupEntity).children
+    }
+
+    @Test
+    fun getChildren_withChildren_returnsAllChildren() {
+        // Configure the mock parent (mockGroupEntity) to have two children.
+        // The corresponding wrapper entities (panelEntity, gltfModelEntity) were created in setUp.
+        val rtChildren = listOf(mockPanelEntityImpl, mockGltfModelEntityImpl)
+        whenever(mockGroupEntity.children).thenReturn(rtChildren)
+
+        // Call getChildren on the parent entity.
+        val children = groupEntity.children
+
+        // Verify the returned list contains the correct wrapper entities in order.
+        assertThat(children).containsExactly(panelEntity, gltfModelEntity).inOrder()
+        verify(mockGroupEntity).children
+    }
+
+    @Test
+    fun dispose_recursivelyDisposesChildren() {
+        // Set up a parent (groupEntity) with a child (panelEntity).
+        // Mock getChildren() to return the child entity.
+        whenever(mockGroupEntity.children).thenReturn(listOf(mockPanelEntityImpl))
+
+        // Dispose of the parent entity.
+        groupEntity.dispose()
+
+        // Verify that dispose() was called on both the parent's and the child's runtime
+        // entities.
+        verify(mockGroupEntity).dispose()
+        verify(mockPanelEntityImpl).dispose()
+    }
+
+    @Test
+    fun dispose_doesNotDisposeMainPanelEntityIfChild() {
+        // Get the mainPanelEntity. In the mock setup, this corresponds to mockPanelEntityImpl.
+        val mainPanel = session.scene.mainPanelEntity
+
+        // Set the mainPanel as a child of the group.
+        whenever(mockGroupEntity.children).thenReturn(listOf(mockMainPanelEntity))
+        mainPanel.parent = groupEntity
+
+        // Dispose of the group entity.
+        groupEntity.dispose()
+
+        // Verify that the group entity's runtime was disposed.
+        verify(mockGroupEntity).dispose()
+        // Verify that the mainPanelEntity's runtime was NOT disposed, even though it was a child.
+        verify(mockMainPanelEntity, never()).dispose()
+    }
+
+    @Test
+    fun dispose_doesNotDisposeMainPanelEntityButDisposesItsChildren() {
+        // Get the mainPanelEntity. In the mock setup, this corresponds to mockPanelEntityImpl.
+        val mainPanel = session.scene.mainPanelEntity
+
+        // Set the mainPanel as a child of the group.
+        whenever(mockGroupEntity.children).thenReturn(listOf(mockMainPanelEntity))
+        mainPanel.parent = groupEntity
+
+        // Set childOfMainPanel as a child of mainPanel.
+        whenever(mockMainPanelEntity.children).thenReturn(listOf(mockPanelEntityImpl))
+        panelEntity.parent = mainPanel
+
+        // Dispose of the group entity.
+        groupEntity.dispose()
+
+        // Verify that the group entity's runtime was disposed.
+        verify(mockGroupEntity).dispose()
+        // Verify that the mainPanelEntity's runtime was NOT disposed.
+        verify(mockMainPanelEntity, never()).dispose()
+        // Verify that the child of the mainPanelEntity WAS disposed.
+        verify(mockPanelEntityImpl).dispose()
+
+        // Verify that the mainPanelEntity's parent is now null.
+        assertThat(mainPanel.parent).isNull()
     }
 }

@@ -21,7 +21,7 @@ import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.RoomTypeNames.ROOM_DB
 import androidx.room3.processor.DaoProcessor
 import androidx.room3.testing.context
@@ -178,7 +178,7 @@ class DefaultsInDaoTest(private val jvmDefaultMode: String) {
         jvmTarget: String = "1.8",
         handler: (StringSubject) -> Unit,
     ) {
-        runProcessorTest(
+        runKspTest(
             sources = listOf(source, COMMON.COROUTINES_ROOM, COMMON.ROOM_DATABASE_KTX),
             javacArguments = listOf("-source", jvmTarget),
             kotlincArguments = listOf("-jvm-target=$jvmTarget", "-Xjvm-default=${jvmDefaultMode}"),

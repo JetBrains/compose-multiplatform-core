@@ -44,7 +44,7 @@ class AnalyzedBundleInfo(val bundleInfo: BundleInfo) {
                 libraryAnalysis.csvEntries() +
                 bundleInfo.csvEntries())
         check(entries.size == CSV_TITLES.size) {
-            "CSV Entry count (${entries.size}) didn't match header count ${CSV_TITLES.size}"
+            "CSV Entry count (${entries.size}) didn't match header count ${CSV_TITLES.size}, entries = $entries, path ${bundleInfo.path}"
         }
         return entries.joinToString(", ")
     }

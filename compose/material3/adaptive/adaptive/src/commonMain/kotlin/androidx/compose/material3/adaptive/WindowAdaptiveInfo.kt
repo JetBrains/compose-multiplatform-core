@@ -18,11 +18,9 @@ package androidx.compose.material3.adaptive
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.toSize
 import androidx.window.core.layout.WindowSizeClass
 
 /**
@@ -35,10 +33,9 @@ import androidx.window.core.layout.WindowSizeClass
  *   include large and extra-large widths.
  * @return [WindowAdaptiveInfo] of the provided context
  */
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun currentWindowAdaptiveInfo(supportLargeAndXLargeWidth: Boolean = false): WindowAdaptiveInfo {
-    val windowSize = currentWindowDpSize()
+    val windowSize = LocalWindowInfo.current.containerDpSize
     return WindowAdaptiveInfo(
         windowSizeClass =
             if (supportLargeAndXLargeWidth) {
@@ -55,10 +52,14 @@ fun currentWindowAdaptiveInfo(supportLargeAndXLargeWidth: Boolean = false): Wind
  *
  * @return an [DpSize] that represents the current window size.
  */
+@Deprecated(
+    message = "Going to be removed in the next version. Prefer LocalWindowInfo instead",
+    replaceWith = ReplaceWith("LocalWindowInfo.current.containerDpSize"),
+    DeprecationLevel.WARNING,
+)
 @ExperimentalMaterial3AdaptiveApi
 @Composable
-fun currentWindowDpSize(): DpSize =
-    with(LocalDensity.current) { currentWindowSize().toSize().toDpSize() }
+fun currentWindowDpSize(): DpSize = LocalWindowInfo.current.containerDpSize
 
 /**
  * Returns and automatically update the current window size. It's a convenient function of getting
@@ -66,7 +67,13 @@ fun currentWindowDpSize(): DpSize =
  *
  * @return an [IntSize] that represents the current window size.
  */
-@Composable fun currentWindowSize(): IntSize = LocalWindowInfo.current.containerSize
+@Deprecated(
+    message = "Prefer LocalWindowInfo instead",
+    replaceWith = ReplaceWith("LocalWindowInfo.current.containerSize"),
+    DeprecationLevel.WARNING,
+)
+@Composable
+fun currentWindowSize(): IntSize = LocalWindowInfo.current.containerSize
 
 /**
  * This class collects window info that affects adaptation decisions. An adaptive layout is supposed

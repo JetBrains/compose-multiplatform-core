@@ -23,7 +23,7 @@ import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE
 import androidx.room3.ext.KotlinTypeNames.FLOW
 import androidx.room3.ext.LifecyclesTypeNames.COMPUTABLE_LIVE_DATA
@@ -342,10 +342,7 @@ class TransactionFunctionProcessorTest {
                 COMMON.LISTENABLE_FUTURE,
                 COMMON.FLOW,
             )
-        runProcessorTest(
-            sources = inputSource + otherSources,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        ) { invocation ->
+        runKspTest(sources = inputSource + otherSources) { invocation ->
             val (owner, methods) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)

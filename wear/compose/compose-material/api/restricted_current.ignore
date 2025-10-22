@@ -281,8 +281,6 @@ RemovedFromKotlin: androidx.wear.compose.material.PickerState#getRepeatItems():
     Source breaking change: method androidx.wear.compose.material.PickerState.getRepeatItems() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.material.PickerState#getSelectedOption():
     Source breaking change: method androidx.wear.compose.material.PickerState.getSelectedOption() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.wear.compose.material.PickerState#isScrollInProgress():
-    Source breaking change: method androidx.wear.compose.material.PickerState.isScrollInProgress() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.material.PickerState#setNumberOfOptions(int):
     Source breaking change: method androidx.wear.compose.material.PickerState.setNumberOfOptions(int) can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.material.PickerState.Companion#getSaver():
@@ -337,8 +335,6 @@ RemovedFromKotlin: androidx.wear.compose.material.ScalingLazyListState#getCenter
     Source breaking change: method androidx.wear.compose.material.ScalingLazyListState.getCenterItemScrollOffset() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.material.ScalingLazyListState#getLayoutInfo():
     Source breaking change: method androidx.wear.compose.material.ScalingLazyListState.getLayoutInfo() can no longer be resolved from Kotlin source
-RemovedFromKotlin: androidx.wear.compose.material.ScalingLazyListState#isScrollInProgress():
-    Source breaking change: method androidx.wear.compose.material.ScalingLazyListState.isScrollInProgress() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.material.ScalingLazyListState.Companion#getSaver():
     Source breaking change: method androidx.wear.compose.material.ScalingLazyListState.Companion.getSaver() can no longer be resolved from Kotlin source
 RemovedFromKotlin: androidx.wear.compose.material.ScalingParams#getEdgeAlpha():

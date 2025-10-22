@@ -18,8 +18,6 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraDevice
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
@@ -79,7 +77,7 @@ constructor(
     private val closed = atomic(false)
 
     init {
-        debug { "Configured $this for $useCases" }
+        Camera2Logger.debug { "Configured $this for $useCases" }
     }
 
     override fun start(): Unit =
@@ -89,7 +87,7 @@ constructor(
             // CameraGraph.
             graph.start()
 
-            debug { "Setting up Surfaces with UseCaseSurfaceManager" }
+            Camera2Logger.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
             if (sessionConfigAdapter.isSessionConfigValid()) {
                 useCaseSurfaceManager
                     .setupAsync(graph, sessionConfigAdapter, surfaceToStreamMap)
@@ -97,18 +95,20 @@ constructor(
                         // Only show logs for error cases, ignore CancellationException since the
                         // task could be cancelled by UseCaseSurfaceManager#stopAsync().
                         if (throwable != null && throwable !is CancellationException) {
-                            Log.error(throwable) { "Surface setup error!" }
+                            Camera2Logger.error(throwable) { "Surface setup error!" }
                         }
                     }
             } else {
-                Log.error { "Unable to create capture session due to conflicting configurations" }
+                Camera2Logger.error {
+                    "Unable to create capture session due to conflicting configurations"
+                }
             }
         }
 
     override fun close(): Job {
         return if (closed.compareAndSet(expect = false, update = true)) {
             threads.scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                debug { "Closing $this" }
+                Camera2Logger.debug { "Closing $this" }
                 requestControl.close()
                 useCaseGraphConfig.graph.close()
                 useCaseSurfaceManager.stopAsync().await()

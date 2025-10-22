@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.projected.ProjectedContext
 import androidx.xr.projected.testapp.audio.AudioActivity
-import androidx.xr.projected.testapp.audiomanager.AudioManagerActivity
 import androidx.xr.projected.testapp.componentpermissions.PermissionsComponentActivity
 import androidx.xr.projected.testapp.permissions.PermissionsActivity
 import androidx.xr.projected.testapp.projectedcontext.ProjectedContextActivity
@@ -131,7 +130,6 @@ class MainActivity : ComponentActivity() {
         val ACTIVITY_MAP: Map<String, Class<*>> =
             mapOf(
                 "Projected Context" to ProjectedContextActivity::class.java,
-                "Audio Manager" to AudioManagerActivity::class.java,
                 "Audio" to AudioActivity::class.java,
             )
 

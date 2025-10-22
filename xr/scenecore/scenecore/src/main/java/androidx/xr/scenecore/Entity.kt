@@ -18,7 +18,6 @@
 
 package androidx.xr.scenecore
 
-import android.util.Log
 import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
@@ -52,7 +51,8 @@ public interface Entity : ScenePose {
      */
     public fun addChild(child: Entity)
 
-    /* TODO b/362296608: Add a getChildren() method. */
+    /** Provides the list of all children of this entity. */
+    public val children: List<Entity>
 
     /**
      * Sets the [Pose] for this Entity. The Pose given is set relative to the [Space] provided.
@@ -279,27 +279,27 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
         }
         set(value) {
             checkNotDisposed()
-            if (value == null) {
-                rtEntity!!.parent = null
-                return
+            require(value == null || value is BaseEntity<*>) {
+                "Parent must be a subtype of BaseEntity or null."
             }
-
-            if (value !is BaseEntity<*>) {
-                Log.e(TAG, "Parent must be a subclass of BaseEntity")
-                return
-            }
-            rtEntity!!.parent = value.rtEntity
+            rtEntity!!.parent = value?.rtEntity
         }
 
     override fun addChild(child: Entity) {
         checkNotDisposed()
-        if (child !is BaseEntity<*>) {
-            Log.e(TAG, "Child must be a subclass of BaseEntity!")
-            return
-        }
+        require(child is BaseEntity<*>) { "Child must be a subtype of BaseEntity." }
         child.checkNotDisposed()
         rtEntity!!.addChild(child.rtEntity!!)
     }
+
+    private fun getChildrenInternal() =
+        rtEntity?.children?.mapNotNull { entityManager.getEntityForRtEntity(it) } ?: emptyList()
+
+    override val children: List<Entity>
+        get() {
+            checkNotDisposed()
+            return getChildrenInternal()
+        }
 
     override fun setPose(pose: Pose, @SpaceValue relativeTo: Int) {
         checkNotDisposed()
@@ -348,6 +348,21 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
     }
 
     override fun dispose() {
+        if (rtEntity == null) return
+        // Make a copy for avoiding concurrent access when disposing children.
+        // Main panel is disposed when session is destroyed. Disconnect it from scene if it's
+        // parented to entity being disposed.
+        val childrenToDispose = getChildrenInternal()
+        childrenToDispose.forEach { child ->
+            when (child) {
+                is MainPanelEntity -> {
+                    child.parent = null
+                    // Dispose children of main panel.
+                    child.children.forEach { it.dispose() }
+                }
+                else -> child.dispose()
+            }
+        }
         rtEntity?.let {
             removeAllComponents()
             entityManager.removeEntity(this)

@@ -39,6 +39,7 @@ import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState.Companion.OffsetToTriggerInitialPin
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutItemAnimator
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutPrefetchState
 import kotlin.coroutines.EmptyCoroutineContext
@@ -50,10 +51,37 @@ import kotlinx.coroutines.launch
 /**
  * Creates a [TransformingLazyColumnState] that is remembered across compositions.
  *
+ * This overload initializes the list with no scroll offset, so you cannot scroll down the screen
+ * for a normal layout or up the screen for a reverse layout.
+ *
+ * If the items all fit on the screen after content padding is applied, then the items are laid out
+ * respecting the content padding, the layout direction and also the vertical arrangement. However,
+ * if the items do not fit on the screen, then content padding and reverse layout are respected and
+ * the vertical arrangement is ignored - so the first item is pinned to the start of the viewport
+ * (top in a normal layout, bottom in a reverse layout) after content padding.
+ *
+ * The behavior of this special case is identical to that for the parameterized overload of
+ * rememberTransformingLazyColumnState, unless very large content padding is provided (such as when
+ * using TransformingLazyColumn with reversed layout and EdgeButton within a ScreenScaffold), in
+ * which case the parameterized overload will try to center the initialAnchorItemIndex.
+ */
+@Composable
+public fun rememberTransformingLazyColumnState(): TransformingLazyColumnState =
+    rememberSaveable(saver = TransformingLazyColumnState.Saver) {
+        TransformingLazyColumnState(
+            initialAnchorItemIndex = 0,
+            initialAnchorItemScrollOffset = OffsetToTriggerInitialPin,
+        )
+    }
+
+/**
+ * Creates a [TransformingLazyColumnState] that is remembered across compositions.
+ *
  * @param initialAnchorItemIndex the index of an item that is going to be placed in the center of
- *   the screen (if possible). This correlates with [TransformingLazyColumnState.anchorItemIndex].
+ *   the screen (if sufficient content padding is available for that item to be centered). This
+ *   correlates with [TransformingLazyColumnState.anchorItemIndex].
  * @param initialAnchorItemScrollOffset the offset of an item to be used when placing the item in
- *   the center of the screen (if possible). This correlates with
+ *   the center of the screen (if possible - see above). This correlates with
  *   [TransformingLazyColumnState.anchorItemScrollOffset].
  */
 @Composable
@@ -322,6 +350,14 @@ internal constructor(
             return start until end
         }
 
+        /**
+         * A very large scroll offset used to intentionally trigger the overscroll correction logic
+         * on the first composition. This is a trick to ensure that when the state is created with
+         * default arguments, the list is correctly pinned to the start of the viewport (top or
+         * bottom, depending on `reverseLayout`).
+         */
+        internal const val OffsetToTriggerInitialPin = Int.MAX_VALUE / 2
+
         /** The default [Saver] implementation for [TransformingLazyColumnState]. */
         internal val Saver =
             listSaver<TransformingLazyColumnState, Int>(
@@ -478,6 +514,7 @@ private val EmptyTransformingLazyColumnMeasureResult =
         beforeContentPadding = 0,
         afterContentPadding = 0,
         childConstraints = Constraints(),
+        reverseLayout = false,
         measureResult =
             object : MeasureResult {
                 override val width: Int = 0

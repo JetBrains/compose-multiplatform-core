@@ -26,9 +26,9 @@ import android.hardware.camera2.CameraMetadata.SCALER_AVAILABLE_STREAM_USE_CASES
 import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.adapter.SupportedSurfaceCombination
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.internal.StreamUseCaseUtil.STREAM_USE_CASE_STREAM_SPEC_OPTION
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ExperimentalZeroShutterLag
@@ -119,7 +119,7 @@ public object StreamUseCaseUtil {
                     STREAM_USE_CASE_STREAM_SPEC_OPTION
                 ) && sessionConfig.surfaces.size != 1
             ) {
-                Log.error {
+                Camera2Logger.error {
                     "StreamUseCaseUtil: SessionConfig has stream use case but also contains " +
                         "${sessionConfig.surfaces.size} surfaces, " +
                         "abort populateSurfaceToStreamUseCaseMapping()."
@@ -164,7 +164,7 @@ public object StreamUseCaseUtil {
                 position++
             }
         }
-        Log.debug {
+        Camera2Logger.debug {
             "populateSurfaceToStreamUseCaseMapping() - streamUseCaseMap = $streamUseCaseMap"
         }
     }

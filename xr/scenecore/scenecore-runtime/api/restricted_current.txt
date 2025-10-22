@@ -776,7 +776,7 @@ package androidx.xr.scenecore.runtime {
     property public abstract boolean isPreferredSpatialEnvironmentActive;
     property public abstract float preferredPassthroughOpacity;
     property public abstract androidx.xr.scenecore.runtime.SpatialEnvironment.SpatialEnvironmentPreference? preferredSpatialEnvironment;
-    field public static final androidx.xr.scenecore.runtime.SpatialEnvironment.Companion Companion;
+    field @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final androidx.xr.scenecore.runtime.SpatialEnvironment.Companion Companion;
     field public static final float NO_PASSTHROUGH_OPACITY_PREFERENCE = (-1.0f/0.0f);
   }
 

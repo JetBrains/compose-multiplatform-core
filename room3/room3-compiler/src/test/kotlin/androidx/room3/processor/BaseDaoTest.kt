@@ -4,7 +4,7 @@ import COMMON
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.testing.context
 import androidx.room3.vo.Dao
 import androidx.room3.writer.DaoWriter
@@ -209,7 +209,7 @@ class BaseDaoTest {
             """
                     .trimIndent(),
             )
-        runProcessorTest(sources = listOf(source)) { invocation ->
+        runKspTest(sources = listOf(source)) { invocation ->
             val dbElm = invocation.context.processingEnv.requireTypeElement("MyDb")
             val dbType = dbElm.type
             // if we could create valid code, it is good, no need for assertions.
@@ -269,8 +269,7 @@ class BaseDaoTest {
             """,
             )
         // https://github.com/google/ksp/issues/2051
-        runProcessorTest(sources = listOf(baseClass, extension, COMMON.USER, fakeDb)) { invocation
-            ->
+        runKspTest(sources = listOf(baseClass, extension, COMMON.USER, fakeDb)) { invocation ->
             val daoElm = invocation.processingEnv.requireTypeElement("foo.bar.MyDao")
             val dbElm = invocation.context.processingEnv.requireTypeElement("foo.bar.MyDb")
             val dbType = dbElm.type

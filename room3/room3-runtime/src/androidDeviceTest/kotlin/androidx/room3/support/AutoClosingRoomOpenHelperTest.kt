@@ -20,7 +20,6 @@ import android.content.Context
 import android.database.sqlite.SQLiteException
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
-import androidx.room3.util.useCursor
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
@@ -171,7 +170,7 @@ class AutoClosingRoomOpenHelperTest {
 
         statement.executeInsert() // This should succeed
 
-        db.query("select * from user").useCursor { assertThat(it.count).isEqualTo(1) }
+        db.query("select * from user").use { assertThat(it.count).isEqualTo(1) }
 
         assertThat(autoClosingRoomOpenHelper.autoCloser.refCountForTest).isEqualTo(0)
     }
@@ -192,7 +191,7 @@ class AutoClosingRoomOpenHelperTest {
 
         statement.executeInsert()
 
-        db.query("select * from users").useCursor {
+        db.query("select * from users").use {
             assertThat(it.moveToFirst()).isTrue()
             assertThat(it.getInt(0)).isEqualTo(123)
             assertThat(it.getDouble(1)).isWithin(.01).of(1.23)
@@ -205,7 +204,7 @@ class AutoClosingRoomOpenHelperTest {
         statement.clearBindings()
         statement.executeInsert() // should insert with nulls
 
-        db.query("select * from users").useCursor {
+        db.query("select * from users").use {
             assertThat(it.moveToFirst()).isTrue()
             it.moveToNext()
             assertThat(it.isNull(0)).isTrue()

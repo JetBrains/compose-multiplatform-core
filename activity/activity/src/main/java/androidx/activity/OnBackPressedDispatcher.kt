@@ -25,11 +25,12 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.core.util.Consumer
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Lifecycle.Event
+import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
-import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInput
 import androidx.navigationevent.OnBackInvokedDefaultInput
 import androidx.navigationevent.OnBackInvokedOverlayInput
@@ -130,62 +131,67 @@ class OnBackPressedDispatcher(
     }
 
     /**
-     * Receive callbacks to a new [OnBackPressedCallback] when the given [LifecycleOwner] is at
-     * least [started][Lifecycle.State.STARTED].
+     * Registers a new [OnBackPressedCallback] that follows the lifecycle of the given
+     * [LifecycleOwner].
      *
-     * This will automatically call [addCallback] and remove the callback as the lifecycle state
-     * changes. As a corollary, if your lifecycle is already at least
-     * [started][Lifecycle.State.STARTED], calling this method will result in an immediate call to
-     * [addCallback].
+     * The callback is registered once and stays attached for the lifetime of the [LifecycleOwner].
+     * Its [OnBackPressedCallback.isEnabled] state automatically follows the lifecycle: it becomes
+     * enabled when the lifecycle is at least [Lifecycle.State.STARTED] and disabled otherwise.
      *
-     * When the [LifecycleOwner] is [destroyed][Lifecycle.State.DESTROYED], it will automatically be
-     * removed from the list of callbacks. The only time you would need to manually call
-     * [OnBackPressedCallback.remove] is if you'd like to remove the callback prior to destruction
-     * of the associated lifecycle.
+     * When the [LifecycleOwner] is [Lifecycle.State.DESTROYED], the callback is removed and
+     * lifecycle tracking stops. If the lifecycle is already destroyed when this method is called,
+     * the callback is not added.
      *
-     * If the Lifecycle is already [destroyed][Lifecycle.State.DESTROYED] when this method is
-     * called, the callback will not be added.
+     * ## Legacy Behavior
+     * To restore the legacy add/remove behavior, set
+     * [ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable] to `false`. In legacy mode,
+     * the handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP],
+     * which may change dispatch ordering across lifecycle transitions.
      *
-     * @param owner The LifecycleOwner which controls when the callback should be invoked
-     * @param onBackPressedCallback The callback to add
+     * @param owner The [LifecycleOwner] that controls when the callback should be active.
+     * @param onBackPressedCallback The callback to register.
      * @see onBackPressed
      */
     @MainThread
+    @OptIn(ExperimentalActivityApi::class)
     fun addCallback(owner: LifecycleOwner, onBackPressedCallback: OnBackPressedCallback) {
         val lifecycle = owner.lifecycle
 
-        if (lifecycle.currentState === Lifecycle.State.DESTROYED) {
+        if (lifecycle.currentState === State.DESTROYED) {
             return // Do not add the callback if the lifecycle is already destroyed.
+        }
+
+        val eventHandler = onBackPressedCallback.createNavigationEventHandler()
+
+        if (ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable) {
+            // Start disabled; will be enabled by lifecycle events.
+            eventHandler.isBackEnabled = false
+
+            // Add handler immediately to fix its position in the dispatch queue.
+            eventDispatcher.addHandler(eventHandler)
         }
 
         // This observer manages the callback's lifecycle-aware registration.
         val lifecycleObserver =
             object : LifecycleEventObserver, AutoCloseable {
-                private val eventHandler: NavigationEventHandler<*> =
-                    onBackPressedCallback.createNavigationEventHandler()
+                override fun onStateChanged(source: LifecycleOwner, event: Event) {
+                    // Sync enabled state with the lifecycle.
+                    if (ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable) {
+                        eventHandler.isBackEnabled =
+                            event.targetState.isAtLeast(State.STARTED) &&
+                                onBackPressedCallback.isEnabled
+                    } else {
+                        if (event == Event.ON_START) {
+                            // Register the INNER callback only when the lifecycle enters STARTED.
+                            // NOTE: This ADDS the callback to the top of the dispatching stack.
+                            eventDispatcher.addHandler(eventHandler)
+                        } else if (event == Event.ON_STOP) {
+                            // Removes the callback from the dispatching stack.
+                            eventHandler.remove()
+                        }
+                    }
 
-                /**
-                 * Manages lifecycle-aware registration of an [OnBackPressedCallback].
-                 *
-                 * Adds the callback to the top of the [NavigationEventDispatcher]'s stack on
-                 * `ON_START`, and removes it on `ON_STOP` without closing, allowing it to
-                 * re-register on restart.
-                 *
-                 * On `ON_DESTROY`, the callback is permanently removed and cleaned up.
-                 *
-                 * Repeated add/remove calls ensure the callback stays at the top of its lifecycle
-                 * group's dispatching stack, maintaining correct dispatch order based on lifecycle
-                 * state.
-                 */
-                override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-                    if (event === Lifecycle.Event.ON_START) {
-                        // Register the INNER callback only when the lifecycle enters STARTED.
-                        // NOTE: This ADDS the callback to the top of the dispatching stack.
-                        eventDispatcher.addHandler(eventHandler)
-                    } else if (event === Lifecycle.Event.ON_STOP) {
-                        // Removes the callback from the dispatching stack.
-                        eventHandler.remove()
-                    } else if (event === Lifecycle.Event.ON_DESTROY) {
+                    if (event == Event.ON_DESTROY) {
                         // Removes the callback from the dispatching stack.
                         eventHandler.remove()
                         // Stop lifecycle tracking if destroyed.
@@ -193,8 +199,8 @@ class OnBackPressedDispatcher(
                     }
                 }
 
-                // Stop lifecycle tracking when the callback is removed manually.
                 override fun close() {
+                    // Stop lifecycle tracking when the callback is removed manually.
                     lifecycle.removeObserver(observer = this)
                 }
             }
@@ -287,13 +293,19 @@ class OnBackPressedDispatcher(
 }
 
 /**
- * Create and add a new [OnBackPressedCallback] that calls [onBackPressed] in
- * [OnBackPressedCallback.handleOnBackPressed].
+ * Creates and registers a new [OnBackPressedCallback] that invokes [onBackPressed].
  *
- * If an [owner] is specified, the callback will only be added when the Lifecycle is
- * [androidx.lifecycle.Lifecycle.State.STARTED].
+ * If a [LifecycleOwner] is provided, the callback’s enabled state automatically follows the
+ * lifecycle: it is enabled while the lifecycle is at least [State.STARTED] and disabled otherwise.
+ * The callback stays registered until the [LifecycleOwner] is destroyed.
  *
  * A default [enabled] state can be supplied.
+ *
+ * ## Legacy Behavior
+ * To restore the legacy add/remove behavior, set
+ * [ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable] to `false`. In legacy mode, the
+ * handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which
+ * may change dispatch ordering across lifecycle transitions.
  */
 @Suppress("RegistrationName")
 fun OnBackPressedDispatcher.addCallback(

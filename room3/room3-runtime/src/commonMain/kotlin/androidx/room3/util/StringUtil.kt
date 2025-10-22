@@ -20,21 +20,7 @@
 package androidx.room3.util
 
 import androidx.annotation.RestrictTo
-import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
-
-@Suppress("unused")
-@JvmField
-@Deprecated("No longer used by generated code")
-public val EMPTY_STRING_ARRAY: Array<String?> = arrayOfNulls<String>(0)
-
-/**
- * Returns a new StringBuilder to be used while producing SQL queries.
- *
- * @return A new or recycled StringBuilder
- */
-@Deprecated("No longer used by generated code")
-public fun newStringBuilder(): StringBuilder = StringBuilder()
 
 /**
  * Adds bind variable placeholders (?) to the given string. Each placeholder is separated by a

@@ -948,8 +948,8 @@ abstract interface androidx.compose.ui.node/TraversableNode : androidx.compose.u
     }
 }
 
-abstract interface androidx.compose.ui.node/UnplacedStateAwareModifierNode : androidx.compose.ui.node/DelegatableNode { // androidx.compose.ui.node/UnplacedStateAwareModifierNode|null[0]
-    abstract fun onUnplaced() // androidx.compose.ui.node/UnplacedStateAwareModifierNode.onUnplaced|onUnplaced(){}[0]
+abstract interface androidx.compose.ui.node/UnplacedAwareModifierNode : androidx.compose.ui.node/DelegatableNode { // androidx.compose.ui.node/UnplacedAwareModifierNode|null[0]
+    abstract fun onUnplaced() // androidx.compose.ui.node/UnplacedAwareModifierNode.onUnplaced|onUnplaced(){}[0]
 }
 
 abstract interface androidx.compose.ui.platform/AccessibilityManager { // androidx.compose.ui.platform/AccessibilityManager|null[0]

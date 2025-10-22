@@ -23,6 +23,7 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Logger
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
+import androidx.camera.core.UseCase
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup
 import androidx.camera.core.featuregroup.impl.UseCaseType
@@ -30,10 +31,10 @@ import androidx.camera.core.featuregroup.impl.UseCaseType.Companion.getFeatureGr
 import androidx.camera.core.featuregroup.impl.UseCaseType.IMAGE_CAPTURE
 import androidx.camera.core.featuregroup.impl.UseCaseType.PREVIEW
 import androidx.camera.core.featuregroup.impl.UseCaseType.VIDEO_CAPTURE
-import androidx.camera.core.featuregroup.impl.feature.DynamicRangeFeature
-import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature
-import androidx.camera.core.featuregroup.impl.feature.ImageFormatFeature
-import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.DYNAMIC_RANGE
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.FPS_RANGE
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.IMAGE_FORMAT
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.VIDEO_STABILIZATION
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.Supported
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.Unsupported
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.UnsupportedUseCase
@@ -74,9 +75,6 @@ internal class DefaultFeatureGroupResolver(private val cameraInfoInternal: Camer
             "Must have at least one required or preferred feature"
         }
 
-        val supportsImageFeature = useCases.any { it is ImageCapture }
-        val supportsStreamFeature = useCases.any { it is Preview || isVideoCapture(it) }
-
         // Return early if given use case combination is known to be unsupported
         useCases.forEach {
             val useCaseType = it.getFeatureGroupUseCaseType()
@@ -87,42 +85,41 @@ internal class DefaultFeatureGroupResolver(private val cameraInfoInternal: Camer
 
         // Return early if a required feature is known to fail with given use case combination
         requiredFeatures.forEach { feature ->
-            when (feature) {
-                // UltraHDR requires ImageCapture use case
-                is ImageFormatFeature -> {
-                    if (!supportsImageFeature) {
-                        return UseCaseMissing(
-                            requiredUseCases = IMAGE_CAPTURE.toString(),
-                            featureRequiring = feature,
-                        )
-                    }
-                }
-                is DynamicRangeFeature,
-                is FpsRangeFeature,
-                is VideoStabilizationFeature -> {
-                    if (!supportsStreamFeature) {
-                        return UseCaseMissing(
-                            requiredUseCases = "$PREVIEW or $VIDEO_CAPTURE",
-                            featureRequiring = feature,
-                        )
-                    }
-                }
+            feature.getMissingUseCase(useCases)?.let {
+                return it
             }
         }
 
         val filteredPreferredFeatures =
             orderedPreferredFeatures.filter { feature ->
-                when (feature) {
-                    // Filter out UltraHDR if there's no image stream
-                    is ImageFormatFeature -> supportsImageFeature
-                    else -> true
-                }
+                // Filter out a feature if it's not supported by the use cases
+                feature.getMissingUseCase(useCases)?.also {
+                    Logger.d(TAG, "resolveFeatureGroup: filtered out preferred feature due to $it")
+                } == null
             }
+
+        Logger.d(TAG, "resolveFeatureGroup: filteredPreferredFeatures = $filteredPreferredFeatures")
 
         return getFeatureListResolvedByPriority(
             sessionConfig = sessionConfig,
             orderedPreferredFeatures = filteredPreferredFeatures,
         )
+    }
+
+    private fun GroupableFeature.getMissingUseCase(useCases: List<UseCase>): UseCaseMissing? {
+        val supportsImageFeature = useCases.any { it is ImageCapture }
+        val supportsStreamFeature = useCases.any { it is Preview || isVideoCapture(it) }
+
+        val missingUseCaseString =
+            when (featureTypeInternal) {
+                IMAGE_FORMAT -> IMAGE_CAPTURE.toString().takeIf { !supportsImageFeature }
+                DYNAMIC_RANGE,
+                FPS_RANGE,
+                VIDEO_STABILIZATION ->
+                    "$PREVIEW or $VIDEO_CAPTURE".takeIf { !supportsStreamFeature }
+            }
+
+        return missingUseCaseString?.let { UseCaseMissing(it, this) }
     }
 
     /**

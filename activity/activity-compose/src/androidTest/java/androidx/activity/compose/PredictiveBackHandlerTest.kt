@@ -50,6 +50,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,7 +58,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class PredictiveBackHandlerTestApi {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private fun OnBackPressedDispatcher.startGestureBack() =
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -166,6 +167,9 @@ class PredictiveBackHandlerTestApi {
         rule.runOnIdle {
             input.backStarted(NavigationEvent())
             input.backCompleted()
+        }
+
+        rule.runOnIdle {
             assertThat(result).isEqualTo(listOf("onBack"))
             assertThat(owner.onBackCompletedFallbackInvocations).isEqualTo(1)
         }
@@ -174,8 +178,8 @@ class PredictiveBackHandlerTestApi {
         rule.runOnIdle {
             input.backStarted(NavigationEvent())
             input.backCompleted()
-            assertThat(result).isEqualTo(listOf("onBack", "onBack"))
         }
+        rule.runOnIdle { assertThat(result).isEqualTo(listOf("onBack", "onBack")) }
     }
 
     @Test
@@ -466,7 +470,7 @@ class PredictiveBackHandlerTestApi {
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 34)
 class PredictiveBackHandlerTestApi34 {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun testHandleOnProgress() {
@@ -507,6 +511,8 @@ class PredictiveBackHandlerTestApi34 {
 
         dispatcher.dispatchOnBackStarted(fakeBackEventCompat())
         dispatcher.dispatchOnBackProgressed(fakeBackEventCompat())
+        // Ensure the handler's coroutine starts before we cancel it.
+        rule.waitForIdle()
         dispatcher.dispatchOnBackCancelled()
 
         rule.runOnIdle {
@@ -530,6 +536,8 @@ class PredictiveBackHandlerTestApi34 {
 
         dispatcher.dispatchOnBackStarted(fakeBackEventCompat())
         dispatcher.dispatchOnBackProgressed(fakeBackEventCompat())
+        // Ensure the handler's coroutine starts before we cancel it.
+        rule.waitForIdle()
         dispatcher.dispatchOnBackCancelled()
 
         rule.runOnIdle { assertThat(result).isEqualTo(listOf("start", "progress")) }
@@ -554,6 +562,8 @@ class PredictiveBackHandlerTestApi34 {
 
         dispatcher.dispatchOnBackStarted(fakeBackEventCompat())
         dispatcher.dispatchOnBackProgressed(fakeBackEventCompat())
+        // Ensure the handler's coroutine starts before we cancel it.
+        rule.waitForIdle()
         dispatcher.dispatchOnBackCancelled()
 
         rule.runOnIdle {

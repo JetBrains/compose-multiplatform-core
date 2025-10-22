@@ -311,7 +311,6 @@ public final class AppSearchImpl implements Closeable {
     @GuardedBy("mReadWriteLock")
     private int mLastReadOrWriteOperationLatencyMillisLocked;
 
-    @ExperimentalAppSearchApi
     private final @Nullable RevocableFileDescriptorStore mRevocableFileDescriptorStore;
 
     /** Whether this instance has been closed, and therefore unusable. */
@@ -2164,7 +2163,6 @@ public final class AppSearchImpl implements Closeable {
      * @param databaseName   The databaseName this blob resides in.
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public @NonNull ParcelFileDescriptor openWriteBlob(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -2230,7 +2228,6 @@ public final class AppSearchImpl implements Closeable {
      * @param databaseName   The databaseName this blob resides in.
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public void removeBlob(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -2296,7 +2293,6 @@ public final class AppSearchImpl implements Closeable {
      * @throws IOException        if there is an error opening or reading the blob file.
      */
     @GuardedBy("mReadWriteLock")
-    @OptIn(markerClass = ExperimentalAppSearchApi.class)
     private void verifyBlobIntegrityLocked(@NonNull AppSearchBlobHandle handle)
             throws AppSearchException, IOException {
         // Since the blob has not yet been committed, we open the blob for *write* again to
@@ -2363,7 +2359,6 @@ public final class AppSearchImpl implements Closeable {
      * @param databaseName   The databaseName this blob resides in.
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public void commitBlob(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -2422,7 +2417,6 @@ public final class AppSearchImpl implements Closeable {
      * @param databaseName   The databaseName this blob resides in.
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public @NonNull ParcelFileDescriptor openReadBlob(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -2477,7 +2471,6 @@ public final class AppSearchImpl implements Closeable {
      *
      * @param handle         The {@link AppSearchBlobHandle} represent the blob.
      */
-    @ExperimentalAppSearchApi
     public @NonNull ParcelFileDescriptor globalOpenReadBlob(@NonNull AppSearchBlobHandle handle,
             @NonNull CallerAccess access,
             CallStats.@Nullable Builder callStatsBuilder)
@@ -2558,7 +2551,6 @@ public final class AppSearchImpl implements Closeable {
      *                            This could happen if the database is closed or in an invalid
      *                            state.
      */
-    @ExperimentalAppSearchApi
     public void setBlobNamespaceVisibility(
             @NonNull String packageName,
             @NonNull String databaseName,
@@ -5303,7 +5295,6 @@ public final class AppSearchImpl implements Closeable {
         return ResultCodeToProtoConverter.toResultCode(statusProto.getCode());
     }
 
-    @ExperimentalAppSearchApi
     private static void verifyCallingBlobHandle(@NonNull String callingPackageName,
             @NonNull String callingDatabaseName, @NonNull AppSearchBlobHandle blobHandle)
             throws AppSearchException {

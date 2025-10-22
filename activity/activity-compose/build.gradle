@@ -85,7 +85,4 @@ androidx {
 android {
     compileSdk = 36
     namespace = "androidx.activity.compose"
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
 }

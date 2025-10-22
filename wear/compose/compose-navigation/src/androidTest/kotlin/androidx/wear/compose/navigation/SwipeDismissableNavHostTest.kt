@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
@@ -65,12 +66,14 @@ import androidx.lifecycle.testing.TestLifecycleOwner
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.testing.TestNavHostController
+import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.CompactChip
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.ToggleButton
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -470,6 +473,47 @@ class SwipeDismissableNavHostTest {
         rule.onNodeWithText(NEXT).assertExists()
     }
 
+    // The following test verifies the PredictiveBackNavHost animation and targets API 36+.
+    @Test
+    @SdkSuppress(minSdkVersion = 36)
+    fun press_back_during_animation_does_not_reset_animation() {
+        lateinit var navController: NavHostController
+        rule.setContentWithBackPressedDispatcher {
+            navController = rememberSwipeDismissableNavController()
+            SwipeDismissWithNavigation(navController)
+        }
+        // Click to move to next destination then swipe back.
+        rule.onNodeWithText(START).performClick()
+
+        rule.waitForIdle()
+
+        rule.mainClock.autoAdvance = false
+
+        val navHostWidth = rule.onNodeWithTag(TEST_TAG).fetchSemanticsNode().size.width
+
+        rule.runOnIdle { backPressedDispatcher.onBackPressed() }
+
+        // Animation now starts. Since we control animation clock manually, here we will
+        // fast-forward few frames.
+        repeat(3) { rule.mainClock.advanceTimeByFrame() }
+        var previousLeft =
+            rule.onNodeWithTag(TEST_TAG_NEXT_CONTAINER).fetchSemanticsNode().boundsInWindow.left
+
+        // Press back while animation is running
+        rule.runOnIdle { backPressedDispatcher.onBackPressed() }
+
+        // Make sure animation continues after pressing back button
+        do {
+            rule.mainClock.advanceTimeByFrame()
+
+            val currentLeft =
+                rule.onNodeWithTag(TEST_TAG_NEXT_CONTAINER).fetchSemanticsNode().boundsInWindow.left
+            assertTrue(previousLeft < currentLeft)
+            previousLeft = currentLeft
+        } while (currentLeft < 0.9 * navHostWidth)
+        rule.mainClock.autoAdvance = true
+    }
+
     @Composable
     fun SwipeDismissWithNavigation(
         navController: NavHostController = rememberSwipeDismissableNavController(),
@@ -494,7 +538,10 @@ class SwipeDismissableNavHostTest {
                 }
             }
             composable(NEXT) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier.testTag(TEST_TAG_NEXT_CONTAINER).fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
                     ScalingLazyColumn(modifier = Modifier.testTag(TEST_TAG_NEXT)) {
                         item { Text(NEXT) }
                     }
@@ -570,4 +617,6 @@ private const val START = "start"
 private const val COUNTER = "counter"
 private const val TEST_TAG = "test-item"
 private const val TEST_TAG_NEXT = "test-tag-next"
+private const val TEST_TAG_NEXT_CONTAINER = "test-tag-next-container"
+
 private const val TEST_TAG_START = "test-tag-start"

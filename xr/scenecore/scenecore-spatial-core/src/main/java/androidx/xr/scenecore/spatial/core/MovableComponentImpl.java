@@ -293,16 +293,17 @@ class MovableComponentImpl implements MovableComponent {
                     mMoveEventListenersMap.forEach(
                             (listener, listenerExecutor) ->
                                     listenerExecutor.execute(
-                                            () -> listener.onMoveEvent(createMoveEvent(
-                                                    reformEvent,
-                                                    mLastPose,
-                                                    newPose,
-                                                    mLastScale,
-                                                    newScale,
-                                                    mInitialParent,
-                                                    parent,
-                                                    disposeEntity
-                                            ))));
+                                            () ->
+                                                    listener.onMoveEvent(
+                                                            createMoveEvent(
+                                                                    reformEvent,
+                                                                    mLastPose,
+                                                                    newPose,
+                                                                    mLastScale,
+                                                                    newScale,
+                                                                    mInitialParent,
+                                                                    parent,
+                                                                    disposeEntity))));
                     mLastPose = newPose;
                     mLastScale = newScale;
                 };

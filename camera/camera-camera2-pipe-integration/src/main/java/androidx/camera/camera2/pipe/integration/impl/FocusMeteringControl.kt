@@ -29,8 +29,6 @@ import androidx.camera.camera2.pipe.CameraGraph.Constants3A.METERING_REGIONS_DEF
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsAutoFocusTrigger
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Result3A
-import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.warn
 import androidx.camera.camera2.pipe.integration.adapter.asListenableFuture
 import androidx.camera.camera2.pipe.integration.adapter.propagateTo
 import androidx.camera.camera2.pipe.integration.compat.ZoomCompat
@@ -188,7 +186,7 @@ constructor(
                      * instead of all cases because Controller3A.update3A() will invalidate
                      * the CameraGraph and thus may cause extra requests to the camera.
                      */
-                    debug { "startFocusAndMetering: updating 3A regions only" }
+                    Camera2Logger.debug { "startFocusAndMetering: updating 3A regions only" }
                     requestControl.update3aRegions(
                         aeRegions = aeRegions,
                         afRegions = afRegions,
@@ -206,7 +204,9 @@ constructor(
                             autoFocusTimeoutMs
                         }
 
-                    debug { "startFocusAndMetering: updating 3A regions & triggering AF" }
+                    Camera2Logger.debug {
+                        "startFocusAndMetering: updating 3A regions & triggering AF"
+                    }
                     /*
                      * If device does not support a 3A region, we should not update it at all.
                      * If device does support but a region list is empty, it means any previously
@@ -255,7 +255,7 @@ constructor(
         autoCancelJob =
             threads.sequentialScope.launch {
                 delay(delayMillis)
-                debug { "triggerAutoCancel: auto-canceling after $delayMillis ms" }
+                Camera2Logger.debug { "triggerAutoCancel: auto-canceling after $delayMillis ms" }
                 cancelFocusAndMeteringNowAsync(requestControl, resultToCancel)
             }
     }
@@ -269,7 +269,7 @@ constructor(
         focusTimeoutJob =
             threads.sequentialScope.launch {
                 delay(delayMillis)
-                debug {
+                Camera2Logger.debug {
                     "triggerFocusTimeout:" +
                         " completing with focus result unsuccessful after $delayMillis ms"
                 }
@@ -283,13 +283,15 @@ constructor(
     ) {
         invokeOnCompletion { throwable ->
             if (throwable != null) {
-                warn(throwable) {
+                Camera2Logger.warn(throwable) {
                     "propagateToFocusMeteringResultDeferred: completed exceptionally!"
                 }
                 resultDeferred.completeExceptionally(throwable)
             } else {
                 val result3A = getCompleted()
-                debug { "propagateToFocusMeteringResultDeferred: result3A = $result3A" }
+                Camera2Logger.debug {
+                    "propagateToFocusMeteringResultDeferred: result3A = $result3A"
+                }
                 if (result3A.status == Result3A.Status.SUBMIT_FAILED) {
                     resultDeferred.completeExceptionally(
                         OperationCanceledException("Camera is not active.")

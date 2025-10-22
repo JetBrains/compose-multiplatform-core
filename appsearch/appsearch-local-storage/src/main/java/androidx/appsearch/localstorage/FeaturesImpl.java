@@ -92,7 +92,7 @@ public class FeaturesImpl implements Features {
                 // fall through
             case Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS:
                 // fall through
-            case Features.BLOB_STORAGE:
+            case Features.SCHEMA_BLOB_HANDLE:
                 // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS:
                 // fall through

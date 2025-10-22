@@ -314,33 +314,37 @@ fun calculateStatistics(data1: DoubleArray, data2: DoubleArray): StatisticsResul
  */
 internal fun printSummary(benchmarkName: String, stats: StatisticsResult) {
     println("\n--- Comparison for: $benchmarkName ---")
-    println("                       Dataset 1 (Branch A) | Dataset 2 (Branch B)")
-    println("----------------------------------------------------------------")
-    println("Count                | ${stats.count1.toString().padEnd(20)} | ${stats.count2}")
+    println("                             Dataset 1 (Branch A)   | Dataset 2 (Branch B)")
+    println("--------------------------------------------------------------------------")
     println(
-        "Min (ns)             | ${"%.2f".format(stats.min1).padEnd(20)} | ${"%.2f".format(stats.min2)}"
+        "Count                        | ${stats.count1.toString().padEnd(20)} | ${stats.count2}"
     )
     println(
-        "Mean (ns)            | ${"%.2f".format(stats.mean1).padEnd(20)} | ${"%.2f".format(stats.mean2)}"
+        "Min (ns)                     | ${"%.2f".format(stats.min1).padEnd(20)} | ${"%.2f".format(stats.min2)}"
     )
     println(
-        "Median (ns)          | ${"%.2f".format(stats.median1).padEnd(20)} | ${"%.2f".format(stats.median2)}"
+        "Mean (ns)                    | ${"%.2f".format(stats.mean1).padEnd(20)} | ${"%.2f".format(stats.mean2)}"
     )
     println(
-        "Std. Dev. (ns)       | ${"%.2f".format(stats.std1).padEnd(20)} | ${"%.2f".format(stats.std2)}"
+        "Median (ns)                  | ${"%.2f".format(stats.median1).padEnd(20)} | ${"%.2f".format(stats.median2)}"
     )
     println(
-        "Min Difference:      | ${"%.2f".format(stats.minDiff)} ns (${"%.2f".format(stats.minDiffPercent)}%)"
+        "Std. Dev. (ns)               | ${"%.2f".format(stats.std1).padEnd(20)} | ${"%.2f".format(stats.std2)}"
     )
     println(
-        "Mean Difference:     | ${"%.2f".format(stats.meanDiff)} ns (${"%.2f".format(stats.meanDiffPercent)}%)"
+        "Min Difference:              | ${"%.2f".format(stats.minDiff)} ns (${"%.2f".format(stats.minDiffPercent)}%)"
     )
     println(
-        "Median Difference:   | ${"%.2f".format(stats.medianDiff)} ns (${"%.2f".format(stats.medianDiffPercent)}%)"
+        "Mean Difference:             | ${"%.2f".format(stats.meanDiff)} ns (${"%.2f".format(stats.meanDiffPercent)}%)"
     )
     println(
-        "95% CI of Diff:      | [${"%.2f".format(stats.medianDiffCI.lower)}, ${"%.2f".format(stats.medianDiffCI.upper)}] ns ([${"%.2f".format(stats.medianDiffCIPercent.lower)}%, ${"%.2f".format(stats.medianDiffCIPercent.upper)}%])"
+        "Median Difference:           | ${"%.2f".format(stats.medianDiff)} ns (${"%.2f".format(stats.medianDiffPercent)}%)"
     )
+    println(
+        "95% CI of Diff:              | [${"%.2f".format(stats.medianDiffCI.lower)}, ${"%.2f".format(stats.medianDiffCI.upper)}] ns ([${"%.2f".format(stats.medianDiffCIPercent.lower)}%, ${"%.2f".format(stats.medianDiffCIPercent.upper)}%])"
+    )
+    println("P-value (Mann-Whitney U):    | ${"%.4f".format(stats.pValue)}")
+
     // Check if the interval contains zero.
     if (stats.medianDiffCI.lower < 0 && stats.medianDiffCI.upper > 0) {
         println(
@@ -350,13 +354,6 @@ internal fun printSummary(benchmarkName: String, stats: StatisticsResult) {
         println(
             "\nThe confidence interval does not contain zero, suggesting a statistically significant difference exists between the medians."
         )
-    }
-    println("\n--- MannWhitneyUTest Results (Branch B vs. Branch A) ---")
-    println("P-value:                 ${"%.4f".format(stats.pValue)}")
-    if (stats.pValue < 0.05) {
-        println("Result:                  Statistically significant difference.")
-    } else {
-        println("Result:                  No statistically significant difference.")
     }
     println("\n-------------------------------------------------------\n")
 }

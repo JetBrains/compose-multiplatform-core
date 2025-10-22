@@ -24,7 +24,6 @@ import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.ConfigQueryResult
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.featuregroup.impl.FeatureCombinationQuery
 import androidx.camera.core.impl.SessionConfig
 import kotlinx.coroutines.runBlocking
@@ -54,7 +53,7 @@ internal class FeatureCombinationQueryImpl(
 
         return runBlocking {
             cameraPipe.isConfigSupported(config).apply {
-                debug {
+                Camera2Logger.debug {
                     val streamsLog =
                         config.streams.map { cameraStream ->
                             cameraStream.outputs.map {

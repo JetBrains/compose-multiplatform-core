@@ -19,6 +19,7 @@ package androidx.compose.ui.viewinterop
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
+import android.util.DisplayMetrics
 import android.view.ContextThemeWrapper
 import android.view.View
 import android.view.ViewGroup
@@ -786,7 +787,11 @@ class ComposeViewTest {
             assertEquals(composeView.width, with(density) { 100.dp.roundToPx() })
 
             rule.activity.resources.displayMetrics.density = newDensity
-            val newConfig = Configuration().apply { setTo(rule.activity.resources.configuration) }
+            val newConfig =
+                Configuration().apply {
+                    setTo(rule.activity.resources.configuration)
+                    densityDpi = (newDensity * DisplayMetrics.DENSITY_DEFAULT).roundToInt()
+                }
             composeView.dispatchConfigurationChanged(newConfig)
         }
 

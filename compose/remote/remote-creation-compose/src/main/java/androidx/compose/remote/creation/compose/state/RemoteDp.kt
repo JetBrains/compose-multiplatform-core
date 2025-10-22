@@ -32,6 +32,12 @@ import androidx.compose.ui.unit.Dp
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public class RemoteDp(public var value: RemoteFloat)
 
+/** Extension property to convert an [Int] to a [RemoteDp]. */
+public val Int.rdp: RemoteDp
+    get() {
+        return RemoteDp(this.rf)
+    }
+
 /**
  * A Composable function to remember and provide a [RemoteDp] value.
  *

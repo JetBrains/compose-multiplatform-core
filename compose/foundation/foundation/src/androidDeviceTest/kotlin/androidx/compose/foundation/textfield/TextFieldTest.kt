@@ -19,6 +19,7 @@
 package androidx.compose.foundation.textfield
 
 import android.os.Build
+import android.view.inputmethod.InputConnection
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.FocusInteraction
@@ -53,6 +54,7 @@ import androidx.compose.foundation.text.contextmenu.test.ContextMenuFlagSuppress
 import androidx.compose.foundation.text.contextmenu.test.SpyTextActionModeCallback
 import androidx.compose.foundation.text.contextmenu.test.assertShown
 import androidx.compose.foundation.text.input.InputMethodInterceptor
+import androidx.compose.foundation.text.input.setTextFieldTestContent
 import androidx.compose.foundation.text.selection.fetchTextLayoutResult
 import androidx.compose.foundation.text.selection.isSelectionHandle
 import androidx.compose.runtime.CompositionLocalProvider
@@ -1634,6 +1636,29 @@ class TextFieldTest : FocusedWindowTest {
 
         assertTrue(keyDownReceived)
         assertTrue(keyUpReceived)
+    }
+
+    @Test
+    fun longText_doesNotCrash_singleLine() {
+        var textLayout: TextLayoutResult? = null
+        inputMethodInterceptor.setTextFieldTestContent {
+            BasicTextField(
+                value = "A".repeat(100_000),
+                onValueChange = {},
+                maxLines = 1,
+                singleLine = true,
+                onTextLayout = { textLayout = it },
+                modifier = Modifier.height(56.dp).fillMaxWidth(),
+            )
+        }
+
+        rule.onNode(hasSetTextAction()).requestFocus()
+
+        inputMethodInterceptor.withInputConnection {
+            requestCursorUpdates(InputConnection.CURSOR_UPDATE_IMMEDIATE)
+        }
+
+        rule.runOnIdle { assertThat(textLayout?.layoutInput?.text?.length).isEqualTo(100_000) }
     }
 }
 

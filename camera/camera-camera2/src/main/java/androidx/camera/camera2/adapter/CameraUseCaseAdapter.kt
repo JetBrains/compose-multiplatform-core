@@ -27,10 +27,9 @@ import androidx.camera.camera2.compat.quirk.PreviewUnderExposureQuirk
 import androidx.camera.camera2.compat.workaround.setupHDRnet
 import androidx.camera.camera2.compat.workaround.toggleHDRPlus
 import androidx.camera.camera2.impl.Camera2ImplConfig
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.DisplayInfoManager
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
-import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.info
 import androidx.camera.core.ExperimentalZeroShutterLag
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.impl.CameraCaptureCallback
@@ -58,13 +57,13 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
 
     init {
         if (context is Application) {
-            info {
+            Camera2Logger.info {
                 "The provided context ($context) is application scoped and will be used to infer " +
                     "the default display for computing the default preview size, orientation, " +
                     "and default aspect ratio for UseCase outputs."
             }
         }
-        debug { "Created UseCaseConfigurationMap" }
+        Camera2Logger.debug { "Created UseCaseConfigurationMap" }
     }
 
     // TODO: the getConfig() is not fully verified and porting. Please do verify.
@@ -74,7 +73,7 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
      */
     @ExperimentalZeroShutterLag
     override fun getConfig(captureType: CaptureType, captureMode: Int): Config {
-        debug { "Creating config for $captureType" }
+        Camera2Logger.debug { "Creating config for $captureType" }
 
         val mutableConfig = MutableOptionsBundle.create()
         val sessionBuilder = SessionConfig.Builder()

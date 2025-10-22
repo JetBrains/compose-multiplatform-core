@@ -221,21 +221,23 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         Node node = mXrExtensions.createNode();
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
         Activity activity = activityController.create().start().get();
-        AnchorEntityImpl anchorEntity = AnchorEntityImpl.create(
-                activity,
-                node,
-                mActivitySpace,
-                mActivitySpace,
-                mXrExtensions,
-                mEntityManager,
-                mExecutor);
-        FakeExportableAnchor runtimeAnchor = new FakeExportableAnchor(
-                NATIVE_POINTER,
-                mSharedAnchorToken,
-                Pose.Identity,
-                TrackingState.TRACKING,
-                PersistenceState.NOT_PERSISTED,
-                null);
+        AnchorEntityImpl anchorEntity =
+                AnchorEntityImpl.create(
+                        activity,
+                        node,
+                        mActivitySpace,
+                        mActivitySpace,
+                        mXrExtensions,
+                        mEntityManager,
+                        mExecutor);
+        FakeExportableAnchor runtimeAnchor =
+                new FakeExportableAnchor(
+                        NATIVE_POINTER,
+                        mSharedAnchorToken,
+                        Pose.Identity,
+                        TrackingState.TRACKING,
+                        PersistenceState.NOT_PERSISTED,
+                        null);
         anchorEntity.setAnchor(new Anchor(runtimeAnchor));
         return anchorEntity;
     }
@@ -260,17 +262,18 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         Node node = mXrExtensions.createNode();
         ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
         Activity activity = activityController.create().start().get();
-        AnchorEntityImpl entity = AnchorEntityImpl.createAnchorFromPlane(
-                activity,
-                node,
-                mPlane,
-                new Pose(),
-                MILLISECONDS.toNanos(mCurrentTimeMillis),
-                mActivitySpace,
-                mActivitySpace,
-                mXrExtensions,
-                mEntityManager,
-                mExecutor);
+        AnchorEntityImpl entity =
+                AnchorEntityImpl.createAnchorFromPlane(
+                        activity,
+                        node,
+                        mPlane,
+                        new Pose(),
+                        MILLISECONDS.toNanos(mCurrentTimeMillis),
+                        mActivitySpace,
+                        mActivitySpace,
+                        mXrExtensions,
+                        mEntityManager,
+                        mExecutor);
         entity.setOnStateChangedListener(mAnchorStateListener);
         return entity;
     }
@@ -672,18 +675,17 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         assertThat(anchorEntity.getState()).isEqualTo(State.UNANCHORED);
         assertThat(NodeRepository.getInstance().getName(anchorEntity.getNode()))
                 .isEqualTo(AnchorEntityImpl.ANCHOR_NODE_NAME);
-        assertThat(NodeRepository.getInstance().getAnchorId(anchorEntity.getNode()))
-                .isNull();
-        assertThat(NodeRepository.getInstance().getParent(anchorEntity.getNode()))
-                .isNull();
+        assertThat(NodeRepository.getInstance().getAnchorId(anchorEntity.getNode())).isNull();
+        assertThat(NodeRepository.getInstance().getParent(anchorEntity.getNode())).isNull();
 
-        FakeExportableAnchor runtimeAnchor = new FakeExportableAnchor(
-                NATIVE_POINTER,
-                mSharedAnchorToken,
-                Pose.Identity,
-                TrackingState.TRACKING,
-                PersistenceState.NOT_PERSISTED,
-                null);
+        FakeExportableAnchor runtimeAnchor =
+                new FakeExportableAnchor(
+                        NATIVE_POINTER,
+                        mSharedAnchorToken,
+                        Pose.Identity,
+                        TrackingState.TRACKING,
+                        PersistenceState.NOT_PERSISTED,
+                        null);
         anchorEntity.setAnchor(new Anchor(runtimeAnchor));
 
         assertThat(anchorEntity.getState()).isEqualTo(State.ANCHORED);

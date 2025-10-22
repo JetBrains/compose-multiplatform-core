@@ -1233,6 +1233,7 @@ package androidx.car.app.model {
     field public static final androidx.car.app.model.CarIcon BACK;
     field @androidx.car.app.annotations.RequiresCarApi(7) public static final androidx.car.app.model.CarIcon COMPOSE_MESSAGE;
     field public static final androidx.car.app.model.CarIcon ERROR;
+    field @androidx.car.app.annotations.RequiresCarApi(8) public static final androidx.car.app.model.CarIcon MEDIA_PLAYBACK;
     field @androidx.car.app.annotations.RequiresCarApi(2) public static final androidx.car.app.model.CarIcon PAN;
     field public static final int TYPE_ALERT = 4; // 0x4
     field public static final int TYPE_APP_ICON = 5; // 0x5
@@ -1240,6 +1241,7 @@ package androidx.car.app.model {
     field public static final int TYPE_COMPOSE_MESSAGE = 8; // 0x8
     field public static final int TYPE_CUSTOM = 1; // 0x1
     field public static final int TYPE_ERROR = 6; // 0x6
+    field public static final int TYPE_MEDIA_PLAYBACK = 9; // 0x9
     field public static final int TYPE_PAN = 7; // 0x7
   }
 

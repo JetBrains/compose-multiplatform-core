@@ -32,8 +32,6 @@ import android.util.Size
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPreviewStabilization
-import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.warn
 import androidx.camera.camera2.pipe.integration.adapter.SupportedSurfaceCombination.CheckingMethod.WITHOUT_FEATURE_COMBO
 import androidx.camera.camera2.pipe.integration.adapter.SupportedSurfaceCombination.CheckingMethod.WITHOUT_FEATURE_COMBO_FIRST_AND_THEN_WITH_IT
 import androidx.camera.camera2.pipe.integration.adapter.SupportedSurfaceCombination.CheckingMethod.WITH_FEATURE_COMBO
@@ -42,6 +40,7 @@ import androidx.camera.camera2.pipe.integration.compat.workaround.ExtraSupported
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.integration.compat.workaround.ResolutionCorrector
 import androidx.camera.camera2.pipe.integration.compat.workaround.TargetAspectRatio
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.DisplayInfoManager
 import androidx.camera.camera2.pipe.integration.internal.DynamicRangeResolver
 import androidx.camera.camera2.pipe.integration.internal.HighSpeedResolver
@@ -417,7 +416,7 @@ public class SupportedSurfaceCombination(
                 useCasesPriorityOrder,
             )
 
-        debug { "resolvedDynamicRanges = $resolvedDynamicRanges" }
+        Camera2Logger.debug { "resolvedDynamicRanges = $resolvedDynamicRanges" }
 
         val isUltraHdrOn = isUltraHdrOn(attachedSurfaces, filteredNewUseCaseConfigsSupportedSizeMap)
 
@@ -513,7 +512,7 @@ public class SupportedSurfaceCombination(
         resolvedDynamicRanges: Map<UseCaseConfig<*>, DynamicRange>,
         findMaxSupportedFrameRate: Boolean,
     ): SurfaceStreamSpecQueryResult {
-        debug { "resolveSpecsByCheckingMethod: checkingMethod = $checkingMethod" }
+        Camera2Logger.debug { "resolveSpecsByCheckingMethod: checkingMethod = $checkingMethod" }
 
         return when (checkingMethod) {
             WITHOUT_FEATURE_COMBO ->
@@ -566,7 +565,7 @@ public class SupportedSurfaceCombination(
                         findMaxSupportedFrameRate,
                     )
                 } catch (e: IllegalArgumentException) {
-                    debug(e) {
+                    Camera2Logger.debug(e) {
                         "Failed to find a supported combination without feature combo" +
                             ", trying again with feature combo"
                     }
@@ -603,7 +602,7 @@ public class SupportedSurfaceCombination(
         resolvedDynamicRanges: Map<UseCaseConfig<*>, DynamicRange>,
         findMaxSupportedFrameRate: Boolean,
     ): SurfaceStreamSpecQueryResult {
-        debug { "resolveSpecsBySettings: featureSettings = $featureSettings" }
+        Camera2Logger.debug { "resolveSpecsBySettings: featureSettings = $featureSettings" }
 
         // TODO: b/414489781 - Return early even with feature combo source for possible
         //  cases (e.g. the number of streams is higher than what FCQ can ever support)
@@ -664,7 +663,7 @@ public class SupportedSurfaceCombination(
                     surfaceConfigIndexAttachedSurfaceInfoMap,
                     surfaceConfigIndexUseCaseConfigMap,
                 )
-            debug {
+            Camera2Logger.debug {
                 "orderedSurfaceConfigListForStreamUseCase = $orderedSurfaceConfigListForStreamUseCase"
             }
         }
@@ -692,7 +691,7 @@ public class SupportedSurfaceCombination(
                 "Existing surfaces: $attachedSurfaces. New configs: $newUseCaseConfigs."
         }
 
-        debug { "resolveSpecsBySettings: bestSizesAndFps = $bestSizesAndFps" }
+        Camera2Logger.debug { "resolveSpecsBySettings: bestSizesAndFps = $bestSizesAndFps" }
 
         val suggestedStreamSpecMap =
             generateSuggestedStreamSpecMap(
@@ -1565,7 +1564,7 @@ public class SupportedSurfaceCombination(
             getStreamConfigurationMapCompat().getOutputMinFrameDuration(imageFormat, size)
         if (minFrameDuration <= 0L) {
             if (isManualSensorSupported) {
-                warn {
+                Camera2Logger.warn {
                     "minFrameDuration: $minFrameDuration is invalid for imageFormat = $imageFormat, size = $size"
                 }
                 return 0
@@ -2249,7 +2248,7 @@ public class SupportedSurfaceCombination(
         val maxSize = Collections.max(outputSizes.asList(), compareSizesByArea)
         var maxHighResolutionSize = SizeUtil.RESOLUTION_ZERO
 
-        if (Build.VERSION.SDK_INT >= 23 && highResolutionIncluded) {
+        if (highResolutionIncluded) {
             val highResolutionOutputSizes = map?.getHighResolutionOutputSizes(imageFormat)
             if (!highResolutionOutputSizes.isNullOrEmpty()) {
                 maxHighResolutionSize =

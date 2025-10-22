@@ -76,7 +76,7 @@ package androidx.privacysandbox.ads.adservices.adselection {
     method @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public boolean hasOutcome();
     property public long adSelectionId;
     property public android.net.Uri renderUri;
-    field public static final androidx.privacysandbox.ads.adservices.adselection.AdSelectionOutcome.Companion Companion;
+    field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public static final androidx.privacysandbox.ads.adservices.adselection.AdSelectionOutcome.Companion Companion;
     field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext10OptIn public static final androidx.privacysandbox.ads.adservices.adselection.AdSelectionOutcome NO_OUTCOME;
   }
 
@@ -339,7 +339,7 @@ package androidx.privacysandbox.ads.adservices.customaudience {
     property public String name;
     property public androidx.privacysandbox.ads.adservices.customaudience.TrustedBiddingData? trustedBiddingSignals;
     property public androidx.privacysandbox.ads.adservices.common.AdSelectionSignals? userBiddingSignals;
-    field public static final androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Companion Companion;
+    field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public static final androidx.privacysandbox.ads.adservices.customaudience.CustomAudience.Companion Companion;
     field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public static final int FLAG_AUCTION_SERVER_REQUEST_DEFAULT = 0; // 0x0
     field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public static final int FLAG_AUCTION_SERVER_REQUEST_OMIT_ADS = 1; // 0x1
     field @SuppressCompatibility @androidx.privacysandbox.ads.adservices.common.ExperimentalFeatures.Ext14OptIn public static final double PRIORITY_DEFAULT = 0.0;

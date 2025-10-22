@@ -47,8 +47,11 @@ import com.google.common.truth.Subject
 import com.google.common.truth.Truth.assertAbout
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlin.math.roundToInt
 import org.junit.Test
 import org.junit.runner.RunWith
+
+private const val MIN_TOUCH_TARGET_SIZE = 48 // dp
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
@@ -124,7 +127,11 @@ class SlidingPaneLayoutA11yTest {
         }
 
         with(ActivityScenario.launch(TestActivity::class.java)) {
-            val spl = withActivity { findViewById<SlidingPaneLayout>(R.id.sliding_pane_layout) }
+            val spl = withActivity {
+                findViewById<SlidingPaneLayout>(R.id.sliding_pane_layout).also {
+                    it.splitDividerPosition = it.width / 2
+                }
+            }
 
             val node =
                 spl.accessibilityDelegate
@@ -134,8 +141,7 @@ class SlidingPaneLayoutA11yTest {
             val actualBounds = Rect()
             node?.getBoundsInScreen(actualBounds)
 
-            val rect = Rect()
-            val expectedBounds = spl.computeDividerTargetRect(rect, spl.visualDividerPosition)
+            val expectedBounds = spl.computeDividerTargetRect(Rect(), spl.visualDividerPosition)
             @SuppressLint("CheckResult") expectedBounds.intersect(0, 0, spl.width, spl.height)
 
             val splLocationOnScreen = IntArray(2)
@@ -143,6 +149,61 @@ class SlidingPaneLayoutA11yTest {
             expectedBounds.offset(splLocationOnScreen[0], splLocationOnScreen[1])
 
             assertThat(actualBounds).isEqualTo(expectedBounds)
+        }
+    }
+
+    @Test
+    fun testDividerNode_onScreenBounds_clipped_largerThanMinTouchTarget() {
+        var touchTargetMin: Int = 0
+        TestActivity.onActivityCreated = { activity ->
+            val container = FrameLayout(activity)
+            val slidingPaneLayout =
+                activity.layoutInflater.inflate(
+                    R.layout.user_resizeable_slidingpanelayout,
+                    null,
+                    false,
+                ) as SlidingPaneLayout
+            slidingPaneLayout.isOverlappingEnabled = false
+            slidingPaneLayout.isUserResizingEnabled = true
+            container.addView(slidingPaneLayout, ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+            activity.setContentView(container)
+            touchTargetMin =
+                (activity.resources.displayMetrics.density * MIN_TOUCH_TARGET_SIZE).roundToInt()
+        }
+
+        with(ActivityScenario.launch(TestActivity::class.java)) {
+            val spl = withActivity {
+                findViewById<SlidingPaneLayout>(R.id.sliding_pane_layout).also {
+                    // Putting the divider at left most position so that it'll be clipped when
+                    // computing the global position.
+                    it.splitDividerPosition = 0
+                }
+            }
+
+            val node =
+                spl.accessibilityDelegate
+                    .getAccessibilityNodeProvider(spl)
+                    ?.createAccessibilityNodeInfo(DIVIDER_VIRTUAL_VIEW_ID)
+
+            val actualBounds = Rect()
+            node?.getBoundsInScreen(actualBounds)
+
+            val dividerRect = spl.computeDividerTargetRect(Rect(), spl.visualDividerPosition)
+            // Gut check to make sure the dividerRect is actually clipped.
+            assertThat(dividerRect.left).isLessThan(0)
+
+            val splLocationOnScreen = IntArray(2)
+            spl.getLocationOnScreen(splLocationOnScreen)
+
+            // Check that it doesn't change the center location of the rect.
+            assertThat(actualBounds.centerX())
+                .isEqualTo(dividerRect.centerX() + splLocationOnScreen[0])
+            assertThat(actualBounds.centerY())
+                .isEqualTo(dividerRect.centerY() + splLocationOnScreen[1])
+
+            // Check the size of the rect is larger than the minimum touch target.
+            assertThat(actualBounds.width()).isAtLeast(touchTargetMin)
+            assertThat(actualBounds.height()).isAtLeast(touchTargetMin)
         }
     }
 

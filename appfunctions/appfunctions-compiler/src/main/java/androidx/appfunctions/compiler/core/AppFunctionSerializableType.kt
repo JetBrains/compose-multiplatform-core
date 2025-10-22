@@ -16,6 +16,7 @@
 
 package androidx.appfunctions.compiler.core
 
+import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_LIST
 import androidx.appfunctions.compiler.core.AppFunctionTypeReference.AppFunctionSupportedTypeCategory.SERIALIZABLE_PROXY_SINGULAR
@@ -25,7 +26,9 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ClassName
+import com.squareup.kotlinpoet.FileSpec
 
 /** An interface representing a type that can be serialized by AppFunctions. */
 interface AppFunctionSerializableType {
@@ -158,7 +161,8 @@ interface AppFunctionSerializableType {
         classDeclaration.superTypes
             .map { it.resolve().declaration as KSClassDeclaration }
             .filter {
-                it.annotations.findAnnotation(AppFunctionSerializableAnnotation.CLASS_NAME) != null
+                it.annotations.findAnnotation(AppFunctionSerializableAnnotation.CLASS_NAME) !=
+                    null && !it.modifiers.contains(Modifier.SEALED)
             }
             .toSet()
 
@@ -264,5 +268,22 @@ interface AppFunctionSerializableType {
                     .getTransitiveSerializableSourceFiles()
             )
         }
+    }
+
+    /**
+     * Returns a [FactoryCodeBuilder] that can be used to generate an implementation of
+     * `androidx.appfunctions.AppFunctionSerializableFactory`.
+     */
+    fun getFactoryCodeBuilder(
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
+    ): FactoryCodeBuilder
+
+    /**
+     * Interface for generating an implementation of
+     * `androidx.appfunctions.AppFunctionSerializableFactory`.
+     */
+    interface FactoryCodeBuilder {
+        // TODO: b/410764334 - Consider abstracting FileSpec builder logic
+        fun buildAppFunctionSerializableFactoryClass(): FileSpec
     }
 }

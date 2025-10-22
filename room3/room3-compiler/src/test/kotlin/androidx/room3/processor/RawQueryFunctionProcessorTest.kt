@@ -24,8 +24,7 @@ import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
-import androidx.room3.ext.CommonTypeNames
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.GuavaUtilConcurrentTypeNames
 import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LifecyclesTypeNames
@@ -191,7 +190,7 @@ class RawQueryFunctionProcessorTest {
 
     @Test
     fun suspendUnit() {
-        runProcessorTest(
+        runKspTest(
             sources =
                 listOf(
                     Source.kotlin(
@@ -374,7 +373,7 @@ class RawQueryFunctionProcessorTest {
             invocation.assertCompilationResult {
                 hasWarningCount(1)
                 hasWarningContaining(
-                    ProcessorErrors.classMustImplementEqualsAndHashCode("foo.bar.User")
+                    ProcessorErrors.classMustImplementEqualsAndHashCode("foo.bar.User?")
                 )
             }
         }
@@ -389,9 +388,7 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.mayNeedMapColumn(CommonTypeNames.STRING.canonicalName)
-                )
+                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.String?"))
             }
         }
     }
@@ -405,9 +402,7 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.mayNeedMapColumn(CommonTypeNames.STRING.canonicalName)
-                )
+                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.String?"))
             }
         }
     }
@@ -421,9 +416,7 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.mayNeedMapColumn(CommonTypeNames.STRING.canonicalName)
-                )
+                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.String?"))
             }
         }
     }
@@ -437,9 +430,7 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.mayNeedMapColumn(XTypeName.BOXED_LONG.canonicalName)
-                )
+                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.Long?"))
             }
         }
     }
@@ -453,9 +444,7 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.mayNeedMapColumn(XTypeName.BOXED_LONG.canonicalName)
-                )
+                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.Long?"))
             }
         }
     }
@@ -469,9 +458,7 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.mayNeedMapColumn(XTypeName.BOXED_LONG.canonicalName)
-                )
+                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.Long?"))
             }
         }
     }
@@ -516,9 +503,7 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.mayNeedMapColumn(CommonTypeNames.STRING.canonicalName)
-                )
+                hasErrorContaining(ProcessorErrors.mayNeedMapColumn("kotlin.String?"))
             }
         }
     }
@@ -629,10 +614,7 @@ class RawQueryFunctionProcessorTest {
                 COMMON.IMAGE_FORMAT,
                 COMMON.CONVERTER,
             )
-        runProcessorTest(
-            sources = commonSources + inputSource,
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
-        ) { invocation ->
+        runKspTest(sources = commonSources + inputSource) { invocation ->
             val (owner, functions) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)
@@ -683,7 +665,7 @@ class RawQueryFunctionProcessorTest {
                 COMMON.FLOW,
                 COMMON.GUAVA_ROOM,
             )
-        runProcessorTest(sources = commonSources + inputSource) { invocation ->
+        runKspTest(sources = commonSources + inputSource) { invocation ->
             val (owner, functions) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)

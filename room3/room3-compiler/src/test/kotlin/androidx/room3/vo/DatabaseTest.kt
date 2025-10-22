@@ -20,7 +20,7 @@ import androidx.room3.compiler.processing.XConstructorElement
 import androidx.room3.compiler.processing.XElement
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
-import org.apache.commons.codec.digest.DigestUtils
+import androidx.room3.util.md5Hex
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -77,11 +77,10 @@ class DatabaseTest {
             )
 
         val expectedLegacyHash =
-            DigestUtils.md5Hex(
-                "CREATE TABLE IF NOT EXISTS `TheTable` ()¯\\_(ツ)_/¯" +
+            ("CREATE TABLE IF NOT EXISTS `TheTable` ()¯\\_(ツ)_/¯" +
                     "CREATE  INDEX `leIndex` ON `TheTable` ()¯\\_(ツ)_/¯" +
-                    "CREATE UNIQUE INDEX `leIndex2` ON `TheTable` ()"
-            )
+                    "CREATE UNIQUE INDEX `leIndex2` ON `TheTable` ()")
+                .md5Hex()
         assertEquals(expectedLegacyHash, database.legacyIdentityHash)
     }
 }

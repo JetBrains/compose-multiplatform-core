@@ -22,7 +22,49 @@ import java.nio.file.Files
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 
-class OutputContext(outputPath: String?, val verbose: Boolean, csv: Boolean) {
+class OutputContext(
+    /** Output directory in which all outputs should */
+    outputPath: String?,
+    /** Pass true to generate an output csv file with optimization stats */
+    csv: Boolean,
+    /**
+     * Produces an additional obf.txt and unobf.txt for debugging what is counted as obfuscated as
+     * an indicator of overall program optimizations
+     */
+    val dumpMappingDebug: Boolean,
+    /** Lists of patterns that will detect presence of .so file names in bundles/apks. */
+    val soMatchPatterns: List<String>,
+) {
+    /**
+     * Represents output directory for a specific app, holding references to individual files.
+     *
+     * Note that this isn't threadsafe, as each bundle/apk is only ever touched on a single thread.
+     */
+    inner class AppOutputDir(
+        val outputDir: File?,
+        val obfuscatedClasses: File?,
+        val unobfuscatedClasses: File?,
+    ) {
+        constructor(
+            outputDir: File?
+        ) : this(
+            outputDir = outputDir,
+            obfuscatedClasses =
+                if (dumpMappingDebug) outputDir?.run { File(this, "obf.txt") } else null,
+            unobfuscatedClasses =
+                if (dumpMappingDebug) outputDir?.run { File(this, "unobf.txt") } else null,
+        )
+
+        init {
+            if (outputDir != null) {
+                Files.createDirectory(outputDir.toPath())
+            } else {
+                require(!dumpMappingDebug) {
+                    "must specify an output directory to support mapping debug"
+                }
+            }
+        }
+    }
 
     val outputDir =
         if (outputPath != null) {
@@ -43,13 +85,17 @@ class OutputContext(outputPath: String?, val verbose: Boolean, csv: Boolean) {
             File(outputDir.toString(), "aabReport.csv").also { it.createNewFile() }
         } else null
 
-    fun outputDirForApp(name: String): File? {
+    private val outputDirsForApps = mutableMapOf<String, AppOutputDir>()
+
+    fun outputDirForApp(name: String): AppOutputDir {
         if (outputDir == null) {
-            println("no output dir!!!")
-            return null
+            return AppOutputDir(null)
         }
 
-        return File(outputDir, name).also { Files.createDirectory(it.toPath()) }
+        return synchronized(outputDirsForApps) {
+            // shouldn't contend since there's one per app, but synchronized just to be safe
+            outputDirsForApps.computeIfAbsent(name) { AppOutputDir(File(outputDir, name)) }
+        }
     }
 
     val packageStats = mutableListOf<Map<String, PackageStats>>()

@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
 }
 
 dependencies {
@@ -25,9 +26,7 @@ dependencies {
     implementation(project(":room3:room3-runtime"))
     implementation("androidx.arch.core:core-runtime:2.2.0")
 
-    androidTestAnnotationProcessor(project(":room3:room3-compiler"))
-    androidTestAnnotationProcessor(libs.autoValue)
-    androidTestAnnotationProcessor(libs.autoValueParcel)
+    ksp(project(":room3:room3-compiler"))
 
     androidTestImplementation(project(":room3:room3-testing"))
     androidTestImplementation("androidx.arch.core:core-testing:2.2.0")
@@ -44,6 +43,11 @@ dependencies {
 
 android {
     namespace = "androidx.room3.integration.autovaluetestapp"
+    sourceSets {
+        androidTest {
+            java.srcDirs += 'src/kaptGenerated/java'
+        }
+    }
 }
 
 // Enable parameter names to support Room incremental when its a project() dep.

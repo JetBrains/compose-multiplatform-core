@@ -166,9 +166,6 @@ object ComposeUiFlags {
     /** This flag enables setting the shape semantics property in the graphicsLayer modifiers. */
     @Suppress("MutableBareField") @JvmField var isGraphicsLayerShapeSemanticsEnabled: Boolean = true
 
-    /** Flag for enabling the performance optimization for content capture. */
-    @Suppress("MutableBareField") @JvmField var isContentCaptureOptimizationEnabled: Boolean = false
-
     /**
      * Flag for enabling nested scroll interop fix for propagating integers, this fixes an issue
      * with interop between compose and views nested scroll where small deltas with the wrong sign

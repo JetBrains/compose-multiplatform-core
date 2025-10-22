@@ -263,12 +263,14 @@ package androidx.wear.protolayout.material3 {
     method @InaccessibleFromKotlin public final androidx.wear.protolayout.material3.ColorScheme getColorScheme();
     method @InaccessibleFromKotlin public final android.content.Context getContext();
     method @InaccessibleFromKotlin public final androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters getDeviceConfiguration();
-    method @InaccessibleFromKotlin public final androidx.wear.protolayout.ProtoLayoutScope? getProtoLayoutScope();
+    method @InaccessibleFromKotlin public final androidx.wear.protolayout.ProtoLayoutScope getProtoLayoutScope();
     method @InaccessibleFromKotlin public final androidx.wear.protolayout.material3.Shapes getShapes();
+    method @InaccessibleFromKotlin public final boolean hasProtoLayoutScope();
     property public final androidx.wear.protolayout.material3.ColorScheme colorScheme;
     property public final android.content.Context context;
     property public final androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters deviceConfiguration;
-    property public final androidx.wear.protolayout.ProtoLayoutScope? protoLayoutScope;
+    property public final boolean hasProtoLayoutScope;
+    property public final androidx.wear.protolayout.ProtoLayoutScope protoLayoutScope;
     property public final androidx.wear.protolayout.material3.Shapes shapes;
   }
 

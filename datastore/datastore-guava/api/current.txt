@@ -7,6 +7,7 @@ package androidx.datastore.guava {
 
   public final class GuavaDataStore<T> {
     method public static <T> androidx.datastore.guava.GuavaDataStore<T> from(androidx.datastore.core.DataStore<T> dataStore);
+    method public static <T> androidx.datastore.guava.GuavaDataStore<T> from(androidx.datastore.core.DataStore<T> dataStore, java.util.concurrent.Executor executor);
     method public static <T> androidx.datastore.guava.GuavaDataStore<T> from(androidx.datastore.core.DataStore<T> dataStore, optional kotlin.coroutines.CoroutineContext coroutineContext);
     method public com.google.common.util.concurrent.ListenableFuture<T> getDataAsync();
     method public com.google.common.util.concurrent.ListenableFuture<T> updateDataAsync(androidx.datastore.guava.DataTransform<T,T> dataTransform);
@@ -25,6 +26,7 @@ package androidx.datastore.guava {
 
   public static final class GuavaDataStore.Companion {
     method public <T> androidx.datastore.guava.GuavaDataStore<T> from(androidx.datastore.core.DataStore<T> dataStore);
+    method public <T> androidx.datastore.guava.GuavaDataStore<T> from(androidx.datastore.core.DataStore<T> dataStore, java.util.concurrent.Executor executor);
     method public <T> androidx.datastore.guava.GuavaDataStore<T> from(androidx.datastore.core.DataStore<T> dataStore, optional kotlin.coroutines.CoroutineContext coroutineContext);
   }
 

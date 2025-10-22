@@ -19,6 +19,8 @@ package androidx.compose.ui.text.android.style
 import android.graphics.Paint
 import android.text.TextPaint
 import androidx.compose.ui.text.android.InternalPlatformTextApi
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.sp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
@@ -32,26 +34,26 @@ import org.junit.runner.RunWith
 class PlaceholderSpanTest {
     @Test
     fun width_isSp_equalsGiven() {
-        val width = 1f
-        val pxPerSp = 10f
+        val density = Density(1f, 2f)
         val placeholderSpan =
             PlaceholderSpan(
-                width = width,
+                width = 10f,
                 widthUnit = PlaceholderSpan.UNIT_SP,
                 height = 0f,
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = pxPerSp,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         assertThat(placeholderSpan.getSize(Paint(), "ab", 1, 2, null))
-            .isEqualTo((width * pxPerSp).toInt())
-        assertThat(placeholderSpan.widthPx).isEqualTo((width * pxPerSp).toInt())
+            .isEqualTo(with(density) { 10.sp.toPx().ceilToInt() })
+        assertThat(placeholderSpan.widthPx).isEqualTo(with(density) { 10.sp.toPx().ceilToInt() })
     }
 
     @Test
     fun width_isEm_equalsGiven() {
         val width = 1f
         val fontSize = 24f
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize }
         val placeholderSpan =
             PlaceholderSpan(
@@ -59,7 +61,7 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = 0f,
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         assertThat(placeholderSpan.getSize(paint, "ab", 1, 2, null))
@@ -69,13 +71,14 @@ class PlaceholderSpanTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun width_isUnspecified() {
+        val density = Density(1f, 2f)
         val placeholderSpan =
             PlaceholderSpan(
                 width = 0f,
                 widthUnit = PlaceholderSpan.UNIT_UNSPECIFIED,
                 height = 0f,
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         placeholderSpan.getSize(TextPaint(), "ab", 0, 2, null)
@@ -84,24 +87,25 @@ class PlaceholderSpanTest {
     @Test
     fun height_isSp_alignAboveBaseLine_smallerThanAscent() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
-        val pxPerSp = 2
         // Height equals to ascent / 2 converted into Sp.
-        val height = abs(fontMetricsInt.ascent) / 2 / pxPerSp
+        val height = abs(fontMetricsInt.ascent) / 2
         val placeholderSpan =
             PlaceholderSpan(
                 width = 0f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = pxPerSp.toFloat(),
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
         placeholderSpan.getSize(paint, "ab", 1, 2, resultFontMetricsInt)
 
-        assertThat(placeholderSpan.heightPx).isEqualTo(height * pxPerSp)
+        assertThat(placeholderSpan.heightPx)
+            .isEqualTo(with(density) { height.sp.toPx().ceilToInt() })
         // Since the abs(ascent) is larger placeHolder's height, there already is enough space
         // for placeHolder. Thus resultFontMetricsInt is same as the one on Paint.
         // Notice: FontMetricsInt doesn't override equals(), using toString() to compare.
@@ -111,6 +115,7 @@ class PlaceholderSpanTest {
     @Test
     fun height_isEm_alignAboveBaseLine_smallerThanAscent() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
         // Height equals to ascent / 2 converted into EM.
@@ -121,7 +126,7 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
@@ -137,24 +142,25 @@ class PlaceholderSpanTest {
     @Test
     fun height_isSp_alignAboveBaseLine_greaterThanAscent() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
-        val pxPerSp = 2
         // Height equals to 2 * ascent converted into SP.
-        val height = abs(fontMetricsInt.ascent) * 2 / pxPerSp
+        val height = abs(fontMetricsInt.ascent) * 2
         val placeholderSpan =
             PlaceholderSpan(
                 width = 0f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = pxPerSp.toFloat(),
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
         placeholderSpan.getSize(paint, "ab", 1, 2, resultFontMetricsInt)
 
-        assertThat(placeholderSpan.heightPx).isEqualTo(height * pxPerSp)
+        assertThat(placeholderSpan.heightPx)
+            .isEqualTo(with(density) { height.sp.toPx().ceilToInt() })
         // Bottom and descent should not be changed.
         assertThat(resultFontMetricsInt.descent).isEqualTo(fontMetricsInt.descent)
         assertThat(resultFontMetricsInt.bottom).isEqualTo(fontMetricsInt.bottom)
@@ -165,6 +171,7 @@ class PlaceholderSpanTest {
     @Test
     fun height_isEm_alignAboveBaseLine_greaterThanAscent() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
         // Height equals to 2 * ascent converted into EM.
@@ -175,7 +182,7 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
@@ -192,24 +199,25 @@ class PlaceholderSpanTest {
     @Test
     fun height_isSp_alignBottom_smallerThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
-        val pxPerSp = 2
         // Height equals to lineHeight / 2 converted into EM.
-        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) / 2 / pxPerSp
+        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) / 2
         val placeholderSpan =
             PlaceholderSpan(
                 width = 0f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = pxPerSp.toFloat(),
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_BOTTOM,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
         placeholderSpan.getSize(paint, "ab", 1, 2, resultFontMetricsInt)
 
-        assertThat(placeholderSpan.heightPx).isEqualTo(height * pxPerSp)
+        assertThat(placeholderSpan.heightPx)
+            .isEqualTo(with(density) { height.sp.toPx().ceilToInt() })
         // Since original line height is enough for the placeHolder resultFontMetricsInt is same as
         // the one on Paint.
         // Notice: FontMetricsInt doesn't override equals(), using toString() to compare.
@@ -219,24 +227,25 @@ class PlaceholderSpanTest {
     @Test
     fun height_isSp_alignTop_smallerThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
-        val pxPerSp = 2
         // Height equals to lineHeight / 2 converted into EM.
-        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) / 2 / pxPerSp
+        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) / 2
         val placeholderSpan =
             PlaceholderSpan(
                 width = 0f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = pxPerSp.toFloat(),
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_TOP,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
         placeholderSpan.getSize(paint, "ab", 1, 2, resultFontMetricsInt)
 
-        assertThat(placeholderSpan.heightPx).isEqualTo(height * pxPerSp)
+        assertThat(placeholderSpan.heightPx)
+            .isEqualTo(with(density) { height.sp.toPx().ceilToInt() })
         // Since original line height is enough for the placeHolder resultFontMetricsInt is same as
         // the one on Paint.
         // Notice: FontMetricsInt doesn't override equals(), using toString() to compare.
@@ -246,6 +255,7 @@ class PlaceholderSpanTest {
     @Test
     fun height_isEm_alignTop_smallerThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
         // Height equals to lineHeight / 2 converted into EM.
@@ -256,7 +266,7 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_TOP,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
@@ -272,24 +282,25 @@ class PlaceholderSpanTest {
     @Test
     fun height_isSp_alignTop_greaterThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
-        val pxPerSp = 2
         // Height equals to lineHeight * 2 converted into EM.
-        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) * 2 / pxPerSp
+        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) * 2
         val placeholderSpan =
             PlaceholderSpan(
                 width = 0f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = pxPerSp.toFloat(),
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_TOP,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
         placeholderSpan.getSize(paint, "ab", 1, 2, resultFontMetricsInt)
 
-        assertThat(placeholderSpan.heightPx).isEqualTo(height * pxPerSp)
+        assertThat(placeholderSpan.heightPx)
+            .isEqualTo(with(density) { height.sp.toPx().ceilToInt() })
         assertThat(resultFontMetricsInt.ascent).isEqualTo(fontMetricsInt.ascent)
         assertThat(resultFontMetricsInt.top).isEqualTo(fontMetricsInt.top)
         // Descent expands to be just enough for the placeHolder placed on top.
@@ -300,6 +311,7 @@ class PlaceholderSpanTest {
     @Test
     fun height_isEm_alignTop_greaterThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
         // Height equals to lineHeight * 2 converted into EM.
@@ -310,7 +322,7 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_TOP,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
@@ -327,6 +339,7 @@ class PlaceholderSpanTest {
     @Test
     fun height_isEm_alignBottom_smallerThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
         // Height equals to lineHeight / 2 converted into EM.
@@ -337,7 +350,7 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_BOTTOM,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
@@ -353,24 +366,25 @@ class PlaceholderSpanTest {
     @Test
     fun height_isSp_alignBottom_greaterThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
-        val pxPerSp = 2
         // Height equals to lineHeight * 2 converted into EM.
-        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) * 2 / pxPerSp
+        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) * 2
         val placeholderSpan =
             PlaceholderSpan(
                 width = 0f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = pxPerSp.toFloat(),
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_BOTTOM,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
         placeholderSpan.getSize(paint, "ab", 1, 2, resultFontMetricsInt)
 
-        assertThat(placeholderSpan.heightPx).isEqualTo(height * pxPerSp)
+        assertThat(placeholderSpan.heightPx)
+            .isEqualTo(with(density) { height.sp.toPx().ceilToInt() })
         assertThat(resultFontMetricsInt.descent).isEqualTo(fontMetricsInt.descent)
         assertThat(resultFontMetricsInt.bottom).isEqualTo(fontMetricsInt.bottom)
         // Ascent expands to be just enough for the placeHolder placed on bottom.
@@ -381,6 +395,7 @@ class PlaceholderSpanTest {
     @Test
     fun height_isEm_alignBottom_greaterThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
         // Height equals to lineHeight * 2 converted into EM.
@@ -391,7 +406,7 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_BOTTOM,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
@@ -408,9 +423,9 @@ class PlaceholderSpanTest {
     @Test
     fun height_isSp_alignCenter_smallerThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
-        val pxPerSp = 2
         // Height equals to lineHeight / 2 converted into EM.
         val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) / 2 / fontSize
         val placeholderSpan =
@@ -419,13 +434,14 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = pxPerSp.toFloat(),
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_BOTTOM,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
         placeholderSpan.getSize(paint, "ab", 1, 2, resultFontMetricsInt)
 
-        assertThat(placeholderSpan.heightPx).isEqualTo(height * pxPerSp)
+        assertThat(placeholderSpan.heightPx)
+            .isEqualTo(with(density) { height.sp.toPx().ceilToInt() })
         // Since original line height is enough for the placeHolder resultFontMetricsInt is same as
         // the one on Paint.
         // Notice: FontMetricsInt doesn't override equals(), using toString() to compare.
@@ -435,6 +451,7 @@ class PlaceholderSpanTest {
     @Test
     fun height_isEm_alignCenter_smallerThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
         // Height equals to lineHeight / 2 converted into EM.
@@ -445,7 +462,7 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_BOTTOM,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
@@ -461,26 +478,29 @@ class PlaceholderSpanTest {
     @Test
     fun height_isSp_alignCenter_greaterThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
-        val pxPerSp = 2
         // Height equals to lineHeight * 2 converted into EM.
-        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) * 2 / pxPerSp
+        val height = abs(fontMetricsInt.descent - fontMetricsInt.ascent) * 2
         val placeholderSpan =
             PlaceholderSpan(
                 width = 0f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_SP,
-                pxPerSp = pxPerSp.toFloat(),
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_CENTER,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
         placeholderSpan.getSize(paint, "ab", 1, 2, resultFontMetricsInt)
 
-        val increasedHeight = height * pxPerSp - (fontMetricsInt.descent - fontMetricsInt.ascent)
+        val increasedHeight =
+            with(density) { height.sp.toPx().ceilToInt() } -
+                (fontMetricsInt.descent - fontMetricsInt.ascent)
 
-        assertThat(placeholderSpan.heightPx).isEqualTo(height * pxPerSp)
+        assertThat(placeholderSpan.heightPx)
+            .isEqualTo(with(density) { height.sp.toPx().ceilToInt() })
 
         assertThat(resultFontMetricsInt.ascent)
             .isEqualTo(fontMetricsInt.ascent - increasedHeight / 2)
@@ -491,6 +511,7 @@ class PlaceholderSpanTest {
     @Test
     fun height_isEm_alignCenter_greaterThanOriginalHeight() {
         val fontSize = 24
+        val density = Density(1f, 2f)
         val paint = Paint().apply { textSize = fontSize.toFloat() }
         val fontMetricsInt = paint.fontMetricsInt
         // Height equals to lineHeight * 2 converted into EM.
@@ -501,7 +522,7 @@ class PlaceholderSpanTest {
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = height.toFloat(),
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_CENTER,
             )
         val resultFontMetricsInt = Paint.FontMetricsInt()
@@ -519,13 +540,14 @@ class PlaceholderSpanTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun height_isUnspecified() {
+        val density = Density(1f, 2f)
         val placeholderSpan =
             PlaceholderSpan(
                 width = 0f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = 0f,
                 heightUnit = PlaceholderSpan.UNIT_UNSPECIFIED,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         placeholderSpan.getSize(TextPaint(), "ab", 0, 2, null)
@@ -533,13 +555,14 @@ class PlaceholderSpanTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun align_isIllegal() {
+        val density = Density(1f, 2f)
         val placeholderSpan =
             PlaceholderSpan(
                 width = 1f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = 1f,
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = 7,
             )
         placeholderSpan.getSize(TextPaint(), "ab", 0, 2, Paint.FontMetricsInt())
@@ -547,13 +570,14 @@ class PlaceholderSpanTest {
 
     @Test(expected = IllegalStateException::class)
     fun widthPx_accessBeforeGetSize() {
+        val density = Density(1f, 2f)
         val placeholderSpan =
             PlaceholderSpan(
                 width = 1f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = 1f,
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         placeholderSpan.widthPx
@@ -561,13 +585,14 @@ class PlaceholderSpanTest {
 
     @Test(expected = IllegalStateException::class)
     fun heightPx_accessBeforeGetSize() {
+        val density = Density(1f, 2f)
         val placeholderSpan =
             PlaceholderSpan(
                 width = 1f,
                 widthUnit = PlaceholderSpan.UNIT_EM,
                 height = 1f,
                 heightUnit = PlaceholderSpan.UNIT_EM,
-                pxPerSp = 1f,
+                density = density,
                 verticalAlign = PlaceholderSpan.ALIGN_ABOVE_BASELINE,
             )
         placeholderSpan.heightPx

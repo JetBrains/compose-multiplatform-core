@@ -431,6 +431,7 @@ package androidx.wear.protolayout.expression {
   }
 
   public final class PlatformEventSources {
+    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool isInAmbientMode();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=500) public static androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool isLayoutVisible();
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus layoutUpdateStatus();
     property public static int LAYOUT_UPDATE_IDLE;
@@ -454,8 +455,10 @@ package androidx.wear.protolayout.expression {
   }
 
   public static final class PlatformEventSources.Keys {
+    property public androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool> AMBIENT_MODE_STATUS;
     property public androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus> LAYOUT_UPDATE_STATUS;
     property public androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool> LAYOUT_VISIBILITY;
+    field public static final androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool> AMBIENT_MODE_STATUS;
     field public static final androidx.wear.protolayout.expression.PlatformEventSources.Keys INSTANCE;
     field public static final androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.PlatformEventSources.DynamicLayoutUpdateStatus> LAYOUT_UPDATE_STATUS;
     field public static final androidx.wear.protolayout.expression.PlatformDataKey<androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool> LAYOUT_VISIBILITY;

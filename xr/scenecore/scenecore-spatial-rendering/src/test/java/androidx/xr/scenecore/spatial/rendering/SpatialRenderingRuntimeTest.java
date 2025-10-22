@@ -27,7 +27,6 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.Material;
 import androidx.xr.scenecore.impl.impress.Texture;
-import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.ExrImageResource;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
@@ -36,7 +35,6 @@ import androidx.xr.scenecore.runtime.MaterialResource;
 import androidx.xr.scenecore.runtime.RenderingEntityFactory;
 import androidx.xr.scenecore.runtime.RenderingRuntime;
 import androidx.xr.scenecore.runtime.SceneRuntime;
-import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
 import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.TextureResource;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
@@ -45,10 +43,8 @@ import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
 
 import com.android.extensions.xr.ShadowXrExtensions;
 import com.android.extensions.xr.XrExtensions;
-import com.android.extensions.xr.node.Node;
 
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager;
-import com.google.androidxr.splitengine.SubspaceNode;
 import com.google.ar.imp.view.splitengine.ImpSplitEngineRenderer;
 import com.google.common.util.concurrent.ListenableFuture;
 

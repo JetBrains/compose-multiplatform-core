@@ -129,6 +129,7 @@ import androidx.compose.remote.core.operations.layout.managers.ImageLayout;
 import androidx.compose.remote.core.operations.layout.managers.RowLayout;
 import androidx.compose.remote.core.operations.layout.managers.StateLayout;
 import androidx.compose.remote.core.operations.layout.managers.TextLayout;
+import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BackgroundModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ClipRectModifierOperation;
@@ -337,6 +338,7 @@ public class Operations {
     public static final int MODIFIER_SCROLL = 226;
     public static final int MODIFIER_MARQUEE = 228;
     public static final int MODIFIER_RIPPLE = 229;
+    public static final int MODIFIER_ALIGN_BY = 237;
 
     public static final int LOOP_START = 215;
 
@@ -457,6 +459,7 @@ public class Operations {
         if (sMapV7AndroidXExperimental == null) {
             sMapV7AndroidXExperimental = new UniqueIntMap<>();
             // add experimental operations for this profile here
+            sMapV7AndroidXExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
         }
         return sMapV7AndroidXExperimental;
     }
@@ -484,7 +487,6 @@ public class Operations {
             sMapV7Widgets.put(PARTICLE_COMPARE, ParticlesCompare::read);
             sMapV7Widgets.put(DYNAMIC_FLOAT_LIST, DataDynamicListFloat::read);
             sMapV7Widgets.put(UPDATE_DYNAMIC_FLOAT_LIST, UpdateDynamicFloatList::read);
-
         }
         return sMapV7Widgets;
     }
@@ -493,6 +495,7 @@ public class Operations {
         if (sMapV7WidgetsExperimental == null) {
             sMapV7WidgetsExperimental = new UniqueIntMap<>();
             // add experimental operations for this profile here
+            sMapV7WidgetsExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
         }
         return sMapV7WidgetsExperimental;
     }

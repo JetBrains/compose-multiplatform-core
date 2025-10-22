@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,39 +18,30 @@ package androidx.room3
 
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.XRoundEnv
-import androidx.room3.compiler.processing.javac.JavacBasicAnnotationProcessor
-import androidx.room3.processor.Context.BooleanProcessorOptions
-import androidx.room3.processor.Context.ProcessorOptions
+import androidx.room3.compiler.processing.ksp.KspBasicAnnotationProcessor
 import androidx.room3.verifier.DatabaseVerifier
-import javax.lang.model.SourceVersion
+import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
+import com.google.devtools.ksp.processing.SymbolProcessorProvider
 
-/** Annotation processor option to tell Gradle that Room is an isolating annotation processor. */
-private const val ISOLATING_ANNOTATION_PROCESSORS_INDICATOR =
-    "org.gradle.annotation.processing.isolating"
-
-/** The annotation processor for Room. */
-class RoomProcessor :
-    JavacBasicAnnotationProcessor(
-        configureEnv = { options -> DatabaseProcessingStep.getEnvConfig(options) }
+/** Entry point for processing using KSP. */
+class RoomProcessor(environment: SymbolProcessorEnvironment) :
+    KspBasicAnnotationProcessor(
+        symbolProcessorEnvironment = environment,
+        config = DatabaseProcessingStep.getEnvConfig(environment.options),
     ) {
 
     override fun processingSteps() = listOf(DatabaseProcessingStep())
 
-    override fun getSupportedOptions(): Set<String> {
-        return buildSet {
-            addAll(ProcessorOptions.entries.map { it.argName })
-            addAll(BooleanProcessorOptions.entries.map { it.argName })
-            add(ISOLATING_ANNOTATION_PROCESSORS_INDICATOR)
-        }
-    }
-
-    override fun getSupportedSourceVersion(): SourceVersion {
-        return SourceVersion.latest()
-    }
-
     override fun postRound(env: XProcessingEnv, round: XRoundEnv) {
         if (round.isProcessingOver) {
             DatabaseVerifier.cleanup()
+        }
+    }
+
+    class Provider : SymbolProcessorProvider {
+        override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
+            return RoomProcessor(environment)
         }
     }
 }

@@ -81,10 +81,8 @@ import java.util.List;
 public class ResizableComponentImplTest {
 
     private static final Dimensions MIN_DIMENSIONS = new Dimensions(0f, 0f, 0f);
-    private static final Dimensions MAX_DIMENSIONS =
-            new Dimensions(10f, 10f, 10f);
-    private static final Dimensions DEFAULT_SIZE =
-            new Dimensions(1.0f, 1.0f, 1.0f);
+    private static final Dimensions MAX_DIMENSIONS = new Dimensions(10f, 10f, 10f);
+    private static final Dimensions DEFAULT_SIZE = new Dimensions(1.0f, 1.0f, 1.0f);
     private final ActivityController<Activity> mActivityController =
             Robolectric.buildActivity(Activity.class);
     private final Activity mActivity = mActivityController.create().start().get();
@@ -227,8 +225,7 @@ public class ResizableComponentImplTest {
 
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS,
-                        new Dimensions(0f, 0f, 0f));
+                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, new Dimensions(0f, 0f, 0f));
 
         assertThat(resizableComponent).isNotNull();
 

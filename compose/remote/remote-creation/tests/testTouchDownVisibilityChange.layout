@@ -5,8 +5,6 @@
     width: 1000
     height: 1000
     operations:
-    - {type: TextData, textId: 42, text: Layout}
-    - {type: RootContentDescription, contentDescriptionId: 42}
     - type: RootLayoutComponent
       id: -2
       x: 0.0
@@ -15,7 +13,7 @@
       height: 1000.0
       visibility: VISIBLE
       list:
-      - {type: IntegerConstant, id: 43, value: 0}
+      - {type: IntegerConstant, id: 42, value: 0}
       - type: ROW
         id: 1
         x: 0.0
@@ -48,7 +46,7 @@
             - type: HeightModifierOperation
               height: {type: Value, value: 200.0}
               dimensionModifierType: EXACT
-            - {type: ComponentVisibilityOperation, visibilityId: 43, visibility: GONE}
+            - {type: ComponentVisibilityOperation, visibilityId: 42, visibility: GONE}
             - {type: BackgroundModifierOperation, x: 0.0, y: 0.0, width: 200.0, height: 200.0,
               color: '0xff00ff00', shapeType: RECTANGLE}
           paddingLeft: 0.0
@@ -106,8 +104,6 @@
     width: 1000
     height: 1000
     operations:
-    - {type: TextData, textId: 42, text: Layout}
-    - {type: RootContentDescription, contentDescriptionId: 42}
     - type: RootLayoutComponent
       id: -2
       x: 0.0
@@ -116,7 +112,7 @@
       height: 1000.0
       visibility: VISIBLE
       list:
-      - {type: IntegerConstant, id: 43, value: 0}
+      - {type: IntegerConstant, id: 42, value: 0}
       - type: ROW
         id: 1
         x: 0.0
@@ -149,7 +145,7 @@
             - type: HeightModifierOperation
               height: {type: Value, value: 200.0}
               dimensionModifierType: EXACT
-            - {type: ComponentVisibilityOperation, visibilityId: 43, visibility: VISIBLE}
+            - {type: ComponentVisibilityOperation, visibilityId: 42, visibility: VISIBLE}
             - {type: BackgroundModifierOperation, x: 0.0, y: 0.0, width: 200.0, height: 200.0,
               color: '0xff00ff00', shapeType: RECTANGLE}
           paddingLeft: 0.0

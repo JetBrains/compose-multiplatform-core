@@ -306,10 +306,6 @@ abstract class BaseEntity extends BaseActivityPose implements Entity {
         // Create a copy to avoid concurrent modification issues since the children detach
         // themselves from their parents as they are disposed.
         destroyAccessibilityView();
-        List<Entity> childrenToDispose = new ArrayList<>(mChildren);
-        for (Entity child : childrenToDispose) {
-            child.dispose();
-        }
         mContext = null;
     }
 

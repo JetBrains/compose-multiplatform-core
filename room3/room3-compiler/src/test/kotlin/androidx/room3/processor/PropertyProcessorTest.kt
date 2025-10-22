@@ -23,6 +23,7 @@ import androidx.room3.compiler.processing.XFieldElement
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.compiler.processing.util.runProcessorTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.parser.Collate
@@ -723,9 +724,9 @@ class PropertyProcessorTest {
                 ),
                 ARRAY_CONVERTER,
             )
-        runProcessorTest(sources = sources) { invocation ->
+        runKspTest(sources = sources) { invocation ->
             if (!invocation.isKsp) {
-                return@runProcessorTest
+                return@runKspTest
             }
             val (owner, propertyElement) =
                 invocation.roundEnv

@@ -17,11 +17,17 @@
 package androidx.activity.compose
 
 import android.annotation.SuppressLint
+import androidx.activity.ActivityFlags
 import androidx.activity.BackEventCompat
+import androidx.activity.ExperimentalActivityApi
+import androidx.activity.OnBackPressedCallback
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcherOwner
@@ -64,6 +70,10 @@ import kotlinx.coroutines.launch
  * }
  * ```
  *
+ * The handler is registered once and stays attached for the lifetime of the [LifecycleOwner]. Its
+ * [OnBackPressedCallback.isEnabled] state automatically follows the lifecycle: it becomes enabled
+ * when the lifecycle is at least [Lifecycle.State.STARTED] and disabled otherwise.
+ *
  * ## Precedence
  * If multiple [PredictiveBackHandler] are present in the composition, the one that is composed
  * **last** among all enabled handlers will be invoked.
@@ -83,6 +93,12 @@ import kotlinx.coroutines.launch
  * `false`, a gesture initiated in the same frame may still trigger this handler because the system
  * sees the stale `true` value.
  *
+ * ## Legacy Behavior
+ * To restore the legacy add/remove behavior, set
+ * [ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable] to `false`. In legacy mode, the
+ * handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which
+ * may change dispatch ordering across lifecycle transitions.
+ *
  * @sample androidx.activity.compose.samples.PredictiveBack
  * @param enabled Controls whether this handler is active. **Important**: Due to the timing issue
  *   described above, a gesture starting immediately after `enabled` is set to `false` may still
@@ -91,6 +107,7 @@ import kotlinx.coroutines.launch
  *   can be collected to track the gesture's progress.
  */
 @SuppressLint("RememberReturnType") // TODO: b/372566999
+@OptIn(ExperimentalActivityApi::class)
 @Composable
 public fun PredictiveBackHandler(
     enabled: Boolean = true,
@@ -110,17 +127,34 @@ public fun PredictiveBackHandler(
     val scope = rememberCoroutineScope()
     val handler = remember { ComposePredictiveBackHandler(scope) }
 
-    // Keep the handler instance stable across recompositions, but update the active parameters.
-    SideEffect {
-        handler.currentEnabled = enabled
-        handler.currentOnBack = onBack
-    }
+    if (ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable) {
+        // Keep the handler instance stable across recompositions, but update the active parameters.
+        SideEffect { handler.currentOnBack = onBack }
 
-    // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
-    // avoiding the frame delay that happens with state-based APIs like collectAsState().
-    LifecycleStartEffect(owner) {
-        owner.navigationEventDispatcher.addHandler(handler)
-        onStopOrDispose { handler.remove() }
+        // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
+        // avoiding the frame delay that happens with state-based APIs like collectAsState().
+        LifecycleStartEffect(enabled) {
+            handler.currentEnabled = enabled
+            onStopOrDispose { handler.currentEnabled = false }
+        }
+
+        DisposableEffect(owner) {
+            owner.navigationEventDispatcher.addHandler(handler)
+            onDispose { handler.remove() }
+        }
+    } else {
+        // Keep the handler instance stable across recompositions, but update the active parameters.
+        SideEffect {
+            handler.currentEnabled = enabled
+            handler.currentOnBack = onBack
+        }
+
+        // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
+        // avoiding the frame delay that happens with state-based APIs like collectAsState().
+        LifecycleStartEffect(owner) {
+            owner.navigationEventDispatcher.addHandler(handler)
+            onStopOrDispose { handler.remove() }
+        }
     }
 }
 
@@ -138,7 +172,7 @@ public fun PredictiveBackHandler(
 private class ComposePredictiveBackHandler(val scope: CoroutineScope) :
     NavigationEventHandler<NavigationEventInfo>(
         initialInfo = NavigationEventInfo.None,
-        isBackEnabled = true,
+        isBackEnabled = false,
     ) {
 
     /** Latest `onBack` implementation to run for the next gesture. */

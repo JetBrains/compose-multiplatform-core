@@ -18,8 +18,8 @@ package androidx.aab.analysis
 
 import androidx.aab.*
 import androidx.aab.analysis.R8Issues.getPrimaryOptimizationIssue
+import androidx.aab.cli.OutputContext
 import androidx.aab.cli.outputContext
-import java.io.File
 import kotlin.math.roundToInt
 
 data class PackageStats(val packagePrefix: String, var classesSeen: Int, var obfClassesSeen: Int)
@@ -37,7 +37,7 @@ data class MinificationStats(
 ) {
     companion object {
         fun fromMappingAndDex(
-            appOutputDir: File?,
+            appOutputDir: OutputContext.AppOutputDir,
             mappingFileInfo: MappingFileInfo?,
             dexInfo: List<DexInfo>,
         ): MinificationStats? {
@@ -52,11 +52,6 @@ data class MinificationStats(
             var isObfuscatedCount = 0
             var isObfuscatedLowerCaseHits = 0
             var isObfuscatedAppearsMinifiedHits = 0
-
-            val (obf, unobf) =
-                if (appOutputDir != null) {
-                    File(appOutputDir, "obf.txt") to File(appOutputDir, "unobf.txt")
-                } else (null to null)
 
             val packagePrefixInfo = mutableMapOf<String, PackageStats>()
             classInfo.forEach { clazz ->
@@ -90,20 +85,18 @@ data class MinificationStats(
                     isObfuscatedCount++
                 }
 
-                if (appOutputDir != null) {
-                    if (isObfuscatedAccordingToMappingFile) {
-                        obf!!.appendText(
-                            "${clazz.fullName.padEnd(100)} -> ${prunedMappingFileInfo[clazz.fullName]}\n"
-                        )
-                    } else {
-                        unobf!!.appendText(
-                            "${clazz.fullName.padEnd(100)} -> ${prunedMappingFileInfo[clazz.fullName]}\n"
-                        )
-                    }
+                if (isObfuscatedAccordingToMappingFile) {
+                    appOutputDir.obfuscatedClasses?.appendText(
+                        "${clazz.fullName.padEnd(100)} -> ${prunedMappingFileInfo[clazz.fullName]}\n"
+                    )
+                } else {
+                    appOutputDir.unobfuscatedClasses?.appendText(
+                        "${clazz.fullName.padEnd(100)} -> ${prunedMappingFileInfo[clazz.fullName]}\n"
+                    )
                 }
             }
 
-            outputContext.dumpPackagePrefixInfoToFile(appOutputDir, packagePrefixInfo)
+            outputContext.dumpPackagePrefixInfoToFile(appOutputDir.outputDir, packagePrefixInfo)
 
             if (isObfuscatedCount > 0.25 * classInfo.count()) {
                 // only register to global stats if app looks somewhat obfuscated
@@ -228,9 +221,7 @@ data class R8Analysis(
                 dexSha256ChecksumsR8JsonOnly = metadataJsonShas - dexShas,
                 minificationStats =
                     MinificationStats.fromMappingAndDex(
-                        androidx.aab.cli.outputContext.outputDirForApp(
-                            this.path.substringAfterLast("/")
-                        ),
+                        outputContext.outputDirForApp(this.path.substringAfterLast("/")),
                         mappingFileInfo,
                         dexInfo,
                     ),

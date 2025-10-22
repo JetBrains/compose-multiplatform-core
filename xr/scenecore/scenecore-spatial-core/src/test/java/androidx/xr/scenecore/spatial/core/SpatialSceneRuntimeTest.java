@@ -290,8 +290,7 @@ public class SpatialSceneRuntimeTest {
         when(mPerceptionLibrary.getSession()).thenReturn(mSession);
         ViewProjection viewProjection =
                 new ViewProjection(
-                        androidx.xr.scenecore.impl.perception.Pose.identity(),
-                        new Fov(0, 0, 0, 0));
+                        androidx.xr.scenecore.impl.perception.Pose.identity(), new Fov(0, 0, 0, 0));
         when(mSession.getStereoViews())
                 .thenReturn(new ViewProjections(viewProjection, viewProjection));
         CameraViewActivityPose cameraViewActivityPose =
@@ -306,8 +305,7 @@ public class SpatialSceneRuntimeTest {
         when(mPerceptionLibrary.getSession()).thenReturn(mSession);
         ViewProjection viewProjection =
                 new ViewProjection(
-                        androidx.xr.scenecore.impl.perception.Pose.identity(),
-                        new Fov(0, 0, 0, 0));
+                        androidx.xr.scenecore.impl.perception.Pose.identity(), new Fov(0, 0, 0, 0));
         when(mSession.getStereoViews())
                 .thenReturn(new ViewProjections(viewProjection, viewProjection));
         CameraViewActivityPose cameraViewActivityPose =
@@ -558,7 +556,7 @@ public class SpatialSceneRuntimeTest {
         Dimensions size = new Dimensions(1.0f, 2.0f, 3.0f);
 
         SubspaceNodeEntity entity =
-            mRuntime.createSubspaceNodeEntity(mXrExtensions.createNode(), size);
+                mRuntime.createSubspaceNodeEntity(mXrExtensions.createNode(), size);
         entity.setSize(size);
 
         assertThat(entity).isNotNull();
@@ -2371,14 +2369,12 @@ public class SpatialSceneRuntimeTest {
     public void getStereoViewsInOpenXrUnboundedSpace_returnsViewProjections() {
         ViewProjection leftViewProjection =
                 new ViewProjection(
-                        new androidx.xr.scenecore.impl.perception.Pose(
-                                -1f, 1f, 1f, 0f, 0f, 0f, 1f),
+                        new androidx.xr.scenecore.impl.perception.Pose(-1f, 1f, 1f, 0f, 0f, 0f, 1f),
                         new Fov(-1f, -1f, -1f, -1f));
 
         ViewProjection rightViewProjection =
                 new ViewProjection(
-                        new androidx.xr.scenecore.impl.perception.Pose(
-                                1f, 1f, 1f, 0f, 0f, 0f, 1f),
+                        new androidx.xr.scenecore.impl.perception.Pose(1f, 1f, 1f, 0f, 0f, 0f, 1f),
                         new Fov(1f, 1f, 1f, 1f));
 
         when(mSession.getStereoViews())

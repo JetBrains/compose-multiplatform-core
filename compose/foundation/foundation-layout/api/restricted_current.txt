@@ -137,7 +137,7 @@ package androidx.compose.foundation.layout {
   }
 
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public final class ContextualFlowColumnOverflow extends androidx.compose.foundation.layout.FlowLayoutOverflow {
-    field @Deprecated public static final androidx.compose.foundation.layout.ContextualFlowColumnOverflow.Companion Companion;
+    field @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public static final androidx.compose.foundation.layout.ContextualFlowColumnOverflow.Companion Companion;
   }
 
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public static final class ContextualFlowColumnOverflow.Companion {
@@ -174,7 +174,7 @@ package androidx.compose.foundation.layout {
   }
 
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public final class ContextualFlowRowOverflow extends androidx.compose.foundation.layout.FlowLayoutOverflow {
-    field @Deprecated public static final androidx.compose.foundation.layout.ContextualFlowRowOverflow.Companion Companion;
+    field @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public static final androidx.compose.foundation.layout.ContextualFlowRowOverflow.Companion Companion;
   }
 
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public static final class ContextualFlowRowOverflow.Companion {
@@ -207,7 +207,7 @@ package androidx.compose.foundation.layout {
   }
 
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public final class FlowColumnOverflow extends androidx.compose.foundation.layout.FlowLayoutOverflow {
-    field @Deprecated public static final androidx.compose.foundation.layout.FlowColumnOverflow.Companion Companion;
+    field @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public static final androidx.compose.foundation.layout.FlowColumnOverflow.Companion Companion;
   }
 
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public static final class FlowColumnOverflow.Companion {

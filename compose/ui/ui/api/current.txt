@@ -140,7 +140,6 @@ package androidx.compose.ui {
     property public boolean isBypassUnfocusableComposeViewEnabled;
     property public boolean isCanScrollUsingLastDownEventFixEnabled;
     property @Deprecated public boolean isClearFocusOnResetEnabled;
-    property public boolean isContentCaptureOptimizationEnabled;
     property @Deprecated public boolean isFocusActionExitsTouchModeEnabled;
     property public boolean isGraphicsLayerShapeSemanticsEnabled;
     property public boolean isIgnoreInvalidPrevFocusRectEnabled;
@@ -161,7 +160,6 @@ package androidx.compose.ui {
     field public static boolean isBypassUnfocusableComposeViewEnabled;
     field public static boolean isCanScrollUsingLastDownEventFixEnabled;
     field @Deprecated public static boolean isClearFocusOnResetEnabled;
-    field public static boolean isContentCaptureOptimizationEnabled;
     field @Deprecated public static boolean isFocusActionExitsTouchModeEnabled;
     field public static boolean isGraphicsLayerShapeSemanticsEnabled;
     field public static boolean isIgnoreInvalidPrevFocusRectEnabled;
@@ -3679,7 +3677,7 @@ package androidx.compose.ui.node {
     method public static <T extends androidx.compose.ui.node.TraversableNode> void traverseDescendants(T, kotlin.jvm.functions.Function1<? super T,? extends androidx.compose.ui.node.TraversableNode.Companion.TraverseDescendantsAction> block);
   }
 
-  public interface UnplacedStateAwareModifierNode extends androidx.compose.ui.node.DelegatableNode {
+  public interface UnplacedAwareModifierNode extends androidx.compose.ui.node.DelegatableNode {
     method public void onUnplaced();
   }
 

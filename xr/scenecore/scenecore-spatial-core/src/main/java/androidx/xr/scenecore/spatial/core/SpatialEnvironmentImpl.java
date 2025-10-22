@@ -45,8 +45,8 @@ import java.util.function.Supplier;
 
 /** Concrete implementation of SpatialEnvironment / XR Wallpaper for Android XR. */
 @SuppressWarnings({"BanSynchronizedMethods", "BanConcurrentHashMap"})
-final class SpatialEnvironmentImpl implements SpatialEnvironment, SpatialEnvironmentExt,
-        Consumer<Consumer<Node>> {
+final class SpatialEnvironmentImpl
+        implements SpatialEnvironment, SpatialEnvironmentExt, Consumer<Consumer<Node>> {
     public static final String PASSTHROUGH_NODE_NAME = "EnvironmentPassthroughNode";
     @VisibleForTesting final Node mPassthroughNode;
     private final XrExtensions mXrExtensions;
@@ -256,7 +256,7 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, SpatialEnviron
                 ((Consumer<Consumer<Node>>) feature).accept(mOnBeforeNodeAttachedListener);
                 mOnBeforeNodeAttachedListener = null;
             }
-        }  catch (ClassCastException e) {
+        } catch (ClassCastException e) {
             throw new ClassCastException(e.toString());
         }
     }
@@ -265,25 +265,22 @@ final class SpatialEnvironmentImpl implements SpatialEnvironment, SpatialEnviron
     public void setPreferredSpatialEnvironment(
             @Nullable SpatialEnvironmentPreference newPreference) {
         if (mSpatialEnvironmentFeature == null) {
-            if(newPreference == null) {
-            // Detaching the app environment to go back to the system environment.
-                mXrExtensions.detachSpatialEnvironment(
-                        mActivity, Runnable::run, (result) -> {});
-            }
-            else if(newPreference.getSkybox() == null && newPreference.getGeometry() == null) {
-                Node currentRootEnvironmentNode =  mXrExtensions.createNode();
+            if (newPreference == null) {
+                // Detaching the app environment to go back to the system environment.
+                mXrExtensions.detachSpatialEnvironment(mActivity, Runnable::run, (result) -> {});
+            } else if (newPreference.getSkybox() == null && newPreference.getGeometry() == null) {
+                Node currentRootEnvironmentNode = mXrExtensions.createNode();
                 int skyboxMode = XrExtensions.NO_SKYBOX;
                 mXrExtensions.attachSpatialEnvironment(
-                    mActivity,
-                    currentRootEnvironmentNode,
-                    skyboxMode,
-                    Runnable::run,
-                    (result) -> {});
-            }
-            else throw new UnsupportedOperationException(
-                    "Did you forget to add scenecore-spatial-rendering in dependencies?");
-        }
-        else {
+                        mActivity,
+                        currentRootEnvironmentNode,
+                        skyboxMode,
+                        Runnable::run,
+                        (result) -> {});
+            } else
+                throw new UnsupportedOperationException(
+                        "Did you forget to add scenecore-spatial-rendering in dependencies?");
+        } else {
             mSpatialEnvironmentFeature.setPreferredSpatialEnvironment(newPreference);
         }
     }

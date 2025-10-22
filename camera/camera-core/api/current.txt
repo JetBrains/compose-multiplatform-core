@@ -785,7 +785,7 @@ package @androidx.camera.core.ExperimentalSessionConfig androidx.camera.core.fea
   @SuppressCompatibility @androidx.camera.core.ExperimentalSessionConfig public abstract class GroupableFeature {
     method @InaccessibleFromKotlin public final int getFeatureType();
     property public final int featureType;
-    field public static final androidx.camera.core.featuregroup.GroupableFeature.Companion Companion;
+    field @SuppressCompatibility @androidx.camera.core.ExperimentalSessionConfig public static final androidx.camera.core.featuregroup.GroupableFeature.Companion Companion;
     field public static final int FEATURE_TYPE_DYNAMIC_RANGE = 0; // 0x0
     field public static final int FEATURE_TYPE_FPS_RANGE = 1; // 0x1
     field public static final int FEATURE_TYPE_IMAGE_FORMAT = 3; // 0x3

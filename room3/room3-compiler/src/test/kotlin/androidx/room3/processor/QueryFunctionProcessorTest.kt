@@ -27,8 +27,7 @@ import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
-import androidx.room3.ext.CommonTypeNames
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.CommonTypeNames.LIST
 import androidx.room3.ext.CommonTypeNames.MUTABLE_LIST
 import androidx.room3.ext.CommonTypeNames.STRING
@@ -428,7 +427,10 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    ProcessorErrors.cannotFindPreparedQueryResultAdapter("float", QueryType.DELETE)
+                    ProcessorErrors.cannotFindPreparedQueryResultAdapter(
+                        "kotlin.Float",
+                        QueryType.DELETE,
+                    )
                 )
             }
         }
@@ -521,7 +523,10 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             assertThat(parsedQuery.returnType.asTypeName()).isEqualTo(XTypeName.PRIMITIVE_INT)
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    ProcessorErrors.cannotFindPreparedQueryResultAdapter("int", QueryType.INSERT)
+                    ProcessorErrors.cannotFindPreparedQueryResultAdapter(
+                        "kotlin.Int",
+                        QueryType.INSERT,
+                    )
                 )
             }
         }
@@ -556,7 +561,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.cannotFindPreparedQueryResultAdapter(
-                        "androidx.lifecycle.LiveData<java.lang.Integer>",
+                        "androidx.lifecycle.LiveData<kotlin.Int?>?",
                         QueryType.DELETE,
                     )
                 )
@@ -575,7 +580,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             invocation.assertCompilationResult {
                 hasErrorContaining(
                     ProcessorErrors.cannotFindPreparedQueryResultAdapter(
-                        "androidx.lifecycle.LiveData<java.lang.Integer>",
+                        "androidx.lifecycle.LiveData<kotlin.Int?>?",
                         QueryType.UPDATE,
                     )
                 )
@@ -746,11 +751,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             val dataClassRowAdapter = listAdapter.rowAdapters.single() as DataClassRowAdapter
             assertThat(dataClassRowAdapter.relationCollectors.size).isEqualTo(1)
             assertThat(dataClassRowAdapter.relationCollectors[0].relationTypeName)
-                .isEqualTo(
-                    CommonTypeNames.ARRAY_LIST.parametrizedBy(
-                        COMMON.USER_TYPE_NAME.copy(nullable = true)
-                    )
-                )
+                .isEqualTo(MUTABLE_LIST.parametrizedBy(COMMON.USER_TYPE_NAME.copy(nullable = true)))
             invocation.assertCompilationResult { hasNoWarnings() }
         }
     }
@@ -952,18 +953,14 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             assertThat(adapter?.mapping?.unusedFields)
                 .containsExactlyElementsIn(adapter?.dataClass?.properties)
             invocation.assertCompilationResult {
-                hasErrorContaining(
-                    cannotFindQueryResultAdapter(
-                        XClassName.get("foo.bar", "MyClass", "DataClass").canonicalName
-                    )
-                )
+                hasErrorContaining(cannotFindQueryResultAdapter("foo.bar.MyClass.DataClass?"))
                 hasWarningContaining(
                     ProcessorErrors.queryPropertyDataClassMismatch(
-                        dataClassTypeNames = listOf(DATA_CLASS.canonicalName),
+                        dataClassTypeNames = listOf("foo.bar.MyClass.DataClass"),
                         unusedColumns = listOf("name", "lastName"),
                         dataClassUnusedProperties =
                             mapOf(
-                                DATA_CLASS.canonicalName to
+                                "foo.bar.MyClass.DataClass" to
                                     listOf(createField("nameX"), createField("lastNameX"))
                             ),
                         allColumns = listOf("name", "lastName"),
@@ -986,11 +983,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         ) { _, _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining("no such column: age")
-                hasErrorContaining(
-                    cannotFindQueryResultAdapter(
-                        XClassName.get("foo.bar", "MyClass", "DataClass").canonicalName
-                    )
-                )
+                hasErrorContaining(cannotFindQueryResultAdapter("foo.bar.MyClass.DataClass?"))
                 hasErrorCount(2)
                 hasNoWarnings()
             }
@@ -1011,7 +1004,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             invocation.assertCompilationResult {
                 hasWarningContaining(
                     ProcessorErrors.queryPropertyDataClassMismatch(
-                        dataClassTypeNames = listOf(DATA_CLASS.canonicalName),
+                        dataClassTypeNames = listOf("foo.bar.MyClass.DataClass"),
                         unusedColumns = listOf("uid"),
                         dataClassUnusedProperties = emptyMap(),
                         allColumns = listOf("uid", "name", "lastName"),
@@ -1039,11 +1032,11 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             invocation.assertCompilationResult {
                 hasWarningContaining(
                     ProcessorErrors.queryPropertyDataClassMismatch(
-                        dataClassTypeNames = listOf(DATA_CLASS.canonicalName),
+                        dataClassTypeNames = listOf("foo.bar.MyClass.DataClass"),
                         unusedColumns = emptyList(),
                         allColumns = listOf("lastName"),
                         dataClassUnusedProperties =
-                            mapOf(DATA_CLASS.canonicalName to listOf(createField("name"))),
+                            mapOf("foo.bar.MyClass.DataClass" to listOf(createField("name"))),
                     )
                 )
             }
@@ -1069,16 +1062,16 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             invocation.assertCompilationResult {
                 hasWarningContaining(
                     ProcessorErrors.queryPropertyDataClassMismatch(
-                        dataClassTypeNames = listOf(DATA_CLASS.canonicalName),
+                        dataClassTypeNames = listOf("foo.bar.MyClass.DataClass"),
                         unusedColumns = emptyList(),
                         dataClassUnusedProperties =
-                            mapOf(DATA_CLASS.canonicalName to listOf(createField("name"))),
+                            mapOf("foo.bar.MyClass.DataClass" to listOf(createField("name"))),
                         allColumns = listOf("lastName"),
                     )
                 )
                 hasErrorContaining(
                     ProcessorErrors.dataClassMissingNonNull(
-                        dataClassTypeName = DATA_CLASS.canonicalName,
+                        dataClassTypeName = "foo.bar.MyClass.DataClass",
                         missingDataClassProperties = listOf("name"),
                         allQueryColumns = listOf("lastName"),
                     )
@@ -1104,11 +1097,11 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             invocation.assertCompilationResult {
                 hasWarningContaining(
                     ProcessorErrors.queryPropertyDataClassMismatch(
-                        dataClassTypeNames = listOf(DATA_CLASS.canonicalName),
+                        dataClassTypeNames = listOf("foo.bar.MyClass.DataClass"),
                         unusedColumns = listOf("uid"),
                         allColumns = listOf("uid", "name"),
                         dataClassUnusedProperties =
-                            mapOf(DATA_CLASS.canonicalName to listOf(createField("lastName"))),
+                            mapOf("foo.bar.MyClass.DataClass" to listOf(createField("lastName"))),
                     )
                 )
             }
@@ -1170,12 +1163,8 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 COMMON.IMAGE_FORMAT,
                 COMMON.CONVERTER,
             )
-        val allOptions =
-            mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false") + options
-        runProcessorTest(
-            sources = additionalSources + commonSources + inputSource,
-            options = allOptions,
-        ) { invocation ->
+        runKspTest(sources = additionalSources + commonSources + inputSource, options = options) {
+            invocation ->
             val (owner, methods) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)
@@ -1242,10 +1231,8 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION,
             )
 
-        runProcessorTest(
-            sources = additionalSources + commonSources + inputSource,
-            options = options,
-        ) { invocation ->
+        runKspTest(sources = additionalSources + commonSources + inputSource, options = options) {
+            invocation ->
             val (owner, methods) =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(Dao::class.qualifiedName!!)
@@ -1517,7 +1504,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             invocation.assertCompilationResult {
                 hasWarningCount(1)
                 hasWarningContaining(
-                    ProcessorErrors.classMustImplementEqualsAndHashCode("foo.bar.User")
+                    ProcessorErrors.classMustImplementEqualsAndHashCode("foo.bar.User?")
                 )
             }
         }
@@ -1532,7 +1519,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn(STRING.canonicalName))
+                hasErrorContaining(mayNeedMapColumn("kotlin.String?"))
             }
         }
     }
@@ -1547,7 +1534,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn(STRING.canonicalName))
+                hasErrorContaining(mayNeedMapColumn("kotlin.String?"))
             }
         }
     }
@@ -1561,7 +1548,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn(STRING.canonicalName))
+                hasErrorContaining(mayNeedMapColumn("kotlin.String?"))
             }
         }
     }
@@ -1575,7 +1562,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn(STRING.canonicalName))
+                hasErrorContaining(mayNeedMapColumn("kotlin.String?"))
             }
         }
     }
@@ -1589,7 +1576,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn(XTypeName.BOXED_LONG.canonicalName))
+                hasErrorContaining(mayNeedMapColumn("kotlin.Long?"))
             }
         }
     }
@@ -1603,7 +1590,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn(XTypeName.BOXED_LONG.canonicalName))
+                hasErrorContaining(mayNeedMapColumn("kotlin.Long?"))
             }
         }
     }
@@ -1617,7 +1604,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(mayNeedMapColumn(XTypeName.BOXED_LONG.canonicalName))
+                hasErrorContaining(mayNeedMapColumn("kotlin.Long?"))
             }
         }
     }
@@ -1667,7 +1654,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             invocation.assertCompilationResult {
                 hasWarningCount(1)
                 hasWarningContaining(
-                    ProcessorErrors.classMustImplementEqualsAndHashCode("foo.bar.User")
+                    ProcessorErrors.classMustImplementEqualsAndHashCode("foo.bar.User?")
                 )
                 hasErrorCount(2)
                 hasErrorContaining(
@@ -1838,7 +1825,9 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasErrorContaining(
-                    ProcessorErrors.invalidQueryForSingleColumnArray("java.lang.String[]")
+                    ProcessorErrors.invalidQueryForSingleColumnArray(
+                        "kotlin.Array<out kotlin.String?>?"
+                    )
                 )
             }
         }
@@ -1856,7 +1845,9 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.invalidQueryForSingleColumnArray("long[]"))
+                hasErrorContaining(
+                    ProcessorErrors.invalidQueryForSingleColumnArray("kotlin.LongArray?")
+                )
             }
         }
     }

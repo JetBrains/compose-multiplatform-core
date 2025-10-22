@@ -16,7 +16,6 @@
 
 package androidx.room3.paging
 
-import android.database.Cursor
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
 import androidx.paging.PagingConfig
@@ -827,16 +826,6 @@ class LimitOffsetPagingSourceImpl(
                 }
             }
         }
-    }
-
-    override fun convertRows(cursor: Cursor): List<TestItem> {
-        val cursorIndexOfId = getColumnIndexOrThrow(cursor, "id")
-        val data = mutableListOf<TestItem>()
-        while (cursor.moveToNext()) {
-            val tmpId = cursor.getInt(cursorIndexOfId)
-            data.add(TestItem(tmpId))
-        }
-        return data
     }
 
     override val jumpingSupported: Boolean

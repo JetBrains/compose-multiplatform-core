@@ -4709,7 +4709,7 @@ package androidx.compose.material3.carousel {
     method public suspend Object? scrollToItem(int item, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     property public int currentItem;
     property public boolean isScrollInProgress;
-    field public static final androidx.compose.material3.carousel.CarouselState.Companion Companion;
+    field @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final androidx.compose.material3.carousel.CarouselState.Companion Companion;
   }
 
   @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class CarouselState.Companion {

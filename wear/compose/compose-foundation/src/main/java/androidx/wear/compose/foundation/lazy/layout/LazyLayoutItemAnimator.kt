@@ -132,6 +132,11 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
                         } else {
                             movingInFromEndBound.add(item)
                         }
+                    } else if (
+                        // Since the list can move down, add the item to animate in from the start.
+                        item.index == previousIndex && item.index < previousFirstVisibleIndex
+                    ) {
+                        movingInFromStartBound.add(item)
                     } else {
                         initializeAnimation(item, item.getOffset().y, newItemInfo)
                         if (shouldAnimateAppearance) {
@@ -174,7 +179,7 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
                             previousKeyToIndexMap.getIndex(it.key) ==
                                 previousKeyToIndexMap.getIndex(movingInFromStartBound[0].key) + 1
                         }
-                        ?.let { getAnimation(it.key)?.finalOffset?.y }
+                        ?.let { getAnimation(it.key)?.logicalOffset?.y }
                         // If the anchor item is removed, fallback to the layoutMinOffset.
                         ?: layoutMinOffset
                 movingInFromStartBound.fastForEach { item ->
@@ -196,7 +201,7 @@ internal class LazyLayoutItemAnimator<T : LazyLayoutMeasuredItem> {
                                 previousKeyToIndexMap.getIndex(movingInFromEndBound[0].key) - 1
                         }
                         ?.let {
-                            getAnimation(it.key)?.finalOffset?.run {
+                            getAnimation(it.key)?.logicalOffset?.run {
                                 it.mainAxisSizeWithSpacings + y
                             }
                         }

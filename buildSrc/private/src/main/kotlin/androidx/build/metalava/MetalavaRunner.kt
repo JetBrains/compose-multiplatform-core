@@ -104,12 +104,14 @@ abstract class MetalavaWorkAction @Inject constructor(private val execOperations
     override fun execute() {
         val outputStream = ByteArrayOutputStream()
         var successful = false
+        // Enable Android Lint infrastructure used by Metalava to use K2 or K1 UAST (K1 support will
+        // be deprecated once all projects are switched to K2 b/385140979).
         val k2UastArg =
-            listOfNotNull(
-                // Enable Android Lint infrastructure used by Metalava to use K2 UAST
-                // (also historically known as FIR) when running Metalava for this module.
-                "--Xuse-k2-uast".takeIf { parameters.k2UastEnabled.get() }
-            )
+            if (parameters.k2UastEnabled.get()) {
+                "--Xuse-k2-uast"
+            } else {
+                "--Xuse-k1-uast"
+            }
         try {
             execOperations.javaexec {
                 // Intellij core reflects into java.util.ResourceBundle

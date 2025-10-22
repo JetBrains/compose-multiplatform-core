@@ -25,9 +25,9 @@ import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.SpaceValue;
 import androidx.xr.scenecore.runtime.SubspaceNodeEntity;
 
+import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
-import com.android.extensions.xr.XrExtensions;
 
 import org.jspecify.annotations.NonNull;
 

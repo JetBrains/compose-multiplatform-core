@@ -23,7 +23,7 @@ import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_LONG
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.compileFiles
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.parser.SQLTypeAffinity
 import androidx.room3.processor.ProcessorErrors.RELATION_IN_ENTITY
 import androidx.room3.testing.context
@@ -296,8 +296,8 @@ class TableEntityProcessorTest : BaseEntityParserTest() {
                     ProcessorErrors.mismatchedSetter(
                         propertyName = "id",
                         ownerType = "foo.bar.MyEntity",
-                        setterType = "int",
-                        propertyType = XTypeName.BOXED_INT.canonicalName,
+                        setterType = "kotlin.Int",
+                        propertyType = "kotlin.Int?",
                     )
                 )
             }
@@ -2639,7 +2639,7 @@ class TableEntityProcessorTest : BaseEntityParserTest() {
             """
                     .trimIndent(),
             )
-        runProcessorTest(sources = listOf(src)) { invocation ->
+        runKspTest(sources = listOf(src)) { invocation ->
             val parser =
                 TableEntityProcessor(
                     invocation.context,

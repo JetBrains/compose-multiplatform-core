@@ -18,8 +18,8 @@ package androidx.compose.remote.wear.material3
 
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rememberRemoteColor
-import androidx.compose.remote.test.screenshot.TargetPlayer
-import androidx.compose.remote.test.screenshot.rule.RemoteComposeScreenshotTestRule
+import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
+import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.test.filters.MediumTest

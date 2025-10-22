@@ -39,9 +39,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -64,7 +66,9 @@ import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.capture.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
+import androidx.compose.remote.integration.view.demos.examples.DemoPaths.pathTest
 import androidx.compose.remote.integration.view.demos.examples.RcSimpleClock1
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo
 import androidx.compose.remote.integration.view.demos.examples.ScrollViewDemo
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendar
 import androidx.compose.remote.integration.view.demos.examples.SimplePath
@@ -227,7 +231,7 @@ class ExperimentActivity : ComponentActivity() {
         ByteArrayInputStream(buffer.buffer, 0, bufferSize).read(bytes)
     }
 
-    var cmap = listOf(get("Frontend...") {}, get("Procedural...") {})
+    var cmap = listOf(get("Frontend...") {}, get("Procedural...") {}, get("Java...") {})
 
     var subMenus =
         mapOf<String, List<RemoteComposeFunc>>(
@@ -241,10 +245,12 @@ class ExperimentActivity : ComponentActivity() {
                 ),
             "Procedural..." to
                 listOf(
+                    getpc("Text baseline") { RcTextDemo() },
                     getpc("CountDown") { countDown() },
                     getpc("Cube 3D") { cube3d() },
                     getpc("Shader Calendar") { ShaderCalendar() },
                 ),
+            "Java..." to listOf(getp("pathTest") { pathTest() }),
         )
 
     fun getpc(
@@ -393,7 +399,14 @@ class ExperimentActivity : ComponentActivity() {
         val com = ComposeView(this)
         setContentView(com)
         com.setContent {
-            Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFFFFFFF)) {
+            Surface(
+                modifier =
+                    Modifier.background(Color.LightGray)
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .navigationBarsPadding(),
+                color = Color(0xFFFFFFFF),
+            ) {
                 if (cfunc != null) {
                     Log.v("MAIN", " running $cfunc")
                     rcRun(cfunc, showOrigami, showCompose, showComposePlayer)
@@ -443,7 +456,10 @@ class ExperimentActivity : ComponentActivity() {
             var fileReady by remember { mutableStateOf(true) }
             Column(
                 modifier =
-                    Modifier.padding(16.dp)
+                    Modifier.padding(16.dp, 0.dp, 16.dp, 0.dp)
+                        .fillMaxSize()
+                        .statusBarsPadding()
+                        .navigationBarsPadding()
                         // .verticalScroll(rememberScrollState()) // TODO investigate why this
                         // breaks
                         .background(Color.White)
@@ -451,7 +467,7 @@ class ExperimentActivity : ComponentActivity() {
                 var tabIndex by remember { mutableIntStateOf(0) }
                 val tabs = listOf("UI", "Stats", "Doc", "misc")
 
-                Text(text = "$func", textAlign = TextAlign.Center)
+                // Text(text = "$func", textAlign = TextAlign.Center)
 
                 SecondaryTabRow(
                     tabIndex,
@@ -777,6 +793,7 @@ fun DisplayMain(
                             id = _id
                             metadata = _metadata ?: "empty"
                         }
+
                         player
                     },
                     update = {

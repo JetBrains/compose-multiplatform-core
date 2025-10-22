@@ -271,11 +271,10 @@ final class RuntimeUtils {
     /**
      * Converts from a perception pose type.
      *
-     * @param perceptionPose a {@code androidx.xr.scenecore.impl.perception.Pose}
-     *    instance representing the pose.
+     * @param perceptionPose a {@code androidx.xr.scenecore.impl.perception.Pose} instance
+     *     representing the pose.
      */
-    static Pose fromPerceptionPose(androidx.xr.scenecore.impl.perception.Pose
-            perceptionPose) {
+    static Pose fromPerceptionPose(androidx.xr.scenecore.impl.perception.Pose perceptionPose) {
         Vector3 translation =
                 new Vector3(perceptionPose.tx(), perceptionPose.ty(), perceptionPose.tz());
         Quaternion rotation =
@@ -309,8 +308,7 @@ final class RuntimeUtils {
      * @param perceptionFov a {@code androidx.xr.scenecore.impl.perception.Fov} instance
      *     representing the FOV.
      */
-    static Fov fovFromPerceptionFov(androidx.xr.scenecore.impl.perception.Fov
-            perceptionFov) {
+    static Fov fovFromPerceptionFov(androidx.xr.scenecore.impl.perception.Fov perceptionFov) {
         return new Fov(
                 perceptionFov.getAngleLeft(),
                 perceptionFov.getAngleRight(),

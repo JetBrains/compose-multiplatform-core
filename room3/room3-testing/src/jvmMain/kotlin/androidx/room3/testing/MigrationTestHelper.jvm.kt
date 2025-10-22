@@ -38,9 +38,12 @@ import org.junit.runner.Description
  * Common usage of this helper is to create a database at an older version first and then attempt a
  * migration and validation:
  * ```
+ * private val tempFilePath = createTempFile("test.db").also { it.toFile().deleteOnExit() }
+ *
  * @get:Rule
  * val migrationTestHelper = MigrationTestHelper(
- *    schemaDirectoryPath = Path("schemas")
+ *    schemaDirectoryPath = Path("schemas"),
+ *    databasePath = tempFilePath,
  *    driver = sqliteDriver,
  *    databaseClass = PetDatabase::class
  * )

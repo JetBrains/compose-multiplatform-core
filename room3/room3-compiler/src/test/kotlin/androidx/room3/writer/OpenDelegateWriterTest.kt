@@ -19,7 +19,7 @@ package androidx.room3.writer
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.processor.DatabaseProcessor
 import androidx.room3.testing.context
 import androidx.room3.vo.Database
@@ -219,7 +219,7 @@ class OpenDelegateWriterTest {
             }
             """,
             )
-        runProcessorTest(sources = sources + databaseCode) { invocation ->
+        runKspTest(sources = sources + databaseCode) { invocation ->
             val db =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(androidx.room3.Database::class.qualifiedName!!)

@@ -523,66 +523,6 @@ class MigrationTest {
         }
     }
 
-    @Test
-    fun compatModeUsingWrongApis() {
-        val supportHelper =
-            MigrationTestHelper(
-                instrumentation = instrumentation,
-                databaseClass = MigrationDb::class.java,
-            )
-        assertThrows<IllegalStateException> { supportHelper.createDatabase(version = 1) }
-            .hasMessageThat()
-            .contains(
-                "MigrationTestHelper functionality returning a SQLiteConnection is not possible " +
-                    "because a SupportSQLiteOpenHelper was provided during configuration (i.e. no " +
-                    "SQLiteDriver was provided)."
-            )
-
-        assertThrows<IllegalStateException> {
-                supportHelper.runMigrationsAndValidate(version = 1, migrations = emptyList())
-            }
-            .hasMessageThat()
-            .contains(
-                "MigrationTestHelper functionality returning a SQLiteConnection is not possible " +
-                    "because a SupportSQLiteOpenHelper was provided during configuration (i.e. no " +
-                    "SQLiteDriver was provided)."
-            )
-    }
-
-    @Test
-    fun noCompatModeUsingWrongApis() {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val dbFile = instrumentation.targetContext.getDatabasePath("test.db")
-        val driverHelper =
-            MigrationTestHelper(
-                instrumentation = instrumentation,
-                file = dbFile,
-                driver = AndroidSQLiteDriver(),
-                databaseClass = MigrationDb::class,
-            )
-        assertThrows<IllegalStateException> {
-                driverHelper.createDatabase(name = "test.db", version = 1)
-            }
-            .hasMessageThat()
-            .contains(
-                "MigrationTestHelper functionality returning a SupportSQLiteDatabase is not possible " +
-                    "because a SQLiteDriver was provided during configuration."
-            )
-
-        assertThrows<IllegalStateException> {
-                driverHelper.runMigrationsAndValidate(
-                    name = "test.db",
-                    version = 1,
-                    validateDroppedTables = false,
-                )
-            }
-            .hasMessageThat()
-            .contains(
-                "MigrationTestHelper functionality returning a SupportSQLiteDatabase is not possible " +
-                    "because a SQLiteDriver was provided during configuration."
-            )
-    }
-
     private val MIGRATION_1_2: Migration =
         object : Migration(1, 2) {
             override fun migrate(connection: SQLiteConnection) {

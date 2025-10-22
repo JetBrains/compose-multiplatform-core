@@ -21,6 +21,7 @@ import androidx.camera.camera2.adapter.CaptureConfigAdapter.Companion.getStillCa
 import androidx.camera.camera2.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.compat.quirk.TorchIsClosedAfterImageCapturingQuirk
 import androidx.camera.camera2.config.UseCaseCameraScope
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.impl.CapturePipeline
 import androidx.camera.camera2.impl.CapturePipelineImpl
@@ -29,7 +30,6 @@ import androidx.camera.camera2.impl.TorchControl.TorchMode
 import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
 import androidx.camera.camera2.pipe.RequestTemplate
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.TorchState
 import androidx.camera.core.imagecapture.CameraCapturePipeline
@@ -82,10 +82,10 @@ constructor(
         if (needCorrectTorchState) {
             threads.sequentialScope.launch {
                 deferredResults.joinAll()
-                Log.debug { "Re-enable Torch to correct the Torch state" }
+                Camera2Logger.debug { "Re-enable Torch to correct the Torch state" }
                 torchControl.setTorchAsync(TorchMode.OFF).join()
                 torchControl.setTorchAsync(TorchMode.USED_AS_FLASH).join()
-                Log.debug { "Re-enable Torch to correct the Torch state, done" }
+                Camera2Logger.debug { "Re-enable Torch to correct the Torch state, done" }
             }
         }
 

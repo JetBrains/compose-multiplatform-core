@@ -451,7 +451,7 @@ public final class RuntimeUtilsTest {
         assertThat(RuntimeUtils.getPassthroughOpacity(passthroughVisibilityState)).isEqualTo(1.0f);
 
         // Log is removed from RuntimeUtils
-        //expectedLogMessagesRule.expectLogMessagePattern(
+        // expectedLogMessagesRule.expectLogMessagePattern(
         //        Log.ERROR,
         //        "RuntimeUtils",
         //        Pattern.compile(".* Opacity should be greater than zero.*"));

@@ -256,9 +256,13 @@ public final class SchemaToPlatformConverter {
                     (AppSearchSchema.EmbeddingPropertyConfig) jetpackProperty;
             return ApiHelperForB.createPlatformEmbeddingPropertyConfig(embeddingProperty);
         } else if (jetpackProperty instanceof AppSearchSchema.BlobHandlePropertyConfig) {
-            // TODO(b/273591938): Remove this once blob APIs are available.
-            throw new UnsupportedOperationException(Features.BLOB_STORAGE
-                    + " is not available on this AppSearch implementation.");
+            if (!AppSearchVersionUtil.isAtLeastB()) {
+                throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                        + " is not available on this AppSearch implementation.");
+            }
+            AppSearchSchema.BlobHandlePropertyConfig blobHandleProperty =
+                    (AppSearchSchema.BlobHandlePropertyConfig) jetpackProperty;
+            return ApiHelperForB.createPlatformBlobHandlePropertyConfig(blobHandleProperty);
         } else {
             throw new IllegalArgumentException(
                     "Invalid dataType: " + jetpackProperty.getDataType());
@@ -367,6 +371,12 @@ public final class SchemaToPlatformConverter {
                     (android.app.appsearch.AppSearchSchema
                             .EmbeddingPropertyConfig) platformProperty;
             return ApiHelperForB.createJetpackEmbeddingPropertyConfig(embeddingProperty);
+        } else if (AppSearchVersionUtil.isAtLeastB() && platformProperty
+                instanceof android.app.appsearch.AppSearchSchema.BlobHandlePropertyConfig) {
+            android.app.appsearch.AppSearchSchema.BlobHandlePropertyConfig blobHandleProperty =
+                    (android.app.appsearch.AppSearchSchema
+                            .BlobHandlePropertyConfig) platformProperty;
+            return ApiHelperForB.createJetpackBlobHandlePropertyConfig(blobHandleProperty);
         } else {
             throw new IllegalArgumentException(
                     "Invalid property type " + platformProperty.getClass()
@@ -550,6 +560,32 @@ public final class SchemaToPlatformConverter {
                     .setCardinality(platformEmbeddingProperty.getCardinality())
                     .setIndexingType(platformEmbeddingProperty.getIndexingType())
                     .setQuantizationType(platformEmbeddingProperty.getQuantizationType())
+                    .build();
+        }
+
+        @DoNotInline
+        @SuppressLint("WrongConstant")
+        static android.app.appsearch.AppSearchSchema.PropertyConfig
+                    createPlatformBlobHandlePropertyConfig(
+                AppSearchSchema.@NonNull BlobHandlePropertyConfig platformBlobHandleProperty) {
+            // TODO(b/326987971) : convert description when SetSchemaDescription is ready in
+            //  service-appsearch fall through.
+            return new android.app.appsearch.AppSearchSchema.BlobHandlePropertyConfig.Builder(
+                    platformBlobHandleProperty.getName())
+                    .setCardinality(platformBlobHandleProperty.getCardinality())
+                    .build();
+        }
+
+        @DoNotInline
+        @SuppressLint("WrongConstant")
+        static AppSearchSchema.BlobHandlePropertyConfig createJetpackBlobHandlePropertyConfig(
+                android.app.appsearch.AppSearchSchema.@NonNull BlobHandlePropertyConfig
+                        platformBlobHandleProperty) {
+            // TODO(b/326987971) : convert description when SetSchemaDescription is ready in
+            //  service-appsearch fall through.
+            return new AppSearchSchema.BlobHandlePropertyConfig.Builder(
+                    platformBlobHandleProperty.getName())
+                    .setCardinality(platformBlobHandleProperty.getCardinality())
                     .build();
         }
     }

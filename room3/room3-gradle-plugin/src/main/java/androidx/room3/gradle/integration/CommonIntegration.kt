@@ -18,7 +18,6 @@ package androidx.room3.gradle.integration
 
 import androidx.room3.gradle.RoomArgumentProvider
 import androidx.room3.gradle.RoomExtension.SchemaConfiguration
-import androidx.room3.gradle.RoomOptions
 import androidx.room3.gradle.util.isKspTask
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
@@ -81,7 +80,6 @@ internal class CommonIntegration(
      */
     fun createArgumentProvider(
         schemaConfiguration: SchemaConfiguration,
-        roomOptions: RoomOptions,
         task: Task,
     ): RoomArgumentProvider {
         return RoomArgumentProvider(
@@ -89,7 +87,6 @@ internal class CommonIntegration(
             schemaInputDir = schemaConfiguration.copyTask.flatMap { it.schemaDirectory },
             schemaOutputDir =
                 providerFactory.provider { apTaskSchemaOutputDirs.getValue(task.name).get() },
-            options = roomOptions,
         )
     }
 }

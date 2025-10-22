@@ -16,17 +16,23 @@
 
 package androidx.activity.compose
 
+import androidx.activity.ActivityFlags
+import androidx.activity.ExperimentalActivityApi
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.NavigationEventHandler
@@ -68,9 +74,12 @@ public object LocalOnBackPressedDispatcherOwner {
 /**
  * An effect for handling presses of the system back button.
  *
- * This effect registers a callback to be invoked when the system back button is pressed.
+ * This effect registers a callback to be invoked when the system back button is pressed. The
+ * [onBack] will be invoked when the system back button is pressed (that is, `onCompleted`).
  *
- * The [onBack] will be invoked when the system back button is pressed (i.e., `onCompleted`).
+ * The handler is registered once and stays attached for the lifetime of the [LifecycleOwner]. Its
+ * [OnBackPressedCallback.isEnabled] state automatically follows the lifecycle: it becomes enabled
+ * when the lifecycle is at least [Lifecycle.State.STARTED] and disabled otherwise.
  *
  * ## Precedence
  * If multiple [BackHandler] are present in the composition, the one that is composed **last** among
@@ -82,11 +91,18 @@ public object LocalOnBackPressedDispatcherOwner {
  * (e.g., inside an `if` block), as conditional calls can change the order of composition, leading
  * to unpredictable behavior where different handlers are invoked after recomposition.
  *
+ * ## Legacy Behavior
+ * To restore the legacy add/remove behavior, set
+ * [ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable] to `false`. In legacy mode, the
+ * handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which
+ * may change dispatch ordering across lifecycle transitions.
+ *
  * @sample androidx.activity.compose.samples.BackHandler
  * @param enabled If `true`, this handler will be enabled and eligible to handle the back press.
  * @param onBack The action to be invoked when the system back button is pressed.
  */
 @SuppressWarnings("MissingJvmstatic")
+@OptIn(ExperimentalActivityApi::class)
 @Composable
 public fun BackHandler(enabled: Boolean = true, onBack: () -> Unit) {
     // Use NavigationEventDispatcher local composition if available,
@@ -100,22 +116,39 @@ public fun BackHandler(enabled: Boolean = true, onBack: () -> Unit) {
 
     val handler = remember { ComposeBackHandler() }
 
-    // Keep the handler instance stable across recompositions, but update the active parameters.
-    SideEffect {
-        handler.isBackEnabled = enabled
-        handler.currentOnBackCompleted = onBack
-    }
+    if (ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable) {
+        // Keep the handler instance stable across recompositions, but update the active parameters.
+        SideEffect { handler.currentOnBackCompleted = onBack }
 
-    // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
-    // avoiding the frame delay that happens with state-based APIs like collectAsState().
-    LifecycleStartEffect(owner) {
-        owner.navigationEventDispatcher.addHandler(handler)
-        onStopOrDispose { handler.remove() }
+        // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
+        // avoiding the frame delay that happens with state-based APIs like collectAsState().
+        LifecycleStartEffect(enabled) {
+            handler.isBackEnabled = enabled
+            onStopOrDispose { handler.isBackEnabled = false }
+        }
+
+        DisposableEffect(owner) {
+            owner.navigationEventDispatcher.addHandler(handler)
+            onDispose { handler.remove() }
+        }
+    } else {
+        // Keep the handler instance stable across recompositions, but update the active parameters.
+        SideEffect {
+            handler.isBackEnabled = enabled
+            handler.currentOnBackCompleted = onBack
+        }
+
+        // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
+        // avoiding the frame delay that happens with state-based APIs like collectAsState().
+        LifecycleStartEffect(owner) {
+            owner.navigationEventDispatcher.addHandler(handler)
+            onStopOrDispose { handler.remove() }
+        }
     }
 }
 
 private class ComposeBackHandler :
-    NavigationEventHandler<NavigationEventInfo>(initialInfo = None, isBackEnabled = true) {
+    NavigationEventHandler<NavigationEventInfo>(initialInfo = None, isBackEnabled = false) {
 
     var currentOnBackCompleted: () -> Unit = {}
 

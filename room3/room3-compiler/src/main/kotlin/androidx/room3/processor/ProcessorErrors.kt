@@ -1266,9 +1266,6 @@ object ProcessorErrors {
         "Only suspend functions are allowed in DAOs" +
             " declared in source sets targeting non-Android platforms."
 
-    val INVALID_KOTLIN_CODE_GEN_IN_JAVAC =
-        "${Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName} can only be enabled in KSP."
-
     const val RAW_QUERY_NOT_SUPPORTED_ON_NON_ANDROID =
         "@RawQuery annotated DAO functions are currently not supported in source sets targeting " +
             "non-Android platforms."

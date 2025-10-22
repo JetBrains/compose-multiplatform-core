@@ -53,6 +53,8 @@ internal constructor(private val updateClient: WidgetUpdateClient) {
     /**
      * Called when a widget provider linked to this widget class becomes active in the host.
      *
+     * This occurs when a widget is added to the carousel.
+     *
      * This method is called from the main thread.
      *
      * @param context the context from which this method is called
@@ -63,6 +65,8 @@ internal constructor(private val updateClient: WidgetUpdateClient) {
 
     /**
      * Called when a widget provider linked to this widget class becomes deactivated in the host.
+     *
+     * This occurs when a widget is removed from the carousel.
      *
      * This method is called from the main thread.
      *

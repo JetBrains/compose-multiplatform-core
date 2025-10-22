@@ -18,7 +18,7 @@
 
 package androidx.room3.solver
 
-import androidx.room3.DatabaseProcessingStep
+import androidx.room3.RoomProcessor
 import androidx.room3.TypeConverter
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.VisibilityModifier
@@ -32,7 +32,7 @@ import androidx.room3.compiler.codegen.XTypeSpec
 import androidx.room3.compiler.codegen.compat.XConverters.toString
 import androidx.room3.compiler.processing.util.CompilationResultSubject
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspProcessorTest
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.RoomAnnotationTypeNames
 import androidx.room3.ext.RoomTypeNames.ROOM_DB
@@ -214,13 +214,13 @@ class CustomTypeConverterResolutionTest {
         sources: List<Source>,
         onCompilationResult: (CompilationResultSubject) -> Unit = { it.hasErrorCount(0) },
     ) {
-        runProcessorTest(
+        runKspProcessorTest(
             sources =
                 sources +
                     CUSTOM_TYPE_JFO +
                     CUSTOM_TYPE_CONVERTER_JFO +
                     CUSTOM_TYPE_SET_CONVERTER_JFO,
-            createProcessingSteps = { listOf(DatabaseProcessingStep()) },
+            symbolProcessorProviders = listOf(RoomProcessor.Provider()),
             onCompilationResult = onCompilationResult,
         )
     }

@@ -452,11 +452,16 @@ public fun UserSubspace(
             userSubspaceRoot.setScale(scale)
         }
     }
+    val userSubspaceRootNode by remember {
+        disposableValueOf(CoreGroupEntity(userSubspaceRoot).apply { enabled = true }) {
+            it.dispose()
+        }
+    }
 
     LaunchedEffect(behavior) {
         behavior.configure(
             session = session,
-            trailingEntity = userSubspaceRoot,
+            trailingEntity = userSubspaceRootNode,
             lockTo = lockTo,
             lockDimensions = lockDimensions,
         )

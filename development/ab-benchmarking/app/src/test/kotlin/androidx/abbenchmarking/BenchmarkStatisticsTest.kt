@@ -273,23 +273,20 @@ class BenchmarkStatisticsTest {
         val expectedOutput =
             """
 --- Comparison for: MyBenchmarkTest ---
-                       Dataset 1 (Branch A) | Dataset 2 (Branch B)
-----------------------------------------------------------------
-Count                | 10                   | 10
-Min (ns)             | 95.50                | 105.50
-Mean (ns)            | 100.00               | 110.00
-Median (ns)          | 99.00                | 109.00
-Std. Dev. (ns)       | 5.00                 | 6.00
-Min Difference:      | 10.00 ns (10.47%)
-Mean Difference:     | 10.00 ns (10.00%)
-Median Difference:   | 10.00 ns (10.10%)
-95% CI of Diff:      | [8.10, 12.20] ns ([8.18%, 12.32%])
+                             Dataset 1 (Branch A)   | Dataset 2 (Branch B)
+--------------------------------------------------------------------------
+Count                        | 10                   | 10
+Min (ns)                     | 95.50                | 105.50
+Mean (ns)                    | 100.00               | 110.00
+Median (ns)                  | 99.00                | 109.00
+Std. Dev. (ns)               | 5.00                 | 6.00
+Min Difference:              | 10.00 ns (10.47%)
+Mean Difference:             | 10.00 ns (10.00%)
+Median Difference:           | 10.00 ns (10.10%)
+95% CI of Diff:              | [8.10, 12.20] ns ([8.18%, 12.32%])
+P-value (Mann-Whitney U):    | 0.0400
 
 The confidence interval does not contain zero, suggesting a statistically significant difference exists between the medians.
-
---- MannWhitneyUTest Results (Branch B vs. Branch A) ---
-P-value:                 0.0400
-Result:                  Statistically significant difference.
 
 -------------------------------------------------------
 

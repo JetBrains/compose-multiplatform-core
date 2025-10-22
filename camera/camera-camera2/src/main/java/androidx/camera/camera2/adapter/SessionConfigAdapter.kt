@@ -20,10 +20,9 @@ import android.hardware.camera2.CameraDevice
 import android.media.MediaCodec
 import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.impl.Camera2ImplConfig
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.internal.StreamUseCaseUtil
 import androidx.camera.camera2.pipe.OutputStream
-import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
@@ -96,7 +95,7 @@ public class SessionConfigAdapter(
     }
 
     public fun reportSurfaceInvalid(deferrableSurface: DeferrableSurface) {
-        debug { "Unavailable $deferrableSurface, notify SessionConfig invalid" }
+        Camera2Logger.debug { "Unavailable $deferrableSurface, notify SessionConfig invalid" }
 
         // Only report error to one SessionConfig, CameraInternal#onUseCaseReset()
         // will handle the other failed Surfaces if there are any.
@@ -131,7 +130,7 @@ public class SessionConfigAdapter(
     ): Map<DeferrableSurface, Long> {
         if (sessionConfigs.any { it.templateType == CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG }) {
             // If is ZSL, do not populate anything.
-            Log.error { "ZSL in populateSurfaceToStreamUseCaseMapping()" }
+            Camera2Logger.error { "ZSL in populateSurfaceToStreamUseCaseMapping()" }
             return emptyMap()
         }
 

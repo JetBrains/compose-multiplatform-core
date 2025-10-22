@@ -126,15 +126,6 @@ class NullabilityAwareTypeConverterStoreTest {
         assertResult(
             result.trim(),
             """
-            JAVAC
-            String? to MyClass?: nullableStringToNullableMyClass
-            MyClass? to String?: nullableMyClassToNullableString
-            String? to MyClass!: nullableStringToNullableMyClass
-            MyClass! to String?: nullableMyClassToNullableString
-            String! to MyClass?: nullableStringToNullableMyClass
-            MyClass? to String!: nullableMyClassToNullableString
-            String! to MyClass!: nullableStringToNullableMyClass
-            MyClass! to String!: nullableMyClassToNullableString
             KSP
             String? to MyClass?: nullableStringToNullableMyClass
             MyClass? to String?: nullableMyClassToNullableString
@@ -155,11 +146,6 @@ class NullabilityAwareTypeConverterStoreTest {
         assertResult(
             result.trim(),
             """
-            JAVAC
-            Cursor to MyClass?: nullableStringToNullableMyClass
-            MyClass? to Cursor: nullableMyClassToNullableString
-            Cursor to MyClass!: nullableStringToNullableMyClass
-            MyClass! to Cursor: nullableMyClassToNullableString
             KSP
             Cursor to MyClass?: nullableStringToNullableMyClass
             MyClass? to Cursor: nullableMyClassToNullableString
@@ -176,15 +162,6 @@ class NullabilityAwareTypeConverterStoreTest {
         assertResult(
             result.trim(),
             """
-            JAVAC
-            String? to MyClass?: stringToMyClass
-            MyClass? to String?: myClassToString
-            String? to MyClass!: stringToMyClass
-            MyClass! to String?: myClassToString
-            String! to MyClass?: stringToMyClass
-            MyClass? to String!: myClassToString
-            String! to MyClass!: stringToMyClass
-            MyClass! to String!: myClassToString
             KSP
             String? to MyClass?: (String? == null ? null : stringToMyClass)
             MyClass? to String?: (MyClass? == null ? null : myClassToString)
@@ -205,11 +182,6 @@ class NullabilityAwareTypeConverterStoreTest {
         assertResult(
             result.trim(),
             """
-                JAVAC
-                Cursor to MyClass?: stringToMyClass
-                MyClass? to Cursor: myClassToString
-                Cursor to MyClass!: stringToMyClass
-                MyClass! to Cursor: myClassToString
                 KSP
                 Cursor to MyClass?: (String? == null ? null : stringToMyClass)
                 MyClass? to Cursor: (MyClass? == null ? null : myClassToString)
@@ -239,11 +211,6 @@ class NullabilityAwareTypeConverterStoreTest {
         assertResult(
             result.trim(),
             """
-                JAVAC
-                int! to MyClass!: (int! as Integer) / boxedIntegerToPlatformMyClass
-                int! to MyClass?: (int! as Integer) / boxedIntegerToPlatformMyClass
-                MyClass! to int!: platformMyClassToBoxedInteger / (Integer as int!)
-                MyClass? to int!: platformMyClassToBoxedInteger / (Integer as int!)
                 KSP
                 int! to MyClass!: (int! as Integer) / boxedIntegerToPlatformMyClass
                 int! to MyClass?: (int! as Integer) / boxedIntegerToPlatformMyClass
@@ -261,15 +228,6 @@ class NullabilityAwareTypeConverterStoreTest {
         assertResult(
             result.trim(),
             """
-            JAVAC
-            String? to MyClass?: stringToMyClass
-            MyClass? to String?: myClassToString
-            String? to MyClass!: stringToMyClass
-            MyClass! to String?: myClassToString
-            String! to MyClass?: stringToMyClass
-            MyClass? to String!: myClassToString
-            String! to MyClass!: stringToMyClass
-            MyClass! to String!: myClassToString
             KSP
             String? to MyClass?: nullableStringToNonNullMyClass / (MyClass! as MyClass?)
             MyClass? to String?: nullableMyClassToNonNullString / (String! as String?)
@@ -290,11 +248,6 @@ class NullabilityAwareTypeConverterStoreTest {
         assertResult(
             result.trim(),
             """
-            JAVAC
-            Cursor to MyClass?: stringToMyClass
-            MyClass? to Cursor: myClassToString
-            Cursor to MyClass!: stringToMyClass
-            MyClass! to Cursor: myClassToString
             KSP
             // we start from nullable string because cursor values are assumed nullable when reading
             Cursor to MyClass?: nullableStringToNonNullMyClass / (MyClass! as MyClass?)
@@ -319,15 +272,6 @@ class NullabilityAwareTypeConverterStoreTest {
         assertResult(
             result.trim(),
             """
-                JAVAC
-                String? to MyClass?: stringToMyClass
-                MyClass? to String?: myClassToString
-                String? to MyClass!: stringToMyClass
-                MyClass! to String?: myClassToString
-                String! to MyClass?: stringToMyClass
-                MyClass? to String!: myClassToString
-                String! to MyClass!: stringToMyClass
-                MyClass! to String!: myClassToString
                 KSP
                 String? to MyClass?: nullableStringToNullableMyClass
                 MyClass? to String?: nullableMyClassToNullableString
@@ -355,11 +299,6 @@ class NullabilityAwareTypeConverterStoreTest {
         assertResult(
             result.trim(),
             """
-                JAVAC
-                Cursor to MyClass?: stringToMyClass
-                MyClass? to Cursor: myClassToString
-                Cursor to MyClass!: stringToMyClass
-                MyClass! to Cursor: myClassToString
                 KSP
                 Cursor to MyClass?: nullableStringToNullableMyClass
                 MyClass? to Cursor: nullableMyClassToNullableString
@@ -452,7 +391,7 @@ class NullabilityAwareTypeConverterStoreTest {
         """
                     .trimIndent(),
             )
-        runProcessorTest(sources = listOf(user, day, converters, dao)) { invocation ->
+        runKspTest(sources = listOf(user, day, converters, dao)) { invocation ->
             val daoProcessor =
                 DaoProcessor(
                     baseContext = invocation.context,
@@ -615,7 +554,7 @@ class NullabilityAwareTypeConverterStoreTest {
         """
                     .trimIndent(),
             )
-        runProcessorTest(sources = listOf(source)) { invocation ->
+        runKspTest(sources = listOf(source)) { invocation ->
             val byteArray =
                 invocation.processingEnv
                     .requireTypeElement("Subject")
@@ -777,7 +716,7 @@ class NullabilityAwareTypeConverterStoreTest {
         selectedConverters: List<String>,
     ): String {
         val result = StringBuilder()
-        runProcessorTest(sources = listOf(kotlinSource, javaSource)) { invocation ->
+        runKspTest(sources = listOf(kotlinSource, javaSource)) { invocation ->
             val store = invocation.createStore(*selectedConverters.toTypedArray())
             assertThat(store).isInstanceOf<NullAwareTypeConverterStore>()
 
@@ -801,7 +740,7 @@ class NullabilityAwareTypeConverterStoreTest {
     /** Collect results for conversion from an unknown cursor type to our type */
     private fun collectCursorResults(vararg selectedConverters: String): String {
         val result = StringBuilder()
-        runProcessorTest(sources = listOf(kotlinSource, javaSource)) { invocation ->
+        runKspTest(sources = listOf(kotlinSource, javaSource)) { invocation ->
             val store = invocation.createStore(*selectedConverters)
             assertThat(store).isInstanceOf<NullAwareTypeConverterStore>()
             val myClassTypeElement = invocation.processingEnv.requireTypeElement("MyClass")

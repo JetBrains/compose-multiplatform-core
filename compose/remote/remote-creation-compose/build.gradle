@@ -69,6 +69,7 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(project(":compose:remote:remote-player-view"))
     androidTestImplementation(project(":compose:remote:test-utils"))
+    androidTestImplementation(project(":compose:remote:remote-player-compose-testutils"))
     androidTestImplementation(project(":compose:test-utils"))
     androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation(project(":test:screenshot:screenshot"))

@@ -61,6 +61,7 @@ package androidx.tracing.driver {
     property public String name;
     property @kotlin.PublishedApi internal final java.util.concurrent.atomic.AtomicInteger started;
     property public androidx.tracing.driver.FlowToken token;
+    field @kotlin.PublishedApi internal static final androidx.tracing.driver.PlatformThreadContextElement.Companion Companion;
     field @kotlin.PublishedApi internal static final kotlin.coroutines.CoroutineContext.Key<androidx.tracing.driver.PlatformThreadContextElement<? extends java.lang.Object?>> KEY;
     field @kotlin.PublishedApi internal static final int STATE_BEGIN = 1; // 0x1
     field @kotlin.PublishedApi internal static final int STATE_END = 0; // 0x0

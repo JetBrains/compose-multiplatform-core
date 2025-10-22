@@ -16,9 +16,22 @@
 
 package androidx.appfunctions.compiler.core
 
+import androidx.appfunctions.compiler.AppFunctionCompiler
+import androidx.appfunctions.compiler.core.AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionAnnotation
+import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerializableFactoryClass
+import androidx.appfunctions.compiler.core.IntrospectionHelper.RESTRICT_API_TO_33_ANNOTATION
+import androidx.appfunctions.compiler.processors.AppFunctionSerializableFactoryCodeBuilderHelper
+import androidx.appfunctions.compiler.processors.AppFunctionSerializableFactoryCodeBuilderHelper.Companion.buildFromAppFunctionDataFunction
+import androidx.appfunctions.compiler.processors.AppFunctionSerializableFactoryCodeBuilderHelper.Companion.buildToAppFunctionDataFunction
+import androidx.appfunctions.compiler.processors.AppFunctionSerializableFactoryCodeBuilderHelper.Companion.setGenericPrimaryConstructor
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSTypeArgument
+import com.google.devtools.ksp.symbol.Modifier
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.TypeSpec
 
 // TODO(b/410764334): Re-evaluate the abstraction layer.
 /** Represents a class annotated with `androidx.appfunctions.AppFunctionSerializable`. */
@@ -27,7 +40,7 @@ open class AnnotatedAppFunctionSerializable(override val classDeclaration: KSCla
 
     /** The name to be assigned to the serializable factory's instance. */
     override val factoryVariableName: String by lazy {
-        "${appFunctionSerializableTypeClassDeclaration.jvmClassName.replace("$", "").replaceFirstChar { it -> it.lowercase() } }Factory"
+        "${appFunctionSerializableTypeClassDeclaration.jvmClassName.replace("$", "").replaceFirstChar {  it.lowercase() } }Factory"
     }
 
     override val isDescribedByKdoc: Boolean by lazy {
@@ -76,5 +89,81 @@ open class AnnotatedAppFunctionSerializable(override val classDeclaration: KSCla
         validateHelper.validatePrimaryConstructor()
         validateHelper.validateParameters(allowSerializableInterfaceTypes)
         return this
+    }
+
+    override fun getFactoryCodeBuilder(
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies
+    ): AppFunctionSerializableType.FactoryCodeBuilder =
+        AnnotatedAppFunctionSerializableFactoryCodeBuilder(
+            this,
+            resolvedAnnotatedSerializableProxies,
+        )
+
+    private class AnnotatedAppFunctionSerializableFactoryCodeBuilder(
+        val annotatedClass: AnnotatedAppFunctionSerializable,
+        val resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
+    ) : AppFunctionSerializableType.FactoryCodeBuilder {
+        override fun buildAppFunctionSerializableFactoryClass(): FileSpec {
+            val superInterfaceClass =
+                AppFunctionSerializableFactoryClass.CLASS_NAME.parameterizedBy(
+                    listOf(annotatedClass.appFunctionSerializableTypeClassDeclaration.typeName)
+                )
+
+            val factoryCodeBuilder =
+                AppFunctionSerializableFactoryCodeBuilderHelper(
+                    annotatedClass,
+                    resolvedAnnotatedSerializableProxies,
+                )
+
+            val generatedFactoryClassName = annotatedClass.factoryClassName.simpleName
+            return FileSpec.builder(
+                    annotatedClass.appFunctionSerializableTypeClassDeclaration.originalClassName
+                        .packageName,
+                    generatedFactoryClassName,
+                )
+                .addType(
+                    TypeSpec.classBuilder(generatedFactoryClassName)
+                        .addAnnotation(RESTRICT_API_TO_33_ANNOTATION)
+                        .addAnnotation(AppFunctionCompiler.GENERATED_ANNOTATION)
+                        .addSuperinterface(superInterfaceClass)
+                        .apply {
+                            if (
+                                annotatedClass.appFunctionSerializableTypeClassDeclaration.modifiers
+                                    .contains(Modifier.INTERNAL)
+                            ) {
+                                addModifiers(KModifier.INTERNAL)
+                            }
+
+                            if (
+                                annotatedClass.appFunctionSerializableTypeClassDeclaration
+                                    .typeParameters
+                                    .isNotEmpty()
+                            ) {
+                                setGenericPrimaryConstructor(
+                                    annotatedClass.appFunctionSerializableTypeClassDeclaration
+                                        .typeParameters
+                                )
+                            }
+                        }
+                        .addFunction(
+                            buildFromAppFunctionDataFunction(
+                                factoryCodeBuilder.buildFromAppFunctionDataMethodBody(),
+                                returnType =
+                                    annotatedClass.appFunctionSerializableTypeClassDeclaration
+                                        .typeName,
+                            )
+                        )
+                        .addFunction(
+                            buildToAppFunctionDataFunction(
+                                factoryCodeBuilder.buildToAppFunctionDataMethodBody(),
+                                parameterType =
+                                    annotatedClass.appFunctionSerializableTypeClassDeclaration
+                                        .typeName,
+                            )
+                        )
+                        .build()
+                )
+                .build()
+        }
     }
 }

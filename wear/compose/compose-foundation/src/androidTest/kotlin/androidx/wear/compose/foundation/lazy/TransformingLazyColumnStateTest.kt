@@ -65,7 +65,7 @@ class TransformingLazyColumnStateTest {
         lateinit var state: TransformingLazyColumnState
         rule.setContent { state = rememberTransformingLazyColumnState() }
         assertThat(state.anchorItemIndex).isEqualTo(0)
-        assertThat(state.anchorItemScrollOffset).isEqualTo(0)
+        assertThat(state.anchorItemScrollOffset).isEqualTo(Int.MAX_VALUE / 2)
     }
 
     @Test

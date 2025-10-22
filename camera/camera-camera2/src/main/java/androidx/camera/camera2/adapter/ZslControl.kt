@@ -26,10 +26,10 @@ import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.compat.quirk.ZslDisablerQuirk
 import androidx.camera.camera2.config.CameraScope
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.impl.area
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateReprocessing
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.MetadataImageReader
 import androidx.camera.core.SafeCloseImageReaderProxy
@@ -147,22 +147,22 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
         }
 
         if (!cameraMetadata.supportsPrivateReprocessing) {
-            Log.info { "ZslControlImpl: Private reprocessing isn't supported" }
+            Camera2Logger.info { "ZslControlImpl: Private reprocessing isn't supported" }
             sessionConfigBuilder.setTemplateType(CameraDevice.TEMPLATE_PREVIEW)
             return
         }
 
         val size = streamConfigurationMap.getInputSizes(FORMAT).toList().maxBy { it.area() }
         if (size == null) {
-            Log.warn { "ZslControlImpl: Unable to find a supported size for ZSL" }
+            Camera2Logger.warn { "ZslControlImpl: Unable to find a supported size for ZSL" }
             return
         }
-        Log.debug { "ZslControlImpl: Selected ZSL size: $size" }
+        Camera2Logger.debug { "ZslControlImpl: Selected ZSL size: $size" }
 
         val isJpegValidOutput =
             streamConfigurationMap.getValidOutputFormatsForInput(FORMAT).contains(ImageFormat.JPEG)
         if (!isJpegValidOutput) {
-            Log.warn { "ZslControlImpl: JPEG isn't valid output for ZSL format" }
+            Camera2Logger.warn { "ZslControlImpl: JPEG isn't valid output for ZSL format" }
             return
         }
 
@@ -177,7 +177,7 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
                         zslRingBuffer.enqueue(imageProxy)
                     }
                 } catch (e: IllegalStateException) {
-                    Log.error { "Failed to acquire latest image" }
+                    Camera2Logger.error { "Failed to acquire latest image" }
                 }
             },
             CameraXExecutors.ioExecutor(),
@@ -244,7 +244,7 @@ public class ZslControlImpl @Inject constructor(private val cameraProperties: Ca
         return try {
             zslRingBuffer.dequeue()
         } catch (e: NoSuchElementException) {
-            Log.warn { "ZslControlImpl#dequeueImageFromBuffer: No such element" }
+            Camera2Logger.warn { "ZslControlImpl#dequeueImageFromBuffer: No such element" }
             null
         }
     }

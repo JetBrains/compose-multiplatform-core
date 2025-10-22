@@ -46,6 +46,14 @@ class RemoteDpTest {
         val remoteFloatDp = RemoteDp(remoteFloat)
 
         assertThat(remoteFloatDp.value).isEqualTo(remoteFloat)
+        assertThat(remoteFloatDp.value.constantValue).isEqualTo(floatValue)
+    }
+
+    @Test
+    fun constructor_extensionFunction() {
+        val intValue = 10
+        val rdpValue = intValue.rdp
+        assertThat(rdpValue.value.constantValue).isEqualTo(intValue)
     }
 
     @Test

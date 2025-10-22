@@ -304,17 +304,24 @@ class EnvironmentActivity : AppCompatActivity() {
             opacityValueText(passthroughOpacityPreference.value, currentPassthroughOpacity.value)
 
         val opacitySlider = findViewById<Slider>(R.id.environment_mySlider)
-        opacitySlider.addOnChangeListener { _, value, _ ->
-            session!!.scene.spatialEnvironment.preferredPassthroughOpacity = value
-            passthroughOpacityPreference.value = value
-            currentPassthroughOpacity.value =
-                session!!.scene.spatialEnvironment.currentPassthroughOpacity
-            opacityTextView.text =
-                opacityValueText(
-                    passthroughOpacityPreference.value,
-                    currentPassthroughOpacity.value,
-                )
-        }
+        opacitySlider.addOnSliderTouchListener(
+            object : Slider.OnSliderTouchListener {
+                override fun onStartTrackingTouch(slider: Slider) {}
+
+                override fun onStopTrackingTouch(slider: Slider) {
+                    Log.i(TAG, "Passthrough opacity slider set to value: ${slider.value}")
+                    session!!.scene.spatialEnvironment.preferredPassthroughOpacity = slider.value
+                    passthroughOpacityPreference.value = slider.value
+                    currentPassthroughOpacity.value =
+                        session!!.scene.spatialEnvironment.currentPassthroughOpacity
+                    opacityTextView.text =
+                        opacityValueText(
+                            passthroughOpacityPreference.value,
+                            currentPassthroughOpacity.value,
+                        )
+                }
+            }
+        )
 
         session!!.scene.spatialEnvironment.addOnPassthroughOpacityChangedListener { newOpacity ->
             currentPassthroughOpacity.value = newOpacity

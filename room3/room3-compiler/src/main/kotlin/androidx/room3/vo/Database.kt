@@ -24,10 +24,10 @@ import androidx.room3.migration.bundle.DatabaseBundle
 import androidx.room3.migration.bundle.SCHEMA_LATEST_FORMAT_VERSION
 import androidx.room3.migration.bundle.SchemaBundle
 import androidx.room3.util.SchemaFileResolver
+import androidx.room3.util.md5Hex
 import java.io.IOException
 import java.io.OutputStream
 import java.nio.file.Path
-import org.apache.commons.codec.digest.DigestUtils
 
 /** Holds information about a class annotated with Database. */
 data class Database(
@@ -93,7 +93,7 @@ data class Database(
             views.sortedBy { it.viewName }.map { it.viewName + it.query.original }
         val input =
             (entityDescriptions + indexDescriptions + viewDescriptions).joinToString("¯\\_(ツ)_/¯")
-        DigestUtils.md5Hex(input)
+        input.md5Hex()
     }
 
     // Writes schema file to output path, using the input path to check if the schema has changed

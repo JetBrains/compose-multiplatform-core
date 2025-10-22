@@ -21,7 +21,6 @@ import androidx.room3.coroutines.PassthroughConnectionPool
 import androidx.room3.coroutines.TransactionWrapper
 import androidx.room3.coroutines.newConnectionPool
 import androidx.room3.coroutines.newSingleConnectionPool
-import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.driver.SupportSQLiteConnection
@@ -102,29 +101,6 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
         init()
     }
 
-    constructor(
-        config: DatabaseConfiguration,
-        supportOpenHelperFactory: (DatabaseConfiguration) -> SupportSQLiteOpenHelper,
-        transactionWrapper: TransactionWrapper<*>,
-    ) {
-        this.configuration = config
-        this.openDelegate = NoOpOpenDelegate()
-        this.callbacks = config.callbacks ?: emptyList()
-        // Compatibility mode due to no driver provided, the SupportSQLiteDriver and
-        // pass-through connection pool are created. A Room onOpen callback is installed so that the
-        // SupportSQLiteDatabase is extracted out of the RoomOpenHelper installed.
-        val configWithCompatibilityCallback =
-            config.installOnOpenCallback { db -> supportDatabase = db }
-        this.supportOpenHelper = supportOpenHelperFactory.invoke(configWithCompatibilityCallback)
-        this.connectionPool =
-            PassthroughConnectionPool(
-                driver = SupportSQLiteDriver(supportOpenHelper),
-                fileName = config.name ?: ":memory:",
-                transactionWrapper = transactionWrapper,
-            )
-        init()
-    }
-
     private fun init() {
         val wal = configuration.journalMode == RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING
         supportOpenHelper?.setWriteAheadLoggingEnabled(wal)
@@ -175,52 +151,5 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
             this@RoomConnectionManager.onOpen(SupportSQLiteConnection(db))
             supportDatabase = db
         }
-    }
-
-    /**
-     * A no op implementation of [RoomOpenDelegate] used in compatibility mode with old gen code
-     * that relies on [RoomOpenHelper].
-     */
-    private class NoOpOpenDelegate : RoomOpenDelegate(-1, "", "") {
-        override fun onCreate(connection: SQLiteConnection) {
-            error("NOP delegate should never be called")
-        }
-
-        override fun onPreMigrate(connection: SQLiteConnection) {
-            error("NOP delegate should never be called")
-        }
-
-        override fun onValidateSchema(connection: SQLiteConnection): ValidationResult {
-            error("NOP delegate should never be called")
-        }
-
-        override fun onPostMigrate(connection: SQLiteConnection) {
-            error("NOP delegate should never be called")
-        }
-
-        override fun onOpen(connection: SQLiteConnection) {
-            error("NOP delegate should never be called")
-        }
-
-        override fun createAllTables(connection: SQLiteConnection) {
-            error("NOP delegate should never be called")
-        }
-
-        override fun dropAllTables(connection: SQLiteConnection) {
-            error("NOP delegate should never be called")
-        }
-    }
-
-    private fun DatabaseConfiguration.installOnOpenCallback(
-        onOpen: (SupportSQLiteDatabase) -> Unit
-    ): DatabaseConfiguration {
-        val newCallbacks =
-            (this.callbacks ?: emptyList()) +
-                object : RoomDatabase.Callback() {
-                    override fun onOpen(db: SupportSQLiteDatabase) {
-                        onOpen.invoke(db)
-                    }
-                }
-        return this.copy(callbacks = newCallbacks)
     }
 }

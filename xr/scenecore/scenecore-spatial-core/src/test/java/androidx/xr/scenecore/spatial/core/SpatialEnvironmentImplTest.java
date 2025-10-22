@@ -68,8 +68,8 @@ public final class SpatialEnvironmentImplTest {
     private XrExtensions mXrExtensions = null;
     private SpatialEnvironmentImpl mEnvironment = null;
     private final NodeRepository mNodeRepository = NodeRepository.getInstance();
-    private final SpatialEnvironmentFeature
-            mMockSpatialEnvironmentFeature = mock(SpatialEnvironmentFeature.class);
+    private final SpatialEnvironmentFeature mMockSpatialEnvironmentFeature =
+            mock(SpatialEnvironmentFeature.class);
 
     @Before
     public void setUp() {
@@ -81,10 +81,7 @@ public final class SpatialEnvironmentImplTest {
 
         mEnvironment =
                 new SpatialEnvironmentImpl(
-                        mActivity,
-                        mXrExtensions,
-                        sceneRootNode,
-                        this::getSpatialState);
+                        mActivity, mXrExtensions, sceneRootNode, this::getSpatialState);
     }
 
     private SpatialState getSpatialState() {
@@ -178,8 +175,7 @@ public final class SpatialEnvironmentImplTest {
                 () ->
                         mEnvironment.setPreferredSpatialEnvironment(
                                 new SpatialEnvironmentPreference(
-                                        new ExrImageResource() {},
-                                        new GltfModelResource() {})));
+                                        new ExrImageResource() {}, new GltfModelResource() {})));
     }
 
     @Test
@@ -188,11 +184,10 @@ public final class SpatialEnvironmentImplTest {
 
         mEnvironment.setPreferredSpatialEnvironment(
                 new SpatialEnvironmentPreference(
-                        new ExrImageResource() {},
-                        new GltfModelResource() {}));
+                        new ExrImageResource() {}, new GltfModelResource() {}));
 
-        verify(mMockSpatialEnvironmentFeature).setPreferredSpatialEnvironment(
-                any(SpatialEnvironmentPreference.class));
+        verify(mMockSpatialEnvironmentFeature)
+                .setPreferredSpatialEnvironment(any(SpatialEnvironmentPreference.class));
     }
 
     @Test

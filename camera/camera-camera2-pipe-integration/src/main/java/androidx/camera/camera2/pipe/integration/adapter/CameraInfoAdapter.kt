@@ -37,8 +37,6 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateRepr
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStrength
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.UnsafeWrapper
-import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
@@ -47,6 +45,7 @@ import androidx.camera.camera2.pipe.integration.compat.quirk.ZslDisablerQuirk
 import androidx.camera.camera2.pipe.integration.compat.workaround.isFlashAvailable
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.config.CameraScope
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
 import androidx.camera.camera2.pipe.integration.impl.CameraPipeCameraProperties
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
@@ -355,7 +354,7 @@ constructor(
                 cameraFovInfo.getDefaultCameraDefaultViewAngleDegrees().toFloat() /
                     cameraFovInfo.getDefaultViewAngleDegrees().toFloat()
         } catch (e: Exception) {
-            Log.error(e) { "Failed to get the intrinsic zoom ratio" }
+            Camera2Logger.error(e) { "Failed to get the intrinsic zoom ratio" }
         }
 
         return intrinsicZoomRatio
@@ -377,7 +376,7 @@ constructor(
                 isFeatureComboInvocation = isFeatureComboInvocation,
             )
         } catch (e: IllegalArgumentException) {
-            debug(e) {
+            Camera2Logger.debug(e) {
                 "CameraInfoAdapter#isUseCaseCombinationSupported:" +
                     " calculateSuggestedStreamSpecs failed"
             }

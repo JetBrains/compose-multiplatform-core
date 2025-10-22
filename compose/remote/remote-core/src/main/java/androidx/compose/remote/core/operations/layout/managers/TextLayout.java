@@ -77,6 +77,8 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
     private float mTextW = -1;
     private float mTextH = -1;
 
+    private float mBaseline = 0f;
+
     private final Size mCachedSize = new Size(0f, 0f);
 
     @Nullable private String mCachedString;
@@ -215,6 +217,26 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
     }
 
     @NonNull public PaintBundle mPaint = new PaintBundle();
+
+    @Override
+    public float getAlignValue(@NonNull PaintContext context, float line) {
+        if (Float.isNaN(line)) {
+            int id = Utils.idFromNan(line);
+            if (id == RemoteContext.ID_FIRST_BASELINE) {
+                return mBaseline;
+            }
+            if (id == RemoteContext.ID_LAST_BASELINE) {
+                // TODO add support for last baseline
+                return mBaseline;
+            }
+            if (Utils.isVariable(line)) {
+                return context.getContext().getFloat(Utils.idFromNan(line));
+            }
+            // unrecognized line value
+            return 0f;
+        }
+        return line;
+    }
 
     @Override
     public void paintingComponent(@NonNull PaintContext context) {
@@ -415,6 +437,7 @@ public class TextLayout extends LayoutManager implements VariableSupport, Access
         }
         if (!forceComplex) {
             context.getTextBounds(mTextId, 0, mCachedString.length(), flags, bounds);
+            mBaseline = -bounds[1];
         }
         if (forceComplex || (bounds[2] - bounds[1] > maxWidth && mMaxLines > 1 && maxWidth > 0f)) {
             mComputedTextLayout =

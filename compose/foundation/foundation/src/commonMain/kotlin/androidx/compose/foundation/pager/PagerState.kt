@@ -762,10 +762,9 @@ internal constructor(
             firstVisiblePageOffset = result.firstVisiblePageScrollOffset
             tryRunPrefetch(result)
             maxScrollOffset = result.calculateNewMaxScrollOffset(pageCount)
-            minScrollOffset = result.calculateNewMinScrollOffset(pageCount)
-            debugLog {
-                "Finished Applying Measure Result" + "\nNew maxScrollOffset=$maxScrollOffset"
-            }
+            minScrollOffset =
+                result.calculateNewMinScrollOffset(pageCount).coerceAtMost(maxScrollOffset)
+            debugLog { "Finished Applying Measure Result\nNew maxScrollOffset=$maxScrollOffset" }
         }
     }
 

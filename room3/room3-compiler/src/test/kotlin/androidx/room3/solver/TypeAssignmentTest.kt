@@ -20,7 +20,7 @@ import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.XVariableElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Test
@@ -101,6 +101,6 @@ class TypeAssignmentTest {
     }
 
     private fun runTest(handler: XTestInvocation.() -> Unit) {
-        runProcessorTest(sources = listOf(TEST_OBJECT)) { it.apply { handler() } }
+        runKspTest(sources = listOf(TEST_OBJECT)) { it.apply { handler() } }
     }
 }

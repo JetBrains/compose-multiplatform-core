@@ -18,12 +18,15 @@ package androidx.compose.foundation.pager
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.snapping.MinFlingVelocityDp
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import kotlin.math.max
+import kotlin.test.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -52,6 +55,30 @@ class PagerGestureTest(private val paramConfig: ParamConfig) : BasePagerTest(con
         rule
             .onNodeWithTag(max(0, initialPage - paramConfig.beyondViewportPageCount - 1).toString())
             .assertDoesNotExist()
+    }
+
+    @Test
+    fun swipePagerWithSmallContent_shouldNotCrash() {
+        createPager(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(20.dp),
+            snapPosition = SnapPosition.Center,
+            pageSize = { PageSize.Fixed(200.dp) },
+            pageCount = { 1 },
+        )
+        val swipeValue = 0.4f
+        val delta = pagerSize * swipeValue * scrollForwardSign
+
+        val caughtReturn = runCatching {
+            onPager().performTouchInput {
+                swipeWithVelocityAcrossMainAxis(
+                    with(rule.density) { 0.5f * MinFlingVelocityDp.toPx() },
+                    delta,
+                )
+            }
+        }
+
+        assertTrue(caughtReturn.isSuccess)
     }
 
     companion object {

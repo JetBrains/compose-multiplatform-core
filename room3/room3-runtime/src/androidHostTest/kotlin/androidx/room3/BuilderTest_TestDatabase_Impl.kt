@@ -18,7 +18,6 @@ package androidx.room3
 
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.migration.Migration
-import androidx.sqlite.db.SupportSQLiteOpenHelper
 import kotlin.reflect.KClass
 import org.mockito.kotlin.mock
 
@@ -29,11 +28,6 @@ internal class BuilderTest_TestDatabase_Impl : BuilderTest.TestDatabase() {
     override fun init(configuration: DatabaseConfiguration) {
         super.init(configuration)
         mConfig = configuration
-    }
-
-    @Deprecated("No longer implemented by generated")
-    override fun createOpenHelper(config: DatabaseConfiguration): SupportSQLiteOpenHelper {
-        return mock()
     }
 
     override fun createOpenDelegate(): RoomOpenDelegate {
@@ -50,5 +44,13 @@ internal class BuilderTest_TestDatabase_Impl : BuilderTest.TestDatabase() {
         autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
     ): List<Migration> {
         return mAutoMigrations
+    }
+
+    override fun getRequiredAutoMigrationSpecClasses(): Set<KClass<out AutoMigrationSpec>> {
+        return emptySet()
+    }
+
+    override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
+        return emptyMap()
     }
 }

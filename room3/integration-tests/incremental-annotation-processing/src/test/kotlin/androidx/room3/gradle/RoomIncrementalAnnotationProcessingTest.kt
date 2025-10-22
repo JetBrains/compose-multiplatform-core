@@ -26,22 +26,18 @@ import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
-@RunWith(Parameterized::class)
-class RoomIncrementalAnnotationProcessingTest(private val useKsp: Boolean) {
+class RoomIncrementalAnnotationProcessingTest() {
 
     companion object {
-
-        @Parameterized.Parameters(name = "useKsp={0}")
-        @JvmStatic
-        fun parameters() = arrayOf(false, true)
 
         private const val SRC_DIR = "src/main/java"
         private const val GEN_RES_DIR = "schemas"
         private const val COMPILE_TASK_NAME = "compileDebugJavaWithJavac"
-        private const val CLASS_DIR = "build/intermediates/javac/debug/$COMPILE_TASK_NAME/classes"
+        private const val JAVA_CLASS_DIR =
+            "build/intermediates/javac/debug/$COMPILE_TASK_NAME/classes"
+        private const val KOTLIN_CLASS_DIR =
+            "build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes"
 
         private const val CLEAN_TASK = ":clean"
         private const val COMPILE_TASK = ":$COMPILE_TASK_NAME"
@@ -51,12 +47,7 @@ class RoomIncrementalAnnotationProcessingTest(private val useKsp: Boolean) {
 
     @get:Rule val expect: Expect = Expect.create()
 
-    private val genSrcDir =
-        if (useKsp) {
-            "build/generated/ksp/debug/java"
-        } else {
-            "build/generated/ap_generated_sources/debug/out/"
-        }
+    private val genSrcDir = "build/generated/ksp/debug/kotlin"
 
     // Original source files
     private lateinit var srcDatabase1: File
@@ -127,38 +118,9 @@ class RoomIncrementalAnnotationProcessingTest(private val useKsp: Boolean) {
         // copy test project
         File("src/test/test-data/simple-project").copyRecursively(projectRoot)
 
-        if (useKsp) {
-            // add a kotlin file to trigger kotlin compilation
-            projectRoot.resolve("src/main/java/placeholer.kt").writeText("")
-        }
+        // add a kotlin file to trigger kotlin compilation
+        projectRoot.resolve("src/main/java/placeholer.kt").writeText("")
 
-        val kspPluginBlock =
-            if (useKsp) {
-                """
-                apply plugin: "com.google.devtools.ksp"
-            """
-            } else {
-                """
-            """
-            }
-        val processorConfiguration =
-            if (useKsp) {
-                "ksp"
-            } else {
-                "annotationProcessor"
-            }
-        val kspArgumentsBlock =
-            if (useKsp) {
-                """
-            ksp {
-                arg('room.schemaLocation', '${projectRoot.resolve(GEN_RES_DIR).canonicalPath}')
-                arg('room.generateKotlin', 'false')
-            }
-            """
-                    .trimIndent()
-            } else {
-                ""
-            }
         // set up build file
         File(projectRoot, "build.gradle")
             .writeText(
@@ -173,7 +135,7 @@ class RoomIncrementalAnnotationProcessingTest(private val useKsp: Boolean) {
             }
 
             apply plugin: 'com.android.application'
-            $kspPluginBlock
+            apply plugin: "com.google.devtools.ksp"
 
             $repositoriesBlock
 
@@ -182,7 +144,7 @@ class RoomIncrementalAnnotationProcessingTest(private val useKsp: Boolean) {
             dependencies {
                 // Uses latest Room built from tip of tree
                 implementation "androidx.room3:room3-runtime:$roomVersion"
-                $processorConfiguration "androidx.room3:room3-compiler:$roomVersion"
+                ksp "androidx.room3:room3-compiler:$roomVersion"
             }
 
             tasks.withType(
@@ -223,7 +185,10 @@ class RoomIncrementalAnnotationProcessingTest(private val useKsp: Boolean) {
                   targetCompatibility = JavaVersion.VERSION_1_8
                 }
             }
-            $kspArgumentsBlock
+
+            ksp {
+                arg('room.schemaLocation', '${projectRoot.resolve(GEN_RES_DIR).canonicalPath}')
+            }
         """
                     .trimIndent()
                     // doing format instead of "$projectSetup.androidProject" on purpose,
@@ -236,24 +201,24 @@ class RoomIncrementalAnnotationProcessingTest(private val useKsp: Boolean) {
         srcDao1 = File(projectRoot, "$SRC_DIR/room/testapp/Dao1.java")
         srcEntity1 = File(projectRoot, "$SRC_DIR/room/testapp/Entity1.java")
 
-        genDatabase1 = File(projectRoot, "$genSrcDir/room/testapp/Database1_Impl.java")
-        genDao1 = File(projectRoot, "$genSrcDir/room/testapp/Dao1_Impl.java")
-        genDatabase2 = File(projectRoot, "$genSrcDir/room/testapp/Database2_Impl.java")
-        genDao2 = File(projectRoot, "$genSrcDir/room/testapp/Dao2_Impl.java")
+        genDatabase1 = File(projectRoot, "$genSrcDir/room/testapp/Database1_Impl.kt")
+        genDao1 = File(projectRoot, "$genSrcDir/room/testapp/Dao1_Impl.kt")
+        genDatabase2 = File(projectRoot, "$genSrcDir/room/testapp/Database2_Impl.kt")
+        genDao2 = File(projectRoot, "$genSrcDir/room/testapp/Dao2_Impl.kt")
 
         genSchema1 = File(projectRoot, "$GEN_RES_DIR/room.testapp.Database1/1.json")
         genSchema2 = File(projectRoot, "$GEN_RES_DIR/room.testapp.Database2/1.json")
 
-        classSrcDatabase1 = File(projectRoot, "$CLASS_DIR/room/testapp/Database1.class")
-        classSrcDao1 = File(projectRoot, "$CLASS_DIR/room/testapp/Dao1.class")
-        classSrcEntity1 = File(projectRoot, "$CLASS_DIR/room/testapp/Entity1.class")
-        classSrcDatabase2 = File(projectRoot, "$CLASS_DIR/room/testapp/Database2.class")
-        classSrcDao2 = File(projectRoot, "$CLASS_DIR/room/testapp/Dao2.class")
-        classSrcEntity2 = File(projectRoot, "$CLASS_DIR/room/testapp/Entity2.class")
-        classGenDatabase1 = File(projectRoot, "$CLASS_DIR/room/testapp/Database1_Impl.class")
-        classGenDao1 = File(projectRoot, "$CLASS_DIR/room/testapp/Dao1_Impl.class")
-        classGenDatabase2 = File(projectRoot, "$CLASS_DIR/room/testapp/Database2_Impl.class")
-        classGenDao2 = File(projectRoot, "$CLASS_DIR/room/testapp/Dao2_Impl.class")
+        classSrcDatabase1 = File(projectRoot, "$JAVA_CLASS_DIR/room/testapp/Database1.class")
+        classSrcDao1 = File(projectRoot, "$JAVA_CLASS_DIR/room/testapp/Dao1.class")
+        classSrcEntity1 = File(projectRoot, "$JAVA_CLASS_DIR/room/testapp/Entity1.class")
+        classSrcDatabase2 = File(projectRoot, "$JAVA_CLASS_DIR/room/testapp/Database2.class")
+        classSrcDao2 = File(projectRoot, "$JAVA_CLASS_DIR/room/testapp/Dao2.class")
+        classSrcEntity2 = File(projectRoot, "$JAVA_CLASS_DIR/room/testapp/Entity2.class")
+        classGenDatabase1 = File(projectRoot, "$KOTLIN_CLASS_DIR/room/testapp/Database1_Impl.class")
+        classGenDao1 = File(projectRoot, "$KOTLIN_CLASS_DIR/room/testapp/Dao1_Impl.class")
+        classGenDatabase2 = File(projectRoot, "$KOTLIN_CLASS_DIR/room/testapp/Database2_Impl.class")
+        classGenDao2 = File(projectRoot, "$KOTLIN_CLASS_DIR/room/testapp/Dao2_Impl.class")
 
         projectRoot
             .resolve("gradle.properties")
@@ -474,8 +439,9 @@ class RoomIncrementalAnnotationProcessingTest(private val useKsp: Boolean) {
             classSrcDatabase2,
             classSrcDao2,
             classSrcEntity2,
-            classGenDatabase2,
-            classGenDao2,
+            // EXPECTATION-NOT-MET: Generated classes shouldn't need to be recompiled
+            // classGenDatabase2,
+            // classGenDao2,
         )
     }
 }

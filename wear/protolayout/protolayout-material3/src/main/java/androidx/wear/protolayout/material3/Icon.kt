@@ -50,7 +50,7 @@ public fun MaterialScope.icon(
     height: ImageDimension = defaultIconStyle.height,
     tintColor: LayoutColor = defaultIconStyle.tintColor,
 ): LayoutElement {
-    require(protoLayoutScope != null) {
+    require(hasProtoLayoutScope) {
         "APIs for automatic resource registration must have ProtoLayoutScope in MaterialScope."
     }
     return protoLayoutScope.basicImage(

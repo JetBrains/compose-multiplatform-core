@@ -85,7 +85,7 @@ public class RemoteComposeWriterAndroid extends RemoteComposeWriter {
     /**
      * Reuse the painter associated with this connection
      *
-     * @return
+     * @return the painter associated with this connection
      */
     public @NonNull Painter getPainter() {
         return mPainter;

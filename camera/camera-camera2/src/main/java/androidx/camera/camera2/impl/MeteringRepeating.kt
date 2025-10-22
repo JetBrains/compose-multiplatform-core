@@ -26,8 +26,6 @@ import android.view.Surface
 import androidx.annotation.GuardedBy
 import androidx.camera.camera2.adapter.CameraUseCaseAdapter
 import androidx.camera.camera2.compat.workaround.getSupportedRepeatingSurfaceSizes
-import androidx.camera.camera2.pipe.core.Log.error
-import androidx.camera.camera2.pipe.core.Log.warn
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.CaptureConfig
 import androidx.camera.core.impl.Config
@@ -141,7 +139,7 @@ public class MeteringRepeating(
         val map =
             metadata[CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP]
                 ?: run {
-                    error { "Can not retrieve SCALER_STREAM_CONFIGURATION_MAP." }
+                    Camera2Logger.error { "Can not retrieve SCALER_STREAM_CONFIGURATION_MAP." }
                     return null
                 }
 
@@ -172,7 +170,7 @@ public class MeteringRepeating(
         if (supportedOutputSizes.isNotEmpty()) {
             outputSizes = supportedOutputSizes
         } else {
-            warn { "No supported output size list, fallback to current list" }
+            Camera2Logger.warn { "No supported output size list, fallback to current list" }
         }
 
         outputSizes.sortBy { size -> size.width.toLong() * size.height.toLong() }

@@ -22,9 +22,9 @@ import android.os.Build
 import android.util.Range
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.compat.quirk.ControlZoomRatioRangeAssertionErrorQuirk
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.internal.ZoomMath.nearZero
 
 /**
@@ -68,19 +68,19 @@ public fun CameraMetadata.getControlZoomRatioRangeSafely(): Range<Float>? =
     try {
         val range = get(CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE)
         if (range == null) {
-            Log.warn { "Failed to read CONTROL_ZOOM_RATIO_RANGE for $camera!" }
+            Camera2Logger.warn { "Failed to read CONTROL_ZOOM_RATIO_RANGE for $camera!" }
             Range(1.0f, 1.0f)
         } else {
             val lower =
                 if (nearZero(range.lower) || range.lower < 0.0f) {
-                    Log.warn { "Invalid lower zoom range detected: ${range.lower}" }
+                    Camera2Logger.warn { "Invalid lower zoom range detected: ${range.lower}" }
                     1.0f
                 } else {
                     range.lower
                 }
             val upper =
                 if (nearZero(range.upper) || range.upper < 0.0f) {
-                    Log.warn { "Invalid upper zoom range detected: ${range.upper}" }
+                    Camera2Logger.warn { "Invalid upper zoom range detected: ${range.upper}" }
                     1.0f
                 } else {
                     range.upper
@@ -89,7 +89,7 @@ public fun CameraMetadata.getControlZoomRatioRangeSafely(): Range<Float>? =
         }
     } catch (e: AssertionError) {
         if (DeviceQuirks[ControlZoomRatioRangeAssertionErrorQuirk::class.java] != null) {
-            Log.debug {
+            Camera2Logger.debug {
                 "Device is known to throw an exception while retrieving" +
                     " the value for CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE." +
                     " CONTROL_ZOOM_RATIO_RANGE is not supported." +
@@ -97,7 +97,7 @@ public fun CameraMetadata.getControlZoomRatioRangeSafely(): Range<Float>? =
                     " ${Build.MODEL}, API Level: ${Build.VERSION.SDK_INT}]."
             }
         } else {
-            Log.error(e) {
+            Camera2Logger.error(e) {
                 "Exception thrown while retrieving the value for" +
                     " CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE on devices not known to " +
                     "throw exceptions during this operation. Please file an issue at " +
@@ -108,7 +108,7 @@ public fun CameraMetadata.getControlZoomRatioRangeSafely(): Range<Float>? =
             }
         }
 
-        Log.warn(e) {
+        Camera2Logger.warn(e) {
             "AssertionError: " + "failed to get CameraCharacteristics.CONTROL_ZOOM_RATIO_RANGE"
         }
         null
@@ -123,7 +123,7 @@ public fun CameraMetadata.getControlZoomRatioRangeSafely(): Range<Float>? =
 public fun CameraMetadata.getActiveArraySizeSafely(): Rect {
     val sensorRect = get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE)
     if (sensorRect == null) {
-        Log.warn { "Failed to read SENSOR_INFO_ACTIVE_ARRAY_SIZE for $camera!" }
+        Camera2Logger.warn { "Failed to read SENSOR_INFO_ACTIVE_ARRAY_SIZE for $camera!" }
         return Rect(0, 0, 4000, 3000)
     } else {
         return sensorRect

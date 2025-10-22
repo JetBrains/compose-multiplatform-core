@@ -122,16 +122,16 @@ abstract class androidx.room3/RoomDatabase { // androidx.room3/RoomDatabase|null
     final val invalidationTracker // androidx.room3/RoomDatabase.invalidationTracker|{}invalidationTracker[0]
         final fun <get-invalidationTracker>(): androidx.room3/InvalidationTracker // androidx.room3/RoomDatabase.invalidationTracker.<get-invalidationTracker>|<get-invalidationTracker>(){}[0]
 
+    abstract fun createAutoMigrations(kotlin.collections/Map<kotlin.reflect/KClass<out androidx.room3.migration/AutoMigrationSpec>, androidx.room3.migration/AutoMigrationSpec>): kotlin.collections/List<androidx.room3.migration/Migration> // androidx.room3/RoomDatabase.createAutoMigrations|createAutoMigrations(kotlin.collections.Map<kotlin.reflect.KClass<out|androidx.room3.migration.AutoMigrationSpec>,androidx.room3.migration.AutoMigrationSpec>){}[0]
     abstract fun createInvalidationTracker(): androidx.room3/InvalidationTracker // androidx.room3/RoomDatabase.createInvalidationTracker|createInvalidationTracker(){}[0]
+    abstract fun createOpenDelegate(): androidx.room3/RoomOpenDelegateMarker // androidx.room3/RoomDatabase.createOpenDelegate|createOpenDelegate(){}[0]
+    abstract fun getRequiredAutoMigrationSpecClasses(): kotlin.collections/Set<kotlin.reflect/KClass<out androidx.room3.migration/AutoMigrationSpec>> // androidx.room3/RoomDatabase.getRequiredAutoMigrationSpecClasses|getRequiredAutoMigrationSpecClasses(){}[0]
+    abstract fun getRequiredTypeConverterClasses(): kotlin.collections/Map<kotlin.reflect/KClass<*>, kotlin.collections/List<kotlin.reflect/KClass<*>>> // androidx.room3/RoomDatabase.getRequiredTypeConverterClasses|getRequiredTypeConverterClasses(){}[0]
     final fun <#A1: kotlin/Any> getTypeConverter(kotlin.reflect/KClass<#A1>): #A1 // androidx.room3/RoomDatabase.getTypeConverter|getTypeConverter(kotlin.reflect.KClass<0:0>){0§<kotlin.Any>}[0]
     final fun close() // androidx.room3/RoomDatabase.close|close(){}[0]
     final fun getCoroutineScope(): kotlinx.coroutines/CoroutineScope // androidx.room3/RoomDatabase.getCoroutineScope|getCoroutineScope(){}[0]
     final fun internalInitInvalidationTracker(androidx.sqlite/SQLiteConnection) // androidx.room3/RoomDatabase.internalInitInvalidationTracker|internalInitInvalidationTracker(androidx.sqlite.SQLiteConnection){}[0]
     final suspend fun <#A1: kotlin/Any?> useConnection(kotlin/Boolean, kotlin.coroutines/SuspendFunction1<androidx.room3/Transactor, #A1>): #A1 // androidx.room3/RoomDatabase.useConnection|useConnection(kotlin.Boolean;kotlin.coroutines.SuspendFunction1<androidx.room3.Transactor,0:0>){0§<kotlin.Any?>}[0]
-    open fun createAutoMigrations(kotlin.collections/Map<kotlin.reflect/KClass<out androidx.room3.migration/AutoMigrationSpec>, androidx.room3.migration/AutoMigrationSpec>): kotlin.collections/List<androidx.room3.migration/Migration> // androidx.room3/RoomDatabase.createAutoMigrations|createAutoMigrations(kotlin.collections.Map<kotlin.reflect.KClass<out|androidx.room3.migration.AutoMigrationSpec>,androidx.room3.migration.AutoMigrationSpec>){}[0]
-    open fun createOpenDelegate(): androidx.room3/RoomOpenDelegateMarker // androidx.room3/RoomDatabase.createOpenDelegate|createOpenDelegate(){}[0]
-    open fun getRequiredAutoMigrationSpecClasses(): kotlin.collections/Set<kotlin.reflect/KClass<out androidx.room3.migration/AutoMigrationSpec>> // androidx.room3/RoomDatabase.getRequiredAutoMigrationSpecClasses|getRequiredAutoMigrationSpecClasses(){}[0]
-    open fun getRequiredTypeConverterClasses(): kotlin.collections/Map<kotlin.reflect/KClass<*>, kotlin.collections/List<kotlin.reflect/KClass<*>>> // androidx.room3/RoomDatabase.getRequiredTypeConverterClasses|getRequiredTypeConverterClasses(){}[0]
 
     final enum class JournalMode : kotlin/Enum<androidx.room3/RoomDatabase.JournalMode> { // androidx.room3/RoomDatabase.JournalMode|null[0]
         enum entry TRUNCATE // androidx.room3/RoomDatabase.JournalMode.TRUNCATE|null[0]
@@ -443,9 +443,6 @@ final object androidx.room3/Room { // androidx.room3/Room|null[0]
     final inline fun <#A1: reified androidx.room3/RoomDatabase> inMemoryDatabaseBuilder(noinline kotlin/Function0<#A1> = ...): androidx.room3/RoomDatabase.Builder<#A1> // androidx.room3/Room.inMemoryDatabaseBuilder|inMemoryDatabaseBuilder(kotlin.Function0<0:0>){0§<androidx.room3.RoomDatabase>}[0]
 }
 
-final val androidx.room3.util/EMPTY_STRING_ARRAY // androidx.room3.util/EMPTY_STRING_ARRAY|{}EMPTY_STRING_ARRAY[0]
-    final fun <get-EMPTY_STRING_ARRAY>(): kotlin/Array<kotlin/String?> // androidx.room3.util/EMPTY_STRING_ARRAY.<get-EMPTY_STRING_ARRAY>|<get-EMPTY_STRING_ARRAY>(){}[0]
-
 final fun <#A: androidx.room3/RoomDatabase> androidx.room3.util/findDatabaseConstructorAndInitDatabaseImpl(kotlin.reflect/KClass<*>): #A // androidx.room3.util/findDatabaseConstructorAndInitDatabaseImpl|findDatabaseConstructorAndInitDatabaseImpl(kotlin.reflect.KClass<*>){0§<androidx.room3.RoomDatabase>}[0]
 final fun <#A: kotlin/Any, #B: kotlin/Any?> androidx.room3.util/recursiveFetchMap(kotlin.collections/MutableMap<#A, #B>, kotlin/Boolean, kotlin/Function1<kotlin.collections/MutableMap<#A, #B>, kotlin/Unit>) // androidx.room3.util/recursiveFetchMap|recursiveFetchMap(kotlin.collections.MutableMap<0:0,0:1>;kotlin.Boolean;kotlin.Function1<kotlin.collections.MutableMap<0:0,0:1>,kotlin.Unit>){0§<kotlin.Any>;1§<kotlin.Any?>}[0]
 final fun <#A: kotlin/Any?> androidx.room3.coroutines/createFlow(androidx.room3/RoomDatabase, kotlin/Boolean, kotlin/Array<kotlin/String>, kotlin/Function1<androidx.sqlite/SQLiteConnection, #A>): kotlinx.coroutines.flow/Flow<#A> // androidx.room3.coroutines/createFlow|createFlow(androidx.room3.RoomDatabase;kotlin.Boolean;kotlin.Array<kotlin.String>;kotlin.Function1<androidx.sqlite.SQLiteConnection,0:0>){0§<kotlin.Any?>}[0]
@@ -458,7 +455,6 @@ final fun androidx.room3.util/getColumnIndexOrThrow(androidx.sqlite/SQLiteStatem
 final fun androidx.room3.util/getLastInsertedRowId(androidx.sqlite/SQLiteConnection): kotlin/Long // androidx.room3.util/getLastInsertedRowId|getLastInsertedRowId(androidx.sqlite.SQLiteConnection){}[0]
 final fun androidx.room3.util/getTotalChangedRows(androidx.sqlite/SQLiteConnection): kotlin/Int // androidx.room3.util/getTotalChangedRows|getTotalChangedRows(androidx.sqlite.SQLiteConnection){}[0]
 final fun androidx.room3.util/joinIntoString(kotlin.collections/List<kotlin/Int>?): kotlin/String? // androidx.room3.util/joinIntoString|joinIntoString(kotlin.collections.List<kotlin.Int>?){}[0]
-final fun androidx.room3.util/newStringBuilder(): kotlin.text/StringBuilder // androidx.room3.util/newStringBuilder|newStringBuilder(){}[0]
 final fun androidx.room3.util/splitToIntList(kotlin/String?): kotlin.collections/List<kotlin/Int>? // androidx.room3.util/splitToIntList|splitToIntList(kotlin.String?){}[0]
 final fun androidx.room3.util/stringError(): kotlin/String // androidx.room3.util/stringError|stringError(){}[0]
 final fun androidx.room3.util/wrapMappedColumns(androidx.sqlite/SQLiteStatement, kotlin/Array<kotlin/String>, kotlin/IntArray): androidx.sqlite/SQLiteStatement // androidx.room3.util/wrapMappedColumns|wrapMappedColumns(androidx.sqlite.SQLiteStatement;kotlin.Array<kotlin.String>;kotlin.IntArray){}[0]

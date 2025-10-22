@@ -50,11 +50,6 @@
             android:requiredDisplayCategory="@string/display_category_xr_projected">
         </activity>
         <activity
-            android:name="androidx.xr.projected.testapp.audiomanager.AudioManagerActivity"
-            android:exported="true"
-            android:label="AudioManager Activity">
-        </activity>
-        <activity
             android:name="androidx.xr.projected.testapp.audio.AudioActivity"
             android:exported="true"
             android:label="Audio Activity">

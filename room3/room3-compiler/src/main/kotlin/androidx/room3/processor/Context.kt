@@ -69,20 +69,7 @@ private constructor(
         }
     }
 
-    val codeLanguage: CodeLanguage by lazy {
-        if (processingEnv.backend == XProcessingEnv.Backend.KSP) {
-            if (BooleanProcessorOptions.GENERATE_KOTLIN.getValue(processingEnv)) {
-                CodeLanguage.KOTLIN
-            } else {
-                CodeLanguage.JAVA
-            }
-        } else {
-            if (BooleanProcessorOptions.GENERATE_KOTLIN.getInputValue(processingEnv) == true) {
-                logger.e(ProcessorErrors.INVALID_KOTLIN_CODE_GEN_IN_JAVAC)
-            }
-            CodeLanguage.JAVA
-        }
-    }
+    val codeLanguage: CodeLanguage by lazy { CodeLanguage.KOTLIN }
 
     // Whether Java 8's lambda syntax is available to be emitted or not.
     val javaLambdaSyntaxAvailable by lazy { processingEnv.jvmVersion >= 8 }
@@ -244,7 +231,6 @@ private constructor(
     }
 
     enum class BooleanProcessorOptions(val argName: String, private val defaultValue: Boolean) {
-        GENERATE_KOTLIN("room.generateKotlin", defaultValue = true),
         EXPORT_SCHEMA_RESOURCE("room.exportSchemaResource", defaultValue = false);
 
         /**

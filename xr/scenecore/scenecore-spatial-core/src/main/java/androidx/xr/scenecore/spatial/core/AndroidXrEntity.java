@@ -327,18 +327,23 @@ abstract class AndroidXrEntity extends BaseEntity implements Entity {
         mPointerCaptureInputEventListener.ifPresent(
                 (listener) -> {
                     Executor executor = mPointerCaptureExecutor.orElse(mExecutor);
-                    executor.execute(() -> listener.onInputEvent(
-                            RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager)
-                    ));
+                    executor.execute(
+                            () ->
+                                    listener.onInputEvent(
+                                            RuntimeUtils.getInputEvent(
+                                                    xrInputEvent, mEntityManager)));
                 });
     }
 
     /** Dispatches an event to all standard input listeners. */
     private void dispatchStandardEvent(InputEvent xrInputEvent) {
         mInputEventListenerMap.forEach(
-                (listener, executor) -> executor.execute(
-                        () -> listener.onInputEvent(
-                                RuntimeUtils.getInputEvent(xrInputEvent, mEntityManager))));
+                (listener, executor) ->
+                        executor.execute(
+                                () ->
+                                        listener.onInputEvent(
+                                                RuntimeUtils.getInputEvent(
+                                                        xrInputEvent, mEntityManager))));
     }
 
     @Override

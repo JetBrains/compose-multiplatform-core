@@ -16,6 +16,7 @@
 
 package androidx.appfunctions.compiler.core
 
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 
 /** Helper class to introspect AppFunction symbols. */
@@ -255,8 +256,16 @@ object IntrospectionHelper {
     object AppFunctionDataClass {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionData")
 
+        val APP_FUNCTION_DATA_QUALIFIED_NAME_PROPERTY = "qualifiedName"
+
         object BuilderClass {
             val CLASS_NAME = ClassName(APP_FUNCTIONS_PACKAGE_NAME, "AppFunctionData", "Builder")
         }
     }
+
+    /** [AnnotationSpec] for @RequiresApi(33) */
+    val RESTRICT_API_TO_33_ANNOTATION =
+        AnnotationSpec.builder(ClassName("androidx.annotation", "RequiresApi"))
+            .addMember("%L", 33)
+            .build()
 }

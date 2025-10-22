@@ -20,11 +20,11 @@ import android.content.Context
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.DurationNs
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.SystemTimeSource
 import androidx.camera.camera2.pipe.core.Timestamps
 import androidx.camera.camera2.pipe.core.Timestamps.formatMs
 import androidx.camera.camera2.pipe.core.Timestamps.measureNow
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.CameraInteropStateCallbackRepository
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
@@ -61,7 +61,7 @@ public class CameraFactoryProvider(
 
         val lazyCameraPipe = lazy {
             if (sharedCameraPipe != null) {
-                Log.debug { "Using shared a $sharedCameraPipe instance." }
+                Camera2Logger.debug { "Using shared a $sharedCameraPipe instance." }
                 sharedCameraPipe
             } else {
                 createCameraPipe(context, threadConfig, openRetryMaxTimeout)
@@ -110,7 +110,9 @@ public class CameraFactoryProvider(
                             ),
                     )
                 )
-            Log.debug { "Created CameraPipe in ${start.measureNow(timeSource).formatMs()}" }
+            Camera2Logger.debug {
+                "Created CameraPipe in ${start.measureNow(timeSource).formatMs()}"
+            }
             cameraPipe
         }
 }

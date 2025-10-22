@@ -87,10 +87,9 @@ public class BaseRenderingFeatureTest {
         ShadowXrExtensions.extract(mXrExtensions)
                 .setOpenXrWorldSpaceType(OPEN_XR_REFERENCE_SPACE_TYPE);
 
-        mRenderingFeature = new BaseRenderingFeatureImpl(
-                mFakeImpressApi,
-                mSplitEngineSubspaceManager,
-                mXrExtensions);
+        mRenderingFeature =
+                new BaseRenderingFeatureImpl(
+                        mFakeImpressApi, mSplitEngineSubspaceManager, mXrExtensions);
     }
 
     @After

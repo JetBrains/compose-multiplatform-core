@@ -979,4 +979,66 @@ class AppFunctionCompilerTest {
             "Type com.testdata.SerializableData cannot be optional",
         )
     }
+
+    // One Of Serializable Tests
+
+    @Test
+    fun oneOfSerializable_oneOfSealedInterface_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/OneOfSealedInterface.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "OneOfSealedInterfaceFactory.kt",
+            "oneofserializable/\$OneOfSealedInterfaceFactory.KT",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_oneOfSealedClass_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/OneOfSealedClass.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "OneOfSealedClassFactory.kt",
+            "oneofserializable/\$OneOfSealedClassFactory.KT",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_nonSerializableSubclasses_fails() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/NonSerializableSubclasses.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            "All subclasses of OneOfSealedInterface should be annotated with @AppFunctionSerializable. Did you forget to annotate OneOfSealedInterface\$ASubclass?",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_nestedOneOfSerializableWithinSerializable_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf(
+                        "oneofserializable/OneOfSealedClass.KT",
+                        "oneofserializable/OneOfSealedInterface.KT",
+                        "oneofserializable/NestedOneOfSerializableWithinSerializable.KT",
+                    )
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "NestedOneOfSerializableWithinSerializableFactory.kt",
+            "oneofserializable/\$NestedOneOfSerializableWithinSerializableFactory.KT",
+        )
+    }
 }

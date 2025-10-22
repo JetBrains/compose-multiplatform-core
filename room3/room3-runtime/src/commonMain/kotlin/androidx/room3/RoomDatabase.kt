@@ -43,7 +43,9 @@ import kotlinx.coroutines.withContext
  *
  * @see Database
  */
-public expect abstract class RoomDatabase() {
+public expect abstract class RoomDatabase
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
+constructor() {
 
     /**
      * The invalidation tracker for this database.
@@ -91,7 +93,7 @@ public expect abstract class RoomDatabase() {
      * @return A new delegate to be used while opening the database
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected open fun createOpenDelegate(): RoomOpenDelegateMarker
+    protected abstract fun createOpenDelegate(): RoomOpenDelegateMarker
 
     /**
      * Creates the invalidation tracker
@@ -115,7 +117,7 @@ public expect abstract class RoomDatabase() {
      *   this database.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public open fun getRequiredAutoMigrationSpecClasses(): Set<KClass<out AutoMigrationSpec>>
+    public abstract fun getRequiredAutoMigrationSpecClasses(): Set<KClass<out AutoMigrationSpec>>
 
     /**
      * Returns a list of automatic [Migration]s that have been generated.
@@ -127,7 +129,7 @@ public expect abstract class RoomDatabase() {
      * @return A list of migration instances each of which is a generated 'auto migration'.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public open fun createAutoMigrations(
+    public abstract fun createAutoMigrations(
         autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
     ): List<Migration>
 
@@ -162,7 +164,7 @@ public expect abstract class RoomDatabase() {
      * @return A map that will include all required type converters for this database.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    protected open fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>>
+    protected abstract fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>>
 
     /** Property delegate of [getRequiredTypeConverterClasses] for common ext functionality. */
     internal val requiredTypeConverterClassesMap: Map<KClass<*>, List<KClass<*>>>

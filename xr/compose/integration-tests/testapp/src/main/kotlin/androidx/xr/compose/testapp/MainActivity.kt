@@ -281,11 +281,9 @@ class MainActivity : ComponentActivity() {
                     TestCaseColumnRowItem(getString(R.string.mode_change_test)) {
                         startTest<ModeChange>()
                     }
-
                     TestCaseColumnRowItem(getString(R.string.anchored_subspace_app_test)) {
                         startTest<AnchoredSubspaceApp>()
                     }
-
                     TestCaseColumnRowItem(getString(R.string.value_based_animation_test)) {
                         startTest<Animation>()
                     }
@@ -307,6 +305,9 @@ class MainActivity : ComponentActivity() {
                     TestCaseColumnRowItem(getString(R.string.accessibility_test)) {
                         startTest<AccessibilityActivity>()
                     }
+                    TestCaseColumnRowItem(getString(R.string.user_subspace_test_case)) {
+                        startTest<UserSubspaceActivity>()
+                    }
                     TestCaseBlankRow("THE FOLLOWING ARE JXR COMPOSE DEVELOPER TESTS")
                     TestCaseColumnRowItem(
                         getString(R.string.depthstacking_modifier_order_test_case)
@@ -315,9 +316,6 @@ class MainActivity : ComponentActivity() {
                     }
                     TestCaseColumnRowItem(getString(R.string.panel_embedded_subspace_test_case)) {
                         startTest<PanelEmbeddedSubspace>()
-                    }
-                    TestCaseColumnRowItem(getString(R.string.user_subspace_test_case)) {
-                        startTest<UserSubspaceActivity>()
                     }
                     TestCaseColumnRowItem(getString(R.string.panel_volume_test_case)) {
                         startTest<PanelVolume>()

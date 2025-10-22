@@ -18,6 +18,7 @@ package androidx.camera.camera2.adapter
 
 import android.annotation.SuppressLint
 import androidx.camera.camera2.config.CameraScope
+import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.CameraProperties
 import androidx.camera.camera2.impl.EvCompControl
 import androidx.camera.camera2.impl.FlashControl
@@ -35,8 +36,6 @@ import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLowLightBoost
 import androidx.camera.camera2.pipe.CameraPipe
-import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.warn
 import androidx.camera.core.CameraControl.OperationCanceledException
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.FocusMeteringResult
@@ -104,7 +103,7 @@ constructor(
             cameraProperties.metadata.supportsLowLightBoost &&
                 lowLightBoostControl.lowLightBoostStateLiveData.value != LowLightBoostState.OFF
         ) {
-            debug { "Unable to enable/disable torch when low-light boost is on." }
+            Camera2Logger.debug { "Unable to enable/disable torch when low-light boost is on." }
             return Futures.immediateFailedFuture<Void>(
                 IllegalStateException(
                     "Torch can not be enabled/disable when low-light boost is on!"
@@ -124,7 +123,9 @@ constructor(
 
     override fun enableLowLightBoostAsync(lowLightBoost: Boolean): ListenableFuture<Void> {
         if (!cameraProperties.metadata.supportsLowLightBoost) {
-            debug { "Unable to enable/disable low-light boost due to it is not supported." }
+            Camera2Logger.debug {
+                "Unable to enable/disable low-light boost due to it is not supported."
+            }
             return Futures.immediateFailedFuture<Void>(
                 IllegalStateException("Low-light boost is not supported!")
             )
@@ -233,7 +234,7 @@ constructor(
     }
 
     override fun getSessionConfig(): SessionConfig {
-        warn { "TODO: getSessionConfig is not yet supported" }
+        Camera2Logger.warn { "TODO: getSessionConfig is not yet supported" }
         return SessionConfig.defaultEmptySessionConfig()
     }
 

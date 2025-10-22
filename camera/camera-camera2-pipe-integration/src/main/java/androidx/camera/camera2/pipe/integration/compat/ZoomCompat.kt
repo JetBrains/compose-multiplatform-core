@@ -23,9 +23,9 @@ import android.os.Build
 import android.util.Range
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsZoomOverride
-import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.integration.compat.workaround.getActiveArraySizeSafely
 import androidx.camera.camera2.pipe.integration.compat.workaround.getControlZoomRatioRangeSafely
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.integration.internal.ZoomMath.nearZero
@@ -67,7 +67,7 @@ public interface ZoomCompat {
                 if ("robolectric" == Build.FINGERPRINT) {
                     val isMissingCharacteristics =
                         NoOpZoomCompat.requiredCharacteristics.any {
-                            Log.warn { "Failed to read $it for zoom features." }
+                            Camera2Logger.warn { "Failed to read $it for zoom features." }
                             cameraProperties.metadata[it] == null
                         }
                     if (isMissingCharacteristics) {
@@ -99,7 +99,9 @@ public class CropRegionZoomCompat(private val cameraProperties: CameraProperties
                     minZoomRatio,
                 )
             if (nearZero(ratio)) {
-                Log.warn { "Invalid max zoom ratio of $ratio detected, defaulting to 1.0f" }
+                Camera2Logger.warn {
+                    "Invalid max zoom ratio of $ratio detected, defaulting to 1.0f"
+                }
                 return 1.0f
             }
             return ratio
@@ -132,7 +134,9 @@ public class CropRegionZoomCompat(private val cameraProperties: CameraProperties
     private fun computeCropRect(sensorRect: Rect, zoomRatio: Float): Rect {
         var ratio = zoomRatio
         if (nearZero(zoomRatio)) {
-            Log.warn { "ZoomCompat: Invalid zoom ratio of 0.0f passed in, defaulting to 1.0f" }
+            Camera2Logger.warn {
+                "ZoomCompat: Invalid zoom ratio of 0.0f passed in, defaulting to 1.0f"
+            }
             ratio = 1.0f
         }
         val cropWidth: Float = sensorRect.width() / ratio

@@ -17,7 +17,7 @@
 package androidx.room3.processor
 
 import androidx.room3.compiler.processing.util.Source
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.migration.bundle.DatabaseBundle
 import androidx.room3.migration.bundle.EntityBundle
 import androidx.room3.migration.bundle.FieldBundle
@@ -44,7 +44,7 @@ class AutoMigrationProcessorTest {
                     .trimIndent(),
             )
 
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             AutoMigrationProcessor(
                     context = invocation.context,
                     spec = invocation.processingEnv.requireType("foo.bar.MyAutoMigration"),
@@ -71,7 +71,7 @@ class AutoMigrationProcessorTest {
                     .trimIndent(),
             )
 
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             AutoMigrationProcessor(
                     context = invocation.context,
                     spec = invocation.processingEnv.requireType("foo.bar.MyAutoMigration"),
@@ -100,7 +100,7 @@ class AutoMigrationProcessorTest {
                     .trimIndent(),
             )
 
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             AutoMigrationProcessor(
                     context = invocation.context,
                     spec =
@@ -132,7 +132,7 @@ class AutoMigrationProcessorTest {
                     .trimIndent(),
             )
 
-        runProcessorTest(listOf(source)) { invocation ->
+        runKspTest(listOf(source)) { invocation ->
             AutoMigrationProcessor(
                     context = invocation.context,
                     spec = invocation.processingEnv.requireType("foo.bar.MyAutoMigration"),

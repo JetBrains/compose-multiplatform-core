@@ -23,7 +23,6 @@ import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.compileFiles
 import androidx.room3.compiler.processing.util.runKspTest
-import androidx.room3.compiler.processing.util.runProcessorTest
 import androidx.room3.ext.RoomTypeNames.ROOM_DB
 import androidx.room3.processor.ProcessorErrors.nullableCollectionOrArrayReturnTypeInDaoFunction
 import androidx.room3.processor.ProcessorErrors.nullableComponentInDaoFunctionReturnType
@@ -264,7 +263,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             """
                     .trimIndent(),
             )
-        runProcessorTest(sources = listOf(daoSrc) + COMMON.USER) { invocation ->
+        runKspTest(sources = listOf(daoSrc) + COMMON.USER) { invocation ->
             val dao =
                 invocation.roundEnv
                     .getElementsAnnotatedWith(androidx.room3.Dao::class.qualifiedName!!)
@@ -431,7 +430,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             val method = dao.queryFunctions.first()
             assertThat(method.element.jvmName, `is`("getAllIds"))
             invocation.assertCompilationResult {
-                hasErrorContaining(ProcessorErrors.cannotFindQueryResultAdapter("void"))
+                hasErrorContaining(ProcessorErrors.cannotFindQueryResultAdapter("kotlin.Unit"))
             }
         }
     }
@@ -453,7 +452,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
         """
                     .trimIndent(),
             )
-        runProcessorTest(sources = listOf(source)) { invocation ->
+        runKspTest(sources = listOf(source)) { invocation ->
             val dao = invocation.processingEnv.requireTypeElement("MyDao")
             val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
             DaoProcessor(
@@ -491,10 +490,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             """
                     .trimIndent(),
             )
-        runKspTest(
-            sources = listOf(src),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-        ) { invocation ->
+        runKspTest(sources = listOf(src)) { invocation ->
             val dao = invocation.processingEnv.requireTypeElement("MyDao")
             val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
             DaoProcessor(
@@ -529,10 +525,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             """
                     .trimIndent(),
             )
-        runKspTest(
-            sources = listOf(src),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-        ) { invocation ->
+        runKspTest(sources = listOf(src)) { invocation ->
             val dao = invocation.processingEnv.requireTypeElement("MyDao")
             val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
             DaoProcessor(
@@ -570,10 +563,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             """
                     .trimIndent(),
             )
-        runKspTest(
-            sources = listOf(src),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-        ) { invocation ->
+        runKspTest(sources = listOf(src)) { invocation ->
             val dao = invocation.processingEnv.requireTypeElement("MyDao")
             val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
             DaoProcessor(
@@ -642,10 +632,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             """
                     .trimIndent(),
             )
-        runKspTest(
-            sources = listOf(src),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-        ) { invocation ->
+        runKspTest(sources = listOf(src)) { invocation ->
             val dao = invocation.processingEnv.requireTypeElement("MyDao")
             val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
             DaoProcessor(
@@ -768,10 +755,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             """
                     .trimIndent(),
             )
-        runKspTest(
-            sources = listOf(src),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-        ) { invocation ->
+        runKspTest(sources = listOf(src)) { invocation ->
             val dao = invocation.processingEnv.requireTypeElement("MyDao")
             val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
             DaoProcessor(
@@ -868,10 +852,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             """
                     .trimIndent(),
             )
-        runKspTest(
-            sources = listOf(dao, entity),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-        ) { invocation ->
+        runKspTest(sources = listOf(dao, entity)) { invocation ->
             val dao = invocation.processingEnv.requireTypeElement("MyDao")
             val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
             DaoProcessor(
@@ -904,10 +885,7 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
             """
                     .trimIndent(),
             )
-        runKspTest(
-            sources = listOf(src),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "true"),
-        ) { invocation ->
+        runKspTest(sources = listOf(src)) { invocation ->
             val dao = invocation.processingEnv.requireTypeElement("MyDao")
             val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
             DaoProcessor(
@@ -928,13 +906,12 @@ class DaoProcessorTest(private val enableVerification: Boolean) {
         classpathFiles: List<File> = emptyList(),
         handler: (Dao, XTestInvocation) -> Unit,
     ) {
-        runProcessorTest(
+        runKspTest(
             sources =
                 listOf(
                     Source.java("foo.bar.MyDao", DAO_PREFIX + inputs.joinToString("\n")),
                     COMMON.USER,
                 ),
-            options = mapOf(Context.BooleanProcessorOptions.GENERATE_KOTLIN.argName to "false"),
             classpath = classpathFiles,
         ) { invocation: XTestInvocation ->
             val dao =
