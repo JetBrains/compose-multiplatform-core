@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Text
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,12 +46,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
 import org.w3c.dom.DataTransfer
 import androidx.compose.ui.draganddrop.domDataTransferOrNull
 import androidx.compose.animation.core.LinearEasing
@@ -89,37 +85,13 @@ actual fun DragAndDropExample() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                colorSources.forEach { (name, color) ->
-                    Box(
-                        Modifier
-                            .size(48.dp)
-                            .background(color, shape = CircleShape)
-                            .clip(CircleShape)
-                            .border(BorderStroke(1.dp, Color.Black), shape = CircleShape)
-                            .dragAndDropSource(
-                                drawDragDecoration = {
-                                    // simple solid color preview
-                                    drawRect(color = color, topLeft = Offset.Zero, size = Size(size.width, size.height))
-                                    val textLayoutResult = textMeasurer.measure(
-                                        text = AnnotatedString(name),
-                                        layoutDirection = layoutDirection,
-                                        density = this
-                                    )
-                                    drawText(
-                                        textLayoutResult = textLayoutResult,
-                                        topLeft = Offset(
-                                            x = (size.width - textLayoutResult.size.width) / 2,
-                                            y = (size.height - textLayoutResult.size.height) / 2,
-                                        )
-                                    )
-                                }
-                            ) { _ ->
-                                val dataTransfer = createDataTransfer()
-                                dataTransfer.setData("text/plain", "color:$name")
-                                DragAndDropTransferData(dataTransfer)
-                            }
-                    ) {}
-                }
+                DraggableColorSource("red", Color.Red)
+                DraggableColorSource("orange", Color(0xFFFFA500))
+                DraggableColorSource("yellow", Color.Yellow)
+                DraggableColorSource("green", Color.Green)
+                DraggableColorSource("light blue", Color(0xFFADD8E6))
+                DraggableColorSource("blue", Color.Blue)
+                DraggableColorSource("violet", Color(0xFF8A2BE2))
             }
         }
 
@@ -247,6 +219,22 @@ actual fun DragAndDropExample() {
             }
         }
     }
+}
+
+@Composable
+private fun DraggableColorSource(name: String, color: Color) {
+    Box(
+        Modifier
+            .size(48.dp)
+            .background(color, shape = CircleShape)
+            .clip(CircleShape)
+            .border(BorderStroke(1.dp, Color.Black), shape = CircleShape)
+            .dragAndDropSource { _ ->
+                val dataTransfer = createDataTransfer()
+                dataTransfer.setData("text/plain", "color:$name")
+                DragAndDropTransferData(dataTransfer)
+            }
+    )
 }
 
 private fun createDataTransfer(): DataTransfer =  js("new DataTransfer()")
