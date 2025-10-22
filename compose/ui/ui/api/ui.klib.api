@@ -5016,8 +5016,6 @@ final class androidx.compose.ui.viewinterop/UIKitInteropProperties { // androidx
         final fun <get-isInteractive>(): kotlin/Boolean // androidx.compose.ui.viewinterop/UIKitInteropProperties.isInteractive.<get-isInteractive>|<get-isInteractive>(){}[0]
     final val isNativeAccessibilityEnabled // androidx.compose.ui.viewinterop/UIKitInteropProperties.isNativeAccessibilityEnabled|{}isNativeAccessibilityEnabled[0]
         final fun <get-isNativeAccessibilityEnabled>(): kotlin/Boolean // androidx.compose.ui.viewinterop/UIKitInteropProperties.isNativeAccessibilityEnabled.<get-isNativeAccessibilityEnabled>|<get-isNativeAccessibilityEnabled>(){}[0]
-    final val placeAsOverlay // androidx.compose.ui.viewinterop/UIKitInteropProperties.placeAsOverlay|{}placeAsOverlay[0]
-        final fun <get-placeAsOverlay>(): kotlin/Boolean // androidx.compose.ui.viewinterop/UIKitInteropProperties.placeAsOverlay.<get-placeAsOverlay>|<get-placeAsOverlay>(){}[0]
 
     final fun equals(kotlin/Any?): kotlin/Boolean // androidx.compose.ui.viewinterop/UIKitInteropProperties.equals|equals(kotlin.Any?){}[0]
     final fun hashCode(): kotlin/Int // androidx.compose.ui.viewinterop/UIKitInteropProperties.hashCode|hashCode(){}[0]
