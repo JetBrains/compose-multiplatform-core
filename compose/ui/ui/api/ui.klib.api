@@ -5221,9 +5221,6 @@ final val androidx.compose.ui.window/androidx_compose_ui_window_SceneActiveState
 final val androidx.compose.ui.window/androidx_compose_ui_window_SceneForegroundStateListener$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_SceneForegroundStateListener$stableprop|#static{}androidx_compose_ui_window_SceneForegroundStateListener$stableprop[0]
 
 // Targets: [ios]
-final val androidx.compose.ui.window/androidx_compose_ui_window_ScrollGestureRecognizer$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_ScrollGestureRecognizer$stableprop|#static{}androidx_compose_ui_window_ScrollGestureRecognizer$stableprop[0]
-
-// Targets: [ios]
 final val androidx.compose.ui.window/androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop // androidx.compose.ui.window/androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop|#static{}androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop[0]
 
 // Targets: [ios]
@@ -5426,9 +5423,6 @@ final fun androidx.compose.ui.window/androidx_compose_ui_window_SceneActiveState
 
 // Targets: [ios]
 final fun androidx.compose.ui.window/androidx_compose_ui_window_SceneForegroundStateListener$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_SceneForegroundStateListener$stableprop_getter|androidx_compose_ui_window_SceneForegroundStateListener$stableprop_getter(){}[0]
-
-// Targets: [ios]
-final fun androidx.compose.ui.window/androidx_compose_ui_window_ScrollGestureRecognizer$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_ScrollGestureRecognizer$stableprop_getter|androidx_compose_ui_window_ScrollGestureRecognizer$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.window/androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop_getter(): kotlin/Int // androidx.compose.ui.window/androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop_getter|androidx_compose_ui_window_ViewControllerLifecycleDelegate$stableprop_getter(){}[0]

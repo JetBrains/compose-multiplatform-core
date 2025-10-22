@@ -407,7 +407,7 @@ private class TouchesGestureRecognizer(
     }
 }
 
-internal class ScrollGestureRecognizer(
+private class ScrollGestureRecognizer(
     private var onScrollEvent: (position: DpOffset, delta: DpOffset, event: UIEvent?, eventKind: TouchesEventKind) -> Unit,
     private var onCancelScroll: () -> Unit
 ) : CMPPanGestureRecognizer(target = null, action = null) {
@@ -614,10 +614,6 @@ internal class OverlayInputView(
         lastHoverPosition = position
     }
 
-    /**
-     * Intentionally clean up all dependencies of InteractionUIView to prevent retain cycles that
-     * can be caused by implicit capture of the view by UIKit objects (such as UIEvent).
-     */
     fun dispose() {
         endEditing(force = true)
         removeGestureRecognizer(touchesGestureRecognizer)
@@ -680,13 +676,6 @@ internal class BackgroundInputView(
         setNeedsLayout()
     }
 
-    /**
-     * Gesture recognizer responsible for processing touches
-     * and sending them to the Compose runtime.
-     *
-     * Also involved in the decision-making process of whether the touch sequence should be
-     * passed to the Compose runtime or to the interop view.
-     */
     private val touchesGestureRecognizer = TouchesGestureRecognizer(
         onTouchesEvent = onTouchesEvent,
         onCancelAllTouches = onCancelAllTouches,
@@ -716,10 +705,6 @@ internal class BackgroundInputView(
             }
     }
 
-    /**
-     * Intentionally clean up all dependencies of InteractionUIView to prevent retain cycles that
-     * can be caused by implicit capture of the view by UIKit objects (such as UIEvent).
-     */
     fun dispose() {
         endEditing(force = true)
         removeGestureRecognizer(touchesGestureRecognizer)
