@@ -64,29 +64,13 @@ internal class ImportCredentialsController(
     private val resultReceiver =
         object : ResultReceiver(Handler(Looper.getMainLooper())) {
             override fun onReceiveResult(resultCode: Int, resultData: Bundle) {
-                try {
-                    if (
-                        maybeReportErrorFromResultReceiver(
-                            resultData,
-                            executor,
-                            callback,
-                            cancellationSignal,
-                        )
-                    ) {
-                        return
-                    }
-                    context.revokeUriPermission(
-                        GMS_PACKAGE_NAME,
-                        uri,
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-                    )
-                    handleImportCredentialsResponse(
-                        resultCode,
-                        getParcelable(resultData, RESULT_DATA_TAG, Intent::class.java),
-                    )
-                } finally {
-                    tempFile.delete()
+                if (maybeReportErrorFromResultReceiver(resultData)) {
+                    return
                 }
+                handleImportCredentialsResponse(
+                    resultCode,
+                    getParcelable(resultData, RESULT_DATA_TAG, Intent::class.java),
+                )
             }
         }
 
@@ -125,14 +109,15 @@ internal class ImportCredentialsController(
         task.addOnFailureListener {
             Log.d(TAG, "Failed to retrieve the pending intent to start UI")
             try {
-                callback.onError(
-                    ImportCredentialsUnknownErrorException(
-                        "Pending intent could not be retrieved to start the UI"
-                    )
-                )
-            } finally {
                 tempFile.delete()
+            } catch (e: Exception) {
+                Log.e(TAG, "Caught exception while trying to clean up the transfer medium.", e)
             }
+            callback.onError(
+                ImportCredentialsUnknownErrorException(
+                    "Pending intent could not be retrieved to start the UI"
+                )
+            )
         }
     }
 
@@ -141,7 +126,7 @@ internal class ImportCredentialsController(
             maybeReportErrorResultCode(
                 resultCode,
                 { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
-                { e -> executor.execute { callback.onError(e) } },
+                { e -> cleanUpAndReportError(e) },
                 cancellationSignal,
             )
         ) {
@@ -149,17 +134,15 @@ internal class ImportCredentialsController(
         }
         if (data == null) {
             cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                executor.execute {
-                    callback.onError(
-                        ImportCredentialsUnknownErrorException("No provider data returned.")
-                    )
-                }
+                cleanUpAndReportError(
+                    ImportCredentialsUnknownErrorException("No provider data returned.")
+                )
             }
         } else {
             val providerException = IntentHandler.retrieveImportCredentialsException(data)
             if (providerException != null) {
                 cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    executor.execute { callback.onError(providerException) }
+                    cleanUpAndReportError(providerException)
                 }
                 return
             }
@@ -167,21 +150,61 @@ internal class ImportCredentialsController(
                 IntentHandler.retrieveProviderImportCredentialsResponse(context, data, uri)
             if (response != null) {
                 cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    executor.execute { callback.onResult(response) }
+                    cleanUpAndReportResponse(response)
                 }
             } else {
                 cancelOrCallbackExceptionOrResult(cancellationSignal) {
-                    executor.execute {
-                        callback.onError(
-                            ImportCredentialsUnknownErrorException("No provider data returned")
-                        )
-                    }
+                    cleanUpAndReportError(
+                        ImportCredentialsUnknownErrorException("No provider data returned")
+                    )
                 }
             }
         }
     }
 
-    private companion object {
+    private fun maybeReportErrorFromResultReceiver(resultData: Bundle): Boolean {
+        val isError = resultData.getBoolean(FAILURE_RESPONSE_TAG)
+        if (!isError) {
+            return false
+        }
+        val errMsg = resultData.getString(EXCEPTION_MESSAGE_TAG)
+        val exception = ImportCredentialsUnknownErrorException(errMsg)
+        cancelOrCallbackExceptionOrResult(
+            cancellationSignal = cancellationSignal,
+            onResultOrException = { cleanUpAndReportError(exception) },
+        )
+        return true
+    }
+
+    private fun cleanUpAndReportError(e: ImportCredentialsException) {
+        try {
+            context.revokeUriPermission(
+                GMS_PACKAGE_NAME,
+                uri,
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+            tempFile.delete()
+        } catch (e: Exception) {
+            Log.e(TAG, "Caught exception while trying to clean up the transfer medium.", e)
+        }
+        executor.execute { callback.onError(e) }
+    }
+
+    private fun cleanUpAndReportResponse(response: ProviderImportCredentialsResponse) {
+        try {
+            context.revokeUriPermission(
+                GMS_PACKAGE_NAME,
+                uri,
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+            tempFile.delete()
+        } catch (e: Exception) {
+            Log.e(TAG, "Caught exception while trying to clean up the transfer medium.", e)
+        }
+        executor.execute { callback.onResult(response) }
+    }
+
+    internal companion object {
         const val TAG = "ImportCredentialsController"
         const val EXTRA_IMPORT_CREDENTIALS_REQUEST: String =
             "androidx.credentials.import.IMPORT_CREDENTIALS_REQUEST"
@@ -210,7 +233,7 @@ internal class ImportCredentialsController(
             onResultOrException()
         }
 
-        private fun maybeReportErrorResultCode(
+        fun maybeReportErrorResultCode(
             resultCode: Int,
             cancelOnError: (CancellationSignal?, () -> Unit) -> Unit,
             onError: (ImportCredentialsException) -> Unit,
@@ -229,32 +252,7 @@ internal class ImportCredentialsController(
             return false
         }
 
-        private fun maybeReportErrorFromResultReceiver(
-            resultData: Bundle,
-            executor: Executor,
-            callback:
-                CredentialManagerCallback<
-                    ProviderImportCredentialsResponse,
-                    ImportCredentialsException,
-                >,
-            cancellationSignal: CancellationSignal?,
-        ): Boolean {
-            val isError = resultData.getBoolean(FAILURE_RESPONSE_TAG)
-            if (!isError) {
-                return false
-            }
-            val errMsg = resultData.getString(EXCEPTION_MESSAGE_TAG)
-            val exception = ImportCredentialsUnknownErrorException(errMsg)
-            cancelOrCallbackExceptionOrResult(
-                cancellationSignal = cancellationSignal,
-                onResultOrException = { executor.execute { callback.onError(exception) } },
-            )
-            return true
-        }
-
-        private fun <T : ResultReceiver?> toIpcFriendlyResultReceiver(
-            resultReceiver: T
-        ): ResultReceiver? {
+        fun <T : ResultReceiver?> toIpcFriendlyResultReceiver(resultReceiver: T): ResultReceiver? {
             val parcel: Parcel = Parcel.obtain()
             resultReceiver!!.writeToParcel(parcel, 0)
             parcel.setDataPosition(0)
@@ -263,7 +261,7 @@ internal class ImportCredentialsController(
             return ipcFriendly
         }
 
-        private fun convertToPlayServicesRequest(
+        fun convertToPlayServicesRequest(
             request: ImportCredentialsRequest,
             uri: Uri,
         ): com.google.android.gms.identitycredentials.ImportCredentialsRequest {
@@ -273,7 +271,7 @@ internal class ImportCredentialsController(
             )
         }
 
-        private fun generateErrorStringUnknown(resultCode: Int): String {
+        fun generateErrorStringUnknown(resultCode: Int): String {
             return "activity with result code: $resultCode indicating not RESULT_OK"
         }
     }

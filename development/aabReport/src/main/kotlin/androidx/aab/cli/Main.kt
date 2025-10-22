@@ -28,7 +28,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 
 var VERBOSE = false
-const val CSV_PATH_PREFIX = "--csv="
+const val OUTPUT_PATH_PREFIX = "--out="
 
 // this is a simple way to abstract the difference between the two, but should probably define
 // interfaces
@@ -44,7 +44,7 @@ internal abstract class PackageProcessor<T>(val typeLabel: String) {
     abstract fun sortKey(item: T): String
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun process(files: List<File>, csvFile: File?) {
+    suspend fun process(files: List<File>, outputContext: OutputContext) {
         println("Analyzing ${files.size} ${typeLabel}s...")
         val items =
             files
@@ -62,42 +62,52 @@ internal abstract class PackageProcessor<T>(val typeLabel: String) {
                 }
                 .toList()
                 .sortedBy { sortKey(it) }
-        if (csvFile != null) {
+        if (outputContext.csvFile != null) {
             println("$typeLabel parsing complete, constructing CSV...")
-            csvFile.writeText(getCsvHeader() + "\n")
-            items.forEach { csvFile.appendText(getCsvLine(it) + "\n") }
-            println("Analysis complete, CSV saved to ${csvFile.absolutePath}")
+            outputContext.csvFile.writeText(getCsvHeader() + "\n")
+            items.forEach { outputContext.csvFile.appendText(getCsvLine(it) + "\n") }
+            println("Analysis complete, CSV saved to ${outputContext.csvFile.absolutePath}")
         } else {
             println("$typeLabel parsing complete, reporting problems...")
             items.forEach { printAnalysis(it) }
         }
+        outputContext.dumpPackagePrefixInfo()
     }
 }
 
-fun main(args: Array<String>) = runBlocking {
-    val csvPath =
-        args
-            .singleOrNull { it.startsWith(CSV_PATH_PREFIX) }
-            ?.substringAfter(CSV_PATH_PREFIX)
-            ?.replaceFirst("~", System.getProperty("user.home"))
-    VERBOSE = args.contains("--verbose") || args.contains("-v")
-
-    val csvFile = if (csvPath != null) File(csvPath) else null
-
-    val pathArgs = args.filter { !it.startsWith("--") }
-
-    if (pathArgs.isEmpty()) {
-        println(
-            """
-            Expected one or more android app bundle files, or directories of bundles to be passed.
+fun usageAndDie() {
+    println(
+        """
             Report Usage:
                  java -jar <path-to-jar> [--verbose] <path-to-aab> [<path-to-aab2>...]
             CSV Usage:
-                 java -jar <path-to-jar> [--verbose] --csv=<output.csv> <path-to-aab> [<path-to-aab2>...]
+                 java -jar <path-to-jar> [--verbose] --out=<output_dir_path> --csv <path-to-aab> [<path-to-aab2>...]
             """
-                .trimIndent()
+            .trimIndent()
+    )
+    exitProcess(1)
+}
+
+lateinit var outputContext: OutputContext
+
+fun main(args: Array<String>) = runBlocking {
+    outputContext =
+        OutputContext(
+            outputPath =
+                args
+                    .singleOrNull { it.startsWith(OUTPUT_PATH_PREFIX) }
+                    ?.substringAfter(OUTPUT_PATH_PREFIX)
+                    ?.replaceFirst("~", System.getProperty("user.home")),
+            verbose = args.contains("--verbose") || args.contains("-v"),
+            csv = args.contains("--csv"),
         )
-        exitProcess(1)
+
+    val pathArgs = args.filter { !it.startsWith("--") }
+    if (pathArgs.isEmpty()) {
+        println(
+            "Expected one or more android app bundle/apk files, or directories of bundles/apks to be passed."
+        )
+        usageAndDie()
     }
 
     val files =
@@ -142,5 +152,5 @@ fun main(args: Array<String>) = runBlocking {
             }
         }
 
-    processor.process(files, csvFile)
+    processor.process(files, outputContext)
 }

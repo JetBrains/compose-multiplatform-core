@@ -42,6 +42,7 @@ internal abstract class AppFunctionDataSpec {
 
     internal abstract fun getDataType(key: String): AppFunctionDataTypeMetadata?
 
+    /** Checks if [key] must be set with non-null value in [AppFunctionData]. */
     internal abstract fun isRequired(key: String): Boolean
 
     internal abstract fun getAllPropertyKeys(): Set<String>
@@ -171,7 +172,7 @@ internal abstract class AppFunctionDataSpec {
     ) {
         // targetValue == null is allowed when the data type is nullable or is marked optional in
         // either ObjectSpec or ParameterSpec.
-        require(targetValue != null || isNullable || !isRequired(targetKey)) {
+        require(targetValue != null || !isRequired(targetKey)) {
             "\"$targetKey\" cannot be set to a null value."
         }
 
@@ -244,7 +245,11 @@ internal abstract class AppFunctionDataSpec {
         }
 
         override fun isRequired(key: String): Boolean {
-            return objectTypeMetadata.required.contains(key)
+            val isRequired = objectTypeMetadata.required.contains(key)
+            val isNullable = objectTypeMetadata.properties[key]?.isNullable ?: true
+            // A field is only required when it is in required list AND being non-null. A nullable
+            // required field is considered as optional from data validation's perspective.
+            return isRequired && !isNullable
         }
 
         override fun getAllPropertyKeys(): Set<String> = objectTypeMetadata.properties.keys
@@ -274,7 +279,13 @@ internal abstract class AppFunctionDataSpec {
         }
 
         override fun isRequired(key: String): Boolean {
-            return parameterMetadataList.firstOrNull { it.name == key }?.isRequired ?: false
+            val isRequired =
+                parameterMetadataList.firstOrNull { it.name == key }?.isRequired ?: false
+            val isNullable =
+                parameterMetadataList.firstOrNull { it.name == key }?.dataType?.isNullable ?: true
+            // A field is only required when it is in required list AND being non-null. A nullable
+            // required field is considered as optional from data validation's perspective.
+            return isRequired && !isNullable
         }
 
         override fun getAllPropertyKeys(): Set<String> =

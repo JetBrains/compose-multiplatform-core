@@ -68,6 +68,7 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.accessibility.AccessibilityActivity
+import androidx.xr.compose.testapp.anchoredsubspace.AnchoredSubspaceApp
 import androidx.xr.compose.testapp.animation.Animation
 import androidx.xr.compose.testapp.curvedlayout.CurvedLayout
 import androidx.xr.compose.testapp.depthstacking.DepthStacking
@@ -280,6 +281,11 @@ class MainActivity : ComponentActivity() {
                     TestCaseColumnRowItem(getString(R.string.mode_change_test)) {
                         startTest<ModeChange>()
                     }
+
+                    TestCaseColumnRowItem(getString(R.string.anchored_subspace_app_test)) {
+                        startTest<AnchoredSubspaceApp>()
+                    }
+
                     TestCaseColumnRowItem(getString(R.string.value_based_animation_test)) {
                         startTest<Animation>()
                     }

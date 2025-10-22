@@ -36,6 +36,8 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.Anchor
+import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.SceneManager
 import androidx.xr.compose.subspace.SpatialBox
@@ -62,6 +64,7 @@ import androidx.xr.compose.testing.assertHeightIsAtLeast
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertHeightIsNotEqualTo
 import androidx.xr.compose.testing.assertPositionInRootIsEqualTo
+import androidx.xr.compose.testing.assertPositionIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsAtLeast
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsNotEqualTo
@@ -73,13 +76,24 @@ import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.compose.testing.toDp
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.VolumeConstraints
+import androidx.xr.runtime.Config
+import androidx.xr.runtime.Config.PlaneTrackingMode
+import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.BoundingBox
+import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.AnchorEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
+import androidx.xr.scenecore.PlaneOrientation
+import androidx.xr.scenecore.PlaneSemanticType
+import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -1331,5 +1345,137 @@ class SubspaceTest {
         val subspaceRootContainer2 = assertNotNull(subspaceRootEntity2.parent)
 
         assertThat(subspaceRootContainer).isEqualTo(subspaceRootContainer2)
+    }
+
+    @Test
+    fun anchoredSubspace_whenCreated_isParentedToProvidedAnchorEntity() {
+        composeTestRule.session = createFakeSession(composeTestRule.activity)
+        val session = assertNotNull(composeTestRule.session)
+
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        val anchorEntity =
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            AnchoredSubspace(lockTo = anchorEntity) {
+                SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+            }
+        }
+
+        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panel = node.semanticsEntity
+        val subspaceBox = panel?.parent
+        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
+        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
+        assertThat(subspaceRootContainerEntity).isEqualTo(anchorEntity)
+    }
+
+    @Test
+    fun anchoredSubspace_withContent_positionsContentAtOrigin() {
+        composeTestRule.session = createFakeSession(composeTestRule.activity)
+        val session = assertNotNull(composeTestRule.session)
+
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        val anchorEntity =
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            AnchoredSubspace(lockTo = anchorEntity) {
+                SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+            }
+        }
+
+        // TODO(b/448999330): check the panelWorldPose when fake setPose is fixed
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertExists()
+            .assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
+    }
+
+    @Test
+    fun anchoredSubspace_whenNested_positionsContentRelativeToAnchor() {
+        composeTestRule.session = createFakeSession(composeTestRule.activity)
+        val session = assertNotNull(composeTestRule.session)
+
+        session.configure(Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL))
+        val anchorEntity =
+            AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace(
+                modifier = SubspaceModifier.offset(x = 40.dp, y = 50.dp, z = 60.dp)
+            ) {
+                SpatialPanel(SubspaceModifier.fillMaxSize().testTag("subspacePanel")) {}
+                AnchoredSubspace(lockTo = anchorEntity) {
+                    SpatialPanel(SubspaceModifier.fillMaxSize().testTag("anchoredSubspacePanel")) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("anchoredSubspacePanel")
+            .assertExists()
+            .assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+
+        composeTestRule
+            .onSubspaceNodeWithTag("subspacePanel")
+            .assertExists()
+            .assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertPositionInRootIsEqualTo(40.dp, 50.dp, 60.dp)
+    }
+
+    @Test
+    fun anchoredSubspace_contentIsAnchoredToIdentityPosition() {
+        var session = assertIs<SessionCreateSuccess>(Session.create(composeTestRule.activity))
+        composeTestRule.session = session.session
+
+        val anchorResult = Anchor.create(session.session, Pose.Identity)
+        val success = assertIs<AnchorCreateSuccess>(anchorResult)
+        val anchorEntity = AnchorEntity.create(session.session, anchor = success.anchor)
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            AnchoredSubspace(lockTo = anchorEntity) {
+                SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertExists()
+            .assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
+    }
+
+    @Test
+    fun anchoredSubspace_contentIsAnchoredToAPosition() {
+        var session = assertIs<SessionCreateSuccess>(Session.create(composeTestRule.activity))
+        composeTestRule.session = session.session
+
+        // Even though we are passing a pose here, this is not getting passed to FakeAnchorEntity
+        val anchorResult = Anchor.create(session.session, Pose(Vector3(20.0f, 30.0f, 40.0f)))
+        val success = assertIs<AnchorCreateSuccess>(anchorResult)
+        val anchorEntity = AnchorEntity.create(session.session, anchor = success.anchor)
+
+        composeTestRule.setContentWithCompatibilityForXr {
+            AnchoredSubspace(lockTo = anchorEntity) {
+                SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+            }
+        }
+
+        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelEntity = assertNotNull(node.semanticsEntity)
+
+        val anchorWorldPose = anchorEntity.getPose(Space.REAL_WORLD)
+        val panelWorldPose = panelEntity.getPose(Space.REAL_WORLD)
+        assertThat(anchorWorldPose).isEqualTo(Pose(Vector3(20.0f, 30.0f, 40.0f)))
+        // The setPose of fake is not implemented rigidly
+        // TODO(b/448999330): check the panelWorldPose when fake setPose is fixed.
+        // assertThat(panelWorldPose).isEqualTo(Pose(Vector3(20.0f, 30.0f, 40.0f)))
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertExists()
+            .assertPositionIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
     }
 }

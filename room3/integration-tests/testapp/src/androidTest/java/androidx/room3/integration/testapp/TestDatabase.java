@@ -34,7 +34,6 @@ import androidx.room3.integration.testapp.dao.ToyDao;
 import androidx.room3.integration.testapp.dao.UserDao;
 import androidx.room3.integration.testapp.dao.UserHouseDao;
 import androidx.room3.integration.testapp.dao.UserPetDao;
-import androidx.room3.integration.testapp.dao.WithClauseDao;
 import androidx.room3.integration.testapp.vo.BlobEntity;
 import androidx.room3.integration.testapp.vo.Day;
 import androidx.room3.integration.testapp.vo.FriendsJunction;
@@ -73,7 +72,6 @@ public abstract class TestDatabase extends RoomDatabase {
     public abstract BlobEntityDao getBlobEntityDao();
     public abstract ProductDao getProductDao();
     public abstract SpecificDogDao getSpecificDogDao();
-    public abstract WithClauseDao getWithClauseDao();
     public abstract RawDao getRawDao();
     public abstract UserHouseDao getUserHouseDao();
     public abstract RobotsDao getRobotsDao();

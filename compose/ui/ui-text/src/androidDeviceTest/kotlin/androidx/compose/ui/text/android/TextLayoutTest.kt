@@ -16,6 +16,8 @@
 
 package androidx.compose.ui.text.android
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Typeface
 import android.text.BoringLayout
 import android.text.Layout
@@ -32,6 +34,10 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.testutils.fonts.R
 import com.google.common.truth.Truth.assertThat
+import java.util.Collections
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -501,6 +507,29 @@ class TextLayoutTest {
         assertThat(layout.getLineForVertical(0)).isEqualTo(0)
         assertThat(layout.getLineBottom(2)).isEqualTo(layout.height)
         assertThat(layout.getLineForVertical(layout.height)).isEqualTo(2)
+    }
+
+    @Test
+    fun paint_multipleThreads_usesDifferentCanvasInstances() {
+        val textLayout = TextLayout(charSequence = "a", width = 100f, textPaint = TextPaint())
+        val numThreads = 8
+        val latch = CountDownLatch(numThreads)
+        val canvasInstances = Collections.synchronizedList(mutableListOf<TextAndroidCanvas>())
+
+        for (i in 0 until numThreads) {
+            thread {
+                val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                textLayout.paint(canvas)
+                val threadSharedTextAndroidCanvas = SharedTextAndroidCanvas.get()!!
+                canvasInstances.add(threadSharedTextAndroidCanvas)
+                assertThat(threadSharedTextAndroidCanvas._nativeCanvas).isNull()
+                latch.countDown()
+            }
+        }
+
+        assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue()
+        assertThat(canvasInstances.distinct().size).isEqualTo(numThreads)
     }
 
     private fun TextLayoutWithSmallLineHeight(

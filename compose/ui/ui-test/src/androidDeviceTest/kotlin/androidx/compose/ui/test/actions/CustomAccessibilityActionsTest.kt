@@ -17,10 +17,14 @@
 package androidx.compose.ui.test.actions
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -264,5 +268,127 @@ class CustomAccessibilityActionsTest {
         rule.onNodeWithTag(tag).performCustomAccessibilityActionWithLabelMatching("description") {
             true
         }
+    }
+
+    @Test
+    fun customActions_areMerged_whenMergeDescendantsIsTrue() {
+        // Arrange
+        val parentTag = "parent"
+        var parentActionInvoked = false
+        var childAActionInvoked = false
+        var childBActionInvoked = false
+
+        rule.setContent {
+            Column(
+                Modifier.testTag(parentTag).semantics(mergeDescendants = true) {
+                    customActions =
+                        listOf(
+                            CustomAccessibilityAction("Parent Action") {
+                                parentActionInvoked = true
+                                true
+                            }
+                        )
+                }
+            ) {
+                Box(
+                    Modifier.semantics {
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction("Child A Action") {
+                                    childAActionInvoked = true
+                                    true
+                                }
+                            )
+                    }
+                )
+                Box(
+                    Modifier.semantics {
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction("Child B Action") {
+                                    childBActionInvoked = true
+                                    true
+                                }
+                            )
+                    }
+                )
+            }
+        }
+
+        // Act
+        val node = rule.onNodeWithTag(parentTag).fetchSemanticsNode()
+        val customActions = node.config.getOrNull(SemanticsActions.CustomActions)
+
+        // Assert
+        assertThat(customActions).isNotNull()
+        assertThat(customActions!!.size).isEqualTo(3)
+        assertThat(customActions[0].label).isEqualTo("Parent Action")
+        assertThat(customActions[1].label).isEqualTo("Child A Action")
+        assertThat(customActions[2].label).isEqualTo("Child B Action")
+
+        // Verify actions can be invoked
+        rule.runOnIdle {
+            assertThat(customActions[0].action.invoke()).isTrue()
+            assertThat(customActions[1].action.invoke()).isTrue()
+            assertThat(customActions[2].action.invoke()).isTrue()
+        }
+
+        assertThat(parentActionInvoked).isTrue()
+        assertThat(childAActionInvoked).isTrue()
+        assertThat(childBActionInvoked).isTrue()
+    }
+
+    @Test
+    fun customActions_areMerged_whenParentIsNull() {
+        // Arrange
+        val parentTag = "parent"
+        var childAActionInvoked = false
+        var childBActionInvoked = false
+
+        rule.setContent {
+            Column(Modifier.testTag(parentTag).semantics(mergeDescendants = true) {}) {
+                Box(
+                    Modifier.semantics {
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction("Child A Action") {
+                                    childAActionInvoked = true
+                                    true
+                                }
+                            )
+                    }
+                )
+                Box(
+                    Modifier.semantics {
+                        customActions =
+                            listOf(
+                                CustomAccessibilityAction("Child B Action") {
+                                    childBActionInvoked = true
+                                    true
+                                }
+                            )
+                    }
+                )
+            }
+        }
+
+        // Act
+        val node = rule.onNodeWithTag(parentTag).fetchSemanticsNode()
+        val customActions = node.config.getOrNull(SemanticsActions.CustomActions)
+
+        // Assert
+        assertThat(customActions).isNotNull()
+        assertThat(customActions!!.size).isEqualTo(2)
+        assertThat(customActions[0].label).isEqualTo("Child A Action")
+        assertThat(customActions[1].label).isEqualTo("Child B Action")
+
+        // Verify actions can be invoked
+        rule.runOnIdle {
+            assertThat(customActions[0].action.invoke()).isTrue()
+            assertThat(customActions[1].action.invoke()).isTrue()
+        }
+
+        assertThat(childAActionInvoked).isTrue()
+        assertThat(childBActionInvoked).isTrue()
     }
 }

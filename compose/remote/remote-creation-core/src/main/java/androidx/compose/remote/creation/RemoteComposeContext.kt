@@ -1324,8 +1324,8 @@ public open class RemoteComposeContext {
     }
 
     /** The time in seconds relative to animation 0 at start of running */
-    public fun deltTime(): RFloat {
-        return mRemoteWriter.deltTime()
+    public fun deltaTime(): RFloat {
+        return mRemoteWriter.deltaTime()
     }
 
     public fun rf(vararg elements: Float): RFloat {

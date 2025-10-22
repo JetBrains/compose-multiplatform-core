@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe.integration.adapter
 
+import android.app.Application
 import android.content.Context
 import android.hardware.camera2.CameraCaptureSession.CaptureCallback
 import android.hardware.camera2.CameraDevice
@@ -55,7 +56,7 @@ public class CameraUseCaseAdapter(context: Context) : UseCaseConfigFactory {
     private val displayInfoManager by lazy { DisplayInfoManager.getInstance(context) }
 
     init {
-        if (context === context.applicationContext) {
+        if (context is Application) {
             info {
                 "The provided context ($context) is application scoped and will be used to infer " +
                     "the default display for computing the default preview size, orientation, " +

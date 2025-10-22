@@ -27,7 +27,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
-    id("androidx.stableaidl")
     id("com.squareup.wire")
     id("AndroidXComposePlugin")
 }
@@ -73,16 +72,8 @@ wire {
 android {
     namespace = "androidx.glance.wear"
     defaultConfig {
-        minSdk = 33
+        minSdk = 28
         compileSdk = 36
-    }
-    buildFeatures {
-        aidl = true
-    }
-    buildTypes.all {
-        stableAidl {
-            version 1
-        }
     }
 }
 

@@ -21,9 +21,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.GetRecompositionStateReadResponse
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.Parameter.Type
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.RecompositionStateRead
-import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.RecompositionStateReadEvent
 import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StateRead
+import layoutinspector.compose.inspection.LayoutInspectorComposeProtocol.StateReadGroup
 
 // A pattern for matching a line from a stacktrace.
 // Can be used to extract className, methodName, fileName and line number.
@@ -38,22 +37,12 @@ internal fun validate(
     block: MultiRecompositionStateReadValidator.() -> Unit = {},
 ) {
     assertThat(reads.anchorHash).isEqualTo(anchorHash)
-    validate(reads.stringsList.toMap(), listOf(reads.read), block)
-}
-
-/** Validate a DSL for a [RecompositionStateReadEvent]. */
-internal fun validate(
-    event: RecompositionStateReadEvent,
-    anchorHash: Int,
-    block: MultiRecompositionStateReadValidator.() -> Unit = {},
-) {
-    assertThat(event.anchorHash).isEqualTo(anchorHash)
-    validate(event.stringsList.toMap(), event.readList, block)
+    validate(reads.stringsList.toMap(), reads.readList, block)
 }
 
 private fun validate(
     strings: Map<Int, String>,
-    reads: List<RecompositionStateRead>,
+    reads: List<StateReadGroup>,
     block: MultiRecompositionStateReadValidator.() -> Unit = {},
 ) {
     val map = reads.associate { it.recompositionNumber to it.readList }
@@ -73,7 +62,7 @@ private fun validate(
     }
 }
 
-/** Validator of a DSL for [GetRecompositionStateReadResponse] and [RecompositionStateReadEvent]. */
+/** Validator of a DSL for [GetRecompositionStateReadResponse]. */
 internal class MultiRecompositionStateReadValidator(
     private val strings: Map<Int, String>,
     private val reads: Map<Int, List<StateRead>>,
@@ -124,10 +113,7 @@ internal class MultiRecompositionStateReadValidator(
     }
 }
 
-/**
- * Validator of a DSL of state reads from either a [GetRecompositionStateReadResponse] or a
- * [RecompositionStateReadEvent].
- */
+/** Validator of a DSL of state reads from a [GetRecompositionStateReadResponse]. */
 internal class RecompositionStateReadValidator(
     private val strings: Map<Int, String>,
     private val reads: List<StateRead>,
@@ -166,10 +152,7 @@ internal class RecompositionStateReadValidator(
     }
 }
 
-/**
- * Validator of a DSL of a single state read from either a [GetRecompositionStateReadResponse] or a
- * [RecompositionStateReadEvent].
- */
+/** Validator of a DSL of state reads from a [GetRecompositionStateReadResponse]. */
 internal class StateReadValidator(
     private val strings: Map<Int, String>,
     private val read: StateRead,

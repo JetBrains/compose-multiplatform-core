@@ -76,4 +76,8 @@ interface IsolateState {
             @NonNull Consumer<TerminationInfo> callback);
 
     void removeOnTerminatedCallback(@NonNull Consumer<TerminationInfo> callback);
+
+    @NonNull
+    MessagePort provideMessagePort(@NonNull String name, @NonNull Executor executor,
+            @NonNull MessagePortClient client);
 }

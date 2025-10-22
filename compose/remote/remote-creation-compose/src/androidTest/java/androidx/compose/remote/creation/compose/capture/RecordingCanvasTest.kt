@@ -330,6 +330,53 @@ class RecordingCanvasTest {
         assertScreenshot(document, "offscreenBitmap")
     }
 
+    @Test
+    fun drawToOffscreenBitmap_nested() {
+        recordingCanvas.drawRect(0, 0, WIDTH, HEIGHT, Paint().apply { color = Color.BLACK })
+
+        // Create the outer offscreen bitmap.
+        val outerBitmap =
+            recordingCanvas.drawToOffscreenBitmap(WIDTH, HEIGHT, Color.TRANSPARENT) {
+                // Draw a blue background on the outer bitmap.
+                recordingCanvas.drawRect(0, 0, WIDTH, HEIGHT, Paint().apply { color = Color.BLUE })
+
+                recordingCanvas.save()
+
+                // Create the inner (nested) offscreen bitmap.
+                val innerBitmap =
+                    recordingCanvas.drawToOffscreenBitmap(
+                        WIDTH / 2,
+                        HEIGHT / 2,
+                        Color.TRANSPARENT,
+                    ) {
+                        // Draw a red circle in the inner bitmap.
+                        recordingCanvas.drawOval(
+                            0f,
+                            0f,
+                            (WIDTH / 2).toFloat(),
+                            (HEIGHT / 2).toFloat(),
+                            Paint().apply { color = Color.RED },
+                        )
+                    }
+
+                // Draw the inner bitmap onto the outer bitmap. This tests that the canvas context
+                // was restored correctly to the outer bitmap's canvas.
+                val innerRect = Rect(0, 0, WIDTH / 2, HEIGHT / 2)
+                val dstRect = Rect(100, 100, 100 + WIDTH / 2, 100 + HEIGHT / 2)
+                recordingCanvas.drawBitmap(innerBitmap, innerRect, dstRect, Paint())
+
+                // This restore isn't strictly needed, but if we're drawing to the wrong canvas it
+                // will lead to an exception.
+                recordingCanvas.restore()
+            }
+
+        val outerRect = Rect(0, 0, WIDTH, HEIGHT)
+        recordingCanvas.drawBitmap(outerBitmap, outerRect, outerRect, Paint())
+
+        val document = constructDocument()
+        assertScreenshot(document, "offscreenBitmap_nested")
+    }
+
     private fun constructDocument() =
         CoreDocument().apply {
             val buffer = creationState.document.buffer

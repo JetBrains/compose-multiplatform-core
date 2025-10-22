@@ -27,7 +27,7 @@ import androidx.core.util.Consumer
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
-import androidx.navigationevent.DirectNavigationEventInput
+import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInput
@@ -79,26 +79,17 @@ class OnBackPressedDispatcher(
      *
      * @see [OnBackPressedCallback.eventHandlers]
      */
-    internal val eventDispatcher: NavigationEventDispatcher by lazy {
-        val dispatcher =
-            NavigationEventDispatcher(onBackCompletedFallback = { fallbackOnBackPressed?.run() })
-        // This is to implement `OnBackPressedDispatcher.onHasEnabledCallbacksChanged`, which
-        // can be set through OnBackPressedDispatcher's public constructor.
-        dispatcher.addInput(
-            object : NavigationEventInput() {
-                override fun onHasEnabledHandlersChanged(hasEnabledHandlers: Boolean) {
-                    hasEnabledCallbacks = hasEnabledHandlers
-                    onHasEnabledCallbacksChanged?.accept(hasEnabledHandlers)
-                }
-            }
-        )
-        dispatcher
-    }
+    internal val eventDispatcher = NavigationEventDispatcher { fallbackOnBackPressed?.run() }
 
-    private val directInput by lazy {
-        val input = DirectNavigationEventInput()
-        eventDispatcher.addInput(input)
-        input
+    /**
+     * Input source representing back events initiated by this dispatcher (for example, via a direct
+     * call to [onBackPressed]).
+     */
+    private val eventInput = OnBackPressedEventInput()
+
+    init {
+        // Connects this dispatcher's input to the event dispatcher.
+        eventDispatcher.addInput(eventInput)
     }
 
     @JvmOverloads
@@ -225,13 +216,13 @@ class OnBackPressedDispatcher(
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackStarted(backEvent: BackEventCompat) {
-        directInput.backStarted(backEvent.toNavigationEvent())
+        eventInput.backStarted(backEvent.toNavigationEvent())
     }
 
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackProgressed(backEvent: BackEventCompat) {
-        directInput.backProgressed(backEvent.toNavigationEvent())
+        eventInput.backProgressed(backEvent.toNavigationEvent())
     }
 
     /**
@@ -244,13 +235,54 @@ class OnBackPressedDispatcher(
      */
     @MainThread
     fun onBackPressed() {
-        directInput.backCompleted()
+        eventInput.backCompleted()
     }
 
     @VisibleForTesting
     @MainThread
     fun dispatchOnBackCancelled() {
-        directInput.backCancelled()
+        eventInput.backCancelled()
+    }
+
+    /**
+     * Bridges [OnBackPressedDispatcher] to the underlying [NavigationEventDispatcher]:
+     * - Exposes the protected `dispatch*` methods from [NavigationEventInput] so the outer
+     *   [OnBackPressedDispatcher] can forward back events.
+     * - Keeps [hasEnabledCallbacks] in sync with the dispatcher to preserve the legacy
+     *   [hasEnabledCallbacks] method and [onHasEnabledCallbacksChanged] callback.
+     */
+    private inner class OnBackPressedEventInput : NavigationEventInput() {
+
+        /**
+         * Syncs the enabled-handler count back to [OnBackPressedDispatcher].
+         *
+         * This preserves the legacy [hasEnabledCallbacks] contract and triggers the external
+         * [onHasEnabledCallbacksChanged] consumer when present.
+         */
+        override fun onHasEnabledHandlersChanged(hasEnabledHandlers: Boolean) {
+            hasEnabledCallbacks = hasEnabledHandlers
+            onHasEnabledCallbacksChanged?.accept(hasEnabledHandlers)
+        }
+
+        /** Forwards a "back started" gesture to the dispatcher. */
+        fun backStarted(event: NavigationEvent) {
+            dispatchOnBackStarted(event)
+        }
+
+        /** Forwards intermediate progress for a back gesture. */
+        fun backProgressed(event: NavigationEvent) {
+            dispatchOnBackProgressed(event)
+        }
+
+        /** Forwards a cancellation of an in-progress back gesture. */
+        fun backCancelled() {
+            dispatchOnBackCancelled()
+        }
+
+        /** Forwards completion of a back gesture. */
+        fun backCompleted() {
+            dispatchOnBackCompleted()
+        }
     }
 }
 

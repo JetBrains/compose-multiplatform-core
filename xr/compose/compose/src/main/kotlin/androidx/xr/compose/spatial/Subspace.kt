@@ -52,7 +52,6 @@ import androidx.xr.compose.platform.LocalSpatialConfiguration
 import androidx.xr.compose.platform.SpatialComposeScene
 import androidx.xr.compose.platform.disposableValueOf
 import androidx.xr.compose.platform.getValue
-import androidx.xr.compose.platform.requireActivity
 import androidx.xr.compose.subspace.BodyPart
 import androidx.xr.compose.subspace.LockDimensions
 import androidx.xr.compose.subspace.LockingBehavior
@@ -71,6 +70,7 @@ import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.AnchorEntity
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.Space
@@ -221,8 +221,14 @@ private fun ApplicationSubspace(
         ) {
             it.dispose()
             subspaceRoot.dispose()
-            if (!context.requireActivity().isFinishing) {
+            try {
                 session.scene.mainPanelEntity.setEnabled(true)
+            } catch (_: Exception) {
+                // When this Composable is disposed, it's possible the Activity is already
+                // being destroyed, which also destroys the underlying session. Accessing
+                // `session.scene` would then throw an IllegalStateException, as checked
+                // in `checkAndGetScene`. We can safely ignore this exception as the app
+                // is tearing down and the main panel does not need to be re-enabled.
             }
         }
     }
@@ -548,4 +554,47 @@ private fun View.findVolumeConstraints(): VolumeConstraints? {
     }
     // No constraints found in this branch of the hierarchy
     return null
+}
+
+/**
+ * Creates an ApplicationSubspace that places its content at a real-world location represented by
+ * [AnchorEntity].
+ *
+ * This is useful for placing UI elements on real-world surfaces or at specific spatial locations.
+ * The visual stability of the anchored content depends on the underlying system's ability to track
+ * the [AnchorEntity].
+ *
+ * [AnchoredSubspace] follows the same conventions as [ApplicationSubspace], including layout and
+ * sizing behaviors. See [ApplicationSubspace] for more details.
+ *
+ * Note: For Creating, loading, and persisting anchors, please check
+ * [androidx.xr.scenecore.AnchorEntity] for more information
+ *
+ * @param lockTo the real-world [AnchorEntity] to which this space will be attached.
+ * @param modifier The [SubspaceModifier] to be applied to this Subspace.
+ * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
+ *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
+ *   space.
+ * @param content The content to render within this Subspace.
+ * @sample androidx.xr.compose.samples.AnchoredSubspaceSample
+ * @see [ApplicationSubspace]
+ */
+@Composable
+@ComposableOpenTarget(index = -1)
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+public fun AnchoredSubspace(
+    lockTo: AnchorEntity,
+    modifier: SubspaceModifier = SubspaceModifier,
+    allowUnboundedSubspace: Boolean = false,
+    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
+) {
+
+    if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
+
+    ApplicationSubspace(
+        modifier = modifier,
+        subspaceRootNode = lockTo,
+        content = content,
+        allowUnboundedSubspace = allowUnboundedSubspace,
+    )
 }

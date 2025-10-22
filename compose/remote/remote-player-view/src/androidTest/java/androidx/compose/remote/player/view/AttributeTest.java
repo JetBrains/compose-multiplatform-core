@@ -202,7 +202,7 @@ public class AttributeTest {
         Canvas canvas = new Canvas(localBitmap);
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
-        Bitmap testImage = TestUtils.createImage(123, 321, false); // randmom size
+        Bitmap testImage = TestUtils.createImage(123, 321, false); // random size
         canvas.drawBitmap(testImage, 0, 0, paint);
 
         paint.setColor(Color.BLUE);

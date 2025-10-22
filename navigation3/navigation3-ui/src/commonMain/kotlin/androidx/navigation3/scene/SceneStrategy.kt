@@ -16,6 +16,7 @@
 
 package androidx.navigation3.scene
 
+import androidx.compose.runtime.Immutable
 import androidx.navigation3.runtime.NavEntry
 
 /**
@@ -23,6 +24,7 @@ import androidx.navigation3.runtime.NavEntry
  *
  * This Scope should be provided to the [SceneStrategy.calculateScene] function to create Scenes.
  */
+@Immutable
 public class SceneStrategyScope<T : Any>(
     /**
      * A callback that should be connected to any internal handling of system back done by the
@@ -44,6 +46,7 @@ public class SceneStrategyScope<T : Any>(
  * If the list of [NavEntry] does not result in a [Scene] for this strategy, `null` will be returned
  * instead to delegate to another strategy.
  */
+@Immutable
 public fun interface SceneStrategy<T : Any> {
     /**
      * Given a [SceneStrategyScope], calculate whether this [SceneStrategy] should take on the task

@@ -27,6 +27,7 @@ import androidx.annotation.NonNull;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Consumer;
 import androidx.javascriptengine.common.LengthLimitExceededException;
+import androidx.javascriptengine.common.MessagePortInternal;
 import androidx.javascriptengine.common.Utils;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -35,6 +36,7 @@ import org.chromium.android_webview.js_sandbox.common.IJsSandboxConsoleCallback;
 import org.chromium.android_webview.js_sandbox.common.IJsSandboxIsolate;
 import org.chromium.android_webview.js_sandbox.common.IJsSandboxIsolateCallback;
 import org.chromium.android_webview.js_sandbox.common.IJsSandboxIsolateSyncCallback;
+import org.chromium.android_webview.js_sandbox.common.IMessagePort;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -474,6 +476,57 @@ final class IsolateUsableState implements IsolateState {
         synchronized (mLock) {
             mOnTerminatedCallbacks.remove(callback);
         }
+    }
+
+    @NonNull
+    @Override
+    public MessagePort provideMessagePort(@NonNull String name, @NonNull Executor executor,
+            @NonNull MessagePortClient client) {
+        if (!mJsIsolate.mJsSandbox.isFeatureSupported(JavaScriptSandbox.JS_FEATURE_MESSAGE_PORTS)) {
+            throw new UnsupportedOperationException("Sandbox does not support MessagePorts");
+        }
+
+        if (mJsIsolate.containsMessagePort(name)) {
+            throw new IllegalStateException("MessagePort with name '" + name
+                    + "' already exists");
+        }
+
+        // Create unentangled MessagePort. Contains local IMessagePort interface implementation.
+        final MessagePortInternal messagePortInternal = new MessagePortInternal(
+                mJsIsolate.mJsSandbox.mThreadPoolTaskExecutor,
+                mMaxEvaluationReturnSizeBytes);
+
+
+        // Set internal client that calls into the public client to handle received messages.
+        messagePortInternal.setClient(new MessagePortInternal.MessagePortClient() {
+                    @Override
+                    public void onString(@NonNull String string) {
+                        executor.execute(() -> client.onMessage(Message.createString(string)));
+                    }
+
+                    @Override
+                    public void onArrayBuffer(@NonNull byte[] arrayBuffer) {
+                        executor.execute(() -> client.onMessage(
+                                Message.createArrayBuffer(arrayBuffer)));
+                    }
+                });
+
+        final IMessagePort portOut;
+        try {
+            portOut = mJsIsolateStub.provideMessagePort(name,
+                    messagePortInternal.getLocalIMessagePort());
+        } catch (DeadObjectException e) {
+            killSandbox(e);
+            return new MessagePort();
+        } catch (RemoteException | RuntimeException e) {
+            throw killSandboxAndGetRuntimeException(e);
+        }
+        mJsIsolate.addMessagePort(name);
+
+        // Create entangled MessagePort. Contains remote IMessagePort interface implementation.
+        messagePortInternal.setRemoteIMessagePort(portOut);
+        MessagePort messagePort = new MessagePort(messagePortInternal);
+        return messagePort;
     }
 
     /**

@@ -16,22 +16,23 @@
 
 package androidx.activity.compose
 
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalView
+import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.navigationevent.NavigationEventHandler
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.NavigationEventInfo.None
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 
 /**
  * Provides a [OnBackPressedDispatcher] that can be used by Composables hosted in a
@@ -88,29 +89,37 @@ public object LocalOnBackPressedDispatcherOwner {
 @SuppressWarnings("MissingJvmstatic")
 @Composable
 public fun BackHandler(enabled: Boolean = true, onBack: () -> Unit) {
-    // Safely update the current `onBack` lambda when a new one is provided
-    val currentOnBack by rememberUpdatedState(onBack)
-    // Remember in Composition a back callback that calls the `onBack` lambda
-    val backCallback = remember {
-        object : OnBackPressedCallback(enabled) {
-            override fun handleOnBackPressed() {
-                currentOnBack()
-            }
-        }
+    // Use NavigationEventDispatcher local composition if available,
+    // otherwise use the legacy dispatcher to maintain compatibility.
+    val mainOwner = LocalNavigationEventDispatcherOwner.current
+    val fallbackOwner = LocalOnBackPressedDispatcherOwner.current
+    val owner = mainOwner ?: fallbackOwner as? NavigationEventDispatcherOwner
+    checkNotNull(owner) {
+        "No NavigationEventDispatcher was provided via LocalNavigationEventDispatcherOwner"
     }
-    // On every successful composition, update the callback with the `enabled` value
-    SideEffect { backCallback.isEnabled = enabled }
-    val backDispatcher =
-        checkNotNull(LocalOnBackPressedDispatcherOwner.current) {
-                "No OnBackPressedDispatcherOwner was provided via LocalOnBackPressedDispatcherOwner"
-            }
-            .onBackPressedDispatcher
-    @Suppress("deprecation", "KotlinRedundantDiagnosticSuppress") // TODO b/330570365
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, backDispatcher) {
-        // Add callback to the backDispatcher
-        backDispatcher.addCallback(lifecycleOwner, backCallback)
-        // When the effect leaves the Composition, remove the callback
-        onDispose { backCallback.remove() }
+
+    val handler = remember { ComposeBackHandler() }
+
+    // Keep the handler instance stable across recompositions, but update the active parameters.
+    SideEffect {
+        handler.isBackEnabled = enabled
+        handler.currentOnBackCompleted = onBack
+    }
+
+    // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
+    // avoiding the frame delay that happens with state-based APIs like collectAsState().
+    LifecycleStartEffect(owner) {
+        owner.navigationEventDispatcher.addHandler(handler)
+        onStopOrDispose { handler.remove() }
+    }
+}
+
+private class ComposeBackHandler :
+    NavigationEventHandler<NavigationEventInfo>(initialInfo = None, isBackEnabled = true) {
+
+    var currentOnBackCompleted: () -> Unit = {}
+
+    override fun onBackCompleted() {
+        currentOnBackCompleted()
     }
 }

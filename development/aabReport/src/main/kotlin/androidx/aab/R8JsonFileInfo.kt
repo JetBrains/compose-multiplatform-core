@@ -132,14 +132,12 @@ private constructor(
                 "r8json_obfuscationEnabled",
                 "r8json_shrinkingEnabled",
                 "r8json_fullMode",
+                "r8json_optimizationDisablePercent",
+                "r8json_obfuscationDisablePercent",
+                "r8json_shrinkingDisablePercent",
             ) +
                 if (VERBOSE) {
-                    listOf(
-                        "r8json_optimizationDisablePercent",
-                        "r8json_obfuscationDisablePercent",
-                        "r8json_shrinkingDisablePercent",
-                        "r8json_sortedDexChecksumsSha256",
-                    )
+                    listOf("r8json_sortedDexChecksumsSha256")
                 } else {
                     emptyList()
                 }
@@ -150,14 +148,14 @@ private constructor(
                 this?.obfuscationEnabled.toString(),
                 this?.shrinkingEnabled.toString(),
                 this?.fullMode.toString(),
+                this?.optimizationDisablePercent.toString(),
+                this?.obfuscationDisabledPercent.toString(),
+                this?.shrinkingDisabledPercent.toString(),
             ) +
                 if (VERBOSE) {
                     listOf(
-                        this?.optimizationDisablePercent.toString(),
-                        this?.obfuscationDisabledPercent.toString(),
-                        this?.shrinkingDisabledPercent.toString(),
                         this?.dexShas?.sorted()?.joinToString(separator = INTERNAL_CSV_SEPARATOR)
-                            ?: "null",
+                            ?: "null"
                     )
                 } else {
                     emptyList()

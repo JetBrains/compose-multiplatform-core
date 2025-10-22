@@ -31,6 +31,7 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraThreadConfig
 import androidx.camera.core.impl.utils.ContextUtil
+import androidx.camera.core.impl.utils.executor.CameraXExecutors
 import androidx.camera.core.internal.StreamSpecsCalculator
 
 /**
@@ -93,7 +94,13 @@ public class CameraFactoryProvider(
                         appContext = ContextUtil.getApplicationContext(context),
                         threadConfig =
                             CameraPipe.ThreadConfig(
-                                defaultCameraExecutor = threadConfig.cameraExecutor
+                                // This executor should be single-threaded or a sequential executor
+                                // to avoid bugs on various API levels (29 ~ 34). See b/446771606
+                                // fore more details.
+                                defaultCameraExecutor =
+                                    CameraXExecutors.newSequentialExecutor(
+                                        threadConfig.cameraExecutor
+                                    )
                             ),
                         cameraInteropConfig =
                             CameraPipe.CameraInteropConfig(

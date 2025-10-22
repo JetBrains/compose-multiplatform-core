@@ -4,6 +4,7 @@
     <string name="title_activity_media_player">Video in Spatial Panel Test Case</string>
     <string name="title_activity_rotation">Panel/Layout rotation Test Case</string>
     <string name="mode_change_test">Compose Mode Change Test Case</string>
+    <string name="anchored_subspace_app_test">Anchored Subspace Test Case</string>
     <string name="panel_rotation_test">Panel/Layout rotation Test Case</string>
     <string name="media_player_panel_test">CUJ: Media Player Panel Test</string>
     <string name="enable_permission_dialog_test">Dialog Permissions Test Case</string>

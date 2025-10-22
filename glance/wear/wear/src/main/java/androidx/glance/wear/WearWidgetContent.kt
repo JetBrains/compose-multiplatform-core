@@ -20,7 +20,6 @@ import android.content.Context
 import androidx.compose.remote.creation.compose.capture.CreationDisplayInfo
 import androidx.compose.runtime.Composable
 import androidx.glance.wear.parcel.WearWidgetCapture
-import androidx.glance.wear.parcel.WearWidgetRawContent
 
 /**
  * Describes the contents of a Widget.

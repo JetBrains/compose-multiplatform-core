@@ -26,6 +26,7 @@ import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_LARGE
 import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_SMALL
 import androidx.glance.wear.GlanceWearWidget
 import androidx.glance.wear.WearWidgetContent
+import androidx.glance.wear.WearWidgetRawContent
 import androidx.glance.wear.WearWidgetRequest
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import com.google.common.truth.Truth.assertThat

@@ -135,7 +135,7 @@ fun WeatherHeader() {
 }
 
 val rowHeight = 90.dp
-val rowHeigh2 = 122.dp
+val rowHeight2 = 122.dp
 
 @Suppress("RestrictedApiAndroidX")
 @RemoteComposable
@@ -183,7 +183,7 @@ fun WeatherBox2() {
 @Preview
 fun WeatherRow() {
     RemoteCollapsibleRow(
-        modifier = RemoteModifier.fillMaxWidth().heightIn(min = rowHeigh2),
+        modifier = RemoteModifier.fillMaxWidth().heightIn(min = rowHeight2),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {

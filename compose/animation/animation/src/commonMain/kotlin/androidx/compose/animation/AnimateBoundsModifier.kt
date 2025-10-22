@@ -418,7 +418,10 @@ internal class BoundsTransformDeferredAnimation {
                 isPending = false
                 coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     // Dispatch right away to make sure approach callbacks are accurate on `isIdle`
-                    anim.animateTo(target, boundsTransform.transform(currentBounds!!, target))
+                    anim.animateTo(
+                        target,
+                        boundsTransform.createAnimationSpec(currentBounds!!, target),
+                    )
                 }
             }
         }

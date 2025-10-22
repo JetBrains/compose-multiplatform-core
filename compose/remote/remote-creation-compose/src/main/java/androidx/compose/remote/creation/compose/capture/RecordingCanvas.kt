@@ -111,6 +111,7 @@ public class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
 
     public val tempCanvas: Canvas = Canvas()
     public var saveCounter: Int = 0
+    private var currentDrawToBitmapId = 0
 
     /**
      * Forces the next `usePaint` call to send all Paint attributes, regardless of changes. This is
@@ -1450,10 +1451,15 @@ public class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         } else {
             document.drawOnBitmap(bitmapId, 1, 0)
         }
+
         forceSendingPaint(true)
+        val lastDrawToBitmapId = currentDrawToBitmapId
+        currentDrawToBitmapId = bitmapId
         drawCommands()
+        currentDrawToBitmapId = lastDrawToBitmapId
         forceSendingPaint(true)
-        document.drawOnBitmap(0, 0, 0)
+        // Switch back to the previous canvas without clearing it.
+        document.drawOnBitmap(lastDrawToBitmapId, 1, 0)
 
         return object : RemoteBitmap(creationState, null) {
             public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =

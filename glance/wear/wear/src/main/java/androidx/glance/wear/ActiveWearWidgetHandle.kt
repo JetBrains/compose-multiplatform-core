@@ -17,6 +17,8 @@
 package androidx.glance.wear
 
 import android.content.ComponentName
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope.LIBRARY
 import androidx.glance.wear.ContainerInfo.ContainerType
 import androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel
 import androidx.glance.wear.proto.ActiveWearWidgetHandleProto
@@ -31,7 +33,9 @@ import java.util.Objects
  * @property instanceId The id of the widget instance.
  * @property containerType The container type of the widget instance.
  */
-public class ActiveWearWidgetHandle(
+public class ActiveWearWidgetHandle
+@RestrictTo(LIBRARY)
+public constructor(
     public val provider: ComponentName,
     public val instanceId: Int,
     @ContainerType public val containerType: Int,

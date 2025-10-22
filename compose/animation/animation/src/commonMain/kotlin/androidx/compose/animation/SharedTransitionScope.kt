@@ -223,7 +223,10 @@ public fun interface BoundsTransform {
      * Returns a [FiniteAnimationSpec] for animating the bounds from [initialBounds] to
      * [targetBounds].
      */
-    public fun transform(initialBounds: Rect, targetBounds: Rect): FiniteAnimationSpec<Rect>
+    public fun createAnimationSpec(
+        initialBounds: Rect,
+        targetBounds: Rect,
+    ): FiniteAnimationSpec<Rect>
 }
 
 /**
@@ -354,19 +357,6 @@ public interface SharedTransitionScope : LookaheadScope {
                 contentScale: ContentScale = ContentScale.FillWidth,
                 alignment: Alignment = Center,
             ): ResizeMode = ScaleToBoundsCached(contentScale, alignment)
-
-            @Deprecated(
-                "ScaleToBounds has been renamed to scaleToBounds",
-                ReplaceWith(
-                    "scaleToBounds(contentScale, alignment)",
-                    "androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds",
-                    "androidx.compose.animation.SharedTransitionScope.ResizeMode",
-                ),
-            )
-            public fun ScaleToBounds(
-                contentScale: ContentScale = ContentScale.FillWidth,
-                alignment: Alignment = Center,
-            ): ResizeMode = scaleToBounds()
         }
     }
 

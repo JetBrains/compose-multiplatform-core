@@ -31,10 +31,10 @@ class TextAndroidCanvasTest {
         val textCanvas = TextAndroidCanvas()
         val canvas = mock<Canvas>()
         whenever(canvas.getClipBounds(any())).thenReturn(true)
-        textCanvas.setCanvas(canvas)
-
-        val rect = Rect()
-        assertThat(textCanvas.getClipBounds(rect)).isTrue()
-        assertThat(rect.height()).isEqualTo(Int.MAX_VALUE)
+        textCanvas.withCanvas(canvas) { wrappedCanvas ->
+            val rect = Rect()
+            assertThat(wrappedCanvas.getClipBounds(rect)).isTrue()
+            assertThat(rect.height()).isEqualTo(Int.MAX_VALUE)
+        }
     }
 }

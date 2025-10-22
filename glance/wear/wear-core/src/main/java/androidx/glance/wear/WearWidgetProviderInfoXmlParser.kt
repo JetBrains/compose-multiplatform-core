@@ -30,7 +30,6 @@ internal object WearWidgetProviderInfoXmlParser {
     private const val ATTR_ICON = "icon"
     private const val ATTR_PREFERRED_TYPE = "preferredType"
     private const val ATTR_GROUP = "group"
-    private const val ATTR_IS_MULTI_INSTANCE_SUPPORTED = "isMultiInstanceSupported"
     private const val ATTR_CONFIG_INTENT_ACTION = "configIntentAction"
     private const val ATTR_MIN_SCHEMA_VERSION = "minSchemaVersion"
     private const val ATTR_MAX_SCHEMA_VERSION = "maxSchemaVersion"
@@ -75,8 +74,6 @@ internal object WearWidgetProviderInfoXmlParser {
         val preferredContainerType =
             parseContainerTypeAttr(resources, ATTR_PREFERRED_TYPE, defaultPreferredContainerType)
         val group = getAttributeValue(NAMESPACE_DISABLED, ATTR_GROUP) ?: defaultGroup
-        val isMultiInstanceSupported =
-            getAttributeBooleanValue(NAMESPACE_DISABLED, ATTR_IS_MULTI_INSTANCE_SUPPORTED, false)
         val configIntentAction = getAttributeValue(NAMESPACE_DISABLED, ATTR_CONFIG_INTENT_ACTION)
         val minSchemaVersion =
             getAttributeValue(NAMESPACE_DISABLED, ATTR_MIN_SCHEMA_VERSION)?.let {
@@ -94,7 +91,6 @@ internal object WearWidgetProviderInfoXmlParser {
                 ATTR_ICON,
                 ATTR_PREFERRED_TYPE,
                 ATTR_GROUP,
-                ATTR_IS_MULTI_INSTANCE_SUPPORTED,
                 ATTR_CONFIG_INTENT_ACTION,
                 ATTR_MIN_SCHEMA_VERSION,
                 ATTR_MAX_SCHEMA_VERSION,
@@ -125,7 +121,6 @@ internal object WearWidgetProviderInfoXmlParser {
             containers = containers,
             preferredContainerType = preferredContainerType,
             group = group,
-            isMultiInstanceSupported = isMultiInstanceSupported,
             configIntentAction = configIntentAction,
             minSchemaVersion = minSchemaVersion,
             maxSchemaVersion = maxSchemaVersion,

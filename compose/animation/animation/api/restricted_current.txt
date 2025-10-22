@@ -85,7 +85,7 @@ package androidx.compose.animation {
   }
 
   public fun interface BoundsTransform {
-    method public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.geometry.Rect> transform(androidx.compose.ui.geometry.Rect initialBounds, androidx.compose.ui.geometry.Rect targetBounds);
+    method public androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.geometry.Rect> createAnimationSpec(androidx.compose.ui.geometry.Rect initialBounds, androidx.compose.ui.geometry.Rect targetBounds);
   }
 
   public final class ColorVectorConverterKt {
@@ -216,7 +216,6 @@ package androidx.compose.animation {
   }
 
   public static final class SharedTransitionScope.ResizeMode.Companion {
-    method @Deprecated public androidx.compose.animation.SharedTransitionScope.ResizeMode ScaleToBounds(optional androidx.compose.ui.layout.ContentScale contentScale, optional androidx.compose.ui.Alignment alignment);
     method @InaccessibleFromKotlin public androidx.compose.animation.SharedTransitionScope.ResizeMode getRemeasureToBounds();
     method public androidx.compose.animation.SharedTransitionScope.ResizeMode scaleToBounds(optional androidx.compose.ui.layout.ContentScale contentScale, optional androidx.compose.ui.Alignment alignment);
     property public androidx.compose.animation.SharedTransitionScope.ResizeMode RemeasureToBounds;

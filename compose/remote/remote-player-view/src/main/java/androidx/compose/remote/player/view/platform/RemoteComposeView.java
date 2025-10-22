@@ -710,7 +710,7 @@ public class RemoteComposeView extends FrameLayout implements View.OnAttachState
     private boolean mDisable = false;
 
     /**
-     * This returns the amount of time in ms the player used to evalueate a pass it is averaged over
+     * This returns the amount of time in ms the player used to evaluate a pass it is averaged over
      * a number of evaluations.
      *
      * @return time in ms

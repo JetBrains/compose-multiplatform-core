@@ -36,6 +36,11 @@
             android:exported="true"
             android:label="@string/title_activity_mode_change"
             android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".anchoredsubspace.AnchoredSubspaceApp"
+            android:exported="true"
+            android:label="@string/anchored_subspace_app_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
        <activity
            android:name=".movable.MovableActivity"
            android:exported="true"

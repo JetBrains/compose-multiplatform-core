@@ -33,6 +33,7 @@ import androidx.room3.integration.kotlintestapp.dao.SchoolDao
 import androidx.room3.integration.kotlintestapp.dao.ToyDao
 import androidx.room3.integration.kotlintestapp.dao.UserPetDao
 import androidx.room3.integration.kotlintestapp.dao.UsersDao
+import androidx.room3.integration.kotlintestapp.dao.WithClauseDao
 import androidx.room3.integration.kotlintestapp.vo.Album
 import androidx.room3.integration.kotlintestapp.vo.Artist
 import androidx.room3.integration.kotlintestapp.vo.Author
@@ -118,6 +119,8 @@ abstract class TestDatabase : RoomDatabase() {
     abstract fun petCoupleDao(): PetCoupleDao
 
     abstract fun funnyNamedDao(): FunnyNamedDao
+
+    abstract fun withClauseDao(): WithClauseDao
 
     class Converters {
         @TypeConverter

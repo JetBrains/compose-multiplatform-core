@@ -339,7 +339,13 @@ fun TooltipBox(
         positionProvider = positionProvider,
         tooltip = {
             // Apply the animated values directly using a standard graphicsLayer modifier.
-            Box(Modifier.graphicsLayer(scaleX = scale, scaleY = scale, alpha = alpha)) {
+            Box(
+                Modifier.graphicsLayer {
+                    this.scaleX = scale
+                    this.scaleY = scale
+                    this.alpha = alpha
+                }
+            ) {
                 scope.tooltip()
             }
         },

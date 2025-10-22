@@ -27,7 +27,7 @@ final enum class androidx.compose.animation/EnterExitState : kotlin/Enum<android
 }
 
 abstract fun interface androidx.compose.animation/BoundsTransform { // androidx.compose.animation/BoundsTransform|null[0]
-    abstract fun transform(androidx.compose.ui.geometry/Rect, androidx.compose.ui.geometry/Rect): androidx.compose.animation.core/FiniteAnimationSpec<androidx.compose.ui.geometry/Rect> // androidx.compose.animation/BoundsTransform.transform|transform(androidx.compose.ui.geometry.Rect;androidx.compose.ui.geometry.Rect){}[0]
+    abstract fun createAnimationSpec(androidx.compose.ui.geometry/Rect, androidx.compose.ui.geometry/Rect): androidx.compose.animation.core/FiniteAnimationSpec<androidx.compose.ui.geometry/Rect> // androidx.compose.animation/BoundsTransform.createAnimationSpec|createAnimationSpec(androidx.compose.ui.geometry.Rect;androidx.compose.ui.geometry.Rect){}[0]
 }
 
 abstract interface androidx.compose.animation/AnimatedVisibilityScope { // androidx.compose.animation/AnimatedVisibilityScope|null[0]
@@ -82,7 +82,6 @@ abstract interface androidx.compose.animation/SharedTransitionScope : androidx.c
             final val RemeasureToBounds // androidx.compose.animation/SharedTransitionScope.ResizeMode.Companion.RemeasureToBounds|{}RemeasureToBounds[0]
                 final fun <get-RemeasureToBounds>(): androidx.compose.animation/SharedTransitionScope.ResizeMode // androidx.compose.animation/SharedTransitionScope.ResizeMode.Companion.RemeasureToBounds.<get-RemeasureToBounds>|<get-RemeasureToBounds>(){}[0]
 
-            final fun ScaleToBounds(androidx.compose.ui.layout/ContentScale = ..., androidx.compose.ui/Alignment = ...): androidx.compose.animation/SharedTransitionScope.ResizeMode // androidx.compose.animation/SharedTransitionScope.ResizeMode.Companion.ScaleToBounds|ScaleToBounds(androidx.compose.ui.layout.ContentScale;androidx.compose.ui.Alignment){}[0]
             final fun scaleToBounds(androidx.compose.ui.layout/ContentScale = ..., androidx.compose.ui/Alignment = ...): androidx.compose.animation/SharedTransitionScope.ResizeMode // androidx.compose.animation/SharedTransitionScope.ResizeMode.Companion.scaleToBounds|scaleToBounds(androidx.compose.ui.layout.ContentScale;androidx.compose.ui.Alignment){}[0]
         }
     }

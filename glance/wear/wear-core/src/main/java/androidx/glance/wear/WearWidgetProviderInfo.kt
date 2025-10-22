@@ -76,9 +76,8 @@ import org.xmlpull.v1.XmlPullParserException
  *   [ContainerInfo.CONTAINER_TYPE_SMALL].
  * @property group The name of the group this widget provider is associated with. Defaults to the
  *   fully qualified name of the provider service.
- * @property isMultiInstanceSupported Whether this widget provider supports multiple instances.
- * @property configIntentAction The intent action to launch an activity for configuring the widget
- *   when [isMultiInstanceSupported] is set to true. This can be null if no configuration is needed.
+ * @property configIntentAction The intent action to launch an activity for configuring the widget.
+ *   This can be null if no configuration is needed.
  * @property minSchemaVersion The minimum schema version supported by this widget provider.
  * @property maxSchemaVersion The maximum schema version supported by this widget provider.
  * @property unrecognisedAttributes Any unrecognised attributes during the XML parsing of the
@@ -95,7 +94,6 @@ public constructor(
     public val containers: List<ContainerInfo>,
     @ContainerInfo.ContainerType public val preferredContainerType: Int,
     public val group: String = providerService.className,
-    public val isMultiInstanceSupported: Boolean = false,
     public val configIntentAction: String? = null,
     public val minSchemaVersion: SchemaVersion? = null,
     public val maxSchemaVersion: SchemaVersion? = null,

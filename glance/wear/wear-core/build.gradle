@@ -27,12 +27,15 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
+    id("com.squareup.wire")
+    id("androidx.stableaidl")
 }
 
 dependencies {
     api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.9.1")
 
+    implementation(libs.jspecify)
     testImplementation(libs.junit)
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.testExtJunit)
@@ -40,8 +43,27 @@ dependencies {
     testImplementation(libs.truth)
 }
 
+wire {
+    kotlin {}
+
+    sourcePath {
+        srcDir 'src/main/proto'
+    }
+}
+
 android {
     namespace = "androidx.glance.wear.core"
+    defaultConfig {
+        minSdk = 28
+    }
+    buildFeatures {
+        aidl = true
+    }
+    buildTypes.all {
+        stableAidl {
+            version 1
+        }
+    }
 }
 
 androidx {

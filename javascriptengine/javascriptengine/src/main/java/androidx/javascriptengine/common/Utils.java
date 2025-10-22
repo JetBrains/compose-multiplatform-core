@@ -87,7 +87,6 @@ public class Utils {
     /**
      * Checks if the given AssetFileDescriptor passes certain conditions.
      */
-
     public static void checkAssetFileDescriptor(@NonNull AssetFileDescriptor afd,
             boolean allowUnknownLength) {
         if (afd.getStartOffset() < 0) {

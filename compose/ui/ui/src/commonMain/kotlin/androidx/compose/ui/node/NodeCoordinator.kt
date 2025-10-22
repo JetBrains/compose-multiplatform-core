@@ -19,6 +19,8 @@ package androidx.compose.ui.node
 import androidx.collection.MutableObjectIntMap
 import androidx.collection.mutableObjectIntMapOf
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.MutableRect
@@ -1163,12 +1165,22 @@ internal abstract class NodeCoordinator(override val layoutNode: LayoutNode) :
         return fromParentRect(rect, clipBounds)
     }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     override fun localToRoot(relativeToLocal: Offset): Offset {
         checkPrecondition(isAttached) { ExpectAttachedLayoutCoordinates }
         onCoordinatesUsed()
         var coordinator: NodeCoordinator? = this
         var position = relativeToLocal
         while (coordinator != null) {
+            if (ComposeUiFlags.isRectManagerOffsetUsageFromLayoutCoordinatesEnabled) {
+                val layoutNode = coordinator.layoutNode
+                if (
+                    coordinator === layoutNode.outerCoordinator &&
+                        layoutNode.offsetFromRoot != IntOffset.Max
+                ) {
+                    return position + layoutNode.offsetFromRoot
+                }
+            }
             position = coordinator.toParentPosition(position)
             coordinator = coordinator.wrappedBy
         }

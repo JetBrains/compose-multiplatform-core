@@ -196,4 +196,13 @@ object ComposeUiFlags {
      * avoiding floating content at the top and bottom of the UI.
      */
     @Suppress("MutableBareField") @JvmField var isScrollCaptureCenteringEnabled: Boolean = true
+
+    /**
+     * Enable performance optimization where coordinates calculations like
+     * [androidx.compose.ui.layout.LayoutCoordinates.localToRoot] are using the cached offsets we
+     * already have in RectManager, instead of traversing the whole tree on each call.
+     */
+    @Suppress("MutableBareField")
+    @JvmField
+    var isRectManagerOffsetUsageFromLayoutCoordinatesEnabled: Boolean = true
 }

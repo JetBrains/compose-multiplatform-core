@@ -67,6 +67,84 @@ class AppFunctionDataTest {
     }
 
     @Test
+    fun testBuild_missingRequiredNullableParameter_succeed() {
+        val parameterMetadata =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "requiredNullableString",
+                    isRequired = true,
+                    dataType = AppFunctionStringTypeMetadata(isNullable = true),
+                )
+            )
+
+        AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata()).build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredNullableObjectFields_succeed() {
+        val objectMetadata =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "requiredNullableDouble" to AppFunctionDoubleTypeMetadata(isNullable = true)
+                    ),
+                required = listOf("requiredNullableDouble"),
+                qualifiedName = "testObject",
+                isNullable = false,
+            )
+
+        AppFunctionData.Builder(objectMetadata, AppFunctionComponentsMetadata()).build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredNullableAllOfObjectFields_succeed() {
+        val allOfTypeMetadata =
+            AppFunctionAllOfTypeMetadata(
+                matchAll =
+                    listOf(
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "requiredNullableStringList" to
+                                        AppFunctionArrayTypeMetadata(
+                                            itemType =
+                                                AppFunctionStringTypeMetadata(isNullable = false),
+                                            isNullable = true,
+                                        )
+                                ),
+                            required = listOf("requiredNullableStringList"),
+                            qualifiedName = "testObject",
+                            isNullable = false,
+                        )
+                    ),
+                qualifiedName = "testAllOf",
+                isNullable = false,
+            )
+
+        AppFunctionData.Builder(allOfTypeMetadata, AppFunctionComponentsMetadata()).build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredNullableResponseFields_succeed() {
+        val responseMetadata =
+            AppFunctionResponseMetadata(
+                valueType =
+                    AppFunctionObjectTypeMetadata(
+                        properties =
+                            mapOf(
+                                "unimportantField" to
+                                    AppFunctionStringTypeMetadata(isNullable = false)
+                            ),
+                        required = listOf("unimportantField"),
+                        isNullable = true,
+                        qualifiedName = "testObject",
+                    )
+            )
+
+        AppFunctionData.Builder(responseMetadata, AppFunctionComponentsMetadata()).build()
+    }
+
+    @Test
     fun testBuild_missingRequiredFields_throwsException() {
         val parameterMetadata =
             listOf(
@@ -1519,7 +1597,6 @@ class AppFunctionDataTest {
                     OpenableNote.OPENABLE_NOTE_ALL_OF_TYPE_METADATA,
                     OpenableNote.COMPONENT_METADATA,
                 )
-                .setString("title", "test")
                 .setPendingIntent(
                     "intentToOpen",
                     PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),

@@ -68,6 +68,16 @@ androidXMultiplatform {
             }
         }
 
+        jvmTest {
+            dependencies {
+                implementation(libs.junit)
+                implementation(libs.mockitoCore4)
+                implementation project(':compose:remote:remote-creation-core')
+                implementation("org.yaml:snakeyaml:2.4")
+                implementation("org.jetbrains.kotlin:kotlin-stdlib")
+            }
+        }
+
         androidDeviceTest {
             dependsOn(commonTest)
             dependencies {

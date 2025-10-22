@@ -95,7 +95,8 @@ final class EnvironmentDeadState implements IsolateState {
     }
 
     @Override
-    public void removeOnTerminatedCallback(@NonNull Consumer<TerminationInfo> callback) {}
+    public void removeOnTerminatedCallback(@NonNull Consumer<TerminationInfo> callback) {
+    }
 
     private ListenableFuture<String> getEnvironmentDeadFuture() {
         return CallbackToFutureAdapter.getFuture(completer -> {
@@ -103,5 +104,12 @@ final class EnvironmentDeadState implements IsolateState {
             completer.setException(mTerminationInfo.toJavaScriptException());
             return futureDebugMessage;
         });
+    }
+
+    @NonNull
+    @Override
+    public MessagePort provideMessagePort(@NonNull String name, @NonNull Executor executor,
+            @NonNull MessagePortClient client) {
+        return new MessagePort();
     }
 }

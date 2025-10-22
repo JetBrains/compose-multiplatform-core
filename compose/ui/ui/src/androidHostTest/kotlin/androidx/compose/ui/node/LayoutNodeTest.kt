@@ -586,7 +586,7 @@ class LayoutNodeTest {
 
     @Test
     fun testPositionRelativeToRootIsNotAffectedByOwnerPosition() {
-        val parent = LayoutNode()
+        val parent = ZeroSizedLayoutNode()
         parent.attach(MockOwner(IntOffset(20, 20)))
         val child = ZeroSizedLayoutNode()
         parent.insertAt(0, child)

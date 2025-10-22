@@ -1084,6 +1084,31 @@ class PlacementLayoutCoordinatesTest {
         rule.runOnIdle { assertThat(actualPosition).isEqualTo(Offset(5f, 5f)) }
         rule.runOnIdle { assertThat(actualPositionChild).isEqualTo(Offset(5f, 5f)) }
     }
+
+    @Test
+    fun testParentPlacingWithNotRoundedTranslation() {
+        var actualPositionChild: Offset? = null
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box {
+                    Box(
+                        Modifier.layout { measurable, constraints ->
+                            val placeable = measurable.measure(constraints)
+                            layout(placeable.width, placeable.height) {
+                                placeable.placeWithLayer(0, 0) { translationX = 10.5f }
+                            }
+                        }
+                    ) {
+                        Layout { measurables, constraints ->
+                            layout(10, 10) { actualPositionChild = coordinates?.positionInRoot() }
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { assertThat(actualPositionChild).isEqualTo(Offset(10.5f, 0f)) }
+    }
 }
 
 private fun LayoutCoordinates?.use(): LayoutCoordinates? {

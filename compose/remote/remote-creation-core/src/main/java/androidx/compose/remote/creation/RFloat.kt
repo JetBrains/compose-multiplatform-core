@@ -517,6 +517,6 @@ public fun RemoteComposeWriter.animationTime(): RFloat {
 }
 
 /** The time in seconds relative to animation 0 at start of running */
-public fun RemoteComposeWriter.deltTime(): RFloat {
+public fun RemoteComposeWriter.deltaTime(): RFloat {
     return RFloat(this, FLOAT_ANIMATION_DELTA_TIME)
 }

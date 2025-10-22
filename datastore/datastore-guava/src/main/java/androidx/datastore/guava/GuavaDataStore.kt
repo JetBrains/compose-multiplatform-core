@@ -53,7 +53,9 @@ internal constructor(
      * ongoing updates.
      */
     public fun getDataAsync(): ListenableFuture<T> {
-        return launchFuture(coroutineContext) { dataStore.currentData() }
+        return launchFuture(context = coroutineContext, launchUndispatched = false) {
+            dataStore.currentData()
+        }
     }
 
     /**
@@ -66,7 +68,7 @@ internal constructor(
      * keep it as `T -> T` to match [DataStore.updateData].
      */
     public fun updateDataAsync(dataTransform: DataTransform<T, T>): ListenableFuture<T> {
-        return launchFuture(coroutineContext) {
+        return launchFuture(context = coroutineContext, launchUndispatched = false) {
             dataStore.updateData { dataTransform.transform(it) }
         }
     }

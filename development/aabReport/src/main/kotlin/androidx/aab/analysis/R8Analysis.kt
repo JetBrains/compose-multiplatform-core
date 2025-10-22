@@ -16,12 +16,109 @@
 
 package androidx.aab.analysis
 
-import androidx.aab.ApkInfo
-import androidx.aab.BundleInfo
-import androidx.aab.Compiler
-import androidx.aab.R8JsonFileInfo
+import androidx.aab.*
 import androidx.aab.analysis.R8Issues.getPrimaryOptimizationIssue
+import androidx.aab.cli.outputContext
+import java.io.File
 import kotlin.math.roundToInt
+
+data class PackageStats(val packagePrefix: String, var classesSeen: Int, var obfClassesSeen: Int)
+
+/**
+ * Tracks stats respecting minification/obfuscation heuristics.
+ *
+ * Note that throughout aabReport, we only consider dex top level classes (that is classes that in
+ * the dex file are not inner classes).
+ */
+data class MinificationStats(
+    val minifiedClassesLowerAccuracy: Double,
+    val minifiedClassesLengthAccuracy: Double,
+    val minifiedRate: Double,
+) {
+    companion object {
+        fun fromMappingAndDex(
+            appOutputDir: File?,
+            mappingFileInfo: MappingFileInfo?,
+            dexInfo: List<DexInfo>,
+        ): MinificationStats? {
+            if (mappingFileInfo == null) return null
+
+            val classInfo = dexInfo.flatMap { it.classInfo }
+
+            val allClassesInDex = classInfo.map { it.fullName }.toSet()
+            val prunedMappingFileInfo =
+                mappingFileInfo.dexClassNameToOriginalName.filter { it.key in allClassesInDex }
+
+            var isObfuscatedCount = 0
+            var isObfuscatedLowerCaseHits = 0
+            var isObfuscatedAppearsMinifiedHits = 0
+
+            val (obf, unobf) =
+                if (appOutputDir != null) {
+                    File(appOutputDir, "obf.txt") to File(appOutputDir, "unobf.txt")
+                } else (null to null)
+
+            val packagePrefixInfo = mutableMapOf<String, PackageStats>()
+            classInfo.forEach { clazz ->
+                val isObfuscatedAccordingToMappingFile =
+                    (prunedMappingFileInfo[clazz.fullName]?.wasRemapped ?: false)
+
+                val packageName =
+                    prunedMappingFileInfo[clazz.fullName]?.originalName?.substringBeforeLast(".")
+                        ?: clazz.packageName
+                val packagePrefix =
+                    if (packageName.startsWith("com.google")) {
+                        // need more package sections to point at what's not being optimized
+                        packageName.split(".").take(4).joinToString(".")
+                    } else {
+                        packageName.split(".").take(2).joinToString(".")
+                    }
+                packagePrefixInfo
+                    .computeIfAbsent(packagePrefix) { PackageStats(packagePrefix, 0, 0) }
+                    .apply {
+                        classesSeen += 1
+                        if (isObfuscatedAccordingToMappingFile) obfClassesSeen++
+                    }
+
+                if (clazz.startsWithLowerCase == isObfuscatedAccordingToMappingFile) {
+                    isObfuscatedLowerCaseHits++
+                }
+                if (clazz.classNameAppearsMinified == isObfuscatedAccordingToMappingFile) {
+                    isObfuscatedAppearsMinifiedHits++
+                }
+                if (isObfuscatedAccordingToMappingFile) {
+                    isObfuscatedCount++
+                }
+
+                if (appOutputDir != null) {
+                    if (isObfuscatedAccordingToMappingFile) {
+                        obf!!.appendText(
+                            "${clazz.fullName.padEnd(100)} -> ${prunedMappingFileInfo[clazz.fullName]}\n"
+                        )
+                    } else {
+                        unobf!!.appendText(
+                            "${clazz.fullName.padEnd(100)} -> ${prunedMappingFileInfo[clazz.fullName]}\n"
+                        )
+                    }
+                }
+            }
+
+            outputContext.dumpPackagePrefixInfoToFile(appOutputDir, packagePrefixInfo)
+
+            if (isObfuscatedCount > 0.25 * classInfo.count()) {
+                // only register to global stats if app looks somewhat obfuscated
+                outputContext.registerPackagePrefixInfo(packagePrefixInfo)
+            }
+
+            return MinificationStats(
+                minifiedClassesLowerAccuracy = isObfuscatedLowerCaseHits * 1.0 / classInfo.size,
+                minifiedClassesLengthAccuracy =
+                    isObfuscatedAppearsMinifiedHits * 1.0 / classInfo.size,
+                minifiedRate = isObfuscatedCount * 1.0 / classInfo.size,
+            )
+        }
+    }
+}
 
 data class R8Analysis(
     val mappingPresent: Boolean,
@@ -32,6 +129,7 @@ data class R8Analysis(
     val dexSha256ChecksumsMatching: Set<String>,
     val dexSha256ChecksumsR8JsonOnly: Set<String>,
     val dexSha256ChecksumsDexOnly: Set<String>,
+    val minificationStats: MinificationStats?,
 ) : ScoreReporter {
     fun R8JsonFileInfo.getScore(): Int {
         return (50 *
@@ -80,6 +178,9 @@ data class R8Analysis(
             compilerMarker.toString(),
             compilerJson.toString(),
             getDexMatchRatio().toString(),
+            (minificationStats?.minifiedClassesLowerAccuracy).toString(),
+            (minificationStats?.minifiedClassesLengthAccuracy).toString(),
+            (minificationStats?.minifiedRate).toString(),
         )
 
     companion object {
@@ -89,6 +190,9 @@ data class R8Analysis(
                 "r8_compilerFromMarker",
                 "r8_compilerFromJson",
                 "r8_ratio_json_shas_match_dex",
+                "r8_minifiedClassesLowerAccuracy",
+                "r8_minifiedClassesLengthAccuracy",
+                "r8_minifiedRate",
             )
 
         fun ApkInfo.getR8Analysis(): R8Analysis {
@@ -101,6 +205,7 @@ data class R8Analysis(
                 dexSha256ChecksumsDexOnly = emptySet(),
                 dexSha256ChecksumsMatching = emptySet(),
                 dexSha256ChecksumsR8JsonOnly = emptySet(),
+                minificationStats = null,
             )
         }
 
@@ -121,6 +226,14 @@ data class R8Analysis(
                 dexSha256ChecksumsMatching = metadataJsonShas.intersect(dexShas),
                 dexSha256ChecksumsDexOnly = dexShas - metadataJsonShas,
                 dexSha256ChecksumsR8JsonOnly = metadataJsonShas - dexShas,
+                minificationStats =
+                    MinificationStats.fromMappingAndDex(
+                        androidx.aab.cli.outputContext.outputDirForApp(
+                            this.path.substringAfterLast("/")
+                        ),
+                        mappingFileInfo,
+                        dexInfo,
+                    ),
             )
         }
     }
