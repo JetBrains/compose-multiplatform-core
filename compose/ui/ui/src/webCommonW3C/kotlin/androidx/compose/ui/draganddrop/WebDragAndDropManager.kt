@@ -103,6 +103,10 @@ internal abstract class WebDragAndDropManager(eventListener: EventTargetListener
             val scope = InternalStartTransferScope(density)
 
             if (scope.startTransfer(event)) {
+                // without setting any kind of data in data transfer Safari on iOS won't proceed with drag action
+                // luckily, the data is mutable and we can reset it in dragAndDropSource
+                // see https://youtrack.jetbrains.com/issue/CMP-7292/Drag-and-Drop-is-not-working-in-mobile-browsers
+                event.dataTransfer?.setData("text/plain", "")
                 scope.ghostImage?.let { ghostImage ->
                     event.setAsDragImage(ghostImage)
                 }
