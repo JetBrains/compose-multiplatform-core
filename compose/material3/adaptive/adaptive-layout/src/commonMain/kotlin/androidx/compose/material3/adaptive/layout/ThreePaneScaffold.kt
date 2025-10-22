@@ -29,9 +29,9 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.Measurable
@@ -48,7 +48,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
-import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastForEachIndexed
@@ -154,8 +153,18 @@ internal fun ThreePaneScaffold(
     LookaheadScope {
         val scaffoldScope =
             remember(currentTransition, this) {
-                ThreePaneScaffoldScopeImpl(transitionScope, this, stateHolder)
+                ThreePaneScaffoldScopeImpl(
+                    transitionScope,
+                    this,
+                    stateHolder,
+                    mapOf(
+                        ThreePaneScaffoldRole.Primary to FocusRequester(),
+                        ThreePaneScaffoldRole.Secondary to FocusRequester(),
+                        ThreePaneScaffoldRole.Tertiary to FocusRequester(),
+                    ),
+                )
             }
+        val scaffoldValue = scaffoldState.targetState
         with(LocalThreePaneScaffoldOverride.current) {
             ThreePaneScaffoldOverrideScope(
                     modifier = modifier,
@@ -167,6 +176,7 @@ internal fun ThreePaneScaffold(
                                 ThreePaneScaffoldRole.Primary,
                                 scaffoldScope,
                                 paneMotions[ThreePaneScaffoldRole.Primary],
+                                scaffoldValue.isInteractable(ThreePaneScaffoldRole.Primary),
                             )
                             .primaryPane()
                     },
@@ -175,6 +185,7 @@ internal fun ThreePaneScaffold(
                                 ThreePaneScaffoldRole.Secondary,
                                 scaffoldScope,
                                 paneMotions[ThreePaneScaffoldRole.Secondary],
+                                scaffoldValue.isInteractable(ThreePaneScaffoldRole.Secondary),
                             )
                             .secondaryPane()
                     },
@@ -186,6 +197,7 @@ internal fun ThreePaneScaffold(
                                         ThreePaneScaffoldRole.Tertiary,
                                         scaffoldScope,
                                         paneMotions[ThreePaneScaffoldRole.Tertiary],
+                                        scaffoldValue.isInteractable(ThreePaneScaffoldRole.Tertiary),
                                     )
                                     .tertiaryPane()
                             }
@@ -201,6 +213,10 @@ internal fun ThreePaneScaffold(
                     motionDataProvider = motionDataProvider,
                 )
                 .ThreePaneScaffold()
+
+            LaunchedEffect(scaffoldValue.currentDestination) {
+                scaffoldScope.focusRequesters[scaffoldValue.currentDestination]?.requestFocus()
+            }
         }
     }
 }
@@ -228,9 +244,7 @@ private object DefaultThreePaneScaffoldOverride : ThreePaneScaffoldOverride {
                 {
                     // A default scrim when no AnimatedPane is being used.
                     scaffoldValue.forEach { _, value ->
-                        (value as? PaneAdaptedValue.Levitated)
-                            ?.scrim
-                            ?.Content(ThreePaneScaffoldDefaults.ScrimColor, true)
+                        (value as? PaneAdaptedValue.Levitated)?.scrim?.invoke()
                         return@listOf
                     }
                 },
@@ -762,7 +776,7 @@ private class ThreePaneContentMeasurePolicy(
         isLookingAhead: Boolean,
     ) {
         val reflowedPane = if (reflowedPanes.isEmpty()) null else reflowedPanes[0]
-        if ((reflowedPane?.value as? PaneAdaptedValue.Reflowed)?.targetPane == expandedPane.role) {
+        if ((reflowedPane?.value as? PaneAdaptedValue.Reflowed)?.reflowUnder == expandedPane.role) {
             // Measure the reflowed pane and adjust the expanded pane's height
             // TODO(conradchen): Avoid hinges
             val availableHeight = partitionBounds.height - horizontalSpacerSize
@@ -808,26 +822,28 @@ private class ThreePaneContentMeasurePolicy(
         isLookingAhead: Boolean,
     ) {
         measurables.fastForEach {
+            val measuringWidth = min(it.measuringWidth, scaffoldBounds.width)
+            val measuringHeight = min(it.measuringHeight, scaffoldBounds.height)
             val paneSize =
                 IntSize(
                     width =
                         it.dragToResizeState?.getDraggedWidth(
-                            measuringWidth = it.measuringWidth,
+                            measuringWidth = measuringWidth,
                             defaultMinWidth =
                                 with(density) {
                                     ThreePaneScaffoldDefaults.MinPaneWidth.roundToPx()
                                 },
                             scaffoldWidth = scaffoldBounds.width,
-                        ) ?: min(it.measuringWidth, scaffoldBounds.width),
+                        ) ?: measuringWidth,
                     height =
                         it.dragToResizeState?.getDraggedHeight(
-                            measuringHeight = it.measuringHeight,
+                            measuringHeight = measuringHeight,
                             defaultMinHeight =
                                 with(density) {
                                     ThreePaneScaffoldDefaults.MinPaneHeight.roundToPx()
                                 },
                             scaffoldHeight = scaffoldBounds.height,
-                        ) ?: min(it.measuringHeight, scaffoldBounds.height),
+                        ) ?: measuringHeight,
                 )
             val alignment = (it.value as? PaneAdaptedValue.Levitated)?.alignment ?: Alignment.Center
             val offset = alignment.align(paneSize, scaffoldBounds.size, layoutDirection)
@@ -967,8 +983,8 @@ private class PaneMeasurable(
     var measuringWidth =
         if (data.preferredWidth.isSpecified) {
             with(density) { data.preferredWidth.roundToPx() }
-        } else if (data.preferredWidthInProportion != Int.MIN_VALUE) {
-            (scaffoldSize.width * data.preferredWidthInProportion / 100)
+        } else if (data.preferredWidthInProportion.isFinite()) {
+            (scaffoldSize.width * data.preferredWidthInProportion).toInt()
         } else {
             defaultPreferredWidth
         }
@@ -976,8 +992,8 @@ private class PaneMeasurable(
     var measuringHeight =
         if (data.preferredHeight.isSpecified) {
             with(density) { data.preferredHeight.roundToPx() }
-        } else if (data.preferredHeightInProportion != Int.MIN_VALUE) {
-            (scaffoldSize.width * data.preferredHeightInProportion / 100)
+        } else if (data.preferredHeightInProportion.isFinite()) {
+            (scaffoldSize.height * data.preferredHeightInProportion).toInt()
         } else {
             defaultPreferredHeight
         }
@@ -1005,8 +1021,8 @@ private class PaneMeasurable(
             else -> 0f
         }
 
-    val dragToResizeState
-        get() = data.dragToResizeState
+    val dragToResizeState: DragToResizeState? = null
+    // TODO: uncomment this when publish the feature: "get() = data.dragToResizeState"
 
     val measuredAndPlaced
         get() = measuredBounds != null
@@ -1083,8 +1099,6 @@ internal object ThreePaneScaffoldDefaults {
      * the same z-index level during pane animations.
      */
     const val HiddenPaneZIndexOffset = -0.1f
-
-    val ScrimColor = Color.Black.copy(alpha = 0.32f)
 
     val MinPaneWidth = 48.dp
 

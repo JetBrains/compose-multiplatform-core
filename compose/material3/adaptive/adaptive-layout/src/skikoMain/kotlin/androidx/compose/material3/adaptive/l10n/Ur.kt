@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.ur() = mapOf(
+    Strings.defaultPaneTitlePrimary to "پرائمری پین",
+    Strings.defaultPaneTitleSecondary to "ثانوی پین",
+    Strings.defaultPaneTitleTertiary to "تیسرے درجے کا پین",
     Strings.defaultPaneExpansionDragHandleContentDescription to "پین کو پھیلانے کے لیے گھسیٹنے کا ہینڈل",
     Strings.defaultPaneExpansionDragHandleStateDescription to "‏موجودہ پین اسپلٹ، ‎%s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "‏پین اسپلٹ کو ‎%s میں تبدیل کریں",
     Strings.defaultPaneExpansionProportionAnchorDescription to "‏‎%d فیصد",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "‏شروع سے ‎%d DPs",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "‏آخر سے ‎%d ‏DPs",
+    Strings.dragToResizeClickToExpandDescription to "پھیلائیں",
+    Strings.dragToResizeClickToCollapseDescription to "سکیڑیں",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "جزوی طور پر پھیلائیں",
+    Strings.dragToResizeExpandedStateDescription to "پھیلا دیا گیا",
+    Strings.dragToResizeCollapsedStateDescription to "سکیڑا ہوا",
+    Strings.dragToResizePartiallyExpandedStateDescription to "جزوی طور پر پھیلایا گیا",
 )

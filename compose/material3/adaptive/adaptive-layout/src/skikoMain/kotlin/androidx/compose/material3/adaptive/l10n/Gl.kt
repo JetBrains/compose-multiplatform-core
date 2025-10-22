@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.gl() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Panel principal",
+    Strings.defaultPaneTitleSecondary to "Panel secundario",
+    Strings.defaultPaneTitleTertiary to "Panel terciario",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Controlador de arrastre para despregar o panel",
     Strings.defaultPaneExpansionDragHandleStateDescription to "División actual do panel, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Cambia o panel dividido a %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d por cento",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP desde o inicio",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP desde o final",
+    Strings.dragToResizeClickToExpandDescription to "despregar",
+    Strings.dragToResizeClickToCollapseDescription to "contraer",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "despregar parcialmente",
+    Strings.dragToResizeExpandedStateDescription to "despregado",
+    Strings.dragToResizeCollapsedStateDescription to "contraído",
+    Strings.dragToResizePartiallyExpandedStateDescription to "despregado parcialmente",
 )

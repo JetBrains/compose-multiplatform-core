@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.az() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Əsas panel",
+    Strings.defaultPaneTitleSecondary to "İkinci dərəcəli panel",
+    Strings.defaultPaneTitleTertiary to "Üçüncü dərəcəli panel",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Panelin genişləndirilməsi üçün sürükləmə tutacağı",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Cari panel bölünməsi, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Panel bölgüsünü %s olaraq dəyişin",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d faiz",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "Başlanğıcdan %d DP",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "Sondan %d DP",
+    Strings.dragToResizeClickToExpandDescription to "genişləndirin",
+    Strings.dragToResizeClickToCollapseDescription to "yığcamlaşdırın",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "qismən genişləndirin",
+    Strings.dragToResizeExpandedStateDescription to "genişləndirilib",
+    Strings.dragToResizeCollapsedStateDescription to "yığcamlaşdırılıb",
+    Strings.dragToResizePartiallyExpandedStateDescription to "qismən genişləndirilib",
 )

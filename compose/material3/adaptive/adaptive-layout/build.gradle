@@ -51,15 +51,15 @@ kotlin {
             dependencies {
                 implementation(libs.kotlinStdlib)
                 api(project(":compose:material3:adaptive:adaptive"))
-                api(project(":compose:animation:animation-core"))
-                api(project(":compose:ui:ui"))
-                implementation(project(":compose:animation:animation"))
-                implementation(project(":compose:foundation:foundation"))
-                implementation(project(":compose:foundation:foundation-layout"))
-                implementation(project(":compose:ui:ui-geometry"))
-                implementation(project(":compose:ui:ui-util"))
+                api("org.jetbrains.compose.animation:animation-core:1.9.0")
+                api("org.jetbrains.compose.ui:ui:1.9.0")
+                implementation("org.jetbrains.compose.animation:animation:1.9.0")
+                implementation("org.jetbrains.compose.foundation:foundation:1.9.0")
+                implementation("org.jetbrains.compose.foundation:foundation-layout:1.9.0")
+                implementation("org.jetbrains.compose.ui:ui-geometry:1.9.0")
+                implementation("org.jetbrains.compose.ui:ui-util:1.9.0")
                 implementation("org.jetbrains.androidx.window:window-core:1.4.0")
-                implementation(project(":collection:collection"))
+                implementation("androidx.collection:collection:1.5.0")
             }
         }
 
@@ -152,12 +152,21 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
     kotlinStringsPackageName = "androidx.compose.material3.adaptive.layout.internal"
     stringByResourceName = [
             // These come are from the material3.adaptive-layout module resources
+            "m3_adaptive_default_pane_title_primary"                            : "defaultPaneTitlePrimary",
+            "m3_adaptive_default_pane_title_secondary"                          : "defaultPaneTitleSecondary",
+            "m3_adaptive_default_pane_title_tertiary"                           : "defaultPaneTitleTertiary",
             "m3_adaptive_default_pane_expansion_drag_handle_content_description": "defaultPaneExpansionDragHandleContentDescription",
             "m3_adaptive_default_pane_expansion_drag_handle_state_description"  : "defaultPaneExpansionDragHandleStateDescription",
             "m3_adaptive_default_pane_expansion_drag_handle_action_description" : "defaultPaneExpansionDragHandleActionDescription",
             "m3_adaptive_default_pane_expansion_proportion_anchor_description"  : "defaultPaneExpansionProportionAnchorDescription",
             "m3_adaptive_default_pane_expansion_start_offset_anchor_description": "defaultPaneExpansionStartOffsetAnchorDescription",
             "m3_adaptive_default_pane_expansion_end_offset_anchor_description"  : "defaultPaneExpansionEndOffsetAnchorDescription",
+            "m3_adaptive_drag_to_resize_click_to_expand_description"            : "dragToResizeClickToExpandDescription",
+            "m3_adaptive_drag_to_resize_click_to_collapse_description"          : "dragToResizeClickToCollapseDescription",
+            "m3_adaptive_drag_to_resize_click_to_partially_expand_description"  : "dragToResizeClickToPartiallyExpandDescription",
+            "m3_adaptive_drag_to_resize_expanded_state_description"             : "dragToResizeExpandedStateDescription",
+            "m3_adaptive_drag_to_resize_collapsed_state_description"            : "dragToResizeCollapsedStateDescription",
+            "m3_adaptive_drag_to_resize_partially_expanded_state_description"   : "dragToResizePartiallyExpandedStateDescription",
     ]
     // This is all the locales translated by Compose on Android in the ui module:
     // https://github.com/androidx/androidx/tree/androidx-main/compose/material3/adaptive/adaptive-layout/src/androidMain/res

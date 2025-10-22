@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.uk() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Основна панель",
+    Strings.defaultPaneTitleSecondary to "Друга панель",
+    Strings.defaultPaneTitleTertiary to "Третя панель",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Маркер переміщення для розгортання панелі",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Поточне розділення панелі, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Змінити розділення панелі на %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d%%",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d пікс. від початку",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d пікс. від кінця",
+    Strings.dragToResizeClickToExpandDescription to "розгорнути",
+    Strings.dragToResizeClickToCollapseDescription to "згорнути",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "частково розгорнути",
+    Strings.dragToResizeExpandedStateDescription to "розгорнуто",
+    Strings.dragToResizeCollapsedStateDescription to "згорнуто",
+    Strings.dragToResizePartiallyExpandedStateDescription to "частково розгорнуто",
 )

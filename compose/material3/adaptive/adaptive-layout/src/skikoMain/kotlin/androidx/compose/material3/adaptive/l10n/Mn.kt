@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.mn() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Үндсэн хэсэг",
+    Strings.defaultPaneTitleSecondary to "Хоёрдогч хэсэг",
+    Strings.defaultPaneTitleTertiary to "Гуравдагч хэсэг",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Хэсгийн өргөтгөлийг чирэх бариул",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Одоогийн хэсгийн хуваалт, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Хэсгийн хуваалтыг %s болгож өөрчлөх",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d хувь",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "Эхлэлээс %d НХП",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "Төгсгөлөөс %d НХП",
+    Strings.dragToResizeClickToExpandDescription to "дэлгэх",
+    Strings.dragToResizeClickToCollapseDescription to "хураах",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "хэсэгчлэн дэлгэх",
+    Strings.dragToResizeExpandedStateDescription to "дэлгэсэн",
+    Strings.dragToResizeCollapsedStateDescription to "хураасан",
+    Strings.dragToResizePartiallyExpandedStateDescription to "хэсэгчлэн дэлгэсэн",
 )

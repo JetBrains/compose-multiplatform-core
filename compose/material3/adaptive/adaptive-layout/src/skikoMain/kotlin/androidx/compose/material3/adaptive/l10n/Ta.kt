@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.ta() = mapOf(
+    Strings.defaultPaneTitlePrimary to "முதன்மைப் பெட்டி",
+    Strings.defaultPaneTitleSecondary to "இரண்டாம்நிலைப் பெட்டி",
+    Strings.defaultPaneTitleTertiary to "மூன்றாம்நிலைப் பெட்டி",
     Strings.defaultPaneExpansionDragHandleContentDescription to "பெட்டியை இழுத்து விரிவாக்குவதற்கான ஹேண்டில்",
     Strings.defaultPaneExpansionDragHandleStateDescription to "தற்போதைய பாகம் பிரித்தல், %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "பாகமாகப் பிரித்தலை %s மாற்றும்",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d சதவீதம்",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "தொடக்கத்திலிருந்து %d DPகள்",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "இறுதியிலிருந்து %d DPகள்",
+    Strings.dragToResizeClickToExpandDescription to "விரிக்கும்",
+    Strings.dragToResizeClickToCollapseDescription to "சுருக்கும்",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "பகுதியளவு விரிக்கும்",
+    Strings.dragToResizeExpandedStateDescription to "விரிக்கப்பட்டது",
+    Strings.dragToResizeCollapsedStateDescription to "சுருக்கப்பட்டது",
+    Strings.dragToResizePartiallyExpandedStateDescription to "பகுதியளவு விரிக்கப்பட்டது",
 )

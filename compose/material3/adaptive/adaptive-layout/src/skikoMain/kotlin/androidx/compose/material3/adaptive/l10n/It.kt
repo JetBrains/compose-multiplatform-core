@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.it() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Riquadro principale",
+    Strings.defaultPaneTitleSecondary to "Riquadro secondario",
+    Strings.defaultPaneTitleTertiary to "Riquadro terziario",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Punto di trascinamento per l\'espansione del riquadro",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Divisione del riquadro attuale, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Modifica la divisione del riquadro in %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d percentuale",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "A %d DP dall\'inizio",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "A %d DP dalla fine",
+    Strings.dragToResizeClickToExpandDescription to "espandi",
+    Strings.dragToResizeClickToCollapseDescription to "comprimi",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "espandi parzialmente",
+    Strings.dragToResizeExpandedStateDescription to "espanso",
+    Strings.dragToResizeCollapsedStateDescription to "compresso",
+    Strings.dragToResizePartiallyExpandedStateDescription to "parzialmente espanso",
 )
