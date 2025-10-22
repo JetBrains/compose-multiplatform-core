@@ -111,7 +111,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void setTransmissionFactorOnKhronosPbrMaterial(long, float);
     method public void setTransmissionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setTransmissionUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
-    method public void setup(com.google.ar.imp.view.View);
+    method public void setup(com.google.ar.imp.view.View?);
     method public void stopGltfModelAnimation(androidx.xr.scenecore.impl.impress.ImpressNode);
   }
 
@@ -175,6 +175,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void destroyNativeObject(long nativeHandle);
     method public void disposeAllResources();
     method public androidx.xr.scenecore.impl.impress.BindingsResourceManager getBindingsResourceManager();
+    method public default androidx.xr.runtime.math.BoundingBox getGltfModelBoundingBox(androidx.xr.scenecore.impl.impress.ImpressNode impressNode);
     method public androidx.xr.scenecore.impl.impress.Texture getReflectionTextureFromIbl(long iblToken);
     method public android.view.Surface getSurfaceFromStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode panelImpressNode);
     method public androidx.xr.scenecore.impl.impress.ImpressNode instanceGltfModel(long gltfToken);
@@ -435,7 +436,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void setTransmissionFactorOnKhronosPbrMaterial(long, float);
     method public void setTransmissionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setTransmissionUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
-    method public void setup(com.google.ar.imp.view.View);
+    method public void setup(com.google.ar.imp.view.View?);
     method public void stopGltfModelAnimation(androidx.xr.scenecore.impl.impress.ImpressNode);
   }
 

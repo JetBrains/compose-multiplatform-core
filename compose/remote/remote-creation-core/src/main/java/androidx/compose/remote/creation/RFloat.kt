@@ -156,6 +156,13 @@ public class RFloat : Number {
         )
     }
 
+    public operator fun plus(v: Number): RFloat {
+        if (v is RFloat) {
+            return plus(v)
+        }
+        return plus(v.toFloat())
+    }
+
     public operator fun minus(v: Float): RFloat {
         return RFloat(writer, floatArrayOf(*toArray(this), v, AnimatedFloatExpression.SUB))
     }
@@ -165,6 +172,13 @@ public class RFloat : Number {
             writer,
             floatArrayOf(*toArray(this), *toArray(v), AnimatedFloatExpression.SUB),
         )
+    }
+
+    public operator fun minus(v: Number): RFloat {
+        if (v is RFloat) {
+            return minus(v)
+        }
+        return minus(v.toFloat())
     }
 
     public operator fun times(v: Float): RFloat {

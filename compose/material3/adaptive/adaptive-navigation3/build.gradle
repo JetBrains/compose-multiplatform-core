@@ -46,7 +46,7 @@ androidXMultiplatform {
             dependencies {
                 api(project(":compose:material3:adaptive:adaptive-navigation"))
                 api(project(":navigation3:navigation3-ui"))
-                implementation(project(":navigationevent:navigationevent-compose"))
+                implementation("androidx.navigationevent:navigationevent-compose:1.0.0-beta01")
             }
         }
 

@@ -46,6 +46,9 @@ public abstract class LockingBehavior internal constructor() {
     )
 
     public companion object {
+        public const val DEFAULT_LAZY_DURATION_MS: Int = 1500
+        public const val MIN_LAZY_DURATION_MS: Long = 100
+
         /**
          * The content is placed once based on the user's initial pose and does not follow
          * subsequent movements.
@@ -60,12 +63,14 @@ public abstract class LockingBehavior internal constructor() {
          * optional but the total duration of the motion can be modified.
          *
          * @param durationMs Amount of milliseconds it takes for the content to catch up to the
-         *   user. Default is 1500 milliseconds. A value less than 100 will be rounded up to 100 to
-         *   allow enough time to complete the content movement.
+         *   user. Default is `DEFAULT_LAZY_DURATION_MS` milliseconds. A value less than
+         *   `MIN_LAZY_DURATION_MS` will be rounded up to `MIN_LAZY_DURATION_MS` to allow enough
+         *   time to complete the content movement.
          * @return A [LockingBehavior] instance configured for lazy locking.
          */
-        public fun lazy(@IntRange(from = 100) durationMs: Int = 1500): LockingBehavior =
-            LazyLockingBehavior(durationMs)
+        public fun lazy(
+            @IntRange(from = MIN_LAZY_DURATION_MS) durationMs: Int = DEFAULT_LAZY_DURATION_MS
+        ): LockingBehavior = LazyLockingBehavior(durationMs)
     }
 }
 
@@ -79,64 +84,17 @@ public abstract class LockingBehavior internal constructor() {
  *   time to complete the content movement.
  */
 @OptIn(ExperimentalUserSubspaceApi::class)
-internal class LazyLockingBehavior(private val durationMs: Int = 1500) : LockingBehavior() {
-    private val totalFrames: Int
-
-    private companion object {
-        private const val TIME_BETWEEN_ANIMATION_TICKS: Long = 50
-        private const val TRANSLATION_THRESHOLD: Float = 0.1f
-        private const val ROTATION_THRESHOLD: Float = 3f
-        private const val HERMITE_CONSTANT1: Float = 3f
-        private const val HERMITE_CONSTANT2: Float = 2f
-    }
-
-    init {
-        totalFrames = (durationMs / TIME_BETWEEN_ANIMATION_TICKS).toInt().coerceAtLeast(1)
-    }
+internal class LazyLockingBehavior(private val durationMs: Int = DEFAULT_LAZY_DURATION_MS) :
+    LockingBehavior() {
 
     private var trailingEntity: CoreGroupEntity? = null
-    private var animationCounter: Int = 999
     private var startPose: Pose = Pose.Identity
-
-    private suspend fun animate() {
-        // Apply a Hermite easing to the interpolation
-        var t: Float = animationCounter.toFloat() / totalFrames
-        t = t * t * (HERMITE_CONSTANT1 - HERMITE_CONSTANT2 * t)
-        val nextPose = Pose.lerp(startPose, targetCurrentPose, t)
-        trailingEntity?.poseInMeters = nextPose
-        animationCounter++
-        if (animationCounter <= totalFrames) {
-            delay(TIME_BETWEEN_ANIMATION_TICKS)
-            animate()
-        }
-    }
-
-    private fun shouldStartAnimation(): Boolean {
-        val trailingEntityCurrentPose = trailingEntity?.poseInMeters ?: Pose.Identity
-
-        val translationDelta =
-            (trailingEntityCurrentPose.translation - targetCurrentPose.translation).length
-        val rotationDelta =
-            Quaternion.angle(trailingEntityCurrentPose.rotation, targetCurrentPose.rotation)
-
-        return translationDelta > TRANSLATION_THRESHOLD || rotationDelta > ROTATION_THRESHOLD
-    }
-
-    private suspend fun handleNewPose() {
-        // If animation is in progress in another thread, do nothing.
-        if (animationCounter <= totalFrames) {
-            return
-        }
-        // If the target has moved significantly enough, start the animation over.
-        else {
-            if (shouldStartAnimation()) {
-                val trailingEntityCurrentPose = trailingEntity?.poseInMeters ?: Pose.Identity
-                startPose = trailingEntityCurrentPose
-                animationCounter = 1
-                animate()
-            }
-        }
-    }
+    // TODO(b/451647909): Investigate if Compose's built in animation APIs could handle the logic.
+    private var isAnimating: Boolean = false
+    // Ensure at least one frame of animation
+    private val totalFrames: Int =
+        (durationMs / TIME_BETWEEN_ANIMATION_TICKS).toInt().coerceAtLeast(1)
+    private var currentFrame: Int = 0
 
     override suspend fun configure(
         session: Session,
@@ -210,6 +168,81 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
             handleNewPose()
         }
     }
+
+    private suspend fun handleNewPose() {
+        // If animation is in progress in another thread, do nothing.
+        if (isAnimating) {
+            return
+        }
+
+        // If the target has moved significantly enough, start the animation over.
+        if (shouldStartAnimation()) {
+            // The current pose of the trailingEntity
+            startPose = trailingEntity?.poseInMeters ?: Pose.Identity
+            currentFrame = 1
+            isAnimating = true
+            animate()
+        }
+    }
+
+    private suspend fun animate() {
+        // If the animation has finished, update state and stop.
+        if (currentFrame > totalFrames) {
+            isAnimating = false
+            return
+        }
+
+        // Calculate the raw and linear progress of the animation (a value from 0.0 to 1.0).
+        val linearProgress: Float = currentFrame.toFloat() / totalFrames
+        val easedProgress: Float = smoothstep(linearProgress)
+
+        val nextPose = Pose.lerp(startPose, targetCurrentPose, easedProgress)
+        trailingEntity?.poseInMeters = nextPose
+        currentFrame++
+
+        // TODO(b/451648700): Should consider locking onto the animation cycle that already
+        // exists instead of creating a new one.
+        delay(TIME_BETWEEN_ANIMATION_TICKS)
+        // A recursive suspend call.
+        animate()
+    }
+
+    private suspend fun shouldStartAnimation(): Boolean {
+        val trailingEntityCurrentPose = trailingEntity?.poseInMeters ?: Pose.Identity
+
+        val translationDelta =
+            (trailingEntityCurrentPose.translation - targetCurrentPose.translation).length
+        val rotationDelta =
+            Quaternion.angle(trailingEntityCurrentPose.rotation, targetCurrentPose.rotation)
+
+        return translationDelta > TRANSLATION_THRESHOLD || rotationDelta > ROTATION_THRESHOLD
+    }
+
+    private companion object {
+        private const val TIME_BETWEEN_ANIMATION_TICKS: Long = 50
+        private const val TRANSLATION_THRESHOLD: Float = 0.1f
+        private const val ROTATION_THRESHOLD: Float = 3f
+
+        /**
+         * Applies Smoothstep function (a specific implementation of a Cubic Hermite interpolation
+         * curve). to a linear value. This creates a smooth S-curve effect that goes through
+         * "ease-in, accelerate, then ease-out" effect for animations.
+         *
+         * The function uses the formula `f(t) = 3t² - 2t³`. The coefficients 3 and 2 are
+         * mathematically derived to be the simplest polynomial that satisfies four essential
+         * conditions for a smooth transition:
+         * 1. It starts at 0 (f(0) = 0).
+         * 2. It ends at 1 (f(1) = 1).
+         * 3. Its rate of change (speed) is 0 at the start (f'(0) = 0).
+         * 4. Its rate of change (speed) is 0 at the end (f'(1) = 0).
+         *
+         * @param x A value between 0.0 and 1.0.
+         * @return The smoothed value, also between 0.0 and 1.0.
+         */
+        private fun smoothstep(x: Float): Float {
+            return x * x * (3f - 2f * x)
+        }
+    }
 }
 
 /**
@@ -224,7 +257,7 @@ internal class StaticLockingBehavior() : LockingBehavior() {
         lockTo: BodyPart,
         lockDimensions: LockDimensions,
     ) {
-        // TODO http://b/448689233 Initial head pose data is not reliable.
+        // TODO(b/448689233): Initial head pose data is not reliable.
         // Skipping over it with delay.
         delay(1000)
 

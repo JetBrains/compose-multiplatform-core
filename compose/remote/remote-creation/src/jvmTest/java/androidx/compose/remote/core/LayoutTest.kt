@@ -27,6 +27,8 @@ import androidx.compose.remote.core.operations.layout.Component
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.actions.ValueIntegerChange
+import androidx.compose.remote.creation.computeMeasure
+import androidx.compose.remote.creation.computePosition
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -132,6 +134,64 @@ class LayoutTest : LayoutTestPlayer() {
                         text("fox", modifier = Modifier.alignByBaseline())
                     }
                 }
+            )
+        checkLayout(
+            1000,
+            1000,
+            7,
+            Profiles.PROFILE_ANDROIDX or Profiles.PROFILE_EXPERIMENTAL,
+            "Layout",
+            ops,
+        )
+    }
+
+    @Test
+    fun testLayoutComputeModifier() {
+        val ops =
+            arrayListOf<TestOperation?>(
+                TestLayout {
+                    box(Modifier.fillMaxSize().padding(8)) {
+                        val size = 50f
+                        box(
+                            Modifier.componentId(2)
+                                .computeMeasure { width = size * 3f }
+                                .height(size.toInt())
+                                .background(Color.GREEN)
+                        )
+                    }
+                },
+                CaptureComponentTree(),
+            )
+        checkLayout(
+            1000,
+            1000,
+            7,
+            Profiles.PROFILE_ANDROIDX or Profiles.PROFILE_EXPERIMENTAL,
+            "Layout",
+            ops,
+        )
+    }
+
+    @Test
+    fun testLayoutComputeModifier2() {
+        val ops =
+            arrayListOf<TestOperation?>(
+                TestLayout {
+                    box(Modifier.fillMaxSize().padding(8)) {
+                        val size = 50f
+                        box(
+                            Modifier.componentId(2)
+                                .computeMeasure { width = size * 3f }
+                                .computePosition {
+                                    x = (parentWidth - width) / 2f
+                                    y = (parentHeight - height) / 2f
+                                }
+                                .height(size.toInt())
+                                .background(Color.GREEN)
+                        )
+                    }
+                },
+                CaptureComponentTree(),
             )
         checkLayout(
             1000,

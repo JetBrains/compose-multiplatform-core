@@ -67,6 +67,8 @@ import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.compose.capture.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths.pathTest
+import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo1
+import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo2
 import androidx.compose.remote.integration.view.demos.examples.RcSimpleClock1
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo
 import androidx.compose.remote.integration.view.demos.examples.ScrollViewDemo
@@ -245,6 +247,8 @@ class ExperimentActivity : ComponentActivity() {
                 ),
             "Procedural..." to
                 listOf(
+                    getpc("Layout modifier 2") { LayoutModifierDemo2() },
+                    getpc("Layout modifier 1") { LayoutModifierDemo1() },
                     getpc("Text baseline") { RcTextDemo() },
                     getpc("CountDown") { countDown() },
                     getpc("Cube 3D") { cube3d() },

@@ -26,8 +26,11 @@ import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
 import androidx.compose.remote.core.operations.layout.managers.TextLayout
+import androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.creation.actions.Action
+import androidx.compose.remote.creation.modifiers.ComponentLayoutChanges
+import androidx.compose.remote.creation.modifiers.ComponentLayoutComputeModifier
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.profile.Profile
 
@@ -1537,3 +1540,15 @@ public fun RemoteComposeContext.createCirclePath(
 }
 */
 private fun RecordingModifier.clip(unit: Any) {}
+
+public fun RecordingModifier.computeMeasure(
+    block: ComponentLayoutChanges.() -> Unit
+): RecordingModifier {
+    return then(ComponentLayoutComputeModifier(LayoutComputeOperation.TYPE_MEASURE, block))
+}
+
+public fun RecordingModifier.computePosition(
+    block: ComponentLayoutChanges.() -> Unit
+): RecordingModifier {
+    return then(ComponentLayoutComputeModifier(LayoutComputeOperation.TYPE_POSITION, block))
+}

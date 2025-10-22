@@ -15,6 +15,9 @@
  */
 package androidx.compose.remote.creation;
 
+import static androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation.TYPE_MEASURE;
+import static androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation.TYPE_POSITION;
+import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.A_DEREF;
 import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.MUL;
 import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.toMathName;
 import static androidx.compose.remote.core.operations.utilities.IntegerExpressionEvaluator.I_ABS;
@@ -69,6 +72,8 @@ import androidx.compose.remote.core.operations.utilities.NanMap;
 import androidx.compose.remote.core.types.IntegerConstant;
 import androidx.compose.remote.core.types.LongConstant;
 import androidx.compose.remote.creation.actions.Action;
+import androidx.compose.remote.creation.modifiers.ComponentLayoutChanges;
+import androidx.compose.remote.creation.modifiers.ComponentLayoutChangesWriter;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
 import androidx.compose.remote.creation.profile.Profile;
 
@@ -3885,6 +3890,22 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Add a component modifier able to change position and dimension of the component
+     * via expressions.
+     *
+     * @param type TYPE_MEASURE or TYPE_POSITION
+     * @param commands functional interface to capture changes to the component x,y,width,height
+     */
+    public void addLayoutCompute(int type, @NonNull ComponentLayoutChangesWriter commands) {
+        int boundsId = createID(NanMap.TYPE_ARRAY);
+        ComponentLayoutChanges c = new InternalComponentLayoutChanges(type, boundsId, this);
+        mBuffer.startLayoutCompute(type, boundsId, false);
+        addDynamicFloatArray(boundsId, 6f);
+        commands.run(c);
+        mBuffer.endLayoutCompute();
+    }
+
+    /**
      * Add a semantics modifier
      *
      * @param contentDescriptionId the content description id
@@ -4019,5 +4040,98 @@ public class RemoteComposeWriter {
      */
     public void addValueFloatExpressionChangeActionOperation(int mValueId, int mValue) {
         mBuffer.addValueFloatExpressionChangeActionOperation(mValueId, mValue);
+    }
+
+    /**
+     * Internal implementation of the ComponentLayoutChanges
+     */
+    private static class InternalComponentLayoutChanges implements ComponentLayoutChanges {
+        private final RemoteComposeWriter mWriter;
+        int mType;
+        float mBounds;
+
+        InternalComponentLayoutChanges(int type, int boundsId,
+                @NonNull RemoteComposeWriter writer) {
+            mType = type;
+            mBounds = Utils.asNan(boundsId);
+            mWriter = writer;
+        }
+
+        private void set(int index, @NonNull Number value) {
+            if (mType == TYPE_MEASURE && index < 2) {
+                throw new RuntimeException("Trying to set position value in a compute measure");
+            }
+            if (mType == TYPE_POSITION && index > 1) {
+                throw new RuntimeException("Trying to set measure value in a compute position");
+            }
+            if (value instanceof RFloat) {
+                RFloat rFloat = (RFloat) value;
+                rFloat.setWriter(mWriter);
+                mWriter.setArrayValue(Utils.idFromNan(mBounds), index, rFloat.floatValue());
+            } else {
+                mWriter.setArrayValue(Utils.idFromNan(mBounds), index, value.floatValue());
+            }
+        }
+
+        private @NonNull RFloat get(Float index) {
+            return new RFloat(mWriter, new float[]{mBounds, index, A_DEREF});
+        }
+
+        @Override
+        public void setX(@NonNull Number value) {
+            set(0, value);
+        }
+
+        @Override
+        public void setY(@NonNull Number value) {
+            set(1, value);
+        }
+
+        @Override
+        public void setWidth(@NonNull Number value) {
+            set(2, value);
+        }
+
+        @Override
+        public void setHeight(@NonNull Number value) {
+            set(3, value);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getX() {
+            return get(0f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getY() {
+            return get(1f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getWidth() {
+            return get(2f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getHeight() {
+            return get(3f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getParentWidth() {
+            return get(4f);
+        }
+
+        @NonNull
+        @Override
+        public RFloat getParentHeight() {
+            return get(5f);
+        }
+
     }
 }

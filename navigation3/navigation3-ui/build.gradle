@@ -36,7 +36,6 @@ androidXMultiplatform {
         compileSdk = 36
         namespace = "androidx.navigation3.ui"
         androidResources.enable = true
-        lint.disable += "ComposeTestRuleDispatcher"
     }
     desktop()
     mac()
@@ -69,21 +68,21 @@ androidXMultiplatform {
                 implementation(libs.kotlinTest)
                 implementation(project(":kruth:kruth"))
                 implementation(project(":compose:runtime:runtime-test-utils"))
-                implementation(project(":navigationevent:navigationevent-testing"))
+                implementation("androidx.navigationevent:navigationevent-testing:1.0.0-beta01")
             }
         }
 
         androidMain {
             dependsOn(commonMain)
             dependencies {
-                api("androidx.activity:activity-compose:1.12.0-alpha09")
+                api(project(":activity:activity-compose"))
             }
         }
 
         androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
-                implementation("androidx.activity:activity-compose:1.12.0-alpha09")
+                implementation(project(":activity:activity-compose"))
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.junit)
@@ -91,8 +90,8 @@ androidXMultiplatform {
                 implementation(libs.truth)
                 implementation("androidx.compose.material3:material3:1.3.1")
                 implementation(project(":compose:test-utils"))
-                implementation("androidx.compose.ui:ui-test:1.7.5")
-                implementation("androidx.compose.ui:ui-test-junit4:1.7.5")
+                implementation(project(":compose:ui:ui-test"))
+                implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(libs.kotlinSerializationCore)
             }
         }

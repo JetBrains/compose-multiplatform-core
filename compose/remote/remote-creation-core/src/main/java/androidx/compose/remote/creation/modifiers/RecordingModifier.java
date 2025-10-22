@@ -239,6 +239,20 @@ public class RecordingModifier {
     }
 
     /**
+     * Add a padding modifier
+     *
+     * @param start
+     * @param top
+     * @param end
+     * @param bottom
+     * @return
+     */
+    public @NonNull RecordingModifier padding(float start, float top, float end, float bottom) {
+        mList.add(new PaddingModifier(start, top, end, bottom));
+        return this;
+    }
+
+    /**
      * Add a fixed width modifier
      *
      * @param value
