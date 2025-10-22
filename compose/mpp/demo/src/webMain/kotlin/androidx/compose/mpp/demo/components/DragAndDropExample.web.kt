@@ -66,109 +66,51 @@ actual fun DragAndDropExample() {
     ) {
         val textMeasurer = rememberTextMeasurer()
 
+        // Drag sources: red, orange, yellow, green, light blue, blue, violet
+        val colorSources: List<Pair<String, Color>> = listOf(
+            "red" to Color.Red,
+            "orange" to Color(0xFFFFA500),
+            "yellow" to Color.Yellow,
+            "green" to Color.Green,
+            "light blue" to Color(0xFFADD8E6),
+            "blue" to Color.Blue,
+            "violet" to Color(0xFF8A2BE2)
+        )
+
         Column(modifier = Modifier.height(300.dp), verticalArrangement = Arrangement.SpaceEvenly) {
-            Box(
-                Modifier
-                    .width(100.dp)
-                    .height(100.dp)
-                    .background(Color.LightGray)
-                    .dragAndDropSource(
-                        drawDragDecoration = {
-                            drawRect(
-                                color = Color.LightGray,
-                                topLeft = Offset(x = 0f, y = 0f),
-                                size = Size(size.width, size.height)
-                            )
-                            drawRect(
-                                color = Color(255f, 0f, 0f, 0.5f),
-                                topLeft = Offset(x = 50f, y = 50f),
-                                size = Size(size.width / 2, size.height / 2)
-                            )
-                            drawRect(
-                                color = Color(0f, 255f, 0f, 0.5f),
-                                topLeft = Offset(x = 70f, y = 70f),
-                                size = Size(size.width / 2, size.height / 2)
-                            )
-                            drawRect(
-                                color = Color(0f, 0f, 255f, 0.5f),
-                                topLeft = Offset(x = 90f, y = 90f),
-                                size = Size(size.width / 2, size.height / 2)
-                            )
-
-
-                            val textLayoutResult = textMeasurer.measure(
-                                text = AnnotatedString(exportedText),
-                                layoutDirection = layoutDirection,
-                                density = this
-                            )
-                            drawText(
-                                textLayoutResult = textLayoutResult,
-                                topLeft = Offset(
-                                    x = (size.width - textLayoutResult.size.width) / 2,
-                                    y = (size.height - textLayoutResult.size.height) / 2,
-                                )
-                            )
-                        }
-                    ) { offset ->
-                        val dataTransfer = createDataTransfer()
-                        dataTransfer.setData("text/plain", "box A")
-                        DragAndDropTransferData(dataTransfer)
-                    }
-            ) {
-                Text("Drag Me", Modifier.align(Alignment.Center))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                colorSources.forEach { (name, color) ->
+                    Box(
+                        Modifier
+                            .size(48.dp)
+                            .background(color, shape = CircleShape)
+                            .clip(CircleShape)
+                            .border(BorderStroke(1.dp, Color.Black), shape = CircleShape)
+                            .dragAndDropSource(
+                                drawDragDecoration = {
+                                    // simple solid color preview
+                                    drawRect(color = color, topLeft = Offset.Zero, size = Size(size.width, size.height))
+                                    val textLayoutResult = textMeasurer.measure(
+                                        text = AnnotatedString(name),
+                                        layoutDirection = layoutDirection,
+                                        density = this
+                                    )
+                                    drawText(
+                                        textLayoutResult = textLayoutResult,
+                                        topLeft = Offset(
+                                            x = (size.width - textLayoutResult.size.width) / 2,
+                                            y = (size.height - textLayoutResult.size.height) / 2,
+                                        )
+                                    )
+                                }
+                            ) { _ ->
+                                val dataTransfer = createDataTransfer()
+                                dataTransfer.setData("text/plain", "color:$name")
+                                DragAndDropTransferData(dataTransfer)
+                            }
+                    ) {}
+                }
             }
-
-            Box(
-                Modifier
-                    .width(100.dp)
-                    .height(100.dp)
-                    .background(Color.LightGray)
-                    .dragAndDropSource(
-                        drawDragDecoration = {
-                            drawRect(
-                                color = Color.Magenta,
-                                topLeft = Offset(x = 0f, y = 0f),
-                                size = Size(size.width, size.height)
-                            )
-                            drawRect(
-                                color = Color(0f, 0f, 255f, 0.5f),
-                                topLeft = Offset(x = 50f, y = 50f),
-                                size = Size(size.width / 2, size.height / 2)
-                            )
-                            drawRect(
-                                color = Color(0f, 255f, 0f, 0.5f),
-                                topLeft = Offset(x = 70f, y = 70f),
-                                size = Size(size.width / 2, size.height / 2)
-                            )
-                            drawRect(
-                                color = Color(255f, 0f, 0f, 0.5f),
-                                topLeft = Offset(x = 90f, y = 90f),
-                                size = Size(size.width / 2, size.height / 2)
-                            )
-
-
-                            val textLayoutResult = textMeasurer.measure(
-                                text = AnnotatedString(exportedText),
-                                layoutDirection = layoutDirection,
-                                density = this
-                            )
-                            drawText(
-                                textLayoutResult = textLayoutResult,
-                                topLeft = Offset(
-                                    x = (size.width - textLayoutResult.size.width) / 2,
-                                    y = (size.height - textLayoutResult.size.height) / 2,
-                                )
-                            )
-                        }
-                    ) { offset ->
-                        val dataTransfer = createDataTransfer()
-                        dataTransfer.setData("text/plain", "box B")
-                        DragAndDropTransferData(dataTransfer)
-                    }
-            ) {
-                Text("Nope, Drag Me!!!", Modifier.align(Alignment.Center))
-            }
-
         }
 
         var showTargetBorder by remember { mutableStateOf(false) }
@@ -198,10 +140,12 @@ actual fun DragAndDropExample() {
                 override fun onDrop(event: DragAndDropEvent): Boolean {
                     showHovered = false
                     event.transferData?.domDataTransferOrNull?.let { dataTransfer ->
-                        val dataText = dataTransfer?.getData("text/plain")
-                        val resolveColor = if (dataText == "box A") Color.Red else Color.Green
-                        pieSlices.add(resolveColor)
-                        println("drag transfer data stats: files[${dataTransfer?.files?.length}], items[${dataTransfer?.items?.length}]")
+                        val dataText = dataTransfer?.getData("text/plain") ?: ""
+                        val droppedColor = if (dataText.startsWith("color:")) {
+                            val name = dataText.removePrefix("color:")
+                            colorSources.firstOrNull { it.first == name }?.second
+                        } else null
+                        droppedColor?.let { pieSlices.add(it) }
                     }
                     dragCounter++
                     return true
