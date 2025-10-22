@@ -123,6 +123,10 @@ class StatelessInputConnectionTest {
                 onSendKeyEvent?.invoke(keyEvent)
             }
 
+            override fun updateTouchMode(isInTouchMode: Boolean) {
+                lastTouchModeUpdate = isInTouchMode
+            }
+
             override fun requestCursorUpdates(cursorUpdateMode: Int) {}
 
             override fun onCommitContent(transferableContent: TransferableContent): Boolean {
@@ -162,6 +166,8 @@ class StatelessInputConnectionTest {
     private var mapToTransformedCalled: TextRange? = null
 
     private var batchDepth = 0
+
+    private var lastTouchModeUpdate: Boolean? = null
 
     @Before
     fun setup() {
@@ -582,6 +588,22 @@ class StatelessInputConnectionTest {
         // Everything is internal and there is nothing to expect.
         // Just make sure it is not crashed by calling method.
         ic.closeConnection()
+    }
+
+    @Test
+    fun setSelection_updatesTouchMode() {
+        assertThat(lastTouchModeUpdate).isNull()
+        value = TextFieldCharSequence("Hello, World")
+        ic.setSelection(0, 5)
+        assertThat(lastTouchModeUpdate).isFalse()
+    }
+
+    @Test
+    fun setSelection_collapsed_updatesTouchMode() {
+        assertThat(lastTouchModeUpdate).isNull()
+        value = TextFieldCharSequence("Hello, World")
+        ic.setSelection(0, 0)
+        assertThat(lastTouchModeUpdate).isFalse()
     }
 
     @Test

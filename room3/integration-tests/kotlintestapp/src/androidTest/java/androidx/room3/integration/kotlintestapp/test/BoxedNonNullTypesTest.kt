@@ -35,8 +35,8 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.ListenableFuture
-import io.reactivex.Flowable
-import io.reactivex.Observable
+import io.reactivex.rxjava3.core.Flowable
+import io.reactivex.rxjava3.core.Observable
 import java.util.Optional
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first

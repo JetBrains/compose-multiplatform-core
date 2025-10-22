@@ -21,4 +21,10 @@
     <string name="discard_changes_dialog_message" msgid="1531057581600971330">"Your changes are not saved."</string>
     <string name="keep_editing_button" msgid="1452730992602657656">"Keep Editing"</string>
     <string name="discard_button" msgid="8907718452026370630">"Discard"</string>
+    <string name="annotation_pen_button_content_desc" msgid="2505660264801773100">"Pen"</string>
+    <string name="annotation_highlighter_button_content_desc" msgid="1162019976938296458">"Highlighter"</string>
+    <string name="annotation_eraser_button_content_desc" msgid="7325793170289162803">"Eraser"</string>
+    <string name="annotation_undo_button_content_desc" msgid="479267370046825819">"Undo"</string>
+    <string name="annotation_redo_button_content_desc" msgid="3758120724922767367">"Redo"</string>
+    <string name="annotation_toggle_annotation_button_content_desc" msgid="7425032497404166935">"Toggle Annotation"</string>
 </resources>

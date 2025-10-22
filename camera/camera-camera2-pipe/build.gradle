@@ -63,7 +63,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     lint {
         enable.add("CameraXQuirksClassDetector")

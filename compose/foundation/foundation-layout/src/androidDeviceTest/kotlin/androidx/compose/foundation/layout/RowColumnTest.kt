@@ -59,7 +59,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -1889,10 +1888,6 @@ class RowColumnTest : LayoutTest() {
         }
 
     @Test
-    @Ignore(
-        "Wrap is not supported when there are children with weight. " +
-            "Should use maxWidth(.Infinity) modifier when it is available"
-    )
     fun testRow_withMinMainAxisSize() =
         with(density) {
             val sizeDp = 50.toDp()
@@ -1906,9 +1901,9 @@ class RowColumnTest : LayoutTest() {
             show {
                 Center {
                     ConstrainedBox(constraints = DpConstraints(minWidth = rowWidthDp)) {
-                        // TODO: add maxWidth(Constraints.Infinity) modifier
                         Row(
-                            Modifier.onGloballyPositioned { coordinates: LayoutCoordinates ->
+                            Modifier.width(IntrinsicSize.Max).onGloballyPositioned {
+                                coordinates: LayoutCoordinates ->
                                 rowSize = coordinates.size
                                 drawLatch.countDown()
                             }
@@ -2413,10 +2408,6 @@ class RowColumnTest : LayoutTest() {
         }
 
     @Test
-    @Ignore(
-        "Wrap is not supported when there are weight children. " +
-            "Should use maxHeight(Constraints.Infinity) modifier when it is available"
-    )
     fun testColumn_withMinMainAxisSize() =
         with(density) {
             val sizeDp = 50.toDp()
@@ -2430,9 +2421,8 @@ class RowColumnTest : LayoutTest() {
             show {
                 Center {
                     ConstrainedBox(constraints = DpConstraints(minHeight = columnHeightDp)) {
-                        // TODO: add maxHeight(Constraints.Infinity) modifier
                         Column(
-                            Modifier.heightIn(max = Dp.Infinity).onGloballyPositioned {
+                            Modifier.height(IntrinsicSize.Max).onGloballyPositioned {
                                 coordinates: LayoutCoordinates ->
                                 columnSize = coordinates.size
                                 drawLatch.countDown()

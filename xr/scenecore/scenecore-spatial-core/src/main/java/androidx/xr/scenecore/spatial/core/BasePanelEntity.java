@@ -24,7 +24,7 @@ import android.util.TypedValue;
 
 import androidx.core.util.TypedValueCompat;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.PanelEntity;
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
@@ -119,7 +119,7 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
     @Override
     public @NonNull PerceivedResolutionResult getPerceivedResolution() {
         // Get the Camera View with which to compute Perceived Resolution
-        CameraViewActivityPose cameraView =
+        CameraViewScenePose cameraView =
                 PerceivedResolutionUtils.getPerceivedResolutionCameraView(mEntityManager);
         if (cameraView == null) {
             return new PerceivedResolutionResult.InvalidCameraView();

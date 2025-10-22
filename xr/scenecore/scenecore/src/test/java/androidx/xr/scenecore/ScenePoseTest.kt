@@ -21,12 +21,12 @@ import androidx.xr.runtime.FieldOfView
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ScenePose.HitTestFilter
-import androidx.xr.scenecore.runtime.CameraViewActivityPose as RtCameraViewActivityPose
+import androidx.xr.scenecore.runtime.CameraViewScenePose as RtCameraViewScenePose
 import androidx.xr.scenecore.runtime.HitTestResult as RtHitTestResult
 import androidx.xr.scenecore.runtime.SceneRuntime
-import androidx.xr.scenecore.testing.FakeCameraViewActivityPose
-import androidx.xr.scenecore.testing.FakeHeadActivityPose
-import androidx.xr.scenecore.testing.FakePerceptionSpaceActivityPose
+import androidx.xr.scenecore.testing.FakeCameraViewScenePose
+import androidx.xr.scenecore.testing.FakeHeadScenePose
+import androidx.xr.scenecore.testing.FakePerceptionSpaceScenePose
 import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
@@ -60,7 +60,7 @@ class ScenePoseTest {
     }
 
     @Test
-    fun allScenePoseTransformPoseTo_callsRuntimeActivityPoseImplTransformPoseTo() {
+    fun allScenePoseTransformPoseTo_callsRuntimeScenePoseImplTransformPoseTo() {
         val pose = Pose.Identity
 
         assertThat(head?.transformPoseTo(pose, head!!)).isEqualTo(pose)
@@ -69,7 +69,7 @@ class ScenePoseTest {
     }
 
     @Test
-    fun allScenePoseTransformPoseToEntity_callsRuntimeActivityPoseImplTransformPoseTo() {
+    fun allScenePoseTransformPoseToEntity_callsRuntimeScenePoseImplTransformPoseTo() {
         val pose = Pose.Identity
 
         assertThat(head!!.transformPoseTo(pose, activitySpace)).isEqualTo(pose)
@@ -78,7 +78,7 @@ class ScenePoseTest {
     }
 
     @Test
-    fun allScenePoseTransformPoseFromEntity_callsRuntimeActivityPoseImplTransformPoseTo() {
+    fun allScenePoseTransformPoseFromEntity_callsRuntimeScenePoseImplTransformPoseTo() {
         val pose = Pose.Identity
 
         assertThat(activitySpace.transformPoseTo(pose, head!!)).isEqualTo(pose)
@@ -87,7 +87,7 @@ class ScenePoseTest {
     }
 
     @Test
-    fun allScenePoseGetActivitySpacePose_callsRuntimeActivityPoseImplGetActivitySpacePose() {
+    fun allScenePoseGetActivitySpacePose_callsRuntimeScenePoseImplGetActivitySpacePose() {
         val pose = Pose.Identity
 
         assertThat(head!!.activitySpacePose).isEqualTo(pose)
@@ -109,12 +109,12 @@ class ScenePoseTest {
 
         // Set the hit test results.
         val rtHitTestResult = RtHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
-        (fakeRuntime.headActivityPose as? FakeHeadActivityPose)?.hitTestResult = rtHitTestResult
+        (fakeRuntime.headActivityPose as? FakeHeadScenePose)?.hitTestResult = rtHitTestResult
         (fakeRuntime.getCameraViewActivityPose(
-                RtCameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
-            ) as? FakeCameraViewActivityPose)
+                RtCameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
+            ) as? FakeCameraViewScenePose)
             ?.hitTestResult = rtHitTestResult
-        (fakeRuntime.perceptionSpaceActivityPose as FakePerceptionSpaceActivityPose).hitTestResult =
+        (fakeRuntime.perceptionSpaceActivityPose as FakePerceptionSpaceScenePose).hitTestResult =
             rtHitTestResult
 
         runBlocking {
@@ -140,12 +140,12 @@ class ScenePoseTest {
 
         // Set the hit test results.
         val rtHitTestResult = RtHitTestResult(hitPosition, surfaceNormal, surfaceType, distance)
-        (fakeRuntime.headActivityPose as? FakeHeadActivityPose)?.hitTestResult = rtHitTestResult
+        (fakeRuntime.headActivityPose as? FakeHeadScenePose)?.hitTestResult = rtHitTestResult
         (fakeRuntime.getCameraViewActivityPose(
-                RtCameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
-            ) as? FakeCameraViewActivityPose)
+                RtCameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
+            ) as? FakeCameraViewScenePose)
             ?.hitTestResult = rtHitTestResult
-        (fakeRuntime.perceptionSpaceActivityPose as FakePerceptionSpaceActivityPose).hitTestResult =
+        (fakeRuntime.perceptionSpaceActivityPose as FakePerceptionSpaceScenePose).hitTestResult =
             rtHitTestResult
 
         runBlocking {
@@ -157,12 +157,12 @@ class ScenePoseTest {
 
     @Test
     fun cameraView_getFov_returnsFov() {
-        val rtFov = RtCameraViewActivityPose.Fov(1f, 2f, 3f, 4f)
+        val rtFov = RtCameraViewScenePose.Fov(1f, 2f, 3f, 4f)
 
         // Set the fov in the camera view.
         (fakeRuntime.getCameraViewActivityPose(
-                RtCameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
-            ) as? FakeCameraViewActivityPose)
+                RtCameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
+            ) as? FakeCameraViewScenePose)
             ?.fov = rtFov
 
         assertThat(camera!!.fov).isEqualTo(FieldOfView(1f, 2f, 3f, 4f))
@@ -170,20 +170,20 @@ class ScenePoseTest {
 
     @Test
     fun cameraView_getFovTwice_returnsUpdatedFov() {
-        val rtFov = RtCameraViewActivityPose.Fov(1f, 2f, 3f, 4f)
+        val rtFov = RtCameraViewScenePose.Fov(1f, 2f, 3f, 4f)
         // Set the fov in the camera view.
         (fakeRuntime.getCameraViewActivityPose(
-                RtCameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
-            ) as? FakeCameraViewActivityPose)
+                RtCameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
+            ) as? FakeCameraViewScenePose)
             ?.fov = rtFov
 
         assertThat(camera!!.fov).isEqualTo(FieldOfView(1f, 2f, 3f, 4f))
 
-        val rtFov2 = RtCameraViewActivityPose.Fov(5f, 6f, 7f, 8f)
+        val rtFov2 = RtCameraViewScenePose.Fov(5f, 6f, 7f, 8f)
         // Set the fov in the camera view.
         (fakeRuntime.getCameraViewActivityPose(
-                RtCameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
-            ) as? FakeCameraViewActivityPose)
+                RtCameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
+            ) as? FakeCameraViewScenePose)
             ?.fov = rtFov2
 
         assertThat(camera!!.fov).isEqualTo(FieldOfView(5f, 6f, 7f, 8f))

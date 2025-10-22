@@ -24,7 +24,7 @@ plugins {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     namespace = "androidx.camera.integration.testingtestapp"
 

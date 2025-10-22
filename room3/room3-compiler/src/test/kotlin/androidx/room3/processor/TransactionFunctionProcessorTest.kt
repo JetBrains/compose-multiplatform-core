@@ -29,7 +29,6 @@ import androidx.room3.ext.KotlinTypeNames.FLOW
 import androidx.room3.ext.LifecyclesTypeNames.COMPUTABLE_LIVE_DATA
 import androidx.room3.ext.LifecyclesTypeNames.LIVE_DATA
 import androidx.room3.ext.ReactiveStreamsTypeNames.PUBLISHER
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.testing.context
 import androidx.room3.vo.TransactionFunction
@@ -160,25 +159,6 @@ class TransactionFunctionProcessorTest {
     }
 
     @Test
-    fun deferredReturnType_rx2_flowable() {
-        singleTransactionMethod(
-            """
-                @Transaction
-                public io.reactivex.Flowable<String> doInTransaction(int param) { return null; }
-                """
-        ) { transaction, invocation ->
-            assertThat(transaction.jvmName, `is`("doInTransaction"))
-            invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.transactionFunctionAsync(
-                        RxJava2TypeNames.FLOWABLE.rawTypeName.toString(CodeLanguage.JAVA)
-                    )
-                )
-            }
-        }
-    }
-
-    @Test
     fun deferredReturnType_rx3_flowable() {
         singleTransactionMethod(
             """
@@ -200,25 +180,6 @@ class TransactionFunctionProcessorTest {
     }
 
     @Test
-    fun deferredReturnType_rx2_completable() {
-        singleTransactionMethod(
-            """
-                @Transaction
-                public io.reactivex.Completable doInTransaction(int param) { return null; }
-                """
-        ) { transaction, invocation ->
-            assertThat(transaction.jvmName, `is`("doInTransaction"))
-            invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.transactionFunctionAsync(
-                        RxJava2TypeNames.COMPLETABLE.rawTypeName.toString(CodeLanguage.JAVA)
-                    )
-                )
-            }
-        }
-    }
-
-    @Test
     fun deferredReturnType_rx3_completable() {
         singleTransactionMethod(
             """
@@ -233,25 +194,6 @@ class TransactionFunctionProcessorTest {
                 hasErrorContaining(
                     ProcessorErrors.transactionFunctionAsync(
                         RxJava3TypeNames.COMPLETABLE.rawTypeName.toString(CodeLanguage.JAVA)
-                    )
-                )
-            }
-        }
-    }
-
-    @Test
-    fun deferredReturnType_rx2_single() {
-        singleTransactionMethod(
-            """
-                @Transaction
-                public io.reactivex.Single<String> doInTransaction(int param) { return null; }
-                """
-        ) { transaction, invocation ->
-            assertThat(transaction.jvmName, `is`("doInTransaction"))
-            invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.transactionFunctionAsync(
-                        RxJava2TypeNames.SINGLE.rawTypeName.toString(CodeLanguage.JAVA)
                     )
                 )
             }
@@ -332,10 +274,7 @@ class TransactionFunctionProcessorTest {
             listOf(
                 COMMON.LIVE_DATA,
                 COMMON.COMPUTABLE_LIVE_DATA,
-                COMMON.RX2_FLOWABLE,
                 COMMON.PUBLISHER,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_SINGLE,
                 COMMON.RX3_FLOWABLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_SINGLE,

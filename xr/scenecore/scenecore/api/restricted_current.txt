@@ -86,7 +86,7 @@ package androidx.xr.scenecore {
     method public androidx.xr.scenecore.AnchorPlacement createForPlanes(optional java.util.Set<java.lang.Integer> anchorablePlaneOrientations, optional java.util.Set<java.lang.Integer> anchorablePlaneSemanticTypes);
   }
 
-  public abstract class BaseEntity<RtEntityType extends androidx.xr.scenecore.runtime.Entity> extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.ActivityPose> implements androidx.xr.scenecore.Entity {
+  public abstract class BaseEntity<RtEntityType extends androidx.xr.scenecore.runtime.Entity> extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.ScenePose> implements androidx.xr.scenecore.Entity {
     method public void addChild(androidx.xr.scenecore.Entity child);
     method public boolean addComponent(androidx.xr.scenecore.Component component);
     method public void dispose();
@@ -113,8 +113,8 @@ package androidx.xr.scenecore {
     property public androidx.xr.scenecore.Entity? parent;
   }
 
-  public abstract class BaseScenePose<RtActivityPoseType extends androidx.xr.scenecore.runtime.ActivityPose> implements androidx.xr.scenecore.ScenePose {
-    ctor protected BaseScenePose(RtActivityPoseType rtActivityPose);
+  public abstract class BaseScenePose<RtScenePoseType extends androidx.xr.scenecore.runtime.ScenePose> implements androidx.xr.scenecore.ScenePose {
+    ctor protected BaseScenePose(RtScenePoseType rtScenePose);
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getActivitySpacePose();
     method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, int hitTestFilter, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
     method public suspend Object? hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.HitTestResult>);
@@ -122,7 +122,7 @@ package androidx.xr.scenecore {
     property public androidx.xr.runtime.math.Pose activitySpacePose;
   }
 
-  public final class CameraView extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.CameraViewActivityPose> {
+  public final class CameraView extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.CameraViewScenePose> {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.CameraView.CameraType getCameraType();
     method @InaccessibleFromKotlin public androidx.xr.runtime.FieldOfView getFov();
     property public androidx.xr.scenecore.CameraView.CameraType cameraType;
@@ -255,7 +255,7 @@ package androidx.xr.scenecore {
     method public androidx.xr.scenecore.GroupEntity create(androidx.xr.runtime.Session session, String name, optional androidx.xr.runtime.math.Pose pose);
   }
 
-  public final class Head extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.HeadActivityPose> {
+  public final class Head extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.HeadScenePose> {
   }
 
   public final class HitTestResult {
@@ -520,7 +520,7 @@ package androidx.xr.scenecore {
     property public androidx.xr.runtime.math.IntSize2d perceivedResolution;
   }
 
-  public final class PerceptionSpace extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose> {
+  public final class PerceptionSpace extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.PerceptionSpaceScenePose> {
   }
 
   public final class PlaneOrientation {

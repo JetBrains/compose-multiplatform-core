@@ -22,11 +22,11 @@ import android.util.Log;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.runtime.ActivityPose;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.HitTestResult;
 import androidx.xr.scenecore.runtime.InputEventListener;
 import androidx.xr.scenecore.runtime.LoggingEntity;
+import androidx.xr.scenecore.runtime.ScenePose;
 import androidx.xr.scenecore.runtime.SpaceValue;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -71,12 +71,12 @@ class LoggingEntityImpl extends BaseEntity implements LoggingEntity {
     }
 
     @Override
-    public @NonNull Pose transformPoseTo(@NonNull Pose pose, @NonNull ActivityPose destination) {
+    public @NonNull Pose transformPoseTo(@NonNull Pose pose, @NonNull ScenePose destination) {
         Log.i(
                 TAG,
                 "Transforming pose "
                         + pose
-                        + " to be relative to the destination ActivityPose: "
+                        + " to be relative to the destination ScenePose: "
                         + destination);
         return new Pose();
     }

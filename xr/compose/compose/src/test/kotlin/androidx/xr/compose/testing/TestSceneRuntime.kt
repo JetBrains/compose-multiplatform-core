@@ -25,17 +25,17 @@ import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
-import androidx.xr.scenecore.runtime.ActivityPose
 import androidx.xr.scenecore.runtime.ActivitySpace
 import androidx.xr.scenecore.runtime.AnchorPlacement
-import androidx.xr.scenecore.runtime.CameraViewActivityPose
-import androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov
-import androidx.xr.scenecore.runtime.HeadActivityPose
+import androidx.xr.scenecore.runtime.CameraViewScenePose
+import androidx.xr.scenecore.runtime.CameraViewScenePose.Fov
+import androidx.xr.scenecore.runtime.HeadScenePose
 import androidx.xr.scenecore.runtime.HitTestResult
 import androidx.xr.scenecore.runtime.MovableComponent
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.RenderingEntityFactory
+import androidx.xr.scenecore.runtime.ScenePose
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.testing.FakeRenderingRuntime
 import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
@@ -151,20 +151,20 @@ private fun shouldUseRealRuntime(activity: Activity) =
 
 /**
  * A test implementation of [androidx.xr.scenecore.runtime.SceneRuntime] that allows for setting
- * custom values for the ActivitySpace, HeadActivityPose, and CameraViewActivityPose.
+ * custom values for the ActivitySpace, HeadScenePose, and CameraViewScenePose.
  *
  * [fakeSceneRuntimeBase] is the base [androidx.xr.scenecore.runtime.SceneRuntime] to use for the
  * [androidx.xr.scenecore.runtime.SceneRuntime] implementation.
  *
  * @param activitySpace The [androidx.xr.scenecore.runtime.ActivitySpace] to use for the
  *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation.
- * @param headActivityPose The [TestHeadActivityPose] to use for the
+ * @param headActivityPose The [TestHeadScenePose] to use for the
  *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation.
- * @param leftCameraViewPose The [TestCameraViewActivityPose] to use for the
+ * @param leftCameraViewPose The [TestCameraViewScenePose] to use for the
  *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation for the left camera.
- * @param rightCameraViewPose The [TestCameraViewActivityPose] to use for the
+ * @param rightCameraViewPose The [TestCameraViewScenePose] to use for the
  *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation for the right camera.
- * @param unknownCameraViewPose The [TestCameraViewActivityPose] to use for the
+ * @param unknownCameraViewPose The [TestCameraViewScenePose] to use for the
  *   [androidx.xr.scenecore.runtime.SceneRuntime] implementation for the unknown camera.
  */
 class TestSceneRuntime
@@ -174,29 +174,27 @@ private constructor(
         fakeSceneRuntimeBase as RenderingEntityFactory,
     override var mainPanelEntity: PanelEntity = fakeSceneRuntimeBase.mainPanelEntity,
     override var activitySpace: ActivitySpace = fakeSceneRuntimeBase.activitySpace,
-    override var headActivityPose: TestHeadActivityPose? =
-        TestHeadActivityPose(activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))),
-    var leftCameraViewPose: TestCameraViewActivityPose? =
-        TestCameraViewActivityPose(
-            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+    override var headActivityPose: TestHeadScenePose? =
+        TestHeadScenePose(activitySpacePose = Pose(translation = Vector3(1f, 0f, 0f))),
+    var leftCameraViewPose: TestCameraViewScenePose? =
+        TestCameraViewScenePose(
+            cameraType = CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE,
             fov = Fov(angleLeft = -1.57f, angleRight = 1.00f, angleUp = 1.57f, angleDown = -1.57f),
         ),
-    var rightCameraViewPose: TestCameraViewActivityPose? =
-        TestCameraViewActivityPose(
-            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+    var rightCameraViewPose: TestCameraViewScenePose? =
+        TestCameraViewScenePose(
+            cameraType = CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE,
             fov = Fov(angleLeft = -1.00f, angleRight = 1.57f, angleUp = 1.57f, angleDown = -1.57f),
         ),
-    var unknownCameraViewPose: TestCameraViewActivityPose? =
-        TestCameraViewActivityPose(
-            cameraType = CameraViewActivityPose.CameraType.CAMERA_TYPE_UNKNOWN
-        ),
+    var unknownCameraViewPose: TestCameraViewScenePose? =
+        TestCameraViewScenePose(cameraType = CameraViewScenePose.CameraType.CAMERA_TYPE_UNKNOWN),
 ) : SceneRuntime by fakeSceneRuntimeBase, RenderingEntityFactory by fakeRenderingEntityFactory {
     override fun getCameraViewActivityPose(
-        @CameraViewActivityPose.CameraType cameraType: Int
-    ): CameraViewActivityPose? {
+        @CameraViewScenePose.CameraType cameraType: Int
+    ): CameraViewScenePose? {
         return when (cameraType) {
-            CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE -> leftCameraViewPose
-            CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE -> rightCameraViewPose
+            CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE -> leftCameraViewPose
+            CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE -> rightCameraViewPose
             else -> unknownCameraViewPose
         }
     }
@@ -237,19 +235,19 @@ private constructor(
 }
 
 /**
- * A test implementation of [androidx.xr.scenecore.runtime.HeadActivityPose] that allows for setting
+ * A test implementation of [androidx.xr.scenecore.runtime.HeadScenePose] that allows for setting
  * custom values for the activity space pose and scales.
  *
  * @param activitySpacePose The pose of the head in ActivitySpace.
  * @param worldSpaceScale The scale of the head in WorldSpace.
  * @param activitySpaceScale The scale of the head in ActivitySpace.
  */
-class TestHeadActivityPose(
+class TestHeadScenePose(
     override var activitySpacePose: Pose = Pose.Identity,
     override var worldSpaceScale: Vector3 = Vector3(1f, 1f, 1f),
     override var activitySpaceScale: Vector3 = Vector3(1f, 1f, 1f),
-) : HeadActivityPose {
-    override fun transformPoseTo(pose: Pose, destination: ActivityPose): Pose {
+) : HeadScenePose {
+    override fun transformPoseTo(pose: Pose, destination: ScenePose): Pose {
         throw NotImplementedError("Intentionally left unimplemented for these test scenarios")
     }
 
@@ -264,7 +262,7 @@ class TestHeadActivityPose(
 }
 
 /**
- * A test implementation of [androidx.xr.scenecore.runtime.CameraViewActivityPose] that allows for
+ * A test implementation of [androidx.xr.scenecore.runtime.CameraViewScenePose] that allows for
  * setting custom values for the cameraType, field of view, ActivitySpace pose, and scales.
  *
  * @param cameraType The type of camera.
@@ -274,7 +272,7 @@ class TestHeadActivityPose(
  * @param worldSpaceScale The scale of the camera in WorldSpace.
  * @param displayResolutionInPixels The pixel dimensions of the camera view.
  */
-class TestCameraViewActivityPose(
+class TestCameraViewScenePose(
     override val cameraType: Int,
     override var fov: Fov =
         Fov(angleLeft = -1.57f, angleRight = 1.57f, angleUp = 1.57f, angleDown = -1.57f),
@@ -282,8 +280,8 @@ class TestCameraViewActivityPose(
     override var activitySpaceScale: Vector3 = Vector3(1f, 1f, 1f),
     override val worldSpaceScale: Vector3 = Vector3(1f, 1f, 1f),
     override val displayResolutionInPixels: PixelDimensions = PixelDimensions(0, 0),
-) : CameraViewActivityPose {
-    override fun transformPoseTo(pose: Pose, destination: ActivityPose): Pose {
+) : CameraViewScenePose {
+    override fun transformPoseTo(pose: Pose, destination: ScenePose): Pose {
         throw NotImplementedError("Intentionally left unimplemented for these test scenarios")
     }
 

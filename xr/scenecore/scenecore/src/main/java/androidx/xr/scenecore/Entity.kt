@@ -22,8 +22,8 @@ import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.ActivityPose as RtActivityPose
 import androidx.xr.scenecore.runtime.Entity as RtEntity
+import androidx.xr.scenecore.runtime.ScenePose as RtScenePose
 
 /**
  * Interface for a spatial Entity. An Entity's [Pose]s are represented as being relative to their
@@ -136,6 +136,10 @@ public interface Entity : ScenePose {
      * This value will affect the rendering of this Entity's children. Children of this node will
      * have their alpha levels multiplied by this value and any alpha of this entity's ancestors.
      *
+     * Usage restrictions:
+     * - If the provided `alpha` is outside the [0, 1] range, it will be clamped automatically to
+     *   [0, 1].
+     *
      * @param alpha Alpha transparency level for the Entity.
      * @param relativeTo Sets alpha relative to given Space. Default value is the parent Space.
      */
@@ -237,7 +241,7 @@ public interface Entity : ScenePose {
 /** The BaseEntity is an implementation of Entity interface that wraps a platform entity. */
 public abstract class BaseEntity<RtEntityType : RtEntity>
 internal constructor(rtEntity: RtEntityType, private val entityManager: EntityManager) :
-    Entity, BaseScenePose<RtActivityPose>(rtEntity) {
+    Entity, BaseScenePose<RtScenePose>(rtEntity) {
 
     internal var rtEntity: RtEntityType?
 

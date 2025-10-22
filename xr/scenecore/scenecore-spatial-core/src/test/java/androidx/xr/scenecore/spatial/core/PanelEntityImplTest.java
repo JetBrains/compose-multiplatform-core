@@ -36,7 +36,7 @@ import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
 import androidx.xr.scenecore.runtime.PixelDimensions;
@@ -119,17 +119,17 @@ public class PanelEntityImplTest {
         return panelEntity;
     }
 
-    private CameraViewActivityPose setupDefaultMockCameraView() {
-        CameraViewActivityPose cameraView = mock(CameraViewActivityPose.class);
+    private CameraViewScenePose setupDefaultMockCameraView() {
+        CameraViewScenePose cameraView = mock(CameraViewScenePose.class);
         when(cameraView.getCameraType())
-                .thenReturn(CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE);
+                .thenReturn(CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE);
         // Camera at origin, looking along -Z
         when(cameraView.getActivitySpacePose())
                 .thenReturn(new Pose(new Vector3(0f, 0f, 0f), Quaternion.Identity));
 
         // 90 deg HFOV, 90 deg VFOV (tan(half-angle) = 1)
-        CameraViewActivityPose.Fov fov =
-                new CameraViewActivityPose.Fov(
+        CameraViewScenePose.Fov fov =
+                new CameraViewScenePose.Fov(
                         (float) Math.atan(1.0),
                         (float) Math.atan(1.0),
                         (float) Math.atan(1.0),

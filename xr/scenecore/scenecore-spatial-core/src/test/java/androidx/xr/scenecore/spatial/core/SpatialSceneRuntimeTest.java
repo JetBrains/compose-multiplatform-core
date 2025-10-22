@@ -61,13 +61,13 @@ import androidx.xr.scenecore.runtime.AnchorEntity;
 import androidx.xr.scenecore.runtime.AnchorEntity.State;
 import androidx.xr.scenecore.runtime.AnchorPlacement;
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper;
-import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Component;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
-import androidx.xr.scenecore.runtime.HeadActivityPose;
+import androidx.xr.scenecore.runtime.HeadScenePose;
 import androidx.xr.scenecore.runtime.InputEvent;
 import androidx.xr.scenecore.runtime.InputEventListener;
 import androidx.xr.scenecore.runtime.InteractableComponent;
@@ -251,75 +251,75 @@ public class SpatialSceneRuntimeTest {
     }
 
     @Test
-    public void getHeadActivityPose_returnsNullIfNotReady() {
+    public void getHeadScenePose_returnsNullIfNotReady() {
         when(mPerceptionLibrary.getSession()).thenReturn(mSession);
         when(mSession.getHeadPose()).thenReturn(null);
-        HeadActivityPose headActivityPose = mRuntime.getHeadActivityPose();
+        HeadScenePose headScenePose = mRuntime.getHeadActivityPose();
 
-        assertThat(headActivityPose).isNull();
+        assertThat(headScenePose).isNull();
     }
 
     @Test
-    public void getHeadActivityPose_returnsActivityPose() {
+    public void getHeadScenePose_returnsScenePose() {
         when(mPerceptionLibrary.getSession()).thenReturn(mSession);
         when(mSession.getHeadPose())
                 .thenReturn(androidx.xr.scenecore.impl.perception.Pose.identity());
-        HeadActivityPose headActivityPose = mRuntime.getHeadActivityPose();
+        HeadScenePose headScenePose = mRuntime.getHeadActivityPose();
 
-        assertThat(headActivityPose).isNotNull();
+        assertThat(headScenePose).isNotNull();
     }
 
     @Test
-    public void getCameraViewActivityPose_returnsNullIfNotReady() {
+    public void getCameraViewScenePose_returnsNullIfNotReady() {
         when(mPerceptionLibrary.getSession()).thenReturn(mSession);
         when(mSession.getStereoViews()).thenReturn(new ViewProjections(null, null));
 
-        CameraViewActivityPose leftCameraViewActivityPose =
+        CameraViewScenePose leftCameraViewScenePose =
                 mRuntime.getCameraViewActivityPose(
-                        CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE);
-        CameraViewActivityPose rightCameraViewActivityPose =
+                        CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE);
+        CameraViewScenePose rightCameraViewScenePose =
                 mRuntime.getCameraViewActivityPose(
-                        CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE);
+                        CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE);
 
-        assertThat(leftCameraViewActivityPose).isNull();
-        assertThat(rightCameraViewActivityPose).isNull();
+        assertThat(leftCameraViewScenePose).isNull();
+        assertThat(rightCameraViewScenePose).isNull();
     }
 
     @Test
-    public void getLeftCameraViewActivityPose_returnsActivityPose() {
+    public void getLeftCameraViewScenePose_returnsScenePose() {
         when(mPerceptionLibrary.getSession()).thenReturn(mSession);
         ViewProjection viewProjection =
                 new ViewProjection(
                         androidx.xr.scenecore.impl.perception.Pose.identity(), new Fov(0, 0, 0, 0));
         when(mSession.getStereoViews())
                 .thenReturn(new ViewProjections(viewProjection, viewProjection));
-        CameraViewActivityPose cameraViewActivityPose =
+        CameraViewScenePose cameraViewScenePose =
                 mRuntime.getCameraViewActivityPose(
-                        CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE);
+                        CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE);
 
-        assertThat(cameraViewActivityPose).isNotNull();
+        assertThat(cameraViewScenePose).isNotNull();
     }
 
     @Test
-    public void getRightCameraViewActivityPose_returnsActivityPose() {
+    public void getRightCameraViewScenePose_returnsScenePose() {
         when(mPerceptionLibrary.getSession()).thenReturn(mSession);
         ViewProjection viewProjection =
                 new ViewProjection(
                         androidx.xr.scenecore.impl.perception.Pose.identity(), new Fov(0, 0, 0, 0));
         when(mSession.getStereoViews())
                 .thenReturn(new ViewProjections(viewProjection, viewProjection));
-        CameraViewActivityPose cameraViewActivityPose =
+        CameraViewScenePose cameraViewScenePose =
                 mRuntime.getCameraViewActivityPose(
-                        CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE);
+                        CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE);
 
-        assertThat(cameraViewActivityPose).isNotNull();
+        assertThat(cameraViewScenePose).isNotNull();
     }
 
     @Test
-    public void getUnknownCameraViewActivityPose_returnsEmptyOptional() {
-        CameraViewActivityPose cameraViewActivityPose = mRuntime.getCameraViewActivityPose(555);
+    public void getUnknownCameraViewScenePose_returnsEmptyOptional() {
+        CameraViewScenePose cameraViewScenePose = mRuntime.getCameraViewActivityPose(555);
 
-        assertThat(cameraViewActivityPose).isNull();
+        assertThat(cameraViewScenePose).isNull();
     }
 
     @Test

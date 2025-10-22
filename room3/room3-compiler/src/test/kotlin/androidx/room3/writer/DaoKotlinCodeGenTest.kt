@@ -985,7 +985,6 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 """
             import androidx.room3.*
             import androidx.paging.*
-            import androidx.paging.rxjava2.*
             import androidx.paging.rxjava3.*
 
             @Dao
@@ -995,9 +994,6 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
 
               @Query("SELECT * FROM MyEntity WHERE pk > :gt ORDER BY pk ASC")
               abstract fun getAllIdsWithArgs(gt: Long): androidx.paging.PagingSource<Int, MyEntity>
-
-              @Query("SELECT pk FROM MyEntity")
-              abstract fun getAllIdsRx2(): androidx.paging.rxjava2.RxPagingSource<Int, MyEntity>
 
               @Query("SELECT pk FROM MyEntity")
               abstract fun getAllIdsRx3(): androidx.paging.rxjava3.RxPagingSource<Int, MyEntity>
@@ -1020,9 +1016,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                     src,
                     databaseSrc,
                     COMMON.LIMIT_OFFSET_PAGING_SOURCE,
-                    COMMON.LIMIT_OFFSET_RX2_PAGING_SOURCE,
                     COMMON.LIMIT_OFFSET_RX3_PAGING_SOURCE,
-                    COMMON.RX2_PAGING_SOURCE,
                     COMMON.RX3_PAGING_SOURCE,
                     COMMON.LIMIT_OFFSET_LISTENABLE_FUTURE_PAGING_SOURCE,
                     COMMON.LISTENABLE_FUTURE_PAGING_SOURCE,
@@ -2324,58 +2318,6 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
     }
 
     @Test
-    fun callableQuery_rx2() {
-        val src =
-            Source.kotlin(
-                "MyDao.kt",
-                """
-            import androidx.room3.*
-            import io.reactivex.*
-
-            @Dao
-            interface MyDao {
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getFlowable(vararg arg: String?): Flowable<MyEntity>
-
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getObservable(vararg arg: String?): Observable<MyEntity>
-
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getSingle(vararg arg: String?): Single<MyEntity>
-
-                @Query("SELECT * FROM MyEntity WHERE pk IN (:arg)")
-                fun getMaybe(vararg arg: String?): Maybe<MyEntity>
-            }
-
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
-                    .trimIndent(),
-            )
-        runTest(
-            sources = listOf(src, databaseSrc),
-            compiledFiles =
-                compileFiles(
-                    listOf(
-                        COMMON.RX2_ROOM,
-                        COMMON.RX2_FLOWABLE,
-                        COMMON.RX2_OBSERVABLE,
-                        COMMON.RX2_SINGLE,
-                        COMMON.RX2_MAYBE,
-                        COMMON.RX2_COMPLETABLE,
-                        COMMON.PUBLISHER,
-                        COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION,
-                    )
-                ),
-            expectedFilePath = getTestGoldenPath(testName.methodName),
-        )
-    }
-
-    @Test
     fun callableQuery_rx3() {
         val src =
             Source.kotlin(
@@ -2421,55 +2363,6 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                         COMMON.RX3_COMPLETABLE,
                         COMMON.PUBLISHER,
                         COMMON.RX3_EMPTY_RESULT_SET_EXCEPTION,
-                    )
-                ),
-            expectedFilePath = getTestGoldenPath(testName.methodName),
-        )
-    }
-
-    @Test
-    fun preparedCallableQuery_rx2() {
-        val src =
-            Source.kotlin(
-                "MyDao.kt",
-                """
-            import androidx.room3.*
-            import io.reactivex.*
-
-            @Dao
-            interface MyDao {
-                @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
-                fun insertPublisherSingle(id: String, name: String): Single<Long>
-
-                @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
-                fun insertPublisherMaybe(id: String, name: String): Maybe<Long>
-
-                @Query("INSERT INTO MyEntity (pk, other) VALUES (:id, :name)")
-                fun insertPublisherCompletable(id: String, name: String): Completable
-            }
-
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
-                    .trimIndent(),
-            )
-        runTest(
-            sources = listOf(src, databaseSrc),
-            compiledFiles =
-                compileFiles(
-                    listOf(
-                        COMMON.RX2_ROOM,
-                        COMMON.RX2_FLOWABLE,
-                        COMMON.RX2_OBSERVABLE,
-                        COMMON.RX2_SINGLE,
-                        COMMON.RX2_MAYBE,
-                        COMMON.RX2_COMPLETABLE,
-                        COMMON.PUBLISHER,
-                        COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION,
                     )
                 ),
             expectedFilePath = getTestGoldenPath(testName.methodName),
@@ -2581,70 +2474,6 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             )
         runTest(
             sources = listOf(src, databaseSrc, COMMON.FLOW, COMMON.COROUTINES_ROOM),
-            expectedFilePath = getTestGoldenPath(testName.methodName),
-        )
-    }
-
-    @Test
-    fun shortcutMethods_rx2() {
-        val src =
-            Source.kotlin(
-                "MyDao.kt",
-                """
-            import androidx.room3.*
-            import io.reactivex.*
-
-            @Dao
-            interface MyDao {
-                @Insert
-                fun insertSingle(vararg entities: MyEntity): Single<List<Long>>
-
-                @Upsert
-                fun upsertSingle(vararg entities: MyEntity): Single<List<Long>>
-
-                @Delete
-                fun deleteSingle(entity: MyEntity): Single<Int>
-
-                @Update
-                fun updateSingle(entity: MyEntity): Single<Int>
-                
-                @Insert
-                fun insertCompletable(vararg entities: MyEntity): Completable
-
-                @Upsert
-                fun upsertCompletable(vararg entities: MyEntity): Completable
-
-                @Delete
-                fun deleteCompletable(entity: MyEntity): Completable
-
-                @Update
-                fun updateCompletable(entity: MyEntity): Completable
-            }
-
-            @Entity
-            data class MyEntity(
-                @PrimaryKey
-                val pk: Int,
-                val other: String
-            )
-            """
-                    .trimIndent(),
-            )
-        runTest(
-            sources = listOf(src, databaseSrc),
-            compiledFiles =
-                compileFiles(
-                    listOf(
-                        COMMON.RX2_ROOM,
-                        COMMON.RX2_SINGLE,
-                        COMMON.RX2_MAYBE,
-                        COMMON.RX2_COMPLETABLE,
-                        COMMON.RX2_FLOWABLE,
-                        COMMON.RX2_OBSERVABLE,
-                        COMMON.RX2_EMPTY_RESULT_SET_EXCEPTION,
-                        COMMON.PUBLISHER,
-                    )
-                ),
             expectedFilePath = getTestGoldenPath(testName.methodName),
         )
     }

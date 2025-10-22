@@ -18,8 +18,8 @@ package androidx.xr.scenecore.spatial.core;
 
 import static java.util.stream.Collectors.toCollection;
 
-import androidx.xr.scenecore.runtime.ActivityPose;
 import androidx.xr.scenecore.runtime.Entity;
+import androidx.xr.scenecore.runtime.ScenePose;
 
 import com.android.extensions.xr.node.Node;
 
@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings("BanConcurrentHashMap")
 final class EntityManager {
     private final Map<Node, Entity> mNodeEntityMap = new ConcurrentHashMap<>();
-    private final List<ActivityPose> mSystemSpaces = new ArrayList<>();
+    private final List<ScenePose> mSystemSpaces = new ArrayList<>();
 
     /**
      * Returns the {@link Entity} associated with the given {@link Node}.
@@ -87,28 +87,28 @@ final class EntityManager {
     }
 
     /** Adds a system space activity pose to the EntityManager. */
-    void addSystemSpaceActivityPose(@NonNull ActivityPose systemSpaceActivityPose) {
-        mSystemSpaces.add(systemSpaceActivityPose);
+    void addSystemSpaceActivityPose(@NonNull ScenePose systemSpaceScenePose) {
+        mSystemSpaces.add(systemSpaceScenePose);
     }
 
     /** Returns a collection of all system space activity poses. */
-    List<ActivityPose> getAllSystemSpaceActivityPoses() {
+    List<ScenePose> getAllSystemSpaceActivityPoses() {
         return mSystemSpaces;
     }
 
     /**
-     * Returns a list of all {@link ActivityPose}s of type {@code T} (including subtypes of {@code
+     * Returns a list of all {@link ScenePose}s of type {@code T} (including subtypes of {@code
      * T}).
      *
-     * @param systemSpaceActivityPoseClass the type of {@link ActivityPose} to return.
-     * @return a list of all {@link ActivityPose}s of type {@code T} (including subtypes of {@code
+     * @param systemSpaceScenePoseClass the type of {@link ScenePose} to return.
+     * @return a list of all {@link ScenePose}s of type {@code T} (including subtypes of {@code
      *     T}).
      */
-    <T extends ActivityPose> List<T> getSystemSpaceActivityPoseOfType(
-            @NonNull Class<T> systemSpaceActivityPoseClass) {
+    <T extends ScenePose> List<T> getSystemSpaceActivityPoseOfType(
+            @NonNull Class<T> systemSpaceScenePoseClass) {
         return mSystemSpaces.stream()
-                .filter(systemSpaceActivityPoseClass::isInstance)
-                .map(systemSpaceActivityPoseClass::cast)
+                .filter(systemSpaceScenePoseClass::isInstance)
+                .map(systemSpaceScenePoseClass::cast)
                 .collect(toCollection(ArrayList::new));
     }
 

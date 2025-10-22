@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import kotlin.test.assertEquals
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,7 +58,7 @@ private const val HEIGHT_FROM_CALLER = 80
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class MultiMeasureCompositionTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun testCustomMultiMeasure_changesFromCompositionSource(): Unit =

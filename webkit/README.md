@@ -63,6 +63,38 @@ If you find bugs in the Jetpack Webkit library or want to request new features,
 please [file a
 ticket](https://issuetracker.google.com/issues/new?component=460423).
 
+
+## Experimental APIs
+
+The Jetpack Webkit library contains a number of experimental APIs. These APIs
+will be marked with annotations that use the
+[`@RequiresOptIn`](https://developer.android.com/reference/kotlin/androidx/annotation/RequiresOptIn)
+annotation. We encourage you to try out these APIs in your application and [file
+feedback](#public-bug-tracker) if you encounter any issues with the API in the
+current shape.
+
+When using an experimental API, you should keep the following points in mind:
+
+* New features or changes may be introduced to experimental APIs. If you are
+  using experimental APIs, we recommend that you always use the latest version
+  of the library in your dependencies, and that you adopt changes in the API as
+  soon as possible. For example, if you are building against the stable version
+  of the library, you should make sure to upgrade to the next stable version as
+  soon as it becomes available.
+* Experimental APIs may be removed from future versions of the library. If this
+  happens, you will not be able to continue using the API by relying on an older
+  version of the library, since the support for the feature will also have been
+  removed from new versions of WebView.
+* The number of WebView versions that support a given experimental API depends
+  on the release status of a given experimental API. For stable library
+  releases, you can expect that WebView versions will continue to offer support
+  until the next stable release of the library. For example, if an experimental
+  API is available in `androidx.webkit:webkit:1.14.0`, then the stable version
+  of WebView will continue to support the API until
+  `androidx.webkit:webkit:1.15.0` has been released, but after the next release
+  the support may then be dropped in WebView versions, depending on the
+  evolution of the API.
+
 ## Building the library (contributing to the Jetpack library)
 
 If you're trying to modify the Jetpack Webkit library, or apply local changes

@@ -79,7 +79,6 @@ dependencies {
     androidTestImplementation("androidx.arch.core:core-runtime:2.2.0")
     androidTestImplementation("androidx.arch.core:core-common:2.2.0")
     androidTestImplementation(project(":room3:room3-testing"))
-    androidTestImplementation(project(":room3:room3-rxjava2"))
     androidTestImplementation(project(":room3:room3-rxjava3"))
     androidTestImplementation(project(":room3:room3-guava"))
     androidTestImplementation(project(":room3:room3-paging"))
@@ -92,7 +91,6 @@ dependencies {
 
     // libs.findbugs dependency resolves an app/testapp version conflict.
     androidTestImplementation(libs.findbugs)
-    androidTestImplementation(libs.rxjava2)
     androidTestImplementation(libs.rxjava3)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)

@@ -94,15 +94,7 @@ public interface UserPetDao {
 
     @Transaction
     @Query("SELECT * FROM User u where u.mId = :userId")
-    io.reactivex.Flowable<@NonNull UserAndAllPets> rx2_flowableUserWithPets(int userId);
-
-    @Transaction
-    @Query("SELECT * FROM User u where u.mId = :userId")
     io.reactivex.rxjava3.core.Flowable<@NonNull UserAndAllPets> rx3_flowableUserWithPets(int userId);
-
-    @Transaction
-    @Query("SELECT * FROM User u where u.mId = :userId")
-    io.reactivex.Observable<@NonNull UserAndAllPets> rx2_observableUserWithPets(int userId);
 
     @Transaction
     @Query("SELECT * FROM User u where u.mId = :userId")

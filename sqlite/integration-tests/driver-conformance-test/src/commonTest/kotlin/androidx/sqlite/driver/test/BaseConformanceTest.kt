@@ -514,7 +514,14 @@ abstract class BaseConformanceTest {
                 connection.execSQL("DELETE FROM Parent WHERE pid = 'p1'") // Fail, FKs enabled
             }
             .hasMessageThat()
-            .contains("FOREIGN KEY constraint failed")
+            .let {
+                if (driverType == TestDriverType.ANDROID_FRAMEWORK) {
+                    // Not all versions of Android use extended error codes
+                    it.contains("FOREIGN KEY constraint failed")
+                } else {
+                    it.isEqualTo("Error code: 787, message: FOREIGN KEY constraint failed")
+                }
+            }
         connection.execSQL("ROLLBACK TRANSACTION")
     }
 

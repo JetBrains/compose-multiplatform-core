@@ -28,7 +28,6 @@ import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,9 +35,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AlphaTest {
 
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun alpha_shouldBeAppliedToEntity() {

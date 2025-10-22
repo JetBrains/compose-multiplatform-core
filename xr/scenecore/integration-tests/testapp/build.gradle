@@ -59,7 +59,7 @@ dependencies {
     implementation("com.google.android.material:material:1.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.9.0")
 
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
 }
 
 // Making this APK available via Android Build so the QA team can

@@ -17,20 +17,10 @@
 package androidx.pdf.utils
 
 import android.graphics.Path
-import android.graphics.RectF
 import android.os.ParcelFileDescriptor
 import androidx.annotation.RestrictTo
-import androidx.pdf.annotation.models.PathPdfObject
 import androidx.pdf.annotation.models.PathPdfObject.PathInput
-import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
-import androidx.pdf.annotation.models.StampAnnotation
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonDeserializer
-import com.google.gson.reflect.TypeToken
-import java.io.FileDescriptor
-import java.io.FileOutputStream
 import java.io.IOException
 
 /** Tolerance level for path approximation. */
@@ -47,19 +37,7 @@ internal fun writeAnnotationsToFile(
     pfd: ParcelFileDescriptor,
     annotations: List<PdfAnnotationData>,
 ) {
-    val fileDescriptor: FileDescriptor = pfd.fileDescriptor
-    // It is the responsibility of the caller to close this pfd.
-    FileOutputStream(fileDescriptor).use { outputStream ->
-        val gson = Gson()
-
-        // Serialize the list of annotationsData to a json string
-        val jsonString = gson.toJson(annotations)
-        outputStream.write(jsonString.toByteArray(Charsets.UTF_8))
-        outputStream.flush()
-    }
-
-    // To reuse the same PFD for reading after writing, we need to reset its file pointer
-    pfd.resetToStartingPosition()
+    // TODO: Read and write annotations to file with org.json
 }
 
 /**
@@ -69,32 +47,9 @@ internal fun writeAnnotationsToFile(
  * @return A list of [PdfAnnotationData] objects read from the file.
  */
 internal fun readAnnotationsFromPfd(pfd: ParcelFileDescriptor): List<PdfAnnotationData> {
-    // TODO: b/434864732 - Use stream to read annotations from file
+    // TODO: Read and write annotations to file with org.json
     val jsonString = readFromPfd(pfd)
-    val type = object : TypeToken<List<PdfAnnotationData>>() {}.type
-    val gson =
-        GsonBuilder()
-            .registerTypeAdapter(PdfAnnotation::class.java, getStampAnnotationDeserializer())
-            .create()
-    val annotations = gson.fromJson<List<PdfAnnotationData>>(jsonString, type)
-    return annotations ?: listOf()
-}
-
-/** Returns a [JsonDeserializer] for [StampAnnotation]. */
-internal fun getStampAnnotationDeserializer(): JsonDeserializer<StampAnnotation> {
-    return JsonDeserializer { json, _, context ->
-        val jsonObject = json.asJsonObject
-
-        val pageNum = jsonObject.get("pageNum").asInt
-        val bounds = context.deserialize<RectF>(jsonObject.get("bounds"), RectF::class.java)
-
-        val pdfObjectsArray = jsonObject.getAsJsonArray("pdfObjects")
-        val pathPdfObjects = mutableListOf<PathPdfObject>()
-        for (pdfObjectElement in pdfObjectsArray) {
-            pathPdfObjects.add(context.deserialize(pdfObjectElement, PathPdfObject::class.java))
-        }
-        StampAnnotation(pageNum, bounds, pathPdfObjects)
-    }
+    return listOf()
 }
 
 /**

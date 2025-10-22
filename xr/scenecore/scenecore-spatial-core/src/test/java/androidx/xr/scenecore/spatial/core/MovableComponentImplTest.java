@@ -117,7 +117,7 @@ public class MovableComponentImplTest {
     private ActivitySpaceImpl mActivitySpaceImpl;
     private Node mActivitySpaceNode;
     private final AndroidXrEntity mActivitySpaceRoot = Mockito.mock(AndroidXrEntity.class);
-    private PerceptionSpaceActivityPoseImpl mPerceptionSpaceActivityPose;
+    private PerceptionSpaceScenePoseImpl mPerceptionSpaceScenePose;
     private final PanelShadowRenderer mPanelShadowRenderer =
             Mockito.mock(PanelShadowRenderer.class);
     private final NodeRepository mNodeRepository = NodeRepository.getInstance();
@@ -143,8 +143,8 @@ public class MovableComponentImplTest {
                         /* unscaledGravityAlignedActivitySpace= */ false);
         mActivitySpaceImpl = (ActivitySpaceImpl) mFakeRuntime.getActivitySpace();
         mActivitySpaceNode = mActivitySpaceImpl.getNode();
-        mPerceptionSpaceActivityPose =
-                (PerceptionSpaceActivityPoseImpl) mFakeRuntime.getPerceptionSpaceActivityPose();
+        mPerceptionSpaceScenePose =
+                (PerceptionSpaceScenePoseImpl) mFakeRuntime.getPerceptionSpaceActivityPose();
     }
 
     @After
@@ -223,7 +223,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -252,7 +252,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -282,7 +282,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -312,7 +312,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -343,7 +343,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -383,7 +383,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -421,7 +421,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -450,7 +450,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -479,7 +479,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -510,7 +510,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -550,7 +550,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -606,7 +606,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -651,7 +651,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -691,7 +691,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -740,7 +740,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -778,7 +778,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -822,7 +822,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -908,7 +908,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -988,7 +988,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1076,7 +1076,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1157,7 +1157,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1239,7 +1239,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1333,7 +1333,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1436,7 +1436,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1524,7 +1524,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1603,7 +1603,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1663,7 +1663,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1733,7 +1733,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1772,7 +1772,7 @@ public class MovableComponentImplTest {
     }
 
     @Test
-    public void anchorable_resetsToActivityPoseAfterAnchoring() {
+    public void anchorable_resetsToScenePoseAfterAnchoring() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
                 new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
@@ -1809,7 +1809,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1894,7 +1894,7 @@ public class MovableComponentImplTest {
     }
 
     @Test
-    public void anchorable_resetsAndScaleToActivityPoseAfterAnchoring() {
+    public void anchorable_resetsAndScaleToScenePoseAfterAnchoring() {
         // Set the activity space pose to be 1 unit to the left of the OpenXR origin and add a scale
         // of 2.
         float activityScale = 2f;
@@ -1935,7 +1935,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -2024,7 +2024,7 @@ public class MovableComponentImplTest {
     }
 
     @Test
-    public void anchorableChildOfEntity_resetsToActivityPoseAfterAnchoring() {
+    public void anchorableChildOfEntity_resetsToScenePoseAfterAnchoring() {
         // Set the activity space pose to be 1 unit to the left of the origin.
         setActivitySpacePose(
                 new Pose(new Vector3(-1f, -1f, 0f), new Quaternion(0f, 0f, 0f, 1f)), 1f);
@@ -2066,7 +2066,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -2188,7 +2188,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -2317,7 +2317,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -2458,7 +2458,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -2543,7 +2543,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -2605,7 +2605,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -2662,7 +2662,7 @@ public class MovableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);

@@ -74,6 +74,7 @@ internal abstract class UwbClientSessionScopeRangingImpl(
     val mAddressDeviceMap: MutableMap<UwbAddress, RangingDevice> =
         Collections.synchronizedMap(mutableMapOf())
     protected var mRangingSession: RangingSession? = null
+    private var isAoaRequested: Boolean = true
 
     protected abstract fun buildRangingPreference(parameters: RangingParameters): RangingPreference
 
@@ -242,10 +243,45 @@ internal abstract class UwbClientSessionScopeRangingImpl(
         subSessionId: Int = mRangingParams!!.subSessionId,
         subSessionKeyInfo: ByteArray? = mRangingParams!!.subSessionKeyInfo,
     ): UwbRangingParams {
+        val configId =
+            when (mRangingParams!!.uwbConfigType) {
+                RangingParameters.CONFIG_UNICAST_DS_TWR -> {
+                    isAoaRequested = !mRangingParams!!.isAoaDisabled
+                    UwbRangingParams.CONFIG_UNICAST_DS_TWR
+                }
+                RangingParameters.CONFIG_MULTICAST_DS_TWR -> {
+                    isAoaRequested = !mRangingParams!!.isAoaDisabled
+                    UwbRangingParams.CONFIG_MULTICAST_DS_TWR
+                }
 
+                RangingParameters.CONFIG_UNICAST_DS_TWR_NO_AOA -> {
+                    isAoaRequested = false
+                    UwbRangingParams.CONFIG_UNICAST_DS_TWR
+                }
+                RangingParameters.CONFIG_PROVISIONED_UNICAST_DS_TWR -> {
+                    isAoaRequested = !mRangingParams!!.isAoaDisabled
+                    UwbRangingParams.CONFIG_PROVISIONED_UNICAST_DS_TWR
+                }
+
+                RangingParameters.CONFIG_PROVISIONED_MULTICAST_DS_TWR -> {
+                    isAoaRequested = !mRangingParams!!.isAoaDisabled
+                    UwbRangingParams.CONFIG_PROVISIONED_MULTICAST_DS_TWR
+                }
+                RangingParameters.CONFIG_PROVISIONED_UNICAST_DS_TWR_NO_AOA -> {
+                    isAoaRequested = false
+                    UwbRangingParams.CONFIG_UNICAST_DS_TWR
+                }
+                RangingParameters.CONFIG_PROVISIONED_INDIVIDUAL_MULTICAST_DS_TWR -> {
+                    isAoaRequested = !mRangingParams!!.isAoaDisabled
+                    UwbRangingParams.CONFIG_PROVISIONED_INDIVIDUAL_MULTICAST_DS_TWR
+                }
+
+                else ->
+                    throw IllegalArgumentException("The selected UWB Config Id is not a valid id.")
+            }
         return UwbRangingParams.Builder(
                 mRangingParams!!.sessionId,
-                mRangingParams!!.uwbConfigType,
+                configId,
                 convertUwbAndroidxAddressToUwbRangingAddress(localAddress),
                 convertUwbAndroidxAddressToUwbRangingAddress(peerAddress),
             )
@@ -281,7 +317,7 @@ internal abstract class UwbClientSessionScopeRangingImpl(
     fun buildSessionConfig(): SessionConfig {
         val sessionConfigBuilder =
             SessionConfig.Builder()
-                .setAngleOfArrivalNeeded(!mRangingParams!!.isAoaDisabled)
+                .setAngleOfArrivalNeeded(isAoaRequested)
                 .setSensorFusionParams(
                     SensorFusionParams.Builder().setSensorFusionEnabled(true).build()
                 )

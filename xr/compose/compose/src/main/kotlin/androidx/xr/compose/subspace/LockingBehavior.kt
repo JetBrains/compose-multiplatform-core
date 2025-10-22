@@ -26,11 +26,8 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.scene
 import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
  * A LockingBehavior controls the motion of content as it is following (or "locked" to) another
@@ -101,7 +98,7 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
     private var animationCounter: Int = 999
     private var startPose: Pose = Pose.Identity
 
-    private fun animate() {
+    private suspend fun animate() {
         // Apply a Hermite easing to the interpolation
         var t: Float = animationCounter.toFloat() / totalFrames
         t = t * t * (HERMITE_CONSTANT1 - HERMITE_CONSTANT2 * t)
@@ -109,14 +106,12 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
         trailingEntity?.poseInMeters = nextPose
         animationCounter++
         if (animationCounter <= totalFrames) {
-            CoroutineScope(Dispatchers.Main).launch {
-                delay(TIME_BETWEEN_ANIMATION_TICKS)
-                animate()
-            }
+            delay(TIME_BETWEEN_ANIMATION_TICKS)
+            animate()
         }
     }
 
-    fun startAnimationCriteria(): Boolean {
+    private fun shouldStartAnimation(): Boolean {
         val trailingEntityCurrentPose = trailingEntity?.poseInMeters ?: Pose.Identity
 
         val translationDelta =
@@ -127,14 +122,14 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
         return translationDelta > TRANSLATION_THRESHOLD || rotationDelta > ROTATION_THRESHOLD
     }
 
-    fun handleNewPose() {
+    private suspend fun handleNewPose() {
         // If animation is in progress in another thread, do nothing.
         if (animationCounter <= totalFrames) {
             return
         }
         // If the target has moved significantly enough, start the animation over.
         else {
-            if (startAnimationCriteria()) {
+            if (shouldStartAnimation()) {
                 val trailingEntityCurrentPose = trailingEntity?.poseInMeters ?: Pose.Identity
                 startPose = trailingEntityCurrentPose
                 animationCounter = 1
@@ -152,7 +147,7 @@ internal class LazyLockingBehavior(private val durationMs: Int = 1500) : Locking
         this.trailingEntity = trailingEntity
         if (lockTo != BodyPart.Head) return
 
-        // TODO http://b/448689233 Initial head pose data is not reliable.
+        // TODO(b/448689233): Initial head pose data is not reliable.
         // Skipping over it with delay.
         delay(1000)
 

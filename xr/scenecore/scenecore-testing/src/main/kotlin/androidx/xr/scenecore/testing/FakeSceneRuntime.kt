@@ -28,18 +28,18 @@ import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper
-import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.CameraViewScenePose
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
 import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
-import androidx.xr.scenecore.runtime.HeadActivityPose
+import androidx.xr.scenecore.runtime.HeadScenePose
 import androidx.xr.scenecore.runtime.InputEventListener
 import androidx.xr.scenecore.runtime.InteractableComponent
 import androidx.xr.scenecore.runtime.LoggingEntity
 import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper
 import androidx.xr.scenecore.runtime.PanelEntity
-import androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose
+import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose
 import androidx.xr.scenecore.runtime.PixelDimensions
 import androidx.xr.scenecore.runtime.PlaneSemantic
 import androidx.xr.scenecore.runtime.PlaneType
@@ -105,10 +105,10 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
 
     override val activitySpace: FakeActivitySpace = FakeActivitySpace()
 
-    override val headActivityPose: HeadActivityPose? = FakeHeadActivityPose()
+    override val headActivityPose: HeadScenePose? = FakeHeadScenePose()
 
-    override val perceptionSpaceActivityPose: PerceptionSpaceActivityPose =
-        FakePerceptionSpaceActivityPose()
+    override val perceptionSpaceActivityPose: PerceptionSpaceScenePose =
+        FakePerceptionSpaceScenePose()
 
     override val soundPoolExtensionsWrapper: SoundPoolExtensionsWrapper =
         FakeSoundPoolExtensionsWrapper()
@@ -126,18 +126,18 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
     override var spatialModeChangeListener: SpatialModeChangeListener? =
         FakeSpatialModeChangeListener()
 
-    private val cameraViewActivityPoseL: FakeCameraViewActivityPose =
-        FakeCameraViewActivityPose(CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE)
+    private val cameraViewActivityPoseL: FakeCameraViewScenePose =
+        FakeCameraViewScenePose(CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE)
 
-    private val cameraViewActivityPoseR: FakeCameraViewActivityPose =
-        FakeCameraViewActivityPose(CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE)
+    private val cameraViewActivityPoseR: FakeCameraViewScenePose =
+        FakeCameraViewScenePose(CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE)
 
     override fun getCameraViewActivityPose(
-        @CameraViewActivityPose.CameraType cameraType: Int
-    ): CameraViewActivityPose? {
+        @CameraViewScenePose.CameraType cameraType: Int
+    ): CameraViewScenePose? {
         return when (cameraType) {
-            CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE -> cameraViewActivityPoseL
-            CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE -> cameraViewActivityPoseR
+            CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE -> cameraViewActivityPoseL
+            CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE -> cameraViewActivityPoseR
             else -> null
         }
     }

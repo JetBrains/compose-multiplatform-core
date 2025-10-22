@@ -403,6 +403,8 @@ public class Rc {
 
         /** force measure every pass (not recommended) */
         public static final int MEASURE_EVERY_TIME = DrawTextAnchored.MEASURE_EVERY_TIME;
+        /** force measure every pass (not recommended) */
+        public static final int BASELINE_RELATIVE = DrawTextAnchored.BASELINE_RELATIVE;
     }
 
     /** Used in Haptic */

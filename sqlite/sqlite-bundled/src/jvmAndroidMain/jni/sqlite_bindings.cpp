@@ -84,6 +84,13 @@ static jlong JNICALL nativeOpen(
         return 0;
     }
 
+    // Enable extended error codes
+    rc = sqlite3_extended_result_codes(db, 1);
+    if (rc != SQLITE_OK) {
+        throwSQLiteException(env, rc, nullptr);
+        return 0;
+    }
+
     // Enable the C function to load extensions but not the load_extension() SQL function.
     rc = sqlite3_db_config(db, SQLITE_DBCONFIG_ENABLE_LOAD_EXTENSION, 1, 0);
     if (rc != SQLITE_OK) {

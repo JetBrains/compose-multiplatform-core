@@ -49,7 +49,7 @@ dependencies {
     implementation(project(":xr:scenecore:scenecore"))
     implementation(project(":xr:scenecore:scenecore-spatial-core"))
 
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
 
     // TODO(b/374796755): Write unit-tests for this test app
 }

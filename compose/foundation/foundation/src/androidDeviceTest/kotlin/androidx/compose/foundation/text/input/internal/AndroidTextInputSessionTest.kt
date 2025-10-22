@@ -245,6 +245,7 @@ class AndroidTextInputSessionTest {
             updateSelectionState = null,
             stylusHandwritingTrigger = null,
             viewConfiguration = null,
+            updateTouchMode = {},
         )
 
     private inner class TestTextElement : ModifierNodeElement<TestTextNode>() {

@@ -47,7 +47,7 @@ import androidx.sqlite.db.SupportSQLiteQuery
 import com.google.common.collect.ImmutableListMultimap
 import com.google.common.collect.ImmutableMap
 import com.google.common.collect.ImmutableSetMultimap
-import io.reactivex.Flowable
+import io.reactivex.rxjava3.core.Flowable
 import java.nio.ByteBuffer
 import java.util.Date
 import kotlinx.coroutines.flow.Flow

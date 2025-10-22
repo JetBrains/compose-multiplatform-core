@@ -554,6 +554,38 @@ class SessionConfigTest {
         assertThat(legacySessionConfig.isLegacy).isTrue()
     }
 
+    @Test
+    fun sessionConfig_toStringContainsAllPropertiesCorrectly() {
+        assertThat(SessionConfig(useCases, viewPort, effects, frameRateRange).toString()).apply {
+            contains("useCases=$useCases")
+            contains("viewPort=$viewPort")
+            contains("effects=$effects")
+            contains("frameRateRange=$frameRateRange")
+            contains("requiredFeatureGroup=[]")
+            contains("preferredFeatureGroup=[]")
+        }
+
+        val requiredFeatures = setOf(HDR_HLG10)
+        val preferredFeatures = listOf(FPS_60, PREVIEW_STABILIZATION)
+
+        assertThat(
+                SessionConfig(
+                        useCases,
+                        requiredFeatureGroup = requiredFeatures,
+                        preferredFeatureGroup = preferredFeatures,
+                    )
+                    .toString()
+            )
+            .apply {
+                contains("useCases=$useCases")
+                contains("requiredFeatureGroup=$requiredFeatures")
+                contains("preferredFeatureGroup=$preferredFeatures")
+                contains("viewPort=null")
+                contains("effects=[]")
+                contains("frameRateRange=[0, 0]")
+            }
+    }
+
     data class FakeDynamicRangeFeature(private val dynamicRange: DynamicRange) :
         GroupableFeature() {
         override val featureTypeInternal: FeatureTypeInternal = FeatureTypeInternal.DYNAMIC_RANGE

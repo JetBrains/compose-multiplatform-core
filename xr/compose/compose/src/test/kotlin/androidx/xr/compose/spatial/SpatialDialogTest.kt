@@ -69,7 +69,6 @@ import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import java.util.UUID
 import kotlin.test.Ignore
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -78,9 +77,7 @@ import org.junit.runner.RunWith
 /** Tests for [SpatialDialog]. */
 @RunWith(AndroidJUnit4::class)
 class SpatialDialogTest {
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun spatialDialog_dismissOnBackPress_setToTrue_dismissDialog() {

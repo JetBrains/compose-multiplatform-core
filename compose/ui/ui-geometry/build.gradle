@@ -77,6 +77,9 @@ androidXMultiplatform {
 
         androidDeviceTest {
             dependsOn(jvmTest)
+            dependencies {
+                implementation(libs.testRunner)
+            }
         }
 
         androidHostTest {

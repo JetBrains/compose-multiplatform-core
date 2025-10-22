@@ -23,7 +23,7 @@ import java.util.concurrent.Executor
 
 /** Interface for an XR Runtime Entity. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface Entity : ActivityPose {
+public interface Entity : ScenePose {
 
     /** Sets the provided Entities to be children of the Entity. */
     public val children: List<Entity>

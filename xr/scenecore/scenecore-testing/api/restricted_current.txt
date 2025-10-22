@@ -13,21 +13,6 @@ package androidx.xr.scenecore.testing {
     property public android.app.Activity movedActivity;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeActivityPose implements androidx.xr.scenecore.runtime.ActivityPose {
-    ctor public FakeActivityPose();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getActivitySpacePose();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getActivitySpaceScale();
-    method @InaccessibleFromKotlin public final androidx.xr.scenecore.runtime.HitTestResult getHitTestResult();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getWorldSpaceScale();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.HitTestResult> hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ActivityPose.HitTestFilterValue int hitTestFilter);
-    method @InaccessibleFromKotlin public final void setHitTestResult(androidx.xr.scenecore.runtime.HitTestResult);
-    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.ActivityPose destination);
-    property public androidx.xr.runtime.math.Pose activitySpacePose;
-    property public androidx.xr.runtime.math.Vector3 activitySpaceScale;
-    property public final androidx.xr.scenecore.runtime.HitTestResult hitTestResult;
-    property public androidx.xr.runtime.math.Vector3 worldSpaceScale;
-  }
-
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeActivitySpace extends androidx.xr.scenecore.testing.FakeSystemSpaceEntity implements androidx.xr.scenecore.runtime.ActivitySpace {
     ctor public FakeActivitySpace();
     method public void addOnBoundsChangedListener(androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener listener);
@@ -35,7 +20,7 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getBounds();
     method @InaccessibleFromKotlin public java.util.Set<androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener> getOnBoundsChangedListeners();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getRecommendedContentBoxInFullSpace();
-    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.HitTestResult> hitTestRelativeToActivityPose(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ActivityPose.HitTestFilterValue int hitTestFilter, androidx.xr.scenecore.runtime.ActivityPose activityPose);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.HitTestResult> hitTestRelativeToActivityPose(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue int hitTestFilter, androidx.xr.scenecore.runtime.ScenePose scenePose);
     method public void onBoundsChanged(androidx.xr.scenecore.runtime.Dimensions bounds);
     method public void removeOnBoundsChangedListener(androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener listener);
     method @InaccessibleFromKotlin public void setActivitySpaceHitTestResult(androidx.xr.scenecore.runtime.HitTestResult);
@@ -80,17 +65,17 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.runtime.NodeHolder<? extends java.lang.Object?>? getSubspaceNodeHolder();
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeCameraViewActivityPose extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.runtime.CameraViewActivityPose {
-    ctor public FakeCameraViewActivityPose();
-    ctor public FakeCameraViewActivityPose(optional @androidx.xr.scenecore.runtime.CameraViewActivityPose.CameraType int cameraType);
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeCameraViewScenePose extends androidx.xr.scenecore.testing.FakeScenePose implements androidx.xr.scenecore.runtime.CameraViewScenePose {
+    ctor public FakeCameraViewScenePose();
+    ctor public FakeCameraViewScenePose(optional @androidx.xr.scenecore.runtime.CameraViewScenePose.CameraType int cameraType);
     method @InaccessibleFromKotlin public int getCameraType();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PixelDimensions getDisplayResolutionInPixels();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov getFov();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.CameraViewScenePose.Fov getFov();
     method @InaccessibleFromKotlin public void setDisplayResolutionInPixels(androidx.xr.scenecore.runtime.PixelDimensions);
-    method @InaccessibleFromKotlin public void setFov(androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov);
+    method @InaccessibleFromKotlin public void setFov(androidx.xr.scenecore.runtime.CameraViewScenePose.Fov);
     property public int cameraType;
     property public androidx.xr.scenecore.runtime.PixelDimensions displayResolutionInPixels;
-    property public androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov fov;
+    property public androidx.xr.scenecore.runtime.CameraViewScenePose.Fov fov;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeComponent implements androidx.xr.scenecore.runtime.Component {
@@ -102,7 +87,7 @@ package androidx.xr.scenecore.testing {
     property public final boolean canBeAttached;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeEntity extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.runtime.Entity {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeEntity extends androidx.xr.scenecore.testing.FakeScenePose implements androidx.xr.scenecore.runtime.Entity {
     ctor public FakeEntity();
     method public void addChild(androidx.xr.scenecore.runtime.Entity child);
     method public void addChildren(java.util.List<? extends androidx.xr.scenecore.runtime.Entity> children);
@@ -179,8 +164,8 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.runtime.GltfFeature createWithMockFeature(androidx.xr.scenecore.runtime.GltfFeature feature, androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeHeadActivityPose extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.runtime.HeadActivityPose {
-    ctor public FakeHeadActivityPose();
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeHeadScenePose extends androidx.xr.scenecore.testing.FakeScenePose implements androidx.xr.scenecore.runtime.HeadScenePose {
+    ctor public FakeHeadScenePose();
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeInteractableComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.InteractableComponent {
@@ -230,8 +215,8 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.runtime.PixelDimensions sizeInPixels;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakePerceptionSpaceActivityPose extends androidx.xr.scenecore.testing.FakeActivityPose implements androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose {
-    ctor public FakePerceptionSpaceActivityPose();
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakePerceptionSpaceScenePose extends androidx.xr.scenecore.testing.FakeScenePose implements androidx.xr.scenecore.runtime.PerceptionSpaceScenePose {
+    ctor public FakePerceptionSpaceScenePose();
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakePointerCaptureComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.PointerCaptureComponent {
@@ -521,6 +506,21 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.testing.FakeResource copy(optional long token);
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeScenePose implements androidx.xr.scenecore.runtime.ScenePose {
+    ctor public FakeScenePose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getActivitySpacePose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getActivitySpaceScale();
+    method @InaccessibleFromKotlin public final androidx.xr.scenecore.runtime.HitTestResult getHitTestResult();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getWorldSpaceScale();
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.HitTestResult> hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue int hitTestFilter);
+    method @InaccessibleFromKotlin public final void setHitTestResult(androidx.xr.scenecore.runtime.HitTestResult);
+    method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.ScenePose destination);
+    property public androidx.xr.runtime.math.Pose activitySpacePose;
+    property public androidx.xr.runtime.math.Vector3 activitySpaceScale;
+    property public final androidx.xr.scenecore.runtime.HitTestResult hitTestResult;
+    property public androidx.xr.runtime.math.Vector3 worldSpaceScale;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntime implements androidx.xr.scenecore.runtime.RenderingEntityFactory androidx.xr.scenecore.runtime.SceneRuntime {
     ctor public FakeSceneRuntime();
     ctor public FakeSceneRuntime(optional java.util.concurrent.Executor? executor);
@@ -545,16 +545,16 @@ package androidx.xr.scenecore.testing {
     method public void enablePanelDepthTest(boolean enabled);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.testing.FakeActivitySpace getActivitySpace();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper getAudioTrackExtensionsWrapper();
-    method public androidx.xr.scenecore.runtime.CameraViewActivityPose? getCameraViewActivityPose(@androidx.xr.scenecore.runtime.CameraViewActivityPose.CameraType int cameraType);
+    method public androidx.xr.scenecore.runtime.CameraViewScenePose? getCameraViewActivityPose(@androidx.xr.scenecore.runtime.CameraViewScenePose.CameraType int cameraType);
     method @InaccessibleFromKotlin public float getDeviceDpPerMeter();
     method @InaccessibleFromKotlin public java.util.concurrent.Executor? getExecutor();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.HeadActivityPose? getHeadActivityPose();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.HeadScenePose? getHeadActivityPose();
     method @InaccessibleFromKotlin public android.app.Activity? getLastSetPreferredAspectRatioActivity();
     method @InaccessibleFromKotlin public float getLastSetPreferredAspectRatioRatio();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PanelEntity getMainPanelEntity();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper getMediaPlayerExtensionsWrapper();
     method @InaccessibleFromKotlin public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions>> getPerceivedResolutionChangedMap();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose getPerceptionSpaceActivityPose();
+    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PerceptionSpaceScenePose getPerceptionSpaceActivityPose();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper getSoundPoolExtensionsWrapper();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialCapabilities getSpatialCapabilities();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SpatialEnvironment getSpatialEnvironment();
@@ -577,13 +577,13 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper audioTrackExtensionsWrapper;
     property public float deviceDpPerMeter;
     property public java.util.concurrent.Executor? executor;
-    property public androidx.xr.scenecore.runtime.HeadActivityPose? headActivityPose;
+    property public androidx.xr.scenecore.runtime.HeadScenePose? headActivityPose;
     property public android.app.Activity? lastSetPreferredAspectRatioActivity;
     property public float lastSetPreferredAspectRatioRatio;
     property public androidx.xr.scenecore.runtime.PanelEntity mainPanelEntity;
     property public androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper mediaPlayerExtensionsWrapper;
     property public java.util.Map<java.util.concurrent.Executor,java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions>> perceivedResolutionChangedMap;
-    property public androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose perceptionSpaceActivityPose;
+    property public androidx.xr.scenecore.runtime.PerceptionSpaceScenePose perceptionSpaceActivityPose;
     property public androidx.xr.scenecore.runtime.SoundPoolExtensionsWrapper soundPoolExtensionsWrapper;
     property public androidx.xr.scenecore.runtime.SpatialCapabilities spatialCapabilities;
     property public androidx.xr.scenecore.runtime.SpatialEnvironment spatialEnvironment;

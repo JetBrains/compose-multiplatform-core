@@ -27,7 +27,6 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.scenecore.HitTestResult.SurfaceType
 import androidx.xr.scenecore.InputEvent.HitInfo
 import androidx.xr.scenecore.ScenePose.HitTestFilter
-import androidx.xr.scenecore.runtime.ActivityPose.HitTestFilter as RtHitTestFilter
 import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement as RtAnchorPlacement
 import androidx.xr.scenecore.runtime.Dimensions as RtDimensions
@@ -42,6 +41,7 @@ import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
 import androidx.xr.scenecore.runtime.PlaneSemantic as RtPlaneSemantic
 import androidx.xr.scenecore.runtime.PlaneType as RtPlaneType
 import androidx.xr.scenecore.runtime.ResizeEvent as RtResizeEvent
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilter as RtHitTestFilter
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.Space as RtSpace
 import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities

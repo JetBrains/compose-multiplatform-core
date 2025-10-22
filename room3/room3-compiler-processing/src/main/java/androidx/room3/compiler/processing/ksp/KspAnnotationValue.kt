@@ -45,8 +45,12 @@ internal class KspAnnotationValue(
     override val value: Any? by lazy { valueProvider.invoke() }
 
     companion object {
-        fun create(env: KspProcessingEnv, valueArgument: KSValueArgument): KspAnnotationValue {
-            val method = findMethod(env, valueArgument)
+        fun create(
+            env: KspProcessingEnv,
+            annotation: KSAnnotation,
+            valueArgument: KSValueArgument,
+        ): KspAnnotationValue {
+            val method = findMethod(env, annotation, valueArgument)
             val valueType = method.returnType
             return KspAnnotationValue(
                 env,
@@ -59,11 +63,10 @@ internal class KspAnnotationValue(
 
         private fun findMethod(
             env: KspProcessingEnv,
+            annotation: KSAnnotation,
             valueArgument: KSValueArgument,
         ): XMethodElement {
-            val ksAnnotation = (valueArgument.parent as KSAnnotation)
-            val ksDeclaration =
-                ksAnnotation.annotationType.resolve().declaration.replaceTypeAliases()
+            val ksDeclaration = annotation.annotationType.resolve().declaration.replaceTypeAliases()
             val typeElement =
                 env.wrapClassDeclarationForNonEnumEntry(ksDeclaration as KSClassDeclaration)
             val valueName =

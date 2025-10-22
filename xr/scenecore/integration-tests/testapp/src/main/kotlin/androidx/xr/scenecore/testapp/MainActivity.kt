@@ -20,6 +20,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
@@ -27,6 +28,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.accessibilitytest.AccessibilityTestActivity
 import androidx.xr.scenecore.testapp.activitypanel.ActivityPanelActivity
 import androidx.xr.scenecore.testapp.anchorentity.AnchorEntityActivity
@@ -54,6 +57,8 @@ import androidx.xr.scenecore.testapp.visibility.VisibilityActivity
 
 class MainActivity : AppCompatActivity() {
 
+    private var session: Session? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -64,7 +69,7 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val session: Session? = createSession(this)
+        session = createSession(this)
         if (session == null) this.finish()
 
         // Top bar
@@ -155,8 +160,10 @@ class MainActivity : AppCompatActivity() {
 
             Tests.VISIBILITY_TEST.test -> startActivity(createIntent<VisibilityActivity>())
 
-            Tests.FSM_HSM_TRANSITION_TEST.test ->
-                startActivity(createIntent<FsmHsmTransitionActivity>())
+            Tests.FSM_HSM_TRANSITION_TEST.test -> {
+                val intent = Intent(this@MainActivity, FsmHsmTransitionActivity::class.java)
+                fsmHsmTransitionLauncher.launch(intent)
+            }
 
             Tests.SPATIAL_USER_TEST.test -> startActivity(createIntent<SpatialUserActivity>())
 
@@ -242,6 +249,33 @@ class MainActivity : AppCompatActivity() {
     }
 
     private inline fun <reified T> createIntent(): Intent = Intent(this@MainActivity, T::class.java)
+
+    // TODO: b/451293148 - Main Panel size is changed after a child activity with a resizable
+    //  component resized the panel and finished.
+    private val fsmHsmTransitionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            run {
+                if (result.resultCode == RESULT_OK) {
+                    val data: Intent? = result.data
+
+                    val defaultPanelSizeWidth: Float? =
+                        data?.getFloatExtra("defaultPanelSizeWidth", 1.28f)
+                    val defaultPanelSizeHeight: Float? =
+                        data?.getFloatExtra("defaultPanelSizeHeight", 0.8f)
+
+                    if (defaultPanelSizeWidth != null && defaultPanelSizeHeight != null) {
+                        val defaultPanelSize =
+                            FloatSize2d(defaultPanelSizeWidth, defaultPanelSizeHeight)
+                        session?.scene?.mainPanelEntity?.size = defaultPanelSize
+
+                        Log.d(
+                            "MainActivity",
+                            "FsmHsmTransitionActivity finished, defaultPanelSize: $defaultPanelSize",
+                        )
+                    }
+                }
+            }
+        }
 
     companion object {
         const val ACTIVITY_NAME = "MainActivity"

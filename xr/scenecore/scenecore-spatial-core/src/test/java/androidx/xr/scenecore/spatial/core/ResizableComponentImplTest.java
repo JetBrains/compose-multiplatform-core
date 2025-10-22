@@ -101,8 +101,8 @@ public class ResizableComponentImplTest {
                     /* unscaledGravityAlignedActivitySpace= */ false,
                     mFakeExecutor);
     private final AndroidXrEntity mActivitySpaceRoot = Mockito.mock(AndroidXrEntity.class);
-    private final PerceptionSpaceActivityPoseImpl mPerceptionSpaceActivityPose =
-            new PerceptionSpaceActivityPoseImpl(mActivitySpaceImpl, mActivitySpaceRoot);
+    private final PerceptionSpaceScenePoseImpl mPerceptionSpaceScenePose =
+            new PerceptionSpaceScenePoseImpl(mActivitySpaceImpl, mActivitySpaceRoot);
     private final PanelShadowRenderer mPanelShadowRenderer =
             Mockito.mock(PanelShadowRenderer.class);
 
@@ -1101,7 +1101,7 @@ public class ResizableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1134,7 +1134,7 @@ public class ResizableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);
@@ -1200,7 +1200,7 @@ public class ResizableComponentImplTest {
                         mXrExtensions,
                         mActivitySpaceImpl,
                         mActivitySpaceRoot,
-                        mPerceptionSpaceActivityPose,
+                        mPerceptionSpaceScenePose,
                         mEntityManager,
                         mPanelShadowRenderer,
                         mFakeExecutor);

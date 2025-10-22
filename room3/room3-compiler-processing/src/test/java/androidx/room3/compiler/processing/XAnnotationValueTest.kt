@@ -18,6 +18,7 @@ package androidx.room3.compiler.processing
 
 import androidx.kruth.assertThat
 import androidx.room3.compiler.codegen.JArrayTypeName
+import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
@@ -91,6 +92,60 @@ class XAnnotationValueTest(
             )
         } else {
             runProcessorTest(sources = sources, handler = handler, kotlincArguments = kotlincArgs)
+        }
+    }
+
+    // Regression test for https://github.com/google/ksp/issues/2637
+    @Test
+    fun testAnnotationsWithSameNameAndValue() {
+        val javaSource =
+            Source.java(
+                "test.MyClass",
+                """
+                package test;
+                @interface MyIntAnnotation {
+                    int value();
+                }
+                @interface MyLongAnnotation {
+                    long value();
+                }
+                @MyIntAnnotation(100)
+                @MyLongAnnotation(100)
+                class MyClass {}
+                """
+                    .trimIndent(),
+            ) as Source.JavaSource
+        val kotlinSource =
+            Source.kotlin(
+                "test.MyClass.kt",
+                """
+                package test
+                annotation class MyIntAnnotation(val value: Int)
+                annotation class MyLongAnnotation(val value: Long)
+                @MyIntAnnotation(100)
+                @MyLongAnnotation(100)
+                class MyClass
+                """
+                    .trimIndent(),
+            ) as Source.KotlinSource
+        runTest(javaSource, kotlinSource) { invocation ->
+            fun testAnnotation(
+                annotationName: String,
+                valueName: String,
+                valueType: XTypeName,
+                value: Any?,
+            ) {
+                val myClass = invocation.processingEnv.requireTypeElement("test.MyClass")
+                val myAnnotation = myClass.getAnnotation(annotationName)!!
+                val myAnnotationValue = myAnnotation.annotationValues.single()
+                assertThat(myAnnotation.qualifiedName).isEqualTo(annotationName)
+                assertThat(myAnnotationValue.name).isEqualTo(valueName)
+                assertThat(myAnnotationValue.valueType.asTypeName()).isEqualTo(valueType)
+                assertThat(myAnnotationValue.value).isEqualTo(value)
+            }
+
+            testAnnotation("test.MyIntAnnotation", "value", XTypeName.PRIMITIVE_INT, 100)
+            testAnnotation("test.MyLongAnnotation", "value", XTypeName.PRIMITIVE_LONG, 100)
         }
     }
 

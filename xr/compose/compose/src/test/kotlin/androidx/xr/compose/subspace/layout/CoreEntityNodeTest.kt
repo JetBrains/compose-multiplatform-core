@@ -28,7 +28,6 @@ import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.scenecore.PanelEntity
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -74,9 +73,7 @@ class CoreEntityNodeTest {
         }
     }
 
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun coreEntityNode_alpha_shouldBeApplied() {
@@ -132,6 +129,25 @@ class CoreEntityNodeTest {
         val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
         assertNotNull(panelSceneCoreEntity)
         assertThat(panelSceneCoreEntity.getAlpha()).isEqualTo(0.25f)
+    }
+
+    @Test
+    fun coreEntityNode_alpha_shouldClampAppendedResult() {
+        composeTestRule.setContentWithCompatibilityForXr {
+            ApplicationSubspace {
+                SpatialAndroidViewPanel(
+                    factory = { View(it) },
+                    SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
+                        .modifyCoreEntity { setOrAppendAlpha(4f) }
+                        .testTag("panel"),
+                )
+            }
+        }
+
+        val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
+        val panelSceneCoreEntity = panelNode.semanticsEntity as PanelEntity?
+        assertNotNull(panelSceneCoreEntity)
+        assertThat(panelSceneCoreEntity.getAlpha()).isEqualTo(1f)
     }
 
     @Test

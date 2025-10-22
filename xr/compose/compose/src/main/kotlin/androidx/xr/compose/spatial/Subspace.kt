@@ -223,7 +223,9 @@ private fun ApplicationSubspace(
             subspaceRoot.dispose()
             try {
                 session.scene.mainPanelEntity.setEnabled(true)
-            } catch (_: Exception) {
+            } catch (_: IllegalStateException) {
+                // TODO(b/450063142) The shutdown order of Impress, SceneCore, and Compose should be
+                //  fixed to avoid having to catch this exception here.
                 // When this Composable is disposed, it's possible the Activity is already
                 // being destroyed, which also destroys the underlying session. Accessing
                 // `session.scene` would then throw an IllegalStateException, as checked
@@ -477,7 +479,7 @@ public fun UserSubspace(
         }
     }
 
-    LaunchedEffect(behavior) {
+    LaunchedEffect(behavior, lockTo, lockDimensions) {
         behavior.configure(
             session = session,
             trailingEntity = userSubspaceRootNode,

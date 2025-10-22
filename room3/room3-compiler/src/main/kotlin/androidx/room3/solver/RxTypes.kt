@@ -18,11 +18,8 @@ package androidx.room3.solver
 
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XMemberName
-import androidx.room3.ext.RoomRxJava2MemberNames
-import androidx.room3.ext.RoomRxJava2TypeNames
 import androidx.room3.ext.RoomRxJava3MemberNames
 import androidx.room3.ext.RoomRxJava3TypeNames
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.processor.ProcessorErrors
 
@@ -32,34 +29,6 @@ internal enum class RxType(
     val factoryMethodName: XMemberName,
     val canBeNull: Boolean = false,
 ) {
-    // RxJava2 types
-    RX2_FLOWABLE(
-        version = RxVersion.TWO,
-        className = RxJava2TypeNames.FLOWABLE,
-        factoryMethodName = RoomRxJava2MemberNames.RX_ROOM_CREATE_FLOWABLE,
-    ),
-    RX2_OBSERVABLE(
-        version = RxVersion.TWO,
-        className = RxJava2TypeNames.OBSERVABLE,
-        factoryMethodName = RoomRxJava2MemberNames.RX_ROOM_CREATE_OBSERVABLE,
-    ),
-    RX2_SINGLE(
-        version = RxVersion.TWO,
-        className = RxJava2TypeNames.SINGLE,
-        factoryMethodName = RoomRxJava2MemberNames.RX_ROOM_CREATE_SINGLE,
-    ),
-    RX2_MAYBE(
-        version = RxVersion.TWO,
-        className = RxJava2TypeNames.MAYBE,
-        factoryMethodName = RoomRxJava2MemberNames.RX_ROOM_CREATE_MAYBE,
-        canBeNull = true,
-    ),
-    RX2_COMPLETABLE(
-        version = RxVersion.TWO,
-        className = RxJava2TypeNames.COMPLETABLE,
-        factoryMethodName = RoomRxJava2MemberNames.RX_ROOM_CREATE_COMPLETABLE,
-    ),
-    // RxJava3 types
     RX3_FLOWABLE(
         version = RxVersion.THREE,
         className = RxJava3TypeNames.FLOWABLE,
@@ -87,22 +56,15 @@ internal enum class RxType(
         factoryMethodName = RoomRxJava3MemberNames.RX_ROOM_CREATE_COMPLETABLE,
     );
 
-    fun isSingle() = this == RX2_SINGLE || this == RX3_SINGLE
+    fun isSingle() = this == RX3_SINGLE
 }
 
 internal enum class RxVersion(
     val rxMarkerClassName: XClassName,
-    val emptyResultExceptionClassName: XClassName,
     val missingArtifactMessage: String,
 ) {
-    TWO(
-        rxMarkerClassName = RoomRxJava2TypeNames.RX2_ROOM,
-        emptyResultExceptionClassName = RoomRxJava2TypeNames.RX2_EMPTY_RESULT_SET_EXCEPTION,
-        missingArtifactMessage = ProcessorErrors.MISSING_ROOM_RXJAVA2_ARTIFACT,
-    ),
     THREE(
         rxMarkerClassName = RoomRxJava3TypeNames.RX3_ROOM_MARKER,
-        emptyResultExceptionClassName = RoomRxJava3TypeNames.RX3_EMPTY_RESULT_SET_EXCEPTION,
         missingArtifactMessage = ProcessorErrors.MISSING_ROOM_RXJAVA3_ARTIFACT,
-    ),
+    )
 }

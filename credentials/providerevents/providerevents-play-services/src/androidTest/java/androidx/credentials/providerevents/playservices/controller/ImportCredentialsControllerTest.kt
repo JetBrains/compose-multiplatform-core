@@ -16,14 +16,21 @@
 
 package androidx.credentials.providerevents.playservices.controller
 
+import android.app.Activity
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.CancellationSignal
+import androidx.credentials.providerevents.IntentHandler
+import androidx.credentials.providerevents.exception.ImportCredentialsCancellationException
+import androidx.credentials.providerevents.exception.ImportCredentialsNoExportOptionException
+import androidx.credentials.providerevents.playservices.controller.ImportCredentialsController.Companion.maybeReportErrorResultCode
 import androidx.credentials.providerevents.transfer.ImportCredentialsRequest
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -74,5 +81,59 @@ class ImportCredentialsControllerTest {
         assertThat(actualPlayServicesRequest.uri).isEqualTo(testUri)
 
         tempFile.delete() // Clean up the temporary file
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun maybeReportErrorResultCode_resultCodeOk() {
+        val result =
+            maybeReportErrorResultCode(
+                Activity.RESULT_OK,
+                { s, f -> f() },
+                { e -> run { Assert.fail("No error should be thrown") } },
+                CancellationSignal(),
+                null,
+            )
+        assertThat(result).isFalse()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun maybeReportErrorResultCode_resultCodeCancelled() {
+        val result =
+            maybeReportErrorResultCode(
+                Activity.RESULT_CANCELED,
+                { s, f -> f() },
+                { e ->
+                    run {
+                        assertThat(e)
+                            .isInstanceOf(ImportCredentialsCancellationException::class.java)
+                    }
+                },
+                CancellationSignal(),
+                null,
+            )
+        assertThat(result).isTrue()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun maybeReportErrorResultCode_providerException() {
+        val exception = ImportCredentialsNoExportOptionException("no export entry")
+        val result =
+            maybeReportErrorResultCode(
+                Activity.RESULT_CANCELED,
+                { s, f -> f() },
+                { e ->
+                    run {
+                        assertThat(e)
+                            .isInstanceOf(ImportCredentialsNoExportOptionException::class.java)
+                        assertThat(e.errorMessage).isEqualTo(exception.errorMessage)
+                    }
+                },
+                CancellationSignal(),
+                Intent().apply { IntentHandler.setImportCredentialsException(this, exception) },
+            )
+        assertThat(result).isTrue()
     }
 }

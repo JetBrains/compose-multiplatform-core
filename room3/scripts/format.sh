@@ -15,10 +15,8 @@
   :room3:room3-migration:ktformat \
   :room3:room3-paging:ktformat \
   :room3:room3-paging-guava:ktformat \
-  :room3:room3-paging-rxjava2:ktformat \
   :room3:room3-paging-rxjava3:ktformat \
   :room3:room3-runtime:ktformat \
-  :room3:room3-rxjava2:ktformat \
   :room3:room3-rxjava3:ktformat \
   :room3:room3-sqlite-wrapper:ktformat \
   :room3:room3-testing:ktformat

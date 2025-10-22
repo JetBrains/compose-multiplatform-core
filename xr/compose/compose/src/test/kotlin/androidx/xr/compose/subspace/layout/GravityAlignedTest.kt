@@ -42,16 +42,13 @@ import androidx.xr.scenecore.Space
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Ignore
 import kotlin.test.assertNotNull
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class GravityAlignedTest {
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun gravityAligned_parentIsLevel_appliesNoRotation() {

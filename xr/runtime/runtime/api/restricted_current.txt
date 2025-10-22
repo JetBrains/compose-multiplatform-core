@@ -427,6 +427,7 @@ package androidx.xr.runtime.internal {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface JxrRuntime {
     method public default void configure(androidx.xr.runtime.Config config);
     method public default void destroy();
+    method public default androidx.xr.runtime.XrDisplay.BlendMode getPreferredBlendMode();
     method public default void initialize();
     method public default boolean isSupported(androidx.xr.runtime.Config.ConfigMode configMode);
     method public default void pause();

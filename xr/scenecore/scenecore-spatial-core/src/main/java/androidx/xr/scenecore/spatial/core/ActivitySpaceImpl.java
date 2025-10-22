@@ -24,12 +24,12 @@ import androidx.xr.runtime.math.Matrix4;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.runtime.ActivityPose;
 import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.HitTestResult;
-import androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose;
+import androidx.xr.scenecore.runtime.ScenePose;
 import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.SpaceValue;
 import androidx.xr.scenecore.runtime.SpatialModeChangeListener;
@@ -114,11 +114,11 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
     }
 
     public Pose getPoseInPerceptionSpace() {
-        PerceptionSpaceActivityPose perceptionSpaceActivityPose =
+        PerceptionSpaceScenePose perceptionSpaceScenePose =
                 mEntityManager
-                        .getSystemSpaceActivityPoseOfType(PerceptionSpaceActivityPose.class)
+                        .getSystemSpaceActivityPoseOfType(PerceptionSpaceScenePose.class)
                         .get(0);
-        return transformPoseTo(new Pose(), perceptionSpaceActivityPose);
+        return transformPoseTo(new Pose(), perceptionSpaceScenePose);
     }
 
     /** Returns the identity pose since we assume the activity space is the world space root. */
@@ -326,43 +326,43 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
             @NonNull Vector3 origin,
             @NonNull Vector3 direction,
             @HitTestFilterValue int hitTestFilter,
-            ActivityPose activityPose) {
+            ScenePose scenePose) {
 
         // Get the Translation of the origin relative to the ActivitySpace.
         Vector3 originInActivitySpace =
-                activityPose.transformPoseTo(new Pose(origin), this).getTranslation();
+                scenePose.transformPoseTo(new Pose(origin), this).getTranslation();
 
         // Get the Translation of the direction pose relative to the ActivitySpace.
-        Pose directionPoseInActivitySpace = activityPose.transformPoseTo(new Pose(direction), this);
+        Pose directionPoseInActivitySpace = scenePose.transformPoseTo(new Pose(direction), this);
 
         // Convert the direction pose to a direction vector relative to the ActivitySpace.
         Vector3 directionInActivitySpace =
                 directionPoseInActivitySpace
-                        .compose(activityPose.getActivitySpacePose().getInverse())
+                        .compose(scenePose.getActivitySpacePose().getInverse())
                         .getTranslation();
 
         ResolvableFuture<HitTestResult> updatedHitTestFuture = ResolvableFuture.create();
 
-        // Perform the hit test then convert the result to be relative to the provided ActivityPose.
+        // Perform the hit test then convert the result to be relative to the provided ScenePose.
         ListenableFuture<HitTestResult> hitTestFuture =
                 hitTest(originInActivitySpace, directionInActivitySpace, hitTestFilter);
         hitTestFuture.addListener(
                 () -> {
                     try {
-                        // Convert the hit test result to be relative to the provided ActivityPose.
+                        // Convert the hit test result to be relative to the provided ScenePose.
                         HitTestResult result = hitTestFuture.get();
                         // No need to do a conversion if the hit test result is not a hit.
                         if (result.getDistance() == Float.POSITIVE_INFINITY) {
                             updatedHitTestFuture.set(result);
                         }
                         // Update the hit position and surface normal to be relative to the
-                        // ActivityPose.
+                        // ScenePose.
                         Vector3 updatedHitPosition =
                                 result.getHitPosition() == null
                                         ? null
                                         : transformPoseTo(
                                                         new Pose(result.getHitPosition()),
-                                                        activityPose)
+                                                scenePose)
                                                 .getTranslation();
                         Vector3 updatedSurfaceNormal =
                                 result.getSurfaceNormal() == null
@@ -371,10 +371,10 @@ final class ActivitySpaceImpl extends SystemSpaceEntityImpl implements ActivityS
                                                         new Pose(
                                                                 new Vector3(
                                                                         result.getSurfaceNormal())),
-                                                        activityPose)
+                                                scenePose)
                                                 .compose(
                                                         this.transformPoseTo(
-                                                                        Pose.Identity, activityPose)
+                                                                        Pose.Identity, scenePose)
                                                                 .getInverse())
                                                 .getTranslation();
                         updatedHitTestFuture.set(

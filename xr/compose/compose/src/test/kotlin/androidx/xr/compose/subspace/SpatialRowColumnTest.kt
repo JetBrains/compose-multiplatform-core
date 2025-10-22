@@ -39,7 +39,6 @@ import androidx.xr.compose.testing.assertZPositionInRootIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.runtime.math.Quaternion
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,9 +46,8 @@ import org.junit.runner.RunWith
 /** Tests for [SpatialRow] and [SpatialColumn]. */
 @RunWith(AndroidJUnit4::class)
 class SpatialRowColumnTest {
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun spatialRowColumn_internalElementsAreLaidOutProperly() {

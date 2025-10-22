@@ -191,7 +191,12 @@ internal class KspProcessingEnv(
 
     fun wrapAnnotation(declaration: KSAnnotation) = kspResolver.wrapAnnotation(declaration)
 
-    fun wrapAnnotationValue(value: KSValueArgument) = kspResolver.wrapAnnotationValue(value)
+    fun wrapAnnotationValue(
+        // TODO: Remove this parameter once https://github.com/google/ksp/issues/2637 is fixed.
+        //  We need to pass in the parent annotation because KSValueArgument#parent is broken.
+        annotation: KSAnnotation,
+        value: KSValueArgument,
+    ) = kspResolver.wrapAnnotationValue(annotation, value)
 
     fun wrapKSFile(file: KSFile): KspMemberContainer = kspResolver.wrapKSFile(file)
 
@@ -525,7 +530,7 @@ private class KspResolver(val env: KspProcessingEnv, val resolver: Resolver) {
         return KspAnnotation(env, declaration)
     }
 
-    fun wrapAnnotationValue(value: KSValueArgument): KspAnnotationValue {
-        return KspAnnotationValue.create(env, value)
+    fun wrapAnnotationValue(annotation: KSAnnotation, value: KSValueArgument): KspAnnotationValue {
+        return KspAnnotationValue.create(env, annotation, value)
     }
 }

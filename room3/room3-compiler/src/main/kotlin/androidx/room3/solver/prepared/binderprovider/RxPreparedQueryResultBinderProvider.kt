@@ -58,9 +58,6 @@ internal constructor(val context: Context, private val rxType: RxType) :
     companion object {
         fun getAll(context: Context) =
             listOf(
-                RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX2_SINGLE),
-                RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX2_MAYBE),
-                RxCompletablePreparedQueryResultBinderProvider(context, RxType.RX2_COMPLETABLE),
                 RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX3_SINGLE),
                 RxSingleOrMaybePreparedQueryResultBinderProvider(context, RxType.RX3_MAYBE),
                 RxCompletablePreparedQueryResultBinderProvider(context, RxType.RX3_COMPLETABLE),

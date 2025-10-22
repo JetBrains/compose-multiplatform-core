@@ -67,22 +67,22 @@ final class FeaturesImpl implements Features {
             // SDK extension U Base features
             case Features.JOIN_SPEC_AND_QUALIFIED_ID:
                 // fall through
+            case Features.LIST_FILTER_QUERY_LANGUAGE:
+                // fall through
+            case Features.NUMERIC_SEARCH:
+                // fall through
+            case Features.VERBATIM_SEARCH:
+                // fall through
+            case Features.SEARCH_SPEC_PROPERTY_WEIGHTS:
+                // fall through
             case Features.SEARCH_SPEC_ADVANCED_RANKING_EXPRESSION:
                 return BuildCompat.T_EXTENSION_INT
                         >= AppSearchVersionUtil.TExtensionVersions.U_BASE;
 
             // Android U Features
-            case Features.LIST_FILTER_QUERY_LANGUAGE:
-                // fall through
-            case Features.NUMERIC_SEARCH:
-                // fall through
-            case Features.SEARCH_SPEC_PROPERTY_WEIGHTS:
-                // fall through
             case Features.SEARCH_SUGGESTION:
                 // fall through
             case Features.TOKENIZER_TYPE_RFC822:
-                // fall through
-            case Features.VERBATIM_SEARCH:
                 // fall through
             case Features.SET_SCHEMA_CIRCULAR_REFERENCES:
                 return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE;
@@ -93,17 +93,18 @@ final class FeaturesImpl implements Features {
                         >= AppSearchVersionUtil.TExtensionVersions.M2023_11;
 
             // SDK extension V Base features
+            case Features.LIST_FILTER_HAS_PROPERTY_FUNCTION:
+                // fall through
             case Features.SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES:
                 return BuildCompat.T_EXTENSION_INT
                         >= AppSearchVersionUtil.TExtensionVersions.V_BASE;
 
+            // Android V features
             case Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA:
                 // fall through
             case Features.SCHEMA_ADD_PARENT_TYPE:
                 // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES:
-                // fall through
-            case Features.LIST_FILTER_HAS_PROPERTY_FUNCTION:
                 // fall through
             case Features.SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG:
                 // fall through
@@ -146,6 +147,8 @@ final class FeaturesImpl implements Features {
 
             // M-2025-05 Features
             case Features.SCHEMA_SCORABLE_PROPERTY_CONFIG:
+                // fall through
+            case Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION:
                 return AppSearchVersionUtil.isAtLeastB()
                         || BuildCompat.T_EXTENSION_INT
                         >= AppSearchVersionUtil.TExtensionVersions.B_BASE;
@@ -156,9 +159,6 @@ final class FeaturesImpl implements Features {
                 // fall through
             case Features.SEARCH_SPEC_ADD_FILTER_DOCUMENT_IDS:
                 // TODO(b/367464836) : Update when feature is ready in service-appsearch.
-                // fall through
-            case Features.LIST_FILTER_MATCH_SCORE_EXPRESSION_FUNCTION:
-                // TODO(b/377215223) : Update when feature is ready in service-appsearch.
                 // fall through
 
             // Beyond Android B Features

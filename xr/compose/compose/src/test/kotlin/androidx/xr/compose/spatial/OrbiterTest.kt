@@ -60,7 +60,6 @@ import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,9 +70,7 @@ import org.mockito.kotlin.verify
 @RunWith(AndroidJUnit4::class)
 class OrbiterTest {
 
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     private val parentTestTag = "parent"
 

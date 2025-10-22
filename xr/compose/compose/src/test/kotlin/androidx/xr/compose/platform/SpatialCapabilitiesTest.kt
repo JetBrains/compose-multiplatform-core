@@ -26,7 +26,6 @@ import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.testing.session
 import androidx.xr.compose.testing.setContentWithCompatibilityForXr
 import androidx.xr.scenecore.scene
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,9 +33,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SpatialCapabilitiesTest {
 
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     private val spatialUiEnabledText = "Spatial UI Enabled"
     private val content3dEnabledText = "3D Content Enabled"

@@ -146,7 +146,6 @@ package androidx.room3 {
     method @Deprecated public void beginTransaction();
     method @WorkerThread public abstract void clearAllTables();
     method public void close();
-    method public androidx.sqlite.db.SupportSQLiteStatement compileStatement(String sql);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract java.util.List<androidx.room3.migration.Migration> createAutoMigrations(java.util.Map<kotlin.reflect.KClass<? extends androidx.room3.migration.AutoMigrationSpec>,? extends androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs);
     method protected abstract androidx.room3.InvalidationTracker createInvalidationTracker();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected abstract androidx.room3.RoomOpenDelegateMarker createOpenDelegate();
@@ -338,14 +337,6 @@ package androidx.room3 {
     property @VisibleForTesting public static int DESIRED_POOL_SIZE;
     property @VisibleForTesting public static int POOL_LIMIT;
     property @VisibleForTesting public java.util.TreeMap<java.lang.Integer,androidx.room3.RoomSQLiteQuery> queryPool;
-  }
-
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract class SharedSQLiteStatement {
-    ctor public SharedSQLiteStatement(androidx.room3.RoomDatabase database);
-    method public androidx.sqlite.db.SupportSQLiteStatement acquire();
-    method protected void assertNotMainThread();
-    method protected abstract String createQuery();
-    method public void release(androidx.sqlite.db.SupportSQLiteStatement statement);
   }
 
   public interface TransactionScope<T> extends androidx.room3.PooledConnection {

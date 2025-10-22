@@ -50,7 +50,7 @@ class PanelShadowRenderer {
     private static final float CORNER_RADIUS = 20f;
     private static final float PANEL_BORDER_ADDED_MARGIN = 50f;
     private final ActivitySpaceImpl mActivitySpaceImpl;
-    private final PerceptionSpaceActivityPoseImpl mPerceptionSpaceActivityPose;
+    private final PerceptionSpaceScenePoseImpl mPerceptionSpaceScenePose;
     private final XrExtensions mExtensions;
     private SurfaceControlViewHost mSurfaceControlViewHost;
     private final Handler mHandler;
@@ -87,11 +87,11 @@ class PanelShadowRenderer {
 
     PanelShadowRenderer(
             ActivitySpaceImpl activitySpaceImpl,
-            PerceptionSpaceActivityPoseImpl perceptionSpaceActivityPose,
+            PerceptionSpaceScenePoseImpl perceptionSpaceScenePose,
             Activity activity,
             XrExtensions extensions) {
         mActivitySpaceImpl = activitySpaceImpl;
-        mPerceptionSpaceActivityPose = perceptionSpaceActivityPose;
+        mPerceptionSpaceScenePose = perceptionSpaceScenePose;
         mExtensions = extensions;
         mActivity = activity;
         mHandler = new Handler(Looper.getMainLooper());
@@ -232,6 +232,6 @@ class PanelShadowRenderer {
                                                 openXrToProposedPanel.getRotation(),
                                                 openXrtoPlane.getRotation())));
         Pose panelInOxr = openXrtoPlane.compose(planeToProjectedPanel);
-        return mPerceptionSpaceActivityPose.transformPoseTo(panelInOxr, mActivitySpaceImpl);
+        return mPerceptionSpaceScenePose.transformPoseTo(panelInOxr, mActivitySpaceImpl);
     }
 }

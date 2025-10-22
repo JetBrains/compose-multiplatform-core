@@ -606,7 +606,7 @@ package androidx.webkit {
     field @SuppressCompatibility @androidx.webkit.Profile.ExperimentalOriginMatchedHeader public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";
     field public static final String PAYMENT_REQUEST = "PAYMENT_REQUEST";
     field public static final String POST_WEB_MESSAGE = "POST_WEB_MESSAGE";
-    field public static final String PRECONNECT = "PRECONNECT";
+    field @SuppressCompatibility @androidx.webkit.Profile.ExperimentalPreconnect public static final String PRECONNECT = "PRECONNECT";
     field public static final String PRERENDER_WITH_URL = "PRERENDER_URL_V2";
     field @SuppressCompatibility @androidx.webkit.Profile.ExperimentalUrlPrefetch public static final String PROFILE_URL_PREFETCH = "PREFETCH_URL_V5";
     field public static final String PROXY_OVERRIDE = "PROXY_OVERRIDE";
@@ -634,8 +634,8 @@ package androidx.webkit {
     field public static final String STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES = "STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES";
     field public static final String STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX = "STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX";
     field public static final String STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS = "STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS";
-    field public static final String STARTUP_FEATURE_SET_PROFILES_TO_LOAD = "STARTUP_FEATURE_SET_PROFILES_TO_LOAD";
-    field public static final String STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE = "STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE";
+    field @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public static final String STARTUP_FEATURE_SET_PROFILES_TO_LOAD = "STARTUP_FEATURE_SET_PROFILES_TO_LOAD";
+    field @SuppressCompatibility @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public static final String STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE = "STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE";
     field public static final String START_SAFE_BROWSING = "START_SAFE_BROWSING";
     field public static final String TRACING_CONTROLLER_BASIC_USAGE = "TRACING_CONTROLLER_BASIC_USAGE";
     field public static final String USER_AGENT_METADATA = "USER_AGENT_METADATA";

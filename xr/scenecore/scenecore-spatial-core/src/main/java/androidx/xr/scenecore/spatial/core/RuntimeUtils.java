@@ -22,9 +22,7 @@ import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.Plane;
-import androidx.xr.scenecore.runtime.ActivityPose.HitTestFilter;
-import androidx.xr.scenecore.runtime.ActivityPose.HitTestFilterValue;
-import androidx.xr.scenecore.runtime.CameraViewActivityPose.Fov;
+import androidx.xr.scenecore.runtime.CameraViewScenePose.Fov;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.HitTestResult;
 import androidx.xr.scenecore.runtime.InputEvent;
@@ -33,6 +31,8 @@ import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.PlaneSemantic;
 import androidx.xr.scenecore.runtime.PlaneType;
 import androidx.xr.scenecore.runtime.ResizeEvent;
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilter;
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue;
 import androidx.xr.scenecore.runtime.SpatialCapabilities;
 import androidx.xr.scenecore.runtime.SpatialPointerIcon;
 import androidx.xr.scenecore.runtime.SpatialPointerIconType;
@@ -319,7 +319,7 @@ final class RuntimeUtils {
     /**
      * Converts to a perception FOV from a SceneCore FOV type.
      *
-     * @param fov a {@code androidx.xr.runtime.internal.CameraViewActivityPose.Fov} instance
+     * @param fov a {@code androidx.xr.runtime.internal.CameraViewScenePose.Fov} instance
      *     representing the FOV.
      */
     static androidx.xr.scenecore.impl.perception.Fov perceptionFovFromFov(Fov fov) {

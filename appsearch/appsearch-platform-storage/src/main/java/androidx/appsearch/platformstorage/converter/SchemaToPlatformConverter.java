@@ -18,6 +18,7 @@ package androidx.appsearch.platformstorage.converter;
 
 import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_NONE;
 import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN;
+import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_VERBATIM;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
@@ -42,12 +43,14 @@ import java.util.List;
 /**
  * Translates a jetpack {@link AppSearchSchema} into a platform
  * {@link android.app.appsearch.AppSearchSchema}.
+ *
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @RequiresApi(Build.VERSION_CODES.S)
 public final class SchemaToPlatformConverter {
-    private SchemaToPlatformConverter() {}
+    private SchemaToPlatformConverter() {
+    }
 
     /**
      * Translates a jetpack {@link AppSearchSchema} into a platform
@@ -126,15 +129,20 @@ public final class SchemaToPlatformConverter {
                     (AppSearchSchema.StringPropertyConfig) jetpackProperty;
             android.app.appsearch.AppSearchSchema.StringPropertyConfig.Builder platformBuilder =
                     new android.app.appsearch.AppSearchSchema.StringPropertyConfig.Builder(
-                    stringProperty.getName())
-                    .setCardinality(stringProperty.getCardinality())
-                    .setIndexingType(stringProperty.getIndexingType())
-                    .setTokenizerType(stringProperty.getTokenizerType());
+                            stringProperty.getName())
+                            .setCardinality(stringProperty.getCardinality())
+                            .setIndexingType(stringProperty.getIndexingType())
+                            .setTokenizerType(stringProperty.getTokenizerType());
 
             // TODO(b/277344542): Handle RFC822 tokenization on T devices with U trains.
             if (Build.VERSION.SDK_INT == Build.VERSION_CODES.TIRAMISU) {
-                Preconditions.checkArgumentInRange(stringProperty.getTokenizerType(),
-                        TOKENIZER_TYPE_NONE, TOKENIZER_TYPE_PLAIN, "tokenizerType");
+                if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.U_BASE) {
+                    Preconditions.checkArgumentInRange(stringProperty.getTokenizerType(),
+                            TOKENIZER_TYPE_NONE, TOKENIZER_TYPE_VERBATIM, "tokenizerType");
+                } else {
+                    Preconditions.checkArgumentInRange(stringProperty.getTokenizerType(),
+                            TOKENIZER_TYPE_NONE, TOKENIZER_TYPE_PLAIN, "tokenizerType");
+                }
             }
 
             // Check joinable value type.
@@ -142,8 +150,8 @@ public final class SchemaToPlatformConverter {
                     == AppSearchSchema.StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID) {
                 if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                     throw new UnsupportedOperationException(
-                        "StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID is not supported"
-                                + " on this AppSearch implementation.");
+                            "StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID is not supported"
+                                    + " on this AppSearch implementation.");
                 }
                 ApiHelperForSdkExtensionUBase.setJoinableValueType(platformBuilder,
                         stringProperty.getJoinableValueType());
@@ -164,16 +172,16 @@ public final class SchemaToPlatformConverter {
                     (AppSearchSchema.LongPropertyConfig) jetpackProperty;
             android.app.appsearch.AppSearchSchema.LongPropertyConfig.Builder longPropertyBuilder =
                     new android.app.appsearch.AppSearchSchema.LongPropertyConfig.Builder(
-                    jetpackProperty.getName())
-                    .setCardinality(jetpackProperty.getCardinality());
+                            jetpackProperty.getName())
+                            .setCardinality(jetpackProperty.getCardinality());
             if (longProperty.getIndexingType()
                     == AppSearchSchema.LongPropertyConfig.INDEXING_TYPE_RANGE) {
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                     throw new UnsupportedOperationException(
-                        "LongProperty.INDEXING_TYPE_RANGE is not supported on this AppSearch "
-                                + "implementation.");
+                            "LongProperty.INDEXING_TYPE_RANGE is not supported on this AppSearch "
+                                    + "implementation.");
                 }
-                ApiHelperForU.setIndexingType(
+                ApiHelperForSdkExtensionUBase.setIndexingType(
                         longPropertyBuilder, longProperty.getIndexingType());
             }
             if (longProperty.isScoringEnabled()) {
@@ -192,8 +200,8 @@ public final class SchemaToPlatformConverter {
             android.app.appsearch.AppSearchSchema.DoublePropertyConfig.Builder
                     doublePropertyBuilder =
                     new android.app.appsearch.AppSearchSchema.DoublePropertyConfig.Builder(
-                         jetpackProperty.getName())
-                        .setCardinality(jetpackProperty.getCardinality());
+                            jetpackProperty.getName())
+                            .setCardinality(jetpackProperty.getCardinality());
             if (doubleProperty.isScoringEnabled()) {
                 if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
                     throw new UnsupportedOperationException(
@@ -210,8 +218,8 @@ public final class SchemaToPlatformConverter {
             android.app.appsearch.AppSearchSchema.BooleanPropertyConfig.Builder
                     booleanPropertyBuilder =
                     new android.app.appsearch.AppSearchSchema.BooleanPropertyConfig.Builder(
-                    jetpackProperty.getName())
-                    .setCardinality(jetpackProperty.getCardinality());
+                            jetpackProperty.getName())
+                            .setCardinality(jetpackProperty.getCardinality());
             if (booleanProperty.isScoringEnabled()) {
                 if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.B_BASE) {
                     throw new UnsupportedOperationException(
@@ -303,9 +311,9 @@ public final class SchemaToPlatformConverter {
                 jetpackBuilder.setScoringEnabled(
                         ApiHelperForSdkExtensionBBase.getScoringEnabled(longProperty));
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.U_BASE) {
                 jetpackBuilder.setIndexingType(
-                        ApiHelperForU.getIndexingType(longProperty));
+                        ApiHelperForSdkExtensionUBase.getIndexingType(longProperty));
             }
             // TODO(b/326987971): Call jetpackBuilder.setDescription() once descriptions become
             // available in platform.
@@ -408,13 +416,6 @@ public final class SchemaToPlatformConverter {
                 android.app.appsearch.AppSearchSchema.StringPropertyConfig stringPropertyConfig) {
             return stringPropertyConfig.getJoinableValueType();
         }
-    }
-
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private static class ApiHelperForU {
-        private ApiHelperForU() {
-            // This class is not instantiable.
-        }
 
         @DoNotInline
         static void setIndexingType(
@@ -440,6 +441,7 @@ public final class SchemaToPlatformConverter {
         private ApiHelperForSdkExtensionM202311() {
             // This class is not instantiable.
         }
+
         @DoNotInline
         static void addIndexableNestedProperties(
                 android.app.appsearch.AppSearchSchema.DocumentPropertyConfig.Builder
@@ -513,7 +515,8 @@ public final class SchemaToPlatformConverter {
 
     @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private static class ApiHelperForV {
-        private ApiHelperForV() {}
+        private ApiHelperForV() {
+        }
 
         @DoNotInline
         @SuppressLint("NewApi")

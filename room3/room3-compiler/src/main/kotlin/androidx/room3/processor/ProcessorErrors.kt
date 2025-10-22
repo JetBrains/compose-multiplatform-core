@@ -704,10 +704,6 @@ object ProcessorErrors {
         "To use Guava features, you must add `guava`" +
             " artifact from Room as a dependency. androidx.room3:room3-guava:<version>"
 
-    const val MISSING_ROOM_RXJAVA2_ARTIFACT =
-        "To use RxJava2 features, you must add `rxjava2`" +
-            " artifact from Room as a dependency. androidx.room3:room3-rxjava2:<version>"
-
     const val MISSING_ROOM_RXJAVA3_ARTIFACT =
         "To use RxJava3 features, you must add `rxjava3`" +
             " artifact from Room as a dependency. androidx.room3:room3-rxjava3:<version>"
@@ -720,11 +716,6 @@ object ProcessorErrors {
         "To use ListenableFuturePagingSource, you must " +
             "add `room-paging-guava` artifact from Room as a dependency. " +
             "androidx.room3:room3-paging-guava:<version>"
-
-    const val MISSING_ROOM_PAGING_RXJAVA2_ARTIFACT =
-        "To use RxPagingSource, you must " +
-            "add `room-paging-rxjava2` artifact from Room as a dependency. " +
-            "androidx.room3:room3-paging-rxjava2:<version>"
 
     const val MISSING_ROOM_PAGING_RXJAVA3_ARTIFACT =
         "To use RxPagingSource, you must " +

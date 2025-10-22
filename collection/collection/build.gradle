@@ -77,6 +77,9 @@ androidXMultiplatform {
 
         jvmMain {
             dependsOn(nonJsMain)
+            dependencies {
+                api(libs.jspecify)
+            }
         }
 
         jvmTest {
@@ -187,6 +190,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Standalone efficient collections."
-    // TODO: b/326456246
-    optOutJSpecify = true
 }

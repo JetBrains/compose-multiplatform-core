@@ -93,7 +93,6 @@ import java.util.UUID
 import kotlin.test.Ignore
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -102,9 +101,7 @@ import org.junit.runner.RunWith
 /** Tests for [SpatialPopup]. */
 @RunWith(AndroidJUnit4::class)
 class SpatialPopupTest {
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     // TODO(b/431079857): Fix underline implementation first and un-ignore this.
     @Ignore("Fix underline implementation first")

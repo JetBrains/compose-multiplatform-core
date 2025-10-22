@@ -70,7 +70,7 @@ class MovableComponentImpl implements MovableComponent {
     private final XrExtensions mExtensions;
     private final ActivitySpaceImpl mActivitySpaceImpl;
     private final AndroidXrEntity mActivitySpaceEntity;
-    private final PerceptionSpaceActivityPoseImpl mPerceptionSpaceActivityPose;
+    private final PerceptionSpaceScenePoseImpl mPerceptionSpaceScenePose;
     private final EntityManager mEntityManager;
     private final PanelShadowRenderer mPanelShadowRenderer;
     private final ScheduledExecutorService mRuntimeExecutor;
@@ -99,7 +99,7 @@ class MovableComponentImpl implements MovableComponent {
             XrExtensions extensions,
             ActivitySpaceImpl activitySpaceImpl,
             AndroidXrEntity activitySpaceEntity,
-            PerceptionSpaceActivityPoseImpl perceptionSpaceActivityPose,
+            PerceptionSpaceScenePoseImpl perceptionSpaceScenePose,
             EntityManager entityManager,
             PanelShadowRenderer panelShadowRenderer,
             ScheduledExecutorService runtimeExecutor) {
@@ -110,7 +110,7 @@ class MovableComponentImpl implements MovableComponent {
         mExtensions = extensions;
         mActivitySpaceImpl = activitySpaceImpl;
         mActivitySpaceEntity = activitySpaceEntity;
-        mPerceptionSpaceActivityPose = perceptionSpaceActivityPose;
+        mPerceptionSpaceScenePose = perceptionSpaceScenePose;
         mEntityManager = entityManager;
         mPanelShadowRenderer = panelShadowRenderer;
         mRuntimeExecutor = runtimeExecutor;
@@ -367,7 +367,7 @@ class MovableComponentImpl implements MovableComponent {
         // The proposed pose is relative to the activity space, it needs to be updated to be in the
         // perception reference space to be compared against the planes..
         Pose updatedPoseInOpenXr =
-                mActivitySpaceImpl.transformPoseTo(proposedPose, mPerceptionSpaceActivityPose);
+                mActivitySpaceImpl.transformPoseTo(proposedPose, mPerceptionSpaceScenePose);
 
         // Create variables to store the plane in case we need to anchor to it later.
         Plane anchorablePlane = null;
@@ -449,7 +449,7 @@ class MovableComponentImpl implements MovableComponent {
 
             // Move the updated pose back to the activity space.
             Pose updatedPoseInActivitySpace =
-                    mPerceptionSpaceActivityPose.transformPoseTo(
+                    mPerceptionSpaceScenePose.transformPoseTo(
                             updatedPoseInOpenXr, mActivitySpaceImpl);
             return Pair.create(updatedPoseInActivitySpace, mActivitySpaceImpl);
         }
@@ -458,13 +458,13 @@ class MovableComponentImpl implements MovableComponent {
         Entity parent = mEntity.getParent();
         if (parent == null || parent == mActivitySpaceImpl) {
             return Pair.create(
-                    mPerceptionSpaceActivityPose.transformPoseTo(
+                    mPerceptionSpaceScenePose.transformPoseTo(
                             updatedPoseInOpenXr, mActivitySpaceImpl),
                     null);
         }
 
         return Pair.create(
-                mPerceptionSpaceActivityPose.transformPoseTo(updatedPoseInOpenXr, parent), null);
+                mPerceptionSpaceScenePose.transformPoseTo(updatedPoseInOpenXr, parent), null);
     }
 
     // Gets the anchor placement settings for the given plane data, if it is null the entity should

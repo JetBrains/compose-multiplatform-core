@@ -45,7 +45,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,9 +52,8 @@ import org.junit.runner.RunWith
 /** Tests for [SubspaceModifier.resizable] modifier. */
 @RunWith(AndroidJUnit4::class)
 class ResizableModifierTest {
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
     fun resizable_noComponentByDefault() {

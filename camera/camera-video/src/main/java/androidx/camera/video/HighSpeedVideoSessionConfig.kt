@@ -156,6 +156,16 @@ constructor(
         }
     }
 
+    override fun toString(): String {
+        return "HighSpeedVideoSessionConfig@" +
+            "${Integer.toHexString(System.identityHashCode(this))} {" +
+            "videoCapture=$videoCapture, " +
+            "preview=$preview, " +
+            "frameRateRange=$frameRateRange, " +
+            "isSlowMotionEnabled=$isSlowMotionEnabled" +
+            "}"
+    }
+
     private fun validateSettingsOrThrow(videoCapture: VideoCapture<*>, preview: Preview?) {
         require(videoCapture.mirrorMode == MIRROR_MODE_OFF) {
             "VideoCapture.Builder.setMirrorMode() is not allowed for high-speed video."

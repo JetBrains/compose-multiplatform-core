@@ -34,7 +34,6 @@ import androidx.room3.ext.GuavaUtilConcurrentTypeNames
 import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LifecyclesTypeNames
 import androidx.room3.ext.ReactiveStreamsTypeNames
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.testing.context
 import androidx.room3.vo.DeleteOrUpdateShortcutFunction
@@ -187,9 +186,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
         listOf(
                 "int",
                 "Integer",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Integer>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Integer>",
-                RxJava2TypeNames.COMPLETABLE.canonicalName,
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Integer>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Integer>",
                 RxJava3TypeNames.COMPLETABLE.canonicalName,
@@ -403,9 +399,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 "void",
                 "int",
                 "Integer",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Integer>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Integer>",
-                RxJava2TypeNames.COMPLETABLE.canonicalName,
                 "${RxJava3TypeNames.SINGLE.canonicalName}<Integer>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Integer>",
                 RxJava3TypeNames.COMPLETABLE.canonicalName,
@@ -458,12 +451,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 "long",
                 "String",
                 "User",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Int>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<String>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<String>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<User>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<User>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<Int>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<String>",
                 "${GuavaUtilConcurrentTypeNames.LISTENABLE_FUTURE.canonicalName}<User>",
@@ -485,11 +472,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
     @Test
     fun suspendReturnsDeferredType() {
         listOf(
-                "${RxJava2TypeNames.FLOWABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.OBSERVABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Int>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.COMPLETABLE.canonicalName}",
                 "${RxJava3TypeNames.FLOWABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
@@ -777,9 +759,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 COMMON.USER,
                 COMMON.BOOK,
                 COMMON.NOT_AN_ENTITY,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_MAYBE,
-                COMMON.RX2_SINGLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,
@@ -821,11 +800,6 @@ abstract class DeleteOrUpdateShortcutFunctionProcessorTest<out T : DeleteOrUpdat
                 COMMON.USER,
                 COMMON.BOOK,
                 COMMON.NOT_AN_ENTITY,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_MAYBE,
-                COMMON.RX2_SINGLE,
-                COMMON.RX2_FLOWABLE,
-                COMMON.RX2_OBSERVABLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,

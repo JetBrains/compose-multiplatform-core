@@ -128,6 +128,7 @@ internal class ImportCredentialsController(
                 { s, f -> cancelOrCallbackExceptionOrResult(s, f) },
                 { e -> cleanUpAndReportError(e) },
                 cancellationSignal,
+                data,
             )
         ) {
             return
@@ -238,13 +239,24 @@ internal class ImportCredentialsController(
             cancelOnError: (CancellationSignal?, () -> Unit) -> Unit,
             onError: (ImportCredentialsException) -> Unit,
             cancellationSignal: CancellationSignal?,
+            data: Intent?,
         ): Boolean {
             if (resultCode != Activity.RESULT_OK) {
                 var exception: ImportCredentialsException =
-                    ImportCredentialsUnknownErrorException(generateErrorStringUnknown(resultCode))
-                if (resultCode == Activity.RESULT_CANCELED) {
-                    exception =
-                        ImportCredentialsCancellationException("activity is cancelled by the user.")
+                    when (resultCode) {
+                        Activity.RESULT_CANCELED ->
+                            ImportCredentialsCancellationException(
+                                "activity is cancelled by the user."
+                            )
+                        else ->
+                            ImportCredentialsUnknownErrorException(
+                                generateErrorStringUnknown(resultCode)
+                            )
+                    }
+                data?.let {
+                    IntentHandler.retrieveImportCredentialsException(it)?.let { intentException ->
+                        exception = intentException
+                    }
                 }
                 cancelOnError(cancellationSignal) { onError(exception) }
                 return true

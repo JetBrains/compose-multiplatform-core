@@ -19,7 +19,7 @@ package androidx.xr.scenecore.spatial.core
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.CameraViewScenePose
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions
@@ -37,11 +37,11 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class PerceivedResolutionUtilsTest {
 
-    private lateinit var mockCameraView: CameraViewActivityPose
+    private lateinit var mockCameraView: CameraViewScenePose
 
     // Default camera properties
     private lateinit var cameraPose: Pose
-    private lateinit var cameraFov: CameraViewActivityPose.Fov
+    private lateinit var cameraFov: CameraViewScenePose.Fov
     private lateinit var cameraDisplayResolution: PixelDimensions
 
     @Before
@@ -51,7 +51,7 @@ class PerceivedResolutionUtilsTest {
         // Default camera setup: at origin, looking along -Z, 90deg HFOV, 90deg VFOV
         cameraPose = Pose(Vector3(0f, 0f, 0f), Quaternion.Identity)
         cameraFov =
-            CameraViewActivityPose.Fov(
+            CameraViewScenePose.Fov(
                 atan(1.0f),
                 atan(1.0f),
                 atan(1.0f),
@@ -68,11 +68,11 @@ class PerceivedResolutionUtilsTest {
 
     @Test
     fun getPerceivedResolutionCameraView_leftEyeExists_returnsLeftEye() {
-        val leftEyeCamera: CameraViewActivityPose = mock {
-            on { cameraType } doReturn CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
+        val leftEyeCamera: CameraViewScenePose = mock {
+            on { cameraType } doReturn CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
         }
-        val rightEyeCamera: CameraViewActivityPose = mock {
-            on { cameraType } doReturn CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE
+        val rightEyeCamera: CameraViewScenePose = mock {
+            on { cameraType } doReturn CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE
         }
         val entityManager = EntityManager()
         entityManager.addSystemSpaceActivityPose(leftEyeCamera)
@@ -85,8 +85,8 @@ class PerceivedResolutionUtilsTest {
 
     @Test
     fun getPerceivedResolutionCameraView_onlyRightEyeExists_returnsNull() {
-        val rightEyeCamera: CameraViewActivityPose = mock {
-            on { cameraType } doReturn CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE
+        val rightEyeCamera: CameraViewScenePose = mock {
+            on { cameraType } doReturn CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE
         }
         val entityManager = EntityManager()
         entityManager.addSystemSpaceActivityPose(rightEyeCamera)
@@ -107,11 +107,11 @@ class PerceivedResolutionUtilsTest {
 
     @Test
     fun getPerceivedResolutionCameraView_noLeftEyeAmongOthers_returnsNull() {
-        val rightEyeCamera: CameraViewActivityPose = mock {
-            on { cameraType } doReturn CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE
+        val rightEyeCamera: CameraViewScenePose = mock {
+            on { cameraType } doReturn CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE
         }
-        val unknownCamera: CameraViewActivityPose = mock {
-            on { cameraType } doReturn CameraViewActivityPose.CameraType.CAMERA_TYPE_UNKNOWN
+        val unknownCamera: CameraViewScenePose = mock {
+            on { cameraType } doReturn CameraViewScenePose.CameraType.CAMERA_TYPE_UNKNOWN
         }
         val entityManager = EntityManager()
         entityManager.addSystemSpaceActivityPose(rightEyeCamera)
@@ -270,7 +270,7 @@ class PerceivedResolutionUtilsTest {
 
     @Test
     fun getPerceivedResolutionOfPanel_zeroFov_returnsZeroPixels() {
-        cameraFov = CameraViewActivityPose.Fov(0f, 0f, 0f, 0f)
+        cameraFov = CameraViewScenePose.Fov(0f, 0f, 0f, 0f)
         whenever(mockCameraView.fov).thenReturn(cameraFov)
 
         val panelWidth = 1f
@@ -349,7 +349,7 @@ class PerceivedResolutionUtilsTest {
     fun getPerceivedResolutionOfPanel_nonFiniteFov_returnsInvalidCameraView() {
         // Test with one non-finite angle (Positive Infinity)
         cameraFov =
-            CameraViewActivityPose.Fov(
+            CameraViewScenePose.Fov(
                 atan(1.0f),
                 Float.POSITIVE_INFINITY, // Non-finite angle
                 atan(1.0f),
@@ -368,7 +368,7 @@ class PerceivedResolutionUtilsTest {
 
         // Test with another non-finite angle (NaN)
         cameraFov =
-            CameraViewActivityPose.Fov(
+            CameraViewScenePose.Fov(
                 atan(1.0f),
                 atan(1.0f),
                 Float.NaN, // Non-finite angle

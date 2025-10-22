@@ -34,7 +34,6 @@ plugins {
 }
 
 android {
-    compileSdk = 35
     defaultConfig {
         minSdk = 31
     }
@@ -77,7 +76,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended-android:1.7.8")
     implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
 
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
 }
 
 // Making this APK available via Android Build

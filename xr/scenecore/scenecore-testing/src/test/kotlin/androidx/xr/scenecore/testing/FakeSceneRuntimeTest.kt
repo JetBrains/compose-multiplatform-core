@@ -24,7 +24,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.AnchorEntity
 import androidx.xr.scenecore.runtime.AnchorPlacement
-import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.CameraViewScenePose
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.InputEvent
 import androidx.xr.scenecore.runtime.InputEventListener
@@ -59,27 +59,27 @@ class FakeSceneRuntimeTest {
     }
 
     @Test
-    fun getCameraViewActivityPose_returnsCameraViewActivityPoseWithCorrectType() {
-        val cameraViewActivityPose =
+    fun getCameraViewScenePose_returnsCameraViewScenePoseWithCorrectType() {
+        val cameraViewScenePose =
             fakeSceneRuntime.getCameraViewActivityPose(
-                CameraViewActivityPose.CameraType.CAMERA_TYPE_UNKNOWN
+                CameraViewScenePose.CameraType.CAMERA_TYPE_UNKNOWN
             )
-        val cameraViewActivityPoseL =
+        val cameraViewScenePoseL =
             fakeSceneRuntime.getCameraViewActivityPose(
-                CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE
+                CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE
             )
-        val cameraViewActivityPoseR =
+        val cameraViewScenePoseR =
             fakeSceneRuntime.getCameraViewActivityPose(
-                CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE
+                CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE
             )
 
-        assertThat(cameraViewActivityPose).isNull()
-        assertThat(cameraViewActivityPoseL).isNotNull()
-        assertThat((cameraViewActivityPoseL as FakeCameraViewActivityPose).cameraType)
-            .isEqualTo(CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE)
-        assertThat(cameraViewActivityPoseR).isNotNull()
-        assertThat((cameraViewActivityPoseR as FakeCameraViewActivityPose).cameraType)
-            .isEqualTo(CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE)
+        assertThat(cameraViewScenePose).isNull()
+        assertThat(cameraViewScenePoseL).isNotNull()
+        assertThat((cameraViewScenePoseL as FakeCameraViewScenePose).cameraType)
+            .isEqualTo(CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE)
+        assertThat(cameraViewScenePoseR).isNotNull()
+        assertThat((cameraViewScenePoseR as FakeCameraViewScenePose).cameraType)
+            .isEqualTo(CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE)
     }
 
     @Test

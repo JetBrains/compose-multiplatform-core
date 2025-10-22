@@ -263,6 +263,17 @@ constructor(
         featureSelectionListenerExecutor = executor
     }
 
+    override fun toString(): String {
+        return "SessionConfig@${Integer.toHexString(System.identityHashCode(this))} {" +
+            "useCases=$useCases, " +
+            "frameRateRange=$frameRateRange, " +
+            "requiredFeatureGroup=$requiredFeatureGroup, " +
+            "preferredFeatureGroup=$preferredFeatureGroup, " +
+            "effects=$effects, " +
+            "viewPort=$viewPort" +
+            "}"
+    }
+
     /** Builder for [SessionConfig] */
     @ExperimentalSessionConfig
     public class Builder(private val useCases: List<UseCase>) {

@@ -20,7 +20,7 @@ package androidx.xr.scenecore.spatial.core
 
 import androidx.annotation.VisibleForTesting
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.CameraViewActivityPose
+import androidx.xr.scenecore.runtime.CameraViewScenePose
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions
@@ -32,23 +32,21 @@ import kotlin.math.tan
 @VisibleForTesting internal const val PERCEIVED_RESOLUTION_EPSILON = 0.001f
 
 /**
- * Retrieves the [androidx.xr.scenecore.runtime.CameraViewActivityPose] used for all Perceived
+ * Retrieves the [androidx.xr.scenecore.runtime.CameraViewScenePose] used for all Perceived
  * Resolution calculations.
  *
  * It is currently set to specifically look for the left eye camera.
  *
  * @param entityManager The [EntityManager] instance that holds the system space activity poses,
  *   including camera views.
- * @return The [androidx.xr.scenecore.runtime.CameraViewActivityPose] for the left eye if found;
+ * @return The [androidx.xr.scenecore.runtime.CameraViewScenePose] for the left eye if found;
  *   otherwise, `null` if no such camera view is registered or available in the [EntityManager].
  */
-internal fun getPerceivedResolutionCameraView(
-    entityManager: EntityManager
-): CameraViewActivityPose? {
+internal fun getPerceivedResolutionCameraView(entityManager: EntityManager): CameraViewScenePose? {
     val cameraViews =
-        entityManager.getSystemSpaceActivityPoseOfType(CameraViewActivityPose::class.java)
+        entityManager.getSystemSpaceActivityPoseOfType(CameraViewScenePose::class.java)
     for (cameraView in cameraViews) {
-        if (cameraView.cameraType == CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE) {
+        if (cameraView.cameraType == CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE) {
             return cameraView
         }
     }
@@ -80,7 +78,7 @@ internal fun getPerceivedResolutionCameraView(
  * @see getPerceivedResolutionOfPanel
  */
 internal fun getPerceivedResolutionOf3DBox(
-    cameraView: CameraViewActivityPose,
+    cameraView: CameraViewScenePose,
     boxDimensionsInActivitySpace: Dimensions,
     boxPositionInActivitySpace: Vector3,
 ): PerceivedResolutionResult {
@@ -122,7 +120,7 @@ internal fun getPerceivedResolutionOf3DBox(
  *       the box's smallest dimension. All the values are in the units of the ActivitySpace.
  */
 internal fun getDimensionsAndDistanceOfLargest3dBoxSurface(
-    cameraView: CameraViewActivityPose,
+    cameraView: CameraViewScenePose,
     boxDimensionsInActivitySpace: Dimensions,
     boxPositionInActivitySpace: Vector3,
 ): Dimensions {
@@ -176,7 +174,7 @@ internal fun getDimensionsAndDistanceOfLargest3dBoxSurface(
  *   close to the camera.
  */
 internal fun getPerceivedResolutionOfPanel(
-    cameraView: CameraViewActivityPose,
+    cameraView: CameraViewScenePose,
     panelWidthInActivitySpace: Float,
     panelHeightInActivitySpace: Float,
     panelDistanceInActivitySpace: Float,

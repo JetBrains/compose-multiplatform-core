@@ -1,11 +1,13 @@
 import androidx.paging.ListenableFuturePagingSource
 import androidx.paging.PagingSource
+import androidx.paging.rxjava3.RxPagingSource
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomRawQuery
 import androidx.room3.RoomSQLiteQuery
 import androidx.room3.RoomSQLiteQuery.Companion.acquire
 import androidx.room3.paging.LimitOffsetPagingSource
 import androidx.room3.paging.guava.LimitOffsetListenableFuturePagingSource
+import androidx.room3.paging.rxjava3.LimitOffsetRxPagingSource
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteStatement
@@ -18,10 +20,6 @@ import kotlin.collections.List
 import kotlin.collections.MutableList
 import kotlin.collections.mutableListOf
 import kotlin.reflect.KClass
-import androidx.paging.rxjava2.RxPagingSource as Rxjava2RxPagingSource
-import androidx.paging.rxjava3.RxPagingSource as Rxjava3RxPagingSource
-import androidx.room3.paging.rxjava2.LimitOffsetRxPagingSource as Rxjava2LimitOffsetRxPagingSource
-import androidx.room3.paging.rxjava3.LimitOffsetRxPagingSource as Rxjava3LimitOffsetRxPagingSource
 
 @Generated(value = ["androidx.room3.RoomProcessor"])
 @Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
@@ -86,29 +84,10 @@ internal class MyDao_Impl(
     }
   }
 
-  public override fun getAllIdsRx2(): Rxjava2RxPagingSource<Int, MyEntity> {
+  public override fun getAllIdsRx3(): RxPagingSource<Int, MyEntity> {
     val _sql: String = "SELECT pk FROM MyEntity"
     val _statement: RoomSQLiteQuery = acquire(_sql, 0)
-    return object : Rxjava2LimitOffsetRxPagingSource<MyEntity>(_statement, __db, "MyEntity") {
-      protected override fun convertRows(statement: SQLiteStatement): List<MyEntity> {
-        val _columnIndexOfPk: Int = 0
-        val _result: MutableList<MyEntity> = mutableListOf()
-        while (statement.step()) {
-          val _item: MyEntity
-          val _tmpPk: String
-          _tmpPk = statement.getText(_columnIndexOfPk)
-          _item = MyEntity(_tmpPk)
-          _result.add(_item)
-        }
-        return _result
-      }
-    }
-  }
-
-  public override fun getAllIdsRx3(): Rxjava3RxPagingSource<Int, MyEntity> {
-    val _sql: String = "SELECT pk FROM MyEntity"
-    val _statement: RoomSQLiteQuery = acquire(_sql, 0)
-    return object : Rxjava3LimitOffsetRxPagingSource<MyEntity>(_statement, __db, "MyEntity") {
+    return object : LimitOffsetRxPagingSource<MyEntity>(_statement, __db, "MyEntity") {
       protected override fun convertRows(statement: SQLiteStatement): List<MyEntity> {
         val _columnIndexOfPk: Int = 0
         val _result: MutableList<MyEntity> = mutableListOf()

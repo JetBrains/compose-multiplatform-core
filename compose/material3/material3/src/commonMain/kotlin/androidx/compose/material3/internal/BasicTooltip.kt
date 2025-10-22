@@ -196,7 +196,7 @@ private fun TooltipPopup(
             }
         },
         // TODO(https://youtrack.jetbrains.com/issue/CMP-963) Discuss how to support focusable
-        properties = PopupProperties(focusable = false),
+        properties = PopupProperties(focusable = false, clippingEnabled = false),
     ) {
         Box(
             modifier =

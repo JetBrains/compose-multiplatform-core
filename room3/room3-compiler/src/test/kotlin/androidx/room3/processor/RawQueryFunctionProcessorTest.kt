@@ -30,7 +30,6 @@ import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LifecyclesTypeNames
 import androidx.room3.ext.PagingTypeNames
 import androidx.room3.ext.ReactiveStreamsTypeNames
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.ext.SupportDbTypeNames
 import androidx.room3.processor.ProcessorErrors.RAW_QUERY_STRING_PARAMETER_REMOVED
@@ -550,11 +549,6 @@ class RawQueryFunctionProcessorTest {
     @Test
     fun suspendReturnsDeferredType() {
         listOf(
-                "${RxJava2TypeNames.FLOWABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.OBSERVABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Int>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.COMPLETABLE.canonicalName}",
                 "${RxJava3TypeNames.FLOWABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
@@ -648,11 +642,6 @@ class RawQueryFunctionProcessorTest {
                 COMMON.USER,
                 COMMON.BOOK,
                 COMMON.NOT_AN_ENTITY,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_MAYBE,
-                COMMON.RX2_SINGLE,
-                COMMON.RX2_FLOWABLE,
-                COMMON.RX2_OBSERVABLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,

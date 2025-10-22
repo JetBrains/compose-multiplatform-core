@@ -46,13 +46,11 @@ public interface SceneRuntime : JxrRuntime {
     /** Returns the Activity Space entity at the root of the scene. */
     public val activitySpace: ActivitySpace
 
-    /** Returns the HeadActivityPose for the session or null if it not ready. */
-    // TODO: b/439932057 - Rename HeadActivityPose to HeadScenePose.
-    public val headActivityPose: HeadActivityPose?
+    /** Returns the HeadScenePose for the session or null if it not ready. */
+    public val headActivityPose: HeadScenePose?
 
-    /** Returns the PerceptionSpaceActivityPose for the Session. */
-    // TODO: b/439932057 - Rename PerceptionSpaceActivityPose to PerceptionSpaceScenePose.
-    public val perceptionSpaceActivityPose: PerceptionSpaceActivityPose
+    /** Returns the PerceptionSpaceScenePose for the Session. */
+    public val perceptionSpaceActivityPose: PerceptionSpaceScenePose
 
     /** Get the PanelEntity associated with the main window for the Runtime. */
     public val mainPanelEntity: PanelEntity
@@ -77,14 +75,14 @@ public interface SceneRuntime : JxrRuntime {
     public val mediaPlayerExtensionsWrapper: MediaPlayerExtensionsWrapper
 
     /**
-     * Returns the CameraViewActivityPose for the specified camera type or null if it is not
+     * Returns the CameraViewScenePose for the specified camera type or null if it is not
      * ready/available.
      *
      * @param cameraType The type of camera to retrieve the pose for.
      */
     public fun getCameraViewActivityPose(
-        @CameraViewActivityPose.CameraType cameraType: Int
-    ): CameraViewActivityPose?
+        @CameraViewScenePose.CameraType cameraType: Int
+    ): CameraViewScenePose?
 
     /**
      * A factory function to create a platform PanelEntity. The parent can be any entity.

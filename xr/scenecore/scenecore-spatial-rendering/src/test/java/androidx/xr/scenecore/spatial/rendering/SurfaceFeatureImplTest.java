@@ -33,7 +33,7 @@ import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.impress.FakeImpressApiImpl;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
-import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.SurfaceEntity;
@@ -111,15 +111,15 @@ public final class SurfaceFeatureImplTest {
         return mSurfaceFeature;
     }
 
-    private CameraViewActivityPose setupDefaultMockCameraView() {
-        CameraViewActivityPose cameraView = mock(CameraViewActivityPose.class);
+    private CameraViewScenePose setupDefaultMockCameraView() {
+        CameraViewScenePose cameraView = mock(CameraViewScenePose.class);
         when(cameraView.getCameraType())
-                .thenReturn(CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE);
+                .thenReturn(CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE);
         when(cameraView.getActivitySpacePose())
                 .thenReturn(new Pose(new Vector3(0f, 0f, 0f), Quaternion.Identity));
 
-        CameraViewActivityPose.Fov fov =
-                new CameraViewActivityPose.Fov(
+        CameraViewScenePose.Fov fov =
+                new CameraViewScenePose.Fov(
                         (float) Math.atan(1.0), (float) Math.atan(1.0),
                         (float) Math.atan(1.0), (float) Math.atan(1.0));
         when(cameraView.getFov()).thenReturn(fov);

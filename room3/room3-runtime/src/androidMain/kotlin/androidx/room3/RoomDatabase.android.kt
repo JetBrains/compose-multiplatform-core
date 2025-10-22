@@ -52,7 +52,6 @@ import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.SupportSQLiteQuery
-import androidx.sqlite.db.SupportSQLiteStatement
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.sqlite.driver.SupportSQLiteConnection
 import java.io.File
@@ -559,19 +558,6 @@ actual constructor() {
         } else {
             openHelper.writableDatabase.query(query)
         }
-    }
-
-    /**
-     * Wrapper for [SupportSQLiteDatabase.compileStatement].
-     *
-     * @param sql The query to compile.
-     * @return The compiled query.
-     * @throws IllegalStateException If a [SQLiteDriver] is configured with this database.
-     */
-    public open fun compileStatement(sql: String): SupportSQLiteStatement {
-        assertNotMainThread()
-        assertNotSuspendingTransaction()
-        return openHelper.writableDatabase.compileStatement(sql)
     }
 
     /**

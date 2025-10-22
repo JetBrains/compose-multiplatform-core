@@ -38,8 +38,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.FocusedWindowTest
 import androidx.compose.foundation.text.Handle
 import androidx.compose.foundation.text.TEST_FONT_FAMILY
+import androidx.compose.foundation.text.input.InputMethodInterceptor
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.setTextFieldTestContent
+import androidx.compose.foundation.text.input.softKeyEvent
 import androidx.compose.foundation.text.selection.SelectionHandleAnchor
 import androidx.compose.foundation.text.selection.assertHandleAnchorMatches
 import androidx.compose.foundation.text.selection.assertHandlePositionMatches
@@ -52,6 +55,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.WindowInfo
@@ -88,6 +92,8 @@ import org.junit.Test
 class TextFieldSelectionHandlesTest : FocusedWindowTest {
 
     @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+
+    private val inputMethodInterceptor = InputMethodInterceptor(rule)
 
     private lateinit var state: TextFieldState
 
@@ -793,6 +799,72 @@ class TextFieldSelectionHandlesTest : FocusedWindowTest {
         }
 
         assertHandlesDisplayed()
+    }
+
+    @Test
+    fun selectionHandles_disappear_whenInputConnectionSetSelection() {
+        state = TextFieldState("hello, world", initialSelection = TextRange(2, 5))
+        inputMethodInterceptor.setTextFieldTestContent {
+            Column {
+                BasicTextField(
+                    state,
+                    textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
+                    modifier = Modifier.testTag(TAG).width(100.dp),
+                )
+            }
+        }
+
+        focusAndWait()
+        assertHandlesDisplayed()
+
+        inputMethodInterceptor.withInputConnection { setSelection(0, 5) }
+
+        assertHandlesNotExist()
+
+        rule.onNodeWithTag(TAG).performTouchInput {
+            longClick(Offset(fontSize.toPx() * 2, fontSize.toPx() / 2))
+        }
+
+        assertHandlesDisplayed()
+    }
+
+    @Test
+    fun selectionHandles_disappear_whenInputConnectionSendKeyEvent() {
+        state = TextFieldState("hello, world", initialSelection = TextRange(2, 5))
+        inputMethodInterceptor.setTextFieldTestContent {
+            Column {
+                BasicTextField(
+                    state,
+                    textStyle = TextStyle(fontSize = fontSize, fontFamily = TEST_FONT_FAMILY),
+                    modifier = Modifier.testTag(TAG).width(100.dp),
+                )
+            }
+        }
+
+        focusAndWait()
+        assertHandlesDisplayed()
+
+        inputMethodInterceptor.withInputConnection {
+            sendKeyEvent(
+                softKeyEvent(
+                    keyCode = KeyEvent.KEYCODE_DPAD_RIGHT,
+                    keyEventType = KeyEventType.KeyDown,
+                    metaState = KeyEvent.META_SHIFT_ON,
+                    source = InputDevice.SOURCE_KEYBOARD,
+                )
+            )
+            sendKeyEvent(
+                softKeyEvent(
+                    keyCode = KeyEvent.KEYCODE_DPAD_RIGHT,
+                    keyEventType = KeyEventType.KeyUp,
+                    metaState = KeyEvent.META_SHIFT_ON,
+                    source = InputDevice.SOURCE_KEYBOARD,
+                )
+            )
+        }
+
+        rule.runOnIdle { assertThat(state.selection).isEqualTo(TextRange(2, 6)) }
+        assertHandlesNotExist()
     }
 
     private fun focusAndWait() {

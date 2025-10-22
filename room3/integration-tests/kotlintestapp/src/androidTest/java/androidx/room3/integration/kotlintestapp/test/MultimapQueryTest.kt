@@ -39,7 +39,7 @@ import com.google.common.collect.ImmutableMap
 import com.google.common.collect.ImmutableMultimap
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.ImmutableSetMultimap
-import io.reactivex.Flowable
+import io.reactivex.rxjava3.core.Flowable
 import java.nio.ByteBuffer
 import java.util.Date
 import java.util.concurrent.ExecutionException

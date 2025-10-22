@@ -28,9 +28,9 @@ import androidx.sqlite.SQLiteException
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.base.Optional
-import io.reactivex.Flowable
-import io.reactivex.schedulers.Schedulers
-import io.reactivex.subscribers.TestSubscriber
+import io.reactivex.rxjava3.core.Flowable
+import io.reactivex.rxjava3.schedulers.Schedulers
+import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.util.Date
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.runBlocking

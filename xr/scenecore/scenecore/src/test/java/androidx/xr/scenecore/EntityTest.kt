@@ -34,8 +34,6 @@ import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.ActivityPanelEntity as RtActivityPanelEntity
-import androidx.xr.scenecore.runtime.ActivityPose as RtActivityPose
-import androidx.xr.scenecore.runtime.ActivityPose.HitTestFilterValue as RtHitTestFilterValue
 import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
 import androidx.xr.scenecore.runtime.Component as RtComponent
@@ -49,6 +47,8 @@ import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult as RtPerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
 import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.ScenePose as RtScenePose
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue as RtHitTestFilterValue
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.Space as RtSpace
 import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
@@ -132,7 +132,7 @@ class EntityTest {
 
         override val activitySpacePose: Pose = Pose()
 
-        override fun transformPoseTo(pose: Pose, destination: RtActivityPose): Pose {
+        override fun transformPoseTo(pose: Pose, destination: RtScenePose): Pose {
             return Pose()
         }
 
@@ -150,7 +150,7 @@ class EntityTest {
             origin: Vector3,
             direction: Vector3,
             @RtHitTestFilterValue hitTestFilter: Int,
-            activityPose: RtActivityPose,
+            scenePose: RtScenePose,
         ): ListenableFuture<RtHitTestResult> {
             return Futures.immediateFuture(
                 RtHitTestResult(Vector3(), Vector3(), 0, Float.POSITIVE_INFINITY)

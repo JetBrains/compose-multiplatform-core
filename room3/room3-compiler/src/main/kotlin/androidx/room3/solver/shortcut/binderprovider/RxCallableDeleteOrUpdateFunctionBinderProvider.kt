@@ -55,9 +55,6 @@ internal constructor(val context: Context, private val rxType: RxType) :
     companion object {
         fun getAll(context: Context) =
             listOf(
-                RxSingleOrMaybeDeleteOrUpdateFunctionBinderProvider(context, RxType.RX2_SINGLE),
-                RxSingleOrMaybeDeleteOrUpdateFunctionBinderProvider(context, RxType.RX2_MAYBE),
-                RxCompletableDeleteOrUpdateFunctionBinderProvider(context, RxType.RX2_COMPLETABLE),
                 RxSingleOrMaybeDeleteOrUpdateFunctionBinderProvider(context, RxType.RX3_SINGLE),
                 RxSingleOrMaybeDeleteOrUpdateFunctionBinderProvider(context, RxType.RX3_MAYBE),
                 RxCompletableDeleteOrUpdateFunctionBinderProvider(context, RxType.RX3_COMPLETABLE),

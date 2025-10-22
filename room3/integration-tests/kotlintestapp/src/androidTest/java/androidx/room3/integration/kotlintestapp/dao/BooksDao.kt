@@ -46,11 +46,11 @@ import com.google.common.base.Optional
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableListMultimap
 import com.google.common.util.concurrent.ListenableFuture
-import io.reactivex.Completable
-import io.reactivex.Flowable
-import io.reactivex.Maybe
-import io.reactivex.Observable
-import io.reactivex.Single
+import io.reactivex.rxjava3.core.Completable
+import io.reactivex.rxjava3.core.Flowable
+import io.reactivex.rxjava3.core.Maybe
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
 import java.util.Date
 import kotlinx.coroutines.flow.Flow
 

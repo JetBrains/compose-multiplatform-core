@@ -19,10 +19,10 @@ package androidx.xr.scenecore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.ActivityPose
 import androidx.xr.scenecore.runtime.ActivitySpace
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.HitTestResult
+import androidx.xr.scenecore.runtime.ScenePose
 import com.google.common.util.concurrent.Futures.immediateFuture
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.Collections
@@ -111,8 +111,8 @@ public class FakeActivitySpace() : FakeSystemSpaceEntity(), ActivitySpace {
     override fun hitTestRelativeToActivityPose(
         origin: Vector3,
         direction: Vector3,
-        @ActivityPose.HitTestFilterValue hitTestFilter: Int,
-        activityPose: ActivityPose,
+        @ScenePose.HitTestFilterValue hitTestFilter: Int,
+        scenePose: ScenePose,
     ): ListenableFuture<HitTestResult> = immediateFuture(activitySpaceHitTestResult)
 
     override val recommendedContentBoxInFullSpace: BoundingBox

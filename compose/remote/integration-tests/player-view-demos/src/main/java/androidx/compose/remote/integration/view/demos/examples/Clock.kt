@@ -24,6 +24,7 @@ import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_SEC
 import androidx.compose.remote.creation.RemotePath
 import androidx.compose.remote.creation.compose.capture.asComposePath
 import androidx.compose.remote.creation.compose.capture.clipRect
+import androidx.compose.remote.creation.compose.capture.translate
 import androidx.compose.remote.creation.compose.capture.withTransform
 import androidx.compose.remote.creation.compose.layout.*
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
@@ -123,7 +124,7 @@ fun RcSimpleClock1(
             val secondAngle = (timeContinuousSec % 60f) * 6f
             val minAngle = min * 6f
             val hrAngle = hr * 30f
-
+            val faceTop = centerY - rad
             val gmtAngle = ((hr - utcOff / 3600f) + ((min % 60f) / 60f)) * 15f
             val handWidth = 20f
             drawCircle(bezel1, rad, RemoteOffset(centerX, centerY))
@@ -146,39 +147,16 @@ fun RcSimpleClock1(
                     )
                 }
             }
-            val not_broken = false // TODO FIX
-            if (not_broken) {
-                val path = RemotePath()
-                path.moveTo(centerX - 40f, top + 20f)
-                path.lineTo(centerX + 40f, top + 20f)
-                path.lineTo(centerX - 10f, top + 60f)
-                path.close()
 
-                val path2 = RemotePath()
-                path2.moveTo(centerX - 40f, top + 20f)
-                path2.lineTo(centerX + 40f, top + 20f)
-                path2.lineTo(centerX + 10f, top + 60f)
-                path2.close()
-
-                // drawPath(path = path.asComposePath(), color = Color.Gray)
-                drawTweenPath(
-                    path.asComposePath(),
-                    path2.asComposePath(),
-                    ((secondAngle % 7f) / 7f),
-                    Color.Cyan,
-                    0f,
-                    1f,
-                )
-
-                // hour hand
-                withTransform({
-                    translate(centerX - 64f, (centerY + top) / 2f)
-                    scale(5f, 5f, Offset(0f, 0f))
-                }) {
-                    drawPath(androidPath.asComposePath(), Color(0xFFA4C639))
-                }
+            // hour hand
+            withTransform({
+                translate(centerX - 64f, (centerY + top) / 2f)
+                scale(5f, 5f, Offset(0f, 0f))
+            }) {
+                drawPath(androidPath.asComposePath(), Color(0xFFA4C639))
             }
-            val shift = (bezel_thick + 20f)
+
+            val shift = faceTop + bezel_thick + 20f
             // bezel circles
             for (i in 0 until 12) {
                 rotate(15f + 30f * i, centerX, centerY) {
@@ -203,7 +181,7 @@ fun RcSimpleClock1(
                     }
                 }
             }
-
+            // ============ Draw Markers at various points =============
             for (i in 0 until 12) {
                 if ((i + 1) % 3 != 0) {
                     rotate(30f * i + 30, centerX, centerY) {
@@ -237,11 +215,17 @@ fun RcSimpleClock1(
                         rotate(30f * i + 30, centerX, centerY) {
                             val path = Path()
 
-                            path.moveTo(centerX - 40f, shift)
-                            path.lineTo(centerX + 40f, shift)
-                            path.lineTo(centerX, top + 40f + shift)
+                            path.moveTo(40f, 0)
+                            path.lineTo(-40f, 0)
+                            path.lineTo(0, 40f)
                             path.close()
-                            drawPath(path = path, color = Color.Gray)
+
+                            translate(
+                                (centerX).internalAsFloat(),
+                                (faceTop + bezel_thick / 2f - 20f).internalAsFloat(),
+                            ) {
+                                drawPath(path = path, color = minHandColor)
+                            }
                         }
                     }
                 }

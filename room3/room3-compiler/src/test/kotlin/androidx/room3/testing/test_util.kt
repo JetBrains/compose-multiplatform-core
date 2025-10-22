@@ -31,7 +31,6 @@ import androidx.room3.ext.GuavaUtilConcurrentTypeNames
 import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LifecyclesTypeNames
 import androidx.room3.ext.ReactiveStreamsTypeNames
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.processor.DatabaseViewProcessor
 import androidx.room3.processor.TableEntityProcessor
@@ -99,29 +98,6 @@ object COMMON {
             ReactiveStreamsTypeNames.PUBLISHER.canonicalName,
         )
     }
-    val RX2_FLOWABLE by lazy {
-        loadJavaCode("common/input/rxjava2/Flowable.java", RxJava2TypeNames.FLOWABLE.canonicalName)
-    }
-    val RX2_OBSERVABLE by lazy {
-        loadJavaCode(
-            "common/input/rxjava2/Observable.java",
-            RxJava2TypeNames.OBSERVABLE.canonicalName,
-        )
-    }
-    val RX2_SINGLE by lazy {
-        loadJavaCode("common/input/rxjava2/Single.java", RxJava2TypeNames.SINGLE.canonicalName)
-    }
-    val RX2_MAYBE by lazy {
-        loadJavaCode("common/input/rxjava2/Maybe.java", RxJava2TypeNames.MAYBE.canonicalName)
-    }
-    val RX2_COMPLETABLE by lazy {
-        loadJavaCode(
-            "common/input/rxjava2/Completable.java",
-            RxJava2TypeNames.COMPLETABLE.canonicalName,
-        )
-    }
-
-    val RX2_ROOM by lazy { loadKotlinCode("common/input/Rx2Room.kt") }
 
     val RX3_FLOWABLE by lazy {
         loadJavaCode("common/input/rxjava3/Flowable.java", RxJava3TypeNames.FLOWABLE.canonicalName)
@@ -175,24 +151,11 @@ object COMMON {
         loadKotlinCode("common/input/LimitOffsetListenableFuturePagingSource.kt")
     }
 
-    val RX2_PAGING_SOURCE by lazy { loadKotlinCode("common/input/Rx2PagingSource.kt") }
-
-    val RX2_EMPTY_RESULT_SET_EXCEPTION by lazy {
-        loadJavaCode(
-            "common/input/rxjava2/EmptyResultSetException.java",
-            "androidx.room3.EmptyResultSetException",
-        )
-    }
-
     val RX3_EMPTY_RESULT_SET_EXCEPTION by lazy {
         loadJavaCode(
             "common/input/rxjava3/EmptyResultSetException.java",
             "androidx.room3.rxjava3.EmptyResultSetException",
         )
-    }
-
-    val LIMIT_OFFSET_RX2_PAGING_SOURCE by lazy {
-        loadKotlinCode("common/input/LimitOffsetRx2PagingSource.kt")
     }
 
     val RX3_PAGING_SOURCE by lazy { loadKotlinCode("common/input/Rx3PagingSource.kt") }

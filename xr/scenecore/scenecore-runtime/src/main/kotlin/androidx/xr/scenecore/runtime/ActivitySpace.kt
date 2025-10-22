@@ -63,20 +63,20 @@ public interface ActivitySpace : SystemSpaceEntity {
      * Creates a hit test at the from the specified origin in the specified direction into the
      * scene.
      *
-     * @param origin The translation of the origin of the hit test relative to this ActivityPose.
-     * @param direction The direction for the hit test ray from the ActivityPose.
+     * @param origin The translation of the origin of the hit test relative to this ScenePose.
+     * @param direction The direction for the hit test ray from the ScenePose.
      * @param hitTestFilter The scenes that will be in range for the hit test.
-     * @param activityPose The ActivityPose to hit test against.
+     * @param scenePose The ScenePose to hit test against.
      * @return a {@code ListenableFuture<HitTestResult>}. The HitResult describes if it hit
-     *   something and where relative to the given ActivityPose. Listeners will be called on the
-     *   main thread if Runnable::run is supplied.
+     *   something and where relative to the given ScenePose. Listeners will be called on the main
+     *   thread if Runnable::run is supplied.
      */
     @Suppress("AsyncSuffixFuture")
     public fun hitTestRelativeToActivityPose(
         origin: Vector3,
         direction: Vector3,
-        @ActivityPose.HitTestFilterValue hitTestFilter: Int,
-        activityPose: ActivityPose,
+        @ScenePose.HitTestFilterValue hitTestFilter: Int,
+        scenePose: ScenePose,
     ): ListenableFuture<HitTestResult>
 
     /**

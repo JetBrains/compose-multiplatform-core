@@ -85,18 +85,6 @@ package androidx.room3
  * * When the return type is `Flow<T?>`, querying an empty table emits a null value.
  * * When the return type is `Flow<List<T>>`, querying an empty table emits an empty list.
  *
- * **RxJava2**
- *
- * If you are using RxJava2, you can also return `Flowable<T>` or `Publisher<T>` from query methods.
- * Since Reactive Streams does not allow `null`, if the query returns a nullable type, it will not
- * dispatch anything if the value is `null` (like fetching an [Entity] row that does not exist). You
- * can return [Flowable<T[]>] or [Flowable<List<T>>] to workaround this limitation.
- *
- * Both `Flowable<T>` and `Publisher<T>` will observe the database for changes and re-dispatch if
- * data changes. If you want to query the database without observing changes, you can use `Maybe<T>`
- * or `Single<T>`. If a `Single<T>` query returns `null`, Room will throw
- * [androidx.room3.EmptyResultSetException].
- *
  * Additionally if the statement is an INSERT, UPDATE or DELETE then the return types, `Single<T>`,
  * `Maybe<T>` and `Completable` are supported.
  *

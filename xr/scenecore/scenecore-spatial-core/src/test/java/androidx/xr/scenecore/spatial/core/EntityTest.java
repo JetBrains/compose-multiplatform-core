@@ -36,8 +36,8 @@ import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.PerceptionLibraryConstants;
 import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.runtime.ActivityPose.HitTestFilter;
 import androidx.xr.scenecore.runtime.HitTestResult;
+import androidx.xr.scenecore.runtime.ScenePose.HitTestFilter;
 import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
@@ -408,7 +408,7 @@ public final class EntityTest {
         child.setParent(mEntity);
         child.setAlpha(0.5f, Space.PARENT);
 
-        assertThat(child.getAlpha(Space.REAL_WORLD)).isEqualTo(1f);
+        assertThat(child.getAlpha(Space.REAL_WORLD)).isEqualTo(0.25f);
     }
 
     @Test

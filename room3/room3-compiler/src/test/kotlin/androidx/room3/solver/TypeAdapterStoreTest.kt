@@ -39,7 +39,6 @@ import androidx.room3.ext.PagingTypeNames
 import androidx.room3.ext.ReactiveStreamsTypeNames
 import androidx.room3.ext.RoomTypeNames.ROOM_DB
 import androidx.room3.ext.RoomTypeNames.STRING_UTIL
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.ext.implementsEqualsAndHashcode
 import androidx.room3.parser.SQLTypeAffinity
@@ -51,7 +50,6 @@ import androidx.room3.processor.ProcessorErrors
 import androidx.room3.solver.binderprovider.ListenableFuturePagingSourceQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.LiveDataQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.PagingSourceQueryResultBinderProvider
-import androidx.room3.solver.binderprovider.RxJava2PagingSourceQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.RxJava3PagingSourceQueryResultBinderProvider
 import androidx.room3.solver.binderprovider.RxQueryResultBinderProvider
 import androidx.room3.solver.query.parameter.CollectionQueryParameterAdapter
@@ -628,24 +626,6 @@ class TypeAdapterStoreTest {
     }
 
     @Test
-    fun testMissingRx2Room() {
-        runKspTest(sources = listOf(COMMON.PUBLISHER, COMMON.RX2_FLOWABLE)) { invocation ->
-            val publisherElement =
-                invocation.processingEnv.requireTypeElement(ReactiveStreamsTypeNames.PUBLISHER)
-            assertThat(publisherElement, notNullValue())
-            assertThat(
-                RxQueryResultBinderProvider.getAll(invocation.context).any {
-                    it.matches(publisherElement.type)
-                },
-                `is`(true),
-            )
-            invocation.assertCompilationResult {
-                hasError(ProcessorErrors.MISSING_ROOM_RXJAVA2_ARTIFACT)
-            }
-        }
-    }
-
-    @Test
     fun testMissingRx3Room() {
         runKspTest(sources = listOf(COMMON.PUBLISHER, COMMON.RX3_FLOWABLE)) { invocation ->
             val publisherElement =
@@ -712,27 +692,6 @@ class TypeAdapterStoreTest {
     }
 
     @Test
-    fun testMissingRoomPagingRx2() {
-        runKspTest(sources = listOf(COMMON.RX2_PAGING_SOURCE)) { invocation ->
-            val rx2PagingSourceElement =
-                invocation.processingEnv.requireTypeElement(PagingTypeNames.RX2_PAGING_SOURCE)
-            val intType = invocation.processingEnv.requireType(Integer::class)
-            val rx2PagingSourceIntIntType =
-                invocation.processingEnv.getDeclaredType(rx2PagingSourceElement, intType, intType)
-
-            assertThat(rx2PagingSourceElement, notNullValue())
-            assertThat(
-                RxJava2PagingSourceQueryResultBinderProvider(invocation.context)
-                    .matches(rx2PagingSourceIntIntType),
-                `is`(true),
-            )
-            invocation.assertCompilationResult {
-                hasError(ProcessorErrors.MISSING_ROOM_PAGING_RXJAVA2_ARTIFACT)
-            }
-        }
-    }
-
-    @Test
     fun testMissingRoomPagingRx3() {
         runKspTest(sources = listOf(COMMON.RX3_PAGING_SOURCE)) { invocation ->
             val rx3PagingSourceElement =
@@ -755,92 +714,70 @@ class TypeAdapterStoreTest {
 
     @Test
     fun testFindPublisher() {
-        listOf(COMMON.RX2_FLOWABLE to COMMON.RX2_ROOM, COMMON.RX3_FLOWABLE to COMMON.RX3_ROOM)
-            .forEach { (rxTypeSrc, rxRoomSrc) ->
-                runKspTest(
-                    sources = listOf(rxTypeSrc, rxRoomSrc),
-                    classpath =
-                        compileFiles(
-                            listOf(
-                                COMMON.RX2_SINGLE,
-                                COMMON.RX2_MAYBE,
-                                COMMON.RX2_COMPLETABLE,
-                                COMMON.RX2_OBSERVABLE,
-                                COMMON.RX3_SINGLE,
-                                COMMON.RX3_MAYBE,
-                                COMMON.RX3_COMPLETABLE,
-                                COMMON.RX3_OBSERVABLE,
-                                COMMON.PUBLISHER,
-                            )
-                        ),
-                ) { invocation ->
-                    val publisher =
-                        invocation.processingEnv.requireTypeElement(
-                            ReactiveStreamsTypeNames.PUBLISHER
+        listOf(COMMON.RX3_FLOWABLE to COMMON.RX3_ROOM).forEach { (rxTypeSrc, rxRoomSrc) ->
+            runKspTest(
+                sources = listOf(rxTypeSrc, rxRoomSrc),
+                classpath =
+                    compileFiles(
+                        listOf(
+                            COMMON.RX3_SINGLE,
+                            COMMON.RX3_MAYBE,
+                            COMMON.RX3_COMPLETABLE,
+                            COMMON.RX3_OBSERVABLE,
+                            COMMON.PUBLISHER,
                         )
-                    assertThat(publisher, notNullValue())
-                    assertThat(
-                        RxQueryResultBinderProvider.getAll(invocation.context).any {
-                            it.matches(publisher.type)
-                        },
-                        `is`(true),
-                    )
-                }
+                    ),
+            ) { invocation ->
+                val publisher =
+                    invocation.processingEnv.requireTypeElement(ReactiveStreamsTypeNames.PUBLISHER)
+                assertThat(publisher, notNullValue())
+                assertThat(
+                    RxQueryResultBinderProvider.getAll(invocation.context).any {
+                        it.matches(publisher.type)
+                    },
+                    `is`(true),
+                )
             }
+        }
     }
 
     @Test
     fun testFindFlowable() {
-        listOf(
-                Triple(COMMON.RX2_FLOWABLE, COMMON.RX2_ROOM, RxJava2TypeNames.FLOWABLE),
-                Triple(COMMON.RX3_FLOWABLE, COMMON.RX3_ROOM, RxJava3TypeNames.FLOWABLE),
-            )
-            .forEach { (rxTypeSrc, rxRoomSrc, rxTypeClassName) ->
-                runKspTest(
-                    sources = listOf(rxTypeSrc, rxRoomSrc),
-                    classpath =
-                        compileFiles(
-                            listOf(
-                                COMMON.RX2_SINGLE,
-                                COMMON.RX2_MAYBE,
-                                COMMON.RX2_COMPLETABLE,
-                                COMMON.RX2_OBSERVABLE,
-                                COMMON.RX3_SINGLE,
-                                COMMON.RX3_MAYBE,
-                                COMMON.RX3_COMPLETABLE,
-                                COMMON.RX3_OBSERVABLE,
-                                COMMON.PUBLISHER,
-                            )
-                        ),
-                ) { invocation ->
-                    val flowable = invocation.processingEnv.requireTypeElement(rxTypeClassName)
-                    assertThat(
-                        RxQueryResultBinderProvider.getAll(invocation.context).any {
-                            it.matches(flowable.type)
-                        },
-                        `is`(true),
-                    )
-                }
+        listOf(Triple(COMMON.RX3_FLOWABLE, COMMON.RX3_ROOM, RxJava3TypeNames.FLOWABLE)).forEach {
+            (rxTypeSrc, rxRoomSrc, rxTypeClassName) ->
+            runKspTest(
+                sources = listOf(rxTypeSrc, rxRoomSrc),
+                classpath =
+                    compileFiles(
+                        listOf(
+                            COMMON.RX3_SINGLE,
+                            COMMON.RX3_MAYBE,
+                            COMMON.RX3_COMPLETABLE,
+                            COMMON.RX3_OBSERVABLE,
+                            COMMON.PUBLISHER,
+                        )
+                    ),
+            ) { invocation ->
+                val flowable = invocation.processingEnv.requireTypeElement(rxTypeClassName)
+                assertThat(
+                    RxQueryResultBinderProvider.getAll(invocation.context).any {
+                        it.matches(flowable.type)
+                    },
+                    `is`(true),
+                )
             }
+        }
     }
 
     @Test
     fun testFindObservable() {
-        listOf(
-                Triple(COMMON.RX2_OBSERVABLE, COMMON.RX2_ROOM, RxJava2TypeNames.OBSERVABLE),
-                Triple(COMMON.RX3_OBSERVABLE, COMMON.RX3_ROOM, RxJava3TypeNames.OBSERVABLE),
-            )
+        listOf(Triple(COMMON.RX3_OBSERVABLE, COMMON.RX3_ROOM, RxJava3TypeNames.OBSERVABLE))
             .forEach { (rxTypeSrc, rxRoomSrc, rxTypeClassName) ->
                 runKspTest(
                     sources = listOf(rxTypeSrc, rxRoomSrc),
                     classpath =
                         compileFiles(
                             listOf(
-                                COMMON.RX2_SINGLE,
-                                COMMON.RX2_MAYBE,
-                                COMMON.RX2_COMPLETABLE,
-                                COMMON.RX2_OBSERVABLE,
-                                COMMON.RX2_FLOWABLE,
                                 COMMON.RX3_SINGLE,
                                 COMMON.RX3_MAYBE,
                                 COMMON.RX3_COMPLETABLE,
@@ -864,47 +801,40 @@ class TypeAdapterStoreTest {
 
     @Test
     fun testFindInsertSingle() {
-        listOf(
-                Triple(COMMON.RX2_SINGLE, COMMON.RX2_ROOM, RxJava2TypeNames.SINGLE),
-                Triple(COMMON.RX3_SINGLE, COMMON.RX3_ROOM, RxJava3TypeNames.SINGLE),
-            )
-            .forEach { (rxTypeSrc, _, rxTypeClassName) ->
-                runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
-                    val single = invocation.processingEnv.requireTypeElement(rxTypeClassName)
-                    assertThat(single, notNullValue())
-                    assertThat(
-                        RxCallableInsertOrUpsertFunctionBinderProvider.getAll(invocation.context)
-                            .any { it.matches(single.type) },
-                        `is`(true),
-                    )
-                }
+        listOf(Triple(COMMON.RX3_SINGLE, COMMON.RX3_ROOM, RxJava3TypeNames.SINGLE)).forEach {
+            (rxTypeSrc, _, rxTypeClassName) ->
+            runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
+                val single = invocation.processingEnv.requireTypeElement(rxTypeClassName)
+                assertThat(single, notNullValue())
+                assertThat(
+                    RxCallableInsertOrUpsertFunctionBinderProvider.getAll(invocation.context).any {
+                        it.matches(single.type)
+                    },
+                    `is`(true),
+                )
             }
+        }
     }
 
     @Test
     fun testFindInsertMaybe() {
-        listOf(
-                Triple(COMMON.RX2_MAYBE, COMMON.RX2_ROOM, RxJava2TypeNames.MAYBE),
-                Triple(COMMON.RX3_MAYBE, COMMON.RX3_ROOM, RxJava3TypeNames.MAYBE),
-            )
-            .forEach { (rxTypeSrc, _, rxTypeClassName) ->
-                runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
-                    val maybe = invocation.processingEnv.requireTypeElement(rxTypeClassName)
-                    assertThat(
-                        RxCallableInsertOrUpsertFunctionBinderProvider.getAll(invocation.context)
-                            .any { it.matches(maybe.type) },
-                        `is`(true),
-                    )
-                }
+        listOf(Triple(COMMON.RX3_MAYBE, COMMON.RX3_ROOM, RxJava3TypeNames.MAYBE)).forEach {
+            (rxTypeSrc, _, rxTypeClassName) ->
+            runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
+                val maybe = invocation.processingEnv.requireTypeElement(rxTypeClassName)
+                assertThat(
+                    RxCallableInsertOrUpsertFunctionBinderProvider.getAll(invocation.context).any {
+                        it.matches(maybe.type)
+                    },
+                    `is`(true),
+                )
             }
+        }
     }
 
     @Test
     fun testFindInsertCompletable() {
-        listOf(
-                Triple(COMMON.RX2_COMPLETABLE, COMMON.RX2_ROOM, RxJava2TypeNames.COMPLETABLE),
-                Triple(COMMON.RX3_COMPLETABLE, COMMON.RX3_ROOM, RxJava3TypeNames.COMPLETABLE),
-            )
+        listOf(Triple(COMMON.RX3_COMPLETABLE, COMMON.RX3_ROOM, RxJava3TypeNames.COMPLETABLE))
             .forEach { (rxTypeSrc, _, rxTypeClassName) ->
                 runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
                     val completable = invocation.processingEnv.requireTypeElement(rxTypeClassName)
@@ -934,8 +864,8 @@ class TypeAdapterStoreTest {
 
     @Test
     fun testFindDeleteOrUpdateSingle() {
-        runKspTest(sources = listOf(COMMON.RX2_SINGLE)) { invocation ->
-            val single = invocation.processingEnv.requireTypeElement(RxJava2TypeNames.SINGLE)
+        runKspTest(sources = listOf(COMMON.RX3_SINGLE)) { invocation ->
+            val single = invocation.processingEnv.requireTypeElement(RxJava3TypeNames.SINGLE)
             assertThat(single, notNullValue())
             assertThat(
                 RxCallableDeleteOrUpdateFunctionBinderProvider.getAll(invocation.context).any {
@@ -948,8 +878,8 @@ class TypeAdapterStoreTest {
 
     @Test
     fun testFindDeleteOrUpdateMaybe() {
-        runKspTest(sources = listOf(COMMON.RX2_MAYBE)) { invocation ->
-            val maybe = invocation.processingEnv.requireTypeElement(RxJava2TypeNames.MAYBE)
+        runKspTest(sources = listOf(COMMON.RX3_MAYBE)) { invocation ->
+            val maybe = invocation.processingEnv.requireTypeElement(RxJava3TypeNames.MAYBE)
             assertThat(maybe, notNullValue())
             assertThat(
                 RxCallableDeleteOrUpdateFunctionBinderProvider.getAll(invocation.context).any {
@@ -962,9 +892,9 @@ class TypeAdapterStoreTest {
 
     @Test
     fun testFindDeleteOrUpdateCompletable() {
-        runKspTest(sources = listOf(COMMON.RX2_COMPLETABLE)) { invocation ->
+        runKspTest(sources = listOf(COMMON.RX3_COMPLETABLE)) { invocation ->
             val completable =
-                invocation.processingEnv.requireTypeElement(RxJava2TypeNames.COMPLETABLE)
+                invocation.processingEnv.requireTypeElement(RxJava3TypeNames.COMPLETABLE)
             assertThat(completable, notNullValue())
             assertThat(
                 RxCallableDeleteOrUpdateFunctionBinderProvider.getAll(invocation.context).any {
@@ -993,51 +923,38 @@ class TypeAdapterStoreTest {
 
     @Test
     fun testFindUpsertSingle() {
-        listOf(
-                Triple(COMMON.RX2_SINGLE, COMMON.RX2_ROOM, RxJava2TypeNames.SINGLE),
-                Triple(COMMON.RX3_SINGLE, COMMON.RX3_ROOM, RxJava3TypeNames.SINGLE),
-            )
-            .forEach { (rxTypeSrc, _, rxTypeClassName) ->
-                runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
-                    val single = invocation.processingEnv.requireTypeElement(rxTypeClassName)
-                    assertThat(single).isNotNull()
-                    assertThat(
-                            RxCallableInsertOrUpsertFunctionBinderProvider.getAll(
-                                    invocation.context
-                                )
-                                .any { it.matches(single.type) }
-                        )
-                        .isTrue()
-                }
+        listOf(Triple(COMMON.RX3_SINGLE, COMMON.RX3_ROOM, RxJava3TypeNames.SINGLE)).forEach {
+            (rxTypeSrc, _, rxTypeClassName) ->
+            runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
+                val single = invocation.processingEnv.requireTypeElement(rxTypeClassName)
+                assertThat(single).isNotNull()
+                assertThat(
+                        RxCallableInsertOrUpsertFunctionBinderProvider.getAll(invocation.context)
+                            .any { it.matches(single.type) }
+                    )
+                    .isTrue()
             }
+        }
     }
 
     @Test
     fun testFindUpsertMaybe() {
-        listOf(
-                Triple(COMMON.RX2_MAYBE, COMMON.RX2_ROOM, RxJava2TypeNames.MAYBE),
-                Triple(COMMON.RX3_MAYBE, COMMON.RX3_ROOM, RxJava3TypeNames.MAYBE),
-            )
-            .forEach { (rxTypeSrc, _, rxTypeClassName) ->
-                runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
-                    val maybe = invocation.processingEnv.requireTypeElement(rxTypeClassName)
-                    assertThat(
-                            RxCallableInsertOrUpsertFunctionBinderProvider.getAll(
-                                    invocation.context
-                                )
-                                .any { it.matches(maybe.type) }
-                        )
-                        .isTrue()
-                }
+        listOf(Triple(COMMON.RX3_MAYBE, COMMON.RX3_ROOM, RxJava3TypeNames.MAYBE)).forEach {
+            (rxTypeSrc, _, rxTypeClassName) ->
+            runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
+                val maybe = invocation.processingEnv.requireTypeElement(rxTypeClassName)
+                assertThat(
+                        RxCallableInsertOrUpsertFunctionBinderProvider.getAll(invocation.context)
+                            .any { it.matches(maybe.type) }
+                    )
+                    .isTrue()
             }
+        }
     }
 
     @Test
     fun testFindUpsertCompletable() {
-        listOf(
-                Triple(COMMON.RX2_COMPLETABLE, COMMON.RX2_ROOM, RxJava2TypeNames.COMPLETABLE),
-                Triple(COMMON.RX3_COMPLETABLE, COMMON.RX3_ROOM, RxJava3TypeNames.COMPLETABLE),
-            )
+        listOf(Triple(COMMON.RX3_COMPLETABLE, COMMON.RX3_ROOM, RxJava3TypeNames.COMPLETABLE))
             .forEach { (rxTypeSrc, _, rxTypeClassName) ->
                 runKspTest(sources = listOf(rxTypeSrc)) { invocation ->
                     val completable = invocation.processingEnv.requireTypeElement(rxTypeClassName)
@@ -1279,58 +1196,6 @@ class TypeAdapterStoreTest {
     }
 
     @Test
-    fun findRx2PagingSourceJavaCollectionValue() {
-        runKspTest(sources = listOf(COMMON.RX2_PAGING_SOURCE)) { invocation ->
-            val rx2PagingSourceElement =
-                invocation.processingEnv.requireTypeElement(PagingTypeNames.RX2_PAGING_SOURCE)
-            val intType = invocation.processingEnv.requireType(Integer::class)
-            val collectionType = invocation.processingEnv.requireType("java.util.Collection")
-            val rx2PagingSourceIntCollectionType =
-                invocation.processingEnv.getDeclaredType(
-                    rx2PagingSourceElement,
-                    intType,
-                    collectionType,
-                )
-
-            assertThat(rx2PagingSourceElement).isNotNull()
-            assertThat(
-                    RxJava2PagingSourceQueryResultBinderProvider(invocation.context)
-                        .matches(rx2PagingSourceIntCollectionType)
-                )
-                .isTrue()
-            invocation.assertCompilationResult {
-                hasError(ProcessorErrors.PAGING_SPECIFY_PAGING_SOURCE_VALUE_TYPE)
-            }
-        }
-    }
-
-    @Test
-    fun findRx2PagingSourceKotlinCollectionValue() {
-        runKspTest(sources = listOf(COMMON.RX2_PAGING_SOURCE)) { invocation ->
-            val rx2PagingSourceElement =
-                invocation.processingEnv.requireTypeElement(PagingTypeNames.RX2_PAGING_SOURCE)
-            val intType = invocation.processingEnv.requireType(Integer::class)
-            val kotlinCollectionType = invocation.processingEnv.requireType(Collection::class)
-            val rx2PagingSourceIntCollectionType =
-                invocation.processingEnv.getDeclaredType(
-                    rx2PagingSourceElement,
-                    intType,
-                    kotlinCollectionType,
-                )
-
-            assertThat(rx2PagingSourceElement).isNotNull()
-            assertThat(
-                    RxJava2PagingSourceQueryResultBinderProvider(invocation.context)
-                        .matches(rx2PagingSourceIntCollectionType)
-                )
-                .isTrue()
-            invocation.assertCompilationResult {
-                hasError(ProcessorErrors.PAGING_SPECIFY_PAGING_SOURCE_VALUE_TYPE)
-            }
-        }
-    }
-
-    @Test
     fun findRx3PagingSourceJavaCollectionValue() {
         runKspTest(sources = listOf(COMMON.RX3_PAGING_SOURCE)) { invocation ->
             val rx3PagingSourceElement =
@@ -1497,59 +1362,6 @@ class TypeAdapterStoreTest {
                     .rawType
             // make sure the actual returned type from Provider is ListenableFuturePagingSource
             assertThat(returnedXRawType).isEqualTo(listenableFuturePagingSourceXRawType)
-        }
-    }
-
-    @Test
-    fun testRx2PagingSourceBinder() {
-        val inputSource =
-            Source.java(
-                qName = "foo.bar.MyDao",
-                code =
-                    """
-                ${DaoProcessorTest.DAO_PREFIX}
-
-                @Dao abstract class MyDao {
-                    @Query("SELECT uid FROM User")
-                    abstract androidx.paging.rxjava2.RxPagingSource<Integer, User> getAllIds();
-                }
-                    """
-                        .trimIndent(),
-            )
-        runKspTest(
-            sources =
-                listOf(
-                    inputSource,
-                    COMMON.USER,
-                    COMMON.RX2_PAGING_SOURCE,
-                    COMMON.LIMIT_OFFSET_RX2_PAGING_SOURCE,
-                )
-        ) { invocation: XTestInvocation ->
-            val dao =
-                invocation.roundEnv.getElementsAnnotatedWith(Dao::class.qualifiedName!!).first()
-            check(dao.isTypeElement())
-            val dbType = invocation.context.processingEnv.requireType(ROOM_DB)
-            val parser = DaoProcessor(invocation.context, dao, dbType, null)
-            val parsedDao = parser.process()
-            val binder =
-                parsedDao.queryFunctions
-                    .filterIsInstance<ReadQueryFunction>()
-                    .first()
-                    .queryResultBinder
-
-            assertThat(binder is MultiTypedPagingSourceQueryResultBinder).isTrue()
-            val rxPagingSourceXRawType: XRawType? =
-                invocation.context.processingEnv
-                    .findType(PagingTypeNames.RX2_PAGING_SOURCE.canonicalName)
-                    ?.rawType
-            val returnedXRawType =
-                parsedDao.queryFunctions
-                    .filterIsInstance<ReadQueryFunction>()
-                    .first()
-                    .returnType
-                    .rawType
-            // make sure the actual returned type from Provider is a Rx2PagingSource
-            assertThat(returnedXRawType).isEqualTo(rxPagingSourceXRawType)
         }
     }
 

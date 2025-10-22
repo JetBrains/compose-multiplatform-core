@@ -40,12 +40,12 @@ import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.runtime.ActivityPanelEntity;
 import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.AnchorEntity;
-import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.GltfEntity;
-import androidx.xr.scenecore.runtime.HeadActivityPose;
+import androidx.xr.scenecore.runtime.HeadScenePose;
 import androidx.xr.scenecore.runtime.PanelEntity;
-import androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose;
 import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeGltfFeature;
@@ -212,7 +212,7 @@ public class EntityManagerTest {
     }
 
     @Test
-    public void getAllSystemSpaceActivityPoses_returnsAllSystemSpaceActivityPoses()
+    public void getAllSystemSpaceScenePoses_returnsAllSystemSpaceScenePoses()
             throws Exception {
         assertThat(mEntityManager.getAllSystemSpaceActivityPoses().size()).isAtLeast(4);
         assertThat(mEntityManager.getAllSystemSpaceActivityPoses())
@@ -222,22 +222,22 @@ public class EntityManagerTest {
     }
 
     @Test
-    public void getSystemSpaceActivityPoseOfType_returnsSystemSpaceActivityPoseOfType()
+    public void getSystemSpaceScenePoseOfType_returnsSystemSpaceScenePoseOfType()
             throws Exception {
         assertThat(mEntityManager.getSystemSpaceActivityPoseOfType(ActivitySpace.class).get(0))
                 .isInstanceOf(ActivitySpaceImpl.class);
         assertThat(
                         mEntityManager
-                                .getSystemSpaceActivityPoseOfType(PerceptionSpaceActivityPose.class)
+                                .getSystemSpaceActivityPoseOfType(PerceptionSpaceScenePose.class)
                                 .get(0))
-                .isInstanceOf(PerceptionSpaceActivityPoseImpl.class);
-        assertThat(mEntityManager.getSystemSpaceActivityPoseOfType(HeadActivityPose.class).get(0))
-                .isInstanceOf(HeadActivityPoseImpl.class);
+                .isInstanceOf(PerceptionSpaceScenePoseImpl.class);
+        assertThat(mEntityManager.getSystemSpaceActivityPoseOfType(HeadScenePose.class).get(0))
+                .isInstanceOf(HeadScenePoseImpl.class);
         assertThat(
                         mEntityManager
-                                .getSystemSpaceActivityPoseOfType(CameraViewActivityPose.class)
+                                .getSystemSpaceActivityPoseOfType(CameraViewScenePose.class)
                                 .get(0))
-                .isInstanceOf(CameraViewActivityPoseImpl.class);
+                .isInstanceOf(CameraViewScenePoseImpl.class);
     }
 
     @Test

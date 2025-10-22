@@ -103,9 +103,9 @@ public abstract class BaseRoomConnectionManager {
      */
     // TODO(b/316944352): Retry mechanism
     private fun configureDatabase(connection: SQLiteConnection) {
+        configureBusyTimeout(connection)
         configureJournalMode(connection)
         configureSynchronousFlag(connection)
-        configureBusyTimeout(connection)
         val version =
             connection.prepare("PRAGMA user_version").use { statement ->
                 statement.step()
@@ -135,8 +135,8 @@ public abstract class BaseRoomConnectionManager {
      * per-connection PRAGMA.
      */
     private fun configurationConnection(connection: SQLiteConnection) {
-        configureSynchronousFlag(connection)
         configureBusyTimeout(connection)
+        configureSynchronousFlag(connection)
         openDelegate.onOpen(connection)
     }
 

@@ -118,8 +118,8 @@ fun ProtoLayoutScope.clickable(
         return Clickable.Builder(this, id)
             .setOnClick(pendingIntent)
             .apply {
-                minClickableWidth.takeIf { !it.isNaN() }?.let { setMinimumClickableWidth(it.dp) }
-                minClickableHeight.takeIf { !it.isNaN() }?.let { setMinimumClickableHeight(it.dp) }
+                if (!minClickableWidth.isNaN()) setMinimumClickableWidth(minClickableWidth.dp)
+                if (!minClickableHeight.isNaN()) setMinimumClickableHeight(minClickableHeight.dp)
             }
             .build()
     }

@@ -129,6 +129,7 @@ public class WebViewFeature {
             PRECONNECT,
             PROVIDER_WEAKLY_REF_WEBVIEW,
             HYPERLINK_CONTEXT_MENU_ITEMS,
+            ORIGIN_MATCHED_HEADERS,
             CUSTOM_REQUEST_HEADERS,
     })
     @Retention(RetentionPolicy.SOURCE)
@@ -139,6 +140,7 @@ public class WebViewFeature {
     /**
      *
      */
+    @SuppressLint("UnsafeOptInUsageError") // Don't mark WebViewStartupFeature as experimental.
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @StringDef(value = {
             STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX,
@@ -746,6 +748,7 @@ public class WebViewFeature {
      * {@link WebViewBuilder#build(Context, AttributeSet, int, int)}.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @WebViewBuilder.Experimental
     public static final String WEBVIEW_BUILDER = "WEBVIEW_BUILDER";
 
     /**
@@ -795,6 +798,7 @@ public class WebViewFeature {
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers {@link WebViewStartUpConfig.Builder#setProfilesToLoadDuringStartup(Set)}.
      */
+    @WebViewCompat.ExperimentalAsyncStartUp
     public static final String STARTUP_FEATURE_SET_PROFILES_TO_LOAD =
             "STARTUP_FEATURE_SET_PROFILES_TO_LOAD";
 
@@ -803,6 +807,7 @@ public class WebViewFeature {
      * This feature covers
      * {@link ProcessGlobalConfig#setUiThreadStartupMode(Context, int)}.
      */
+    @WebViewCompat.ExperimentalAsyncStartUp
     public static final String STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE =
             "STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE";
 
@@ -810,6 +815,7 @@ public class WebViewFeature {
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers {@link Profile#preconnect(String)}
      */
+    @Profile.ExperimentalPreconnect
     public static final String PRECONNECT = "PRECONNECT";
 
     /**

@@ -72,6 +72,12 @@ internal class PdfRendererAnnotationsProcessor(private val renderer: PdfDocument
                     return@forEach
                 }
                 renderer.withPage(pageNum) { page ->
+
+                    // Defensive call to re-populate annotations mapping in Aosp before calling
+                    // removing annotations.
+                    // TODO: b/448063670 - Remove this once addressed
+                    page.getPageAnnotations()
+
                     editIds.forEach {
                         try {
                             val aospId: Int = it.value.toInt()

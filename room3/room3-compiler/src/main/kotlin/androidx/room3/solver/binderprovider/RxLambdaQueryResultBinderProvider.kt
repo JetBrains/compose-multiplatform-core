@@ -61,7 +61,7 @@ private constructor(val context: Context, private val rxType: RxType) : QueryRes
 
     companion object {
         fun getAll(context: Context) =
-            listOf(RxType.RX2_SINGLE, RxType.RX2_MAYBE, RxType.RX3_SINGLE, RxType.RX3_MAYBE).map {
+            listOf(RxType.RX3_SINGLE, RxType.RX3_MAYBE).map {
                 RxLambdaQueryResultBinderProvider(context, it)
                     .requireArtifact(
                         context = context,

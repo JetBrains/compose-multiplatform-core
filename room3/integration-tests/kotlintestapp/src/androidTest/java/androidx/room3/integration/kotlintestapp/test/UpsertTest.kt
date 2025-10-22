@@ -28,8 +28,8 @@ import androidx.room3.integration.kotlintestapp.vo.Publisher
 import androidx.room3.useWriterConnection
 import androidx.sqlite.SQLiteException
 import androidx.test.filters.MediumTest
-import io.reactivex.observers.TestObserver
-import io.reactivex.subscribers.TestSubscriber
+import io.reactivex.rxjava3.observers.TestObserver
+import io.reactivex.rxjava3.subscribers.TestSubscriber
 import java.util.concurrent.CountDownLatch
 import kotlin.test.assertFails
 import kotlinx.coroutines.Dispatchers
@@ -211,7 +211,7 @@ class UpsertTest(driver: UseDriver) : TestDatabaseTest(driver) {
             booksDao.upsertBookSingle(TestUtil.BOOK_1).subscribeWith(TestObserver<Long>())
         drain()
         testObserver.assertError(SQLiteException::class.java)
-        assertThat(testObserver.errors().get(0).message).ignoringCase().contains("foreign key")
+        testObserver.assertError { it.message?.contains("foreign key", ignoreCase = true) == true }
     }
 
     @Test
@@ -255,7 +255,7 @@ class UpsertTest(driver: UseDriver) : TestDatabaseTest(driver) {
             booksDao.upsertBookMaybe(TestUtil.BOOK_1).subscribeWith(TestObserver<Long>())
         drain()
         testObserver.assertError(SQLiteException::class.java)
-        assertThat(testObserver.errors().get(0).message).ignoringCase().contains("foreign key")
+        testObserver.assertError { it.message?.contains("foreign key", ignoreCase = true) == true }
     }
 
     @Test
@@ -301,7 +301,7 @@ class UpsertTest(driver: UseDriver) : TestDatabaseTest(driver) {
             booksDao.upsertBookCompletable(TestUtil.BOOK_1).subscribeWith(TestObserver<Long>())
         drain()
         testObserver.assertError(SQLiteException::class.java)
-        assertThat(testObserver.errors().get(0).message).ignoringCase().contains("foreign key")
+        testObserver.assertError { it.message?.contains("foreign key", ignoreCase = true) == true }
     }
 
     @Test

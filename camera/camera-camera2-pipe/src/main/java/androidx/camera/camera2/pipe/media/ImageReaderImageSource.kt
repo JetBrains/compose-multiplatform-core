@@ -92,13 +92,18 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (usageFlags != null) {
-                Log.warn {
-                    "Ignoring usageFlags ($usageFlags) " +
-                        "for $cameraStream. MultiResolutionImageReader does not support " +
-                        "setting usage flags."
+            val usage =
+                if (usageFlags != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    usageFlags
+                } else {
+                    Log.warn {
+                        "Ignoring usageFlags ($usageFlags) " +
+                            "for $cameraStream. MultiResolutionImageReader does not support " +
+                            "setting usage flags."
+                    }
+                    null
                 }
-            }
+
             if (defaultDataSpace != null) {
                 Log.warn {
                     "Ignoring DataSpace ($defaultDataSpace) " +
@@ -114,7 +119,12 @@ internal class ImageReaderImageSources @Inject constructor(private val threads: 
                 }
             }
             val imageReader =
-                AndroidMultiResolutionImageReader.create(cameraStream, capacity, executorProvider())
+                AndroidMultiResolutionImageReader.create(
+                    cameraStream,
+                    capacity,
+                    executorProvider(),
+                    usage,
+                )
             return ImageReaderImageSource.create(imageReader)
         }
 

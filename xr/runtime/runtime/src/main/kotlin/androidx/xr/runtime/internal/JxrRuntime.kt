@@ -19,6 +19,7 @@ package androidx.xr.runtime.internal
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.ConfigMode
+import androidx.xr.runtime.XrDisplay.BlendMode
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -61,6 +62,16 @@ public interface JxrRuntime {
         @SuppressWarnings("HiddenTypeParameter") configMode: ConfigMode
     ): Boolean {
         return false
+    }
+
+    /**
+     * Gets the preferred [BlendMode] by the runtime.
+     *
+     * @return the preferred [BlendMode], or [BlendMode.NOT_APPLICABLE] if none are supported.
+     */
+    @SuppressWarnings("UnavailableSymbol", "HiddenTypeParameter")
+    public fun getPreferredBlendMode(): BlendMode {
+        return BlendMode.NOT_APPLICABLE
     }
 
     /**

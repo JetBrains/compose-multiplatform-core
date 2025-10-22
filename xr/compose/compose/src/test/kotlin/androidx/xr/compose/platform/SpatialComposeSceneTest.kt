@@ -30,7 +30,6 @@ import androidx.xr.runtime.Session
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.runtime.SceneRuntime
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -40,9 +39,7 @@ import org.mockito.kotlin.mock
 @RunWith(AndroidJUnit4::class)
 class SpatialComposeSceneTest {
 
-    @get:Rule
-    val composeTestRule =
-        createAndroidComposeRule<SubspaceTestingActivity>(StandardTestDispatcher())
+    @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     lateinit var mockSceneRuntime: SceneRuntime
 

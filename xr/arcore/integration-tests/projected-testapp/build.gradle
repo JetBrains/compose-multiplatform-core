@@ -42,7 +42,7 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")
 
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
 }
 
 android {

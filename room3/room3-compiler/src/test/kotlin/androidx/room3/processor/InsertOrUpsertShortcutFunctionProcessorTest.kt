@@ -34,7 +34,6 @@ import androidx.room3.ext.GuavaUtilConcurrentTypeNames
 import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LifecyclesTypeNames
 import androidx.room3.ext.ReactiveStreamsTypeNames
-import androidx.room3.ext.RxJava2TypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.solver.shortcut.result.InsertOrUpsertFunctionAdapter
 import androidx.room3.testing.context
@@ -484,20 +483,16 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
 
     @Test
     fun multipleParamCompletable() {
-        listOf(
-                RxJava2TypeNames.COMPLETABLE.canonicalName,
-                RxJava3TypeNames.COMPLETABLE.canonicalName,
-            )
-            .forEach { type ->
-                singleInsertUpsertShortcutFunction(
-                    """
+        listOf(RxJava3TypeNames.COMPLETABLE.canonicalName).forEach { type ->
+            singleInsertUpsertShortcutFunction(
+                """
                 @${annotation.java.canonicalName}
                 abstract fun bookUserCompletable(user: User, book: Book): $type
                 """
-                ) { insertionUpsertion, _ ->
-                    assertThat(insertionUpsertion.parameters.size).isEqualTo(2)
-                }
+            ) { insertionUpsertion, _ ->
+                assertThat(insertionUpsertion.parameters.size).isEqualTo(2)
             }
+        }
     }
 
     @Test
@@ -520,12 +515,12 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
     fun invalidReturnType() {
         listOf(
                 "int",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Int>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<String>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<String>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<User>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<User>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<Int>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<String>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<String>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<User>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<User>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -547,8 +542,8 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 "long[]",
                 "Long[]",
                 "List<Long>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<List<Long>>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<List<Long>>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<List<Long>>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<List<Long>>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -571,8 +566,8 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
         listOf(
                 "long",
                 "Long",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Long>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Long>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<Long>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<Long>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -595,8 +590,8 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
         listOf(
                 "long",
                 "Long",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Long>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Long>",
+                "${RxJava3TypeNames.SINGLE.canonicalName}<Long>",
+                "${RxJava3TypeNames.MAYBE.canonicalName}<Long>",
             )
             .forEach { type ->
                 singleInsertUpsertShortcutMethod(
@@ -620,26 +615,6 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 Pair("long[]", InsertOrUpsertFunctionAdapter.ReturnInfo.ID_ARRAY),
                 Pair("Long[]", InsertOrUpsertFunctionAdapter.ReturnInfo.ID_ARRAY_BOX),
                 Pair("List<Long>", InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST),
-                Pair(
-                    RxJava2TypeNames.COMPLETABLE.canonicalName,
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.VOID_OBJECT,
-                ),
-                Pair(
-                    "${RxJava2TypeNames.SINGLE.canonicalName}<Long>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID,
-                ),
-                Pair(
-                    "${RxJava2TypeNames.SINGLE.canonicalName}<List<Long>>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST,
-                ),
-                Pair(
-                    "${RxJava2TypeNames.MAYBE.canonicalName}<Long>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.SINGLE_ID,
-                ),
-                Pair(
-                    "${RxJava2TypeNames.MAYBE.canonicalName}<List<Long>>",
-                    InsertOrUpsertFunctionAdapter.ReturnInfo.ID_LIST,
-                ),
                 Pair(
                     RxJava3TypeNames.COMPLETABLE.canonicalName,
                     InsertOrUpsertFunctionAdapter.ReturnInfo.VOID_OBJECT,
@@ -1084,11 +1059,6 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
     @Test
     fun suspendReturnsDeferredType() {
         listOf(
-                "${RxJava2TypeNames.FLOWABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.OBSERVABLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.MAYBE.canonicalName}<Int>",
-                "${RxJava2TypeNames.SINGLE.canonicalName}<Int>",
-                "${RxJava2TypeNames.COMPLETABLE.canonicalName}",
                 "${RxJava3TypeNames.FLOWABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.OBSERVABLE.canonicalName}<Int>",
                 "${RxJava3TypeNames.MAYBE.canonicalName}<Int>",
@@ -1145,9 +1115,6 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 COMMON.USER,
                 COMMON.BOOK,
                 COMMON.NOT_AN_ENTITY,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_MAYBE,
-                COMMON.RX2_SINGLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,
@@ -1187,11 +1154,6 @@ abstract class InsertOrUpsertShortcutFunctionProcessorTest<out T : InsertOrUpser
                 COMMON.USER,
                 COMMON.BOOK,
                 COMMON.NOT_AN_ENTITY,
-                COMMON.RX2_COMPLETABLE,
-                COMMON.RX2_MAYBE,
-                COMMON.RX2_SINGLE,
-                COMMON.RX2_FLOWABLE,
-                COMMON.RX2_OBSERVABLE,
                 COMMON.RX3_COMPLETABLE,
                 COMMON.RX3_MAYBE,
                 COMMON.RX3_SINGLE,

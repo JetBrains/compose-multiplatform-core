@@ -34,6 +34,7 @@
          <trust group="com.google.android.play" reason="b/255621183"/>
          <trust group="com.google.android.tv" reason="b/345483744"/>
          <trust group="com.google.ar" reason="b/378946732"/>
+         <trust group="com.android.extensions.xr" name="extensions-xr" reason="b/440381584"/>
          <trust group="com.google.devsite" reason="developed by our own team, not signed yet"/>
          <trust group="com.google.firebase" reason="b/223907608"/>
          <trust group="com.google.mlkit" reason="b/223907608"/>

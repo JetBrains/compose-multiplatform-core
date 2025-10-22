@@ -20,7 +20,7 @@ import android.content.Context;
 import android.view.Surface;
 
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult;
@@ -165,7 +165,7 @@ final class SurfaceEntityImpl extends BaseRenderingEntity implements SurfaceEnti
     @Override
     public @NonNull PerceivedResolutionResult getPerceivedResolution() {
         // Get the Camera View with which to compute Perceived Resolution
-        CameraViewActivityPose cameraView =
+        CameraViewScenePose cameraView =
                 PerceivedResolutionUtils.getPerceivedResolutionCameraView(mEntityManager);
         if (cameraView == null) {
             return new PerceivedResolutionResult.InvalidCameraView();

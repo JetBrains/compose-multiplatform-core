@@ -30,6 +30,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -42,7 +43,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class DesignInfoProviderTest {
-    @get:Rule internal val rule = TestRule(createComposeRule())
+    @get:Rule internal val rule = TestRule(createComposeRule(StandardTestDispatcher()))
 
     @Test
     fun designInfoProviderInRemember_withConstraintSet() {

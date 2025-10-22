@@ -176,7 +176,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         // By default, set the activity space to the root of the underlying OpenXR reference space.
         mActivitySpace.setOpenXrReferenceSpacePose(Matrix4.Identity);
         mEntityManager.addSystemSpaceActivityPose(
-                new PerceptionSpaceActivityPoseImpl(mActivitySpace, mActivitySpace));
+                new PerceptionSpaceScenePoseImpl(mActivitySpace, mActivitySpace));
     }
 
     /**

@@ -104,25 +104,16 @@ object RoomAnnotationTypeNames {
 }
 
 object PagingTypeNames {
-    val DATA_SOURCE = XClassName.get(PAGING_PACKAGE, "DataSource")
     val POSITIONAL_DATA_SOURCE = XClassName.get(PAGING_PACKAGE, "PositionalDataSource")
-    val DATA_SOURCE_FACTORY = XClassName.get(PAGING_PACKAGE, "DataSource", "Factory")
     val PAGING_SOURCE = XClassName.get(PAGING_PACKAGE, "PagingSource")
     val LISTENABLE_FUTURE_PAGING_SOURCE =
         XClassName.get(PAGING_PACKAGE, "ListenableFuturePagingSource")
-    val RX2_PAGING_SOURCE = XClassName.get("$PAGING_PACKAGE.rxjava2", "RxPagingSource")
     val RX3_PAGING_SOURCE = XClassName.get("$PAGING_PACKAGE.rxjava3", "RxPagingSource")
 }
 
 object LifecyclesTypeNames {
     val LIVE_DATA = XClassName.get(LIFECYCLE_PACKAGE, "LiveData")
     val COMPUTABLE_LIVE_DATA = XClassName.get(LIFECYCLE_PACKAGE, "ComputableLiveData")
-}
-
-object AndroidTypeNames {
-    val CURSOR = XClassName.get("android.database", "Cursor")
-    val BUILD = XClassName.get("android.os", "Build")
-    val CANCELLATION_SIGNAL = XClassName.get("android.os", "CancellationSignal")
 }
 
 object CollectionTypeNames {
@@ -197,14 +188,6 @@ object GuavaUtilConcurrentTypeNames {
     val LISTENABLE_FUTURE = XClassName.get("com.google.common.util.concurrent", "ListenableFuture")
 }
 
-object RxJava2TypeNames {
-    val FLOWABLE = XClassName.get("io.reactivex", "Flowable")
-    val OBSERVABLE = XClassName.get("io.reactivex", "Observable")
-    val MAYBE = XClassName.get("io.reactivex", "Maybe")
-    val SINGLE = XClassName.get("io.reactivex", "Single")
-    val COMPLETABLE = XClassName.get("io.reactivex", "Completable")
-}
-
 object RxJava3TypeNames {
     val FLOWABLE = XClassName.get("io.reactivex.rxjava3.core", "Flowable")
     val OBSERVABLE = XClassName.get("io.reactivex.rxjava3.core", "Observable")
@@ -224,24 +207,6 @@ object RoomGuavaTypeNames {
 
 object RoomGuavaMemberNames {
     val GUAVA_ROOM_CREATE_LISTENABLE_FUTURE = GUAVA_ROOM.packageMember("createListenableFuture")
-}
-
-object RoomRxJava2TypeNames {
-    val RX2_ROOM = XClassName.get(ROOM_PACKAGE, "RxRoom")
-    val RX2_EMPTY_RESULT_SET_EXCEPTION = XClassName.get(ROOM_PACKAGE, "EmptyResultSetException")
-}
-
-object RoomRxJava2MemberNames {
-    val RX_ROOM_CREATE_FLOWABLE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createFlowable", isJvmStatic = true)
-    val RX_ROOM_CREATE_OBSERVABLE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createObservable", isJvmStatic = true)
-    val RX_ROOM_CREATE_SINGLE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createSingle", isJvmStatic = true)
-    val RX_ROOM_CREATE_MAYBE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createMaybe", isJvmStatic = true)
-    val RX_ROOM_CREATE_COMPLETABLE =
-        RoomRxJava2TypeNames.RX2_ROOM.companionMember("createCompletable", isJvmStatic = true)
 }
 
 object RoomRxJava3TypeNames {
@@ -268,11 +233,6 @@ object RoomPagingTypeNames {
 object RoomPagingGuavaTypeNames {
     val LIMIT_OFFSET_LISTENABLE_FUTURE_PAGING_SOURCE =
         XClassName.get("$ROOM_PACKAGE.paging.guava", "LimitOffsetListenableFuturePagingSource")
-}
-
-object RoomPagingRx2TypeNames {
-    val LIMIT_OFFSET_RX_PAGING_SOURCE =
-        XClassName.get("$ROOM_PACKAGE.paging.rxjava2", "LimitOffsetRxPagingSource")
 }
 
 object RoomPagingRx3TypeNames {
@@ -333,11 +293,6 @@ val DEFERRED_TYPES =
     listOf(
         LifecyclesTypeNames.LIVE_DATA,
         LifecyclesTypeNames.COMPUTABLE_LIVE_DATA,
-        RxJava2TypeNames.FLOWABLE,
-        RxJava2TypeNames.OBSERVABLE,
-        RxJava2TypeNames.MAYBE,
-        RxJava2TypeNames.SINGLE,
-        RxJava2TypeNames.COMPLETABLE,
         RxJava3TypeNames.FLOWABLE,
         RxJava3TypeNames.OBSERVABLE,
         RxJava3TypeNames.MAYBE,

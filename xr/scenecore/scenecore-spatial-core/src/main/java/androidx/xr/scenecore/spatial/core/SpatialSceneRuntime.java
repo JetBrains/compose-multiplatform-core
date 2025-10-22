@@ -37,19 +37,19 @@ import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.AnchorEntity;
 import androidx.xr.scenecore.runtime.AnchorPlacement;
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper;
-import androidx.xr.scenecore.runtime.CameraViewActivityPose;
+import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.GltfEntity;
 import androidx.xr.scenecore.runtime.GltfFeature;
-import androidx.xr.scenecore.runtime.HeadActivityPose;
+import androidx.xr.scenecore.runtime.HeadScenePose;
 import androidx.xr.scenecore.runtime.InputEventListener;
 import androidx.xr.scenecore.runtime.InteractableComponent;
 import androidx.xr.scenecore.runtime.LoggingEntity;
 import androidx.xr.scenecore.runtime.MediaPlayerExtensionsWrapper;
 import androidx.xr.scenecore.runtime.MovableComponent;
 import androidx.xr.scenecore.runtime.PanelEntity;
-import androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose;
 import androidx.xr.scenecore.runtime.PixelDimensions;
 import androidx.xr.scenecore.runtime.PlaneSemantic;
 import androidx.xr.scenecore.runtime.PlaneType;
@@ -136,13 +136,11 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     private SpatialModeChangeListener mSpatialModeChangeListener = null;
 
     private final ActivitySpaceImpl mActivitySpace;
-    private final HeadActivityPoseImpl mHeadActivityPose;
-    private final List<CameraViewActivityPoseImpl> mCameraActivityPoses = new ArrayList<>();
+    private final HeadScenePoseImpl mHeadScenePose;
+    private final List<CameraViewScenePoseImpl> mCameraViewScenePoses = new ArrayList<>();
 
-    /** Returns the PerceptionSpaceActivityPose for the Session. */
-    // TODO b/439932057 - Rename mPerceptionSpaceActivityPose to mPerceptionSpaceScenePose.
-
-    private final PerceptionSpaceActivityPoseImpl mPerceptionSpaceActivityPose;
+    /** Returns the PerceptionSpaceScenePose for the Session. */
+    private final PerceptionSpaceScenePoseImpl mPerceptionSpaceScenePose;
 
     private final PanelEntity mMainPanelEntity;
 
@@ -200,25 +198,25 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                         unscaledGravityAlignedActivitySpace,
                         executor);
         mEntityManager.addSystemSpaceActivityPose(mActivitySpace);
-        mHeadActivityPose =
-                new HeadActivityPoseImpl(mActivitySpace, mActivitySpace, perceptionLibrary);
-        mEntityManager.addSystemSpaceActivityPose(mHeadActivityPose);
-        mPerceptionSpaceActivityPose =
-                new PerceptionSpaceActivityPoseImpl(mActivitySpace, mActivitySpace);
-        mEntityManager.addSystemSpaceActivityPose(mPerceptionSpaceActivityPose);
-        mCameraActivityPoses.add(
-                new CameraViewActivityPoseImpl(
-                        CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE,
+        mHeadScenePose =
+                new HeadScenePoseImpl(mActivitySpace, mActivitySpace, perceptionLibrary);
+        mEntityManager.addSystemSpaceActivityPose(mHeadScenePose);
+        mPerceptionSpaceScenePose =
+                new PerceptionSpaceScenePoseImpl(mActivitySpace, mActivitySpace);
+        mEntityManager.addSystemSpaceActivityPose(mPerceptionSpaceScenePose);
+        mCameraViewScenePoses.add(
+                new CameraViewScenePoseImpl(
+                        CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE,
                         mActivitySpace,
                         mActivitySpace,
                         perceptionLibrary));
-        mCameraActivityPoses.add(
-                new CameraViewActivityPoseImpl(
-                        CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE,
+        mCameraViewScenePoses.add(
+                new CameraViewScenePoseImpl(
+                        CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE,
                         mActivitySpace,
                         mActivitySpace,
                         perceptionLibrary));
-        mCameraActivityPoses.forEach(mEntityManager::addSystemSpaceActivityPose);
+        mCameraViewScenePoses.forEach(mEntityManager::addSystemSpaceActivityPose);
         mMainPanelEntity =
                 new MainPanelEntityImpl(
                         activity, taskWindowLeashNode, extensions, entityManager, executor);
@@ -372,34 +370,34 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     }
 
     @Override
-    public @Nullable HeadActivityPose getHeadActivityPose() {
+    public @Nullable HeadScenePose getHeadActivityPose() {
         // If it is unable to retrieve a pose the head in not yet loaded in openXR so return null.
-        if (mHeadActivityPose.getPoseInOpenXrReferenceSpace() == null) {
+        if (mHeadScenePose.getPoseInOpenXrReferenceSpace() == null) {
             return null;
         }
-        return mHeadActivityPose;
+        return mHeadScenePose;
     }
 
     @Override
-    public @Nullable CameraViewActivityPose getCameraViewActivityPose(
-            @CameraViewActivityPose.CameraType int cameraType) {
-        CameraViewActivityPoseImpl cameraViewActivityPose = null;
-        if (cameraType == CameraViewActivityPose.CameraType.CAMERA_TYPE_LEFT_EYE) {
-            cameraViewActivityPose = mCameraActivityPoses.get(0);
-        } else if (cameraType == CameraViewActivityPose.CameraType.CAMERA_TYPE_RIGHT_EYE) {
-            cameraViewActivityPose = mCameraActivityPoses.get(1);
+    public @Nullable CameraViewScenePose getCameraViewActivityPose(
+            @CameraViewScenePose.CameraType int cameraType) {
+        CameraViewScenePoseImpl cameraViewScenePose = null;
+        if (cameraType == CameraViewScenePose.CameraType.CAMERA_TYPE_LEFT_EYE) {
+            cameraViewScenePose = mCameraViewScenePoses.get(0);
+        } else if (cameraType == CameraViewScenePose.CameraType.CAMERA_TYPE_RIGHT_EYE) {
+            cameraViewScenePose = mCameraViewScenePoses.get(1);
         }
         // If it is unable to retrieve a pose the camera in not yet loaded in openXR so return null.
-        if (cameraViewActivityPose == null
-                || cameraViewActivityPose.getPoseInOpenXrReferenceSpace() == null) {
+        if (cameraViewScenePose == null
+                || cameraViewScenePose.getPoseInOpenXrReferenceSpace() == null) {
             return null;
         }
-        return cameraViewActivityPose;
+        return cameraViewScenePose;
     }
 
     @Override
-    public @NonNull PerceptionSpaceActivityPose getPerceptionSpaceActivityPose() {
-        return mPerceptionSpaceActivityPose;
+    public @NonNull PerceptionSpaceScenePose getPerceptionSpaceActivityPose() {
+        return mPerceptionSpaceScenePose;
     }
 
     @Override
@@ -808,10 +806,10 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                 mExtensions,
                 mActivitySpace,
                 mActivitySpace,
-                mPerceptionSpaceActivityPose,
+                mPerceptionSpaceScenePose,
                 mEntityManager,
                 new PanelShadowRenderer(
-                        mActivitySpace, mPerceptionSpaceActivityPose, mActivity, mExtensions),
+                        mActivitySpace, mPerceptionSpaceScenePose, mActivity, mExtensions),
                 mExecutor);
     }
 

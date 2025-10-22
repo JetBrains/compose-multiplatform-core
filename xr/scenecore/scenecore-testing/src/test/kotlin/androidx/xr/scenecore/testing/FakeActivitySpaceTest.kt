@@ -18,10 +18,10 @@ package androidx.xr.scenecore.testing
 
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.ActivityPose
 import androidx.xr.scenecore.runtime.ActivitySpace
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.HitTestResult
+import androidx.xr.scenecore.runtime.ScenePose
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
@@ -97,7 +97,7 @@ class FakeActivitySpaceTest {
         val hitPosition = Vector3(1.0f, 2.0f, 3.0f)
         val surfaceNormal = Vector3(4.0f, 5.0f, 6.0f)
         val extensionsHitTestResult = HitTestResult(hitPosition, surfaceNormal, 1, distance)
-        val hitTestFilter = ActivityPose.HitTestFilter.SELF_SCENE
+        val hitTestFilter = ScenePose.HitTestFilter.SELF_SCENE
 
         underTest.activitySpaceHitTestResult = extensionsHitTestResult
         val hitTestResult =

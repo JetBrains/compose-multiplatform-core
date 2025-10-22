@@ -42,9 +42,6 @@ dependencies {
 
 android {
     namespace = "androidx.core.backported.fixes"
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
 }
 
 androidx {

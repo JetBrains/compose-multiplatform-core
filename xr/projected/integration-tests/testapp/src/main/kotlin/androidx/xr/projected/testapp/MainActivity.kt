@@ -63,17 +63,12 @@ class MainActivity : ComponentActivity() {
                     activity.key,
                     activity.value,
                     context,
-                    /* launchProjected= */ false,
+                    launchProjected = false,
                 )
             }
             // Add all activities that are launched on a projected device.
             for (activity in PROJECTED_ACTIVITY_MAP) {
-                CreateTestActivityRow(
-                    activity.key,
-                    activity.value,
-                    context,
-                    /* launchProjected= */ true,
-                )
+                CreateTestActivityRow(activity.key, activity.value, context, launchProjected = true)
             }
         }
     }

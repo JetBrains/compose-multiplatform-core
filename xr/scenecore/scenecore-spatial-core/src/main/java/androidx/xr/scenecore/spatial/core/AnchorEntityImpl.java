@@ -27,7 +27,7 @@ import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.AnchorEntity;
 import androidx.xr.scenecore.runtime.Entity;
-import androidx.xr.scenecore.runtime.PerceptionSpaceActivityPose;
+import androidx.xr.scenecore.runtime.PerceptionSpaceScenePose;
 import androidx.xr.scenecore.runtime.Space;
 import androidx.xr.scenecore.runtime.SpaceValue;
 
@@ -56,7 +56,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     private @State int mState = State.UNANCHORED;
     private Anchor mAnchor;
 
-    private final OpenXrActivityPoseHelper mOpenXrActivityPoseHelper;
+    private final OpenXrScenePoseHelper mOpenXrScenePoseHelper;
 
     private static class AnchorCreationData {
         Plane mPlane;
@@ -139,11 +139,11 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         }
 
         if (mActivitySpace != null && mActivitySpaceRoot != null) {
-            mOpenXrActivityPoseHelper =
-                    new OpenXrActivityPoseHelper(
+            mOpenXrScenePoseHelper =
+                    new OpenXrScenePoseHelper(
                             (ActivitySpaceImpl) activitySpace, (AndroidXrEntity) activitySpaceRoot);
         } else {
-            mOpenXrActivityPoseHelper = null;
+            mOpenXrScenePoseHelper = null;
         }
 
         // Return early if the state is already in an error state.
@@ -270,7 +270,7 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     @Override
     public @NonNull Pose getPoseInActivitySpace() {
         synchronized (this) {
-            if (mActivitySpace == null || mOpenXrActivityPoseHelper == null) {
+            if (mActivitySpace == null || mOpenXrScenePoseHelper == null) {
                 throw new IllegalStateException(
                         "Cannot get pose in Activity Space with a null Activity Space.");
             }
@@ -279,31 +279,31 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
                 return new Pose();
             }
 
-            return mOpenXrActivityPoseHelper.getPoseInActivitySpace(
+            return mOpenXrScenePoseHelper.getPoseInActivitySpace(
                     getPoseInOpenXrReferenceSpace());
         }
     }
 
     public Pose getPoseInPerceptionSpace() {
-        PerceptionSpaceActivityPose perceptionSpaceActivityPose =
+        PerceptionSpaceScenePose perceptionSpaceScenePose =
                 mEntityManager
-                        .getSystemSpaceActivityPoseOfType(PerceptionSpaceActivityPose.class)
+                        .getSystemSpaceActivityPoseOfType(PerceptionSpaceScenePose.class)
                         .get(0);
-        return transformPoseTo(new Pose(), perceptionSpaceActivityPose);
+        return transformPoseTo(new Pose(), perceptionSpaceScenePose);
     }
 
     @Override
     public @NonNull Pose getActivitySpacePose() {
-        if (mOpenXrActivityPoseHelper == null) {
+        if (mOpenXrScenePoseHelper == null) {
             throw new IllegalStateException(
                     "Cannot get pose in Activity Space. Anchor initialized in Error state.");
         }
-        return mOpenXrActivityPoseHelper.getActivitySpacePose(getPoseInOpenXrReferenceSpace());
+        return mOpenXrScenePoseHelper.getActivitySpacePose(getPoseInOpenXrReferenceSpace());
     }
 
     @Override
     public @NonNull Vector3 getActivitySpaceScale() {
-        return mOpenXrActivityPoseHelper.getActivitySpaceScale(getWorldSpaceScale());
+        return mOpenXrScenePoseHelper.getActivitySpaceScale(getWorldSpaceScale());
     }
 
     @Override

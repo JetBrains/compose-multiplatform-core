@@ -123,7 +123,12 @@ internal class BasicTextFieldSendKeyEventTest {
 }
 
 /** Creates a native [KeyEvent] instance that originates from IME. */
-private fun softKeyEvent(keyCode: Int, keyEventType: KeyEventType): KeyEvent {
+internal fun softKeyEvent(
+    keyCode: Int,
+    keyEventType: KeyEventType,
+    metaState: Int = 0,
+    source: Int = 0,
+): KeyEvent {
     val action =
         when (keyEventType) {
             KeyEventType.KeyDown -> KeyEvent.ACTION_DOWN
@@ -136,9 +141,10 @@ private fun softKeyEvent(keyCode: Int, keyEventType: KeyEventType): KeyEvent {
         action,
         keyCode,
         0,
-        0,
+        metaState,
         KeyCharacterMap.VIRTUAL_KEYBOARD,
         0,
         KeyEvent.FLAG_SOFT_KEYBOARD or KeyEvent.FLAG_KEEP_TOUCH_MODE,
+        source,
     )
 }

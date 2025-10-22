@@ -30,7 +30,7 @@ import androidx.room3.ext.SQLiteDriverTypeNames
 import androidx.room3.solver.CodeGenScope
 import androidx.room3.solver.RxType
 
-/** Binds the result as an RxJava2 Flowable, Publisher and Observable. */
+/** Binds the result as an RxJava Flowable, Publisher and Observable. */
 internal class RxQueryResultBinder(
     private val rxType: RxType,
     val typeArg: XType,

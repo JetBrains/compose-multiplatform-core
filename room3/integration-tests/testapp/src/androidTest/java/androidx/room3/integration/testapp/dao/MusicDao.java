@@ -47,15 +47,11 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 
-import org.jspecify.annotations.NonNull;
-
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import io.reactivex.Flowable;
 
 @Dao
 @SuppressWarnings("ROOM_EXPAND_PROJECTION_WITH_UNUSED_COLUMNS")
@@ -130,9 +126,6 @@ public interface MusicDao {
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
     LiveData<Map<Artist, List<Song>>> getAllArtistAndTheirSongsAsLiveDataList();
 
-    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
-    Flowable<@NonNull Map<Artist, List<Song>>> getAllArtistAndTheirSongsAsFlowableList();
-
     @Query("SELECT Album.mAlbumReleaseYear as mReleaseYear, Album.mAlbumName, Album.mAlbumArtist "
             + "as mBandName"
             + " from Album "
@@ -149,9 +142,6 @@ public interface MusicDao {
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
     LiveData<Map<Artist, Set<Song>>> getAllArtistAndTheirSongsAsLiveDataSet();
-
-    @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
-    Flowable<@NonNull Map<Artist, Set<Song>>> getAllArtistAndTheirSongsAsFlowableSet();
 
     /* Guava ImmutableMap */
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
