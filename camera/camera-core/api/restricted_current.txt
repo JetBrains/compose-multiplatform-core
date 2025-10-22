@@ -42,7 +42,13 @@ package androidx.camera.core {
     method public java.util.List<androidx.camera.core.CameraInfo!> filter(java.util.List<androidx.camera.core.CameraInfo!>);
   }
 
+  public final class CameraIdentifier {
+    method public boolean isOf(androidx.camera.core.Camera camera);
+    method public boolean isOf(androidx.camera.core.CameraInfo cameraInfo);
+  }
+
   public interface CameraInfo {
+    method public default androidx.camera.core.CameraIdentifier? getCameraIdentifier();
     method public androidx.camera.core.CameraSelector getCameraSelector();
     method public androidx.lifecycle.LiveData<androidx.camera.core.CameraState!> getCameraState();
     method public androidx.camera.core.ExposureState getExposureState();
@@ -73,16 +79,24 @@ package androidx.camera.core {
   public final class CameraInfoUnavailableException extends java.lang.Exception {
   }
 
+  public interface CameraPresenceListener {
+    method public void onCamerasAdded(java.util.Set<androidx.camera.core.CameraIdentifier!>);
+    method public void onCamerasRemoved(java.util.Set<androidx.camera.core.CameraIdentifier!>);
+  }
+
   public interface CameraProvider {
+    method public default void addCameraPresenceListener(java.util.concurrent.Executor executor, androidx.camera.core.CameraPresenceListener listener);
     method @InaccessibleFromKotlin public java.util.List<androidx.camera.core.CameraInfo> getAvailableCameraInfos();
     method public default androidx.camera.core.CameraInfo getCameraInfo(androidx.camera.core.CameraSelector cameraSelector);
     method @kotlin.jvm.Throws(exceptionClasses=CameraInfoUnavailableException::class) public boolean hasCamera(androidx.camera.core.CameraSelector cameraSelector) throws androidx.camera.core.CameraInfoUnavailableException;
+    method public default void removeCameraPresenceListener(androidx.camera.core.CameraPresenceListener listener);
     property public abstract java.util.List<androidx.camera.core.CameraInfo> availableCameraInfos;
   }
 
   public final class CameraSelector {
     method public java.util.List<androidx.camera.core.CameraInfo!> filter(java.util.List<androidx.camera.core.CameraInfo!>);
     method public String? getPhysicalCameraId();
+    method public static androidx.camera.core.CameraSelector of(androidx.camera.core.CameraIdentifier...);
     field public static final androidx.camera.core.CameraSelector DEFAULT_BACK_CAMERA;
     field public static final androidx.camera.core.CameraSelector DEFAULT_FRONT_CAMERA;
     field public static final int LENS_FACING_BACK = 1; // 0x1
@@ -108,6 +122,7 @@ package androidx.camera.core {
     field public static final int ERROR_CAMERA_DISABLED = 5; // 0x5
     field public static final int ERROR_CAMERA_FATAL_ERROR = 6; // 0x6
     field public static final int ERROR_CAMERA_IN_USE = 2; // 0x2
+    field public static final int ERROR_CAMERA_REMOVED = 8; // 0x8
     field public static final int ERROR_DO_NOT_DISTURB_MODE_ENABLED = 7; // 0x7
     field public static final int ERROR_MAX_CAMERAS_IN_USE = 1; // 0x1
     field public static final int ERROR_OTHER_RECOVERABLE_ERROR = 3; // 0x3

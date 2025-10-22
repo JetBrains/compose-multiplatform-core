@@ -49,7 +49,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 implementation("androidx.collection:collection:1.5.0")
                 api(project(":compose:material3:adaptive:adaptive"))
                 api(project(":compose:animation:animation-core"))

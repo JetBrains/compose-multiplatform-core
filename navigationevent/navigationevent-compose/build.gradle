@@ -52,7 +52,6 @@ androidXMultiplatform {
                 api(project(":navigationevent:navigationevent"))
                 implementation(project(":compose:ui:ui"))
                 implementation(project(":compose:runtime:runtime"))
-                implementation(libs.kotlinStdlib)
                 implementation(libs.kotlinCoroutinesCore)
             }
         }

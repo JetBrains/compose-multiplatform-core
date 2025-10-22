@@ -33,7 +33,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":xr:compose:compose"))
     api(project(":xr:runtime:runtime"))
     api(project(":xr:runtime:runtime-testing"))

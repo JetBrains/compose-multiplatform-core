@@ -53,7 +53,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":paging:paging-common"))
                 api("androidx.compose.runtime:runtime:1.9.0")
             }

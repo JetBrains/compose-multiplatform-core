@@ -164,21 +164,21 @@ class AppFunctionDataTypeMetadataTest {
             AppFunctionOneOfTypeMetadata(
                 matchOneOf = listOf(objectType),
                 isNullable = true,
-                qualifiedName = null,
+                qualifiedName = "oneOfType1",
                 description = description,
             )
         val oneOfDataType2 =
             AppFunctionOneOfTypeMetadata(
                 matchOneOf = listOf(objectType, referenceType),
                 isNullable = true,
-                qualifiedName = "oneOf1",
+                qualifiedName = "oneOfType2",
                 description = description,
             )
         val oneOfDataType2a =
             AppFunctionOneOfTypeMetadata(
                 matchOneOf = listOf(objectType, referenceType),
                 isNullable = true,
-                qualifiedName = "oneOf1",
+                qualifiedName = "oneOfType2",
                 description = description,
             )
 

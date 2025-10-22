@@ -25,6 +25,5 @@ android {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":privacysandbox:databridge:databridge-core"))
 }

@@ -23,7 +23,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":text:text-vertical"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.4")

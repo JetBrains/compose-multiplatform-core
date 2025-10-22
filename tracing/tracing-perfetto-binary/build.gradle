@@ -82,7 +82,6 @@ android {
 }
 
 dependencies {
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(project(":benchmark:benchmark-common")) // for supported ABI checks

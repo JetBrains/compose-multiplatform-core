@@ -48,6 +48,7 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,7 +57,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class NavHostScreenShotTest {
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule("navigation/navigation-compose")
 
@@ -144,16 +145,20 @@ class NavHostScreenShotTest {
             backPressedDispatcher.dispatchOnBackStarted(
                 BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
             )
-            assertThat(navController.currentBackStackEntry?.lifecycle?.currentState)
-                .isEqualTo(Lifecycle.State.STARTED)
-            assertThat(navController.previousBackStackEntry?.lifecycle?.currentState)
-                .isEqualTo(Lifecycle.State.STARTED)
+        }
+
+        composeTestRule.waitForIdle()
+
+        assertThat(navController.currentBackStackEntry?.lifecycle?.currentState)
+            .isEqualTo(Lifecycle.State.STARTED)
+        assertThat(navController.previousBackStackEntry?.lifecycle?.currentState)
+            .isEqualTo(Lifecycle.State.STARTED)
+
+        composeTestRule.runOnIdle {
             backPressedDispatcher.dispatchOnBackProgressed(
                 BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
             )
         }
-
-        composeTestRule.waitForIdle()
 
         composeTestRule.runOnIdle {
             backPressedDispatcher.dispatchOnBackProgressed(
@@ -201,16 +206,14 @@ class NavHostScreenShotTest {
             backPressedDispatcher.dispatchOnBackStarted(
                 BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
             )
-            assertThat(navController.currentBackStackEntry?.lifecycle?.currentState)
-                .isEqualTo(Lifecycle.State.STARTED)
-            assertThat(navController.previousBackStackEntry?.lifecycle?.currentState)
-                .isEqualTo(Lifecycle.State.STARTED)
-            backPressedDispatcher.dispatchOnBackProgressed(
-                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
-            )
         }
 
         composeTestRule.waitForIdle()
+
+        assertThat(navController.currentBackStackEntry?.lifecycle?.currentState)
+            .isEqualTo(Lifecycle.State.STARTED)
+        assertThat(navController.previousBackStackEntry?.lifecycle?.currentState)
+            .isEqualTo(Lifecycle.State.STARTED)
 
         composeTestRule.runOnIdle {
             backPressedDispatcher.dispatchOnBackProgressed(

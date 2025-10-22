@@ -36,7 +36,6 @@ androidXMultiplatform {
     androidLibrary {
         compileSdk = 35
         namespace = "androidx.lifecycle.viewmodel.compose"
-        lint.disable += "ComposeTestRuleDispatcher"
     }
     desktop()
     mac()
@@ -56,7 +55,6 @@ androidXMultiplatform {
                 api(project(":compose:runtime:runtime"))
                 api(project(":compose:ui:ui"))
                 api(libs.kotlinSerializationCore)
-                implementation(libs.kotlinStdlib)
             }
         }
 

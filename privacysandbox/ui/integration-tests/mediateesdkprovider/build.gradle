@@ -39,7 +39,6 @@ android {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     implementation(project(":privacysandbox:sdkruntime:sdkruntime-provider"))
     implementation(project(":privacysandbox:ui:ui-provider"))

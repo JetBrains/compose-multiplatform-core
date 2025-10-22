@@ -22,7 +22,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":core:core-remoteviews"))
 }
 

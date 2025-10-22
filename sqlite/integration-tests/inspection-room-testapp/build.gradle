@@ -22,7 +22,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation(libs.testExtJunitKtx)

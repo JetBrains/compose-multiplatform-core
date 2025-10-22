@@ -31,7 +31,6 @@ plugins {
 
 dependencies {
     // core-telecom dependencies
-    api(libs.kotlinStdlib)
     api(libs.guavaListenableFuture)
     implementation("androidx.annotation:annotation:1.9.0") // OptIn, RestrictTo, etc.
     implementation("androidx.core:core:1.13.1")
@@ -40,7 +39,6 @@ dependencies {
     // Test dependencies
     androidTestImplementation(project(":internal-testutils-common"))
     androidTestImplementation(libs.androidx.annotation)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)

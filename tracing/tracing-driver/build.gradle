@@ -33,7 +33,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
                 api(libs.androidx.annotation)
                 implementation("androidx.collection:collection:1.4.5")

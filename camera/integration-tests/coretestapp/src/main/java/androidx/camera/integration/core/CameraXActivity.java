@@ -472,6 +472,8 @@ public class CameraXActivity extends AppCompatActivity {
             } catch (IllegalStateException e) {
                 Log.e(TAG, "Unexpected decrement. Continuing");
             }
+        } else {
+            Log.d(TAG, mPreviewFrameCount.get() + " frames counted on preview.");
         }
     };
 

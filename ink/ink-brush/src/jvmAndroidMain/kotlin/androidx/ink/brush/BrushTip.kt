@@ -62,7 +62,6 @@ private constructor(
         @FloatRange(from = -90.0, to = 90.0) @AngleDegreesFloat slantDegrees: Float = 0f,
         @FloatRange(from = 0.0, to = 1.0) pinch: Float = 0f,
         @AngleDegreesFloat rotationDegrees: Float = 0f,
-        @FloatRange(from = 0.0, to = 2.0) opacityMultiplier: Float = 1f,
         @FloatRange(from = 0.0, toInclusive = false) particleGapDistanceScale: Float = 0f,
         @IntRange(from = 0L) particleGapDurationMillis: Long = 0L,
         behaviors: List<BrushBehavior> = emptyList(),
@@ -74,7 +73,6 @@ private constructor(
             slantDegrees,
             pinch,
             rotationDegrees,
-            opacityMultiplier,
             particleGapDistanceScale,
             particleGapDurationMillis,
             behaviors.map { it.nativePointer }.toLongArray(),
@@ -160,18 +158,6 @@ private constructor(
         get() = BrushTipNative.getRotationDegrees(nativePointer)
 
     /**
-     * Scales the opacity of the base brush color for this tip, independent of `brush_behavior`s. A
-     * possible example application is a highlighter brush.
-     *
-     * The multiplier must be in the range [0, 2] and the value ultimately applied can be modified
-     * by applicable `brush_behavior`s.
-     */
-    @get:FloatRange(from = 0.0, to = 2.0)
-    @Deprecated("Use brush paint color functions instead.")
-    public val opacityMultiplier: Float
-        get() = BrushTipNative.getOpacityMultiplier(nativePointer)
-
-    /**
      * Parameter controlling emission of particles as a function of distance traveled by the stroke
      * inputs.
      *
@@ -210,7 +196,6 @@ private constructor(
         slantDegrees: Float = this.slantDegrees,
         @FloatRange(from = 0.0, to = 1.0) pinch: Float = this.pinch,
         @AngleDegreesFloat rotationDegrees: Float = this.rotationDegrees,
-        @FloatRange(from = 0.0, to = 2.0) opacityMultiplier: Float = this.opacityMultiplier,
         @FloatRange(from = 0.0, toInclusive = false)
         particleGapDistanceScale: Float = this.particleGapDistanceScale,
         @IntRange(from = 0L) particleGapDurationMillis: Long = this.particleGapDurationMillis,
@@ -223,7 +208,6 @@ private constructor(
             slantDegrees,
             pinch,
             rotationDegrees,
-            opacityMultiplier,
             particleGapDistanceScale,
             particleGapDurationMillis,
             behaviors,
@@ -242,7 +226,6 @@ private constructor(
             .setSlantDegrees(slantDegrees)
             .setPinch(pinch)
             .setRotationDegrees(rotationDegrees)
-            .setOpacityMultiplier(opacityMultiplier)
             .setParticleGapDistanceScale(particleGapDistanceScale)
             .setParticleGapDurationMillis(particleGapDurationMillis)
             .setBehaviors(behaviors)
@@ -261,7 +244,6 @@ private constructor(
         @AngleDegreesFloat private var slantDegrees: Float = 0f
         private var pinch: Float = 0f
         @AngleDegreesFloat private var rotationDegrees: Float = 0f
-        private var opacityMultiplier: Float = 1f
         private var particleGapDistanceScale: Float = 0F
         private var particleGapDurationMillis: Long = 0L
         private var behaviors: List<BrushBehavior> = emptyList()
@@ -292,11 +274,6 @@ private constructor(
             rotationDegrees = degrees
         }
 
-        @Deprecated("Use brush paint color functions instead.")
-        public fun setOpacityMultiplier(
-            @FloatRange(from = 0.0, to = 2.0) opacityMultiplier: Float
-        ): Builder = apply { this.opacityMultiplier = opacityMultiplier }
-
         public fun setParticleGapDistanceScale(
             @FloatRange(from = 0.0, toInclusive = false) particleGapDistanceScale: Float
         ): Builder = apply { this.particleGapDistanceScale = particleGapDistanceScale }
@@ -317,7 +294,6 @@ private constructor(
                 slantDegrees,
                 pinch,
                 rotationDegrees,
-                opacityMultiplier,
                 particleGapDistanceScale,
                 particleGapDurationMillis,
                 behaviors,
@@ -335,7 +311,6 @@ private constructor(
             rotationDegrees == other.rotationDegrees &&
             particleGapDistanceScale == other.particleGapDistanceScale &&
             particleGapDurationMillis == other.particleGapDurationMillis &&
-            opacityMultiplier == other.opacityMultiplier &&
             behaviors == other.behaviors
     }
 
@@ -347,7 +322,6 @@ private constructor(
         result = 31 * result + cornerRounding.hashCode()
         result = 31 * result + slantDegrees.hashCode()
         result = 31 * result + rotationDegrees.hashCode()
-        result = 31 * result + opacityMultiplier.hashCode()
         result = 31 * result + particleGapDistanceScale.hashCode()
         result = 31 * result + particleGapDurationMillis.hashCode()
         result = 31 * result + behaviors.hashCode()
@@ -358,7 +332,7 @@ private constructor(
     override fun toString(): String =
         "BrushTip(scale=($scaleX, $scaleY), cornerRounding=$cornerRounding," +
             " slantDegrees=$slantDegrees, pinch=$pinch, rotationDegrees=$rotationDegrees," +
-            " opacityMultiplier=$opacityMultiplier, particleGapDistanceScale=$particleGapDistanceScale," +
+            " particleGapDistanceScale=$particleGapDistanceScale," +
             " particleGapDurationMillis=$particleGapDurationMillis, behaviors=$behaviors)"
 
     /** Delete native BrushTip memory. */
@@ -413,7 +387,6 @@ private object BrushTipNative {
         slantDegrees: Float,
         pinch: Float,
         rotationDegrees: Float,
-        opacityMultiplier: Float,
         particleGapDistanceScale: Float,
         particleGapDurationMillis: Long,
         behaviorNativePointersArray: LongArray,
@@ -433,8 +406,6 @@ private object BrushTipNative {
     @UsedByNative external fun getPinch(nativePointer: Long): Float
 
     @UsedByNative @AngleDegreesFloat external fun getRotationDegrees(nativePointer: Long): Float
-
-    @UsedByNative external fun getOpacityMultiplier(nativePointer: Long): Float
 
     @UsedByNative external fun getParticleGapDistanceScale(nativePointer: Long): Float
 

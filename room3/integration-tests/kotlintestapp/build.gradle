@@ -54,7 +54,6 @@ dependencies {
     implementation(project(":paging:paging-guava"))
     implementation("androidx.arch.core:core-runtime:2.2.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
     kspAndroidTestWithKspGenKotlin(project(":room3:room3-compiler"))
     androidTestImplementation("androidx.arch.core:core-runtime:2.2.0")

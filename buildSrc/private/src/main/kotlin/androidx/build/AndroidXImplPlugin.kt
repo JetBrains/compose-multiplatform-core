@@ -867,13 +867,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         libraryAndroidComponentsExtension.apply {
             finalizeDsl {
                 it.defaultConfig.aarMetadata.configure(it.compileSdk)
+                project.setUpBlankProguardFileForAarIfNeeded(it.defaultConfig)
                 it.lint.targetSdk = project.defaultAndroidConfig.targetSdk
                 it.testOptions.targetSdk = project.defaultAndroidConfig.targetSdk
                 // Replace with a public API once available, see b/360392255
                 it.buildTypes.configureEach { buildType ->
                     if (buildType.name == buildTypeForTests && !project.hasBenchmarkPlugin())
                         (buildType as TestBuildType).isDebuggable = true
-                    project.setUpBlankProguardFileForAarIfNeeded(buildType)
                 }
             }
             // Disable debug build type for Android Libraries

@@ -49,7 +49,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(project(":lifecycle:lifecycle-runtime"))
             }
         }

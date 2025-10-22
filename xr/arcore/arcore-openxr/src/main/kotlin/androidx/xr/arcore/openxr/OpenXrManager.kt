@@ -17,6 +17,7 @@
 package androidx.xr.arcore.openxr
 
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RestrictTo
@@ -249,7 +250,7 @@ internal constructor(
 
     private external fun nativeGetPointer(): Long
 
-    private external fun nativeInit(activity: Activity, startPollingThread: Boolean): Boolean
+    private external fun nativeInit(context: Context, startPollingThread: Boolean): Boolean
 
     private external fun nativeDeInit(): Boolean
 

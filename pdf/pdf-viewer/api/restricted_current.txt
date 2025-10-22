@@ -207,7 +207,7 @@ package androidx.pdf.selection {
   }
 
   public final class SelectionMenuComponent extends androidx.pdf.selection.ContextMenuComponent {
-    ctor public SelectionMenuComponent(Object key, String label, optional String? contentDescription, kotlin.jvm.functions.Function1<? super androidx.pdf.selection.SelectionMenuSession,kotlin.Unit> onClick);
+    ctor public SelectionMenuComponent(Object key, String label, String? contentDescription, kotlin.jvm.functions.Function1<? super androidx.pdf.selection.SelectionMenuSession,kotlin.Unit> onClick);
     method @InaccessibleFromKotlin public String? getContentDescription();
     method @InaccessibleFromKotlin public String getLabel();
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function1<androidx.pdf.selection.SelectionMenuSession,kotlin.Unit> getOnClick();

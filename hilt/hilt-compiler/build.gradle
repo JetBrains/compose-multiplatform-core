@@ -34,7 +34,6 @@ plugins {
 androidx.configureAarAsJarForConfiguration("testImplementation")
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation("androidx.room:room-compiler-processing:2.6.0")
     implementation(libs.javapoet)
     implementation(libs.kspApi)

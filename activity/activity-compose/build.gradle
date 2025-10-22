@@ -32,7 +32,6 @@ plugins {
 
 dependencies {
 
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesCore)
     api("androidx.compose.runtime:runtime:1.7.0")
     api("androidx.compose.runtime:runtime-saveable:1.7.0")

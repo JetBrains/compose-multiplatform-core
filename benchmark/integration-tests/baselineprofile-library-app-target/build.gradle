@@ -34,6 +34,5 @@ android {
 
 dependencies {
     implementation(project(":benchmark:integration-tests:baselineprofile-library-consumer"))
-    implementation(libs.kotlinStdlib)
     implementation(libs.constraintLayout)
 }

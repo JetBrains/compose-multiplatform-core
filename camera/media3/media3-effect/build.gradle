@@ -41,7 +41,6 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation("androidx.camera:camera-camera2:1.4.0")
     androidTestImplementation("androidx.camera:camera-lifecycle:1.4.0")

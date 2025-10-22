@@ -30,7 +30,6 @@ androidXMultiplatform {
         compileSdk = 35
         namespace = "androidx.navigation.compose"
         androidResources.enable = true
-        lint.disable += "ComposeTestRuleDispatcher"
     }
     desktop()
     mac()
@@ -43,7 +42,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(project(":compose:animation:animation"))
                 api(project(":compose:ui:ui"))
                 api(project(":compose:runtime:runtime"))

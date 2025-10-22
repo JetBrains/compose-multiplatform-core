@@ -39,7 +39,6 @@ def compileSdk = AndroidXConfig.getDefaultAndroidConfig(project).getCompileSdk()
 dependencies {
     api(project(":privacysandbox:tools:tools"))
     api(project(":privacysandbox:tools:tools-core"))
-    api(libs.kotlinStdlib)
     implementation(libs.kspApi)
     implementation("com.squareup:kotlinpoet:2.0.0")
 

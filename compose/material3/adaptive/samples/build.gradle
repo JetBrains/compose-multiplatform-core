@@ -34,7 +34,6 @@ plugins {
 
 dependencies {
 
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinSerializationCore)
 
     compileOnly(project(":annotation:annotation-sampled"))

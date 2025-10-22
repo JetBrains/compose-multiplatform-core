@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.compose.runtime:runtime:1.8.0")
     implementation("androidx.compose.foundation:foundation:1.8.0")

@@ -38,7 +38,6 @@ dependencies {
     api("androidx.compose.ui:ui-unit:1.1.1")
     api("androidx.wear.tiles:tiles:1.1.0")
 
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesGuava)
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
     implementation("androidx.lifecycle:lifecycle-service:2.6.1")

@@ -26,6 +26,7 @@ import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.DYNAMIC_RANGE
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.FPS_RANGE
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.IMAGE_FORMAT
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.RECORDING_QUALITY
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.VIDEO_STABILIZATION
 import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
@@ -147,6 +148,7 @@ public enum class UseCaseType(
                 FPS_RANGE -> useCase.isFpsRangeConfiguredByApp()
                 VIDEO_STABILIZATION -> useCase.isStabilizationModeConfiguredByApp()
                 IMAGE_FORMAT -> useCase.isImageFormatConfiguredByApp()
+                RECORDING_QUALITY -> useCase.isRecordingQualityConfiguredByApp()
             }
 
         private fun UseCase.isDynamicRangeConfiguredByApp() = appConfig.hasDynamicRange()
@@ -159,5 +161,11 @@ public enum class UseCaseType(
 
         private fun UseCase.isImageFormatConfiguredByApp() =
             appConfig.containsOption(ImageCaptureConfig.OPTION_OUTPUT_FORMAT)
+
+        private fun UseCase.isRecordingQualityConfiguredByApp(): Boolean =
+            appConfig.retrieveOption(
+                UseCaseConfig.OPTION_IS_VIDEO_QUALITY_SELECTOR_DEFAULT,
+                true,
+            ) == false
     }
 }

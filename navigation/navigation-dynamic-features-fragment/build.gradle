@@ -39,7 +39,6 @@ dependencies {
     api(project(":navigation:navigation-fragment"))
     api(project(":navigation:navigation-runtime"))
     api(libs.playFeatureDelivery)
-    api(libs.kotlinStdlib)
 
     implementation(libs.kotlinSerializationCore)
     implementation("androidx.activity:activity:1.7.2")

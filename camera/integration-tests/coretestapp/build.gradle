@@ -96,7 +96,6 @@ dependencies {
     // Testing framework
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.espressoIdlingResource)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation(libs.leakcanaryInstrumentation)
@@ -117,7 +116,6 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
     androidTestImplementation("org.jetbrains.kotlinx:atomicfu:0.13.1")
 
-    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.kotlinCoroutinesAndroid)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)

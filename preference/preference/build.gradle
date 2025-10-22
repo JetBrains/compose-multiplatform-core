@@ -41,17 +41,13 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.truth)
 }
 
 android {
     defaultConfig {
         vectorDrawables.useSupportLibrary = true
-    }
-
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
     }
     namespace = "androidx.preference"
 }

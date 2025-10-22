@@ -57,7 +57,6 @@ dependencies {
     androidTestImplementation("androidx.compose.material:material-icons-core:1.6.7")
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinReflect)
     androidTestImplementation(libs.kotlinTestCommon)
     androidTestImplementation(libs.truth)

@@ -25,6 +25,7 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSerial
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSPropertyDeclaration
+import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ClassName
@@ -55,7 +56,10 @@ interface AppFunctionSerializableType {
     /** The generated factory variable name. */
     val factoryVariableName: String
         get() =
-            "${appFunctionSerializableTypeClassDeclaration.jvmClassName.replace("$", "").replaceFirstChar { it -> it.lowercase() } }Factory"
+            "${
+                appFunctionSerializableTypeClassDeclaration.jvmClassName.replace("$", "")
+                    .replaceFirstChar { it -> it.lowercase() }
+            }Factory"
 
     /** The docstring of the annotated class. */
     val docString: String
@@ -285,5 +289,61 @@ interface AppFunctionSerializableType {
     interface FactoryCodeBuilder {
         // TODO: b/410764334 - Consider abstracting FileSpec builder logic
         fun buildAppFunctionSerializableFactoryClass(): FileSpec
+    }
+
+    companion object {
+        /**
+         * Creates a new [AppFunctionSerializableType] from the given [classDeclaration].
+         *
+         * If the [typeArguments] are provided, and the [classDeclaration] is a
+         * [AnnotatedAppFunctionSerializable] then it will be parameterized accordingly
+         */
+        fun create(
+            classDeclaration: KSClassDeclaration,
+            typeArguments: List<KSTypeArgument> = emptyList(),
+        ): AppFunctionSerializableType =
+            when {
+                isAnnotatedWithAppFunctionSerializableInterface(classDeclaration) ->
+                    AnnotatedAppFunctionSerializableInterface(classDeclaration)
+
+                isAnnotatedWithAppFunctionSerializableProxy(classDeclaration) ->
+                    AnnotatedAppFunctionSerializableProxy(classDeclaration)
+
+                isAnnotatedWithAppFunctionSerializable(classDeclaration) &&
+                    isOneOfType(classDeclaration) ->
+                    AnnotatedOneOfAppFunctionSerializable(classDeclaration)
+
+                isAnnotatedWithAppFunctionSerializable(classDeclaration) ->
+                    AnnotatedAppFunctionSerializable(classDeclaration)
+                        .parameterizedBy(typeArguments)
+
+                else ->
+                    throw ProcessingException(
+                        "Invalid AppFunctionSerializable type.",
+                        classDeclaration,
+                    )
+            }
+
+        fun isAnnotatedWithAppFunctionSerializable(classDeclaration: KSClassDeclaration): Boolean =
+            classDeclaration.annotations.findAnnotation(
+                AppFunctionSerializableAnnotation.CLASS_NAME
+            ) != null
+
+        fun isAnnotatedWithAppFunctionSerializableProxy(
+            classDeclaration: KSClassDeclaration
+        ): Boolean =
+            classDeclaration.annotations.findAnnotation(
+                IntrospectionHelper.AppFunctionSerializableProxyAnnotation.CLASS_NAME
+            ) != null
+
+        fun isAnnotatedWithAppFunctionSerializableInterface(
+            classDeclaration: KSClassDeclaration
+        ): Boolean =
+            classDeclaration.annotations.findAnnotation(
+                IntrospectionHelper.AppFunctionSerializableInterfaceAnnotation.CLASS_NAME
+            ) != null
+
+        fun isOneOfType(classDeclaration: KSClassDeclaration) =
+            classDeclaration.modifiers.contains(Modifier.SEALED)
     }
 }

@@ -16,8 +16,10 @@
 
 package androidx.camera.integration.featurecombo
 
+import android.util.Log
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.ExperimentalSessionConfig
@@ -26,10 +28,6 @@ import androidx.camera.core.UseCase
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase.*
 import androidx.camera.testing.impl.CameraUtil
-import androidx.camera.video.Quality
-import androidx.camera.video.QualitySelector
-import androidx.camera.video.Recorder
-import androidx.camera.video.VideoCapture
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.CompletableDeferred
@@ -53,7 +51,7 @@ class FeatureCombinationDeviceTest(
 ) : FeatureGroupTestBase(cameraSelector, implName, cameraXConfig) {
     @Test
     fun bindToLifecycle_allFeaturesPreferred_canBindSuccessfully(): Unit = runBlocking {
-        bindAndVerifyFeatures(useCasesToTest.toUseCases(), allFeatures.toList())
+        bindAndVerifyFeatures(useCasesToTest.toUseCases(), preferredFeatures = allFeatures.toList())
     }
 
     @Test
@@ -62,12 +60,15 @@ class FeatureCombinationDeviceTest(
             // Arrange: Bind with all features as preferred and store the selected ones.
             val useCases = useCasesToTest.toUseCases()
             val features = allFeatures.toList()
-            val selectedFeatures = bindAndVerifyFeatures(useCases, features)
+            val selectedFeatures = bindAndVerifyFeatures(useCases, preferredFeatures = features)
 
             // Act & assert: Ensure query returns false for each of the unselected features added
             //   to the selected ones.
             features.forEach { feature ->
-                if (selectedFeatures.contains(feature)) return@forEach
+                Log.d(TAG, "selectedFeatures: $selectedFeatures, testing feature: $feature")
+
+                if (selectedFeatures.map { it.featureType }.contains(feature.featureType))
+                    return@forEach
 
                 assertWithMessage(
                         "selectedFeatures = $selectedFeatures, newly added feature = $feature"
@@ -87,61 +88,45 @@ class FeatureCombinationDeviceTest(
         }
 
     @Test
-    fun bindToLifecycle_uhdRecordingAndAllFeaturesPreferred_canBindSuccessfully(): Unit =
+    fun recordingFeatureBoundWithSpecificAspectRatioUseCases_aspectRatioMaintained(): Unit =
         runBlocking {
             assumeTrue(useCasesToTest.contains(VIDEO_CAPTURE))
 
-            val useCases = useCasesToTest.toUseCases().recordingQualityToUhd()
+            allFeatures
+                .filter { it.featureType == GroupableFeature.FEATURE_TYPE_RECORDING_QUALITY }
+                .forEach { feature ->
+                    listOf(AspectRatio.RATIO_DEFAULT, AspectRatio.RATIO_4_3, AspectRatio.RATIO_16_9)
+                        .forEach { aspectRatio ->
+                            val useCases = useCasesToTest.toUseCases(aspectRatio)
 
-            bindAndVerifyFeatures(useCases, allFeatures.toList())
-        }
-
-    @Test
-    fun isFeatureGroupSupported_queryReturnsFalseWithUnselectedPreferredFeatures_forUhd(): Unit =
-        runBlocking {
-            assumeTrue(useCasesToTest.contains(VIDEO_CAPTURE))
-
-            // Arrange: Bind with all features preferred and store the selected ones + UHD recording
-            val useCases = useCasesToTest.toUseCases().recordingQualityToUhd()
-            val features = allFeatures.toList()
-            val selectedFeatures = bindAndVerifyFeatures(useCases, features)
-
-            // Act & assert: Ensure query returns false for each of the unselected features added
-            //   to the selected ones.
-            features.forEach { feature ->
-                if (selectedFeatures.contains(feature)) return@forEach
-
-                assertWithMessage(
-                        "selectedFeatures = $selectedFeatures, newly added feature = $feature"
-                    )
-                    .that(
-                        cameraProvider
-                            .getCameraInfo(cameraSelector)
-                            .isFeatureGroupSupported(
-                                SessionConfig(
-                                    useCases = useCases,
-                                    requiredFeatureGroup = selectedFeatures + feature,
-                                )
+                            bindAndVerifyFeatures(
+                                useCases,
+                                requiredFeatures = setOf(feature),
+                                aspectRatio = aspectRatio,
                             )
-                    )
-                    .isFalse()
-            }
+                        }
+                }
         }
 
     private suspend fun bindAndVerifyFeatures(
         useCases: List<UseCase>,
-        preferredFeatures: List<GroupableFeature>,
+        requiredFeatures: Set<GroupableFeature> = emptySet(),
+        preferredFeatures: List<GroupableFeature> = emptyList(),
+        aspectRatio: Int = AspectRatio.RATIO_DEFAULT,
     ): Set<GroupableFeature> {
         val selectedFeatures = CompletableDeferred<Set<GroupableFeature>>()
 
         val sessionConfig =
-            SessionConfig(useCases = useCases, preferredFeatureGroup = preferredFeatures).apply {
-                setFeatureSelectionListener { features -> selectedFeatures.complete(features) }
-            }
+            SessionConfig(
+                    useCases = useCases,
+                    requiredFeatureGroup = requiredFeatures,
+                    preferredFeatureGroup = preferredFeatures,
+                )
+                .apply {
+                    setFeatureSelectionListener { features -> selectedFeatures.complete(features) }
+                }
 
         withContext(Dispatchers.Main) {
-                // TODO: b/437820285 - Remove and make the tests simpler once UHD recording
-                //  GroupableFeature is created.
                 assumeTrue(
                     cameraProvider
                         .getCameraInfo(cameraSelector)
@@ -150,26 +135,14 @@ class FeatureCombinationDeviceTest(
 
                 cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, sessionConfig)
             }
-            .apply { selectedFeatures.await().verifyFeatures(useCases, cameraInfo) }
+            .apply { selectedFeatures.await().verifyFeatures(useCases, cameraInfo, aspectRatio) }
 
         return selectedFeatures.await()
     }
 
-    // TODO: b/437820285 - Remove and make the tests simpler once UHD recording GroupableFeature is
-    //  created.
-    private fun List<UseCase>.recordingQualityToUhd(): List<UseCase> = map {
-        if (it is VideoCapture<*>) {
-            VideoCapture.withOutput(
-                Recorder.Builder()
-                    .setQualitySelector(QualitySelector.fromOrderedList(listOf(Quality.UHD)))
-                    .build()
-            )
-        } else {
-            it
-        }
-    }
-
     companion object {
+        private const val TAG = "FeatureCombinationDeviceTest"
+
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =

@@ -65,7 +65,6 @@ dependencies {
     implementation(project(":xr:scenecore:scenecore-spatial-core"))
     implementation(project(":xr:scenecore:scenecore-spatial-rendering"))
 
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesGuava)
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.appcompat:appcompat:1.7.0")

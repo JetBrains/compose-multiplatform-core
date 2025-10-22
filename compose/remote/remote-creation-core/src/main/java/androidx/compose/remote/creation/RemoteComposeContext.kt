@@ -1122,6 +1122,34 @@ public open class RemoteComposeContext {
         )
     }
 
+    public fun startTextComponent(
+        modifier: RecordingModifier,
+        textId: Int,
+        color: Int,
+        fontSize: Float,
+        fontStyle: Int,
+        fontWeight: Float,
+        fontFamily: String?,
+        flags: Short,
+        textAlign: Short,
+        overflow: Int,
+        maxLines: Int,
+    ) {
+        mRemoteWriter.startTextComponent(
+            modifier,
+            textId,
+            color,
+            fontSize,
+            fontStyle,
+            fontWeight,
+            fontFamily,
+            flags,
+            textAlign,
+            overflow,
+            maxLines,
+        )
+    }
+
     public fun endTextComponent() {
         mRemoteWriter.endTextComponent()
     }
@@ -1340,7 +1368,7 @@ public open class RemoteComposeContext {
     public fun text(
         string: String,
         modifier: RecordingModifier = RecordingModifier(),
-        color: Int = -16777216,
+        color: Int = 0xFF000000.toInt(),
         fontSize: Float = 36f,
         fontStyle: Int = 0,
         fontWeight: Float = 400f,

@@ -54,7 +54,6 @@ class BrushTipTest {
         assertThat(brushTip.slantDegrees).isEqualTo(Angle.ZERO_DEGREES)
         assertThat(brushTip.pinch).isEqualTo(0.0f)
         assertThat(brushTip.rotationDegrees).isEqualTo(Angle.ZERO_DEGREES)
-        assertThat(brushTip.opacityMultiplier).isEqualTo(1.0f)
         assertThat(brushTip.particleGapDistanceScale).isEqualTo(0.0f)
         assertThat(brushTip.particleGapDurationMillis).isEqualTo(0L)
     }
@@ -164,25 +163,6 @@ class BrushTipTest {
 
     @Test
     @Suppress("Range") // Testing error cases.
-    fun constructor_withInvalidOpacitiyMultiplier_throws() {
-        val nanError =
-            assertFailsWith<IllegalArgumentException> { BrushTip(opacityMultiplier = Float.NaN) }
-        assertThat(nanError).hasMessageThat().contains("opacity_multiplier")
-        assertThat(nanError).hasMessageThat().contains("interval [0, 2]")
-
-        val lowError =
-            assertFailsWith<IllegalArgumentException> { BrushTip(opacityMultiplier = -0.1f) }
-        assertThat(lowError).hasMessageThat().contains("opacity_multiplier")
-        assertThat(lowError).hasMessageThat().contains("interval [0, 2]")
-
-        val highError =
-            assertFailsWith<IllegalArgumentException> { BrushTip(opacityMultiplier = 2.1f) }
-        assertThat(highError).hasMessageThat().contains("opacity_multiplier")
-        assertThat(highError).hasMessageThat().contains("interval [0, 2]")
-    }
-
-    @Test
-    @Suppress("Range") // Testing error cases.
     fun constructor_withInvalidParticleGapDistanceScale_throws() {
         val infinityError =
             assertFailsWith<IllegalArgumentException> {
@@ -234,31 +214,29 @@ class BrushTipTest {
         // same values.
         assertThat(
                 BrushTip(
-                        1f,
-                        2f,
-                        0.3f,
-                        Angle.QUARTER_TURN_DEGREES,
-                        0.4f,
-                        Angle.ZERO_DEGREES,
-                        0.7f,
-                        0.5f,
-                        100L,
-                        emptyList(),
+                        scaleX = 1f,
+                        scaleY = 2f,
+                        cornerRounding = 0.3f,
+                        slantDegrees = Angle.QUARTER_TURN_DEGREES,
+                        pinch = 0.4f,
+                        rotationDegrees = Angle.ZERO_DEGREES,
+                        particleGapDistanceScale = 0.5f,
+                        particleGapDurationMillis = 100L,
+                        behaviors = emptyList(),
                     )
                     .hashCode()
             )
             .isEqualTo(
                 BrushTip(
-                        1f,
-                        2f,
-                        0.3f,
-                        Angle.QUARTER_TURN_DEGREES,
-                        0.4f,
-                        Angle.ZERO_DEGREES,
-                        0.7f,
-                        0.5f,
-                        100L,
-                        emptyList(),
+                        scaleX = 1f,
+                        scaleY = 2f,
+                        cornerRounding = 0.3f,
+                        slantDegrees = Angle.QUARTER_TURN_DEGREES,
+                        pinch = 0.4f,
+                        rotationDegrees = Angle.ZERO_DEGREES,
+                        particleGapDistanceScale = 0.5f,
+                        particleGapDurationMillis = 100L,
+                        behaviors = emptyList(),
                     )
                     .hashCode()
             )
@@ -279,7 +257,6 @@ class BrushTipTest {
         assertThat(brushTip).isNotEqualTo(BrushTip(slantDegrees = Angle.QUARTER_TURN_DEGREES))
         assertThat(brushTip).isNotEqualTo(BrushTip(pinch = 0.2f))
         assertThat(brushTip).isNotEqualTo(BrushTip(rotationDegrees = Angle.HALF_TURN_DEGREES))
-        assertThat(brushTip).isNotEqualTo(BrushTip(opacityMultiplier = 0.7f))
         assertThat(brushTip).isNotEqualTo(BrushTip(behaviors = listOf(customBehavior)))
     }
 
@@ -288,9 +265,8 @@ class BrushTipTest {
         assertThat(BrushTip().toString())
             .isEqualTo(
                 "BrushTip(scale=(1.0, 1.0), cornerRounding=1.0, slantDegrees=0.0, " +
-                    "pinch=0.0, rotationDegrees=0.0, opacityMultiplier=1.0, " +
-                    "particleGapDistanceScale=0.0, particleGapDurationMillis=0, " +
-                    "behaviors=[])"
+                    "pinch=0.0, rotationDegrees=0.0, particleGapDistanceScale=0.0, " +
+                    "particleGapDurationMillis=0, behaviors=[])"
             )
     }
 
@@ -304,7 +280,6 @@ class BrushTipTest {
                 slantDegrees = Angle.ZERO_DEGREES,
                 pinch = 0.5f,
                 rotationDegrees = Angle.ZERO_DEGREES,
-                opacityMultiplier = 0.7f,
                 particleGapDistanceScale = 0.8f,
                 particleGapDurationMillis = 9L,
                 behaviors = listOf(customBehavior),
@@ -319,7 +294,6 @@ class BrushTipTest {
                     slantDegrees = Angle.ZERO_DEGREES,
                     pinch = 0.5f,
                     rotationDegrees = Angle.ZERO_DEGREES,
-                    opacityMultiplier = 0.7f,
                     particleGapDistanceScale = 0.8f,
                     particleGapDurationMillis = 9L,
                     behaviors = listOf(customBehavior),
@@ -337,7 +311,6 @@ class BrushTipTest {
                 slantDegrees = Angle.ZERO_DEGREES,
                 pinch = 0.5f,
                 rotationDegrees = Angle.ZERO_DEGREES,
-                opacityMultiplier = 0.7f,
                 particleGapDistanceScale = 0.8f,
                 particleGapDurationMillis = 9L,
                 behaviors = listOf(customBehavior),
@@ -361,7 +334,6 @@ class BrushTipTest {
                 .setSlantDegrees(0.4f)
                 .setPinch(0.5f)
                 .setRotationDegrees(0.6f)
-                .setOpacityMultiplier(0.7f)
                 .setParticleGapDistanceScale(0.8f)
                 .setParticleGapDurationMillis(9L)
                 .setBehaviors(listOf(customBehavior))
@@ -369,7 +341,17 @@ class BrushTipTest {
 
         assertThat(tip)
             .isEqualTo(
-                BrushTip(0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 9L, listOf(customBehavior))
+                BrushTip(
+                    scaleX = 0.1f,
+                    scaleY = 0.2f,
+                    cornerRounding = 0.3f,
+                    slantDegrees = 0.4f,
+                    pinch = 0.5f,
+                    rotationDegrees = 0.6f,
+                    particleGapDistanceScale = 0.8f,
+                    particleGapDurationMillis = 9L,
+                    behaviors = listOf(customBehavior),
+                )
             )
     }
 

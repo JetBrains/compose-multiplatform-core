@@ -31,6 +31,7 @@ import androidx.appfunctions.AppFunctionManagerCompat
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.ExecuteAppFunctionResponse.Success.Companion.PROPERTY_RETURN_VALUE
 import androidx.appfunctions.integration.tests.AppSearchMetadataHelper.isDynamicIndexerAvailable
 import androidx.appfunctions.integration.tests.TestUtil.assertReadAccessible
 import androidx.appfunctions.integration.tests.TestUtil.assertReadInaccessible
@@ -138,7 +139,7 @@ class IntegrationTest {
                 it.appFunctions
             }
 
-        assertThat(appFunctions).hasSize(20)
+        assertThat(appFunctions).hasSize(21)
     }
 
     @Test
@@ -1565,6 +1566,48 @@ class IntegrationTest {
                 )
             )
             .isEqualTo("Completed")
+    }
+
+    @Test
+    fun executeAppFunction_oneOfSerializableFunction_success() = doBlocking {
+        val oneOfFunctionMetadata = findAppFunctionMetadata(OneOfFunctionsIds.ONE_OF_FUNCTION_ID)
+        val oneOfList =
+            listOf(
+                OneOfFunctions.ASubclass(interfaceProperty = "interfacePropertyA", str = "strA"),
+                OneOfFunctions.BSubclass(interfaceProperty = "interfacePropertyB", integer = 10),
+            )
+        val request =
+            ExecuteAppFunctionRequest(
+                targetPackageName = context.packageName,
+                functionIdentifier = OneOfFunctionsIds.ONE_OF_FUNCTION_ID,
+                functionParameters =
+                    AppFunctionData.Builder(
+                            oneOfFunctionMetadata.parameters,
+                            oneOfFunctionMetadata.components,
+                        )
+                        .setAppFunctionDataList(
+                            "oneOfList",
+                            oneOfList.map {
+                                AppFunctionData.serialize(
+                                    it,
+                                    OneOfFunctions.OneOfSealedInterface::class.java,
+                                )
+                            },
+                        )
+                        .build(),
+            )
+
+        val response = appFunctionManager.executeAppFunction(request)
+
+        assertIs<ExecuteAppFunctionResponse.Success>(response)
+        assertThat(
+                response.returnValue.getAppFunctionDataList(PROPERTY_RETURN_VALUE)?.map {
+                    it.deserialize(OneOfFunctions.OneOfSealedNestedSerializable::class.java)
+                }
+            )
+            .containsExactlyElementsIn(
+                oneOfList.map { OneOfFunctions.OneOfSealedNestedSerializable(it) }
+            )
     }
 
     @Test

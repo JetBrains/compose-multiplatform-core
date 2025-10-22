@@ -44,7 +44,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":compose:material3:adaptive:adaptive-navigation"))
                 api(project(":navigation3:navigation3-ui"))
                 implementation(project(":navigationevent:navigationevent-compose"))

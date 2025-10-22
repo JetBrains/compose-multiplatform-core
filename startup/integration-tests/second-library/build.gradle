@@ -21,7 +21,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":startup:startup-runtime"))
     implementation(project(":startup:integration-tests:first-library"))
     androidTestImplementation(libs.testExtJunit)

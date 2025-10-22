@@ -33,7 +33,6 @@ plugins {
 dependencies {
     def compose_version = "1.7.8"
 
-    api(libs.kotlinStdlib)
     api("androidx.compose.ui:ui:$compose_version")
     api("androidx.compose.runtime:runtime-annotation:1.9.0-rc01")
     api(project(":pdf:pdf-viewer"))

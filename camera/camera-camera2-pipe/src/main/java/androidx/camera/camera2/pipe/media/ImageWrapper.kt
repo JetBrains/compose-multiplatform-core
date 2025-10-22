@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.pipe.media
 
+import android.graphics.Rect
 import androidx.camera.camera2.pipe.UnsafeWrapper
 import java.nio.ByteBuffer
 
@@ -37,6 +38,9 @@ public interface ImageWrapper : UnsafeWrapper, AutoCloseable {
 
     /** @see {@link android.media.Image.getTimestamp} */
     public val timestamp: Long
+
+    /** @see {@link android.media.Image.getCropRect} */
+    public var cropRect: Rect
 }
 
 public interface ImagePlane : UnsafeWrapper {

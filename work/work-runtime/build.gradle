@@ -40,13 +40,12 @@ android {
         aidl = true
     }
     buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-
         stableAidl {
             version = 1
         }
     }
     defaultConfig {
+        consumerProguardFiles("proguard-rules.pro")
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [
@@ -76,7 +75,6 @@ dependencies {
     api("androidx.startup:startup-runtime:1.1.1")
     implementation("androidx.lifecycle:lifecycle-service:2.6.2")
     implementation("androidx.tracing:tracing-ktx:1.2.0")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.truth)

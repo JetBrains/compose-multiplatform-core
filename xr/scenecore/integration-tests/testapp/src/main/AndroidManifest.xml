@@ -81,6 +81,9 @@
             android:name=".surfaceinteraction.SurfaceEntityInteractionActivity"
             android:exported="true" />
         <activity
+            android:name=".surfaceplayback.SurfaceEntityPlaybackActivity"
+            android:exported="true" />
+        <activity
             android:name=".movable.MovableActivity"
             android:exported="true" />
         <activity

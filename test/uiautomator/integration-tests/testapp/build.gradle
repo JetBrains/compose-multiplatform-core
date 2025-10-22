@@ -23,7 +23,6 @@ plugins {
 
 dependencies {
     api(libs.jspecify)
-    implementation(libs.kotlinStdlib)
     implementation(libs.androidx.annotation)
     implementation("androidx.core:core:1.6.0")
 

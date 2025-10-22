@@ -175,8 +175,8 @@ message BrushTip {
   // `scale`, `pinch`, and `slant`.
   optional float rotation_radians = 6;
 
-  // DEPRECATED: Use brush paint color functions instead.
-  optional float opacity_multiplier = 8 [default = 1.0, deprecated = true];
+  // Was `opacity_multiplier`; use brush paint color functions instead.
+  reserved 8;
 
   // Controls emission of particles as a function of distance traveled by the
   // stroke inputs. The value must be finite and non-negative.

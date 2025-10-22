@@ -33,11 +33,9 @@ dependencies {
     implementation("androidx.profileinstaller:profileinstaller:1.4.0")
     implementation("androidx.tracing:tracing:1.0.0")
     implementation(libs.kotlinCoroutinesCore)
-    api(libs.kotlinStdlib)
 
     androidTestImplementation(project(":navigationevent:navigationevent-testing"))
     androidTestImplementation("androidx.lifecycle:lifecycle-runtime-testing:2.6.1")
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.hamcrestCore)
     androidTestImplementation(libs.junit)

@@ -171,3 +171,5 @@ Warning: Unable to lock settings file \$GRADLE_USER_HOME/\.android/analytics\.se
 \[Resource\-Usage\] Problem extracting process name:.*
 # b/427504385
 ChromeHeadless has not captured in [0-9]+ ms, killing\.
+# b/446710763
+.*Unable to find pattern file or unable to map it for am.*

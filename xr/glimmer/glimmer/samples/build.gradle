@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":compose:ui:ui-tooling"))
 
     compileOnly(project(":annotation:annotation-sampled"))

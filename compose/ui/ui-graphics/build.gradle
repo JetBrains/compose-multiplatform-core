@@ -58,7 +58,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(libs.androidx.annotation)
 
                 api(project(":compose:ui:ui-unit"))

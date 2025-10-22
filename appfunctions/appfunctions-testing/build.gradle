@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
     implementation(project(":appfunctions:appfunctions"))
     implementation(project(":appfunctions:appfunctions-service"))

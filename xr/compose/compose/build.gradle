@@ -33,7 +33,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":xr:runtime:runtime"))
     api(project(":xr:scenecore:scenecore"))
     api("androidx.core:core-viewtree:1.0.0")

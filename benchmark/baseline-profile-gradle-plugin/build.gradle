@@ -57,7 +57,6 @@ dependencies {
 
     neededForGradleTestKit(libs.androidGradlePlugin)
     neededForGradleTestKit(libs.kotlinGradlePlugin)
-    neededForGradleTestKit(libs.kotlinStdlib)
 
     neededForGradleTestKitAgp82("com.android.tools.build:gradle:8.2.1")
     neededForGradleTestKitAgp82("com.android.tools.build:aapt2:8.2.1-10154469")

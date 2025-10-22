@@ -35,7 +35,6 @@ dependencies {
     api("androidx.lifecycle:lifecycle-viewmodel:2.6.1")
     implementation("androidx.activity:activity-ktx:1.8.1")
     implementation("androidx.activity:activity:1.8.1")
-    api(libs.kotlinStdlib)
 
     lintPublish(project(":fragment:fragment-testing-manifest-lint"))
 }

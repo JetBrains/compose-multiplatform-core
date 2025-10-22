@@ -12,7 +12,7 @@ package androidx.pdf.compose {
   }
 
   public final class PdfSelectionMenuBuilderScope {
-    method public void item(Object key, String label, String contentDescription, kotlin.jvm.functions.Function1<? super androidx.pdf.selection.SelectionMenuSession,kotlin.Unit> onClick);
+    method public void item(Object key, String label, String? contentDescription, kotlin.jvm.functions.Function1<? super androidx.pdf.selection.SelectionMenuSession,kotlin.Unit> onClick);
   }
 
   public final class PdfViewerKt {

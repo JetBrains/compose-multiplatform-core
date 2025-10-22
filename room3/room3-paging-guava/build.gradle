@@ -35,7 +35,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":room3:room3-paging"))
     implementation(project(":room3:room3-guava"))
     api("androidx.paging:paging-guava:3.1.1")

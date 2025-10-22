@@ -53,7 +53,6 @@ android {
 
 dependencies {
     api(libs.junit)
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":benchmark:benchmark-macro"))
     api("androidx.test.uiautomator:uiautomator:2.3.0")

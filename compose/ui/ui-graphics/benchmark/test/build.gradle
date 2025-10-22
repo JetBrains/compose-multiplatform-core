@@ -29,7 +29,6 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui"))
     androidTestImplementation(project(":compose:ui:ui-graphics"))
     androidTestImplementation(project(":compose:ui:ui-graphics:ui-graphics-benchmark"))
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
 }

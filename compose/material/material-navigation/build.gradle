@@ -42,7 +42,6 @@ androidXMultiplatform {
             dependencies {
                 api(project(":navigation:navigation-compose"))
                 implementation(project(":compose:material:material"))
-                implementation(libs.kotlinStdlib)
                 implementation(libs.kotlinSerializationCore)
             }
         }

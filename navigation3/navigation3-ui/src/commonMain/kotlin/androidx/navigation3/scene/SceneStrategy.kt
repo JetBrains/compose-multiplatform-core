@@ -25,7 +25,8 @@ import androidx.navigation3.runtime.NavEntry
  * This Scope should be provided to the [SceneStrategy.calculateScene] function to create Scenes.
  */
 @Immutable
-public class SceneStrategyScope<T : Any>(
+public class SceneStrategyScope<T : Any>
+internal constructor(
     /**
      * A callback that should be connected to any internal handling of system back done by the
      * returned [Scene].
@@ -37,8 +38,19 @@ public class SceneStrategyScope<T : Any>(
      *
      * @sample androidx.navigation3.scene.samples.SceneStrategyOnBackSample
      */
-    public val onBack: () -> Unit = {}
-)
+    public val onBack: () -> Unit
+) {
+    /**
+     * Construct a [SceneStrategyScope] suitable for calling [SceneStrategy.calculateScene] in
+     * isolation.
+     *
+     * For more complicated cases, such as ones where you want to test if [onBack] is called
+     * correctly, use [rememberSceneState], which will construct its own internal
+     * [SceneStrategyScope] suitable for a Scene that closely mirror real scenarios and be passed to
+     * [androidx.navigation3.ui.NavDisplay].
+     */
+    public constructor() : this(onBack = {})
+}
 
 /**
  * A strategy that tries to calculate a [Scene] given a list of [NavEntry].

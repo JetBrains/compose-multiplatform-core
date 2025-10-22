@@ -28,9 +28,9 @@ public interface Face {
     /** Flag indicating if the [blendShapeValues] array is valid */
     public val isValid: Boolean
 
-    /** The values measuring the blend shapes of the face. */
+    /** The values measuring the blend shapes of the face. Range: `[0.0f, 1.0f]` */
     public val blendShapeValues: FloatArray
 
-    /** The confidence values of the face tracker at different regions. */
+    /** The confidence values of the face tracker at different regions. Range: `[0.0f, 1.0f]` */
     public val confidenceValues: FloatArray
 }

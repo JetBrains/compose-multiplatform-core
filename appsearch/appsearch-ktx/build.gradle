@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
     kaptAndroidTest(project(":appsearch:appsearch-compiler"))
     androidTestImplementation(project(":appsearch:appsearch"))

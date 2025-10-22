@@ -41,7 +41,6 @@ configurations {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(gradleApi())
     compileOnly("com.android.tools.build:gradle:8.4.2")
     compileOnly(libs.kotlinGradlePlugin)

@@ -52,6 +52,7 @@
           paddingTop: 0.0
           paddingBottom: 0.0
           textId: 42
+          flags: 0
           color: '0xff000000'
           fontSize: {type: Value, value: 36.0}
           fontStyle: 0
@@ -74,6 +75,7 @@
           paddingTop: 0.0
           paddingBottom: 0.0
           textId: 43
+          flags: 0
           color: '0xff000000'
           fontSize: {type: Value, value: 100.0}
           fontStyle: 0
@@ -96,6 +98,7 @@
           paddingTop: 0.0
           paddingBottom: 0.0
           textId: 44
+          flags: 0
           color: '0xff000000'
           fontSize: {type: Value, value: 30.0}
           fontStyle: 0
@@ -118,6 +121,7 @@
           paddingTop: 0.0
           paddingBottom: 0.0
           textId: 45
+          flags: 0
           color: '0xff000000'
           fontSize: {type: Value, value: 36.0}
           fontStyle: 0

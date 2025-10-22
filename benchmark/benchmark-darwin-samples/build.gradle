@@ -33,7 +33,6 @@ androidXMultiplatform {
         iosMain {
             dependsOn(commonMain)
             dependencies {
-                api(libs.kotlinStdlib)
                 api(project(":benchmark:benchmark-darwin"))
             }
         }

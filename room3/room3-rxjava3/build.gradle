@@ -38,7 +38,6 @@ dependencies {
     api(libs.rxjava3)
 
     implementation("androidx.arch.core:core-runtime:2.2.0")
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesRx3)
 
     testImplementation(project(":kruth:kruth"))

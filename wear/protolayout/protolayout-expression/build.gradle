@@ -34,7 +34,6 @@ dependencies {
     annotationProcessor(libs.nullaway)
     api("androidx.annotation:annotation:1.8.1")
 
-    implementation(libs.kotlinStdlib)
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.collection:collection:1.4.2")
     implementation(project(":wear:protolayout:protolayout-proto"))
@@ -52,12 +51,9 @@ dependencies {
 
 android {
     namespace = "androidx.wear.protolayout.expression"
-
     defaultConfig {
         minSdk = 26
-    }
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
     }
 }
 

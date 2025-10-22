@@ -40,7 +40,6 @@ dependencies {
     // Following dependencies will be provided by inspected app itself
     // because compose:ui-inspector can be run only in app with compose:ui:ui
     // thus all its transitive dependencies will be present too.
-    compileOnly(libs.kotlinStdlib)
     compileOnly(libs.kotlinCoroutinesAndroid)
     compileOnly("androidx.collection:collection:1.4.2")
     compileOnly("androidx.inspection:inspection:1.0.0")
@@ -55,7 +54,6 @@ dependencies {
     implementation(libs.kotlinReflect, {
         exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib"
     })
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(project(":compose:foundation:foundation-layout"))

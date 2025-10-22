@@ -48,7 +48,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":compose:foundation:foundation"))
                 api(project(":compose:ui:ui"))
                 api(project(":window:window-core"))

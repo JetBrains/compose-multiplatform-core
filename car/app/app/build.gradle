@@ -63,8 +63,6 @@ dependencies {
     api("androidx.lifecycle:lifecycle-common-java8:2.2.0")
     api("androidx.annotation:annotation-experimental:1.4.1")
 
-    api(libs.kotlinStdlib)
-    implementation(libs.kotlinStdlibCommon)
 
     annotationProcessor(libs.nullaway)
 

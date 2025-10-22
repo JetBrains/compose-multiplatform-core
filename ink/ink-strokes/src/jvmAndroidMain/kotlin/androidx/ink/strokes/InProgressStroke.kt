@@ -276,8 +276,8 @@ public class InProgressStroke {
     }
 
     /**
-     * Gets the value of the i-th input and overwrites [out]. Requires that [index] is positive and
-     * less than [getInputCount].
+     * Gets the value of the i-th input and overwrites [out]. Requires that [index] is non-negative
+     * and less than [getInputCount].
      *
      * Returns the passed-in [StrokeInput] to make it easier to chain calls.
      *

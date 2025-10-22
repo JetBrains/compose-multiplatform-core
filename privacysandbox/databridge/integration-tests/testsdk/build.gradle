@@ -44,7 +44,6 @@ dependencies {
     // privacysandboxplugin.
     implementation(project(":privacysandbox:tools:tools"))
 
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api(project(":privacysandbox:databridge:databridge-core"))
     api(project(":privacysandbox:databridge:databridge-sdkprovider"))

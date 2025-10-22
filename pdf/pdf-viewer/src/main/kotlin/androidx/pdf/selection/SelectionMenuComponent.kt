@@ -61,7 +61,7 @@ public abstract class ContextMenuComponent internal constructor(public val key: 
 public class SelectionMenuComponent(
     key: Any,
     public val label: String,
-    public val contentDescription: String? = null,
+    public val contentDescription: String?,
     public val onClick: SelectionMenuSession.() -> Unit,
 ) : ContextMenuComponent(key)
 

@@ -32,7 +32,6 @@ plugins {
 dependencies {
     api(project(":security:security-crypto"))
 
-    api(libs.kotlinStdlib)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.testExtJunit)

@@ -52,7 +52,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":compose:animation:animation-core"))
                 api(project(":compose:foundation:foundation"))
                 api(project(":compose:material:material-ripple"))

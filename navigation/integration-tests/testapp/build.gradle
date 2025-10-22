@@ -21,7 +21,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":navigation:navigation-common"))
     implementation(project(":navigation:navigation-fragment"))
     implementation(project(":navigation:navigation-runtime"))

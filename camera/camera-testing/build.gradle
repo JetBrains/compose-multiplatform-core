@@ -59,7 +59,6 @@ dependencies {
     implementation(libs.guavaListenableFuture)
     implementation(libs.junit)
     implementation(libs.truth)
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(libs.testUiautomator)
     implementation 'androidx.annotation:annotation-experimental:1.4.1'
@@ -68,7 +67,6 @@ dependencies {
     implementation libs.testMonitor
 
     androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 }

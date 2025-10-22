@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesCore)
 
     compileOnly(project(":annotation:annotation-sampled"))

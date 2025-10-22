@@ -43,7 +43,6 @@ android {
 dependencies {
     def ink_version = "1.0.0-alpha07"
 
-    api(libs.kotlinStdlib)
     implementation(project(":pdf:pdf-viewer-fragment"))
 
     implementation("androidx.core:core:1.13.0")

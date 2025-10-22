@@ -34,7 +34,6 @@ androidXMultiplatform {
         darwinMain {
             dependsOn(commonMain)
             dependencies {
-                api(libs.kotlinStdlib)
             }
         }
         darwinTest {

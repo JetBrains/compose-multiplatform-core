@@ -43,7 +43,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":compose:material3:material3"))
                 api(project(":compose:material3:adaptive:adaptive"))
                 implementation(project(":window:window-core"))

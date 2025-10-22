@@ -37,7 +37,6 @@ dependencies {
     implementation(project(":xr:assets"))
     implementation(project(":xr:arcore:arcore-projected"))
 
-    implementation(libs.kotlinStdlib)
     implementation("androidx.activity:activity:1.9.3")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")

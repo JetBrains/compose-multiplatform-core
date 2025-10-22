@@ -35,7 +35,6 @@ android {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
     api(libs.kotlinCoroutinesRx3)
     api(libs.rxjava3)

@@ -62,8 +62,8 @@ class BrushCoatTest {
             .isEqualTo(
                 "BrushCoat(tip=BrushTip(scale=(1.0, 1.0), " +
                     "cornerRounding=1.0, slantDegrees=0.0, pinch=0.0, rotationDegrees=0.0, " +
-                    "opacityMultiplier=1.0, particleGapDistanceScale=0.0, particleGapDurationMillis=0, " +
-                    "behaviors=[]), paintPreferences=[BrushPaint(textureLayers=[], colorFunctions=[], " +
+                    "particleGapDistanceScale=0.0, particleGapDurationMillis=0, behaviors=[]), " +
+                    "paintPreferences=[BrushPaint(textureLayers=[], colorFunctions=[], " +
                     "selfOverlap=SelfOverlap.ANY)])"
             )
     }
@@ -134,7 +134,6 @@ class BrushCoatTest {
             slantDegrees = 0.4f,
             pinch = 0.5f,
             rotationDegrees = 0.6f,
-            opacityMultiplier = 0.7f,
             particleGapDistanceScale = 0.8f,
             particleGapDurationMillis = 9L,
             listOf<BrushBehavior>(customBehavior),

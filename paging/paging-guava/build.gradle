@@ -32,7 +32,6 @@ plugins {
 
 dependencies {
     api(project(":paging:paging-common"))
-    api(libs.kotlinStdlib)
     api(libs.guavaAndroid)
     implementation(libs.kotlinCoroutinesGuava)
 

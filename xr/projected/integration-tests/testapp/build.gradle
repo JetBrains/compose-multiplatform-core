@@ -27,7 +27,6 @@ plugins {
 dependencies {
     implementation(project(":xr:projected:projected"))
 
-    implementation(libs.kotlinStdlib)
     implementation(project(":activity:activity"))
     implementation(project(":activity:activity-compose"))
     implementation(project(":appcompat:appcompat"))

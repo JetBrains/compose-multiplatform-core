@@ -1876,6 +1876,7 @@ public class RemoteComposeBuffer {
      * @param fontStyle font style (0 : Normal, 1 : Italic)
      * @param fontWeight font weight (1 to 1000, normal is 400)
      * @param fontFamilyId font family or null
+     * @param flags flags for configuration, only use by color (0: Static color, 1: Color Id)
      * @param textAlign text alignment (0 : Center, 1 : Left, 2 : Right)
      * @param overflow
      * @param maxLines
@@ -1889,10 +1890,13 @@ public class RemoteComposeBuffer {
             int fontStyle,
             float fontWeight,
             int fontFamilyId,
-            int textAlign,
+            short flags,
+            short textAlign,
             int overflow,
             int maxLines) {
         mLastComponentId = getComponentId(componentId);
+        int flagsAndTextAlign = (flags << 16) | (textAlign & 0xFFFF);
+
         TextLayout.apply(
                 mBuffer,
                 mLastComponentId,
@@ -1903,7 +1907,7 @@ public class RemoteComposeBuffer {
                 fontStyle,
                 fontWeight,
                 fontFamilyId,
-                textAlign,
+                flagsAndTextAlign,
                 overflow,
                 maxLines);
     }

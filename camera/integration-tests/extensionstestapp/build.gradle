@@ -60,7 +60,6 @@ dependencies {
 
     // Android Support Library
     api(libs.constraintLayout)
-    implementation(libs.kotlinStdlib)
     implementation("androidx.appcompat:appcompat:1.2.0")
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")

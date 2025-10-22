@@ -190,25 +190,28 @@ constructor(
 
         require(conflictingFeatureType == null) {
             "A ${conflictingFeatureType!!.name} value is set to $useCaseName" +
-                " despite using feature groups. Do not use APIs like ${useCaseName}.Builder." +
+                " despite using feature groups. Do not use APIs like " +
                 when (conflictingFeatureType) {
-                    FeatureTypeInternal.DYNAMIC_RANGE -> "setDynamicRange"
-                    FeatureTypeInternal.FPS_RANGE -> "setTargetFrameRateRange"
+                    FeatureTypeInternal.DYNAMIC_RANGE -> "${useCaseName}.Builder.setDynamicRange"
+                    FeatureTypeInternal.FPS_RANGE ->
+                        "${useCaseName}.Builder.setTargetFrameRateRange"
                     FeatureTypeInternal.VIDEO_STABILIZATION ->
                         if (isVideoCapture(this)) {
-                            "setVideoStabilizationEnabled"
+                            "${useCaseName}.Builder.setVideoStabilizationEnabled"
                         } else {
-                            "setPreviewStabilizationEnabled"
+                            "${useCaseName}.Builder.setPreviewStabilizationEnabled"
                         }
-                    FeatureTypeInternal.IMAGE_FORMAT -> "setOutputFormat"
+                    FeatureTypeInternal.IMAGE_FORMAT -> "${useCaseName}.Builder.setOutputFormat"
+                    FeatureTypeInternal.RECORDING_QUALITY -> "Recorder.Builder.setQualitySelector"
                 } +
                 " while using feature groups." +
-                " If " +
+                " If, for example, " +
                 when (conflictingFeatureType) {
                     FeatureTypeInternal.DYNAMIC_RANGE -> "HDR"
                     FeatureTypeInternal.FPS_RANGE -> "60 FPS"
                     FeatureTypeInternal.VIDEO_STABILIZATION -> "stabilization"
                     FeatureTypeInternal.IMAGE_FORMAT -> "JPEG_R output format"
+                    FeatureTypeInternal.RECORDING_QUALITY -> "UHD recording quality"
                 } +
                 " is required, instead set " +
                 when (conflictingFeatureType) {
@@ -217,6 +220,7 @@ constructor(
                     FeatureTypeInternal.VIDEO_STABILIZATION ->
                         "GroupableFeature.PREVIEW_STABILIZATION"
                     FeatureTypeInternal.IMAGE_FORMAT -> "GroupableFeature.IMAGE_ULTRA_HDR"
+                    FeatureTypeInternal.RECORDING_QUALITY -> "GroupableFeatures.UHD_RECORDING"
                 } +
                 " as either a required or preferred feature."
         }

@@ -24,7 +24,6 @@ configurations {
 
 dependencies {
     implementation("com.android.tools.build:gradle-api:8.8.0-alpha06")
-    implementation(libs.kotlinStdlib)
     compileOnly(libs.androidGradlePlugin)
     compileOnly(libs.kspGradlePlugin)
 

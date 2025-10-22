@@ -45,6 +45,7 @@ import androidx.compose.foundation.lazy.layout.ObservableScopeInvalidator
 import androidx.compose.foundation.lazy.layout.PrefetchScheduler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -457,7 +458,7 @@ internal constructor(
      * @sample androidx.compose.foundation.samples.ObservingStateChangesInPagerStateSample
      */
     val currentPageOffsetFraction: Float
-        get() = scrollPosition.currentPageOffsetFraction
+        @FrequentlyChangingValue get() = scrollPosition.currentPageOffsetFraction
 
     internal val prefetchState =
         LazyLayoutPrefetchState(prefetchScheduler) {

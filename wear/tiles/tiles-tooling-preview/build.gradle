@@ -31,7 +31,6 @@ plugins {
 
 dependencies {
     implementation(libs.jspecify)
-    implementation(libs.kotlinStdlib)
 
     api(project(':wear:protolayout:protolayout'))
     api(project(":wear:protolayout:protolayout-expression"))

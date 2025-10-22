@@ -50,7 +50,6 @@ dependencies {
     implementation(project(":wear:protolayout:protolayout-material3"))
     implementation(project(":wear:protolayout:protolayout-expression"))
     implementation(project(":wear:tiles:tiles"))
-    implementation(libs.kotlinStdlib)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.wear.compose:compose-material:1.2.1")

@@ -224,7 +224,6 @@ androidXMultiplatform {
         //  jvmMain        androidMain               macMain   linuxMain    iosMain
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":sqlite:sqlite"))
             }
         }

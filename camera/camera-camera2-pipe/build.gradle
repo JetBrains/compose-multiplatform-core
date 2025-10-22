@@ -33,7 +33,6 @@ plugins {
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
 
     implementation(libs.atomicFu)

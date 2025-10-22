@@ -54,7 +54,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(libs.kotlinSerializationCore)
                 api("androidx.compose.runtime:runtime:1.9.3")
                 api("androidx.compose.runtime:runtime-saveable:1.9.3")

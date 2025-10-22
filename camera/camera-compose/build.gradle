@@ -64,7 +64,6 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
 
     testImplementation(libs.testRunner)
-    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.truth)
     testImplementation(libs.testRules)
     testImplementation(libs.testCore)

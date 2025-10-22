@@ -110,7 +110,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(project(":room3:room3-common"))
                 api(project(":sqlite:sqlite"))
                 api("androidx.collection:collection:1.5.0")

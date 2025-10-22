@@ -45,7 +45,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
                 api(project(":datastore:datastore"))
                 api(project(":datastore:datastore-preferences-core"))

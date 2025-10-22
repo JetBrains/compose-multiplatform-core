@@ -46,7 +46,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 implementation(project(":room3:room3-common"))
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
             }

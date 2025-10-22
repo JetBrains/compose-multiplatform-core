@@ -54,7 +54,6 @@ dependencies {
     implementation("androidx.preference:preference:1.2.1")
     implementation("androidx.exifinterface:exifinterface:1.0.0")
     implementation(libs.constraintLayout)
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.

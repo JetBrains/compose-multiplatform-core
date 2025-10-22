@@ -35,7 +35,6 @@ androidx {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     implementation(project(":compose:remote:remote-core"))
     implementation(project(":compose:remote:remote-creation"))

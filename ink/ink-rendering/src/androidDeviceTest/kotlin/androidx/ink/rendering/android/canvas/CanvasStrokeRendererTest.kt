@@ -79,10 +79,7 @@ class CanvasStrokeRendererTest {
                     Pair(
                         "Translucent",
                         finishedInProgressStroke(
-                            brush(
-                                BrushFamily(BrushTip(opacityMultiplier = 1.0F)),
-                                TestColors.COBALT_BLUE.withAlpha(0.4),
-                            ),
+                            brush(color = TestColors.COBALT_BLUE.withAlpha(0.4)),
                             INPUTS_TWIST,
                         ),
                     ),

@@ -57,7 +57,6 @@ androidXMultiplatform {
 
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api("androidx.annotation:annotation:1.9.1")
                 api(project(":lifecycle:lifecycle-common"))
                 api(project(":lifecycle:lifecycle-runtime"))

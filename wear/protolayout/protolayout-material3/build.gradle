@@ -34,7 +34,6 @@ dependencies {
     annotationProcessor(libs.nullaway)
     api(project(":wear:protolayout:protolayout"))
     api(project(":wear:protolayout:protolayout-expression"))
-    api(libs.kotlinStdlib)
     implementation(project(":wear:protolayout:protolayout-material-core"))
     lintChecks(project(":wear:protolayout:protolayout-lint"))
     compileOnly(project(":annotation:annotation-sampled"))

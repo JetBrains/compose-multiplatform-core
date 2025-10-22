@@ -49,7 +49,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-livedata:2.3.1")
 
     testImplementation(libs.testRunner)
-    testImplementation(libs.kotlinStdlib)
     testImplementation(libs.truth)
     testImplementation(libs.testRules)
     testImplementation(libs.testCore)
@@ -68,7 +67,6 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testUiautomator)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":camera:camera-camera2"))
     androidTestImplementation(project(":camera:camera-testing")) {

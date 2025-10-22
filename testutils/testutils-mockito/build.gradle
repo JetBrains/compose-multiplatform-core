@@ -32,7 +32,6 @@ plugins {
 dependencies {
     api(libs.mockitoCore)
 
-    implementation(libs.kotlinStdlib)
 }
 
 android {

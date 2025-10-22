@@ -27,6 +27,7 @@ import androidx.navigation.NavHostController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,7 +35,7 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class NavHostPredictiveBackTest {
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun testNavHostAnimations() {
@@ -74,16 +75,14 @@ class NavHostPredictiveBackTest {
             backPressedDispatcher.dispatchOnBackStarted(
                 BackEventCompat(0.1F, 0.1F, 0.1F, BackEvent.EDGE_LEFT)
             )
-            assertThat(navController.currentBackStackEntry?.lifecycle?.currentState)
-                .isEqualTo(Lifecycle.State.STARTED)
-            assertThat(navController.previousBackStackEntry?.lifecycle?.currentState)
-                .isEqualTo(Lifecycle.State.STARTED)
-            backPressedDispatcher.dispatchOnBackProgressed(
-                BackEventCompat(0.1F, 0.1F, 0.5F, BackEvent.EDGE_LEFT)
-            )
         }
 
         composeTestRule.waitForIdle()
+
+        assertThat(navController.currentBackStackEntry?.lifecycle?.currentState)
+            .isEqualTo(Lifecycle.State.STARTED)
+        assertThat(navController.previousBackStackEntry?.lifecycle?.currentState)
+            .isEqualTo(Lifecycle.State.STARTED)
 
         composeTestRule.runOnIdle {
             backPressedDispatcher.dispatchOnBackProgressed(

@@ -49,6 +49,7 @@
     <string name="cuj_hit_test">Digital Hit Test Case</string>
     <string name="cuj_accessibility_test">Accessibility Test Case</string>
     <string name="cuj_surface_entity_interaction_test">Surface Entity Interaction Test Case</string>
+    <string name="cuj_surface_entity_playbacktest">Surface Entity Playback Test Case</string>
     <string name="dev_memory_leak_test">Memory Leak (Dev) Test Case</string>
 
     <string name="recreate_activity" description="button text to recreate current activity [CHAR LIMIT=40]">Recreate Activity</string>

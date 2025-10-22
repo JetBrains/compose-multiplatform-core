@@ -31,7 +31,6 @@ plugins {
 
 dependencies {
     api(project(":palette:palette"))
-    api(libs.kotlinStdlib)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)

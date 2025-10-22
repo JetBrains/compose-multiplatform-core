@@ -33,7 +33,6 @@ plugins {
 androidx.configureAarAsJarForConfiguration("testImplementation")
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kspApi)
 
     implementation("androidx.annotation:annotation:1.7.0")

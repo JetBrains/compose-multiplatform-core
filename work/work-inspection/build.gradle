@@ -34,7 +34,6 @@ plugins {
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    api(libs.kotlinStdlib)
     compileOnly("androidx.inspection:inspection:1.0.0")
     compileOnly("androidx.lifecycle:lifecycle-runtime:2.9.3")
     compileOnly(project(":work:work-runtime"))

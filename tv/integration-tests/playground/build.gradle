@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     implementation("androidx.appcompat:appcompat:1.6.1")
 

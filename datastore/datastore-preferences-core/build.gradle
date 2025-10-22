@@ -58,7 +58,6 @@ androidXMultiplatform {
 
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(libs.okio)
                 api(project(":datastore:datastore-core"))
                 api(project(":datastore:datastore-core-okio"))

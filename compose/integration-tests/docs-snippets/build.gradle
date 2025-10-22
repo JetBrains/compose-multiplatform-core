@@ -53,7 +53,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1")
     implementation(project(":paging:paging-compose"))
 
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinReflect)
     implementation(libs.testCore)
     implementation(libs.testRules)

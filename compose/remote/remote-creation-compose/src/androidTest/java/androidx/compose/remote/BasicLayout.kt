@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.size
@@ -63,6 +64,7 @@ import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.toComposeUi
 import androidx.compose.remote.creation.compose.modifier.width
+import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
 import androidx.compose.remote.player.core.RemoteComposeDocument
@@ -78,6 +80,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
@@ -527,6 +530,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
         }
     }
 
+    @SuppressLint("UnrememberedMutableState")
     @Ignore("Flaky")
     @Test
     fun testSimpleText() {
@@ -571,6 +575,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val text = rememberRemoteString("test") { "Bonjour le monde!" }
+                val white = RemoteColor(Color.White.toArgb())
 
                 RemoteRow(
                     modifier = RemoteModifier.background(Color.LightGray),
@@ -585,7 +590,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                                 .background(Color.Red)
                                 .padding(4.dp),
                         fontSize = 32.sp,
-                        color = Color.White,
+                        color = white,
                     )
                 }
                 RemoteText(
@@ -596,12 +601,13 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                             .background(Color.Black)
                             .padding(4.dp),
                     fontSize = 18.sp,
-                    color = Color.White,
+                    color = white,
                 )
             }
         }
     }
 
+    @SuppressLint("UnrememberedMutableState")
     @Ignore("Flaky (off by one pixel error)")
     @Test
     fun testSimpleTextVariants() {
@@ -665,6 +671,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val text = rememberRemoteString("plop") { "Bonjour Le Monde!" }
+                val white = RemoteColor(Color.White.toArgb())
 
                 RemoteText(
                     text,
@@ -672,7 +679,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                         .padding(4.dp)
                         .background(Color.Red)
                         .padding(4.dp),
-                    Color.White,
+                    white,
                     18.sp,
                 )
                 RemoteText(
@@ -681,7 +688,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                         .padding(4.dp)
                         .background(Color.Red)
                         .padding(4.dp),
-                    Color.White,
+                    white,
                     18.sp,
                     FontStyle.Italic,
                 )
@@ -691,7 +698,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                         .padding(4.dp)
                         .background(Color.Red)
                         .padding(4.dp),
-                    Color.White,
+                    white,
                     18.sp,
                     fontWeight = FontWeight.ExtraLight,
                 )
@@ -701,7 +708,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                         .padding(4.dp)
                         .background(Color.Red)
                         .padding(4.dp),
-                    Color.White,
+                    white,
                     18.sp,
                     fontWeight = FontWeight.Black,
                 )
@@ -711,7 +718,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                         .padding(4.dp)
                         .background(Color.Red)
                         .padding(4.dp),
-                    Color.White,
+                    white,
                     18.sp,
                     fontFamily = FontFamily.Serif,
                 )
@@ -721,7 +728,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                         .padding(4.dp)
                         .background(Color.Red)
                         .padding(4.dp),
-                    Color.White,
+                    white,
                     18.sp,
                     fontFamily = FontFamily.SansSerif,
                 )
@@ -1062,6 +1069,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
         }
     }
 
+    @SuppressLint("UnrememberedMutableState")
     @SdkSuppress(minSdkVersion = 29)
     @Test
     fun testColorFilter1() {
@@ -1075,8 +1083,8 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
     CANVAS [-5:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
       MODIFIERS
       CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-        ComponentValue value 44 set to WIDTH of Component -7
-        ComponentValue value 45 set to HEIGHT of Component -7
+        ComponentValue value 45 set to WIDTH of Component -7
+        ComponentValue value 46 set to HEIGHT of Component -7
     TEXT_LAYOUT [-8:-1] = [305.0, 364.0, 215.0, 97.0] VISIBLE (43:"Green")
       MODIFIERS
 """
@@ -1088,7 +1096,8 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                     RemoteModifier.fillMaxSize()
                         .background(RemoteBrush.radialGradient(colors = colors))
             ) {
-                RemoteText("Green", color = Color.Green, fontSize = 30.sp)
+                val green = RemoteColor(Color.Green.toArgb())
+                RemoteText("Green", color = green, fontSize = 30.sp)
             }
         }
     }

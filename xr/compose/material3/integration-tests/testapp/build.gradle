@@ -25,7 +25,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     implementation(project(":appcompat:appcompat"))
     implementation("androidx.activity:activity-compose:1.10.1")

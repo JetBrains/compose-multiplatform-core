@@ -32,7 +32,6 @@ plugins {
 dependencies {
     api(project(":lifecycle:lifecycle-livedata"))
     api(project(":lifecycle:lifecycle-livedata-core-ktx"))
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
     testImplementation(project(":lifecycle:lifecycle-runtime-testing"))
     testImplementation("androidx.arch.core:core-testing:2.2.0")

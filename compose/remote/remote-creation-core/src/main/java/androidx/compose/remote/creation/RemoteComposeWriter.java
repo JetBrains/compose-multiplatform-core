@@ -3046,13 +3046,13 @@ public class RemoteComposeWriter {
      * Start a text component
      *
      * @param modifier
-     * @param textId
-     * @param color
-     * @param fontSize
-     * @param fontStyle
-     * @param fontWeight
-     * @param fontFamily
-     * @param textAlign
+     * @param textId id of the text
+     * @param color color of the text
+     * @param fontSize font size
+     * @param fontStyle font style (0 : Normal, 1 : Italic)
+     * @param fontWeight font weight (1 to 1000, normal is 400)
+     * @param fontFamily font family or null
+     * @param textAlign text alignment (0 : Center, 1 : Left, 2 : Right)
      * @param overflow
      * @param maxLines
      */
@@ -3080,6 +3080,57 @@ public class RemoteComposeWriter {
                 fontStyle,
                 fontWeight,
                 fontFamilyId,
+                (short) 0,
+                (short) textAlign,
+                overflow,
+                maxLines);
+        for (RecordingModifier.Element m : modifier.getList()) {
+            m.write(this);
+        }
+        addContentStart();
+    }
+
+    /**
+     * Start a text component
+     *
+     * @param modifier
+     * @param textId id of the text
+     * @param color color of the text
+     * @param fontSize font size
+     * @param fontStyle font style (0 : Normal, 1 : Italic)
+     * @param fontWeight font weight (1 to 1000, normal is 400)
+     * @param fontFamily font family or null
+     * @param flags flags for configuration, only use by color (0: Static color, 1: Color Id)
+     * @param textAlign text alignment (0 : Center, 1 : Left, 2 : Right)
+     * @param overflow
+     * @param maxLines
+     */
+    public void startTextComponent(
+            @NonNull RecordingModifier modifier,
+            int textId,
+            int color,
+            float fontSize,
+            int fontStyle,
+            float fontWeight,
+            @Nullable String fontFamily,
+            short flags,
+            short textAlign,
+            int overflow,
+            int maxLines) {
+        int fontFamilyId = -1;
+        if (fontFamily != null) {
+            fontFamilyId = addText(fontFamily);
+        }
+        mBuffer.addTextComponentStart(
+                modifier.getComponentId(),
+                -1,
+                textId,
+                color,
+                fontSize,
+                fontStyle,
+                fontWeight,
+                fontFamilyId,
+                flags,
                 textAlign,
                 overflow,
                 maxLines);

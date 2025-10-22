@@ -55,7 +55,6 @@ dependencies {
 
     implementation(libs.apacheCommonIo)
     implementation(libs.apacheAnt)
-    implementation(libs.kotlinStdlib)
 
     testPlugin(libs.androidGradlePlugin)
 

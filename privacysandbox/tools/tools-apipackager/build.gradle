@@ -31,7 +31,6 @@ plugins {
 dependencies {
     api(project(":privacysandbox:tools:tools"))
     api(project(":privacysandbox:tools:tools-core"))
-    api(libs.kotlinStdlib)
     implementation(libs.asm)
     implementation(libs.asmCommons)
     implementation(libs.kotlinMetadataJvm) {

@@ -36,7 +36,6 @@ androidXMultiplatform {
 }
 
 dependencies {
-    commonMainImplementation(libs.kotlinStdlib)
 }
 
 androidx {

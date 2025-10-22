@@ -34,7 +34,6 @@ android {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     // General dependencies to run tests.
     androidTestImplementation(libs.testCore)

@@ -32,7 +32,6 @@ plugins {
 dependencies {
     api(project(":lifecycle:lifecycle-livedata-core-ktx"))
     api(libs.truth)
-    api(libs.kotlinStdlib)
     testImplementation(libs.truth)
     testImplementation(libs.mockitoCore4)
     testImplementation("androidx.arch.core:core-testing:2.2.0")

@@ -32,9 +32,7 @@ plugins {
 }
 
 android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     sourceSets {
         String testUtilDir = 'src/testUtil/java'
         test {
@@ -49,7 +47,6 @@ android {
 
 dependencies {
     api(libs.jspecify)
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.collection:collection:1.4.2")

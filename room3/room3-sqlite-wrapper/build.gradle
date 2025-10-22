@@ -33,7 +33,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":room3:room3-runtime"))
     api(project(":sqlite:sqlite"))
     implementation(libs.kotlinCoroutinesAndroid)

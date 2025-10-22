@@ -32,7 +32,6 @@ plugins {
 dependencies {
     api(project(":wear:wear"))
     implementation("androidx.core:core:1.6.0")
-    implementation(libs.kotlinStdlib)
 }
 
 androidx {

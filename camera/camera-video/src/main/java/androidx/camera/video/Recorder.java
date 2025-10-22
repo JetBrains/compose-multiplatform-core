@@ -723,6 +723,12 @@ public final class Recorder implements VideoOutput {
         return getObservableData(mMediaSpec).getVideoSpec().getQualitySelector();
     }
 
+    @Override
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    public boolean isQualitySelectorDefault() {
+        return getQualitySelector() == DEFAULT_QUALITY_SELECTOR;
+    }
+
     /**
      * Gets the video capabilities source of this Recorder.
      *

@@ -35,7 +35,6 @@ plugins {
 dependencies {
     api(project(":room3:room3-common"))
     api(project(":room3:room3-runtime"))
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)

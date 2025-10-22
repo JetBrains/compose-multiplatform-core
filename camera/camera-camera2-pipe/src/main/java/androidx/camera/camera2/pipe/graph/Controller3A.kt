@@ -43,8 +43,8 @@ import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.core.Token
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
@@ -859,7 +859,7 @@ internal class Controller3A(
         //
         // TODO: b/435774981 - handle the reset of auto-focus.
         scope
-            .launch(Dispatchers.Unconfined) {
+            .launch(start = CoroutineStart.UNDISPATCHED) {
                 lock3A(
                     aeLockBehavior = if (wasAeUnlocked) Lock3ABehavior.IMMEDIATE else null,
                     awbLockBehavior = if (wasAwbUnlocked) Lock3ABehavior.IMMEDIATE else null,

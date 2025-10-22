@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation("androidx.core:core:1.15.0")
     implementation("androidx.compose.runtime:runtime:1.7.5")
     implementation("androidx.compose.foundation:foundation-layout:1.7.5")

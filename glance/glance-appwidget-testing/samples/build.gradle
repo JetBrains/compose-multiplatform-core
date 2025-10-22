@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     compileOnly(project(":annotation:annotation-sampled"))
 
     implementation(project(":glance:glance"))

@@ -192,7 +192,7 @@ constructor(
         MeteringRepeating.Builder(cameraProperties, displayInfoManager).build()
     }
 
-    private val supportedSurfaceCombination by lazy {
+    private val supportedSurfaceCombination =
         SupportedSurfaceCombination(
             context,
             cameraProperties.metadata,
@@ -201,7 +201,6 @@ constructor(
             //   order to handle MeteringRepeating scenarios
             FeatureCombinationQuery.NO_OP_FEATURE_COMBINATION_QUERY,
         )
-    }
 
     private val dynamicRangeResolver = DynamicRangeResolver(cameraProperties.metadata)
 
@@ -696,8 +695,29 @@ constructor(
         }
 
         return with(attachedWithoutMetering) {
-            (onlyVideoCapture() || requireMeteringRepeating()) && isMeteringCombinationSupported()
+            shouldForceRepeatingStream() && isMeteringCombinationSupported()
         }
+    }
+
+    private fun Collection<UseCase>.shouldForceRepeatingStream(): Boolean {
+        if (isEmpty()) {
+            return false
+        }
+
+        val sessionConfig =
+            ValidatingBuilder().apply { forEach { useCase -> add(useCase.sessionConfig) } }.build()
+
+        val repeatingSurfaces = sessionConfig.repeatingCaptureConfig.surfaces
+        val allSurfaces = sessionConfig.surfaces
+
+        if (allSurfaces.isEmpty()) {
+            return false
+        }
+
+        val isVideoOnly = allSurfaces.all { it.containerClass == MediaCodec::class.java }
+        val hasNoRepeatingUseCases = repeatingSurfaces.isEmpty()
+
+        return isVideoOnly || hasNoRepeatingUseCases
     }
 
     @GuardedBy("lock")
@@ -757,14 +777,6 @@ constructor(
             surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
             cameraXConfig = cameraXConfig,
         )
-    }
-
-    private fun Collection<UseCase>.onlyVideoCapture(): Boolean {
-        return isNotEmpty() &&
-            checkSurfaces { _, sessionSurfaces ->
-                sessionSurfaces.isNotEmpty() &&
-                    sessionSurfaces.all { it.containerClass == MediaCodec::class.java }
-            }
     }
 
     private fun Collection<UseCase>.isMeteringCombinationSupported(): Boolean {
@@ -908,27 +920,6 @@ constructor(
             meteringRepeating.attachedSurfaceResolution!!,
             meteringRepeating.currentConfig.streamUseCase,
         )
-
-    private fun Collection<UseCase>.requireMeteringRepeating(): Boolean {
-        return isNotEmpty() &&
-            checkSurfaces { repeatingSurfaces, sessionSurfaces ->
-                // There is no repeating UseCases
-                sessionSurfaces.isNotEmpty() && repeatingSurfaces.isEmpty()
-            }
-    }
-
-    private fun Collection<UseCase>.checkSurfaces(
-        predicate:
-            (
-                repeatingSurfaces: List<DeferrableSurface>, sessionSurfaces: List<DeferrableSurface>,
-            ) -> Boolean
-    ): Boolean =
-        ValidatingBuilder().let { validatingBuilder ->
-            forEach { useCase -> validatingBuilder.add(useCase.sessionConfig) }
-            val sessionConfig = validatingBuilder.build()
-            val captureConfig = sessionConfig.repeatingCaptureConfig
-            return predicate(captureConfig.surfaces, sessionConfig.surfaces)
-        }
 
     private fun updateZslDisabledByUseCaseConfigStatus() {
         val disableZsl = attachedUseCases.any { it.currentConfig.isZslDisabled(false) }

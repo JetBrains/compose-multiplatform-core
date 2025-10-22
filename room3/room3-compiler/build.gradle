@@ -57,7 +57,6 @@ dependencies {
     implementation(project(":room3:room3-external-antlr"))
     implementation(project(":room3:room3-migration"))
     implementation(project(":room3:room3-compiler-processing"))
-    implementation(libs.kotlinStdlib)
     implementation(libs.autoCommon)
     implementation(libs.autoValueAnnotations)
     implementation(libs.javapoet)

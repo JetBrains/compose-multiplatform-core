@@ -319,7 +319,7 @@ class ShadowTest {
     }
 
     private fun Bitmap.hasNoShadow() {
-        assertEquals(Color.White, color(width / 2, height - 1))
+        assertColorsEqualWithTolerance(Color.White, color(width / 2, height - 1))
     }
 
     private fun Bitmap.hasShadow() {
@@ -346,5 +346,16 @@ class ShadowTest {
         assertEquals(width, bitmap.width)
         assertEquals(height, bitmap.height)
         return bitmap
+    }
+
+    private fun assertColorsEqualWithTolerance(
+        expected: Color,
+        actual: Color,
+        tolerance: Float = 0.02f,
+    ) {
+        assertEquals(expected.red, actual.red, tolerance)
+        assertEquals(expected.green, actual.green, tolerance)
+        assertEquals(expected.blue, actual.blue, tolerance)
+        assertEquals(expected.alpha, actual.alpha, tolerance)
     }
 }

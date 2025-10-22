@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     // workaround for https://github.com/gradle/gradle/issues/8489
     implementation("androidx.activity:activity:1.7.1")
     implementation("androidx.lifecycle:lifecycle-common:2.6.1")

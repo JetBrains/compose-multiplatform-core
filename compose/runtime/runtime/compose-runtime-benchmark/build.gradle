@@ -49,7 +49,6 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinReflect)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(androidx.projectOrArtifact(":benchmark:benchmark-junit4"))

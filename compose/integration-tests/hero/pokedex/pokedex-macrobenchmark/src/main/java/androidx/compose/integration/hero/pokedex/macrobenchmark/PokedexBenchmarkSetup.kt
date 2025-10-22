@@ -29,11 +29,14 @@ import androidx.test.uiautomator.Until
  * @param timeout The maximum amount of time (in milliseconds) to wait for the "complete" status
  *   text for.
  */
-fun MacrobenchmarkScope.setupPokedexBenchmarkTarget(timeout: Long = 15_000) {
+fun MacrobenchmarkScope.setupPokedexBenchmarkTarget(
+    numberOfImages: Int = 200,
+    timeout: Long = 15_000,
+) {
     trace("Set up images") {
         val setupIntent = Intent()
         setupIntent.action = "$POKEDEX_TARGET_PACKAGE_NAME.POKEDEX_SETUP_ACTIVITY"
-        setupIntent.putExtra("AMOUNT_OF_IMAGES", 10)
+        setupIntent.putExtra("AMOUNT_OF_IMAGES", numberOfImages)
         startActivityAndWait(setupIntent)
         device.waitOrThrow(Until.hasObject(By.text("pokedex-setup-complete")), timeout) {
             "Waited for PokedexSetupActivity to emit status, but was not found."

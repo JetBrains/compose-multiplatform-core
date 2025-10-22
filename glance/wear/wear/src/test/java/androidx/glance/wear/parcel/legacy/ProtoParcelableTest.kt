@@ -66,6 +66,7 @@ class ProtoParcelableTest {
         assertThat(foo1.hashCode()).isNotEqualTo(foo2.hashCode())
     }
 
+    @Suppress("DEPRECATION") // usage of bundleOf
     @Test
     fun extrasEqualsAndHashCode() {
         val bundle1 = bundleOf("foo1" to 111)
@@ -82,6 +83,7 @@ class ProtoParcelableTest {
         assertThat(foo1.hashCode()).isNotEqualTo(bar.hashCode())
     }
 
+    @Suppress("DEPRECATION") // usage of bundleOf
     @Test
     fun extrasEqualsAndHashCode_withDifferentKeyOrder() {
         val key1 = "key1"
@@ -115,6 +117,7 @@ class ProtoParcelableTest {
         assertThat(Wrapper.CREATOR.createFromParcel(parcel)).isEqualTo(wrapper)
     }
 
+    @Suppress("DEPRECATION") // usage of bundleOf
     @Test
     fun toParcelAndBackV2() {
         val req = TileUpdateRequest(tile_id = 222)

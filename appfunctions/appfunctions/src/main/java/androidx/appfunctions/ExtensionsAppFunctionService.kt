@@ -20,6 +20,7 @@ import android.os.Build
 import android.os.CancellationSignal
 import android.os.OutcomeReceiver
 import androidx.annotation.CallSuper
+import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import androidx.appfunctions.internal.AppFunctionMetadataUtils.getAppFunctionMetadata
 import androidx.appfunctions.internal.Dispatchers
@@ -52,7 +53,7 @@ import kotlinx.coroutines.withContext
  * @see [com.android.extensions.appfunctions.AppFunctionService]
  */
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-public abstract class ExtensionsAppFunctionCompatService : AppFunctionService() {
+public abstract class ExtensionsAppFunctionService : AppFunctionService() {
     private val workerCoroutineScope = CoroutineScope(Dispatchers.Worker)
 
     /**
@@ -81,11 +82,11 @@ public abstract class ExtensionsAppFunctionCompatService : AppFunctionService() 
                     try {
                         val appFunctionMetadata =
                             getAppFunctionMetadata(
-                                this@ExtensionsAppFunctionCompatService,
+                                this@ExtensionsAppFunctionService,
                                 request.functionIdentifier,
                             )
                                 ?: throw AppFunctionFunctionNotFoundException(
-                                    "No function found with identifier: ${request.functionIdentifier} in package: ${this@ExtensionsAppFunctionCompatService.packageName}"
+                                    "No function found with identifier: ${request.functionIdentifier} in package: ${this@ExtensionsAppFunctionService.packageName}"
                                 )
                         withContext(Dispatchers.Main) {
                             executeFunction(
@@ -102,7 +103,7 @@ public abstract class ExtensionsAppFunctionCompatService : AppFunctionService() 
                 when (result) {
                     is ExecuteAppFunctionResponse.Success -> {
                         result.grantUriAccess(
-                            context = this@ExtensionsAppFunctionCompatService,
+                            context = this@ExtensionsAppFunctionService,
                             callingPackageName = callingPackage,
                         )
                         callback.onResult(result.toPlatformExtensionClass())
@@ -156,6 +157,7 @@ public abstract class ExtensionsAppFunctionCompatService : AppFunctionService() 
      *
      * @param request The function execution request.
      */
+    @MainThread
     public abstract suspend fun executeFunction(
         request: ExecuteAppFunctionRequest
     ): ExecuteAppFunctionResponse

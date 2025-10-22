@@ -16,6 +16,7 @@
 
 package androidx.compose.remote.integration.view.demos.examples
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.remote.creation.compose.layout.Alignment
@@ -41,6 +42,7 @@ import androidx.compose.remote.creation.compose.modifier.rememberRemoteScrollSta
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.verticalScroll
 import androidx.compose.remote.creation.compose.modifier.width
+import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.abs
 import androidx.compose.remote.creation.compose.state.rememberRemoteDpValue
 import androidx.compose.remote.creation.compose.state.rememberRemoteFloat
@@ -49,6 +51,7 @@ import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -194,6 +197,7 @@ fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 
     }
 }
 
+@SuppressLint("UnrememberedMutableState")
 @Suppress("RestrictedApiAndroidX")
 @Composable
 @RemoteComposable
@@ -253,12 +257,13 @@ fun ScrollViewDemo() {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                val blue = RemoteColor(Color.Blue.toArgb())
                 RemoteText(
                     rememberRemoteFloatValue { scrollState.position }.toRemoteString(5),
                     fontSize = 34.sp,
-                    color = Color.Blue,
+                    color = blue,
                 )
-                RemoteText(height.toRemoteString(5), fontSize = 34.sp, color = Color.Blue)
+                RemoteText(height.toRemoteString(5), fontSize = 34.sp, color = blue)
             }
         }
         //            val value = rememberRemoteString(RemoteFloat(scrollState.position))

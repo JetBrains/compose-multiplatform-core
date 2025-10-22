@@ -47,7 +47,6 @@ androidXMultiplatform {
       dependsOn(commonMain)
       dependencies {
         api(libs.androidx.annotation)
-        implementation(libs.kotlinStdlib)
         implementation("androidx.collection:collection:1.4.3")
         implementation(project(":ink:ink-geometry"))
         implementation(project(":ink:ink-nativeloader"))

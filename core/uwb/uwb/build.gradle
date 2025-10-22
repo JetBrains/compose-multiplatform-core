@@ -31,7 +31,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core-ktx:1.2.0")
     api(libs.kotlinCoroutinesAndroid)
@@ -40,7 +39,6 @@ dependencies {
     implementation(libs.kotlinCoroutinesPlayServices)
     implementation('com.google.android.gms:play-services-nearby:19.2.0')
 
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)

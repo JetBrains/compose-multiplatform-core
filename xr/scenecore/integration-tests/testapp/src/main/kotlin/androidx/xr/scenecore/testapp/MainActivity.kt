@@ -50,6 +50,7 @@ import androidx.xr.scenecore.testapp.spatialcapabilities.SpatialCapabilitiesActi
 import androidx.xr.scenecore.testapp.spatialuser.SpatialUserActivity
 import androidx.xr.scenecore.testapp.standalone.StandaloneActivity
 import androidx.xr.scenecore.testapp.surfaceinteraction.SurfaceEntityInteractionActivity
+import androidx.xr.scenecore.testapp.surfaceplayback.SurfaceEntityPlaybackActivity
 import androidx.xr.scenecore.testapp.transformation.TransformationActivity
 import androidx.xr.scenecore.testapp.ui.BuildInfoRecyclerViewAdapter
 import androidx.xr.scenecore.testapp.ui.TestCasesRecyclerViewAdapter
@@ -132,6 +133,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.cuj_accessibility_test),
                 getString(R.string.dev_memory_leak_test),
                 getString(R.string.cuj_surface_entity_interaction_test),
+                getString(R.string.cuj_surface_entity_playbacktest),
             )
         val customAdapter = TestCasesRecyclerViewAdapter(dataset)
         val recyclerView: RecyclerView = findViewById(R.id.cuj_buttons_recycler)
@@ -242,6 +244,9 @@ class MainActivity : AppCompatActivity() {
             Tests.SURFACE_INTERACTION_TEST.test ->
                 startActivity(createIntent<SurfaceEntityInteractionActivity>())
 
+            Tests.SURFACE_PLAYBACK_TEST.test ->
+                startActivity(createIntent<SurfaceEntityPlaybackActivity>())
+
             else -> {
                 Log.i(ACTIVITY_NAME, "DO_NOTHING")
             }
@@ -307,5 +312,6 @@ class MainActivity : AppCompatActivity() {
         ACCESSIBILITY_TEST(22),
         MEMORY_LEAK_TEST(23),
         SURFACE_INTERACTION_TEST(24),
+        SURFACE_PLAYBACK_TEST(25),
     }
 }

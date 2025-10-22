@@ -41,7 +41,6 @@ dependencies {
     implementation(project(":work:work-runtime-ktx"))
     implementation(project(":hilt:hilt-work"))
     ksp(project(":hilt:hilt-compiler"))
-    implementation(libs.kotlinStdlib)
     implementation(libs.hiltAndroid)
     ksp(libs.hiltCompiler)
 

@@ -16,7 +16,6 @@
 
 package androidx.appfunctions.compiler.processors
 
-import androidx.appfunctions.compiler.core.AnnotatedOneOfAppFunctionSerializable
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator.AppFunctionComponent
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
@@ -100,10 +99,7 @@ class AppFunctionComponentRegistryProcessor(private val codeGenerator: CodeGener
     @OptIn(KspExperimental::class)
     private fun generateSerializableComponentRegistry(resolver: Resolver) {
         val annotatedSerializables =
-            AppFunctionSymbolResolver(resolver).resolveAnnotatedAppFunctionSerializables().filter {
-                // TODO: b/447532808- Handle oneofs
-                it !is AnnotatedOneOfAppFunctionSerializable
-            }
+            AppFunctionSymbolResolver(resolver).resolveAnnotatedAppFunctionSerializables()
         val serializableComponents = buildList {
             for (annotatedSerializable in annotatedSerializables) {
                 add(

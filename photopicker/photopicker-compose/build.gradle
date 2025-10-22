@@ -25,7 +25,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
 
     // Pin to the stable release of compose.

@@ -48,7 +48,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(project(":room3:room3-common"))
                 api(project(":room3:room3-runtime"))
                 api(project(":sqlite:sqlite"))

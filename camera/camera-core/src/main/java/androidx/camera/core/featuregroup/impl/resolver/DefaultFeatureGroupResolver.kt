@@ -34,6 +34,7 @@ import androidx.camera.core.featuregroup.impl.UseCaseType.VIDEO_CAPTURE
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.DYNAMIC_RANGE
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.FPS_RANGE
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.IMAGE_FORMAT
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.RECORDING_QUALITY
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.VIDEO_STABILIZATION
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.Supported
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.Unsupported
@@ -109,6 +110,7 @@ internal class DefaultFeatureGroupResolver(private val cameraInfoInternal: Camer
     private fun GroupableFeature.getMissingUseCase(useCases: List<UseCase>): UseCaseMissing? {
         val supportsImageFeature = useCases.any { it is ImageCapture }
         val supportsStreamFeature = useCases.any { it is Preview || isVideoCapture(it) }
+        val supportsVideoFeature = useCases.any { isVideoCapture(it) }
 
         val missingUseCaseString =
             when (featureTypeInternal) {
@@ -117,6 +119,7 @@ internal class DefaultFeatureGroupResolver(private val cameraInfoInternal: Camer
                 FPS_RANGE,
                 VIDEO_STABILIZATION ->
                     "$PREVIEW or $VIDEO_CAPTURE".takeIf { !supportsStreamFeature }
+                RECORDING_QUALITY -> VIDEO_CAPTURE.toString().takeIf { !supportsVideoFeature }
             }
 
         return missingUseCaseString?.let { UseCaseMissing(it, this) }
@@ -149,10 +152,11 @@ internal class DefaultFeatureGroupResolver(private val cameraInfoInternal: Camer
             )
 
             return if (
-                cameraInfoInternal.isResolvedFeatureGroupSupported(
-                    ResolvedFeatureGroup(features),
-                    sessionConfig,
-                )
+                features.isConflictFree() &&
+                    cameraInfoInternal.isResolvedFeatureGroupSupported(
+                        ResolvedFeatureGroup(features),
+                        sessionConfig,
+                    )
             ) {
                 // TODO: Store the whole UseCase to StreamSpecs map in ResolvedFeatureGroup so
                 //  that we can skip this step while binding with a resolved feature combination.
@@ -180,6 +184,27 @@ internal class DefaultFeatureGroupResolver(private val cameraInfoInternal: Camer
             index + 1,
             currentOptionalFeatures,
         )
+    }
+
+    /**
+     * Checks if there are conflicting values among the features.
+     *
+     * Users can set features with same type but different values in
+     * [SessionConfig.preferredFeatureGroup]. We should pick only one of such features as per
+     * priority. For example, if both `UHD_RECORDING` and `FHD_RECORDING` are set, we should pick
+     * only one of them for each supported-ness checking, never both together.
+     */
+    private fun Set<GroupableFeature>.isConflictFree(): Boolean {
+        val featureTypes = map { it.featureTypeInternal }.distinct()
+        featureTypes.forEach { featureType ->
+            val distinctFeaturesPerType = filter { it.featureTypeInternal == featureType }
+
+            if (distinctFeaturesPerType.size > 1) {
+                return false
+            }
+        }
+
+        return true
     }
 
     private companion object {

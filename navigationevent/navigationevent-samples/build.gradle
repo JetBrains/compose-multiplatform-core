@@ -32,7 +32,6 @@ plugins {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":navigationevent:navigationevent"))
     implementation(project(":navigationevent:navigationevent-compose"))
     implementation(project(":navigationevent:navigationevent-testing"))

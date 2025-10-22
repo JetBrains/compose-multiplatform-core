@@ -1779,7 +1779,7 @@ package androidx.compose.foundation.pager {
     method @InaccessibleFromKotlin public final boolean getCanScrollBackward();
     method @InaccessibleFromKotlin public final boolean getCanScrollForward();
     method @InaccessibleFromKotlin public final int getCurrentPage();
-    method @InaccessibleFromKotlin public final float getCurrentPageOffsetFraction();
+    method @InaccessibleFromKotlin @androidx.compose.runtime.annotation.FrequentlyChangingValue public final float getCurrentPageOffsetFraction();
     method @InaccessibleFromKotlin public final androidx.compose.foundation.interaction.InteractionSource getInteractionSource();
     method @InaccessibleFromKotlin public final androidx.compose.foundation.pager.PagerLayoutInfo getLayoutInfo();
     method public final float getOffsetDistanceInPages(int page);
@@ -1795,7 +1795,7 @@ package androidx.compose.foundation.pager {
     property public final boolean canScrollBackward;
     property public final boolean canScrollForward;
     property public final int currentPage;
-    property public final float currentPageOffsetFraction;
+    property @androidx.compose.runtime.annotation.FrequentlyChangingValue public final float currentPageOffsetFraction;
     property public final androidx.compose.foundation.interaction.InteractionSource interactionSource;
     property public boolean isScrollInProgress;
     property public boolean lastScrolledBackward;

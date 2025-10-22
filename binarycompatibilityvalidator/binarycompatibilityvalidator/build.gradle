@@ -70,7 +70,6 @@ androidXMultiplatform {
     sourceSets {
         jvmMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 implementation(libs.binaryCompatibilityValidator)
             }
         }

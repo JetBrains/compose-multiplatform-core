@@ -42,7 +42,6 @@ android {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":hilt:hilt-lifecycle-viewmodel"))
     api("androidx.navigation:navigation-fragment-ktx:2.9.0")
 

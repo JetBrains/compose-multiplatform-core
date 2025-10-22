@@ -31,7 +31,6 @@ plugins {
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    implementation(libs.kotlinStdlib)
     implementation(project(":appcompat:appcompat"))
     implementation(project(":camera:camera-core"))
     implementation(project(":camera:camera-lifecycle"))

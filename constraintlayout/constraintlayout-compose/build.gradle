@@ -45,7 +45,6 @@ androidXMultiplatform {
                 implementation("androidx.compose.foundation:foundation-layout:1.7.0")
                 implementation(project(":constraintlayout:constraintlayout-core"))
                 implementation("androidx.collection:collection:1.4.2")
-                implementation(libs.kotlinStdlib)
             }
         }
 

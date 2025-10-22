@@ -30,14 +30,11 @@ plugins {
 }
 
 android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.lifecycle.process"
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(project(":lifecycle:lifecycle-runtime"))
     api("androidx.startup:startup-runtime:1.1.1")
     api("androidx.annotation:annotation:1.9.1")

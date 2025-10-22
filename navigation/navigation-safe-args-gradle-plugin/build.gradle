@@ -40,7 +40,6 @@ configurations {
 
 dependencies {
     compileOnly("com.android.tools.build:gradle:8.4.2")
-    implementation(libs.kotlinStdlib)
     implementation(project(":navigation:navigation-safe-args-generator"))
     implementation(gradleApi())
     implementation(libs.gson)

@@ -16,11 +16,13 @@
 
 package androidx.camera.camera2.adapter
 
+import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Size
 import androidx.camera.camera2.impl.CameraInteropStateCallbackRepository
 import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.CameraDevices
@@ -47,6 +49,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.robolectric.annotation.internal.DoNotInstrument
+import org.robolectric.shadows.StreamConfigurationMapBuilder
 import org.robolectric.util.ReflectionHelpers
 
 @ExperimentalCoroutinesApi
@@ -230,6 +233,7 @@ class CameraFactoryAdapterTest {
         lensFacing: Int,
         hasCompatCap: Boolean,
     ): FakeCameraMetadata {
+        val testOutputSize = Size(1280, 720)
         val capabilities =
             if (hasCompatCap) {
                 intArrayOf(CameraMetadata.REQUEST_AVAILABLE_CAPABILITIES_BACKWARD_COMPATIBLE)
@@ -244,6 +248,18 @@ class CameraFactoryAdapterTest {
                     CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL to
                         CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
                     CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES to capabilities,
+                    CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to
+                        StreamConfigurationMapBuilder.newBuilder()
+                            .addOutputSize(ImageFormat.YUV_444_888, testOutputSize)
+                            .addOutputSize(ImageFormat.YUV_420_888, testOutputSize)
+                            .addOutputSize(testOutputSize)
+                            .addOutputSize(Size(1920, 1080))
+                            .addOutputSize(Size(4032, 3024))
+                            .addOutputSize(Size(3840, 2160))
+                            .addOutputSize(Size(640, 480))
+                            .addOutputSize(Size(320, 240))
+                            .addOutputSize(/* format= */ 0x21, testOutputSize)
+                            .build(),
                 ),
         )
     }

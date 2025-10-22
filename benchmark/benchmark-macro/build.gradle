@@ -69,7 +69,6 @@ dependencies {
     api(project(":test:uiautomator:uiautomator"))
     api(libs.jspecify)
     api(libs.junit)
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
 
     implementation("androidx.core:core:1.9.0")

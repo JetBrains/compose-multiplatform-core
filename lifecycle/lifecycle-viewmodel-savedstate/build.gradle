@@ -59,7 +59,6 @@ androidXMultiplatform {
                 api(project(":savedstate:savedstate"))
                 api(project(":lifecycle:lifecycle-viewmodel"))
                 implementation(project(":lifecycle:lifecycle-common"))
-                api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
                 api(libs.kotlinSerializationCore)
             }
