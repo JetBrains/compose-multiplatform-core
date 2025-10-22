@@ -64,27 +64,13 @@ actual fun DragAndDropExample() {
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        val textMeasurer = rememberTextMeasurer()
-
-        // Drag sources: red, orange, yellow, green, light blue, blue, violet
-        val colorSources: List<Pair<String, Color>> = listOf(
-            "red" to Color.Red,
-            "orange" to Color(0xFFFFA500),
-            "yellow" to Color.Yellow,
-            "green" to Color.Green,
-            "light blue" to Color(0xFFADD8E6),
-            "blue" to Color.Blue,
-            "violet" to Color(0xFF8A2BE2)
-        )
-
-        // Sources row pinned to the top, centered horizontally
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 DraggableColorSource("red", Color.Red)
                 DraggableColorSource("orange", Color(0xFFFFA500))
                 DraggableColorSource("yellow", Color.Yellow)
@@ -131,10 +117,11 @@ actual fun DragAndDropExample() {
                     event.transferData?.domDataTransferOrNull?.let { dataTransfer ->
                         val dataText = dataTransfer?.getData("text/plain") ?: ""
                         val droppedColor = if (dataText.startsWith("color:")) {
-                            val name = dataText.removePrefix("color:")
-                            colorSources.firstOrNull { it.first == name }?.second
-                        } else null
-                        droppedColor?.let { pieSlices.add(it) }
+                            Color(dataText.removePrefix("color:").toULong(16))
+                        } else {
+                            Color.LightGray
+                        }
+                        pieSlices.add(droppedColor)
                     }
                     dragCounter++
                     return true
@@ -142,7 +129,6 @@ actual fun DragAndDropExample() {
             }
         }
 
-        // Drag target stays centered in the viewport independently of the sources above
         val glowPadding = 24.dp
 
         Box(
@@ -151,7 +137,6 @@ actual fun DragAndDropExample() {
                 .size(200.dp + glowPadding * 2)
                 .drawBehind {
                     if (showTargetBorder) {
-                        val glowPaddingPx = glowPadding.toPx()
                         val outerR = size.minDimension / 2f
                         if (pieSlices.isNotEmpty()) {
                             // Segmented glow: draw a colored ring mirroring the pie chart segments
@@ -169,16 +154,16 @@ actual fun DragAndDropExample() {
                                     useCenter = false,
                                     topLeft = topLeft,
                                     size = arcSize,
-                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = glowPaddingPx)
+                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = glowPadding.toPx())
                                 )
                                 start += sweep
                             }
                         } else {
                             drawCircle(
                                 color = Color.Gray,
-                                radius = outerR - glowPaddingPx / 2f,
+                                radius = outerR - glowPadding.toPx() / 2f,
                                 center = center,
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = glowPaddingPx)
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = glowPadding.toPx())
                             )
                         }
                     }
@@ -197,7 +182,7 @@ actual fun DragAndDropExample() {
                 contentAlignment = Alignment.Center
             ) {
 
-                // Draw pie chart based on dropped colors
+                // Draw a pie chart based on dropped colors
                 Canvas(Modifier.fillMaxSize()) {
                     if (pieSlices.isNotEmpty()) {
                         val counts = pieSlices.groupingBy { it }.eachCount()
@@ -225,13 +210,13 @@ actual fun DragAndDropExample() {
 private fun DraggableColorSource(name: String, color: Color) {
     Box(
         Modifier
-            .size(48.dp)
+            .size(56.dp)
             .background(color, shape = CircleShape)
             .clip(CircleShape)
             .border(BorderStroke(1.dp, Color.Black), shape = CircleShape)
             .dragAndDropSource { _ ->
                 val dataTransfer = createDataTransfer()
-                dataTransfer.setData("text/plain", "color:$name")
+                dataTransfer.setData("text/plain", "color:${color.value.toString(radix = 16)}")
                 DragAndDropTransferData(dataTransfer)
             }
     )
