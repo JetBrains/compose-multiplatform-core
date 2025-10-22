@@ -31,10 +31,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
+import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -173,6 +175,7 @@ actual fun DragAndDropExample() {
         var showHovered by remember { mutableStateOf(false) }
         var dragCounter by remember { mutableStateOf(0) }
         var targetText by remember { mutableStateOf("Drop Here") }
+        val pieSlices = remember { mutableStateListOf<Color>() }
 
         val dragAndDropTarget = remember {
             object: DragAndDropTarget {
@@ -195,6 +198,9 @@ actual fun DragAndDropExample() {
                 override fun onDrop(event: DragAndDropEvent): Boolean {
                     showHovered = false
                     event.transferData?.domDataTransferOrNull?.let { dataTransfer ->
+                        val dataText = dataTransfer?.getData("text/plain")
+                        val resolveColor = if (dataText == "box A") Color.Red else Color.Green
+                        pieSlices.add(resolveColor)
                         println("drag transfer data stats: files[${dataTransfer?.files?.length}], items[${dataTransfer?.items?.length}]")
                     }
                     dragCounter++
@@ -215,6 +221,26 @@ actual fun DragAndDropExample() {
                 ),
                 contentAlignment = Alignment.Center
         ) {
+            // Draw pie chart based on dropped colors
+            Canvas(Modifier.fillMaxSize()) {
+                if (pieSlices.isNotEmpty()) {
+                    val counts = pieSlices.groupingBy { it }.eachCount()
+                    val total = pieSlices.size.toFloat()
+                    var start = -90f
+                    counts.entries.forEach { (color, count) ->
+                        val sweep = (count.toFloat() / total) * 360f
+                        drawArc(
+                            color = color,
+                            startAngle = start,
+                            sweepAngle = sweep,
+                            useCenter = true,
+                            size = size
+                        )
+                        start += sweep
+                    }
+                }
+            }
+
             Text(targetText + " [" + dragCounter + "]", Modifier.align(Alignment.Center))
         }
     }
