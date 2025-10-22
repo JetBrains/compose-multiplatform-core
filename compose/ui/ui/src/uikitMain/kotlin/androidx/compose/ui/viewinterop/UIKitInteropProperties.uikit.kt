@@ -60,7 +60,7 @@ import androidx.compose.ui.semantics.semantics
  * @see Modifier.semantics
  */
 @Immutable
-class UIKitInteropProperties(
+class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
     val interactionMode: UIKitInteropInteractionMode? = UIKitInteropInteractionMode.Cooperative(),
     val isNativeAccessibilityEnabled: Boolean = false,
     @property:ExperimentalComposeUiApi val placeAsOverlay: Boolean = false

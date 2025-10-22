@@ -5007,7 +5007,6 @@ final class androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration { // 
 // Targets: [ios]
 final class androidx.compose.ui.viewinterop/UIKitInteropProperties { // androidx.compose.ui.viewinterop/UIKitInteropProperties|null[0]
     constructor <init>(androidx.compose.ui.viewinterop/UIKitInteropInteractionMode? = ..., kotlin/Boolean = ...) // androidx.compose.ui.viewinterop/UIKitInteropProperties.<init>|<init>(androidx.compose.ui.viewinterop.UIKitInteropInteractionMode?;kotlin.Boolean){}[0]
-    constructor <init>(androidx.compose.ui.viewinterop/UIKitInteropInteractionMode? = ..., kotlin/Boolean = ..., kotlin/Boolean = ...) // androidx.compose.ui.viewinterop/UIKitInteropProperties.<init>|<init>(androidx.compose.ui.viewinterop.UIKitInteropInteractionMode?;kotlin.Boolean;kotlin.Boolean){}[0]
     constructor <init>(kotlin/Boolean, kotlin/Boolean) // androidx.compose.ui.viewinterop/UIKitInteropProperties.<init>|<init>(kotlin.Boolean;kotlin.Boolean){}[0]
 
     final val interactionMode // androidx.compose.ui.viewinterop/UIKitInteropProperties.interactionMode|{}interactionMode[0]
