@@ -64,5 +64,5 @@ public object ActivityFlags {
      */
     @Suppress("MutableBareField")
     @JvmField
-    public var isOnBackPressedLifecycleHandledByEnableDisable: Boolean = true
+    public var isOnBackPressedLifecycleOrderMaintained: Boolean = true
 }

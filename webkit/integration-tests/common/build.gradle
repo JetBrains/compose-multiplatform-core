@@ -40,7 +40,6 @@ dependencies {
 
 android {
     namespace = "androidx.webkit.test.common"
-    compileSdk = 35
 }
 
 androidx {

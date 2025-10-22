@@ -595,8 +595,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     private val pointerInputEventProcessor = PointerInputEventProcessor(root)
 
     /**
-     * The snapshot-state backed current [Configuration]. This is updated by
-     * [onConfigurationChanged].
+     * The snapshot-state backed current [Configuration]. This is updated by [updateConfiguration].
      */
     var configuration: Configuration by
         mutableStateOf(Configuration(context.resources.configuration))
@@ -2854,6 +2853,30 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        updateConfiguration(newConfig)
+    }
+
+    /**
+     * There is a known platform bug where a size-based configuration change can occur that won't
+     * call View.onConfigurationChanged. Since this is the mechanism that Compose uses to drive
+     * configuration logic, this results in LocalConfiguration.current becoming out-of-sync with the
+     * underlying configuration: https://issuetracker.google.com/issues/247013643 As a workaround,
+     * we call the onConfigurationChanged callback directly after a global layout, in case we are
+     * falling into one of the cases with a bug on the impacted API versions. If we aren't falling
+     * into one of these cases, this extra call should be a no-op as we've already seen the updated
+     * configuration. This isn't an ideal workaround, as the global layout listener will result in a
+     * temporary inconsistency for the initial composition after the configuration changed, but this
+     * is better than remaining out of sync for an indeterminate amount of time, and there doesn't
+     * appear to be a better signal to use.
+     */
+    private fun dispatchConfigurationChangeIfNeeded() {
+        if (SDK_INT in 32..33) {
+            updateConfiguration(resources.configuration)
+        }
+    }
+
+    /** Updates this [AndroidComposeView] with properties from the updated [Configuration]. */
+    private fun updateConfiguration(newConfig: Configuration) {
         // Keep track of the old configuration for checking if components have updated
         val oldConfig = configuration
         if (oldConfig != newConfig) {
@@ -3163,6 +3186,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         // make sure that we use an updated window position and matrix
         lastMatrixRecalculationAnimationTime = 0
         updatePositionCacheAndDispatch()
+        dispatchConfigurationChangeIfNeeded()
     }
 
     // executed when a scrolling container like ScrollView of RecyclerView performed the

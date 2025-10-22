@@ -102,8 +102,8 @@ public class SandboxedPdfDocument(
     private val annotationsProcessor: PdfAnnotationsProcessor,
 ) : EditablePdfDocument() {
 
-    // TODO: b/437827008 - Implement management of PdfEdits in EditablePdfDocument
-    private val annotationsManager = InMemoryAnnotationsManager(::getAnnotationsForPage)
+    private val annotationsManager =
+        InMemoryAnnotationsManager(::getAnnotationsForPage, annotationsProcessor)
 
     public override val formEditRecords: List<FormEditRecord>
         get() = _formEditRecords.toList()
@@ -452,8 +452,7 @@ public class SandboxedPdfDocument(
     }
 
     override suspend fun commitEdits(): EditsResult {
-        // TODO: b/437827008 - Implementation of managing PdfEdits in EditablePdfDocument
-        return EditsResult(listOf(), listOf())
+        return annotationsManager.commitEdits()
     }
 
     override fun getAllEdits(): PdfEdits = annotationsManager.getSnapshot()

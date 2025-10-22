@@ -4905,6 +4905,145 @@ class SharedTransitionTest {
             assertEquals(controlPosition[id], actualOffset)
         }
     }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testRenderInSharedTransitionOverlayPlacementIsInvalidated() {
+        var state by mutableIntStateOf(0)
+        var offset by mutableIntStateOf(0)
+
+        val animDurationMillis = 500
+
+        val parentTag = "STL"
+        var renderInOverlay by mutableStateOf(false)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout(
+                    Modifier.size(100.dp).testTag(parentTag).background(Color.White)
+                ) {
+                    Box(Modifier.offset { IntOffset(offset, offset) }) {
+                        Box(
+                            Modifier.renderInSharedTransitionScopeOverlay { renderInOverlay }
+                                .size(20.dp)
+                                .background(Color.Red)
+                        )
+                    }
+                    AnimatedContent(
+                        targetState = state,
+                        transitionSpec = {
+                            // Add a delay to the animation just so that it takes a known time to
+                            // complete
+                            fadeIn(snap()).togetherWith(fadeOut(snap(animDurationMillis)))
+                        },
+                    ) {
+                        Box(
+                            Modifier
+                                // Using shared bounds so that we control when the item enters
+                                // and leaves in every case. Particularly, we want the target to
+                                // show immediately
+                                .sharedBounds(
+                                    rememberSharedContentState(key = "key"),
+                                    animatedVisibilityScope = this,
+                                    enter = fadeIn(tween(500)),
+                                    exit = fadeOut(tween(500)),
+                                )
+                                .fillMaxSize()
+                        )
+                    }
+                }
+            }
+        }
+
+        renderInOverlay = true
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+
+        rule.onNodeWithTag(parentTag).captureToImage().assertPixels {
+            if (it.x < 20 && it.y < 20) Color.Red else null
+        }
+
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        offset = 10
+        rule.mainClock.advanceTimeByFrame()
+        rule.waitForIdle()
+
+        rule.onNodeWithTag(parentTag).captureToImage().assertPixels {
+            if (it.x in 10 until 30 && it.y in 10 until 30) Color.Red else null
+        }
+
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+    }
+
+    @SdkSuppress(minSdkVersion = 26)
+    @Test
+    fun testRenderInSharedTransitionOverlayInvalidationInTheSameFrameAsPlacementChange() {
+        var offset by mutableIntStateOf(0)
+
+        val parentTag = "STL"
+        var renderInOverlay by mutableStateOf(false)
+
+        // Configure the overlay color and the color to be rendered to be translucent, so
+        // we can inspect the final render results, and verify if the layout is rendered
+        // above or under the overlay, and that the layout is only rendered once (i.e.
+        // never both in overlay and in place).
+        val overlayBackgroundColor = Color.White.copy(alpha = 0.5f)
+        val color = Color.Red.copy(alpha = 0.5f)
+
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                SharedTransitionLayout(
+                    Modifier.size(20.dp).testTag(parentTag).background(Color.White)
+                ) {
+                    Box(Modifier.offset { IntOffset(offset, offset) }) {
+                        Box(
+                            Modifier.renderInSharedTransitionScopeOverlay { renderInOverlay }
+                                .background(color)
+                                .size(1.dp)
+                        )
+                    }
+                    Box(modifier = Modifier.fillMaxSize().background(overlayBackgroundColor))
+                }
+            }
+        }
+
+        renderInOverlay = false
+        offset = 0
+        rule.waitForIdle()
+
+        // When render in overlay is false, we expect the layout to be rendered in place, covered
+        // by the translucent white top content.
+        repeat(3) {
+            offset += 3
+            // Nothing should be rendered in the overlay
+            rule.onNodeWithTag(parentTag).captureToImage().assertPixels {
+                if (it.x == offset && it.y == offset) {
+                    overlayBackgroundColor.compositeOver(color).compositeOver(Color.White)
+                } else {
+                    overlayBackgroundColor.compositeOver(Color.White)
+                }
+            }
+        }
+
+        renderInOverlay = true
+        rule.waitForIdle()
+
+        // When render in overlay is true, we expect nothing rendered in the child layer
+        repeat(3) {
+            offset += 3
+            rule.waitForIdle()
+            rule.onNodeWithTag(parentTag).captureToImage().assertPixels {
+                if (it.x == offset && it.y == offset) {
+                    color.compositeOver(overlayBackgroundColor).compositeOver(Color.White)
+                } else {
+                    overlayBackgroundColor.compositeOver(Color.White)
+                }
+            }
+        }
+    }
 }
 
 private fun assertEquals(a: IntSize, b: IntSize, delta: IntSize) {

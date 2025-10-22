@@ -27,8 +27,6 @@ import android.os.RemoteException;
 import android.util.Log;
 import android.webkit.WebView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
 import androidx.annotation.VisibleForTesting;
@@ -42,6 +40,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.chromium.android_webview.js_sandbox.common.IJsSandboxIsolate;
 import org.chromium.android_webview.js_sandbox.common.IJsSandboxIsolateClient;
 import org.chromium.android_webview.js_sandbox.common.IJsSandboxService;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -266,8 +266,7 @@ public final class JavaScriptSandbox implements AutoCloseable {
     private final HashSet<String> mClientSideFeatureSet;
 
     static class ConnectionSetup implements ServiceConnection {
-        @Nullable
-        private CallbackToFutureAdapter.Completer<JavaScriptSandbox> mCompleter;
+        private CallbackToFutureAdapter.@Nullable Completer<JavaScriptSandbox> mCompleter;
         @Nullable
         private JavaScriptSandbox mJsSandbox;
         @NonNull
@@ -334,7 +333,7 @@ public final class JavaScriptSandbox implements AutoCloseable {
         }
 
         ConnectionSetup(@NonNull Context context,
-                @NonNull CallbackToFutureAdapter.Completer<JavaScriptSandbox> completer) {
+                CallbackToFutureAdapter.@NonNull Completer<JavaScriptSandbox> completer) {
             mContext = context;
             mCompleter = completer;
         }

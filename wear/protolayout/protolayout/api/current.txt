@@ -1287,10 +1287,17 @@ package androidx.wear.protolayout {
 
   @MainThread public final class ProtoLayoutScope {
     ctor public ProtoLayoutScope();
+    ctor public ProtoLayoutScope(optional androidx.wear.protolayout.expression.VersionBuilders.VersionInfo rendererVersionInfo);
     method public void clearAll();
     method public android.os.Bundle collectPendingIntents();
     method public androidx.wear.protolayout.ResourceBuilders.Resources collectResources();
+    method public boolean hasCapability(androidx.wear.protolayout.ProtoLayoutScope.RendererCapability capability);
     method public boolean hasResources();
+  }
+
+  public enum ProtoLayoutScope.RendererCapability {
+    enum_constant public static final androidx.wear.protolayout.ProtoLayoutScope.RendererCapability LOTTIE_COLOR_FOR_SLOT;
+    enum_constant public static final androidx.wear.protolayout.ProtoLayoutScope.RendererCapability PENDING_INTENT_ACTION;
   }
 
   public final class ResourceBuilders {
@@ -1599,9 +1606,10 @@ package androidx.wear.protolayout.modifiers {
     method public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(optional androidx.wear.protolayout.ActionBuilders.Action action, optional String? id, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) float minClickableWidth, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) float minClickableHeight);
     method public static androidx.wear.protolayout.modifiers.LayoutModifier clickable(androidx.wear.protolayout.modifiers.LayoutModifier, optional androidx.wear.protolayout.ActionBuilders.Action action, optional String? id);
     method public static androidx.wear.protolayout.modifiers.LayoutModifier clickable(androidx.wear.protolayout.modifiers.LayoutModifier, androidx.wear.protolayout.ModifiersBuilders.Clickable clickable);
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id);
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minClickableWidth);
-    method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=600) public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minClickableWidth, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minClickableHeight);
+    method public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id);
+    method public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id, optional androidx.wear.protolayout.ActionBuilders.Action? fallbackAction);
+    method public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id, optional androidx.wear.protolayout.ActionBuilders.Action? fallbackAction, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minClickableWidth);
+    method public static androidx.wear.protolayout.ModifiersBuilders.Clickable clickable(androidx.wear.protolayout.ProtoLayoutScope, android.app.PendingIntent pendingIntent, String id, optional androidx.wear.protolayout.ActionBuilders.Action? fallbackAction, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minClickableWidth, optional @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minClickableHeight);
     method public static androidx.wear.protolayout.ActionBuilders.LoadAction loadAction(optional @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=200) androidx.wear.protolayout.expression.DynamicDataMap? requestedStateMap);
     method @androidx.wear.protolayout.expression.RequiresSchemaVersion(major=1, minor=300) public static androidx.wear.protolayout.modifiers.LayoutModifier minimumTouchTargetSize(androidx.wear.protolayout.modifiers.LayoutModifier, @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minWidth, @Dimension(unit=androidx.annotation.Dimension.Companion.DP) float minHeight);
   }

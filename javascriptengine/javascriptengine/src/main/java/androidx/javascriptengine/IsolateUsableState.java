@@ -23,7 +23,6 @@ import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.core.util.Consumer;
 import androidx.javascriptengine.common.LengthLimitExceededException;
@@ -37,6 +36,7 @@ import org.chromium.android_webview.js_sandbox.common.IJsSandboxIsolate;
 import org.chromium.android_webview.js_sandbox.common.IJsSandboxIsolateCallback;
 import org.chromium.android_webview.js_sandbox.common.IJsSandboxIsolateSyncCallback;
 import org.chromium.android_webview.js_sandbox.common.IMessagePort;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -79,11 +79,10 @@ final class IsolateUsableState implements IsolateState {
 
     private class IJsSandboxIsolateSyncCallbackStubWrapper extends
             IJsSandboxIsolateSyncCallback.Stub {
-        @NonNull
-        private final CallbackToFutureAdapter.Completer<String> mCompleter;
+        private final CallbackToFutureAdapter.@NonNull Completer<String> mCompleter;
 
         IJsSandboxIsolateSyncCallbackStubWrapper(
-                @NonNull CallbackToFutureAdapter.Completer<String> completer) {
+                CallbackToFutureAdapter.@NonNull Completer<String> completer) {
             mCompleter = completer;
         }
 
@@ -147,11 +146,10 @@ final class IsolateUsableState implements IsolateState {
     }
 
     private class IJsSandboxIsolateCallbackStubWrapper extends IJsSandboxIsolateCallback.Stub {
-        @NonNull
-        private final CallbackToFutureAdapter.Completer<String> mCompleter;
+        private final CallbackToFutureAdapter.@NonNull Completer<String> mCompleter;
 
         IJsSandboxIsolateCallbackStubWrapper(
-                @NonNull CallbackToFutureAdapter.Completer<String> completer) {
+                CallbackToFutureAdapter.@NonNull Completer<String> completer) {
             mCompleter = completer;
         }
 
@@ -327,7 +325,7 @@ final class IsolateUsableState implements IsolateState {
     }
 
     @Override
-    public void provideNamedData(@NonNull String name, @NonNull byte[] inputBytes) {
+    public void provideNamedData(@NonNull String name, byte @NonNull [] inputBytes) {
         // We pass the codeAfd to the separate sandbox process but we still need to close
         // it on our end to avoid file descriptor leaks.
         try (AssetFileDescriptor codeAfd = Utils.writeBytesIntoPipeAsync(inputBytes,
@@ -374,7 +372,7 @@ final class IsolateUsableState implements IsolateState {
     }
 
     // Caller should call mJsIsolate.removePending(mCompleter) first
-    void handleEvaluationError(@NonNull CallbackToFutureAdapter.Completer<String> completer,
+    void handleEvaluationError(CallbackToFutureAdapter.@NonNull Completer<String> completer,
             int type, @NonNull String error) {
         switch (type) {
             case IJsSandboxIsolateSyncCallback.JS_EVALUATION_ERROR:
@@ -405,18 +403,18 @@ final class IsolateUsableState implements IsolateState {
     }
 
     // Caller should call mJsIsolate.removePending(mCompleter) first
-    void handleEvaluationResult(@NonNull CallbackToFutureAdapter.Completer<String> completer,
+    void handleEvaluationResult(CallbackToFutureAdapter.@NonNull Completer<String> completer,
             @NonNull String result) {
         completer.set(result);
     }
 
-    boolean removePending(@NonNull CallbackToFutureAdapter.Completer<String> completer) {
+    boolean removePending(CallbackToFutureAdapter.@NonNull Completer<String> completer) {
         synchronized (mLock) {
             return mPendingCompleterSet.remove(completer);
         }
     }
 
-    void addPending(@NonNull CallbackToFutureAdapter.Completer<String> completer) {
+    void addPending(CallbackToFutureAdapter.@NonNull Completer<String> completer) {
         synchronized (mLock) {
             mPendingCompleterSet.add(completer);
         }
@@ -436,7 +434,7 @@ final class IsolateUsableState implements IsolateState {
     }
 
     @NonNull
-    ListenableFuture<String> evaluateJavaScriptAsync(@NonNull byte[] code) {
+    ListenableFuture<String> evaluateJavaScriptAsync(byte @NonNull [] code) {
         return CallbackToFutureAdapter.getFuture(completer -> {
             final String futureDebugMessage = "evaluateJavascript Future";
             IJsSandboxIsolateSyncCallbackStubWrapper callbackStub =
@@ -505,7 +503,7 @@ final class IsolateUsableState implements IsolateState {
                     }
 
                     @Override
-                    public void onArrayBuffer(@NonNull byte[] arrayBuffer) {
+                    public void onArrayBuffer(byte @NonNull [] arrayBuffer) {
                         executor.execute(() -> client.onMessage(
                                 Message.createArrayBuffer(arrayBuffer)));
                     }

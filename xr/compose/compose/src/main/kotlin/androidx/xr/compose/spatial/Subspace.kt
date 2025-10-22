@@ -400,14 +400,33 @@ public annotation class ExperimentalUserSubspaceApi
  * nested within. Its position in the world is determined solely by its `lockTo` parameter.
  *
  * By default, this Subspace is automatically bounded by the system's recommended content box,
- * similar to [ApplicationSubspace].
- *
- * When using BodyPart.Head as the lockTo target, this API requires headtracking to not be disabled
- * in the session configuration. If it is disabled, this API will not return anything. The session
- * configuration should resemble `session.configure( config = session.config.copy(headTracking =
- * Config.HeadTrackingMode.LAST_KNOWN) )`
+ * similar to [ApplicationSubspace]. When using BodyPart.Head as the lockTo target, this API
+ * requires headtracking to not be disabled in the session configuration. If it is disabled, this
+ * API will not return anything. The session configuration should resemble `session.configure(
+ * config = session.config.copy(headTracking = Config.HeadTrackingMode.LAST_KNOWN) )`
  *
  * This composable is a no-op in non-XR environments (i.e., Phone and Tablet).
+ *
+ * ## Managing Spatial Overlap
+ * Because each call to any kind of Subspace function creates an independent 3D scene, these spaces
+ * are not aware of one another. This can lead to a phenomenon known as the "tunneling effect,"
+ * where a moving `UserSubspace` (like a head-locked menu) can intersect with content in another
+ * stationary Subspace. This overlap can cause jarring visual artifacts and z-depth ordering issues
+ * (Z-fighting), creating a confusing user experience. A Subspace does not perform automatic
+ * collision avoidance between these independent Subspaces. It is the developer's responsibility to
+ * manage the layout and prevent these intersections or to introduce custom hit handling.
+ *
+ * ### Guidelines for Preventing Overlap:
+ * 1. **Control Volume Size**: Carefully define the bounds of your Subspace instances. Instead of
+ *    letting content fill the maximum recommended constraints, use sizing modifiers to create
+ *    smaller, manageable content areas that are less likely to collide.
+ * 2. **Use Strategic Offsets**: Use `SubspaceModifier.offset` to position a Subspace. For example,
+ *    a head-locked menu can be offset to appear in the user's peripheral vision, reducing the
+ *    chance it will collide with central content.Also, consider placing different Subspace
+ *    instances at different depths. This ensures that if they overlap, their z-depth ordering will
+ *    be clear and predictable. Note, however, that while the visual ordering may be clear, Jetpack
+ *    XR doesn't guarantee predictable interaction behaviors between UI elements in separate,
+ *    overlapping Subspaces.
  *
  * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
  * @param lockTo Specifies a part of the body which the Subspace will be locked to.

@@ -303,8 +303,16 @@ constructor(
                         "Unexpected ArrayIndexOutOfBoundsException thrown by framework."
                 }
                 return null
+            } catch (e: NullPointerException) {
+                // getCameraIdList() can return null on problematic problems, which then ran afoul
+                // with kotlin intrinsics: b/450641047
+                Log.warn(e) {
+                    "Failed to query CameraManager#getCameraIdList!" +
+                        "Null was returned by framework."
+                }
+                return null
             }
-        val cameraIds = cameraIdArray.map { CameraId(it) }
+        val cameraIds = cameraIdArray.mapNotNull { CameraId(it) }
         if (isValidCameraIds(cameraIds)) {
             // Only update the cached camera IDs if the list is valid.
             synchronized(lock) { openableCameras = cameraIds }

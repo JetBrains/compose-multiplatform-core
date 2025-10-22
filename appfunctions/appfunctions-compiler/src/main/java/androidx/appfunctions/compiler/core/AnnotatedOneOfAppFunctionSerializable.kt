@@ -96,4 +96,9 @@ class AnnotatedOneOfAppFunctionSerializable(override val classDeclaration: KSCla
             AnnotatedAppFunctionSerializableProxy.ResolvedAnnotatedSerializableProxies
     ): AppFunctionSerializableType.FactoryCodeBuilder =
         OneOfAppFunctionSerializableFactoryCodeBuilder(this)
+
+    /** Returns an emptyList since a sealed interface properties will be inherited by subclass. */
+    override fun getProperties(
+        sharedDataTypeDescriptionMap: Map<String, String>
+    ): List<AppFunctionPropertyDeclaration> = emptyList()
 }

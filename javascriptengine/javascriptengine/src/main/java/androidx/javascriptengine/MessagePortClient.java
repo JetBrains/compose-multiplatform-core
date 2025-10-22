@@ -16,8 +16,9 @@
 
 package androidx.javascriptengine;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interface for handling messages received from the other end of a {@link MessagePort} channel.

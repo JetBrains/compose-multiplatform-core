@@ -21,10 +21,11 @@ import androidx.appfunctions.AppFunctionSerializable
 @AppFunctionSerializable
 sealed class OneOfSealedClass {
 
-    @AppFunctionSerializable
-    class ASubclass(val str: String) : OneOfSealedClass()
+    abstract val interfaceProperty: String
 
     @AppFunctionSerializable
-    class BSubclass(val integer: Int) : OneOfSealedClass()
+    class ASubclass(override val interfaceProperty: String, val str: String) : OneOfSealedClass()
 
+    @AppFunctionSerializable
+    class BSubclass(override val interfaceProperty: String, val integer: Int) : OneOfSealedClass()
 }

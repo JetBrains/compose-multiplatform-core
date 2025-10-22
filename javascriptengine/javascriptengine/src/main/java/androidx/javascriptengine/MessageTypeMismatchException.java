@@ -16,8 +16,9 @@
 
 package androidx.javascriptengine;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * Indicates an attempt to access the data of a {@link Message} object as the wrong type.

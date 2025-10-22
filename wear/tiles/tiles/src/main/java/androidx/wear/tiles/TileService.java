@@ -183,8 +183,13 @@ public abstract class TileService extends Service {
      * <p>This method is not thread safe and should be called only from main thread.
      */
     @MainThread
-    @NonNull ProtoLayoutScope getScope(int tileId) {
-        return mScopes.computeIfAbsent(tileId, id -> new ProtoLayoutScope());
+    @SuppressWarnings("RestrictedApiAndroidX") // Tiles is allowed to use ProtoLayout's APIs
+    @NonNull ProtoLayoutScope getScope(int tileId, VersionInfo rendererVersionInfo) {
+        return mScopes.computeIfAbsent(
+                tileId,
+                id ->
+                        new ProtoLayoutScope(
+                                VersionBuilders.VersionInfo.fromProto(rendererVersionInfo)));
     }
 
     /**
@@ -509,8 +514,7 @@ public abstract class TileService extends Service {
                         }
                         tileService.markTileAsActiveLegacy(tileId);
                         TileRequest tileRequest;
-
-                        ProtoLayoutScope scope = tileService.getScope(tileId);
+                        ProtoLayoutScope scope;
                         try {
                             RequestProto.TileRequest tileRequestProto =
                                     RequestProto.TileRequest.parseFrom(requestParams.getContents());
@@ -522,16 +526,25 @@ public abstract class TileService extends Service {
                             // If schema version is missing, go and fill it back in again.
                             // Explicitly check that device_config is set though. If not, then
                             // skip entirely.
+                            VersionInfo rendererVersion;
                             if (tileRequestProto.hasDeviceConfiguration()
                                     && !tileRequestProto
                                             .getDeviceConfiguration()
                                             .hasRendererSchemaVersion()) {
+                                rendererVersion = DEFAULT_VERSION;
                                 DeviceParameters deviceParams =
                                         tileRequestProto.getDeviceConfiguration().toBuilder()
                                                 .setRendererSchemaVersion(DEFAULT_VERSION)
                                                 .build();
                                 tileRequestProtoBuilder.setDeviceConfiguration(deviceParams);
+                            } else {
+                                rendererVersion =
+                                        tileRequestProto
+                                                .getDeviceConfiguration()
+                                                .getRendererSchemaVersion();
                             }
+
+                            scope = tileService.getScope(tileId, rendererVersion);
 
                             tileRequest =
                                     TileRequest.fromProto(tileRequestProtoBuilder.build(), scope);

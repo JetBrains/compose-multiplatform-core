@@ -36,13 +36,13 @@ import androidx.compose.testutils.assertContainsColor
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.BitmapMatcher
@@ -127,18 +127,21 @@ class RemoteComposeScreenshotTestRule(
         outerContent: (@Composable (content: @Composable @RemoteComposable () -> Unit) -> Unit)? =
             null,
     ) {
-        val boxModifier =
-            Modifier.width(size.width.dp)
-                .height(size.height.dp)
-                .then(
-                    if (backgroundColor != null) {
-                        Modifier.background(backgroundColor)
-                    } else {
-                        Modifier
-                    }
-                )
-                .testTag("playerRoot")
         composeTestRule.setContent {
+            val pxSize = with(LocalDensity.current) { size.toDpSize() }
+
+            val boxModifier =
+                Modifier.width(pxSize.width)
+                    .height(pxSize.height)
+                    .then(
+                        if (backgroundColor != null) {
+                            Modifier.background(backgroundColor)
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .testTag("playerRoot")
+
             val content: @Composable @RemoteComposable () -> Unit = {
                 RemoteDocumentPlayer(document, size)
             }
@@ -158,18 +161,21 @@ class RemoteComposeScreenshotTestRule(
         backgroundColor: Color?,
         content: @Composable @RemoteComposable () -> Unit,
     ) {
-        val boxModifier =
-            Modifier.width(size.width.dp)
-                .height(size.height.dp)
-                .then(
-                    if (backgroundColor != null) {
-                        Modifier.background(backgroundColor)
-                    } else {
-                        Modifier
-                    }
-                )
-                .testTag(ROOT_TEST_TAG)
         composeTestRule.setContent {
+            val pxSize = with(LocalDensity.current) { size.toDpSize() }
+
+            val boxModifier =
+                Modifier.width(pxSize.width)
+                    .height(pxSize.height)
+                    .then(
+                        if (backgroundColor != null) {
+                            Modifier.background(backgroundColor)
+                        } else {
+                            Modifier
+                        }
+                    )
+                    .testTag(ROOT_TEST_TAG)
+
             Box(modifier = boxModifier) {
                 val document: CoreDocument? by rememberRemoteDocument(content = content)
                 document?.let { RemoteDocumentPlayer(it, size) }

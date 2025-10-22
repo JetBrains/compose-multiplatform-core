@@ -1393,7 +1393,7 @@ public class TileServiceTest {
         // Register noop resources so we make sure it's cleared even when onTileResReq throws
         mFakeTileServiceController
                 .get()
-                .getScope(TILE_WITH_RESOURCES_ID)
+                .getScope(TILE_WITH_RESOURCES_ID, Version.CURRENT)
                 .registerResource("1", new ImageResource.Builder().build());
 
         mTileProviderServiceStub.onTileRequest(
@@ -1411,7 +1411,7 @@ public class TileServiceTest {
         expect.that(
                         mFakeTileServiceController
                                 .get()
-                                .getScope(TILE_WITH_RESOURCES_ID)
+                                .getScope(TILE_WITH_RESOURCES_ID, Version.CURRENT)
                                 .hasResources())
                 .isFalse();
         expect.that(mFakeTileServiceController.get().removeSavedResources(TILE_WITH_RESOURCES_ID))
@@ -1609,6 +1609,32 @@ public class TileServiceTest {
 
         expect.that(mSavedResourcesSharedPref.getAll()).hasSize(1);
         expect.that(mSavedResourcesSharedPref.getString(key, "")).isEqualTo(value);
+    }
+
+    @Test
+    public void tileService_tileRequest_checkCapabilityFromScope() throws Exception {
+        mTileProviderServiceStub.onTileRequest(
+                5,
+                new TileRequestData(
+                        RequestProto.TileRequest.newBuilder()
+                                .setDeviceConfiguration(
+                                        DeviceParameters.newBuilder()
+                                                .setRendererSchemaVersion(
+                                                        VersionInfo.newBuilder()
+                                                                .setMajor(1)
+                                                                .setMinor(526)))
+                                .build()
+                                .toByteArray(),
+                        TileRequestData.VERSION_PROTOBUF),
+                mMockTileCallback);
+        shadowOf(Looper.getMainLooper()).idle();
+
+        ProtoLayoutScope scope = mFakeTileServiceController.get().mTileRequestParams.getScope();
+        assertThat(scope).isNotNull();
+        expect.that(scope.hasCapability(ProtoLayoutScope.RendererCapability.PENDING_INTENT_ACTION))
+                .isTrue();
+        expect.that(scope.hasCapability(ProtoLayoutScope.RendererCapability.LOTTIE_COLOR_FOR_SLOT))
+                .isFalse();
     }
 
     private static String getOnlyKeyFromMap(Map<String, ?> allPref) {

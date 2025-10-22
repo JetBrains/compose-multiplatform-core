@@ -15,13 +15,20 @@
   -->
 
 <resources>
+    <dimen name="margin_8dp">8dp</dimen>
+    <dimen name="margin_4dp">4dp</dimen>
+    <dimen name="padding_8dp">8dp</dimen>
+
     <!-- Annotation Toolbar dimens - BEGIN -->
-    <dimen name="annotation_toolbar_padding">8dp</dimen>
     <dimen name="annotation_tool_width">48dp</dimen>
     <dimen name="annotation_tool_height">56dp</dimen>
-    <dimen name="annotation_tool_marginEnd">4dp</dimen>
     <dimen name="annotation_tool_cornerRadius">16dp</dimen>
     <dimen name="annotation_toolbar_elevation">4dp</dimen>
     <dimen name="color_palette_icon_corner_radius">24dp</dimen>
+
+    <dimen name="brush_preview_width">48dp</dimen>
+    <dimen name="brush_preview_height">48dp</dimen>
+    <dimen name="brush_selector_container_corner_radius">20dp</dimen>
+    <dimen name="default_brush_preview_size">16dp</dimen>
     <!-- Annotation Toolbar dimens - END -->
 </resources>

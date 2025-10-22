@@ -25,3 +25,5 @@ internal const val SCREENSHOT_GOLDEN_DIRECTORY = "pdf/pdf-ink"
  */
 internal const val ANNOTATION_TOOLBAR = "annotation_toolbar"
 internal const val ANNOTATION_TOOLBAR_WITH_PEN_SELECTED = "annotation_toolbar_with_pen_selected"
+internal const val BRUSH_SIZE_SELECTED_ON_STEP_0 = "brush_size_selector_on_step_0"
+internal const val BRUSH_SIZE_SELECTED_ON_STEP_4 = "brush_size_selector_on_step_4"

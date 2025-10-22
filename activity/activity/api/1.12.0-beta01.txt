@@ -2,9 +2,9 @@
 package androidx.activity {
 
   @SuppressCompatibility @androidx.activity.ExperimentalActivityApi public final class ActivityFlags {
-    property public boolean isOnBackPressedLifecycleHandledByEnableDisable;
+    property public boolean isOnBackPressedLifecycleOrderMaintained;
     field public static final androidx.activity.ActivityFlags INSTANCE;
-    field public static boolean isOnBackPressedLifecycleHandledByEnableDisable;
+    field public static boolean isOnBackPressedLifecycleOrderMaintained;
   }
 
   public final class ActivityViewModelLazyKt {

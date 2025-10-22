@@ -31,7 +31,6 @@ import android.webkit.WebView;
 
 import androidx.annotation.RestrictTo;
 import androidx.annotation.StringDef;
-import androidx.core.os.OutcomeReceiverCompat;
 import androidx.webkit.internal.WebViewFeatureInternal;
 
 import org.jspecify.annotations.NonNull;

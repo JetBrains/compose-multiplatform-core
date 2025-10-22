@@ -17,8 +17,6 @@ package androidx.room3.util
 
 import androidx.annotation.RestrictTo
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.driver.SupportSQLiteConnection
 
 /**
  * A data class that holds the information about a view.
@@ -42,19 +40,6 @@ actual constructor(
     actual override fun toString(): String = toStringCommon()
 
     public actual companion object {
-        /**
-         * Reads the view information from the given database.
-         *
-         * @param database The database to read the information from.
-         * @param viewName The view name.
-         * @return A ViewInfo containing the schema information for the provided view name.
-         */
-        @Deprecated("No longer used by generated code.")
-        @JvmStatic
-        public fun read(database: SupportSQLiteDatabase, viewName: String): ViewInfo {
-            return read(SupportSQLiteConnection(database), viewName)
-        }
-
         /**
          * Reads the view information from the given database.
          *

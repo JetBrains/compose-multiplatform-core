@@ -28,7 +28,8 @@
             android:name=".DemoActivity"
             android:configChanges="uiMode"
             android:exported="true"
-            android:theme="@style/AppTheme">
+            android:theme="@style/AppTheme"
+            android:requiredDisplayCategory="xr_projected">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.DEFAULT" />

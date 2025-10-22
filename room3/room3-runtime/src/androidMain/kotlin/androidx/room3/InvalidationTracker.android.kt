@@ -90,18 +90,6 @@ actual constructor(
 
     private val trackerLock = Any()
 
-    @Deprecated("No longer called by generated implementation")
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public constructor(
-        database: RoomDatabase,
-        vararg tableNames: String,
-    ) : this(
-        database = database,
-        shadowTablesMap = emptyMap(),
-        viewTables = emptyMap(),
-        tableNames = tableNames,
-    )
-
     init {
         // TODO(b/316944352): Figure out auto-close with driver APIs
         // Setup a callback to disallow invalidation refresh when underlying compat database
@@ -367,30 +355,6 @@ actual constructor(
                     it.notifyByTableNames(tables)
                 }
             }
-    }
-
-    /**
-     * Creates a LiveData that computes the given function once and for every other invalidation of
-     * the database.
-     *
-     * Holds a strong reference to the created LiveData as long as it is active.
-     *
-     * @param computeFunction The function that calculates the value
-     * @param tableNames The list of tables to observe
-     * @param T The return type
-     * @return A new LiveData that computes the given function when the given list of tables
-     *   invalidates.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    @Deprecated(
-        message = "Replaced with overload that takes 'inTransaction 'parameter.",
-        replaceWith = ReplaceWith("createLiveData(tableNames, false, computeFunction"),
-    )
-    public open fun <T> createLiveData(
-        tableNames: Array<out String>,
-        computeFunction: Callable<T?>,
-    ): LiveData<T> {
-        return createLiveData(tableNames, false, computeFunction)
     }
 
     /**

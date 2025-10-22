@@ -16,9 +16,10 @@
 
 package androidx.javascriptengine;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.javascriptengine.common.MessagePortInternal;
+
+import org.jspecify.annotations.NonNull;
 
 import java.util.Objects;
 import java.util.concurrent.Executor;

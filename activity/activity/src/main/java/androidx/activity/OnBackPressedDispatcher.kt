@@ -144,8 +144,8 @@ class OnBackPressedDispatcher(
      *
      * ## Legacy Behavior
      * To restore the legacy add/remove behavior, set
-     * [ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable] to `false`. In legacy mode,
-     * the handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP],
+     * [ActivityFlags.isOnBackPressedLifecycleOrderMaintained] to `false`. In legacy mode, the
+     * handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP],
      * which may change dispatch ordering across lifecycle transitions.
      *
      * @param owner The [LifecycleOwner] that controls when the callback should be active.
@@ -163,7 +163,7 @@ class OnBackPressedDispatcher(
 
         val eventHandler = onBackPressedCallback.createNavigationEventHandler()
 
-        if (ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable) {
+        if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
             // Start disabled; will be enabled by lifecycle events.
             eventHandler.isBackEnabled = false
 
@@ -176,7 +176,7 @@ class OnBackPressedDispatcher(
             object : LifecycleEventObserver, AutoCloseable {
                 override fun onStateChanged(source: LifecycleOwner, event: Event) {
                     // Sync enabled state with the lifecycle.
-                    if (ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable) {
+                    if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
                         eventHandler.isBackEnabled =
                             event.targetState.isAtLeast(State.STARTED) &&
                                 onBackPressedCallback.isEnabled
@@ -303,9 +303,9 @@ class OnBackPressedDispatcher(
  *
  * ## Legacy Behavior
  * To restore the legacy add/remove behavior, set
- * [ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable] to `false`. In legacy mode, the
- * handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which
- * may change dispatch ordering across lifecycle transitions.
+ * [ActivityFlags.isOnBackPressedLifecycleOrderMaintained] to `false`. In legacy mode, the handler
+ * is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which may change
+ * dispatch ordering across lifecycle transitions.
  */
 @Suppress("RegistrationName")
 fun OnBackPressedDispatcher.addCallback(

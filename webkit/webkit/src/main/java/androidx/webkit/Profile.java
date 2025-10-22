@@ -30,7 +30,6 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
 import androidx.annotation.UiThread;
-import androidx.core.os.OutcomeReceiverCompat;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -252,7 +251,6 @@ public interface Profile {
      * a prerender request. This applies specifically to WebViews that are
      * associated with this Profile.
      * <p>
-     *
      * @param speculativeLoadingConfig the config to set for this profile session.
      */
     @RequiresFeature(name = WebViewFeature.SPECULATIVE_LOADING_CONFIG,
@@ -314,8 +312,8 @@ public interface Profile {
      *
      * @param headerName  A
      *                    <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
-     * @param headerValue A
-     *                    <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP value name string</a>
+     * @param headerValue  A
+     *                          <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP value name string</a>
      * @param originRules a set of origin rules following the same format as
      *                    {@link WebViewCompat#addWebMessageListener}
      */
@@ -359,7 +357,6 @@ public interface Profile {
 
     /**
      * Remove any currently set headers from being applied to network requests.
-     *
      * @see #setOriginMatchedHeader(String, String, Set)
      */
     @RequiresFeature(name = WebViewFeature.ORIGIN_MATCHED_HEADERS,

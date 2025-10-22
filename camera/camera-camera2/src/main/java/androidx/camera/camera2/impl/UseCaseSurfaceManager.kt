@@ -100,7 +100,7 @@ constructor(
                                 sessionConfigAdapter.reportSurfaceInvalid(e.deferrableSurface)
                                 return@async false
                             } catch (e: TimeoutCancellationException) {
-                                Camera2Logger.warn(e) {
+                                Camera2Logger.warn {
                                     "Failed to get Surfaces within $timeoutMillis ms"
                                 }
                                 return@async false
@@ -192,7 +192,7 @@ constructor(
         try {
             return setupDeferred.await()
         } catch (e: CancellationException) {
-            Camera2Logger.warn(e) { "Surface setup was cancelled" }
+            Camera2Logger.warn { "Surface setup was cancelled" }
             return false
         }
     }

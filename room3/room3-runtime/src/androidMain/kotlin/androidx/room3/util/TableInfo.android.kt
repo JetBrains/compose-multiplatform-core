@@ -19,8 +19,6 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.room3.ColumnInfo.SQLiteTypeAffinity
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.driver.SupportSQLiteConnection
 
 /**
  * A data class that holds the information about a table.
@@ -45,14 +43,6 @@ actual constructor(
     @IntDef(value = [CREATED_FROM_UNKNOWN, CREATED_FROM_ENTITY, CREATED_FROM_DATABASE])
     internal annotation class CreatedFrom()
 
-    /** For backward compatibility with dbs created with older versions. */
-    @Deprecated("No longer used by generated code.")
-    public constructor(
-        name: String,
-        columns: Map<String, Column>,
-        foreignKeys: Set<ForeignKey>,
-    ) : this(name, columns, foreignKeys, emptySet<Index>())
-
     actual override fun equals(other: Any?): Boolean = equalsCommon(other)
 
     actual override fun hashCode(): Int = hashCodeCommon()
@@ -74,19 +64,6 @@ actual constructor(
          * from a PRAGMA, such as table_info.
          */
         public actual const val CREATED_FROM_DATABASE: Int = 2
-
-        /**
-         * Reads the table information from the given database.
-         *
-         * @param database The database to read the information from.
-         * @param tableName The table name.
-         * @return A TableInfo containing the schema information for the provided table name.
-         */
-        @Deprecated("No longer used by generated code.")
-        @JvmStatic
-        public fun read(database: SupportSQLiteDatabase, tableName: String): TableInfo {
-            return read(SupportSQLiteConnection(database), tableName)
-        }
 
         /**
          * Reads the table information from the given database.
@@ -130,14 +107,6 @@ actual constructor(
          */
         public actual val isPrimaryKey: Boolean
             get() = primaryKeyPosition > 0
-
-        @Deprecated("No longer used by generated code.")
-        public constructor(
-            name: String,
-            type: String,
-            notNull: Boolean,
-            primaryKeyPosition: Int,
-        ) : this(name, type, notNull, primaryKeyPosition, null, CREATED_FROM_UNKNOWN)
 
         public companion object {
             @JvmStatic
@@ -186,18 +155,6 @@ actual constructor(
             // should match the value in Index.kt
             public actual const val DEFAULT_PREFIX: String = "index_"
         }
-
-        @Deprecated("No longer used by generated code.")
-        public constructor(
-            name: String,
-            unique: Boolean,
-            columns: List<String>,
-        ) : this(
-            name,
-            unique,
-            columns,
-            List<String>(columns.size) { androidx.room3.Index.Order.ASC.name },
-        )
 
         actual override fun equals(other: Any?): Boolean = equalsCommon(other)
 

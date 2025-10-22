@@ -19,7 +19,6 @@ package androidx.pdf.annotation.processor
 import android.os.Build
 import androidx.annotation.RequiresExtension
 import androidx.pdf.adapter.FakePdfDocumentRenderer
-import androidx.pdf.adapter.FakePdfPage
 import androidx.pdf.adapter.PdfDocumentRenderer
 import androidx.pdf.annotation.createPdfAnnotationDataList
 import androidx.pdf.annotation.models.PdfAnnotationData
@@ -38,9 +37,7 @@ class PdfRendererAnnotationsProcessorTest {
     @Before
     fun setUp() {
         pdfDocumentRenderer =
-            FakePdfDocumentRenderer(isLinearized = false, pageCount = 10, formType = 1) { pageNum ->
-                FakePdfPage(pageNum, 100, 100)
-            }
+            FakePdfDocumentRenderer(isLinearized = false, pageCount = 10, formType = 1)
         processor = PdfRendererAnnotationsProcessor(pdfDocumentRenderer)
     }
 

@@ -113,6 +113,7 @@ class BackgroundModifierTest {
                                 RemoteBrush.radialGradient(
                                     listOf(Color.Blue, Color.Red),
                                     radius = 50f,
+                                    center = Offset(50f, 50f),
                                 )
                             )
                 ) {}

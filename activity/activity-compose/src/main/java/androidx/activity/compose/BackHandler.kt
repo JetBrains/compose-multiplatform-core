@@ -93,9 +93,9 @@ public object LocalOnBackPressedDispatcherOwner {
  *
  * ## Legacy Behavior
  * To restore the legacy add/remove behavior, set
- * [ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable] to `false`. In legacy mode, the
- * handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which
- * may change dispatch ordering across lifecycle transitions.
+ * [ActivityFlags.isOnBackPressedLifecycleOrderMaintained] to `false`. In legacy mode, the handler
+ * is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which may change
+ * dispatch ordering across lifecycle transitions.
  *
  * @sample androidx.activity.compose.samples.BackHandler
  * @param enabled If `true`, this handler will be enabled and eligible to handle the back press.
@@ -116,7 +116,7 @@ public fun BackHandler(enabled: Boolean = true, onBack: () -> Unit) {
 
     val handler = remember { ComposeBackHandler() }
 
-    if (ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable) {
+    if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
         // Keep the handler instance stable across recompositions, but update the active parameters.
         SideEffect { handler.currentOnBackCompleted = onBack }
 

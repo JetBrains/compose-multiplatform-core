@@ -27,8 +27,8 @@ import androidx.pdf.ink.view.tool.AnnotationToolView
 /**
  * A toolbar that hosts a set of annotation tools for interacting with a PDF document.
  *
- * This custom viewgroup contains a predefined set of [AnnotationToolView] buttons such as pen,
- * highlighter, eraser, etc. aligned based on the [orientation] set.
+ * This custom [android.view.ViewGroup] contains a predefined set of [AnnotationToolView] buttons
+ * such as pen, highlighter, eraser, etc. aligned based on the [orientation] set.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class AnnotationToolbar

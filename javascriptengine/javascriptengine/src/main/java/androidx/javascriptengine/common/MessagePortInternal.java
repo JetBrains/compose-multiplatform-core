@@ -22,12 +22,11 @@ import android.os.DeadObjectException;
 import android.os.IBinder;
 import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.google.common.util.concurrent.MoreExecutors;
 
 import org.chromium.android_webview.js_sandbox.common.IMessagePort;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -85,8 +84,7 @@ public final class MessagePortInternal {
     // The service side limit is set to an unreachable high value.
     private final int mMaxMessageSize;
     // Binder link to death. Link closeLocally to isolate/sandbox death.
-    @Nullable
-    public IBinder.DeathRecipient mDeathRecipient;
+    public IBinder.@Nullable DeathRecipient mDeathRecipient;
 
     private final class MessagePortIpcClient extends IMessagePort.Stub {
         MessagePortIpcClient() {}
@@ -212,7 +210,7 @@ public final class MessagePortInternal {
          *
          * @param arrayBuffer The ArrayBuffer message as a byte array.
          */
-        void onArrayBuffer(@NonNull byte[] arrayBuffer);
+        void onArrayBuffer(byte @NonNull [] arrayBuffer);
     }
 
     /**
@@ -332,7 +330,7 @@ public final class MessagePortInternal {
      *
      * @param bytes the ArrayBuffer message to post.
      */
-    public void postArrayBuffer(@NonNull byte[] bytes) {
+    public void postArrayBuffer(byte @NonNull [] bytes) {
         IMessagePort remote = mRemoteIMessagePort.get();
         if (remote == null) return;
 

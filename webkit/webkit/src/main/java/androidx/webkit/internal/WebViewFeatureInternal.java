@@ -34,6 +34,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.PackageInfoCompat;
 import androidx.webkit.BackForwardCacheSettings;
 import androidx.webkit.Navigation;
+import androidx.webkit.OutcomeReceiverCompat;
 import androidx.webkit.Page;
 import androidx.webkit.PrerenderOperationCallback;
 import androidx.webkit.Profile;

@@ -32,9 +32,19 @@ import android.graphics.pdf.models.PageMatchBounds
 import android.graphics.pdf.models.selection.PageSelection
 import android.graphics.pdf.models.selection.SelectionBoundary
 import android.util.Pair
+import androidx.pdf.annotation.models.EditOperation
 
 class FakePdfPage(private val pageNum: Int, override val height: Int, override val width: Int) :
     PdfPage {
+
+    internal data class AnnotationOperationRecord(
+        val aospId: Int,
+        val operation: EditOperation.Operation,
+    )
+
+    internal val annotationsOperation = mutableListOf<AnnotationOperationRecord>()
+    val annotationsMap = mutableMapOf<Int, PdfAnnotation>()
+
     override fun renderPage(bitmap: Bitmap) {
         TODO("Not yet implemented")
     }
@@ -114,20 +124,27 @@ class FakePdfPage(private val pageNum: Int, override val height: Int, override v
 
     override fun addPageAnnotation(annotation: PdfAnnotation): Int {
         if (pageNum == -1) throw IllegalStateException()
-        return 0
+        val fakeAospId = annotationsMap.size
+        annotationsOperation.add(AnnotationOperationRecord(fakeAospId, EditOperation.Add))
+        annotationsMap[fakeAospId] = annotation
+        return fakeAospId
     }
 
     override fun getPageAnnotations(): List<Pair<Int, PdfAnnotation>> {
-        TODO("Not yet implemented")
+        return annotationsMap.map { (aospId, annotation) -> Pair(aospId, annotation) }
     }
 
     override fun updatePageAnnotation(annotationId: Int, annotation: PdfAnnotation): Boolean {
         if (pageNum < 0) throw IllegalStateException()
+        annotationsOperation.add(AnnotationOperationRecord(annotationId, EditOperation.Update))
+        annotationsMap[annotationId] = annotation
         return true
     }
 
     override fun removePageAnnotation(annotationId: Int) {
         if (pageNum < 0) throw IllegalStateException()
+        annotationsOperation.add(AnnotationOperationRecord(annotationId, EditOperation.Remove))
+        annotationsMap.remove(annotationId)
     }
 
     override fun close() {

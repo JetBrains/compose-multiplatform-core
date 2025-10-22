@@ -72,7 +72,7 @@ class AnnotationToolbarUiTest {
                     id = ANNOTATION_TOOLBAR_VIEW_ID
                     elevation = context.resources.getDimension(R.dimen.annotation_toolbar_elevation)
                     val defaultPadding =
-                        context.resources.getDimensionPixelSize(R.dimen.annotation_toolbar_padding)
+                        context.resources.getDimensionPixelSize(R.dimen.padding_8dp)
                     setPadding(defaultPadding, defaultPadding, defaultPadding, defaultPadding)
                 }
             activity.container.addView(

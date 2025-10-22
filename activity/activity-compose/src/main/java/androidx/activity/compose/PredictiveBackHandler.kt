@@ -95,9 +95,9 @@ import kotlinx.coroutines.launch
  *
  * ## Legacy Behavior
  * To restore the legacy add/remove behavior, set
- * [ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable] to `false`. In legacy mode, the
- * handler is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which
- * may change dispatch ordering across lifecycle transitions.
+ * [ActivityFlags.isOnBackPressedLifecycleOrderMaintained] to `false`. In legacy mode, the handler
+ * is added on [Lifecycle.Event.ON_START] and removed on [Lifecycle.Event.ON_STOP], which may change
+ * dispatch ordering across lifecycle transitions.
  *
  * @sample androidx.activity.compose.samples.PredictiveBack
  * @param enabled Controls whether this handler is active. **Important**: Due to the timing issue
@@ -127,7 +127,7 @@ public fun PredictiveBackHandler(
     val scope = rememberCoroutineScope()
     val handler = remember { ComposePredictiveBackHandler(scope) }
 
-    if (ActivityFlags.isOnBackPressedLifecycleHandledByEnableDisable) {
+    if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
         // Keep the handler instance stable across recompositions, but update the active parameters.
         SideEffect { handler.currentOnBack = onBack }
 

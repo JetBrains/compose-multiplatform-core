@@ -136,7 +136,7 @@ internal class PruningProcessingQueue<T>(
                     processDeferred?.onAwait { processDeferred = null }
                 }
             } catch (cancellationException: CancellationException) {
-                Log.debug(cancellationException) { "PruningProcessingQueue: Scope cancelled" }
+                Log.debug { "PruningProcessingQueue: Scope cancelled" }
                 break
             } catch (throwable: Throwable) {
                 Log.error(throwable) { "Encountered exception during processing" }

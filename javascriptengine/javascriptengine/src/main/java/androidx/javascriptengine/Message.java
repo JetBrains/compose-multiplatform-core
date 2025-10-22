@@ -17,9 +17,10 @@
 package androidx.javascriptengine;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -51,8 +52,7 @@ public final class Message {
     @Type private final int mType;
     @Nullable
     private final String mString;
-    @Nullable
-    private final byte[] mArrayBuffer;
+    private final byte @Nullable [] mArrayBuffer;
 
     /**
      * Creates a new message with a {@link String} payload.
@@ -72,7 +72,7 @@ public final class Message {
      * @return a new Message instance with the byte array payload.
      */
     @NonNull
-    public static Message createArrayBuffer(@NonNull byte[] bytes) {
+    public static Message createArrayBuffer(byte @NonNull [] bytes) {
         return new Message(bytes);
     }
 
@@ -83,7 +83,7 @@ public final class Message {
         mType = Type.STRING;
     }
 
-    private Message(@NonNull byte[] bytes) {
+    private Message(byte @NonNull [] bytes) {
         Objects.requireNonNull(bytes);
         mString = null;
         mArrayBuffer = bytes;
@@ -137,8 +137,7 @@ public final class Message {
      * @return the message's data as a byte array.
      * @throws MessageTypeMismatchException if the message type is not an array buffer.
      */
-    @NonNull
-    public byte[] getArrayBuffer() {
+    public byte @NonNull [] getArrayBuffer() {
         if (mType != Type.ARRAY_BUFFER) {
             throw new MessageTypeMismatchException("Message type is not an array buffer");
         }
