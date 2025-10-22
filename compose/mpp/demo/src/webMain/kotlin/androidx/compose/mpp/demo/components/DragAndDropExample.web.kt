@@ -26,9 +26,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Text
@@ -53,6 +51,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import org.w3c.dom.DataTransfer
 import androidx.compose.ui.draganddrop.domDataTransferOrNull
 
@@ -159,40 +159,94 @@ actual fun DragAndDropExample() {
         }
 
         // Drag target stays centered in the viewport independently of the sources above
+        val glowPadding = 24.dp
+        val glowColor = if (pieSlices.isEmpty()) {
+            Color.Black
+        } else {
+            var r = 0f; var g = 0f; var b = 0f
+            pieSlices.forEach { c -> r += c.red; g += c.green; b += c.blue }
+            val n = pieSlices.size
+            Color(r / n, g / n, b / n)
+        }
+
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .size(200.dp)
-                .background(if (showHovered) Color.Magenta else Color.LightGray, shape = CircleShape)
-                .border(border = BorderStroke(3.dp, if (showTargetBorder) Color.Black else Color.Transparent), shape = CircleShape)
-                .clip(CircleShape)
-                .dragAndDropTarget(
-                    shouldStartDragAndDrop = { true },
-                    target = dragAndDropTarget
-                ),
+                .size(200.dp + glowPadding * 2)
+                .drawBehind {
+                    if (showTargetBorder) {
+                        val glowPaddingPx = glowPadding.toPx()
+                        val outerR = size.minDimension / 2f
+                        val innerR = outerR - glowPaddingPx
+                        if (pieSlices.isNotEmpty()) {
+                            // Segmented glow: draw a colored ring mirroring the pie chart segments
+                            val counts = pieSlices.groupingBy { it }.eachCount()
+                            val total = pieSlices.size.toFloat()
+                            var start = -90f
+                            val arcSize = Size(outerR * 2f, outerR * 2f)
+                            val topLeft = Offset(center.x - outerR, center.y - outerR)
+                            counts.entries.forEach { (color, count) ->
+                                val sweep = (count.toFloat() / total) * 360f
+                                drawArc(
+                                    color = color.copy(alpha = 0.6f),
+                                    startAngle = start,
+                                    sweepAngle = sweep,
+                                    useCenter = false,
+                                    topLeft = topLeft,
+                                    size = arcSize,
+                                    style = androidx.compose.ui.graphics.drawscope.Stroke(width = glowPaddingPx)
+                                )
+                                start += sweep
+                            }
+                        } else {
+                            // Fallback soft radial glow when there are no segments yet
+                            val ratio = if (outerR > 0f) innerR / outerR else 0f
+                            val brush = Brush.radialGradient(
+                                (maxOf(0f, ratio - 0.05f)) to Color.Transparent,
+                                ratio to glowColor.copy(alpha = 0.5f),
+                                1f to Color.Transparent,
+                                center = center,
+                                radius = outerR
+                            )
+                            drawCircle(brush = brush, radius = outerR, center = center)
+                        }
+                    }
+                },
             contentAlignment = Alignment.Center
         ) {
-            // Draw pie chart based on dropped colors
-            Canvas(Modifier.fillMaxSize()) {
-                if (pieSlices.isNotEmpty()) {
-                    val counts = pieSlices.groupingBy { it }.eachCount()
-                    val total = pieSlices.size.toFloat()
-                    var start = -90f
-                    counts.entries.forEach { (color, count) ->
-                        val sweep = (count.toFloat() / total) * 360f
-                        drawArc(
-                            color = color,
-                            startAngle = start,
-                            sweepAngle = sweep,
-                            useCenter = true,
-                            size = size
-                        )
-                        start += sweep
+            Box(
+                modifier = Modifier
+                    .size(200.dp)
+                    .background(if (showHovered) Color.Magenta else Color.LightGray, shape = CircleShape)
+                    .clip(CircleShape)
+                    .dragAndDropTarget(
+                        shouldStartDragAndDrop = { true },
+                        target = dragAndDropTarget
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                // Draw pie chart based on dropped colors
+                Canvas(Modifier.fillMaxSize()) {
+                    if (pieSlices.isNotEmpty()) {
+                        val counts = pieSlices.groupingBy { it }.eachCount()
+                        val total = pieSlices.size.toFloat()
+                        var start = -90f
+                        counts.entries.forEach { (color, count) ->
+                            val sweep = (count.toFloat() / total) * 360f
+                            drawArc(
+                                color = color,
+                                startAngle = start,
+                                sweepAngle = sweep,
+                                useCenter = true,
+                                size = size
+                            )
+                            start += sweep
+                        }
                     }
                 }
-            }
 
-            Text(targetText + " [" + dragCounter + "]", Modifier.align(Alignment.Center))
+                Text(targetText + " [" + dragCounter + "]", Modifier.align(Alignment.Center))
+            }
         }
     }
 }
