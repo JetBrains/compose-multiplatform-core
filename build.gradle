@@ -23,6 +23,7 @@
  */
 import androidx.build.AndroidXRootPlugin
 import androidx.build.SdkHelperKt
+import org.jetbrains.androidx.build.JetBrainsAndroidXRootPlugin
 
 buildscript {
     SdkHelperKt.setSupportRootFolder(project, project.projectDir)
@@ -36,3 +37,4 @@ buildscript {
 }
 
 apply plugin: AndroidXRootPlugin
+apply plugin: JetBrainsAndroidXRootPlugin
