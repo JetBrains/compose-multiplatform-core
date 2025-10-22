@@ -58,7 +58,7 @@ class FeatureGroupQueryBindAlignmentTest(
         // with this initial query result for both when all these features are set as required and
         // when all these features are set as preferred features.
         val isSupported =
-            cameraProvider.getCameraInfo(cameraSelector).isFeatureGroupSupported(sessionConfig)
+            cameraProvider.getCameraInfo(cameraSelector).isSessionConfigSupported(sessionConfig)
 
         // Scenario 1: Verify binding when all the features are required.
         // Binding should succeed if and only if the full feature group is supported and no

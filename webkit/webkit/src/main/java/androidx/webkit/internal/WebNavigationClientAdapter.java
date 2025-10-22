@@ -20,7 +20,6 @@ package androidx.webkit.internal;
 import androidx.webkit.WebNavigationClient;
 
 import org.chromium.support_lib_boundary.WebViewNavigationBoundaryInterface;
-import org.chromium.support_lib_boundary.WebViewNavigationClientBoundaryInterface;
 import org.chromium.support_lib_boundary.WebViewPageBoundaryInterface;
 import org.chromium.support_lib_boundary.util.BoundaryInterfaceReflectionUtil;
 import org.chromium.support_lib_boundary.util.Features;
@@ -31,12 +30,13 @@ import java.lang.reflect.InvocationHandler;
 
 /**
  * Adapter between {@link WebNavigationClient} and
- * {@link WebViewNavigationClientBoundaryInterface}. It handles the delegation for callback
- * triggers.
+ * {@link org.chromium.support_lib_boundary.WebViewNavigationClientBoundaryInterface}.
+ * It handles the delegation for callback triggers.
  */
 @WebNavigationClient.ExperimentalNavigationCallback
+@SuppressWarnings("deprecation")
 public class WebNavigationClientAdapter implements
-        WebViewNavigationClientBoundaryInterface {
+        org.chromium.support_lib_boundary.WebViewNavigationClientBoundaryInterface {
     WebNavigationClient mWebNavigationClient;
 
     public WebNavigationClientAdapter(@NonNull WebNavigationClient client) {

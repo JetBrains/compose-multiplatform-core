@@ -119,6 +119,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void setStereoSurfaceEntityCanvasShapeQuad(androidx.xr.scenecore.impl.impress.ImpressNode, float, float);
     method public void setStereoSurfaceEntityCanvasShapeSphere(androidx.xr.scenecore.impl.impress.ImpressNode, float);
     method public void setStereoSurfaceEntityColliderEnabled(androidx.xr.scenecore.impl.impress.ImpressNode, boolean);
+    method public void setStereoSurfaceEntitySurfaceSize(androidx.xr.scenecore.impl.impress.ImpressNode, int, int);
     method public void setTransmissionFactorOnKhronosPbrMaterial(long, float);
     method public void setTransmissionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setTransmissionUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);
@@ -158,6 +159,8 @@ package androidx.xr.scenecore.impl.impress {
     method public float getRadius();
     method @androidx.xr.scenecore.impl.impress.ImpressApi.StereoMode public int getStereoMode();
     method public android.view.Surface? getSurface();
+    method public int getSurfaceHeight();
+    method public int getSurfaceWidth();
     method public float getWidth();
   }
 
@@ -261,6 +264,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void setStereoSurfaceEntityCanvasShapeQuad(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, float width, float height);
     method public void setStereoSurfaceEntityCanvasShapeSphere(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, float radius);
     method public void setStereoSurfaceEntityColliderEnabled(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, boolean enableCollider);
+    method public void setStereoSurfaceEntitySurfaceSize(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, int width, int height);
     method public void setTransmissionFactorOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float factor);
     method public void setTransmissionTextureOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, long transmissionTexture, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setTransmissionUvTransformOnKhronosPbrMaterial(long nativeKhronosPbrMaterial, float ux, float uy, float uz, float vx, float vy, float vz, float wx, float wy, float wz);
@@ -455,6 +459,7 @@ package androidx.xr.scenecore.impl.impress {
     method public void setStereoSurfaceEntityCanvasShapeQuad(androidx.xr.scenecore.impl.impress.ImpressNode, float, float);
     method public void setStereoSurfaceEntityCanvasShapeSphere(androidx.xr.scenecore.impl.impress.ImpressNode, float);
     method public void setStereoSurfaceEntityColliderEnabled(androidx.xr.scenecore.impl.impress.ImpressNode, boolean);
+    method public void setStereoSurfaceEntitySurfaceSize(androidx.xr.scenecore.impl.impress.ImpressNode, int, int);
     method public void setTransmissionFactorOnKhronosPbrMaterial(long, float);
     method public void setTransmissionTextureOnKhronosPbrMaterial(long, long, androidx.xr.scenecore.runtime.TextureSampler);
     method public void setTransmissionUvTransformOnKhronosPbrMaterial(long, float, float, float, float, float, float, float, float, float);

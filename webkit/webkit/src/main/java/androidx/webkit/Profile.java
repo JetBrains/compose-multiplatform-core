@@ -324,9 +324,10 @@ public interface Profile {
     void setOriginMatchedHeader(@NonNull String headerName,
             @NonNull String headerValue, @NonNull Set<String> originRules);
 
-
     /**
      * Returns true if the profile has a value set for the given header name.
+     *
+     * <p>This method is case sensitive.
      *
      * @param headerName A
      *                   <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
@@ -345,6 +346,8 @@ public interface Profile {
      * <p>
      * It is safe to call this method even if {@code headerName} has not previously been set via
      * {@link #setOriginMatchedHeader(String, String, Set)}
+     *
+     * <p>This method is case sensitive.
      *
      * @param headerName Header to remove.
      * @see #setOriginMatchedHeader(String, String, Set)
@@ -376,13 +379,20 @@ public interface Profile {
      * getRequestHeaders provided in shouldInterceptRequest.
      * <p>
      * If this method is called multiple times with headers that have the same name and value,
-     * then the sets of will be merged into a single set.
+     * then the sets of origin rules will be merged into a single set.
      * <p>
      * If multiple headers with the same name but different values match a request,
      * then all the values will be sent in a comma-separated list of values
      * following the guidance for <a
      * href="https://www.rfc-editor.org/rfc/rfc7230#section-3.2.2">repeated
      * header fields</a>. This does not take into account whether such merging is safe.
+     *
+     * <p>Headers are considered the same if their {@code name} matches case-insensitive and
+     * their {@code value} matches case-sensitive.
+     * This follows
+     * <a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-field-names">RFC 9110</a>,
+     * which states that "field names are case insensitive".
+     * This API will use the casing of the first custom header encountered.
      *
      * @param header The header to add.
      */
@@ -395,6 +405,8 @@ public interface Profile {
 
     /**
      * Returns true if the profile has a value set for the given header name.
+     *
+     * <p>This method is case insensitive.
      *
      * @param headerName A
      *                   <a href="https://datatracker.ietf.org/doc/html/rfc7230#section-3.2">valid HTTP header name string</a>
@@ -428,6 +440,8 @@ public interface Profile {
      * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} or
      * {@link #setOriginMatchedHeader(String, String, Set)} which have the specified {@code name}.
      *
+     * <p>This method is case insensitive.
+     *
      * @param name Name of headers to get. Case sensitive.
      */
     @RequiresFeature(name = WebViewFeature.CUSTOM_REQUEST_HEADERS,
@@ -444,6 +458,8 @@ public interface Profile {
      * Returns all custom headers set with {@link #addCustomHeader(CustomHeader)} or
      * {@link #setOriginMatchedHeader(String, String, Set)} which have the specified {@code name}
      * and {@code value}.
+     *
+     * <p>This method is case insensitive for {@code name} but case-sensitive for {@code value}.
      *
      * @param name  Name of headers to get. Case sensitive.
      * @param value Value of headers to get. Case sensitive.
@@ -466,6 +482,8 @@ public interface Profile {
      * {@link #addCustomHeader(CustomHeader)} or
      * {@link #setOriginMatchedHeader(String, String, Set)}.
      *
+     * <p>This method is case insensitive.
+     *
      * @param headerName Header to remove.
      * @see #addCustomHeader(CustomHeader)
      */
@@ -483,6 +501,8 @@ public interface Profile {
      * previously been set via
      * {@link #addCustomHeader(CustomHeader)} or
      * {@link #setOriginMatchedHeader(String, String, Set)}.
+     *
+     * <p>This method is case insensitive for {@code name} but case-sensitive for {@code value}.
      *
      * @param headerName  Header name to remove.
      * @param headerValue Header value to remove.

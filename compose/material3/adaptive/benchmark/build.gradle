@@ -33,7 +33,7 @@ dependencies {
     androidTestImplementation(project(":compose:ui:ui"))
     androidTestImplementation(project(":compose:animation:animation"))
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.kotlinTestCommon)
+    androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.junit)
 }
 

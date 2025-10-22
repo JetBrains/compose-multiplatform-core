@@ -21,6 +21,7 @@ import android.util.Log
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.CreatePoseFromGeospatialPoseSuccess
 import androidx.xr.arcore.Earth
@@ -53,7 +54,11 @@ class ProjectedTestAppActivity : ComponentActivity() {
     private var vpsStatusMessage: String = "VPS status: checking..."
     private val sessionInitialized = CompletableDeferred<Unit>()
     private val TAG = "ProjectedTestAppActivity"
-    val config: Config = Config(geospatial = Config.GeospatialMode.EARTH)
+    val config: Config =
+        Config(
+            geospatial = Config.GeospatialMode.EARTH,
+            deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+        )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,7 +78,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 checkVpsAvailability(37.422, -122.084) // Googleplex coordinates
                 while (true) {
                     update()
-                    delay(1000)
+                    delay(100)
                 }
             }
         }
@@ -105,6 +110,12 @@ class ProjectedTestAppActivity : ComponentActivity() {
     }
 
     private fun update() {
+        val pose = ArDevice.getInstance(session).state.value.devicePose
+        var newText =
+            "\n\n\n\nDevicePose translation: ${pose.translation.x}, ${pose.translation.y}, ${pose.translation.z}"
+        newText +=
+            "\nDevicePose rotation: ${pose.rotation.x}, ${pose.rotation.y}, ${pose.rotation.z}, ${pose.rotation.w}"
+
         when (val geospatialPoseResult = earth.createGeospatialPoseFromDevicePose()) {
             is CreateGeospatialPoseFromPoseSuccess -> {
                 val currentGeospatialPose = geospatialPoseResult.pose
@@ -113,9 +124,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
 
                 if (!isCurrentPoseValid) {
                     Log.w(TAG, "Skipping frame due to invalid currentGeospatialPose.")
-                    runOnUiThread {
-                        textView.text = "\n\n\n\nWaiting for a valid Geospatial Pose..."
-                    }
+                    newText += "\nWaiting for a valid Geospatial Pose..."
                     return
                 }
 
@@ -135,11 +144,10 @@ class ProjectedTestAppActivity : ComponentActivity() {
             }
             else -> {
                 Log.e(TAG, "Failed to get GeospatialPose from device pose: $geospatialPoseResult")
-                runOnUiThread {
-                    textView.text = "Error getting GeospatialPose: $geospatialPoseResult"
-                }
+                newText += "\nError getting GeospatialPose: $geospatialPoseResult"
             }
         }
+        runOnUiThread { textView.text = newText }
     }
 
     private fun displayToScreen(

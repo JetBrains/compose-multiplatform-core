@@ -53,7 +53,7 @@ import androidx.camera.core.impl.CameraInfoInternal
  * supported, or some/all features from [SessionConfig.preferredFeatureGroup] will be dropped based
  * on priority).
  *
- * Additionally, the [androidx.camera.core.CameraInfo.isFeatureGroupSupported] API can be used to
+ * Additionally, the [androidx.camera.core.CameraInfo.isSessionConfigSupported] API can be used to
  * check if a group of features is supported together on a device.
  *
  * @sample androidx.camera.core.samples.startCameraWithSomeHighQualityFeatures

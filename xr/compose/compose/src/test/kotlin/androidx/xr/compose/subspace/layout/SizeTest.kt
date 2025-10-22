@@ -510,4 +510,173 @@ class SizeTest {
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertDepthIsEqualTo(30.dp)
     }
+
+    @Test
+    fun requiredSizeIn_whenContentIsLargerThanMax_coercesToMax() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .requiredSizeIn(maxWidth = 40.dp, maxHeight = 35.dp, maxDepth = 30.dp)
+                        .size(50.dp)
+                ) {}
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(40.dp)
+            .assertHeightIsEqualTo(35.dp)
+            .assertDepthIsEqualTo(30.dp)
+    }
+
+    @Test
+    fun requiredSizeIn_whenContentIsSmallerThanMin_coercesToMin() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .requiredSizeIn(minWidth = 10.dp, minHeight = 15.dp, minDepth = 20.dp)
+                        .size(5.dp)
+                ) {}
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(10.dp)
+            .assertHeightIsEqualTo(15.dp)
+            .assertDepthIsEqualTo(20.dp)
+    }
+
+    @Test
+    fun requiredSizeIn_whenLargerThanParent_overridesParentConstraints() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialRow(SubspaceModifier.size(30.dp)) {
+                    SpatialPanel(
+                        SubspaceModifier.testTag("panel")
+                            .requiredSizeIn(minWidth = 40.dp, minHeight = 45.dp, minDepth = 50.dp)
+                    ) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(40.dp)
+            .assertHeightIsEqualTo(45.dp)
+            .assertDepthIsEqualTo(50.dp)
+    }
+
+    @Test
+    fun requiredWidthIn_whenContentIsLargerThanMax_coercesToMax() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").requiredWidthIn(max = 30.dp).width(40.dp)
+                ) {}
+            }
+        }
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(30.dp)
+    }
+
+    @Test
+    fun requiredWidthIn_whenContentIsSmallerThanMin_coercesToMin() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").requiredWidthIn(min = 20.dp).width(10.dp)
+                ) {}
+            }
+        }
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(20.dp)
+    }
+
+    @Test
+    fun requiredWidthIn_whenLargerThanParent_overridesParentConstraints() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialRow(SubspaceModifier.width(30.dp)) {
+                    SpatialPanel(SubspaceModifier.testTag("panel").requiredWidthIn(min = 40.dp)) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(40.dp)
+    }
+
+    @Test
+    fun requiredHeightIn_whenContentIsLargerThanMax_coercesToMax() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").requiredHeightIn(max = 30.dp).height(40.dp)
+                ) {}
+            }
+        }
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(30.dp)
+    }
+
+    @Test
+    fun requiredHeightIn_whenContentIsSmallerThanMin_coercesToMin() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").requiredHeightIn(min = 20.dp).height(10.dp)
+                ) {}
+            }
+        }
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(20.dp)
+    }
+
+    @Test
+    fun requiredHeightIn_whenLargerThanParent_overridesParentConstraints() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialRow(SubspaceModifier.height(30.dp)) {
+                    SpatialPanel(SubspaceModifier.testTag("panel").requiredHeightIn(min = 40.dp)) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertHeightIsEqualTo(40.dp)
+    }
+
+    @Test
+    fun requiredDepthIn_whenContentIsLargerThanMax_coercesToMax() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").requiredDepthIn(max = 30.dp).depth(40.dp)
+                ) {}
+            }
+        }
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDepthIsEqualTo(30.dp)
+    }
+
+    @Test
+    fun requiredDepthIn_whenContentIsSmallerThanMin_coercesToMin() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").requiredDepthIn(min = 20.dp).depth(10.dp)
+                ) {}
+            }
+        }
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDepthIsEqualTo(20.dp)
+    }
+
+    @Test
+    fun requiredDepthIn_whenLargerThanParent_overridesParentConstraints() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialRow(SubspaceModifier.depth(30.dp)) {
+                    SpatialPanel(SubspaceModifier.testTag("panel").requiredDepthIn(min = 40.dp)) {}
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDepthIsEqualTo(40.dp)
+    }
 }

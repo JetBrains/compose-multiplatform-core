@@ -112,7 +112,6 @@ public interface CameraProvider {
      * @throws IllegalArgumentException if the given [CameraSelector] and [SessionConfig] can't
      *   result in a valid camera to provide the [CameraInfo].
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
     public fun getCameraInfo(
         cameraSelector: CameraSelector,
         sessionConfig: SessionConfig,

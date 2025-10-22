@@ -635,7 +635,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 // Sign all the builds (including release) with debug key
                 buildType.signingConfig = debugSigningConfig
             }
-            project.configureTestConfigGeneration(androidXExtension.isIsolatedProjectsEnabled())
+            project.configureTestConfigGeneration(
+                androidXExtension.isIsolatedProjectsEnabled(),
+                androidXExtension,
+            )
             project.addAppApkToTestConfigGeneration(androidXExtension)
             excludeVersionFiles(packaging.resources)
         }
@@ -707,6 +710,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         kotlinMultiplatformAndroidTarget.configureAndroidBaseOptions(
             project,
             kotlinMultiplatformAndroidComponentsExtension,
+            androidXExtension,
         )
         configureCommonAndroidLibrary(
             project,
@@ -884,7 +888,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 buildType.signingConfig = debugSigningConfig
             }
             testBuildType = buildTypeForTests
-            project.configureTestConfigGeneration(androidXExtension.isIsolatedProjectsEnabled())
+            project.configureTestConfigGeneration(
+                androidXExtension.isIsolatedProjectsEnabled(),
+                androidXExtension,
+            )
             project.addAppApkToTestConfigGeneration(androidXExtension)
         }
 
@@ -1135,6 +1142,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
     private fun KotlinMultiplatformAndroidLibraryTarget.configureAndroidBaseOptions(
         project: Project,
         componentsExtension: KotlinMultiplatformAndroidComponentsExtension,
+        androidXExtension: AndroidXExtension,
     ) {
         val defaultMinSdkVersion = project.defaultAndroidConfig.minSdk
         val defaultCompileSdk = project.defaultAndroidConfig.compileSdk
@@ -1169,7 +1177,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.enforceBanOnVersionRanges()
         }
 
-        project.configureTestConfigGeneration(buildFeatures.isIsolatedProjectsEnabled())
+        project.configureTestConfigGeneration(
+            buildFeatures.isIsolatedProjectsEnabled(),
+            androidXExtension,
+        )
         project.configureFtlRunner(componentsExtension)
     }
 
@@ -1277,7 +1288,10 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             versionName = "1.0"
         }
 
-        project.configureTestConfigGeneration(androidXExtension.isIsolatedProjectsEnabled())
+        project.configureTestConfigGeneration(
+            androidXExtension.isIsolatedProjectsEnabled(),
+            androidXExtension,
+        )
         project.addAppApkToTestConfigGeneration(androidXExtension)
         project.addAppApkToFtlRunner()
     }

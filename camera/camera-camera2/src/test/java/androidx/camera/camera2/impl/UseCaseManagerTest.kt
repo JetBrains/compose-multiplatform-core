@@ -55,8 +55,6 @@ import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.OutputStream.DynamicRangeProfile
 import androidx.camera.camera2.pipe.RequestTemplate
-import androidx.camera.camera2.pipe.testing.FakeCameraBackend
-import androidx.camera.camera2.pipe.testing.FakeCameraDevices
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.testing.FakeCamera2CameraControlCompat
 import androidx.camera.camera2.testing.FakeUseCaseCameraComponentBuilder
@@ -748,7 +746,6 @@ class UseCaseManagerTest {
             FakeCameraMetadata(cameraId = cameraId, characteristics = characteristicsMap)
         val fakeCamera = FakeCamera()
         val cameraPipe = CameraPipe(CameraPipe.Config(ApplicationProvider.getApplicationContext()))
-        val fakeCameraBackend = FakeCameraBackend(mapOf(cameraId to fakeCameraMetadata))
         val cameraProperties =
             CameraPipeCameraProperties(CameraConfig(cameraId), fakeCameraMetadata)
         lowLightBoostControl =
@@ -775,12 +772,6 @@ class UseCaseManagerTest {
             )
         return UseCaseManager(
                 cameraPipe = cameraPipe,
-                cameraDevices =
-                    FakeCameraDevices(
-                        fakeCameraBackend.id,
-                        emptySet(),
-                        mapOf(fakeCameraBackend.id to listOf(fakeCameraMetadata)),
-                    ),
                 cameraCoordinator = CameraCoordinatorAdapter(cameraPipe, cameraPipe.cameras()),
                 builder = useCaseCameraComponentBuilder,
                 zslControl = ZslControlNoOpImpl(),

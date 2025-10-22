@@ -50,6 +50,7 @@ import androidx.xr.scenecore.testapp.spatialaudio.SpatialAudioActivity
 import androidx.xr.scenecore.testapp.spatialcapabilities.SpatialCapabilitiesActivity
 import androidx.xr.scenecore.testapp.spatialuser.SpatialUserActivity
 import androidx.xr.scenecore.testapp.standalone.StandaloneActivity
+import androidx.xr.scenecore.testapp.surfaceimage.SurfaceEntityImageActivity
 import androidx.xr.scenecore.testapp.surfaceinteraction.SurfaceEntityInteractionActivity
 import androidx.xr.scenecore.testapp.surfaceplayback.SurfaceEntityPlaybackActivity
 import androidx.xr.scenecore.testapp.transformation.TransformationActivity
@@ -136,6 +137,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.cuj_surface_entity_interaction_test),
                 getString(R.string.cuj_surface_entity_playbacktest),
                 getString(R.string.cuj_gravity_aligned_pose_test),
+                getString(R.string.cuj_surface_entity_imagetest),
             )
         val customAdapter = TestCasesRecyclerViewAdapter(dataset)
         val recyclerView: RecyclerView = findViewById(R.id.cuj_buttons_recycler)
@@ -144,6 +146,7 @@ class MainActivity : AppCompatActivity() {
         customAdapter.setOnClickListener(
             object : TestCasesRecyclerViewAdapter.OnClickListener {
                 override fun onClick(position: Int) {
+                    Log.e("RICKNELS", "onClick: $position")
                     runTest(position)
                 }
             }
@@ -246,6 +249,9 @@ class MainActivity : AppCompatActivity() {
 
             Tests.MEMORY_LEAK_TEST.test -> startActivity(createIntent<MemoryLeakActivity>())
 
+            Tests.SURFACE_ENTITY_IMAGE_TEST.test ->
+                startActivity(createIntent<SurfaceEntityImageActivity>())
+
             Tests.SURFACE_INTERACTION_TEST.test ->
                 startActivity(createIntent<SurfaceEntityInteractionActivity>())
 
@@ -319,5 +325,6 @@ class MainActivity : AppCompatActivity() {
         SURFACE_INTERACTION_TEST(24),
         SURFACE_PLAYBACK_TEST(25),
         GRAVITY_ALIGNED_POSE_TEST(26),
+        SURFACE_ENTITY_IMAGE_TEST(27),
     }
 }

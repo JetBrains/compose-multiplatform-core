@@ -209,8 +209,10 @@ internal class ResizableNode(
     /** Enables the ResizableComponent for this CoreEntity and updates its values. */
     private fun enableAndUpdateComponent() {
         if (!isComponentAttached) {
-            check(coreEntity.addComponent(component)) {
-                "Could not add ResizableComponent to Core Entity"
+            coreEntity.onEntityAttached {
+                check(coreEntity.addComponent(component) == true) {
+                    "Could not add ResizableComponent to Core Entity"
+                }
             }
             isComponentAttached = true
         }
@@ -251,13 +253,13 @@ internal class ResizableNode(
      */
     fun handleResizeEvent(resizeEvent: ResizeEvent) {
         when (resizeEvent.resizeState) {
-            ResizeEvent.ResizeState.RESIZE_STATE_START -> {
+            ResizeEvent.ResizeState.START -> {
                 component.isFixedAspectRatioEnabled = maintainAspectRatio
                 onResizeStart?.invoke(resizeEvent.newSize.toIntVolumeSize(density))
             }
-            ResizeEvent.ResizeState.RESIZE_STATE_ONGOING ->
+            ResizeEvent.ResizeState.ONGOING ->
                 onResizeUpdate?.invoke(resizeEvent.newSize.toIntVolumeSize(density))
-            ResizeEvent.ResizeState.RESIZE_STATE_END -> {
+            ResizeEvent.ResizeState.END -> {
                 val nextSize = resizeEvent.newSize.toIntVolumeSize(density)
                 onResizeEnd?.invoke(nextSize)
                 if (onSizeChange?.invoke(nextSize) == true) {

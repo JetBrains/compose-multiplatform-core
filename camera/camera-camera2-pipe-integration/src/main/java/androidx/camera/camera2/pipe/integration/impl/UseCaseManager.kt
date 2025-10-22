@@ -26,7 +26,6 @@ import android.os.Build
 import android.util.Pair
 import androidx.annotation.GuardedBy
 import androidx.annotation.VisibleForTesting
-import androidx.camera.camera2.pipe.CameraDevices
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.OperatingMode
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLowLightBoost
@@ -65,6 +64,7 @@ import androidx.camera.core.impl.SessionConfig.ValidatingBuilder
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.stabilization.StabilizationMode
+import androidx.camera.core.impl.utils.UseCaseUtil.containsVideoCapture
 import androidx.camera.core.streamsharing.StreamSharing
 import androidx.camera.core.streamsharing.StreamSharingConfig
 import javax.inject.Inject
@@ -105,7 +105,6 @@ public class UseCaseManager
 @Inject
 constructor(
     private val cameraPipe: CameraPipe,
-    private val cameraDevices: CameraDevices,
     @GuardedBy("lock") private val cameraCoordinator: CameraCoordinator,
     private val builder: UseCaseCameraComponent.Builder,
     private val zslControl: ZslControl,
@@ -738,8 +737,9 @@ constructor(
                 SupportedSurfaceCombination.FeatureSettings(
                     getCameraMode(),
                     getRequiredMaxBitDepth(attachedSurfaceInfoList),
-                    isPreviewStabilizationOn(),
-                    isUltraHdrOn(),
+                    hasVideoCapture = containsVideoCapture(),
+                    isPreviewStabilizationOn = isPreviewStabilizationOn(),
+                    isUltraHdrOn = isUltraHdrOn(),
                 ),
                 mutableListOf<SurfaceConfig>().apply {
                     addAll(sessionSurfacesConfigs)

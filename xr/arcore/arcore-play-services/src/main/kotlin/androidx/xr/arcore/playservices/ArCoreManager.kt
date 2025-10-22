@@ -31,6 +31,7 @@ import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
 import com.google.ar.core.Config as ArConfig
+import com.google.ar.core.Config.AugmentedFaceMode
 import com.google.ar.core.Config.DepthMode
 import com.google.ar.core.Config.GeospatialMode
 import com.google.ar.core.Config.PlaneFindingMode
@@ -89,6 +90,22 @@ internal constructor(
     override fun configure(config: Config) {
         val arConfig = _session.config
 
+        if (config.cameraFacingDirection != this.config.cameraFacingDirection) {
+            try {
+                perceptionManager.setCameraFacingDirection(config.cameraFacingDirection)
+            } catch (e: Exception) {
+                val message =
+                    when (e) {
+                        is UnsupportedDeviceException ->
+                            "This device does not have a front-facing (selfie) camera"
+                        is IllegalArgumentException ->
+                            "${config.cameraFacingDirection} is not supported."
+                        else -> throw (e)
+                    }
+                throw UnsupportedOperationException(message, e)
+            }
+        }
+
         if (Build.VERSION.SDK_INT >= 27) {
             setTextureUpdateModeToHardwareBuffer(arConfig)
         } else {
@@ -119,6 +136,13 @@ internal constructor(
         if (config.anchorPersistence != Config.AnchorPersistenceMode.DISABLED) {
             throw UnsupportedOperationException()
         }
+
+        arConfig.augmentedFaceMode =
+            when (config.faceTracking) {
+                Config.FaceTrackingMode.MESHES -> AugmentedFaceMode.MESH3D
+                Config.FaceTrackingMode.DISABLED -> AugmentedFaceMode.DISABLED
+                else -> throw UnsupportedOperationException()
+            }
 
         arConfig.geospatialMode =
             if (config.geospatial == Config.GeospatialMode.EARTH) {

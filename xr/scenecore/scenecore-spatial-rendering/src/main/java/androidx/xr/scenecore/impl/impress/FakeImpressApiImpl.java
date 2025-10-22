@@ -76,6 +76,8 @@ public class FakeImpressApiImpl implements ImpressApi {
         CanvasShape mCanvasShape;
         float mFeatherRadiusX;
         float mFeatherRadiusY;
+        int mSurfaceWidth = 1;
+        int mSurfaceHeight = 1;
 
         boolean mColliderEnabled;
 
@@ -107,6 +109,14 @@ public class FakeImpressApiImpl implements ImpressApi {
 
         public float getFeatherRadiusY() {
             return mFeatherRadiusY;
+        }
+
+        public int getSurfaceWidth() {
+            return mSurfaceWidth;
+        }
+
+        public int getSurfaceHeight() {
+            return mSurfaceHeight;
         }
 
         @Nullable
@@ -538,6 +548,20 @@ public class FakeImpressApiImpl implements ImpressApi {
             throw new IllegalArgumentException("Couldn't find stereo surface entity!");
         }
         return mStereoSurfaceEntities.get(panelImpressNode).mSurface;
+    }
+
+    @Override
+    public void setStereoSurfaceEntitySurfaceSize(
+            @NonNull ImpressNode impressNode, int width, int height) {
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException("Surface dimensions must be positive!");
+        }
+        if (!mStereoSurfaceEntities.containsKey(impressNode)) {
+            throw new IllegalArgumentException("Couldn't find stereo surface entity!");
+        }
+        StereoSurfaceEntityData data = mStereoSurfaceEntities.get(impressNode);
+        data.mSurfaceWidth = width;
+        data.mSurfaceHeight = height;
     }
 
     @Override

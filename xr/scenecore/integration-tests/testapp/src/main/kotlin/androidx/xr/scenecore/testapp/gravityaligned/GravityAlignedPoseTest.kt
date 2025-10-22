@@ -165,7 +165,7 @@ class GravityAlignedPoseTest : AppCompatActivity() {
                         surfaceEntity =
                             SurfaceEntity.create(
                                 session = session!!,
-                                stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO,
+                                stereoMode = SurfaceEntity.StereoMode.MONO,
                                 pose = it!!,
                                 shape = SurfaceEntity.Shape.Quad(FloatSize2d(0.5f, 0.5f)),
                             )

@@ -71,7 +71,6 @@ deleteOldOutDir
 
 # b/430983364: Remove cache to avoid privacySandbox flakiness
 function deletePrivacySandbox() {
-    rm -rf "$OUT_DIR/androidx/privacysandbox/databridge/integration-tests/testsdk"
     rm -rf "$OUT_DIR/androidx/privacysandbox/tools/integration-tests/testsdk"
     rm -rf "$OUT_DIR/androidx/privacysandbox/ui/integration-tests/testsdkprovider"
     rm -rf "$OUT_DIR/androidx/privacysandbox/ui/integration-tests/mediateesdkprovider"
@@ -94,6 +93,7 @@ else
 fi
 
 export USE_ANDROIDX_REMOTE_BUILD_CACHE=gcp
+export ENABLE_PRESUBMIT_COMPATIBLE_CC_STORE=true
 
 # If we encounter a failure in postsubmit, we try a few things to determine if the failure is
 # reproducible

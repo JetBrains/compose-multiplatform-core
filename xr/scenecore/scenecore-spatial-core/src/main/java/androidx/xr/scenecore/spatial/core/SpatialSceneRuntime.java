@@ -415,7 +415,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
 
     @Override
     public void setSpatialModeChangeListener(
-            @NonNull SpatialModeChangeListener spatialModeChangeListener) {
+            @Nullable SpatialModeChangeListener spatialModeChangeListener) {
         mSpatialModeChangeListener = spatialModeChangeListener;
         mActivitySpace.setSpatialModeChangeListener(spatialModeChangeListener);
     }

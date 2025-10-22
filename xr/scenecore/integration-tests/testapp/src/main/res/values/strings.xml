@@ -48,6 +48,7 @@
     <string name="cuj_field_of_view_visibility_test">Field Of View Visibility Test Case</string>
     <string name="cuj_hit_test">Digital Hit Test Case</string>
     <string name="cuj_accessibility_test">Accessibility Test Case</string>
+    <string name="cuj_surface_entity_imagetest">Surface Entity Image Display Test Case</string>
     <string name="cuj_surface_entity_interaction_test">Surface Entity Interaction Test Case</string>
     <string name="cuj_surface_entity_playbacktest">Surface Entity Playback Test Case</string>
     <string name="dev_memory_leak_test">Memory Leak (Dev) Test Case</string>

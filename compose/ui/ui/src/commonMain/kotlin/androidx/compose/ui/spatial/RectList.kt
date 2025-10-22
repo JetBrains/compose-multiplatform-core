@@ -429,6 +429,23 @@ internal class RectList {
         return false
     }
 
+    fun getTopLeft(value: Int): Long {
+        val value = value and Lower26Bits
+        val items = items
+        val size = itemsSize
+        var i = 0
+        while (i < items.size - 2) {
+            if (i >= size) break
+            val meta = items[i + 2]
+            if (unpackMetaValue(meta) == value) {
+                val topLeft = items[i + 0]
+                return topLeft
+            }
+            i += LongsPerItem
+        }
+        return Long.MAX_VALUE
+    }
+
     operator fun contains(value: Int): Boolean {
         val value = value and Lower26Bits
         val items = items

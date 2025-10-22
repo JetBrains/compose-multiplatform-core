@@ -153,6 +153,7 @@ package androidx.compose.ui {
     property public boolean isNestedScrollInteropIntegerPropagationEnabled;
     property @Deprecated public boolean isNoPinningInFocusRestorationEnabled;
     property public boolean isOptimizedFocusEventDispatchEnabled;
+    property public boolean isPinningFocusedAndroidViewsEnabled;
     property public boolean isPre26FocusFinderFixEnabled;
     property public boolean isRectManagerOffsetUsageFromLayoutCoordinatesEnabled;
     property @Deprecated public boolean isRemoveFocusedViewFixEnabled;
@@ -174,6 +175,7 @@ package androidx.compose.ui {
     field public static boolean isNestedScrollInteropIntegerPropagationEnabled;
     field @Deprecated public static boolean isNoPinningInFocusRestorationEnabled;
     field public static boolean isOptimizedFocusEventDispatchEnabled;
+    field public static boolean isPinningFocusedAndroidViewsEnabled;
     field public static boolean isPre26FocusFinderFixEnabled;
     field public static boolean isRectManagerOffsetUsageFromLayoutCoordinatesEnabled;
     field @Deprecated public static boolean isRemoveFocusedViewFixEnabled;

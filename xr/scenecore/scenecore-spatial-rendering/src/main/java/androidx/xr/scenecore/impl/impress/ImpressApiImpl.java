@@ -626,6 +626,13 @@ public final class ImpressApiImpl implements ImpressApi {
     }
 
     @Override
+    public void setStereoSurfaceEntitySurfaceSize(
+            @NonNull ImpressNode impressNode, int width, int height)  {
+        nSetStereoSurfaceEntitySurfaceSize(
+            getViewNativeHandle(mView), impressNode.getHandle(), width, height);
+    }
+
+    @Override
     public void setPrimaryAlphaMaskForStereoSurface(
             @NonNull ImpressNode panelImpressNode, long alphaMask) {
         nSetPrimaryAlphaMaskForStereoSurfaceEntity(
@@ -1440,6 +1447,9 @@ public final class ImpressApiImpl implements ImpressApi {
 
     private static native int nCreateStereoSurfaceEntity(
             long view, int stereoMode, int contentSecurityLevel, boolean useSuperSampling);
+
+    private static native void nSetStereoSurfaceEntitySurfaceSize(
+            long view, int impressNode, int width, int height);
 
     private static native void nSetStereoSurfaceEntityCanvasShapeQuad(
             long view, int impressNode, float width, float height);
