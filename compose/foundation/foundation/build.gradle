@@ -72,9 +72,8 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)
-                def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
-                implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
-                implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
+                implementation(project(":navigationevent:navigationevent"))
+                implementation(project(":navigationevent:navigationevent-testing"))
                 implementation(project(":navigationevent:navigationevent-compose"))
             }
         }
