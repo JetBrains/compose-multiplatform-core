@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.hr() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Primarno okno",
+    Strings.defaultPaneTitleSecondary to "Sekundarno okno",
+    Strings.defaultPaneTitleTertiary to "Tercijarno okno",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Marker za povlačenje proširenja okna",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Trenutačna podjela okna, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Promijeni podjelu okna u: %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d posto",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP-ova od početka",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP-ova od kraja",
+    Strings.dragToResizeClickToExpandDescription to "proširi",
+    Strings.dragToResizeClickToCollapseDescription to "sažmi",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "djelomično proširi",
+    Strings.dragToResizeExpandedStateDescription to "prošireno",
+    Strings.dragToResizeCollapsedStateDescription to "sažeto",
+    Strings.dragToResizePartiallyExpandedStateDescription to "djelomično prošireno",
 )

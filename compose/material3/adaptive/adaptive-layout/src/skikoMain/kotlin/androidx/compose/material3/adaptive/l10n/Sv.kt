@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.sv() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Primär ruta",
+    Strings.defaultPaneTitleSecondary to "Sekundär ruta",
+    Strings.defaultPaneTitleTertiary to "Tertiär ruta",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Handtag för rutexpansion",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Nuvarande rutdelning, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Ändra rutdelning till %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d procent",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP från början",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP från slutet",
+    Strings.dragToResizeClickToExpandDescription to "utöka",
+    Strings.dragToResizeClickToCollapseDescription to "komprimera",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "utöka delvis",
+    Strings.dragToResizeExpandedStateDescription to "utökades",
+    Strings.dragToResizeCollapsedStateDescription to "komprimerades",
+    Strings.dragToResizePartiallyExpandedStateDescription to "utökades delvis",
 )

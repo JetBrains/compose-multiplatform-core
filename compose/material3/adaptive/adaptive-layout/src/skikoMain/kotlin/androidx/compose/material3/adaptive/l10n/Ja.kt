@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.ja() = mapOf(
+    Strings.defaultPaneTitlePrimary to "プライマリ ペイン",
+    Strings.defaultPaneTitleSecondary to "セカンダリ ペイン",
+    Strings.defaultPaneTitleTertiary to "ターシャリ ペイン",
     Strings.defaultPaneExpansionDragHandleContentDescription to "ペインの展開のドラッグ ハンドル",
     Strings.defaultPaneExpansionDragHandleStateDescription to "現在のペイン分割、%s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "ペインの分割を %s に変更",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d パーセント",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "開始地点から %d DP",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "終了地点から %d DP",
+    Strings.dragToResizeClickToExpandDescription to "開く",
+    Strings.dragToResizeClickToCollapseDescription to "閉じる",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "一部開く",
+    Strings.dragToResizeExpandedStateDescription to "開いています",
+    Strings.dragToResizeCollapsedStateDescription to "閉じています",
+    Strings.dragToResizePartiallyExpandedStateDescription to "一部開いています",
 )

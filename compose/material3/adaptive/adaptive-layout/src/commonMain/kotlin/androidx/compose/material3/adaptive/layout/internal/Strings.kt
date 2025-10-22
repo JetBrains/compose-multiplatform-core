@@ -26,12 +26,21 @@ import kotlin.jvm.JvmInline
 @JvmInline
 internal expect value class Strings(val value: Int) {
     companion object {
+        val defaultPaneTitlePrimary: Strings
+        val defaultPaneTitleSecondary: Strings
+        val defaultPaneTitleTertiary: Strings
         val defaultPaneExpansionDragHandleContentDescription: Strings
         val defaultPaneExpansionDragHandleStateDescription: Strings
         val defaultPaneExpansionDragHandleActionDescription: Strings
         val defaultPaneExpansionProportionAnchorDescription: Strings
         val defaultPaneExpansionStartOffsetAnchorDescription: Strings
         val defaultPaneExpansionEndOffsetAnchorDescription: Strings
+        val dragToResizeClickToExpandDescription: Strings
+        val dragToResizeClickToCollapseDescription: Strings
+        val dragToResizeClickToPartiallyExpandDescription: Strings
+        val dragToResizeExpandedStateDescription: Strings
+        val dragToResizeCollapsedStateDescription: Strings
+        val dragToResizePartiallyExpandedStateDescription: Strings
     }
 }
 

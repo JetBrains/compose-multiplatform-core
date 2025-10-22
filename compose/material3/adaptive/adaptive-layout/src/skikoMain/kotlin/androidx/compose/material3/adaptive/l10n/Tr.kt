@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.tr() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Birincil bölme",
+    Strings.defaultPaneTitleSecondary to "İkincil bölme",
+    Strings.defaultPaneTitleTertiary to "Üçüncül bölme",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Bölmeyi genişletmek için sürükleme tutamacı",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Mevcut bölme oranı, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Bölme oranını %s olarak değiştirin",
     Strings.defaultPaneExpansionProportionAnchorDescription to "Yüzde %d",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "Başlangıçtan %d DP",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "Sondan %d DP",
+    Strings.dragToResizeClickToExpandDescription to "genişlet",
+    Strings.dragToResizeClickToCollapseDescription to "daralt",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "kısmen genişlet",
+    Strings.dragToResizeExpandedStateDescription to "genişletildi",
+    Strings.dragToResizeCollapsedStateDescription to "daraltıldı",
+    Strings.dragToResizePartiallyExpandedStateDescription to "kısmen genişletildi",
 )

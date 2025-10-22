@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.lt() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Pagrindinė sritis",
+    Strings.defaultPaneTitleSecondary to "Antrinė sritis",
+    Strings.defaultPaneTitleTertiary to "Tretinė sritis",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Srities išplėtimo vilkimo rankenėlė",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Dabartinis srities skaidymas, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Keisti srities skaidymą į %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d proc.",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP nuo pradžios",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP nuo galo",
+    Strings.dragToResizeClickToExpandDescription to "išskleisti",
+    Strings.dragToResizeClickToCollapseDescription to "sutraukti",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "išskleisti iš dalies",
+    Strings.dragToResizeExpandedStateDescription to "išskleista",
+    Strings.dragToResizeCollapsedStateDescription to "sutraukta",
+    Strings.dragToResizePartiallyExpandedStateDescription to "iš dalies išskleista",
 )

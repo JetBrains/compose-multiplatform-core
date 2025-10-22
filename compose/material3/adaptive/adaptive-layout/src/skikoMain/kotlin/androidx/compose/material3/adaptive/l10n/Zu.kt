@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.zu() = mapOf(
+    Strings.defaultPaneTitlePrimary to "I-pane eyinhloko",
+    Strings.defaultPaneTitleSecondary to "I-pane yesibili",
+    Strings.defaultPaneTitleTertiary to "I-pane yesithathu",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Isibambo sokuhudula isandiso sepane",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Ukuhlukaniswa kwepane yamanje, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Shintsha ukuhlukana kwepane kube ku-%s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d iphesenti",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "I-%d DPs ukusukela ekuqaleni",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "I-%d DPs ukusukela ekugcineni",
+    Strings.dragToResizeClickToExpandDescription to "nweba",
+    Strings.dragToResizeClickToCollapseDescription to "goqa",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "nweba ngokwengxenye",
+    Strings.dragToResizeExpandedStateDescription to "kunwetshiwe",
+    Strings.dragToResizeCollapsedStateDescription to "kugoqiwe",
+    Strings.dragToResizePartiallyExpandedStateDescription to "kunwetshwe ngokwengxenye",
 )

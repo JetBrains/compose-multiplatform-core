@@ -21,20 +21,38 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.frCA() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Volet principal",
+    Strings.defaultPaneTitleSecondary to "Volet secondaire",
+    Strings.defaultPaneTitleTertiary to "Volet tertiaire",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Poignée de déplacement d\'extension du volet",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Volet actuel divisé, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Modifiez la division du volet à %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d pour cent",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP à partir du début",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DPs à partir de la fin",
+    Strings.dragToResizeClickToExpandDescription to "Développer",
+    Strings.dragToResizeClickToCollapseDescription to "Réduire",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "Développer partiellement",
+    Strings.dragToResizeExpandedStateDescription to "Développé",
+    Strings.dragToResizeCollapsedStateDescription to "Réduit",
+    Strings.dragToResizePartiallyExpandedStateDescription to "Partiellement développé",
 )
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.fr() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Volet principal",
+    Strings.defaultPaneTitleSecondary to "Volet secondaire",
+    Strings.defaultPaneTitleTertiary to "Volet tertiaire",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Poignée de déplacement pour développer les volets",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Répartition actuelle des volets, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Passer la répartition des volets sur %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d pour cent",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP depuis le début",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP depuis la fin",
+    Strings.dragToResizeClickToExpandDescription to "développer",
+    Strings.dragToResizeClickToCollapseDescription to "réduire",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "développer partiellement",
+    Strings.dragToResizeExpandedStateDescription to "développé",
+    Strings.dragToResizeCollapsedStateDescription to "réduit",
+    Strings.dragToResizePartiallyExpandedStateDescription to "partiellement développé",
 )

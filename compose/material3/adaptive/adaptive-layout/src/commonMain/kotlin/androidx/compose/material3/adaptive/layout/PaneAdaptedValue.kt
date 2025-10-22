@@ -17,6 +17,7 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
@@ -33,24 +34,24 @@ sealed interface PaneAdaptedValue {
     }
 
     /**
-     * Indicates that the associated pane should be reflowed to its [targetPane], i.e., it will be
+     * Indicates that the associated pane should be reflowed to its [reflowUnder], i.e., it will be
      * displayed under the target pane.
      *
-     * @param targetPane the target pane of the reflowing, i.e., the pane that the reflowed pane
+     * @param reflowUnder the target pane of the reflowing, i.e., the pane that the reflowed pane
      *   will be put under.
      */
     @Immutable
-    class Reflowed(val targetPane: Any) : PaneAdaptedValue {
-        override fun toString() = "PaneAdaptedValue[Reflowed to $targetPane]"
+    class Reflowed(internal val reflowUnder: PaneScaffoldRole) : PaneAdaptedValue {
+        override fun toString() = "PaneAdaptedValue[Reflowed to $reflowUnder]"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Reflowed) return false
-            return targetPane == other.targetPane
+            return reflowUnder == other.reflowUnder
         }
 
         override fun hashCode(): Int {
-            return targetPane.hashCode()
+            return reflowUnder.hashCode()
         }
     }
 
@@ -62,17 +63,21 @@ sealed interface PaneAdaptedValue {
      *   element in the window. See [Alignment] for more information.
      * @param scrim the scrim to show when the levitated pane is shown to block user interaction
      *   with the underlying layout and emphasize the levitated pane; by default it will be `null`
-     *   and no scrim will show.
+     *   and no scrim will show; to display a scrim, we recommend to use [LevitatedPaneScrim] as a
+     *   default implementation.
      */
     @Immutable
-    class Levitated(val alignment: Alignment, val scrim: Scrim? = null) : PaneAdaptedValue {
+    class Levitated(
+        internal val alignment: Alignment,
+        internal val scrim: (@Composable () -> Unit)? = null,
+    ) : PaneAdaptedValue {
         override fun toString() = "PaneAdaptedValue[Levitated with $alignment and scrim=$scrim]"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Levitated) return false
             if (alignment != other.alignment) return false
-            if (scrim != other.scrim) return false
+            if (scrim !== other.scrim) return false
             return true
         }
 

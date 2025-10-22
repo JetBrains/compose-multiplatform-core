@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.sq() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Paneli kryesor",
+    Strings.defaultPaneTitleSecondary to "Paneli dytësor",
+    Strings.defaultPaneTitleTertiary to "Paneli tretësor",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Doreza e zvarritjes për zgjerimin e panelit",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Ndarja aktuale e panelit, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Ndrysho ndarjen e panelit në %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d për qind",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP nga fillimi",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP nga fundi",
+    Strings.dragToResizeClickToExpandDescription to "zgjero",
+    Strings.dragToResizeClickToCollapseDescription to "palos",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "zgjero pjesërisht",
+    Strings.dragToResizeExpandedStateDescription to "zgjeruar",
+    Strings.dragToResizeCollapsedStateDescription to "palosur",
+    Strings.dragToResizePartiallyExpandedStateDescription to "zgjeruar pjesërisht",
 )

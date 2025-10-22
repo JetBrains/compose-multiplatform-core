@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.ka() = mapOf(
+    Strings.defaultPaneTitlePrimary to "ძირითადი არე",
+    Strings.defaultPaneTitleSecondary to "მეორეული არე",
+    Strings.defaultPaneTitleTertiary to "მესამეული არე",
     Strings.defaultPaneExpansionDragHandleContentDescription to "არეს გაფართოების სახელური ჩავლებისთვის",
     Strings.defaultPaneExpansionDragHandleStateDescription to "მიმდინარე არის გაყოფა, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "არეს გაყოფის შეცვლა %s-ით",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d პროცენტი",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP დასაწყისიდან",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP ბოლოდან",
+    Strings.dragToResizeClickToExpandDescription to "გაფართოება",
+    Strings.dragToResizeClickToCollapseDescription to "ჩაკეცვა",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "ნაწილობრივ გაფართოება",
+    Strings.dragToResizeExpandedStateDescription to "გაფართოებულია",
+    Strings.dragToResizeCollapsedStateDescription to "ჩაკეცილია",
+    Strings.dragToResizePartiallyExpandedStateDescription to "გაფართოებულია ნაწილობრივ",
 )
