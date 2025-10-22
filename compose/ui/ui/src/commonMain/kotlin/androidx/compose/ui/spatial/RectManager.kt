@@ -124,6 +124,9 @@ internal class RectManager(
         // this gets called frequently, but we might need to schedule it more often to ensure that
         // debounced callbacks get fired
         throttledCallbacks.triggerDebounced(currentTime)
+        if (throttledCallbacks.minDebounceDeadline > 0) {
+            scheduleDebounceCallback(ensureSomethingScheduled = true)
+        }
     }
 
     fun scheduleDebounceCallback(ensureSomethingScheduled: Boolean) {
