@@ -213,11 +213,26 @@ private fun DraggableColorSource(name: String, color: Color) {
             .background(color, shape = CircleShape)
             .clip(CircleShape)
             .border(BorderStroke(1.dp, Color.Black), shape = CircleShape)
-            .dragAndDropSource { _ ->
-                val dataTransfer = createDataTransfer()
-                dataTransfer.setData("text/plain", "color:${color.value.toString(radix = 16)}")
-                DragAndDropTransferData(dataTransfer)
-            }
+            .dragAndDropSource(
+                drawDragDecoration = {
+                    val r = size.minDimension / 2f
+                    val c = center
+                    // Three concentrated rings, slightly larger than the original filled circle look
+                    val radii = listOf(r * 0.6f, r * 0.8f, r * 0.95f)
+                    val widths = listOf(r * 0.14f, r * 0.1f, r * 0.06f)
+                    drawCircle(color = color.copy(alpha = 0.25f), radius = radii[0], center = c,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = widths[0]))
+                    drawCircle(color = color.copy(alpha = 0.5f), radius = radii[1], center = c,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = widths[1]))
+                    drawCircle(color = color.copy(alpha = 0.9f), radius = radii[2], center = c,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = widths[2]))
+                },
+                transferData = { _ ->
+                    val dataTransfer = createDataTransfer()
+                    dataTransfer.setData("text/plain", "color:${color.value.toString(radix = 16)}")
+                    DragAndDropTransferData(dataTransfer)
+                }
+            )
     )
 }
 
