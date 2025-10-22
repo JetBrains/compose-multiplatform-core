@@ -65,10 +65,10 @@ package androidx.camera.core {
     method public default androidx.lifecycle.LiveData<java.lang.Integer!> getTorchStrengthLevel();
     method public androidx.lifecycle.LiveData<androidx.camera.core.ZoomState!> getZoomState();
     method public boolean hasFlashUnit();
-    method public default boolean isFeatureGroupSupported(androidx.camera.core.SessionConfig);
     method public default boolean isFocusMeteringSupported(androidx.camera.core.FocusMeteringAction);
     method public default boolean isLogicalMultiCameraSupported();
     method public default boolean isLowLightBoostSupported();
+    method public default boolean isSessionConfigSupported(androidx.camera.core.SessionConfig);
     method public default boolean isTorchStrengthSupported();
     method @SuppressCompatibility @androidx.camera.core.ExperimentalZeroShutterLag public default boolean isZslSupported();
     method public static boolean mustPlayShutterSound();
@@ -88,6 +88,7 @@ package androidx.camera.core {
     method public default void addCameraPresenceListener(java.util.concurrent.Executor executor, androidx.camera.core.CameraPresenceListener listener);
     method @InaccessibleFromKotlin public java.util.List<androidx.camera.core.CameraInfo> getAvailableCameraInfos();
     method public default androidx.camera.core.CameraInfo getCameraInfo(androidx.camera.core.CameraSelector cameraSelector);
+    method public default androidx.camera.core.CameraInfo getCameraInfo(androidx.camera.core.CameraSelector cameraSelector, androidx.camera.core.SessionConfig sessionConfig);
     method @kotlin.jvm.Throws(exceptionClasses=CameraInfoUnavailableException::class) public boolean hasCamera(androidx.camera.core.CameraSelector cameraSelector) throws androidx.camera.core.CameraInfoUnavailableException;
     method public default void removeCameraPresenceListener(androidx.camera.core.CameraPresenceListener listener);
     property public abstract java.util.List<androidx.camera.core.CameraInfo> availableCameraInfos;

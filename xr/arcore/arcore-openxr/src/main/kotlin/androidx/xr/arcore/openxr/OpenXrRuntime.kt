@@ -92,7 +92,6 @@ internal constructor(
                 Config.EyeTrackingMode.DISABLED,
                 Config.EyeTrackingMode.COARSE_TRACKING,
                 Config.EyeTrackingMode.FINE_TRACKING,
-                Config.EyeTrackingMode.COARSE_AND_FINE_TRACKING,
             )
     }
 

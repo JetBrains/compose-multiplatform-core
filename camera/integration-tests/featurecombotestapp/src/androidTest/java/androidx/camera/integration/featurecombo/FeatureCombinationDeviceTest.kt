@@ -53,7 +53,7 @@ class FeatureCombinationDeviceTest(
     }
 
     @Test
-    fun isFeatureGroupSupported_queryReturnsFalseWithUnselectedPreferredFeatures(): Unit =
+    fun isSessionConfigSupported_queryReturnsFalseWithUnselectedPreferredFeatures(): Unit =
         runBlocking {
             // Arrange: Bind with all features as preferred and store the selected ones.
             val useCases = useCasesToTest.toUseCases()
@@ -74,7 +74,7 @@ class FeatureCombinationDeviceTest(
                     .that(
                         cameraProvider
                             .getCameraInfo(cameraSelector)
-                            .isFeatureGroupSupported(
+                            .isSessionConfigSupported(
                                 SessionConfig(
                                     useCases = useCases,
                                     requiredFeatureGroup = selectedFeatures + feature,
@@ -128,7 +128,7 @@ class FeatureCombinationDeviceTest(
                 assumeTrue(
                     cameraProvider
                         .getCameraInfo(cameraSelector)
-                        .isFeatureGroupSupported(sessionConfig)
+                        .isSessionConfigSupported(sessionConfig)
                 )
 
                 cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, sessionConfig)

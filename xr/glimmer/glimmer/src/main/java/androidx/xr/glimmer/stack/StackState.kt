@@ -256,10 +256,11 @@ internal constructor(private val pagerState: PagerState, private val topItemStat
         measuredHeights.put(index, height)
 
         // Clean up measured heights for items that are not in the close range to the top item.
+        // TODO(b/446933128): find a way to access currentPage inside of withoutReadObservation.
+        val currentPage = pagerState.currentPage
         Snapshot.withoutReadObservation {
-            val topItem = topItemState.value
             val itemCount = pagerState.pageCount
-            val itemRange = topItem - 2..(topItem + 3).coerceAtMost(itemCount - 1)
+            val itemRange = currentPage - 2..(currentPage + 3).coerceAtMost(itemCount - 1)
             measuredHeights.removeIf { index, _ -> index !in itemRange }
         }
     }

@@ -120,7 +120,7 @@ class GroupableFeatureDisablingActivity : ComponentActivity() {
             if (currentFeatures.contains(featureOption)) return@forEach
 
             if (
-                !isFeatureGroupSupported(
+                !isSessionConfigSupported(
                     SessionConfig(
                         useCases = listOf(preview, imageCapture, videoCapture),
                         requiredFeatureGroup = currentFeatures + featureOption,

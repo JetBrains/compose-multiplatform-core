@@ -187,7 +187,7 @@ class WearWidgetCaptureTest {
         val result =
             """
 DATA_TEXT<42> = "text-0"
-DATA_TEXT<45> = "text-1"
+DATA_TEXT<44> = "text-1"
 ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
   COLUMN [-3:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
     MODIFIERS
@@ -198,12 +198,12 @@ ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
     TEXT_LAYOUT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
       MODIFIERS
         CLICK_MODIFIER
-          HOST_NAMED_ACTION = 48 : 43
+          HOST_NAMED_ACTION = 46 : 43
         SEMANTICS = SEMANTICS BUTTON
-    TEXT_LAYOUT [-9:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (45:"null")
+    TEXT_LAYOUT [-9:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (44:"null")
       MODIFIERS
         CLICK_MODIFIER
-          HOST_NAMED_ACTION = 48 : 46
+          HOST_NAMED_ACTION = 46 : 45
         SEMANTICS = SEMANTICS BUTTON
 """
 

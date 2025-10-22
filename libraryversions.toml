@@ -36,7 +36,7 @@ CORE = "1.18.0-alpha01"
 CORE_ANIMATION = "1.0.0"
 CORE_ANIMATION_TESTING = "1.0.0"
 CORE_APPDIGEST = "1.0.0-alpha01"
-CORE_BACKPORTED_FIXES = "1.0.0-beta01"
+CORE_BACKPORTED_FIXES = "1.0.0-beta02"
 CORE_GOOGLE_SHORTCUTS = "1.2.0-alpha02"
 CORE_HAPTICS = "1.0.0-alpha01"
 CORE_I18N = "1.0.0-rc01"
@@ -114,7 +114,6 @@ PREFERENCE = "1.3.0-alpha01"
 PRINT = "1.1.0-rc01"
 PRIVACYSANDBOX_ACTIVITY = "1.0.0-alpha02"
 PRIVACYSANDBOX_ADS = "1.1.0-beta13"
-PRIVACYSANDBOX_DATABRIDGE = "1.0.0-alpha01"
 PRIVACYSANDBOX_ONDEVICEPERSONALIZATION = "1.0.0-alpha01"
 PRIVACYSANDBOX_PLUGINS = "1.0.0-alpha03"
 PRIVACYSANDBOX_SDKRUNTIME = "1.0.0-alpha18"
@@ -187,12 +186,12 @@ WINDOW_EXTENSIONS = "1.5.0"
 WINDOW_EXTENSIONS_CORE = "1.1.0-alpha01"
 WINDOW_SIDECAR = "1.0.0-rc01"
 WORK = "2.12.0-alpha01"
-XR_ARCORE = "1.0.0-alpha07"
-XR_COMPOSE = "1.0.0-alpha08"
+XR_ARCORE = "1.0.0-alpha08"
+XR_COMPOSE = "1.0.0-alpha09"
 XR_GLIMMER = "1.0.0-alpha01"
-XR_PROJECTED = "1.0.0-alpha01"
-XR_RUNTIME = "1.0.0-alpha07"
-XR_SCENECORE = "1.0.0-alpha08"
+XR_PROJECTED = "1.0.0-alpha02"
+XR_RUNTIME = "1.0.0-alpha08"
+XR_SCENECORE = "1.0.0-alpha09"
 
 [groups]
 ACTIVITY = { group = "androidx.activity", atomicGroupVersion = "versions.ACTIVITY" }
@@ -285,7 +284,6 @@ PREFERENCE = { group = "androidx.preference", atomicGroupVersion = "versions.PRE
 PRINT = { group = "androidx.print", atomicGroupVersion = "versions.PRINT" }
 PRIVACYSANDBOX_ACTIVITY = { group = "androidx.privacysandbox.activity", atomicGroupVersion = "versions.PRIVACYSANDBOX_ACTIVITY" }
 PRIVACYSANDBOX_ADS = { group = "androidx.privacysandbox.ads", atomicGroupVersion = "versions.PRIVACYSANDBOX_ADS" }
-PRIVACYSANDBOX_DATABRIDGE = { group = "androidx.privacysandbox.databridge", atomicGroupVersion = "versions.PRIVACYSANDBOX_DATABRIDGE" }
 PRIVACYSANDBOX_ONDEVICEPERSONALIZATION = { group = "androidx.privacysandbox.ondevicepersonalization", atomicGroupVersion = "versions.PRIVACYSANDBOX_ONDEVICEPERSONALIZATION" }
 PRIVACYSANDBOX_PLUGINS = { group = "androidx.privacysandbox.plugins", atomicGroupVersion = "versions.PRIVACYSANDBOX_PLUGINS" }
 PRIVACYSANDBOX_SDKRUNTIME = { group = "androidx.privacysandbox.sdkruntime", atomicGroupVersion = "versions.PRIVACYSANDBOX_SDKRUNTIME" }

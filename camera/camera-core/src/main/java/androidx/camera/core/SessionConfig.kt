@@ -25,8 +25,8 @@ import androidx.camera.core.featuregroup.impl.UseCaseType.Companion.getFeatureGr
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+import androidx.camera.core.impl.utils.UseCaseUtil.isVideoCapture
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
-import androidx.camera.core.internal.CameraUseCaseAdapter.isVideoCapture
 import androidx.core.util.Consumer
 import java.util.concurrent.Executor
 
@@ -210,7 +210,7 @@ constructor(
                     FeatureTypeInternal.FPS_RANGE ->
                         "${useCaseName}.Builder.setTargetFrameRateRange"
                     FeatureTypeInternal.VIDEO_STABILIZATION ->
-                        if (isVideoCapture(this)) {
+                        if (isVideoCapture()) {
                             "${useCaseName}.Builder.setVideoStabilizationEnabled"
                         } else {
                             "${useCaseName}.Builder.setPreviewStabilizationEnabled"
@@ -247,7 +247,7 @@ constructor(
             "ImageCapture"
         } else if (this is ImageAnalysis) {
             "ImageAnalysis"
-        } else if (isVideoCapture(this)) {
+        } else if (this.isVideoCapture()) {
             "VideoCapture"
         } else {
             "UseCase"
@@ -265,7 +265,7 @@ constructor(
      * invoked even when no preferred features are selected, providing either the required features
      * or an empty set (if no feature was set as required).
      *
-     * Alternatively, the [CameraInfo.isFeatureGroupSupported] API can be used to query if a set of
+     * Alternatively, the [CameraInfo.isSessionConfigSupported] API can be used to query if a set of
      * features is supported before binding.
      *
      * @param executor The executor in which the listener will be invoked. If not set, the main
@@ -337,8 +337,8 @@ constructor(
          * To avoid setting an unsupported feature as required, the [setPreferredFeatureGroup] API
          * can be used since the features from the preferred features are selected on a best-effort
          * basis according to the priority defined by the ordering of features in the list.
-         * Alternatively, the [CameraInfo.isFeatureGroupSupported] API can be used before binding to
-         * check if the features are supported or not.
+         * Alternatively, the [CameraInfo.isSessionConfigSupported] API can be used before binding
+         * to check if the features are supported or not.
          *
          * Note that [CameraEffect] or [ImageAnalysis] use case is currently not supported when a
          * feature is set to a session config. Furthermore, unlike the [setPreferredFeatureGroup]

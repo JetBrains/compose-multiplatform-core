@@ -100,7 +100,7 @@ class FeatureGroupQueryBenchmark(
             )
 
         benchmarkRule.measureRepeated {
-            cameraProvider.getCameraInfo(cameraSelector).isFeatureGroupSupported(sessionConfig)
+            cameraProvider.getCameraInfo(cameraSelector).isSessionConfigSupported(sessionConfig)
         }
     }
 

@@ -66,7 +66,7 @@ import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.stabilization.StabilizationMode;
-import androidx.camera.core.internal.CameraUseCaseAdapter;
+import androidx.camera.core.impl.utils.UseCaseUtil;
 import androidx.camera.core.internal.TargetConfig;
 import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk;
 import androidx.camera.core.internal.utils.UseCaseConfigUtil;
@@ -1240,7 +1240,7 @@ public abstract class UseCase {
             }
         }
 
-        if (this instanceof Preview || CameraUseCaseAdapter.isVideoCapture(this)) {
+        if (this instanceof Preview || UseCaseUtil.isVideoCapture(this)) {
             config.insertOption(OPTION_INPUT_DYNAMIC_RANGE, dynamicRange);
         }
 

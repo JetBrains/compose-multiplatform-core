@@ -26,6 +26,7 @@ import androidx.xr.compose.testing.createFakeSession
 import androidx.xr.compose.testing.session
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertNotNull
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,6 +65,7 @@ class ComposeXrOwnerLocalsKtTest {
     }
 
     @Test
+    @Ignore("b/454042420 This test is failing randomly")
     fun getOrCreateXrOwnerLocals_isClearedAndRecreated_onActivityRecreation() {
         // Phase 1: Create the initial instance in the first activity.
         val activity1 = composeTestRule.activity

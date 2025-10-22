@@ -45,6 +45,7 @@ import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.bundling.ZipEntryCompression
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.kotlin.dsl.extra
+import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
 
@@ -196,6 +197,9 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
                 it.cacheStorage.set(layout.buildDirectory.dir("wasmYarnCache"))
                 it.yarnrcFile.set(layout.buildDirectory.file("wasm/.yarnrc"))
             }
+
+        configureNode()
+
         tasks.withType<KotlinNpmInstallTask>().configureEach {
             when (it.name) {
                 "kotlinNpmInstall" -> it.dependsOn(createYarnRcFileTask)

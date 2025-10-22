@@ -36,8 +36,12 @@ import androidx.xr.runtime.VpsAvailabilityNotAuthorized
 import androidx.xr.runtime.VpsAvailabilityResourceExhausted
 import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.VpsAvailabilityUnavailable
+import androidx.xr.runtime.internal.UnsupportedDeviceException
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
+import com.google.ar.core.AugmentedFace as ARCore1xAugmentedFace
+import com.google.ar.core.CameraConfig
+import com.google.ar.core.CameraConfigFilter
 import com.google.ar.core.Frame
 import com.google.ar.core.Plane as ARCore1xPlane
 import com.google.ar.core.Session
@@ -86,6 +90,13 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     internal fun lastFrame(value: Frame) {
         _latestFrame = value
     }
+
+    internal val usingFrontFacingCamera: Boolean
+        get() =
+            if (::session.isInitialized) {
+                val arCoreCameraConfig: CameraConfig? = session.cameraConfig
+                arCoreCameraConfig?.facingDirection == CameraConfig.FacingDirection.FRONT
+            } else false
 
     /**
      * Creates an anchor in the scene.
@@ -229,12 +240,12 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val earth: ArCoreEarth = xrResources.earth
 
-    /** Returns the [androidx.xr.arcore.runtime.ArDevice] instance. */
+    /** Returns the [ArDevice] instance. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override val arDevice: ArCoreDevice = xrResources.arDevice
 
     /**
-     * Returns the left [androidx.xr.arcore.runtime.RenderViewpoint] object.
+     * Returns the left [RenderViewpoint] object.
      *
      * This is not available in ARCore.
      */
@@ -242,7 +253,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val leftRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the right [androidx.xr.arcore.runtime.RenderViewpoint] object.
+     * Returns the right [RenderViewpoint] object.
      *
      * This is not available in ARCore.
      */
@@ -250,7 +261,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val rightRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the mono[androidx.xr.arcore.runtime.RenderViewpoint] object.
+     * Returns the mono[RenderViewpoint] object.
      *
      * This is not currently implemented in ARCore.
      */
@@ -258,20 +269,20 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     override val monoRenderViewpoint: RenderViewpoint? = null
 
     /**
-     * Returns the left [androidx.xr.arcore.runtime.DepthMap] object.
+     * Returns the left [DepthMap] object.
      *
      * This is not available in ARCore.
      */
     override val leftDepthMap: DepthMap? = null
 
     /**
-     * Returns the right [androidx.xr.arcore.runtime.DepthMap] object.
+     * Returns the right [DepthMap] object.
      *
      * This is not available in ARCore.
      */
     override val rightDepthMap: DepthMap? = null
 
-    /** Returns the mono [androidx.xr.arcore.runtime.DepthMap] object. */
+    /** Returns the mono [DepthMap] object. */
     override val monoDepthMap: DepthMap?
         get() = xrResources.depthMap
 
@@ -283,7 +294,6 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
      * perception manager.
      */
     internal fun update() {
-
         if (displayChanged) {
             session.setDisplayGeometry(displayRotation, displayWidth, displayHeight)
         }
@@ -301,6 +311,18 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
 
         val planes = _latestFrame.getUpdatedTrackables(ARCore1xPlane::class.java)
         planes.forEach { xrResources.addTrackable(it, ArCorePlane(it, xrResources)) }
+
+        val augmentedFaces = session.getAllTrackables(ARCore1xAugmentedFace::class.java)
+        // Don't retain any AugmentedFaces that the ArCore Session is no longer tracking
+        xrResources.trackables
+            .filter { it.value is ArCoreFace }
+            .keys
+            .forEach {
+                if (!augmentedFaces.contains(it)) {
+                    xrResources.removeTrackable(it)
+                }
+            }
+        augmentedFaces.forEach { xrResources.addTrackable(it, ArCoreFace(it)) }
 
         arDevice.update(_latestFrame)
 
@@ -346,5 +368,25 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
      */
     public fun dispose() {
         xrResources.depthMap.dispose()
+    }
+
+    internal fun setCameraFacingDirection(facingDirection: Config.CameraFacingDirection) {
+        val arCoreFacingDirection =
+            when (facingDirection) {
+                Config.CameraFacingDirection.USER -> CameraConfig.FacingDirection.FRONT
+                Config.CameraFacingDirection.WORLD -> CameraConfig.FacingDirection.BACK
+                else ->
+                    throw IllegalArgumentException(
+                        "Unsupported CameraFacingDirection ${facingDirection}."
+                    )
+            }
+        val filter = CameraConfigFilter(session)
+        filter.facingDirection = arCoreFacingDirection
+        val supportedConfigs = session.getSupportedCameraConfigs(filter)
+        if (supportedConfigs.isEmpty()) {
+            throw UnsupportedDeviceException()
+        }
+        // Element 0 contains the best match
+        session.cameraConfig = supportedConfigs[0]
     }
 }

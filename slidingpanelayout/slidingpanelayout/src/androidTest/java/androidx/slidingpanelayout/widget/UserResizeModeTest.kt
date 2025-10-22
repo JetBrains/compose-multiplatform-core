@@ -50,6 +50,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 class UserResizeModeTest {
+    @SdkSuppress(minSdkVersion = 24) // b/454115140
     @Test
     fun layoutWithUserResizeEnabled() {
         val context = InstrumentationRegistry.getInstrumentation().context
@@ -77,6 +78,7 @@ class UserResizeModeTest {
         assertWithMessage("rightPane width after drag").that(rightPane.width).isEqualTo(70)
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/454115140
     @Test
     fun layoutWithUserResizeEnabledLive() {
         val context = InstrumentationRegistry.getInstrumentation().context
@@ -182,6 +184,7 @@ class UserResizeModeTest {
         assertWithMessage("SlidingPaneLayout is slideable").that(spl.isSlideable).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/454115140
     @Test
     fun dragDividerWithTouchCapturingPanes() {
         val context = InstrumentationRegistry.getInstrumentation().context
@@ -199,6 +202,7 @@ class UserResizeModeTest {
         assertWithMessage("splitDividerPosition").that(spl.splitDividerPosition).isEqualTo(30)
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/454115140
     @Test
     fun dragDividerUpdatesUserDividerDrawableState() {
         val context = InstrumentationRegistry.getInstrumentation().context

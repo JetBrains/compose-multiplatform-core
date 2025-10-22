@@ -216,10 +216,7 @@ kotlinSerializationJsonOkio = { module = "org.jetbrains.kotlinx:kotlinx-serializ
 kotlinSerializationProtobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinSerialization" }
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
-kotlinStdlibCommon = { module = "org.jetbrains.kotlin:kotlin-stdlib-common" }
 kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test"}
-kotlinTestAnnotationsCommon = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common" }
-kotlinTestCommon = { module = "org.jetbrains.kotlin:kotlin-test-common" }
 kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }
 kotlinReflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 kotlinPoet = { module = "com.squareup:kotlinpoet", version = "2.1.0" }

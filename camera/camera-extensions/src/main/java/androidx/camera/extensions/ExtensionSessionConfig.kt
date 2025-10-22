@@ -82,7 +82,6 @@ import androidx.camera.core.ViewPort
  * @see androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  * @see ExtensionsManager.getInstanceAsync
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class ExtensionSessionConfig
 @JvmOverloads
 constructor(
@@ -134,7 +133,7 @@ constructor(
         ) : this(mode, extensionsManager, useCases.toList())
 
         /** Sets the [ViewPort] for the session. */
-        public fun setViewPort(viewPort: ViewPort?): Builder {
+        public fun setViewPort(viewPort: ViewPort): Builder {
             this.viewPort = viewPort
             return this
         }

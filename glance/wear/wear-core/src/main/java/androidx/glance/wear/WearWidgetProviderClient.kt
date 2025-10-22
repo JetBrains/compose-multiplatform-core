@@ -74,9 +74,10 @@ public class WearWidgetProviderClient(
         instanceId: Int,
         @ContainerType containerType: Int,
         executor: Executor,
-    ): ListenableFuture<Unit> =
+    ): ListenableFuture<Void?> =
         CoroutineScope(executor.asCoroutineDispatcher()).future {
             sendActivationNotice(instanceId, containerType)
+            null
         }
 
     /** Call [IWearWidgetProvider.onDeactivated] on the provider and wait for completion. */
@@ -99,9 +100,10 @@ public class WearWidgetProviderClient(
         instanceId: Int,
         @ContainerType containerType: Int,
         executor: Executor,
-    ): ListenableFuture<Unit> =
+    ): ListenableFuture<Void?> =
         CoroutineScope(executor.asCoroutineDispatcher()).future {
             sendDeactivationNotice(instanceId, containerType)
+            null
         }
 
     /** Binds to the service, runs the given [block] and then unbinds. */

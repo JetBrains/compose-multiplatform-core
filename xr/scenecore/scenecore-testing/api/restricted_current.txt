@@ -751,6 +751,7 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin public void setStereoMode(int);
     method public void setSurface(android.view.Surface surface);
+    method public void setSurfacePixelDimensions(int width, int height);
     property public androidx.xr.scenecore.runtime.TextureResource? auxiliaryAlphaMask;
     property public int colorRange;
     property public int colorSpace;
@@ -790,6 +791,7 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin public void setStereoMode(int);
     method public void setSurface(android.view.Surface surface);
+    method public void setSurfacePixelDimensions(int width, int height);
     property public int colorRange;
     property public int colorSpace;
     property public int colorTransfer;

@@ -410,8 +410,8 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
     data class VideoAttributes(
         val buttonText: String,
         val videoPath: String,
-        val stereoMode: Int,
-        val protection: Int,
+        val stereoMode: SurfaceEntity.StereoMode,
+        val protection: SurfaceEntity.SurfaceProtection,
         val movable: Boolean,
         val stickToHead: Boolean,
         val shapeOffset: Pose,
@@ -420,7 +420,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
             VideoAttributes.(GroupEntity, ExoPlayer) -> VideoInputManager.InputHandler,
     ) {
         val isProtected
-            get() = protection == SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_PROTECTED
+            get() = protection == SurfaceEntity.SurfaceProtection.PROTECTED
 
         fun createInputHandler(parent: GroupEntity, player: ExoPlayer) =
             inputHandlerProvider(parent, player)
@@ -438,8 +438,8 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
             parent: GroupEntity,
             initPose: Pose,
             shape: SurfaceEntity.Shape,
-            stereoMode: Int,
-            surfaceProtection: Int,
+            stereoMode: SurfaceEntity.StereoMode,
+            surfaceProtection: SurfaceEntity.SurfaceProtection,
             movable: Boolean,
         ): SurfaceEntity {
             // Create SurfaceEntity
@@ -468,7 +468,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
             activity: ComponentActivity,
             surfaceEntity: SurfaceEntity,
             videoUri: String,
-            stereoMode: Int,
+            stereoMode: SurfaceEntity.StereoMode,
             canvasShape: SurfaceEntity.Shape,
             canvasMovable: Boolean,
             protected: Boolean,
@@ -540,7 +540,7 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
         }
 
         fun getCanvasAspectRatio(
-            stereoMode: Int,
+            stereoMode: SurfaceEntity.StereoMode,
             videoWidth: Int,
             videoHeight: Int,
             pixelAspectRatio: Float,
@@ -550,13 +550,13 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
             val effectiveDisplayWidth = videoWidth.toFloat() * pixelAspectRatio
 
             return when (stereoMode) {
-                SurfaceEntity.StereoMode.STEREO_MODE_MONO,
-                SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
-                SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY ->
+                SurfaceEntity.StereoMode.MONO,
+                SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+                SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
                     FloatSize3d(1.0f, videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
-                SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM ->
+                SurfaceEntity.StereoMode.TOP_BOTTOM ->
                     FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
-                SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE ->
+                SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
                     FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
                 else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
             }
@@ -568,8 +568,8 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
                     VideoAttributes(
                         buttonText = "Play Quad Surface Video",
                         videoPath = "/Download/vid_bigbuckbunny.mp4",
-                        stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM,
-                        protection = SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE,
+                        stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
+                        protection = SurfaceEntity.SurfaceProtection.NONE,
                         movable = true,
                         stickToHead = false,
                         shapeOffset = Pose(Vector3(0.0f, 0.0f, -1.0f), Quaternion.Identity),
@@ -580,8 +580,8 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
                     VideoAttributes(
                         buttonText = "Play 360 Surface Video",
                         videoPath = "/Download/Galaxy11_VR_3D360.mp4",
-                        stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM,
-                        protection = SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE,
+                        stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
+                        protection = SurfaceEntity.SurfaceProtection.NONE,
                         movable = false,
                         stickToHead = true,
                         shapeOffset = Pose.Identity,
@@ -594,8 +594,8 @@ class SurfaceEntityInteractionActivity : AppCompatActivity() {
                     VideoAttributes(
                         buttonText = "Play 180 Surface Video",
                         videoPath = "/Download/Galaxy11_VR_3D360.mp4",
-                        stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM,
-                        protection = SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE,
+                        stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM,
+                        protection = SurfaceEntity.SurfaceProtection.NONE,
                         movable = false,
                         stickToHead = true,
                         shapeOffset = Pose.Identity,

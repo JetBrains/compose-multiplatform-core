@@ -274,7 +274,8 @@ public class EarthGuavaTest {
                                         Config.AnchorPersistenceMode.DISABLED,
                                         Config.FaceTrackingMode.DISABLED,
                                         Config.GeospatialMode.EARTH,
-                                        Config.EyeTrackingMode.DISABLED));
+                                        Config.EyeTrackingMode.DISABLED,
+                                        Config.CameraFacingDirection.WORLD));
 
                         try {
                             testBody.run();

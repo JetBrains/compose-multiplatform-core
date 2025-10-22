@@ -525,7 +525,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         val isSupported =
             cameraSelector
                 .getCameraInfo()
-                .isFeatureGroupSupported(
+                .isSessionConfigSupported(
                     SessionConfig(useCases, requiredFeatureGroup = requiredFeatures)
                 )
 

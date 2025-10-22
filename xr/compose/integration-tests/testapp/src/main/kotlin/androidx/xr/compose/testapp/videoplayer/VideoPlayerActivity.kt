@@ -227,7 +227,7 @@ class VideoPlayerActivity : ComponentActivity() {
     }
 
     fun getCanvasAspectRatio(
-        stereoMode: Int,
+        stereoMode: SurfaceEntity.StereoMode,
         videoWidth: Int,
         videoHeight: Int,
         pixelAspectRatio: Float,
@@ -237,13 +237,13 @@ class VideoPlayerActivity : ComponentActivity() {
         val effectiveDisplayWidth = videoWidth.toFloat() * pixelAspectRatio
 
         return when (stereoMode) {
-            SurfaceEntity.StereoMode.STEREO_MODE_MONO,
-            SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
-            SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY ->
+            SurfaceEntity.StereoMode.MONO,
+            SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
+            SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY ->
                 FloatSize3d(1.0f, videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
-            SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM ->
+            SurfaceEntity.StereoMode.TOP_BOTTOM ->
                 FloatSize3d(1.0f, 0.5f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
-            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE ->
+            SurfaceEntity.StereoMode.SIDE_BY_SIDE ->
                 FloatSize3d(1.0f, 2.0f * videoHeight.toFloat() / effectiveDisplayWidth, 0.0f)
             else -> throw IllegalArgumentException("Unsupported stereo mode: $stereoMode")
         }
@@ -566,16 +566,15 @@ class VideoPlayerActivity : ComponentActivity() {
                 ApiRow {
                     val modifier = Modifier.weight(1F)
                     ApiButton("Mono", modifier) {
-                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_MONO
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.MONO
                     }
 
                     ApiButton("Top-Bottom", modifier) {
-                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM
                     }
 
                     ApiButton("Side-by-Side", modifier) {
-                        surfaceEntity!!.stereoMode =
-                            SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE
+                        surfaceEntity!!.stereoMode = SurfaceEntity.StereoMode.SIDE_BY_SIDE
                     }
                 }
             }
@@ -634,7 +633,7 @@ class VideoPlayerActivity : ComponentActivity() {
     }
 
     private fun createSurfaceEntity(
-        stereoMode: Int,
+        stereoMode: SurfaceEntity.StereoMode,
         pose: Pose,
         canvasShape: SurfaceEntity.Shape,
         protected: Boolean = false,
@@ -643,9 +642,9 @@ class VideoPlayerActivity : ComponentActivity() {
         if (surfaceEntity == null) {
             val surfaceContentLevel =
                 if (protected) {
-                    SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_PROTECTED
+                    SurfaceEntity.SurfaceProtection.PROTECTED
                 } else {
-                    SurfaceEntity.SurfaceProtection.SURFACE_PROTECTION_NONE
+                    SurfaceEntity.SurfaceProtection.NONE
                 }
 
             surfaceEntity =
@@ -699,7 +698,7 @@ class VideoPlayerActivity : ComponentActivity() {
 
     private fun setupExoPlayer(
         videoUri: String,
-        stereoMode: Int,
+        stereoMode: SurfaceEntity.StereoMode,
         canvasShape: SurfaceEntity.Shape,
         protected: Boolean,
     ) {
@@ -818,7 +817,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     VideoAttributes(
                         "Play Big Buck Bunny",
                         "/Download/vid_bigbuckbunny.mp4",
-                        SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM,
+                        SurfaceEntity.StereoMode.TOP_BOTTOM,
                         false,
                         defaultPose,
                         defaultShape,
@@ -829,7 +828,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     VideoAttributes(
                         "Play MVHEVC Left Primary",
                         "/Download/mvhevc_flat_left_primary_1080.mov",
-                        SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
+                        SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
                         false,
                         defaultPose,
                         defaultShape,
@@ -840,7 +839,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     VideoAttributes(
                         "Play MVHEVC Right Primary",
                         "/Download/mvhevc_flat_right_primary_1080.mov",
-                        SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_RIGHT_PRIMARY,
+                        SurfaceEntity.StereoMode.MULTIVIEW_RIGHT_PRIMARY,
                         false,
                         defaultPose,
                         defaultShape,
@@ -851,7 +850,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     VideoAttributes(
                         "Play Naver 180 (Side-by-Side)",
                         "/Download/Naver180.mp4",
-                        SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE,
+                        SurfaceEntity.StereoMode.SIDE_BY_SIDE,
                         false,
                         defaultPose,
                         SurfaceEntity.Shape.Hemisphere(1.0f),
@@ -862,7 +861,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     VideoAttributes(
                         "Play Naver 180 (MV-HEVC)",
                         "/Download/Naver180_MV-HEVC.mp4",
-                        SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
+                        SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
                         false,
                         defaultPose,
                         SurfaceEntity.Shape.Hemisphere(1.0f),
@@ -873,7 +872,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     VideoAttributes(
                         "Play Galaxy 360 (Top-Bottom)",
                         "/Download/Galaxy11_VR_3D360.mp4",
-                        SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM,
+                        SurfaceEntity.StereoMode.TOP_BOTTOM,
                         false,
                         defaultPose,
                         SurfaceEntity.Shape.Sphere(1.0f),
@@ -884,7 +883,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     VideoAttributes(
                         "Play Galaxy 360 (MV-HEVC)",
                         "/Download/Galaxy11_VR_3D360_MV-HEVC.mp4",
-                        SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
+                        SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
                         false,
                         defaultPose,
                         SurfaceEntity.Shape.Sphere(1.0f),
@@ -895,7 +894,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     VideoAttributes(
                         "Play DRM Protected For Bigger Blazes",
                         "/Download/sdr_singleview_protected.mp4",
-                        SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE,
+                        SurfaceEntity.StereoMode.SIDE_BY_SIDE,
                         true,
                         defaultPose,
                         defaultShape,
@@ -906,7 +905,7 @@ class VideoPlayerActivity : ComponentActivity() {
                     VideoAttributes(
                         "Play DRM Protected MVHEVC Left Primary",
                         "/Download/mvhevc_flat_left_primary_1080_protected.mp4",
-                        SurfaceEntity.StereoMode.STEREO_MODE_MULTIVIEW_LEFT_PRIMARY,
+                        SurfaceEntity.StereoMode.MULTIVIEW_LEFT_PRIMARY,
                         true,
                         defaultPose,
                         defaultShape,
@@ -930,7 +929,7 @@ class VideoPlayerActivity : ComponentActivity() {
     data class VideoAttributes(
         val buttonText: String,
         val videoPath: String,
-        val stereoMode: Int,
+        val stereoMode: SurfaceEntity.StereoMode,
         val protected: Boolean,
         var pose: Pose,
         var canvasShape: SurfaceEntity.Shape,

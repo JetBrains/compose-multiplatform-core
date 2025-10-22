@@ -99,6 +99,16 @@ public class RemoteComposeWriter {
     public static final int FONT_TYPE_SERIF = PaintBundle.FONT_TYPE_SERIF;
     public static final int FONT_TYPE_MONOSPACE = PaintBundle.FONT_TYPE_MONOSPACE;
 
+    protected final @NonNull RcPaint mPainter = new RcPaint(this);
+
+    /**
+     * Returns the paint object
+     * @return the paint object
+     */
+    public @NonNull RcPaint getRcPaint() {
+        return mPainter;
+    }
+
     /**
      * Factory to obtain a RemoteComposeWriter
      *

@@ -37,7 +37,6 @@ androidXMultiplatform {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.kotlinTest)
-                implementation(libs.kotlinTestAnnotationsCommon)
             }
         }
         iosMain {
