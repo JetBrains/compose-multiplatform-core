@@ -244,14 +244,6 @@ fun Slider(
  * Slider using custom track and thumb:
  *
  * @sample androidx.compose.material3.samples.SliderWithCustomTrackAndThumbSample
- *
- * Slider using track icons:
- *
- * @sample androidx.compose.material3.samples.SliderWithTrackIconsSample
- *
- * Slider with a centered track:
- *
- * @sample androidx.compose.material3.samples.CenteredSliderSample
  * @param value current value of the slider. If outside of [valueRange] provided, value will be
  *   coerced to this range.
  * @param onValueChange callback in which value should be updated
@@ -346,14 +338,6 @@ fun Slider(
  * Slider using custom track and thumb:
  *
  * @sample androidx.compose.material3.samples.SliderWithCustomTrackAndThumbSample
- *
- * Slider using track icons:
- *
- * @sample androidx.compose.material3.samples.SliderWithTrackIconsSample
- *
- * Slider with a centered track:
- *
- * @sample androidx.compose.material3.samples.CenteredSliderSample
  * @param state [SliderState] which contains the slider's current value.
  * @param modifier the [Modifier] to be applied to this slider
  * @param enabled controls the enabled state of this slider. When `false`, this component will not
@@ -412,13 +396,6 @@ fun Slider(
  * ![Sliders
  * image](https://firebasestorage.googleapis.com/v0/b/design-spec/o/projects%2Fgoogle-material-3%2Fimages%2Flqe2zb2b-1.png?alt=media)
  *
- * Vertical Slider:
- *
- * @sample androidx.compose.material3.samples.VerticalSliderSample
- *
- * Vertical Slider with a centered track:
- *
- * @sample androidx.compose.material3.samples.VerticalCenteredSliderSample
  * @param state [SliderState] which contains the slider's current value.
  * @param modifier the [Modifier] to be applied to this slider
  * @param enabled controls the enabled state of this slider. When `false`, this component will not
@@ -436,9 +413,8 @@ fun Slider(
  *   lambda receives a [SliderState] which is used to obtain the current active track.
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@ExperimentalMaterial3ExpressiveApi
 @Composable
-fun VerticalSlider(
+internal fun VerticalSlider(
     state: SliderState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -1539,9 +1515,8 @@ object SliderDefaults {
      * @param thumbSize the size of the thumb.
      */
     @OptIn(ExperimentalMaterial3Api::class)
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun Thumb(
+    internal fun Thumb(
         interactionSource: MutableInteractionSource,
         sliderState: SliderState,
         modifier: Modifier = Modifier,
@@ -1743,9 +1718,8 @@ object SliderDefaults {
      * @param trackInsideCornerSize size of the corners towards the thumb when a gap is set.
      */
     @OptIn(ExperimentalMaterial3Api::class)
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun Track(
+    internal fun Track(
         sliderState: SliderState,
         trackCornerSize: Dp,
         modifier: Modifier = Modifier,
@@ -1799,9 +1773,8 @@ object SliderDefaults {
      * @param trackCornerSize size of the external corners.
      */
     @OptIn(ExperimentalMaterial3Api::class)
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun CenteredTrack(
+    internal fun CenteredTrack(
         sliderState: SliderState,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
@@ -2028,9 +2001,8 @@ object SliderDefaults {
      * @param trackInsideCornerSize size of the corners towards the thumbs when a gap is set.
      */
     @OptIn(ExperimentalMaterial3Api::class)
-    @ExperimentalMaterial3ExpressiveApi
     @Composable
-    fun Track(
+    internal fun Track(
         rangeSliderState: RangeSliderState,
         trackCornerSize: Dp,
         modifier: Modifier = Modifier,

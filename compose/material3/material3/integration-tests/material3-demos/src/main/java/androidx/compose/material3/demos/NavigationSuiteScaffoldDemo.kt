@@ -29,11 +29,10 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalWideNavigationRail
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -44,10 +43,8 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuite
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItem
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldLayout
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldValue
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.material3.adaptive.navigationsuite.rememberNavigationSuiteScaffoldState
-import androidx.compose.material3.animateFloatingActionButton
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -65,7 +62,6 @@ import androidx.window.core.layout.WindowHeightSizeClass
 import androidx.window.core.layout.WindowWidthSizeClass
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 @Suppress("DEPRECATION") // WindowWidthSizeClass is deprecated
 fun NavigationSuiteScaffoldCustomConfigDemo() {
@@ -94,18 +90,7 @@ fun NavigationSuiteScaffoldCustomConfigDemo() {
     val railState = rememberWideNavigationRailState()
     val railExpanded = railState.currentValue == WideNavigationRailValue.Expanded
     val isWideNavRailCollapsedType = navSuiteType == NavigationSuiteType.WideNavigationRailCollapsed
-    val animateFAB =
-        if (
-            navSuiteType == NavigationSuiteType.ShortNavigationBarMedium ||
-                navSuiteType == NavigationSuiteType.NavigationBar
-        ) {
-            Modifier.animateFloatingActionButton(
-                visible = state.currentValue == NavigationSuiteScaffoldValue.Visible,
-                alignment = Alignment.BottomEnd,
-            )
-        } else {
-            Modifier
-        }
+
     val fab =
         @Composable {
             val startPadding =
@@ -115,7 +100,7 @@ fun NavigationSuiteScaffoldCustomConfigDemo() {
                     24.dp
                 }
             ExtendedFloatingActionButton(
-                modifier = Modifier.padding(start = startPadding).then(animateFAB),
+                modifier = Modifier.padding(start = startPadding),
                 onClick = { /* onClick function for FAB. */ },
                 expanded =
                     if (isWideNavRailCollapsedType) railExpanded
@@ -141,7 +126,7 @@ fun NavigationSuiteScaffoldCustomConfigDemo() {
             }
         }
 
-    MaterialExpressiveTheme {
+    MaterialTheme {
         Surface {
             // Use NavigationSuiteScaffoldLayout so that we can customize the NavigationSuite.
             NavigationSuiteScaffoldLayout(

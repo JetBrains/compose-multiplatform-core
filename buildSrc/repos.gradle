@@ -62,6 +62,7 @@ def addMavenRepositories(RepositoryHandler handler) {
                 excludeGroup "com.android.tools.metalava"
             }
         }
+        handler.maven { url = "https://redirector.kotlinlang.org/maven/dev" }
     }
     if (System.getenv("ALLOW_PUBLIC_REPOS") != null || System.getProperty("ALLOW_PUBLIC_REPOS") != null) {
         handler.mavenCentral()

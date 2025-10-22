@@ -207,6 +207,33 @@ class BoundsTest : ToolingTest() {
             assertThat(itemParams).isEmpty()
         }
     }
+
+    @Test
+    fun testEmptyParams() {
+        val anchors = mutableMapOf<String, Any?>()
+        val slotTableRecord = CompositionDataRecord.create()
+        show { Inspectable(slotTableRecord) { Item() } }
+
+        activityTestRule.runOnUiThread {
+            slotTableRecord.store
+                .first()
+                .mapTree<Any>({ group, context, _ ->
+                    if (context.location?.sourceFile == "BoundsTest.kt") {
+                        anchors[context.name!!] = group.identity
+                    }
+                })
+
+            val itemAnchor = anchors["Item"]
+            val itemGroup = slotTableRecord.store.first().find(itemAnchor!!)!!
+            val itemParams = itemGroup.findParameters()
+            assertThat(itemParams).isEmpty()
+        }
+    }
+}
+
+@Composable
+fun Item() {
+    Text("test")
 }
 
 @Composable

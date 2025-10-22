@@ -91,7 +91,6 @@ import kotlin.math.roundToInt
  * @param arrangement the [ShortNavigationBarArrangement] of this navigation bar
  * @param content the content of this navigation bar, typically [ShortNavigationBarItem]s
  */
-@OptIn(ExperimentalMaterial3ComponentOverrideApi::class)
 @Composable
 fun ShortNavigationBar(
     modifier: Modifier = Modifier,
@@ -119,8 +118,7 @@ fun ShortNavigationBar(
  *
  * [ShortNavigationBarOverride] used when no override is specified.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-object DefaultShortNavigationBarOverride : ShortNavigationBarOverride {
+internal object DefaultShortNavigationBarOverride : ShortNavigationBarOverride {
     @Composable
     override fun ShortNavigationBarOverrideScope.ShortNavigationBar() {
         Surface(color = containerColor, contentColor = contentColor, modifier = modifier) {
@@ -350,8 +348,7 @@ object ShortNavigationBarItemDefaults {
  * To override this component, implement the member function of this interface, then provide the
  * implementation to [LocalShortNavigationBarOverride] in the Compose hierarchy.
  */
-@ExperimentalMaterial3ComponentOverrideApi
-interface ShortNavigationBarOverride {
+internal interface ShortNavigationBarOverride {
     /** Behavior function that is called by the [ShortNavigationBar] component. */
     @Composable fun ShortNavigationBarOverrideScope.ShortNavigationBar()
 }
@@ -367,8 +364,7 @@ interface ShortNavigationBarOverride {
  * @param arrangement the [ShortNavigationBarArrangement] of this navigation bar
  * @param content the content of this navigation bar, typically [ShortNavigationBarItem]s
  */
-@ExperimentalMaterial3ComponentOverrideApi
-class ShortNavigationBarOverrideScope
+internal class ShortNavigationBarOverrideScope
 internal constructor(
     val modifier: Modifier,
     val containerColor: Color,
@@ -379,8 +375,8 @@ internal constructor(
 )
 
 /** CompositionLocal containing the currently-selected [ShortNavigationBarOverride]. */
-@ExperimentalMaterial3ComponentOverrideApi
-val LocalShortNavigationBarOverride: ProvidableCompositionLocal<ShortNavigationBarOverride> =
+internal val LocalShortNavigationBarOverride:
+    ProvidableCompositionLocal<ShortNavigationBarOverride> =
     compositionLocalOf {
         DefaultShortNavigationBarOverride
     }

@@ -16,7 +16,6 @@
 
 package androidx.compose.material3.catalog.library.model
 
-import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.material3.MaterialTheme
 
 data class Theme(

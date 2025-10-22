@@ -82,26 +82,10 @@ import androidx.compose.ui.text.TextStyle
  *   annotate imagery or to introduce a headline.
  * @property labelSmall labelSmall is one of the smallest font sizes. It is used sparingly to
  *   annotate imagery or to introduce a headline.
- * @property displayLargeEmphasized an emphasized version of [displayLarge].
- * @property displayMediumEmphasized an emphasized version of [displayMedium].
- * @property displaySmallEmphasized an emphasized version of [displaySmall].
- * @property headlineLargeEmphasized an emphasized version of [headlineLarge].
- * @property headlineMediumEmphasized an emphasized version of [headlineMedium].
- * @property headlineSmallEmphasized an emphasized version of [headlineSmall].
- * @property titleLargeEmphasized an emphasized version of [titleLarge].
- * @property titleMediumEmphasized an emphasized version of [titleMedium].
- * @property titleSmallEmphasized an emphasized version of [titleSmall].
- * @property bodyLargeEmphasized an emphasized version of [bodyLarge].
- * @property bodyMediumEmphasized an emphasized version of [bodyMedium].
- * @property bodySmallEmphasized an emphasized version of [bodySmall].
- * @property labelLargeEmphasized an emphasized version of [labelLarge].
- * @property labelMediumEmphasized an emphasized version of [labelMedium].
- * @property labelSmallEmphasized an emphasized version of [labelSmall].
  */
 @Immutable
 class Typography
-@ExperimentalMaterial3ExpressiveApi
-constructor(
+internal constructor(
     val displayLarge: TextStyle = TypographyTokens.DisplayLarge,
     val displayMedium: TextStyle = TypographyTokens.DisplayMedium,
     val displaySmall: TextStyle = TypographyTokens.DisplaySmall,
@@ -133,65 +117,50 @@ constructor(
     labelMediumEmphasized: TextStyle = TypographyTokens.LabelMediumEmphasized,
     labelSmallEmphasized: TextStyle = TypographyTokens.LabelSmallEmphasized,
 ) {
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [displayLarge]. */
-    val displayLargeEmphasized = displayLargeEmphasized
+    internal val displayLargeEmphasized = displayLargeEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [displayMedium]. */
-    val displayMediumEmphasized = displayMediumEmphasized
+    internal val displayMediumEmphasized = displayMediumEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [displaySmall]. */
-    val displaySmallEmphasized = displaySmallEmphasized
+    internal val displaySmallEmphasized = displaySmallEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [headlineLarge]. */
-    val headlineLargeEmphasized = headlineLargeEmphasized
+    internal val headlineLargeEmphasized = headlineLargeEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [headlineMedium]. */
-    val headlineMediumEmphasized = headlineMediumEmphasized
+    internal val headlineMediumEmphasized = headlineMediumEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [headlineSmall]. */
-    val headlineSmallEmphasized = headlineSmallEmphasized
+    internal val headlineSmallEmphasized = headlineSmallEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [titleLarge]. */
-    val titleLargeEmphasized = titleLargeEmphasized
+    internal val titleLargeEmphasized = titleLargeEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [titleMedium]. */
-    val titleMediumEmphasized = titleMediumEmphasized
+    internal val titleMediumEmphasized = titleMediumEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [titleSmall]. */
-    val titleSmallEmphasized = titleSmallEmphasized
+    internal val titleSmallEmphasized = titleSmallEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [bodyLarge]. */
-    val bodyLargeEmphasized = bodyLargeEmphasized
+    internal val bodyLargeEmphasized = bodyLargeEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [bodyMedium]. */
-    val bodyMediumEmphasized = bodyMediumEmphasized
+    internal val bodyMediumEmphasized = bodyMediumEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [bodySmall]. */
-    val bodySmallEmphasized = bodySmallEmphasized
+    internal val bodySmallEmphasized = bodySmallEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [labelLarge]. */
-    val labelLargeEmphasized = labelLargeEmphasized
+    internal val labelLargeEmphasized = labelLargeEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [labelMedium]. */
-    val labelMediumEmphasized = labelMediumEmphasized
+    internal val labelMediumEmphasized = labelMediumEmphasized
 
-    @ExperimentalMaterial3ExpressiveApi
     /** an emphasized version of [labelSmall]. */
-    val labelSmallEmphasized = labelSmallEmphasized
+    internal val labelSmallEmphasized = labelSmallEmphasized
 
     /**
      * The Material Design type scale includes a range of contrasting styles that support the needs
@@ -298,8 +267,7 @@ constructor(
     )
 
     /** Returns a copy of this Typography, optionally overriding some of the values. */
-    @ExperimentalMaterial3ExpressiveApi
-    fun copy(
+    internal fun copy(
         displayLarge: TextStyle = this.displayLarge,
         displayMedium: TextStyle = this.displayMedium,
         displaySmall: TextStyle = this.displaySmall,
