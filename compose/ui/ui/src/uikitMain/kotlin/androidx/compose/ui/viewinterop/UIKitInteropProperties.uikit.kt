@@ -30,7 +30,8 @@ import androidx.compose.ui.semantics.semantics
  * @property isNativeAccessibilityEnabled Indicates whether a11y services should traverse the
  * native view itself, instead of parsing Compose semantics properties.
  *
- * @property placeAsOverlay places the interop view above the Metal drawing canvas.
+ * @property placeAsOverlay determines whether the interop view should be placed above or below the
+ * Metal drawing canvas.
  * When true, the interop view may have a transparent background and may also overlap other
  * Composables, including those placed on top of the interop view.
  * When false, the interop view will be placed below the Metal drawing canvas, with a transparent
@@ -63,7 +64,7 @@ import androidx.compose.ui.semantics.semantics
 class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
     val interactionMode: UIKitInteropInteractionMode? = UIKitInteropInteractionMode.Cooperative(),
     val isNativeAccessibilityEnabled: Boolean = false,
-    @property:ExperimentalComposeUiApi val placeAsOverlay: Boolean = false
+    @property:ExperimentalComposeUiApi val placeAsOverlay: Boolean = false,
 ) {
     /**
      * Indicates whether the user can interact with the interop component.

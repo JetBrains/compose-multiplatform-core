@@ -279,8 +279,8 @@ internal class ComposeSceneMediator(
     val overlayView: UIView get() = _overlayView
 
     /**
-     * View that handles user touches that happened over interop views that located under the
-     * metal layer.
+     * A holder for interop views that located below the Metal canvas.
+     * The view handles user touches that occur only over the interop views located on it.
      */
     private val _backgroundView = BackgroundInputView(
         onLayoutSubviews = ::updateLayout,

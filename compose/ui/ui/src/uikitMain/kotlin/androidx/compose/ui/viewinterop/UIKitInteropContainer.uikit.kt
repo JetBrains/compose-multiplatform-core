@@ -30,6 +30,10 @@ internal class UIKitInteropContainer(
     private var requestRedraw: () -> Unit
 ) : InteropContainer {
     override var rootModifier: TrackInteropPlacementModifierNode? = null
+
+    // On iOS, `root` is no longer used as an interop container.
+    // Both, overlayContainer and backgroundContainer act as an interop container for corresponding
+    // views.
     override val root: InteropViewGroup get() = backgroundContainer
 
     private var interopViews = mutableMapOf<InteropView, UIKitInteropElementHolder<*>>()
@@ -97,9 +101,9 @@ internal class UIKitInteropContainer(
 
         val isAdded = interopViews.put(interopView, holder) == null
         val countBelow = countInteropComponentsBelow(holder) {
-            contains(it) && (it as UIKitInteropElementHolder<*>).isOverlay == holder.isOverlay
+            contains(it) && (it as UIKitInteropElementHolder<*>).placeAsOverlay == holder.placeAsOverlay
         }
-        val container = if (holder.isOverlay) overlayContainer else backgroundContainer
+        val container = if (holder.placeAsOverlay) overlayContainer else backgroundContainer
 
         if (isAdded) {
             scheduleUpdate {
@@ -113,6 +117,7 @@ internal class UIKitInteropContainer(
     }
 
     override fun unplace(holder: InteropViewHolder) {
+        holder as UIKitInteropElementHolder<*>
         val interopView = requireNotNull(holder.interopView)
 
         interopViews.remove(interopView)
@@ -121,9 +126,10 @@ internal class UIKitInteropContainer(
             transaction.isInteropActive = false
             snapshotObserver.stop()
         }
+        val container = if (holder.placeAsOverlay) overlayContainer else backgroundContainer
 
         scheduleUpdate {
-            holder.removeInteropView(root = backgroundContainer)
+            holder.removeInteropView(root = container)
         }
     }
 
