@@ -74,10 +74,10 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
     /**
      * Properties that are used to configure the behavior of the interop view.
      *
-     * @property interactionMode The strategy on how the touches are processed when the user
+     * @param interactionMode The strategy on how the touches are processed when the user
      * interacts with the interop view.
      *
-     * @property isNativeAccessibilityEnabled Indicates whether a11y services should traverse the
+     * @param isNativeAccessibilityEnabled Indicates whether a11y services should traverse the
      * native view itself, instead of parsing Compose semantics properties.
      */
     constructor(
@@ -121,6 +121,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
 
         if (interactionMode != other.interactionMode) return false
         if (isNativeAccessibilityEnabled != other.isNativeAccessibilityEnabled) return false
+        if (placeAsOverlay != other.placeAsOverlay) return false
 
         return true
     }
@@ -128,6 +129,7 @@ class UIKitInteropProperties @ExperimentalComposeUiApi constructor(
     override fun hashCode(): Int {
         var result = interactionMode.hashCode()
         result = 31 * result + isNativeAccessibilityEnabled.hashCode()
+        result = 31 * result + placeAsOverlay.hashCode()
         return result
     }
 }

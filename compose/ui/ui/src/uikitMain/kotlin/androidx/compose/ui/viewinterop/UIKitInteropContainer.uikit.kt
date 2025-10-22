@@ -96,7 +96,9 @@ internal class UIKitInteropContainer(
         }
 
         val isAdded = interopViews.put(interopView, holder) == null
-        val countBelow = countInteropComponentsBelow(holder)
+        val countBelow = countInteropComponentsBelow(holder) {
+            contains(it) && (it as UIKitInteropElementHolder<*>).isOverlay == holder.isOverlay
+        }
         val container = if (holder.isOverlay) overlayContainer else backgroundContainer
 
         if (isAdded) {
