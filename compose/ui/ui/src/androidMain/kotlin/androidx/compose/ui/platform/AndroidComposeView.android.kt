@@ -1783,6 +1783,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
     override fun measureAndLayoutForTest() {
         measureAndLayout()
+        handler?.removeCallbacks(outOfFrameRunnable)
         outOfFrameRunnable.run()
     }
 

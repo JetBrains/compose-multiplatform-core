@@ -633,6 +633,30 @@ class SessionConfigTest {
             }
     }
 
+    @Test
+    fun sessionConfig_emptyUseCaseList_throwsIllegalArgumentException() {
+        assertThrows<IllegalArgumentException> { SessionConfig(emptyList()) }
+    }
+
+    @Test
+    fun sessionConfig_emptyUseCaseListWithRequireNonEmptyUseCasesFalse_noException() {
+        // Internal constructor to bypass public API restrictions
+        class TestSessionConfig : SessionConfig(emptyList()) {
+            override val requireNonEmptyUseCases: Boolean = false
+        }
+        TestSessionConfig() // Should not throw
+    }
+
+    @Test
+    fun legacySessionConfig_emptyUseCaseList_noException() {
+        LegacySessionConfig(emptyList())
+    }
+
+    @Test
+    fun sessionConfig_nonEmptyUseCaseList_noException() {
+        SessionConfig(useCases) // Should not throw
+    }
+
     private fun createVideoCapture(quality: Quality? = null): VideoCapture<Recorder> {
         return VideoCapture.withOutput(
             Recorder.Builder()

@@ -332,6 +332,10 @@ public class AppSearchStatsTest {
         int queryProcessorLexerExtractTokenLatencyMillis = 12;
         int queryProcessorParserConsumeQueryLatencyMillis = 13;
         int queryProcessorQueryVisitorLatencyMillis = 14;
+        int numUnquantizedEmbeddingsScored = 15;
+        int numQuantizedEmbeddingsScored = 16;
+        int numEmbeddingShardsRead = 17;
+        long numEmbeddingBytesRead = 18L;
 
         final SearchStats.Builder sStatsBuilder = new SearchStats.Builder()
                 .setNativeQueryLength(nativeQueryLength)
@@ -353,7 +357,11 @@ public class AppSearchStatsTest {
                 .setNativeQueryProcessorParserConsumeQueryLatencyMillis(
                         queryProcessorParserConsumeQueryLatencyMillis)
                 .setNativeQueryProcessorQueryVisitorLatencyMillis(
-                        queryProcessorQueryVisitorLatencyMillis);
+                        queryProcessorQueryVisitorLatencyMillis)
+                .setNativeNumUnquantizedEmbeddingsScored(numUnquantizedEmbeddingsScored)
+                .setNativeNumQuantizedEmbeddingsScored(numQuantizedEmbeddingsScored)
+                .setNativeNumEmbeddingShardsRead(numEmbeddingShardsRead)
+                .setNativeNumEmbeddingBytesRead(numEmbeddingBytesRead);
         final SearchStats sStats = sStatsBuilder.build();
 
         assertThat(sStats.getNativeQueryLength()).isEqualTo(nativeQueryLength);
@@ -377,6 +385,12 @@ public class AppSearchStatsTest {
                 .isEqualTo(queryProcessorParserConsumeQueryLatencyMillis);
         assertThat(sStats.getNativeQueryProcessorQueryVisitorLatencyMillis())
                 .isEqualTo(queryProcessorQueryVisitorLatencyMillis);
+        assertThat(sStats.getNativeNumUnquantizedEmbeddingsScored()).isEqualTo(
+                numUnquantizedEmbeddingsScored);
+        assertThat(sStats.getNativeNumQuantizedEmbeddingsScored()).isEqualTo(
+                numQuantizedEmbeddingsScored);
+        assertThat(sStats.getNativeNumEmbeddingShardsRead()).isEqualTo(numEmbeddingShardsRead);
+        assertThat(sStats.getNativeNumEmbeddingBytesRead()).isEqualTo(numEmbeddingBytesRead);
         String expectedString = "SearchStats {\n"
                 + "query_length=1, num_terms=2, num_namespaces_filtered=3, "
                 + "num_schema_types_filtered=4,\n"
@@ -386,7 +400,9 @@ public class AppSearchStatsTest {
                 + "num_fetched_hits_integer_index=11,\n"
                 + "query_processor_lexer_extract_token_latency=12, "
                 + "query_processor_parser_consume_query_latency=13,\n"
-                + "query_processor_query_visitor_latency=14}";
+                + "query_processor_query_visitor_latency=14,\n"
+                + "num_unquantized_embeddings_scored=15, num_quantized_embeddings_scored=16, "
+                + "num_embedding_shards_read=17, num_embedding_bytes_read=18}";
         assertThat(sStats.toString()).isEqualTo(expectedString);
     }
 
@@ -407,6 +423,10 @@ public class AppSearchStatsTest {
         int queryProcessorLexerExtractTokenLatencyMillis = 112;
         int queryProcessorParserConsumeQueryLatencyMillis = 113;
         int queryProcessorQueryVisitorLatencyMillis = 114;
+        int numUnquantizedEmbeddingsScored = 115;
+        int numQuantizedEmbeddingsScored = 116;
+        int numEmbeddingShardsRead = 117;
+        long numEmbeddingBytesRead = 118L;
 
         SearchStats searchStats = new SearchStats.Builder()
                 .setNativeQueryLength(nativeQueryLength)
@@ -428,7 +448,12 @@ public class AppSearchStatsTest {
                 .setNativeQueryProcessorParserConsumeQueryLatencyMillis(
                         queryProcessorParserConsumeQueryLatencyMillis)
                 .setNativeQueryProcessorQueryVisitorLatencyMillis(
-                        queryProcessorQueryVisitorLatencyMillis).build();
+                        queryProcessorQueryVisitorLatencyMillis)
+                .setNativeNumUnquantizedEmbeddingsScored(numUnquantizedEmbeddingsScored)
+                .setNativeNumQuantizedEmbeddingsScored(numQuantizedEmbeddingsScored)
+                .setNativeNumEmbeddingShardsRead(numEmbeddingShardsRead)
+                .setNativeNumEmbeddingBytesRead(numEmbeddingBytesRead)
+                .build();
 
         int enabledFeatures = 1;
         int rewriteSearchSpecLatencyMillis = 202;
@@ -569,7 +594,9 @@ public class AppSearchStatsTest {
                 + "num_fetched_hits_integer_index=111,\n"
                 + "query_processor_lexer_extract_token_latency=112, "
                 + "query_processor_parser_consume_query_latency=113,\n"
-                + "query_processor_query_visitor_latency=114},\n"
+                + "query_processor_query_visitor_latency=114,\n"
+                + "num_unquantized_embeddings_scored=115, num_quantized_embeddings_scored=116, "
+                + "num_embedding_shards_read=117, num_embedding_bytes_read=118},\n"
                 + " child_search_stats=SearchStats {\n"
                 + "query_length=101, num_terms=102, num_namespaces_filtered=103, "
                 + "num_schema_types_filtered=104,\n"
@@ -579,7 +606,9 @@ public class AppSearchStatsTest {
                 + "num_fetched_hits_integer_index=111,\n"
                 + "query_processor_lexer_extract_token_latency=112, "
                 + "query_processor_parser_consume_query_latency=113,\n"
-                + "query_processor_query_visitor_latency=114}}";
+                + "query_processor_query_visitor_latency=114,\n"
+                + "num_unquantized_embeddings_scored=115, num_quantized_embeddings_scored=116, "
+                + "num_embedding_shards_read=117, num_embedding_bytes_read=118}}";
         assertThat(qStats.toString()).isEqualTo(expectedString);
         assertThat(qStats.getGetVmLatencyMillis()).isEqualTo(getVmLatencyMillis);
     }

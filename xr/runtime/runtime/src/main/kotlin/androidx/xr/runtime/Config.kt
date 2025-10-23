@@ -171,19 +171,16 @@ constructor(
         )
     }
 
-    // This is restricted to LIBRARY_GROUP_PREFIX because the API is implemented in ARCore.
     /** Describes a specific value used to set the configuration via [Session.configure]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public interface ConfigMode {
         /**
          * Queries whether the [ConfigMode] is supported and is available to be configured for the
-         * [session] via [Session.configure]. Attempting to configure this [ConfigMode] if it not
+         * [session] via [Session.configure]. Attempting to configure this [ConfigMode] if it is not
          * supported will result in [Session.configure] returning [UnsupportedOperationException].
          *
          * @param session the [Session] to check support for.
          * @return true if supported, else false.
          */
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
         public fun isSupported(session: Session): Boolean {
             return session.runtimes.map { it.isSupported(this) }.contains(true)
         }

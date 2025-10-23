@@ -1555,6 +1555,20 @@ public class RemoteComposeBuffer {
         BackgroundModifierOperation.apply(mBuffer, 0f, 0f, 0f, 0f, r, g, b, a, shape);
     }
 
+
+    /**
+     * Add a background modifier of provided color
+     *
+     * @param r the red value, possibly a remote float
+     * @param g the green value, possibly a remote float
+     * @param b the blue value, possibly a remote float
+     * @param a the alpha value, possibly a remote float
+     * @param shape the background shape -- SHAPE_RECTANGLE, SHAPE_CIRCLE
+     */
+    public void addModifierBackground(float r, float g, float b, float a, int shape) {
+        BackgroundModifierOperation.apply(mBuffer, 0f, 0f, 0f, 0f, r, g, b, a, shape);
+    }
+
     /**
      * Add an align modifier
      */

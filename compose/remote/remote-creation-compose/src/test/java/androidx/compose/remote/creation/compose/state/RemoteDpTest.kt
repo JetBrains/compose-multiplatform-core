@@ -82,6 +82,36 @@ class RemoteDpTest {
         assertThat(resultId).isEqualTo(resultDpId)
     }
 
+    @Test
+    fun toPx_hasDifferentFloatValueAsOriginalRemoteFloat() {
+        val floatValue = 10.5f
+        val density = 2f
+        val remoteFloatDp = RemoteDp(floatValue.rf)
+        val remoteFloatPx = remoteFloatDp.toPx()
+
+        context.density = density
+
+        val resultDpId = remoteFloatDp.value.getIdForCreationState(creationState)
+        val resultPxId = remoteFloatPx.getIdForCreationState(creationState)
+
+        makeAndPaintCoreDocument()
+
+        assertThat(context.getFloat(resultDpId)).isEqualTo(floatValue)
+        assertThat(context.getFloat(resultPxId)).isEqualTo(floatValue * density)
+    }
+
+    @Test
+    fun toPx_remoteFloatHasDifferentIdFromOriginal() {
+        val floatValue = 10.5f
+        val remoteFloatDp = RemoteDp(floatValue.rf)
+        val remoteFloatPx = remoteFloatDp.toPx()
+
+        val resultDpId = remoteFloatDp.value.getIdForCreationState(creationState)
+        val resultPxId = remoteFloatPx.getIdForCreationState(creationState)
+
+        assertThat(resultDpId).isNotEqualTo(resultPxId)
+    }
+
     private fun makeAndPaintCoreDocument() =
         CoreDocument().apply {
             val buffer = creationState.document.buffer

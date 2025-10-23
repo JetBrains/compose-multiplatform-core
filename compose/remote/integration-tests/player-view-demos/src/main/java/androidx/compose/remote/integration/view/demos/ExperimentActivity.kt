@@ -78,6 +78,7 @@ import androidx.compose.remote.integration.view.demos.examples.SwitchWidgetDemo
 import androidx.compose.remote.integration.view.demos.examples.WeatherDemo
 import androidx.compose.remote.integration.view.demos.examples.countDown
 import androidx.compose.remote.integration.view.demos.examples.cube3d
+import androidx.compose.remote.integration.view.demos.examples.shaderFireworks
 import androidx.compose.remote.integration.view.demos.utils.RCDoc
 import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.compose.remote.player.view.RemoteComposePlayer
@@ -247,6 +248,7 @@ class ExperimentActivity : ComponentActivity() {
                 ),
             "Procedural..." to
                 listOf(
+                    getpc("Fireworks") { shaderFireworks() },
                     getpc("Layout modifier 2") { LayoutModifierDemo2() },
                     getpc("Layout modifier 1") { LayoutModifierDemo1() },
                     getpc("Text baseline") { RcTextDemo() },

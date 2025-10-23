@@ -19,7 +19,7 @@ package androidx.xr.runtime
 import androidx.annotation.RestrictTo
 
 /** Capability APIs related to the display and rendering on XR devices. */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class XrDisplay {
 
     /**

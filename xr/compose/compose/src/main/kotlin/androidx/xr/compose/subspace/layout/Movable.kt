@@ -448,7 +448,7 @@ internal class MovableNode(
             )
         scaleFromMovement = scale
 
-        requestRelayout()
+        invalidatePlacement()
     }
 
     companion object {

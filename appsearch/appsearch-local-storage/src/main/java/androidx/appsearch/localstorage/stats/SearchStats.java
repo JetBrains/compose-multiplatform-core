@@ -66,6 +66,14 @@ public final class SearchStats {
     private final int mNativeQueryProcessorParserConsumeQueryLatencyMillis;
     /** Time used in QueryVisitor to visit and build (nested) DocHitInfoIterator. */
     private final int mNativeQueryProcessorQueryVisitorLatencyMillis;
+    /** Number of unquantized embeddings scored. */
+    private final int mNativeNumUnquantizedEmbeddingsScored;
+    /** Number of quantized embeddings scored. */
+    private final int mNativeNumQuantizedEmbeddingsScored;
+    /** Number of shards read from the embedding index. */
+    private final int mNativeNumEmbeddingShardsRead;
+    /** Number of raw embedding bytes read from the embedding index. */
+    private final long mNativeNumEmbeddingBytesRead;
 
     SearchStats(@NonNull Builder builder) {
         mNativeQueryLength = builder.mNativeQueryLength;
@@ -86,6 +94,10 @@ public final class SearchStats {
                 builder.mNativeQueryProcessorParserConsumeQueryLatencyMillis;
         mNativeQueryProcessorQueryVisitorLatencyMillis =
                 builder.mNativeQueryProcessorQueryVisitorLatencyMillis;
+        mNativeNumUnquantizedEmbeddingsScored = builder.mNativeNumUnquantizedEmbeddingsScored;
+        mNativeNumQuantizedEmbeddingsScored = builder.mNativeNumQuantizedEmbeddingsScored;
+        mNativeNumEmbeddingShardsRead = builder.mNativeNumEmbeddingShardsRead;
+        mNativeNumEmbeddingBytesRead = builder.mNativeNumEmbeddingBytesRead;
     }
 
     /** Returns the length of the search string. */
@@ -167,6 +179,26 @@ public final class SearchStats {
         return mNativeQueryProcessorQueryVisitorLatencyMillis;
     }
 
+    /** Returns number of unquantized embeddings scored. */
+    public int getNativeNumUnquantizedEmbeddingsScored() {
+        return mNativeNumUnquantizedEmbeddingsScored;
+    }
+
+    /** Returns number of quantized embeddings scored. */
+    public int getNativeNumQuantizedEmbeddingsScored() {
+        return mNativeNumQuantizedEmbeddingsScored;
+    }
+
+    /** Returns number of shards read from the embedding index. */
+    public int getNativeNumEmbeddingShardsRead() {
+        return mNativeNumEmbeddingShardsRead;
+    }
+
+    /** Returns number of raw embedding bytes read from the embedding index. */
+    public long getNativeNumEmbeddingBytesRead() {
+        return mNativeNumEmbeddingBytesRead;
+    }
+
     @NonNull
     @Override
     public String toString() {
@@ -180,7 +212,10 @@ public final class SearchStats {
                         + "num_fetched_hits_integer_index=%d,\n"
                         + "query_processor_lexer_extract_token_latency=%d, "
                         + "query_processor_parser_consume_query_latency=%d,\n"
-                        + "query_processor_query_visitor_latency=%d}",
+                        + "query_processor_query_visitor_latency=%d,\n"
+                        + "num_unquantized_embeddings_scored=%d, "
+                        + "num_quantized_embeddings_scored=%d, "
+                        + "num_embedding_shards_read=%d, num_embedding_bytes_read=%d}",
                 mNativeQueryLength,
                 mNativeNumTerms,
                 mNativeNumNamespacesFiltered,
@@ -195,7 +230,11 @@ public final class SearchStats {
                 mNativeNumFetchedHitsIntegerIndex,
                 mNativeQueryProcessorLexerExtractTokenLatencyMillis,
                 mNativeQueryProcessorParserConsumeQueryLatencyMillis,
-                mNativeQueryProcessorQueryVisitorLatencyMillis);
+                mNativeQueryProcessorQueryVisitorLatencyMillis,
+                mNativeNumUnquantizedEmbeddingsScored,
+                mNativeNumQuantizedEmbeddingsScored,
+                mNativeNumEmbeddingShardsRead,
+                mNativeNumEmbeddingBytesRead);
     }
 
     /** Builder for {@link SearchStats} */
@@ -216,6 +255,10 @@ public final class SearchStats {
         int mNativeQueryProcessorLexerExtractTokenLatencyMillis;
         int mNativeQueryProcessorParserConsumeQueryLatencyMillis;
         int mNativeQueryProcessorQueryVisitorLatencyMillis;
+        int mNativeNumUnquantizedEmbeddingsScored;
+        int mNativeNumQuantizedEmbeddingsScored;
+        int mNativeNumEmbeddingShardsRead;
+        long mNativeNumEmbeddingBytesRead;
 
         /** Sets length of the search string. */
         @CanIgnoreReturnValue
@@ -335,6 +378,38 @@ public final class SearchStats {
                 int nativeQueryProcessorQueryVisitorLatencyMillis) {
             mNativeQueryProcessorQueryVisitorLatencyMillis =
                     nativeQueryProcessorQueryVisitorLatencyMillis;
+            return this;
+        }
+
+        /** Sets number of unquantized embeddings scored. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeNumUnquantizedEmbeddingsScored(
+                int nativeNumUnquantizedEmbeddingsScored) {
+            mNativeNumUnquantizedEmbeddingsScored = nativeNumUnquantizedEmbeddingsScored;
+            return this;
+        }
+
+        /** Sets number of quantized embeddings scored. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeNumQuantizedEmbeddingsScored(
+                int nativeNumQuantizedEmbeddingsScored) {
+            mNativeNumQuantizedEmbeddingsScored = nativeNumQuantizedEmbeddingsScored;
+            return this;
+        }
+
+        /** Sets number of shards read from the embedding index. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeNumEmbeddingShardsRead(
+                int nativeNumEmbeddingShardsRead) {
+            mNativeNumEmbeddingShardsRead = nativeNumEmbeddingShardsRead;
+            return this;
+        }
+
+        /** Sets number of raw embedding bytes read from the embedding index. */
+        @CanIgnoreReturnValue
+        public @NonNull Builder setNativeNumEmbeddingBytesRead(
+                long nativeNumEmbeddingBytesRead) {
+            mNativeNumEmbeddingBytesRead = nativeNumEmbeddingBytesRead;
             return this;
         }
 

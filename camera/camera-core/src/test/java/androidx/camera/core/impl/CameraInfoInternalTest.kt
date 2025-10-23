@@ -67,7 +67,12 @@ internal class CameraInfoInternalTest {
             FakeCameraInfoInternal().apply {
                 setCameraUseCaseAdapterProvider(createFakeCameraUseCaseAdapterProvider())
             }
-        val supportedFrameRateRanges = cameraInfo.getSupportedFrameRateRanges(SessionConfig())
+        val supportedFrameRateRanges =
+            cameraInfo.getSupportedFrameRateRanges(
+                object : SessionConfig() {
+                    override val requireNonEmptyUseCases: Boolean = false
+                }
+            )
         assertThat(supportedFrameRateRanges)
             .containsExactlyElementsIn(cameraInfo.supportedFrameRateRanges)
     }
@@ -87,6 +92,7 @@ internal class CameraInfoInternalTest {
             cameraInfo.getSupportedFrameRateRanges(
                 object : SessionConfig() {
                     override val sessionType: Int = SESSION_TYPE_HIGH_SPEED
+                    override val requireNonEmptyUseCases: Boolean = false
                 }
             )
         assertThat(supportedFrameRateRanges).containsExactly(FPS_120_120, FPS_240_240)

@@ -49,7 +49,7 @@ import java.util.concurrent.Executor
  *
  * @sample androidx.camera.core.samples.configureSessionConfigWithFeatureGroups
  * @property useCases The list of [UseCase] to be attached to the camera and receive camera data.
- *   This can't be empty.
+ *   This cannot be empty.
  * @property viewPort The [ViewPort] to be applied on the camera session. If not set, the default is
  *   no viewport.
  * @property effects The list of [CameraEffect] to be applied on the camera session. If not set, the
@@ -78,7 +78,7 @@ import java.util.concurrent.Executor
  *   **video recording**, though it can lead to darker, noisier video in low light due to shorter
  *   exposure times.
  * @throws IllegalArgumentException If the combination of config options are conflicting or
- *   unsupported.
+ *   unsupported, or if the `useCases` list is empty.
  * @See androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  */
 @ExperimentalSessionConfig
@@ -97,6 +97,8 @@ constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val isLegacy: Boolean = false
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public open val sessionType: Int = SESSION_TYPE_REGULAR
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    internal open val requireNonEmptyUseCases: Boolean = true
 
     /**
      * Gets the feature selection listener set to this session config.
@@ -116,6 +118,9 @@ constructor(
         private set
 
     init {
+        if (requireNonEmptyUseCases) {
+            require(useCases.isNotEmpty()) { "SessionConfig must contain at least one UseCase." }
+        }
         validateFrameRate()
         validateFeatureGroups()
     }
@@ -403,6 +408,7 @@ public class LegacySessionConfig(
     effects: List<CameraEffect> = emptyList(),
 ) : SessionConfig(useCases, viewPort, effects) {
     public override val isLegacy: Boolean = true
+    public override val requireNonEmptyUseCases: Boolean = false
 
     public constructor(
         useCaseGroup: UseCaseGroup

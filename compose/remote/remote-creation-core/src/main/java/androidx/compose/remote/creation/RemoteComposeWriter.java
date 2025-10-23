@@ -3263,6 +3263,18 @@ public class RemoteComposeWriter {
     /**
      * Add a dynamic array
      *
+     * @param size
+     * @return
+     */
+    public float addDynamicFloatArray(float size) {
+        int id = createID(NanMap.TYPE_ARRAY);
+        mBuffer.addDynamicFloatArray(id, size);
+        return Utils.asNan(id);
+    }
+
+    /**
+     * Add a dynamic array
+     *
      * @param id
      * @param size
      * @return
@@ -3829,6 +3841,19 @@ public class RemoteComposeWriter {
      */
     public void addModifierBackground(int color, int shape) {
         mBuffer.addModifierBackground(color, shape);
+    }
+
+    /**
+     * Add a modifier background
+     *
+     * @param r the red value, possibly a remote float
+     * @param g the green value, possibly a remote float
+     * @param b the blue value, possibly a remote float
+     * @param a the alpha value, possibly a remote float
+     * @param shape the shape to set
+     */
+    public void addModifierBackground(float r, float g, float b, float a, int shape) {
+        mBuffer.addModifierBackground(r, g, b, a, shape);
     }
 
     /**

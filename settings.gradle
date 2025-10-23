@@ -115,7 +115,8 @@ develocity {
             hostname { host -> "unset" }
             ipAddresses { addresses -> addresses.collect { address -> "0.0.0.0"} }
         }
-        value("androidx.projects", getRequestedProjectSubsetName() ?: "Unset")
+        value("androidx.projects", getRequestedProjectSubsetName() ?: "unset")
+        value("androidx.projectPrefix", providers.environmentVariable("PROJECT_PREFIX").orElse("unset").get() )
         value("androidx.useMaxDepVersions", providers.gradleProperty("androidx.useMaxDepVersions").isPresent().toString())
 
         // Do not publish scan for androidx-platform-dev

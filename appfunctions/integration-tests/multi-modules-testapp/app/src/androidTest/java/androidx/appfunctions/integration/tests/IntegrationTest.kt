@@ -28,7 +28,10 @@ import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionManagerCompat
+import androidx.appfunctions.AppFunctionResourceContainer
+import androidx.appfunctions.AppFunctionResourceContainer.Companion.asAppFunctionResourceContainer
 import androidx.appfunctions.AppFunctionSearchSpec
+import androidx.appfunctions.AppFunctionTextResource
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.ExecuteAppFunctionResponse.Success.Companion.PROPERTY_RETURN_VALUE
@@ -39,6 +42,8 @@ import androidx.appfunctions.integration.tests.TestUtil.assertWriteAccessible
 import androidx.appfunctions.integration.tests.TestUtil.assertWriteInaccessible
 import androidx.appfunctions.integration.tests.TestUtil.doBlocking
 import androidx.appfunctions.integration.tests.TestUtil.retryAssert
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
@@ -121,12 +126,7 @@ class IntegrationTest {
             )
 
         val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
-        assertThat(
-                successResponse.returnValue.getLong(
-                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-                )
-            )
-            .isEqualTo(3)
+        assertThat(successResponse.returnValue.getLong(PROPERTY_RETURN_VALUE)).isEqualTo(3)
     }
 
     @Test
@@ -139,7 +139,7 @@ class IntegrationTest {
                 it.appFunctions
             }
 
-        assertThat(appFunctions).hasSize(21)
+        assertThat(appFunctions).hasSize(22)
     }
 
     @Test
@@ -355,12 +355,7 @@ class IntegrationTest {
         // If the enclosing class was created by the provided factory, the secondary constructor
         // should be called and so the return value would be `true`.
         val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
-        assertThat(
-                successResponse.returnValue.getBoolean(
-                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-                )
-            )
-            .isEqualTo(true)
+        assertThat(successResponse.returnValue.getBoolean(PROPERTY_RETURN_VALUE)).isEqualTo(true)
     }
 
     @Test
@@ -384,12 +379,7 @@ class IntegrationTest {
             )
 
         val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
-        assertThat(
-                successResponse.returnValue.getString(
-                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-                )
-            )
-            .isEqualTo("logcat")
+        assertThat(successResponse.returnValue.getString(PROPERTY_RETURN_VALUE)).isEqualTo("logcat")
     }
 
     @Test
@@ -474,7 +464,7 @@ class IntegrationTest {
             )
         assertThat(
                 successResponse.returnValue
-                    .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                    .getAppFunctionData(PROPERTY_RETURN_VALUE)
                     ?.deserialize(Note::class.java)
             )
             .isEqualTo(expectedNote)
@@ -521,7 +511,7 @@ class IntegrationTest {
             )
         assertThat(
                 successResponse.returnValue
-                    .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                    .getAppFunctionData(PROPERTY_RETURN_VALUE)
                     ?.deserialize(Note::class.java)
             )
             .isEqualTo(expectedNote)
@@ -569,7 +559,7 @@ class IntegrationTest {
         val openableNoteResult =
             assertIs<OpenableNote>(
                 successResponse.returnValue
-                    .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                    .getAppFunctionData(PROPERTY_RETURN_VALUE)
                     ?.deserialize(OpenableNote::class.java)
             )
 
@@ -659,7 +649,7 @@ class IntegrationTest {
 
         assertIs<LocalDateTime>(
             successResponse.returnValue
-                .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                .getAppFunctionData(PROPERTY_RETURN_VALUE)
                 ?.deserialize(DateTime::class.java)
                 ?.localDateTime
         )
@@ -688,7 +678,7 @@ class IntegrationTest {
         val androidUriResult =
             assertIs<Uri>(
                 successResponse.returnValue
-                    .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                    .getAppFunctionData(PROPERTY_RETURN_VALUE)
                     ?.deserialize(Uri::class.java)
             )
         assertThat(androidUriResult.toString()).isEqualTo("https://www.google.com/")
@@ -739,7 +729,7 @@ class IntegrationTest {
             )
         assertThat(
                 successResponse.returnValue
-                    .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                    .getAppFunctionData(PROPERTY_RETURN_VALUE)
                     ?.deserialize(Note::class.java)
             )
             .isEqualTo(expectedNote)
@@ -785,7 +775,7 @@ class IntegrationTest {
             )
         assertThat(
                 successResponse.returnValue
-                    .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                    .getAppFunctionData(PROPERTY_RETURN_VALUE)
                     ?.deserialize(Note::class.java)
             )
             .isEqualTo(expectedNote)
@@ -826,7 +816,7 @@ class IntegrationTest {
             )
         assertThat(
                 successResponse.returnValue
-                    .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                    .getAppFunctionData(PROPERTY_RETURN_VALUE)
                     ?.deserialize(Note::class.java)
             )
             .isEqualTo(expectedNote)
@@ -877,10 +867,7 @@ class IntegrationTest {
             )
 
         assertIs<ExecuteAppFunctionResponse.Success>(response)
-        val returnValue =
-            response.returnValue.getAppFunctionData(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-            )
+        val returnValue = response.returnValue.getAppFunctionData(PROPERTY_RETURN_VALUE)
         assertThat(returnValue).isNotNull()
         assertThat(checkNotNull(returnValue).getString("title")).isEqualTo("Test Title")
         assertThat(returnValue.getString("content")).isEqualTo("Test Content")
@@ -926,10 +913,7 @@ class IntegrationTest {
             )
 
         assertIs<ExecuteAppFunctionResponse.Success>(response)
-        val returnValue =
-            response.returnValue.getAppFunctionData(
-                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-            )
+        val returnValue = response.returnValue.getAppFunctionData(PROPERTY_RETURN_VALUE)
         assertThat(returnValue).isNotNull()
         val note = checkNotNull(returnValue).deserialize(LegacyNote::class.java)
         assertThat(note.title).isEqualTo("Test Title")
@@ -985,7 +969,7 @@ class IntegrationTest {
         assertIs<ExecuteAppFunctionResponse.Success>(response)
         val resultNote =
             response.returnValue
-                .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                .getAppFunctionData(PROPERTY_RETURN_VALUE)
                 ?.getAppFunctionData("createdNote")
         assertThat(resultNote?.getString("id")).isEqualTo("testId")
         assertThat(resultNote?.getString("title")).isEqualTo("Test Title")
@@ -1038,7 +1022,7 @@ class IntegrationTest {
         assertIs<ExecuteAppFunctionResponse.Success>(response)
         val resultNote =
             response.returnValue
-                .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                .getAppFunctionData(PROPERTY_RETURN_VALUE)
                 ?.getAppFunctionData("createdNote")
         assertThat(resultNote?.getString("id")).isEqualTo("testId")
         assertThat(resultNote?.getString("title")).isEqualTo("Test Title")
@@ -1093,7 +1077,7 @@ class IntegrationTest {
         assertIs<ExecuteAppFunctionResponse.Success>(response)
         val resultNote =
             response.returnValue
-                .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                .getAppFunctionData(PROPERTY_RETURN_VALUE)
                 ?.getAppFunctionData("createdNote")
         assertThrows(IllegalArgumentException::class.java) { resultNote?.getInt(("title")) }
     }
@@ -1227,11 +1211,7 @@ class IntegrationTest {
 
         val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
         assertThat(
-                checkNotNull(
-                        successResponse.returnValue.getAppFunctionData(
-                            ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-                        )
-                    )
+                checkNotNull(successResponse.returnValue.getAppFunctionData(PROPERTY_RETURN_VALUE))
                     .deserialize(ClassWithOptionalValues::class.java)
             )
             .isEqualTo(classWithOptionalValues)
@@ -1262,9 +1242,7 @@ class IntegrationTest {
             val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
             assertThat(
                     checkNotNull(
-                            successResponse.returnValue.getAppFunctionData(
-                                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-                            )
+                            successResponse.returnValue.getAppFunctionData(PROPERTY_RETURN_VALUE)
                         )
                         .deserialize(ClassWithOptionalValues::class.java)
                 )
@@ -1400,11 +1378,7 @@ class IntegrationTest {
 
         val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
         assertThat(
-                checkNotNull(
-                        successResponse.returnValue.getAppFunctionData(
-                            ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-                        )
-                    )
+                checkNotNull(successResponse.returnValue.getAppFunctionData(PROPERTY_RETURN_VALUE))
                     .deserialize(ClassWithOptionalValues::class.java)
             )
             .isEqualTo(
@@ -1467,9 +1441,7 @@ class IntegrationTest {
             val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
             assertThat(
                     checkNotNull(
-                            successResponse.returnValue.getAppFunctionData(
-                                ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-                            )
+                            successResponse.returnValue.getAppFunctionData(PROPERTY_RETURN_VALUE)
                         )
                         .deserialize(ClassWithOptionalValues::class.java)
                 )
@@ -1525,7 +1497,7 @@ class IntegrationTest {
         val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
         val filesData =
             successResponse.returnValue
-                .getAppFunctionData(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+                .getAppFunctionData(PROPERTY_RETURN_VALUE)
                 ?.deserialize(FilesData::class.java)
         assertThat(filesData).isNotNull()
         targetContext.assertReadAccessible(checkNotNull(filesData).readOnlyUri.uri)
@@ -1560,11 +1532,7 @@ class IntegrationTest {
         // Assert responseB is completed successfully
         val successResponse =
             assertIs<ExecuteAppFunctionResponse.Success>(responseBDeferred.await())
-        assertThat(
-                successResponse.returnValue.getString(
-                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE
-                )
-            )
+        assertThat(successResponse.returnValue.getString(PROPERTY_RETURN_VALUE))
             .isEqualTo("Completed")
     }
 
@@ -1609,6 +1577,92 @@ class IntegrationTest {
                 oneOfList.map { OneOfFunctions.OneOfSealedNestedSerializable(it) }
             )
     }
+
+    @Test
+    fun resourceFunction_usesResourceHolderAndAppFunctionTextResource_correctRepresentationAsAllOf() =
+        doBlocking {
+            val resourceFunctionMetadata =
+                findAppFunctionMetadata(ResourceFunctionsIds.TEXT_RESOURCE_FUNCTION_ID)
+
+            val responseValueType =
+                assertIs<AppFunctionReferenceTypeMetadata>(
+                    resourceFunctionMetadata.response.valueType
+                )
+            val resolvedResponseAllOfType =
+                assertIs<AppFunctionAllOfTypeMetadata>(
+                    resourceFunctionMetadata.components.dataTypes[
+                            responseValueType.referenceDataType]
+                )
+            assertThat(resolvedResponseAllOfType.matchAll)
+                .contains(
+                    AppFunctionObjectTypeMetadata(
+                        properties =
+                            mapOf(
+                                "resources" to
+                                    AppFunctionArrayTypeMetadata(
+                                        itemType =
+                                            AppFunctionReferenceTypeMetadata(
+                                                referenceDataType =
+                                                    "androidx.appfunctions.AppFunctionTextResource",
+                                                isNullable = false,
+                                                description = "",
+                                            ),
+                                        isNullable = false,
+                                        description = "",
+                                    )
+                            ),
+                        required = listOf("resources"),
+                        qualifiedName = "androidx.appfunctions.ResourceHolder",
+                        isNullable = true,
+                        description = "",
+                    )
+                )
+        }
+
+    @Test
+    fun resourceFunction_usesResourceHolderAndAppFunctionTextResource_readsResourceHolderInResponse_success() =
+        doBlocking {
+            val resourceFunctionMetadata =
+                findAppFunctionMetadata(ResourceFunctionsIds.TEXT_RESOURCE_FUNCTION_ID)
+            val request =
+                ExecuteAppFunctionRequest(
+                    targetPackageName = resourceFunctionMetadata.packageName,
+                    functionIdentifier = ResourceFunctionsIds.TEXT_RESOURCE_FUNCTION_ID,
+                    functionParameters =
+                        AppFunctionData.Builder(
+                                resourceFunctionMetadata.parameters,
+                                resourceFunctionMetadata.components,
+                            )
+                            .setString("text", "Hello World!")
+                            .build(),
+                )
+
+            val response = appFunctionManager.executeAppFunction(request)
+
+            val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
+            assertThat(
+                    successResponse.returnValue
+                        .getAppFunctionData(PROPERTY_RETURN_VALUE)
+                        ?.getString("stringValue")
+                )
+                .isEqualTo("Hello World!")
+            assertThat(
+                    successResponse.returnValue
+                        .getAppFunctionData(PROPERTY_RETURN_VALUE)
+                        ?.asAppFunctionResourceContainer()
+                )
+                .isEqualTo(
+                    object : AppFunctionResourceContainer {
+                        override val resources: List<AppFunctionTextResource> =
+                            listOf(
+                                AppFunctionTextResource(
+                                    mimeType = "text/plain",
+                                    content = "Hello World!",
+                                )
+                            )
+                    }
+                )
+        }
 
     @Test
     fun serializeAppFunctionSerializable_failsForInvalidValues() {

@@ -38,11 +38,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.platform.AndroidOwnerExtraAssertionsRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import junit.framework.TestCase.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertFalse
@@ -52,7 +57,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-class TogglePlacementInLookaheadScope {
+class TogglePlacementInLookaheadScopeTest {
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     @get:Rule val excessiveAssertions = AndroidOwnerExtraAssertionsRule()
@@ -116,6 +121,41 @@ class TogglePlacementInLookaheadScope {
         rule.waitForIdle()
         rule.runOnIdle { place = true }
         rule.waitForIdle()
+    }
+
+    @Test
+    fun togglePlacementInModifierAndVerifyLookaheadRootPlacement() {
+        var place by mutableStateOf(true)
+        var newChildAdded by mutableStateOf(false)
+        var layoutNode: LayoutNode? = null
+        rule.setContent {
+            LookaheadScope {
+                TestItem(
+                    newChildAdded,
+                    Modifier.layout { m, constraints ->
+                            val p = m.measure(constraints)
+                            layout(p.width, p.height) {
+                                if (place) {
+                                    p.place(0, 0)
+                                }
+                            }
+                        }
+                        .then(TestModifierNodeElement { layoutNode = it }),
+                )
+            }
+        }
+        rule.waitForIdle()
+        assertNotNull(layoutNode) { "TestItem LayoutNode cannot be null" }
+
+        assertEquals(true, layoutNode?.isPlaced)
+        assertEquals(true, layoutNode?.isPlacedInLookahead)
+
+        place = false
+        rule.waitForIdle()
+        // Check that both isPlaced and isPlacedInLookahead have been updated to false when
+        // skipping placement in the modifier
+        assertEquals(false, layoutNode?.isPlaced)
+        assertEquals(false, layoutNode?.isPlacedInLookahead)
     }
 
     @Test
@@ -282,6 +322,32 @@ class TogglePlacementInLookaheadScope {
                     Text(text = "Updated", modifier = badgeModifier)
                 }
             }
+        }
+    }
+
+    private data class TestModifierNodeElement(val onAttached: (LayoutNode) -> Unit) :
+        ModifierNodeElement<TestModifierNode>() {
+        override fun create(): TestModifierNode {
+            return TestModifierNode(onAttached)
+        }
+
+        override fun update(node: TestModifierNode) {
+            node.onAttached = onAttached
+        }
+    }
+
+    private class TestModifierNode(onAttached: (LayoutNode) -> Unit) : Modifier.Node() {
+        var onAttached: (LayoutNode) -> Unit = onAttached
+            set(value) {
+                if (isAttached) {
+                    value.invoke(requireLayoutNode())
+                }
+                field = value
+            }
+
+        override fun onAttach() {
+            super.onAttach()
+            onAttached(requireLayoutNode())
         }
     }
 }

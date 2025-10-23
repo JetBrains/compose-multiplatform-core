@@ -91,6 +91,7 @@ import org.gradle.api.artifacts.CacheableRule
 import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ExternalDependency
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Usage
 import org.gradle.api.configuration.BuildFeatures
@@ -332,13 +333,20 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         // Resolve unspecified Kotlin versions to the target version.
         // TODO(b/443037365): Remove when bug fixed as built-in Kotlin would handle this
         configurations.configureEach { configuration ->
-            configuration.resolutionStrategy { strategy ->
-                strategy.eachDependency { details ->
+            configuration.withDependencies { dependencySet ->
+                dependencySet.filterIsInstance<ExternalDependency>().forEach { dependency ->
                     if (
-                        details.requested.group == "org.jetbrains.kotlin" &&
-                            details.requested.version.isNullOrBlank()
+                        dependency.group == "org.jetbrains.kotlin" &&
+                            dependency.version.isNullOrEmpty()
                     ) {
-                        details.useVersion(kotlinVersionStringProvider.get())
+                        project.dependencies.constraints.add(
+                            configuration.name,
+                            dependency.module.toString(),
+                        ) {
+                            it.version { constraint ->
+                                constraint.require(kotlinVersionStringProvider.get())
+                            }
+                        }
                     }
                 }
             }

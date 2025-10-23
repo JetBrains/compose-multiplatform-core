@@ -943,7 +943,14 @@ public class AndroidPaintContext extends PaintContext {
                     for (int i = 0; i < names.length; i++) {
                         String name = names[i];
                         float[] val = data.getUniformFloats(name);
-                        shader.setFloatUniform(name, val);
+                        if (val.length == 1 && Float.isNaN(val[0])) {
+                            // check if dynamic array
+                            float[] values = mContext.getCollectionsAccess().getDynamicFloats(
+                                    Utils.idFromNan(val[0]));
+                            shader.setFloatUniform(name, values);
+                        } else {
+                            shader.setFloatUniform(name, val);
+                        }
                     }
                     names = data.getUniformIntegerNames();
                     for (int i = 0; i < names.length; i++) {

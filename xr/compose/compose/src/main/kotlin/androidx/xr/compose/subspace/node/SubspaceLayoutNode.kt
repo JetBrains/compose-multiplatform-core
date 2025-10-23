@@ -59,6 +59,15 @@ private val DefaultDensity = Density(1f)
  */
 internal class SubspaceLayoutNode : ComposeSubspaceNode {
     /**
+     * The layout state the node is currently in.
+     *
+     * [layoutState] may be read in other contexts to help determine if/when the node should be
+     * measured/placed, but can only be set by the node itself.
+     */
+    internal var layoutState: LayoutState = LayoutState.Idle
+        private set
+
+    /**
      * The children of this [SubspaceLayoutNode], controlled by [insertAt], [move], and [removeAt].
      */
     internal val children: MutableList<SubspaceLayoutNode> = mutableListOf()
@@ -72,6 +81,9 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     /** The element system [SubspaceOwner]. This value is `null` until [attach] is called */
     internal var owner: SubspaceOwner? = null
         private set
+
+    internal val isAttached: Boolean
+        get() = owner != null
 
     internal val nodes: SubspaceModifierNodeChain = SubspaceModifierNodeChain(this)
 
@@ -111,7 +123,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     internal var layoutDirection: LayoutDirection = LayoutDirection.Ltr
         private set
 
-    private var ignoreRelayoutRequests = false
+    private var ignoreMeasureRequests = false
 
     /**
      * This function sets up CoreEntity parent/child relationships that reflect the parent/child
@@ -236,7 +248,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         }
 
         nodes.runOnDetach()
-        ignoreRelayoutRequests { children.forEach { child -> child.detach() } }
+        ignoreMeasureRequests { children.forEach { child -> child.detach() } }
         nodes.markAsDetached()
         coreEntity?.dispose()
 
@@ -244,17 +256,21 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         this.owner = null
     }
 
-    private inline fun <T> ignoreRelayoutRequests(block: () -> T): T {
-        ignoreRelayoutRequests = true
+    private inline fun <T> ignoreMeasureRequests(block: () -> T): T {
+        ignoreMeasureRequests = true
         val result = block()
-        ignoreRelayoutRequests = false
+        ignoreMeasureRequests = false
         return result
     }
 
-    internal fun requestRelayout() {
-        if (!ignoreRelayoutRequests) {
-            owner?.requestRelayout()
+    internal fun requestMeasure() {
+        if (!ignoreMeasureRequests) {
+            owner?.requestMeasure(this)
         }
+    }
+
+    internal fun requestLayout() {
+        owner?.requestLayout(this)
     }
 
     override fun toString(): String {
@@ -307,6 +323,20 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         return treeString
     }
 
+    private val outerCoordinator
+        get() = nodes.getAll<SubspaceLayoutModifierNode>().firstOrNull()?.requireCoordinator()
+
+    /**
+     * Measures this layout node using the most recently provided constraints.
+     *
+     * Returns true if the measured size has changed.
+     */
+    internal fun remeasure(): Boolean =
+        outerCoordinator?.remeasure() ?: measurableLayout.remeasure()
+
+    /** Places this layout node using the most recently provided pose. */
+    internal fun replace() = outerCoordinator?.replace() ?: measurableLayout.replace()
+
     /**
      * A [SubspaceMeasurable] and [SubspacePlaceable] object that is used to measure and lay out the
      * children of this node.
@@ -315,8 +345,10 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
      */
     inner class SubspaceMeasurableLayout :
         SubspaceMeasurable, SubspaceLayoutCoordinates, SubspaceSemanticsInfo, SubspacePlaceable() {
-        private var layoutPose: Pose? = null
+
+        private var lastConstraints: VolumeConstraints? = null
         private var subspaceMeasureResult: SubspaceMeasureResult? = null
+        private var layoutPose: Pose? = null
 
         /** Unique ID used by semantics libraries. */
         override val semanticsId: Int = generateSemanticsId()
@@ -328,14 +360,20 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
          */
         val tail: SubspaceModifier.Node = TailModifierNode()
 
-        override fun measure(constraints: VolumeConstraints): SubspacePlaceable =
-            nodes.measureChain(constraints, ::measureJustThis)
+        override fun measure(constraints: VolumeConstraints): SubspacePlaceable {
+            layoutState = LayoutState.Measuring
+            val placeable = nodes.measureChain(constraints, ::measureJustThis)
+            layoutState = LayoutState.Idle
+            return placeable
+        }
 
         override fun adjustParams(params: ParentLayoutParamsAdjustable) {
             nodes.getAll<ParentLayoutParamsModifier>().forEach { it.adjustParams(params) }
         }
 
         private fun measureJustThis(constraints: VolumeConstraints): SubspacePlaceable {
+            lastConstraints = constraints
+
             subspaceMeasureResult =
                 with(measurePolicy) {
                     LayoutSubspaceMeasureScope(this@SubspaceLayoutNode)
@@ -353,11 +391,26 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         }
 
         /**
+         * Measures this layout node using the most recently provided constraints.
+         *
+         * Returns true if the measured size has changed.
+         */
+        internal fun remeasure(): Boolean {
+            return lastConstraints?.let {
+                val oldSize = size
+                measure(it)
+                oldSize != size
+            } ?: false
+        }
+
+        /**
          * Places the children of this node at the given pose.
          *
          * @param pose The pose to place the children at, with translation in pixels.
          */
         public override fun placeAt(pose: Pose) {
+            layoutState = LayoutState.LayingOut
+
             layoutPose = pose
 
             coreEntity?.applyCoreEntityNodes(nodes.getAll<CoreEntityNode>())
@@ -374,6 +427,13 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             nodes.getAll<LayoutCoordinatesAwareModifierNode>().forEach {
                 it.onLayoutCoordinates(this)
             }
+
+            layoutState = LayoutState.Idle
+        }
+
+        /** Places this layout node using the most recently provided pose. */
+        internal fun replace() {
+            layoutPose?.let { placeAt(it) }
         }
 
         override val pose: Pose
@@ -514,6 +574,20 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         /** Walk up the parent hierarchy to find the closest ancestor attached to a [CoreEntity]. */
         private fun findCoreEntityParent(node: SubspaceLayoutNode) =
             generateSequence(node.parent) { it.parent }.firstNotNullOfOrNull { it.coreEntity }
+    }
+
+    internal enum class LayoutState {
+        /** Node is currently being measured. */
+        Measuring,
+
+        /** Node is currently being laid out. */
+        LayingOut,
+
+        /**
+         * Node is not currently measuring or laying out. It could be pending measure or pending
+         * layout.
+         */
+        Idle,
     }
 }
 
