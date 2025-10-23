@@ -82,6 +82,8 @@ class ComposeContainerLifecycleOwnerTest {
                     window.extendedState = Frame.NORMAL
                     allEvents.waitFor(Lifecycle.Event.ON_START)
                     allEvents.waitFor(Lifecycle.Event.ON_RESUME)
+                } else {
+                    println("Setting ICONIFIED window state failed")
                 }
             } else {
                 println("ICONIFIED window state not supported")
