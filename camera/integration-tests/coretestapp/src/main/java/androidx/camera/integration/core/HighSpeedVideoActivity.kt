@@ -55,7 +55,6 @@ import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.Preview
 import androidx.camera.integration.core.button.FrameRateButton
 import androidx.camera.integration.core.button.VideoQualityButton
@@ -84,7 +83,7 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
 /** Activity for verifying behavior of high speed video recording. */
-@kotlin.OptIn(ExperimentalSessionConfig::class, ExperimentalHighSpeedVideo::class)
+@kotlin.OptIn(ExperimentalHighSpeedVideo::class)
 @SuppressLint("RestrictedApiAndroidX")
 class HighSpeedVideoActivity : AppCompatActivity() {
 

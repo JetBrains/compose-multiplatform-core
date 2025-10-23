@@ -17,7 +17,6 @@ package androidx.camera.core.impl
 
 import androidx.camera.core.CameraUseCaseAdapterProvider
 import androidx.camera.core.CompositionSettings
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.internal.CameraUseCaseAdapter
@@ -60,7 +59,6 @@ internal class CameraInfoInternalTest {
         cameraInfo.cameraSelector.filter(LinkedHashSet(cameras))
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun getSupportedFrameRateRanges_regularSession_returnAllFrameRateRanges() {
         val cameraInfo =
@@ -77,7 +75,6 @@ internal class CameraInfoInternalTest {
             .containsExactlyElementsIn(cameraInfo.supportedFrameRateRanges)
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun getSupportedFrameRateRanges_highSpeedSession_filterFixedFrameRateRanges() {
         val cameraInfo =

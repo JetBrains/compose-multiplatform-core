@@ -130,6 +130,10 @@ class EntityTest {
             return Pose()
         }
 
+        override fun getGravityAlignedPose(pose: Pose): Pose {
+            return pose
+        }
+
         override val activitySpacePose: Pose = Pose()
 
         override fun transformPoseTo(pose: Pose, destination: RtScenePose): Pose {
@@ -484,6 +488,25 @@ class EntityTest {
     }
 
     @Test
+    fun allEntityGetGravityAlignedPose_callsRuntimeEntityImplGetGravityAlignedPose() {
+        val pose = Pose.Identity
+        whenever(mockPanelEntityImpl.getGravityAlignedPose(pose)).thenReturn(Pose())
+        whenever(mockGltfModelEntityImpl.getGravityAlignedPose(pose)).thenReturn(Pose())
+        whenever(mockAnchorEntityImpl.getGravityAlignedPose(pose)).thenReturn(Pose())
+        whenever(mockActivityPanelEntity.getGravityAlignedPose(pose)).thenReturn(Pose())
+
+        assertThat(panelEntity.getGravityAlignedPose()).isEqualTo(pose)
+        assertThat(gltfModelEntity.getGravityAlignedPose()).isEqualTo(pose)
+        assertThat(anchorEntity.getGravityAlignedPose()).isEqualTo(pose)
+        assertThat(activityPanelEntity.getGravityAlignedPose()).isEqualTo(pose)
+
+        verify(mockPanelEntityImpl).getGravityAlignedPose(any())
+        verify(mockGltfModelEntityImpl).getGravityAlignedPose(any())
+        verify(mockAnchorEntityImpl).getGravityAlignedPose(any())
+        verify(mockActivityPanelEntity).getGravityAlignedPose(any())
+    }
+
+    @Test
     fun allEntitySetAlpha_callsRuntimeEntityImplSetAlpha() {
         val alpha = 0.1f
 
@@ -826,6 +849,17 @@ class EntityTest {
 
         assertThat(entity.activitySpacePose).isEqualTo(pose)
         verify(mockGroupEntity).activitySpacePose
+    }
+
+    @Test
+    fun groupEntity_canGetGravityAlignedPose() {
+        val pose = Pose.Identity
+        whenever(mockGroupEntity.getGravityAlignedPose(pose)).thenReturn(Pose())
+
+        val entity = GroupEntity.create(session, "test")
+
+        assertThat(entity.getGravityAlignedPose()).isEqualTo(pose)
+        verify(mockGroupEntity).getGravityAlignedPose(any())
     }
 
     @Test

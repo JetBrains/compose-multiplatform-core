@@ -61,6 +61,7 @@ fun Main(modifier: Modifier = Modifier) {
     var documentState by remember { mutableStateOf<RemoteComposeDocument?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
         RememberRemoteDocumentInline(
             onDocument = { doc ->
                 println("Document generated: $doc")

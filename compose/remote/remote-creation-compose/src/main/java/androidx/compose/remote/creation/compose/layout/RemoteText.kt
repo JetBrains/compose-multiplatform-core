@@ -39,7 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -56,7 +55,7 @@ import androidx.compose.ui.unit.sp
 public fun RemoteText(
     text: String,
     modifier: RemoteModifier = RemoteModifier,
-    color: RemoteColor = RemoteColor(Color.Black.toArgb()),
+    color: RemoteColor = RemoteColor(Color.Black),
     fontSize: TextUnit = TextUnit.Unspecified,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,
@@ -87,7 +86,7 @@ public fun RemoteText(
 public fun RemoteText(
     text: RemoteString,
     modifier: RemoteModifier = RemoteModifier,
-    color: RemoteColor = RemoteColor(Color.Black.toArgb()),
+    color: RemoteColor = RemoteColor(Color.Black),
     fontSize: TextUnit = TextUnit.Unspecified,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,
@@ -167,7 +166,7 @@ public class RemoteComposeTextComponentModifier(
 public fun RemoteText(
     text: RemoteString,
     modifier: RemoteModifier = RemoteModifier,
-    color: RemoteColor = RemoteColor(Color.Black.toArgb()),
+    color: RemoteColor = RemoteColor(Color.Black),
     fontSize: TextUnit = TextUnit.Unspecified,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,
@@ -223,7 +222,7 @@ public fun RemoteText(
             else -> -1
         }
     if (captureMode is NoRemoteCompose) {
-        @Suppress("DEPRECATION")
+        @Suppress("DEPRECATION", "COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
         Text(
             text = text.value,
             modifier = modifier.toComposeUi(),
@@ -237,6 +236,7 @@ public fun RemoteText(
             maxLines = maxLines,
         )
     } else {
+        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
         androidx.compose.foundation.layout.Box(
             RemoteComposeTextComponentModifier(
                     modifier.toRemoteCompose(),
@@ -260,7 +260,7 @@ public fun RemoteText(
 public fun RemoteText(
     textId: RemoteIntReference,
     modifier: RemoteModifier = RemoteModifier,
-    color: RemoteColor = RemoteColor(Color.Black.toArgb()),
+    color: RemoteColor = RemoteColor(Color.Black),
     fontSize: TextUnit = TextUnit.Unspecified,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,
@@ -316,7 +316,7 @@ public fun RemoteText(
             else -> -1
         }
     if (captureMode is NoRemoteCompose) {
-        @Suppress("DEPRECATION")
+        @Suppress("DEPRECATION", "COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
         Text(
             text = "XX",
             modifier = modifier.toComposeUi(),
@@ -330,6 +330,7 @@ public fun RemoteText(
             maxLines = maxLines,
         )
     } else {
+        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
         androidx.compose.foundation.layout.Box(
             RemoteComposeTextComponentModifier(
                     modifier.toRemoteCompose(),

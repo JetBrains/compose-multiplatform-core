@@ -59,7 +59,7 @@ import android.text.TextUtils;
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.MatrixAccess;
 import androidx.compose.remote.core.PaintContext;
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.ClipPath;
 import androidx.compose.remote.core.operations.ShaderData;
@@ -441,7 +441,7 @@ public class AndroidPaintContext extends PaintContext {
     }
 
     @Override
-    public Platform.@Nullable ComputedTextLayout layoutComplexText(
+    public RcPlatformServices.@Nullable ComputedTextLayout layoutComplexText(
             int textId,
             int start,
             int end,
@@ -522,7 +522,8 @@ public class AndroidPaintContext extends PaintContext {
     }
 
     @Override
-    public void drawComplexText(Platform.@Nullable ComputedTextLayout computedTextLayout) {
+    public void drawComplexText(
+            RcPlatformServices.@Nullable ComputedTextLayout computedTextLayout) {
         if (computedTextLayout == null) {
             return;
         }

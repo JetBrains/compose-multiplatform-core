@@ -24,7 +24,6 @@ import android.os.SystemClock
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.CameraXConfig
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.InitializationException
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
@@ -129,7 +128,6 @@ class ProcessCameraProviderTest {
     }
 
     @Test
-    @OptIn(ExperimentalSessionConfig::class)
     fun bindUseCasesOrSessionConfig_withNotExistedLensFacingCamera() = runTest {
         shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA, true)
         shadowPackageManager.setSystemFeature(PackageManager.FEATURE_CAMERA_FRONT, false)

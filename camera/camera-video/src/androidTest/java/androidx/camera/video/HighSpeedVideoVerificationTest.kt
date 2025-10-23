@@ -34,7 +34,6 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.utils.TransformUtils.rotateSize
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -157,7 +156,6 @@ class HighSpeedVideoVerificationTest(
     private lateinit var preview: Preview
     private lateinit var videoCapture: VideoCapture<Recorder>
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Before
     fun setUp() {
         assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
@@ -237,7 +235,6 @@ class HighSpeedVideoVerificationTest(
     }
 
     @SuppressLint("BanThreadSleep")
-    @OptIn(ExperimentalSessionConfig::class)
     private fun testRecording(isSlowMotionEnabled: Boolean = false) {
         // Arrange.
         val highSpeedVideoConfig =

@@ -19,9 +19,9 @@ package androidx.compose.remote.creation
 
 import android.graphics.Bitmap
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.core.Platform
-import androidx.compose.remote.creation.profile.PlatformProfile
+import androidx.compose.remote.core.RcPlatformServices
 import androidx.compose.remote.creation.profile.Profile
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 
 public class RemoteComposeContextAndroid : RemoteComposeContext {
 
@@ -37,7 +37,7 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
         width: Int,
         height: Int,
         contentDescription: String,
-        platform: Platform,
+        platform: RcPlatformServices,
         content: RemoteComposeContextAndroid.() -> Unit,
     ) : super(RemoteComposeWriterAndroid(width, height, contentDescription, platform)) {
         content()
@@ -49,7 +49,7 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
         contentDescription: String,
         apiLevel: Int,
         profiles: Int,
-        platform: Platform,
+        platform: RcPlatformServices,
         content: RemoteComposeContextAndroid.() -> Unit,
     ) : super(
         RemoteComposeWriterAndroid(width, height, contentDescription, apiLevel, profiles, platform)
@@ -61,14 +61,14 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
         width: Int,
         height: Int,
         contentDescription: String,
-        profile: Profile = PlatformProfile.ANDROIDX,
+        profile: Profile = RcPlatformProfiles.ANDROIDX,
         content: RemoteComposeContextAndroid.() -> Unit,
     ) : super(width, height, contentDescription, profile) {
         content()
     }
 
     public constructor(
-        platform: Platform,
+        platform: RcPlatformServices,
         vararg tags: RemoteComposeWriter.HTag,
         content: RemoteComposeContextAndroid.() -> Unit,
     ) : super(RemoteComposeWriterAndroid(platform, *tags)) {

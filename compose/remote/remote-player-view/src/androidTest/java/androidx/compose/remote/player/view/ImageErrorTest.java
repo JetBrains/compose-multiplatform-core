@@ -21,14 +21,14 @@ import static org.junit.Assert.assertTrue;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.creation.RemoteComposeContext;
 import androidx.compose.remote.creation.RemoteComposeContextAndroid;
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
 import androidx.compose.remote.player.core.RemoteComposeDocument;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -49,7 +49,7 @@ import java.util.Random;
 @RunWith(AndroidJUnit4.class)
 public class ImageErrorTest {
 
-    private final Platform mPlatform = new AndroidxPlatformServices();
+    private final RcPlatformServices mPlatform = new AndroidxRcPlatformServices();
 
     // ########################### TEST UTILS ######################################
     private RemoteComposeDocument createDocument(

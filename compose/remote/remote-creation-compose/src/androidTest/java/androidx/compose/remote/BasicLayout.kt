@@ -80,7 +80,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalDensity
@@ -500,6 +499,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                             modifier =
                                 RemoteModifier.background(Color.Black).fillMaxWidth().height(30.dp)
                         ) {
+                            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
                             Text("Hello, World", color = Color.White)
                         }
                     }
@@ -508,6 +508,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                             modifier =
                                 RemoteModifier.width(32.dp).height(10.dp).background(Color.Blue)
                         )
+                        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
                         CaptureAsBitmap(onCapture = { it.value = true }) {
                             Column(modifier = RemoteModifier.background(Color.Yellow)) {
                                 Text("🏄 🐶 élo! 🥳")
@@ -575,7 +576,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val text = rememberRemoteString("test") { "Bonjour le monde!" }
-                val white = RemoteColor(Color.White.toArgb())
+                val white = RemoteColor(Color.White)
 
                 RemoteRow(
                     modifier = RemoteModifier.background(Color.LightGray),
@@ -671,7 +672,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val text = rememberRemoteString("plop") { "Bonjour Le Monde!" }
-                val white = RemoteColor(Color.White.toArgb())
+                val white = RemoteColor(Color.White)
 
                 RemoteText(
                     text,
@@ -1043,6 +1044,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
       BACKGROUND = [0.0, 0.0, 825.0, 55.0] color [1.0, 1.0, 0.0, 1.0] shape [0]
 """
         testLayout(result) {
+            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
             Column {
                 Row(modifier = RemoteModifier.background(Color.Cyan).height(IntrinsicSize.Min)) {
                     Box(
@@ -1096,7 +1098,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                     RemoteModifier.fillMaxSize()
                         .background(RemoteBrush.radialGradient(colors = colors))
             ) {
-                val green = RemoteColor(Color.Green.toArgb())
+                val green = RemoteColor(Color.Green)
                 RemoteText("Green", color = green, fontSize = 30.sp)
             }
         }
@@ -1112,6 +1114,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
     ) {
         val captureMode = LocalRemoteComposeCreationState.current
         if (true || captureMode is NoRemoteCompose) {
+            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
             Icon(
                 imageVector = icon,
                 contentDescription = null,

@@ -59,7 +59,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.remote.core.CoreDocument
-import androidx.compose.remote.core.Profiles.PROFILE_WIDGETS
+import androidx.compose.remote.core.RcProfiles.PROFILE_WIDGETS
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.operations.Theme
 import androidx.compose.remote.creation.RemoteComposeContext

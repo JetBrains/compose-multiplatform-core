@@ -191,13 +191,34 @@ public class Head private constructor(rtScenePose: RtHeadScenePose) :
  * PerceptionSpace is an [ScenePose] used to track the origin of the space used by ARCore for
  * Jetpack XR APIs.
  */
-public class PerceptionSpace private constructor(rtScenePose: RtPerceptionSpaceScenePose) :
-    BaseScenePose<RtPerceptionSpaceScenePose>(rtScenePose) {
+public class PerceptionSpace private constructor(private val sceneRuntime: SceneRuntime) :
+    BaseScenePose<RtPerceptionSpaceScenePose>(sceneRuntime.perceptionSpaceActivityPose) {
+
+    /**
+     * Returns a [ScenePose] from a [Pose] relative to this [PerceptionSpace].
+     *
+     * @param pose a Pose relative to the perceptionSpace.
+     * @return a ScenePose containing the position in the [PerceptionSpace].
+     */
+    public fun getScenePoseFromPerceptionPose(pose: Pose): ScenePose {
+        return PerceptionScenePose.create(sceneRuntime, pose)
+    }
 
     internal companion object {
 
         /** Factory function for creating [PerceptionSpace] instance. */
         internal fun create(sceneRuntime: SceneRuntime): PerceptionSpace =
-            PerceptionSpace(sceneRuntime.perceptionSpaceActivityPose)
+            PerceptionSpace(sceneRuntime)
+    }
+}
+
+/** A ScenePose that is created based on a position in [PerceptionSpace]. */
+internal class PerceptionScenePose private constructor(rtScenePose: RtScenePose) :
+    BaseScenePose<RtScenePose>(rtScenePose) {
+
+    internal companion object {
+        /** Factory function for creating PerceptionScenePose instance. */
+        internal fun create(sceneRuntime: SceneRuntime, pose: Pose): ScenePose =
+            PerceptionScenePose(sceneRuntime.getScenePoseFromPerceptionPose(pose))
     }
 }

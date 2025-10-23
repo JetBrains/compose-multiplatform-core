@@ -28,7 +28,6 @@ import androidx.appfunctions.AppFunctionData
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
 import androidx.appfunctions.AppFunctionInvalidArgumentException
 import androidx.appfunctions.AppFunctionManagerCompat
-import androidx.appfunctions.AppFunctionResourceContainer
 import androidx.appfunctions.AppFunctionResourceContainer.Companion.asAppFunctionResourceContainer
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.AppFunctionTextResource
@@ -1546,7 +1545,7 @@ class IntegrationTest {
             )
         val request =
             ExecuteAppFunctionRequest(
-                targetPackageName = context.packageName,
+                targetPackageName = oneOfFunctionMetadata.packageName,
                 functionIdentifier = OneOfFunctionsIds.ONE_OF_FUNCTION_ID,
                 functionParameters =
                     AppFunctionData.Builder(
@@ -1581,6 +1580,7 @@ class IntegrationTest {
     @Test
     fun resourceFunction_usesResourceHolderAndAppFunctionTextResource_correctRepresentationAsAllOf() =
         doBlocking {
+            assumeTrue(isDynamicIndexerAvailable(context))
             val resourceFunctionMetadata =
                 findAppFunctionMetadata(ResourceFunctionsIds.TEXT_RESOURCE_FUNCTION_ID)
 
@@ -1612,7 +1612,7 @@ class IntegrationTest {
                                     )
                             ),
                         required = listOf("resources"),
-                        qualifiedName = "androidx.appfunctions.ResourceHolder",
+                        qualifiedName = "androidx.appfunctions.AppFunctionResourceContainer",
                         isNullable = true,
                         description = "",
                     )
@@ -1622,6 +1622,7 @@ class IntegrationTest {
     @Test
     fun resourceFunction_usesResourceHolderAndAppFunctionTextResource_readsResourceHolderInResponse_success() =
         doBlocking {
+            assumeTrue(isDynamicIndexerAvailable(context))
             val resourceFunctionMetadata =
                 findAppFunctionMetadata(ResourceFunctionsIds.TEXT_RESOURCE_FUNCTION_ID)
             val request =
@@ -1650,17 +1651,10 @@ class IntegrationTest {
                     successResponse.returnValue
                         .getAppFunctionData(PROPERTY_RETURN_VALUE)
                         ?.asAppFunctionResourceContainer()
+                        ?.resources
                 )
-                .isEqualTo(
-                    object : AppFunctionResourceContainer {
-                        override val resources: List<AppFunctionTextResource> =
-                            listOf(
-                                AppFunctionTextResource(
-                                    mimeType = "text/plain",
-                                    content = "Hello World!",
-                                )
-                            )
-                    }
+                .containsExactly(
+                    AppFunctionTextResource(mimeType = "text/plain", content = "Hello World!")
                 )
         }
 

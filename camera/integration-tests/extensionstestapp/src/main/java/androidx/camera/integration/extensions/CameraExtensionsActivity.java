@@ -85,7 +85,6 @@ import androidx.camera.core.Camera;
 import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.FocusMeteringAction;
 import androidx.camera.core.FocusMeteringResult;
 import androidx.camera.core.ImageCapture;
@@ -277,7 +276,7 @@ public class CameraExtensionsActivity extends AppCompatActivity
         } while (!bindUseCasesWithCurrentExtensionMode());
     }
 
-    @OptIn(markerClass = {ExperimentalCamera2Interop.class, ExperimentalSessionConfig.class})
+    @OptIn(markerClass = {ExperimentalCamera2Interop.class})
     boolean bindUseCasesWithCurrentExtensionMode() {
         if (!mExtensionsManager.isExtensionAvailable(mCurrentCameraSelector,
                 mCurrentExtensionMode)) {

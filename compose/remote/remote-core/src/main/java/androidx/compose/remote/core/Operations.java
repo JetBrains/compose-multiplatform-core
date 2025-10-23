@@ -15,11 +15,11 @@
  */
 package androidx.compose.remote.core;
 
-import static androidx.compose.remote.core.Profiles.PROFILE_ANDROIDX;
-import static androidx.compose.remote.core.Profiles.PROFILE_ANDROID_NATIVE;
-import static androidx.compose.remote.core.Profiles.PROFILE_DEPRECATED;
-import static androidx.compose.remote.core.Profiles.PROFILE_EXPERIMENTAL;
-import static androidx.compose.remote.core.Profiles.PROFILE_WIDGETS;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_ANDROIDX;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_ANDROID_NATIVE;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_DEPRECATED;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_EXPERIMENTAL;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_WIDGETS;
 
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.BitmapData;

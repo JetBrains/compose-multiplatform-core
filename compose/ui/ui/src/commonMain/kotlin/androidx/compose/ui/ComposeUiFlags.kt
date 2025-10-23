@@ -163,6 +163,9 @@ object ComposeUiFlags {
     @JvmField
     var isIndirectPointerNavigationGestureDetectorEnabled: Boolean = true
 
+    /** Flag enables optimized focus change dispatching logic. */
+    @Suppress("MutableBareField") @JvmField var isOptimizedFocusEventDispatchEnabled: Boolean = true
+
     /** This flag enables setting the shape semantics property in the graphicsLayer modifiers. */
     @Suppress("MutableBareField") @JvmField var isGraphicsLayerShapeSemanticsEnabled: Boolean = true
 

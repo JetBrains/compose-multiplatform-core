@@ -52,7 +52,7 @@ public final class SearchStats {
     private final int mNativeParseQueryLatencyMillis;
     /** Time used to score the raw results. */
     private final int mNativeScoringLatencyMillis;
-    /**Whether it contains numeric query or not.*/
+    /** Whether it contains numeric query or not. */
     private final boolean mNativeIsNumericQuery;
     /** Number of hits fetched by lite index before applying any filters. */
     private final int mNativeNumFetchedHitsLiteIndex;
@@ -60,7 +60,7 @@ public final class SearchStats {
     private final int mNativeNumFetchedHitsMainIndex;
     /** Number of hits fetched by integer index before applying any filters. */
     private final int mNativeNumFetchedHitsIntegerIndex;
-    /**Time used in Lexer to extract lexer tokens from the query. */
+    /** Time used in Lexer to extract lexer tokens from the query. */
     private final int mNativeQueryProcessorLexerExtractTokenLatencyMillis;
     /** Time used in Parser to consume lexer tokens extracted from the query. */
     private final int mNativeQueryProcessorParserConsumeQueryLatencyMillis;
@@ -204,18 +204,26 @@ public final class SearchStats {
     public String toString() {
         return String.format(
                 "SearchStats {\n"
-                        + "query_length=%d, num_terms=%d, num_namespaces_filtered=%d, "
-                        + "num_schema_types_filtered=%d,\n"
-                        + "ranking_strategy=%d, num_docs_scored=%d, parse_query_latency=%d, "
-                        + "scoring_latency=%d, is_numeric_query=%b,\n"
-                        + "num_fetched_hits_lite_index=%d, num_fetched_hits_main_index=%d, "
-                        + "num_fetched_hits_integer_index=%d,\n"
-                        + "query_processor_lexer_extract_token_latency=%d, "
-                        + "query_processor_parser_consume_query_latency=%d,\n"
-                        + "query_processor_query_visitor_latency=%d,\n"
-                        + "num_unquantized_embeddings_scored=%d, "
-                        + "num_quantized_embeddings_scored=%d, "
-                        + "num_embedding_shards_read=%d, num_embedding_bytes_read=%d}",
+                        + "  nativeQueryLength=%d,\n"
+                        + "  nativeNumTerms=%d,\n"
+                        + "  nativeNumNamespacesFiltered=%d,\n"
+                        + "  nativeNumSchemaTypesFiltered=%d,\n"
+                        + "  nativeRankingStrategy=%d,\n"
+                        + "  nativeNumDocumentsScored=%d,\n"
+                        + "  nativeParseQueryLatencyMillis=%d,\n"
+                        + "  nativeScoringLatencyMillis=%d,\n"
+                        + "  nativeIsNumericQuery=%b,\n"
+                        + "  nativeNumFetchedHitsLiteIndex=%d,\n"
+                        + "  nativeNumFetchedHitsMainIndex=%d,\n"
+                        + "  nativeNumFetchedHitsIntegerIndex=%d,\n"
+                        + "  nativeQueryProcessorLexerExtractTokenLatencyMillis=%d,\n"
+                        + "  nativeQueryProcessorParserConsumeQueryLatencyMillis=%d,\n"
+                        + "  nativeQueryProcessorQueryVisitorLatencyMillis=%d\n"
+                        + "  nativeNumUnquantizedEmbeddingsScored=%d\n"
+                        + "  nativeNumQuantizedEmbeddingsScored=%d\n"
+                        + "  nativeNumEmbeddingShardsRead=%d\n"
+                        + "  nativeNumEmbeddingBytesRead=%d\n"
+                        + "}",
                 mNativeQueryLength,
                 mNativeNumTerms,
                 mNativeNumNamespacesFiltered,

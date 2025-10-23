@@ -27,11 +27,11 @@ import android.graphics.Rect;
 import android.graphics.Shader;
 import android.os.Environment;
 
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.WireBuffer;
 import androidx.compose.remote.creation.RemoteComposeContextAndroid;
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
 import androidx.compose.remote.creation.profile.Profile;
 import androidx.compose.remote.player.core.RemoteComposeDocument;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
@@ -46,7 +46,7 @@ import java.text.DecimalFormat;
 
 public class TestUtils {
 
-    private static final Platform sPlatform = new AndroidxPlatformServices();
+    private static final RcPlatformServices sPlatform = new AndroidxRcPlatformServices();
 
     static String getMethodName() {
         return getMethodName(2);

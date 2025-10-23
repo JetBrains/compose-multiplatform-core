@@ -76,9 +76,9 @@ internal interface LayoutStrategy : Parcelable {
      *
      * @param viewport The current visible viewport (used as context for certain layouts).
      * @param pageNum The zero-based index of the page to locate.
-     * @param pageDimensions An array containing the dimensions of all pages in the document.
+     * @param pageDimension The dimension of [pageNum] in the document.
      * @return A [RectF] defining the page's position (left, top, right, bottom) within the content
      *   area.
      */
-    fun getPageLocation(viewport: RectF, pageNum: Int, pageDimensions: Array<Dimension>): RectF
+    fun getPageLocation(viewport: RectF, pageNum: Int, pageDimension: Dimension): RectF
 }

@@ -48,7 +48,7 @@ import static androidx.compose.remote.core.operations.utilities.IntegerExpressio
 
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteComposeBuffer;
 import androidx.compose.remote.core.RemoteComposeState;
 import androidx.compose.remote.core.RemoteContext;
@@ -87,7 +87,7 @@ import java.util.Map;
 public class RemoteComposeWriter {
     protected @NonNull RemoteComposeBuffer mBuffer;
     protected @NonNull RemoteComposeState mState = new RemoteComposeState();
-    protected @NonNull Platform mPlatform;
+    protected @NonNull RcPlatformServices mPlatform;
     private int mOriginalWidth = 0;
     private int mOriginalHeight = 0;
     private @NonNull String mContentDescription = "";
@@ -135,7 +135,8 @@ public class RemoteComposeWriter {
      * @param platform the platform to use
      */
     public RemoteComposeWriter(
-            int width, int height, @NonNull String contentDescription, @NonNull Platform platform) {
+            int width, int height, @NonNull String contentDescription,
+            @NonNull RcPlatformServices platform) {
         this.mPlatform = platform;
         mBuffer = new RemoteComposeBuffer();
         header(width, height, contentDescription, 1f, 0);
@@ -160,7 +161,7 @@ public class RemoteComposeWriter {
             @NonNull String contentDescription,
             int apilLevel,
             int profiles,
-            @NonNull Platform platform) {
+            @NonNull RcPlatformServices platform) {
         this(
                 platform,
                 apilLevel,
@@ -177,7 +178,8 @@ public class RemoteComposeWriter {
      * @param apiLevel document api level
      * @param tags properties of the document
      */
-    public RemoteComposeWriter(@NonNull Platform platform, int apiLevel, HTag @NonNull ... tags) {
+    public RemoteComposeWriter(@NonNull RcPlatformServices platform, int apiLevel,
+            HTag @NonNull ... tags) {
         this.mPlatform = platform;
         mBuffer = new RemoteComposeBuffer(apiLevel);
 
@@ -214,7 +216,7 @@ public class RemoteComposeWriter {
      * @param platform the platform to use
      * @param tags properties of the document
      */
-    public RemoteComposeWriter(@NonNull Platform platform, HTag @NonNull ... tags) {
+    public RemoteComposeWriter(@NonNull RcPlatformServices platform, HTag @NonNull ... tags) {
         this(platform, CoreDocument.DOCUMENT_API_LEVEL, tags);
     }
 

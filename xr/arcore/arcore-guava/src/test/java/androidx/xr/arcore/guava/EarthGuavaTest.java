@@ -262,7 +262,7 @@ public class EarthGuavaTest {
                         mSession =
                                 ((SessionCreateSuccess) Session.create(activity, mTestDispatcher))
                                         .getSession();
-                        mXrResourcesManager.setLifecycleManager$arcore_release(
+                        mXrResourcesManager.setLifecycleManager$arcore(
                                 SessionExtKt.getPerceptionRuntime(mSession).getLifecycleManager());
                         mSession.configure(
                                 new Config(

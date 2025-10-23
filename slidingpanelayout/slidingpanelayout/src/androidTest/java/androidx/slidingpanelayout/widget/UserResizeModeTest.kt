@@ -214,7 +214,7 @@ class UserResizeModeTest {
 
                 override fun setColorFilter(colorFilter: ColorFilter?) {}
 
-                @Suppress("DeprecatedCallableAddReplaceWith")
+                @Suppress("DeprecatedCallableAddReplaceWith", "OVERRIDE_DEPRECATION")
                 @Deprecated("Deprecated in Java")
                 override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 
@@ -644,7 +644,7 @@ class UserResizeModeTest {
 
                 override fun setColorFilter(colorFilter: ColorFilter?) {}
 
-                override fun getOpacity(): Int = 0
+                @Suppress("OVERRIDE_DEPRECATION") override fun getOpacity(): Int = 0
 
                 override fun onStateChange(state: IntArray): Boolean {
                     drawableState = state

@@ -22,7 +22,7 @@ import android.util.Log
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.Theme
 import androidx.compose.remote.creation.RemoteComposeContextAndroid
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.RemoteComposeDocument
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
@@ -85,7 +85,7 @@ class DisplayDocumentTest {
         val darkImage = createImage(tw, th, true)
 
         val doc =
-            RemoteComposeContextAndroid(tw, th, "Demo", AndroidxPlatformServices()) {
+            RemoteComposeContextAndroid(tw, th, "Demo", AndroidxRcPlatformServices()) {
                 setTheme(Theme.LIGHT)
                 drawBitmap(lightImage, "Light Mode")
                 setTheme(Theme.DARK)

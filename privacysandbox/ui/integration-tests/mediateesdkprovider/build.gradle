@@ -20,6 +20,7 @@ import com.google.devtools.ksp.gradle.KspAATask
 plugins {
     id("AndroidXPlugin")
     id("androidx.privacysandboxplugin")
+    // Remove when b/442128557 is fixed
     id("org.jetbrains.kotlin.android")
 }
 

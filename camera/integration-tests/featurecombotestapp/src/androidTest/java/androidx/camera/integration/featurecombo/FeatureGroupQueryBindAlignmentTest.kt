@@ -23,7 +23,6 @@ import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.integration.featurecombo.FeatureGroupQueryBindAlignmentTest.VerificationScenario.PREFERRED_FEATURES
@@ -39,7 +38,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalSessionConfig::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class FeatureGroupQueryBindAlignmentTest(
@@ -181,7 +179,6 @@ class FeatureGroupQueryBindAlignmentTest(
     companion object {
         private const val TAG = "FeatureGroupQueryBindAlignmentTest"
 
-        @OptIn(ExperimentalSessionConfig::class)
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =

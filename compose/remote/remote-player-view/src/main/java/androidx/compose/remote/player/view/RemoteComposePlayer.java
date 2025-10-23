@@ -65,6 +65,7 @@ import java.io.InputStream;
  * passing sensor values, etc.). It also exposes player APIs that allows to control how the document
  * is displayed as well as reacting to document events.
  */
+@RestrictTo(LIBRARY_GROUP)
 public class RemoteComposePlayer extends FrameLayout implements RemoteContextActions {
 
     private static final int MAX_SUPPORTED_MAJOR_VERSION = MAJOR_VERSION;

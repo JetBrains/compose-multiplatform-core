@@ -19,11 +19,23 @@ package androidx.compose.remote.integration.view.demos.examples
 import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.graphics.Paint
-import androidx.compose.remote.core.Profiles
+import androidx.compose.remote.core.RcProfiles
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.Utils.idFromNan
-import androidx.compose.remote.creation.*
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices
+import androidx.compose.remote.creation.RFloat
+import androidx.compose.remote.creation.RemoteComposeContext
+import androidx.compose.remote.creation.RemoteComposeContextAndroid
+import androidx.compose.remote.creation.RemoteComposeWriterAndroid
+import androidx.compose.remote.creation.component6
+import androidx.compose.remote.creation.cos
+import androidx.compose.remote.creation.createParticles
+import androidx.compose.remote.creation.deltaTime
+import androidx.compose.remote.creation.ifElse
+import androidx.compose.remote.creation.index
+import androidx.compose.remote.creation.particlesLoops
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
+import androidx.compose.remote.creation.round
+import androidx.compose.remote.creation.sin
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 
@@ -102,8 +114,8 @@ fun shaderFireworks(): RemoteComposeContext {
         800,
         "Clock",
         7,
-        Profiles.PROFILE_ANDROIDX,
-        AndroidxPlatformServices(),
+        RcProfiles.PROFILE_ANDROIDX,
+        AndroidxRcPlatformServices(),
     ) {
         root {
             box(Modifier.fillMaxSize()) {

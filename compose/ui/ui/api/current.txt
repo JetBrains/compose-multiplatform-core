@@ -152,6 +152,7 @@ package androidx.compose.ui {
     property public boolean isInitialFocusOnFocusableAvailable;
     property public boolean isNestedScrollInteropIntegerPropagationEnabled;
     property @Deprecated public boolean isNoPinningInFocusRestorationEnabled;
+    property public boolean isOptimizedFocusEventDispatchEnabled;
     property public boolean isPre26FocusFinderFixEnabled;
     property public boolean isRectManagerOffsetUsageFromLayoutCoordinatesEnabled;
     property @Deprecated public boolean isRemoveFocusedViewFixEnabled;
@@ -172,6 +173,7 @@ package androidx.compose.ui {
     field public static boolean isInitialFocusOnFocusableAvailable;
     field public static boolean isNestedScrollInteropIntegerPropagationEnabled;
     field @Deprecated public static boolean isNoPinningInFocusRestorationEnabled;
+    field public static boolean isOptimizedFocusEventDispatchEnabled;
     field public static boolean isPre26FocusFinderFixEnabled;
     field public static boolean isRectManagerOffsetUsageFromLayoutCoordinatesEnabled;
     field @Deprecated public static boolean isRemoveFocusedViewFixEnabled;
@@ -2995,7 +2997,7 @@ package androidx.compose.ui.layout {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public static void LookaheadScope(kotlin.jvm.functions.Function3<? super androidx.compose.ui.layout.LookaheadScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>, androidx.compose.runtime.Composer?, int);
     method public static androidx.compose.ui.Modifier approachLayout(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function1<? super androidx.compose.ui.unit.IntSize,java.lang.Boolean> isMeasurementApproachInProgress, optional kotlin.jvm.functions.Function2<? super androidx.compose.ui.layout.Placeable.PlacementScope,? super androidx.compose.ui.layout.LayoutCoordinates,java.lang.Boolean> isPlacementApproachInProgress, kotlin.jvm.functions.Function3<? super androidx.compose.ui.layout.ApproachMeasureScope,? super androidx.compose.ui.layout.Measurable,? super androidx.compose.ui.unit.Constraints,? extends androidx.compose.ui.layout.MeasureResult> approachMeasure);
     method @BytecodeOnly public static androidx.compose.ui.Modifier! approachLayout$default(androidx.compose.ui.Modifier!, kotlin.jvm.functions.Function1!, kotlin.jvm.functions.Function2!, kotlin.jvm.functions.Function3!, int, Object!);
-    method public static androidx.compose.ui.layout.LayoutCoordinates lookaheadScopeCoordinates(androidx.compose.ui.layout.LayoutCoordinates, androidx.compose.ui.layout.LookaheadScope lookaheadScope);
+    method public static androidx.compose.ui.layout.LayoutCoordinates lookaheadScopeCoordinates(androidx.compose.ui.layout.LookaheadScope, androidx.compose.ui.layout.LayoutCoordinates sourceCoordinates);
   }
 
   public interface Measurable extends androidx.compose.ui.layout.IntrinsicMeasurable {

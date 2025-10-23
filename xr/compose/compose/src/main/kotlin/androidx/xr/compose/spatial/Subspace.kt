@@ -112,7 +112,7 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
  */
 @Composable
 @ComposableOpenTarget(index = -1)
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
 public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit) {
     // If not in XR, do nothing
     if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
@@ -166,7 +166,7 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
  */
 @Composable
 @ComposableOpenTarget(index = -1)
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
 public fun ApplicationSubspace(
     modifier: SubspaceModifier = SubspaceModifier,
     allowUnboundedSubspace: Boolean = false,
@@ -539,7 +539,7 @@ public fun UserSubspace(
  */
 @Composable
 @ComposableOpenTarget(index = -1)
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun GravityAlignedSubspace(
     modifier: SubspaceModifier = SubspaceModifier,

@@ -17,6 +17,17 @@ package androidx.xr.scenecore.impl.impress {
     method public void register(Object, Runnable);
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ExrImage extends androidx.xr.scenecore.impl.impress.BindingsResource implements androidx.xr.scenecore.runtime.ExrImageResource {
+    method protected void releaseBindingsResource(long);
+  }
+
+  public static class ExrImage.Builder {
+    ctor public ExrImage.Builder();
+    method public androidx.xr.scenecore.impl.impress.ExrImage build();
+    method public androidx.xr.scenecore.impl.impress.ExrImage.Builder setImpressApi(androidx.xr.scenecore.impl.impress.ImpressApi);
+    method public androidx.xr.scenecore.impl.impress.ExrImage.Builder setNativeExrImage(long);
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeImpressApiImpl implements androidx.xr.scenecore.impl.impress.ImpressApi {
     ctor public FakeImpressApiImpl();
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void!> animateGltfModel(androidx.xr.scenecore.impl.impress.ImpressNode, String?, boolean);
@@ -49,10 +60,10 @@ package androidx.xr.scenecore.impl.impress {
     method public int impressNodeLoopAnimatingSize();
     method public androidx.xr.scenecore.impl.impress.ImpressNode instanceGltfModel(long);
     method public androidx.xr.scenecore.impl.impress.ImpressNode instanceGltfModel(long, boolean);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long!> loadGltfAsset(byte[], String);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long!> loadGltfAsset(String);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long!> loadImageBasedLightingAsset(byte[], String);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long!> loadImageBasedLightingAsset(String);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.GltfModel!> loadGltfAsset(byte[], String);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.GltfModel!> loadGltfAsset(String);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.ExrImage!> loadImageBasedLightingAsset(byte[], String);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.ExrImage!> loadImageBasedLightingAsset(String);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.Texture!> loadTexture(String);
     method public void onPause();
     method public void onResume();
@@ -160,6 +171,17 @@ package androidx.xr.scenecore.impl.impress {
     ctor public FakeImpressApiImpl.TestSurface(int);
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class GltfModel extends androidx.xr.scenecore.impl.impress.BindingsResource implements androidx.xr.scenecore.runtime.GltfModelResource {
+    method protected void releaseBindingsResource(long);
+  }
+
+  public static class GltfModel.Builder {
+    ctor public GltfModel.Builder();
+    method public androidx.xr.scenecore.impl.impress.GltfModel build();
+    method public androidx.xr.scenecore.impl.impress.GltfModel.Builder setImpressApi(androidx.xr.scenecore.impl.impress.ImpressApi);
+    method public androidx.xr.scenecore.impl.impress.GltfModel.Builder setNativeGltfModel(long);
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface ImpressApi {
     method public com.google.common.util.concurrent.ListenableFuture<java.lang.Void?> animateGltfModel(androidx.xr.scenecore.impl.impress.ImpressNode impressNode, String? animationName, boolean looping);
     method public androidx.xr.scenecore.impl.impress.Texture borrowReflectionTexture();
@@ -180,10 +202,10 @@ package androidx.xr.scenecore.impl.impress {
     method public android.view.Surface getSurfaceFromStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode panelImpressNode);
     method public androidx.xr.scenecore.impl.impress.ImpressNode instanceGltfModel(long gltfToken);
     method public androidx.xr.scenecore.impl.impress.ImpressNode instanceGltfModel(long gltfToken, boolean enableCollider);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long> loadGltfAsset(byte[] data, String key);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long> loadGltfAsset(String path);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long> loadImageBasedLightingAsset(byte[] data, String key);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long> loadImageBasedLightingAsset(String path);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.GltfModel> loadGltfAsset(byte[] data, String key);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.GltfModel> loadGltfAsset(String path);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.ExrImage> loadImageBasedLightingAsset(byte[] data, String key);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.ExrImage> loadImageBasedLightingAsset(String path);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.Texture> loadTexture(String path);
     method public void onPause();
     method public void onResume();
@@ -374,10 +396,10 @@ package androidx.xr.scenecore.impl.impress {
     method public android.view.Surface getSurfaceFromStereoSurface(androidx.xr.scenecore.impl.impress.ImpressNode);
     method public androidx.xr.scenecore.impl.impress.ImpressNode instanceGltfModel(long);
     method public androidx.xr.scenecore.impl.impress.ImpressNode instanceGltfModel(long, boolean);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long!> loadGltfAsset(byte[], String);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long!> loadGltfAsset(String);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long!> loadImageBasedLightingAsset(byte[], String);
-    method public com.google.common.util.concurrent.ListenableFuture<java.lang.Long!> loadImageBasedLightingAsset(String);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.GltfModel!> loadGltfAsset(byte[], String);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.GltfModel!> loadGltfAsset(String);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.ExrImage!> loadImageBasedLightingAsset(byte[], String);
+    method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.ExrImage!> loadImageBasedLightingAsset(String);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.impl.impress.Texture!> loadTexture(String);
     method public void onPause();
     method public void onResume();

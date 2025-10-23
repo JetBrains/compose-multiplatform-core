@@ -168,6 +168,40 @@ public class CallStats extends BaseStats {
         return mOnExecutorLatencyMillis;
     }
 
+    @NonNull
+    @Override
+    public String toString() {
+        return String.format(
+                "CallStats {\n"
+                        + "  packageName=%s,\n"
+                        + "  database=%s,\n"
+                        + "  statusCode=%d,\n"
+                        + "  totalLatencyMillis=%d,\n"
+                        + "  callType=%d,\n"
+                        + "  estimatedBinderLatencyMillis=%d,\n"
+                        + "  numOperationsSucceeded=%d,\n"
+                        + "  numOperationsFailed=%d,\n"
+                        + "  callReceivedTimestampMillis=%d,\n"
+                        + "  lastCallTypeHoldExecutor=%d,\n"
+                        + "  executorAcquisitionLatencyMillis=%d,\n"
+                        + "  onExecutorLatencyMillis=%d\n"
+                        // Include BaseStats fields
+                        + super.toString()
+                        + "}",
+                mPackageName,
+                mDatabase,
+                mStatusCode,
+                mTotalLatencyMillis,
+                mCallType,
+                mEstimatedBinderLatencyMillis,
+                mNumOperationsSucceeded,
+                mNumOperationsFailed,
+                mCallReceivedTimestampMillis,
+                mLastCallTypeHoldExecutor,
+                mExecutorAcquisitionLatencyMillis,
+                mOnExecutorLatencyMillis);
+    }
+
     /** Builder for {@link CallStats}. */
     public static class Builder extends BaseStats.Builder<CallStats.Builder> {
         @Nullable String mPackageName;

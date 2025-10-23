@@ -22,14 +22,14 @@ import static org.junit.Assert.assertEquals;
 
 import android.util.Log;
 
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.creation.RemoteComposeContext;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
 import androidx.compose.remote.player.core.RemoteComposeDocument;
 import androidx.test.filters.SdkSuppress;
 
@@ -43,7 +43,7 @@ import java.io.ByteArrayInputStream;
 @RunWith(JUnit4.class)
 public class LoopOperationTest {
 
-    private final Platform mPlatform = new AndroidxPlatformServices();
+    private final RcPlatformServices mPlatform = new AndroidxRcPlatformServices();
 
     interface Callback {
         void run(RemoteComposeContext foo);

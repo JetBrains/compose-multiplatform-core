@@ -27,11 +27,11 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.Log;
 
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.operations.Header;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.creation.RemoteComposeWriterAndroid;
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
 import androidx.compose.remote.player.core.RemoteComposeDocument;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.test.filters.SdkSuppress;
@@ -178,7 +178,7 @@ public class HeaderTest {
     }
 
     // ########################### END TEST UTILS ######################################
-    private static final Platform sPlatform = new AndroidxPlatformServices();
+    private static final RcPlatformServices sPlatform = new AndroidxRcPlatformServices();
 
     @Test
     public void testHeader1() {

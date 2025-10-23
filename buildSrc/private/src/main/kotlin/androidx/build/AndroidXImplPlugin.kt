@@ -121,6 +121,7 @@ import org.gradle.plugin.devel.tasks.ValidatePlugins
 import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
@@ -133,6 +134,7 @@ import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import org.jetbrains.kotlin.gradle.utils.API
 
 /**
  * A plugin which enables all of the Gradle customizations for AndroidX. This plugin reacts to other
@@ -565,6 +567,24 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 } else {
                     ExplicitApiMode.Disabled
                 }
+            if (plugin is KotlinBaseApiPlugin) {
+                // TODO(b/443080559): Remove when built-in Kotlin adds kotlin-test-junit
+                // automatically
+                (kotlinExtension as KotlinAndroidProjectExtension)
+                    .target
+                    .compilations
+                    .configureEach { compilation ->
+                        if (!compilation.name.contains("test", ignoreCase = true))
+                            return@configureEach
+                        compilation.dependencies { implementation(kotlin("test-junit")) }
+                    }
+                // TODO(b/452246814): Remove when built-in Kotlin adds kotlin-stdlib as an api
+                // dependency automatically
+                project.dependencies.add(
+                    API,
+                    "org.jetbrains.kotlin:kotlin-stdlib:${kotlinExtension.coreLibrariesVersion}",
+                )
+            }
         }
     }
 

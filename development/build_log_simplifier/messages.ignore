@@ -428,3 +428,20 @@ warning Waiting for the other yarn instance to finish.*
 # Kotlinx Benchmark Plugin
 Analyzing \d+ files from .*/(kotlin|jvm|java|processedResources|sources)(.*/.*)
 Writing out Java source to .*benchmark.*
+# b/446708295
+w: file://\$SUPPORT/[a-zA-Z-_/]+\.kt:[0-9]+:[0-9]+ Suppression of error '(OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE|UNSAFE_CALL|INVISIBLE_REFERENCE|WRONG_ANNOTATION_TARGET|UPPER_BOUND_VIOLATED)' might compile and work, but the compiler behavior is UNSPECIFIED and WILL NOT BE PRESERVED\. Please report your use case to the Kotlin issue tracker instead: https://kotl\.in/issue
+# Cannot be suppressed because the issue is in generated code
+# > Task :compose:integration-tests:hero:pokedex:pokedex-macrobenchmark-target:compileDebugKotlin
+w: file://\$OUT_DIR/androidx/compose/integration\-tests/hero/pokedex/pokedex\-macrobenchmark\-target/build/generated/ksp/debug/kotlin/com/bumptech/glide/GeneratedAppGlideModuleImpl\.kt:[0-9]+:[0-9]+ 'internal' declaration exposes 'public/\*package\*/' type 'GeneratedAppGlideModule'\. This will become an error in language version [0-9]+\.[0-9]+\. See https://youtrack\.jetbrains\.com/issue/KTLC\-[0-9]+\.
+# Cannot be suppressed because the issue is in generated code
+# > Task :compose:integration-tests:hero:pokedex:pokedex-macrobenchmark-target:compileReleaseKotlin
+w: file://\$OUT_DIR/androidx/compose/integration\-tests/hero/pokedex/pokedex\-macrobenchmark\-target/build/generated/ksp/release/kotlin/com/bumptech/glide/GeneratedAppGlideModuleImpl\.kt:[0-9]+:[0-9]+ 'internal' declaration exposes 'public/\*package\*/' type 'GeneratedAppGlideModule'\. This will become an error in language version [0-9]+\.[0-9]+\. See https://youtrack\.jetbrains\.com/issue/KTLC\-[0-9]+\.
+# Cannot be suppressed because the issue is in generated code
+# > Task :room3:integration-tests:room-testapp:compileDebugAndroidTestKotlin
+w: file://\$OUT_DIR/androidx/room3/integration\-tests/room\-testapp/build/generated/ksp/.+\.kt:[0-9]+:[0-9]+ 'internal' declaration exposes 'public/\*package\*/' type.+
+# > Task :compose:runtime:runtime-test-utils:compileKotlinWasmJs
+w: file://\$SUPPORT/compose/runtime/runtime/.+\.kt:[0-9]+:[0-9]+ This declaration needs opt\-in\. Its usage should be marked with '@kotlin\.js\.ExperimentalWasmJsInterop' or '@OptIn\(kotlin\.js\.ExperimentalWasmJsInterop::class\)'
+# b/446708297
+# > Task :kotlinWasmToolingSetup
+\(node:[0-9]+\) \[DEP[0-9]+\] DeprecationWarning: The `punycode` module is deprecated\. Please use a userland alternative instead\.
+\(Use `node \-\-trace\-deprecation \.\.\.` to show where the warning was created\)

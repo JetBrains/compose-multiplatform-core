@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("androidx.privacysandboxplugin")
+    // Remove when b/442128557 is fixed
     id("org.jetbrains.kotlin.android")
 }
 

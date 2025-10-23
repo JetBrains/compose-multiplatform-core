@@ -98,6 +98,7 @@ package androidx.xr.scenecore {
     method public java.util.List<androidx.xr.scenecore.Component> getComponents();
     method public <T extends androidx.xr.scenecore.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
     method @InaccessibleFromKotlin public CharSequence getContentDescription();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.math.Pose getGravityAlignedPose(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.Entity? getParent();
     method public androidx.xr.runtime.math.Pose getPose(@androidx.xr.scenecore.SpaceValue int relativeTo);
     method public float getScale(@androidx.xr.scenecore.SpaceValue int relativeTo);
@@ -163,6 +164,8 @@ package androidx.xr.scenecore {
     method public java.util.List<androidx.xr.scenecore.Component> getComponents();
     method public <T extends androidx.xr.scenecore.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
     method @InaccessibleFromKotlin public CharSequence getContentDescription();
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.math.Pose getGravityAlignedPose(optional androidx.xr.runtime.math.Pose pose);
+    method @BytecodeOnly @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.runtime.math.Pose! getGravityAlignedPose$default(androidx.xr.scenecore.Entity!, androidx.xr.runtime.math.Pose!, int, Object!);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.Entity? getParent();
     method public default androidx.xr.runtime.math.Pose getPose();
     method public androidx.xr.runtime.math.Pose getPose(optional @androidx.xr.scenecore.SpaceValue int relativeTo);
@@ -556,6 +559,7 @@ package androidx.xr.scenecore {
   }
 
   public final class PerceptionSpace extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.PerceptionSpaceScenePose> {
+    method public androidx.xr.scenecore.ScenePose getScenePoseFromPerceptionPose(androidx.xr.runtime.math.Pose pose);
   }
 
   public final class PlaneOrientation {

@@ -33,7 +33,7 @@ builder = "8.6.0-alpha05"
 byteBuddy = "1.14.9"
 asm = "9.7"
 cmake = "3.22.1"
-composeCompilerPlugin = "2.2.10"
+composeCompilerPlugin = "2.2.20"
 dagger = "2.57.1"
 datetime = "0.7.1"
 dependencyAnalysisGradlePlugin = "2.11.0"
@@ -52,17 +52,17 @@ kotlin19 = "1.9.24"
 # Use the most up-to-date patch
 kotlin20 = "2.0.21"
 kotlin21 = "2.1.21"
-kotlin22 = "2.2.10"
-kotlin = "2.2.10"
-kotlinBenchmark = "0.4.11"
-kotlinGradlePluginAnnotations = "2.2.10"
-kotlinGradlePluginApi = "2.2.10"
+kotlin22 = "2.2.20"
+kotlin = "2.2.20"
+kotlinBenchmark = "0.4.14"
+kotlinGradlePluginAnnotations = "2.2.20"
+kotlinGradlePluginApi = "2.2.20"
 kotlinCompileTesting = "1.4.9"
 kotlinCoroutines = "1.9.0"
-kotlinNativeUtils = "2.2.10"
+kotlinNativeUtils = "2.2.20"
 kotlinSerialization = "1.8.0"
-kotlinToolingCore = "2.2.10"
-ksp = "2.2.10-2.0.2"
+kotlinToolingCore = "2.2.20"
+ksp = "2.2.20-2.0.4"
 ktfmt = "0.54"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
@@ -86,10 +86,12 @@ yarn = "1.22.17"
 [libraries]
 agpTestingPlatformCoreProto =  { module = "com.google.testing.platform:core-proto", version = "0.0.8-alpha08" }
 androidAccessibilityFramework = { module = "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework", version = { strictly = "2.1" } }
+androidExperimentalBuiltInKotlinPlugin = { module = "com.android.experimental.built-in-kotlin:com.android.experimental.built-in-kotlin.gradle.plugin", version.ref = "androidGradlePlugin" }
 androidGradlePluginApi = { module = "com.android.tools.build:gradle-api", version.ref = "androidGradlePlugin" }
 androidGradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
 androidGradleSettingsPlugin = { module = "com.android.tools.build:gradle-settings", version.ref = "androidGradlePlugin" }
 androidLayoutlibApi = { module = "com.android.tools.layoutlib:layoutlib-api", version.ref = "androidLint" }
+androidLegacyKaptPlugin = { module = "com.android.legacy-kapt:com.android.legacy-kapt.gradle.plugin", version.ref = "androidGradlePlugin"}
 androidLint = { module = "com.android.tools.lint:lint", version.ref = "androidLint" }
 androidLintMin = { module = "com.android.tools.lint:lint", version.ref = "androidLintMin" }
 androidLintStableAnalysis = { module = "com.android.tools.lint:lint", version.ref = "androidLintStableAnalysis" }
@@ -218,7 +220,7 @@ kotlinSerializationProtobuf = { module = "org.jetbrains.kotlinx:kotlinx-serializ
 kotlinGradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinStdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib" }
 kotlinStdlibCommon = { module = "org.jetbrains.kotlin:kotlin-stdlib-common" }
-kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test" }
+kotlinTest = { module = "org.jetbrains.kotlin:kotlin-test"}
 kotlinTestAnnotationsCommon = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common" }
 kotlinTestCommon = { module = "org.jetbrains.kotlin:kotlin-test-common" }
 kotlinTestJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit" }

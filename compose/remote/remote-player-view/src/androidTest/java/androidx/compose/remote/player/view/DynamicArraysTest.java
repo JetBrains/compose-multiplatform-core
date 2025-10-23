@@ -32,7 +32,7 @@ import android.util.Log;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
-import androidx.compose.remote.creation.profile.PlatformProfile;
+import androidx.compose.remote.creation.profile.RcPlatformProfiles;
 import androidx.compose.remote.player.core.RemoteComposeDocument;
 import androidx.compose.remote.player.view.platform.RemoteComposeView;
 import androidx.test.filters.SdkSuppress;
@@ -155,7 +155,7 @@ public class DynamicArraysTest {
                     rdoc.drawCircle(x, y, z);
                 };
 
-        byte[] rawDoc = TestSerializeUtils.createDoc(PlatformProfile.ANDROIDX, cb);
+        byte[] rawDoc = TestSerializeUtils.createDoc(RcPlatformProfiles.ANDROIDX, cb);
         String result = TestSerializeUtils.toYamlFlatString(rawDoc);
 
         Log.v("TEST", result);

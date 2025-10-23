@@ -536,6 +536,7 @@ package androidx.xr.scenecore {
   }
 
   public final class PerceptionSpace extends androidx.xr.scenecore.BaseScenePose<androidx.xr.scenecore.runtime.PerceptionSpaceScenePose> {
+    method public androidx.xr.scenecore.ScenePose getScenePoseFromPerceptionPose(androidx.xr.runtime.math.Pose pose);
   }
 
   public final class PlaneOrientation {

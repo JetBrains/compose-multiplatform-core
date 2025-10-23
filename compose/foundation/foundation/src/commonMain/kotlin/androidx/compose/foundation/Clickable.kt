@@ -82,6 +82,7 @@ import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -1814,6 +1815,7 @@ internal abstract class AbstractClickableNode(
     class IndirectPointerClickDetector(val node: AbstractClickableNode) {
         private var downEvent: IndirectPointerInputChange? = null
 
+        // TODO(b/449944873): Align PointerInput and IndirectTouchInput implementations
         fun processRawEvent(
             pointerEvent: IndirectPointerEvent,
             pass: PointerEventPass,
@@ -1824,9 +1826,16 @@ internal abstract class AbstractClickableNode(
                 if (downEvent == null) {
                     if (pointerEvent.changes.fastAny { it.changedToDownIgnoreConsumed() }) {
                         val change = pointerEvent.changes[0]
-                        change.consume()
                         this.downEvent = change
                         node.handlePressInteractionStart(change.position, indirectPointer = true)
+                        change.consume()
+                    }
+                } else if (pointerEvent.changes.fastAny { it.isMovingIgnoreConsumed() }) {
+                    val change = pointerEvent.changes[0]
+                    val distanceFromPress = change.position - downEvent.position
+                    val touchSlop = node.currentValueOf(LocalViewConfiguration).touchSlop
+                    if (abs(distanceFromPress.getDistance()) > touchSlop) {
+                        resetDetector()
                     }
                 } else if (pointerEvent.changes.fastAll { it.changedToUp() }) {
                     // All pointers are up
@@ -1838,8 +1847,7 @@ internal abstract class AbstractClickableNode(
                 } else {
                     if (pointerEvent.changes.fastAny { it.isConsumed }) {
                         // Canceled
-                        this.downEvent = null
-                        node.handlePressInteractionCancel(indirectPointer = true)
+                        resetDetector()
                     }
                 }
             } else if (pass == PointerEventPass.Final && downEvent != null) {
@@ -1847,8 +1855,7 @@ internal abstract class AbstractClickableNode(
                 // existing pointer event because it comes after the pass we checked above.
                 if (pointerEvent.changes.fastAny { it.isConsumed && it != downEvent }) {
                     // Canceled
-                    downEvent = null
-                    node.handlePressInteractionCancel(indirectPointer = true)
+                    resetDetector()
                 }
             }
         }
@@ -1884,6 +1891,8 @@ private fun unsupportedIndicationExceptionMessage(indication: Indication): Strin
 private fun IndirectPointerInputChange.changedToUp() = !isConsumed && previousPressed && !pressed
 
 private fun IndirectPointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
+
+private fun IndirectPointerInputChange.isMovingIgnoreConsumed() = previousPressed && pressed
 
 private fun FocusRequesterModifierNode.requestFocusWhenInMouseInputMode() {
     if (isRequestFocusOnClickEnabled()) {

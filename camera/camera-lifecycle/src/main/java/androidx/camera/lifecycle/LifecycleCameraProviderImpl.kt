@@ -34,7 +34,6 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.ConcurrentCamera
 import androidx.camera.core.ConcurrentCamera.SingleCameraConfig
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.LegacySessionConfig
@@ -70,7 +69,6 @@ import java.util.Objects.requireNonNull
 import java.util.concurrent.Executor
 
 /** Implementation of the [LifecycleCameraProvider] interface. */
-@OptIn(ExperimentalSessionConfig::class)
 @JavaOptIn(ExperimentalCameraProviderConfiguration::class)
 internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPresenceListener {
     private val lock = Any()

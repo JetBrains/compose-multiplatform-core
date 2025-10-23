@@ -89,7 +89,7 @@ class SinglePageLayoutStrategyTest {
         setupPageDimensions()
         val viewport = RectF(0f, 0f, 500f, 800f)
         val pageDimensions = createPageDimensions()
-        val location = singlePageLayoutStrategy.getPageLocation(viewport, 0, pageDimensions)
+        val location = singlePageLayoutStrategy.getPageLocation(viewport, 0, pageDimensions[0])
 
         val expectedLeft = (viewport.width() - pageDimensions[0].x) / 2f
         assertThat(location.left).isEqualTo(expectedLeft)
@@ -106,7 +106,7 @@ class SinglePageLayoutStrategyTest {
         // Max scroll is 100. Current scroll is 50.
         // Proportional scroll for a page of width 600 is 50 * (600 - 600) / 100 = 0.
         // So this page should not be scrolled.
-        val location = singlePageLayoutStrategy.getPageLocation(viewport, 0, pageDimensions)
+        val location = singlePageLayoutStrategy.getPageLocation(viewport, 0, pageDimensions[0])
         assertThat(location.left).isEqualTo(0f)
     }
 
@@ -134,8 +134,9 @@ class SinglePageLayoutStrategyTest {
         val viewport = RectF(0f, 0f, 500f, 800f)
         val pageDimensions = createPageDimensions(pageWidth = 150)
 
-        val originalLocation = singlePageLayoutStrategy.getPageLocation(viewport, 5, pageDimensions)
-        val restoredLocation = restoredStrategy.getPageLocation(viewport, 5, pageDimensions)
+        val originalLocation =
+            singlePageLayoutStrategy.getPageLocation(viewport, 5, pageDimensions[5])
+        val restoredLocation = restoredStrategy.getPageLocation(viewport, 5, pageDimensions[5])
         assertThat(restoredLocation).isEqualTo(originalLocation)
 
         parcel.recycle()

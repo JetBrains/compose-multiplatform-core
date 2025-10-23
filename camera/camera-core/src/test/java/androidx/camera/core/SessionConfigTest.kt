@@ -46,7 +46,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@OptIn(ExperimentalSessionConfig::class)
 class SessionConfigTest {
     val useCases = listOf(Preview.Builder().build(), ImageCapture.Builder().build())
     val viewPort = ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build()

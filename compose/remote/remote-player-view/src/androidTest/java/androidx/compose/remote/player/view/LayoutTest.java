@@ -23,7 +23,7 @@ import android.graphics.Color;
 
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
-import androidx.compose.remote.core.Platform;
+import androidx.compose.remote.core.RcPlatformServices;
 import androidx.compose.remote.core.RemoteContext;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.layout.ClickModifierOperation;
@@ -46,7 +46,7 @@ import androidx.compose.remote.creation.actions.HostAction;
 import androidx.compose.remote.creation.actions.ValueIntegerChange;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
 import androidx.compose.remote.creation.modifiers.RoundedRectShape;
-import androidx.compose.remote.creation.platform.AndroidxPlatformServices;
+import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
 import androidx.compose.remote.player.core.RemoteComposeDocument;
 import androidx.test.filters.SdkSuppress;
 
@@ -75,7 +75,7 @@ public class LayoutTest {
     int mTw = 1000;
     int mTh = 1000;
 
-    Platform mPlatform = new AndroidxPlatformServices();
+    RcPlatformServices mPlatform = new AndroidxRcPlatformServices();
 
     class SnapShot {
         float mTime = 0f;

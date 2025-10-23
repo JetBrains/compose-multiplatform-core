@@ -53,6 +53,18 @@ package androidx.camera.video {
     method public androidx.camera.video.FileOutputOptions.Builder setLocation(android.location.Location?);
   }
 
+  public final class GroupableFeatures {
+    property public androidx.camera.core.featuregroup.GroupableFeature FHD_RECORDING;
+    property public androidx.camera.core.featuregroup.GroupableFeature HD_RECORDING;
+    property public androidx.camera.core.featuregroup.GroupableFeature SD_RECORDING;
+    property public androidx.camera.core.featuregroup.GroupableFeature UHD_RECORDING;
+    field public static final androidx.camera.core.featuregroup.GroupableFeature FHD_RECORDING;
+    field public static final androidx.camera.core.featuregroup.GroupableFeature HD_RECORDING;
+    field public static final androidx.camera.video.GroupableFeatures INSTANCE;
+    field public static final androidx.camera.core.featuregroup.GroupableFeature SD_RECORDING;
+    field public static final androidx.camera.core.featuregroup.GroupableFeature UHD_RECORDING;
+  }
+
   @SuppressCompatibility public final class HighSpeedVideoSessionConfig extends androidx.camera.core.SessionConfig {
     ctor @BytecodeOnly public HighSpeedVideoSessionConfig(androidx.camera.video.VideoCapture!, androidx.camera.core.Preview!, android.util.Range!, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     ctor public HighSpeedVideoSessionConfig(androidx.camera.video.VideoCapture<? extends java.lang.Object?> videoCapture);

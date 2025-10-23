@@ -136,39 +136,34 @@ internal class SinglePageLayoutStrategy(
      * @param viewport The rectangle defining the visible area. Used for horizontal centering or
      *   scrolling.
      * @param pageNum The index of the page to locate.
-     * @param pageDimensions An array containing the dimensions of all pages.
+     * @param pageDimension The dimension of [pageNum] in the document.
      * @return The [RectF] representing the page's boundaries in document coordinates.
      */
-    override fun getPageLocation(
-        viewport: RectF,
-        pageNum: Int,
-        pageDimensions: Array<Dimension>,
-    ): RectF {
-        val page = pageDimensions[pageNum]
+    override fun getPageLocation(viewport: RectF, pageNum: Int, pageDimension: Dimension): RectF {
         var left = 0f
         var right: Float = _maxWidth
         val top = pageTops[pageNum]
-        val bottom = top + page.y
+        val bottom = top + pageDimension.y
 
-        if (page.x < viewport.width()) {
+        if (pageDimension.x < viewport.width()) {
             // Page is smaller than the view: center it horizontally.
-            left = Math.max(left, viewport.left + (viewport.width() - page.x) / 2f)
+            left = Math.max(left, viewport.left + (viewport.width() - pageDimension.x) / 2f)
         } else {
             // Page is larger than the view: manage horizontal scrolling.
             if (viewport.right > right) {
                 // If the viewport has scrolled past the right edge of maxPageWidth, align page's
                 // right edge to maxPageWidth.
-                left = right - page.x
+                left = right - pageDimension.x
             } else if (viewport.left > left) {
                 // Apply proportional horizontal scroll based on the ratio of max scroll available
                 // for this page to the max scroll available for the layout's maxPageWidth.
                 val maxScrollForLayout = right - viewport.width()
                 if (maxScrollForLayout > 0) {
-                    left = viewport.left * (right - page.x) / maxScrollForLayout
+                    left = viewport.left * (right - pageDimension.x) / maxScrollForLayout
                 }
             }
         }
-        right = left + page.x
+        right = left + pageDimension.x
 
         return RectF(left, top, right, bottom)
     }

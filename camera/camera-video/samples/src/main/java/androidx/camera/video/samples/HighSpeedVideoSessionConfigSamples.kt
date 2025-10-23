@@ -22,7 +22,6 @@ import androidx.annotation.Sampled
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.DynamicRange
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -38,7 +37,7 @@ import androidx.core.content.ContextCompat
 
 @SuppressLint("MissingPermission")
 @Suppress("unused", "UnusedVariable")
-@OptIn(ExperimentalHighSpeedVideo::class, ExperimentalSessionConfig::class)
+@OptIn(ExperimentalHighSpeedVideo::class)
 @Sampled
 suspend fun slowMotionVideoSample(activity: AppCompatActivity, previewView: PreviewView) {
     // Get ProcessCameraProvider.
