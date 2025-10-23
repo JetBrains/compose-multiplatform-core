@@ -31,10 +31,6 @@ internal fun easeOutTimingFunction(progress: Float): Float {
     return -progress * (progress - 2f)
 }
 
-internal fun easeInTimingFunction(progress: Float): Float {
-    return progress * progress
-}
-
 internal suspend fun withAnimationProgress(
     duration: Duration,
     timingFunction: (Float) -> Float = ::easeInOutTimingFunction,

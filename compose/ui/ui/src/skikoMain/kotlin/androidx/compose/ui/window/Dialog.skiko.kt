@@ -21,14 +21,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.InternalComposeApi
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.animation.easeOutTimingFunction
 import androidx.compose.ui.animation.withAnimationProgress
@@ -36,11 +34,6 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.layout.Layout
@@ -65,43 +58,11 @@ import kotlinx.coroutines.launch
 /**
  * The default scrim opacity.
  */
-private const val DefaultScrimOpacity = 0.78f
+private const val DefaultScrimOpacity = 0.6f
 private val DefaultScrimColor = Color.Black.copy(alpha = DefaultScrimOpacity)
-private const val AnimatedLayerAppearanceOffsetDp = 16f
-private const val AnimatedLayerDisappearanceOffsetDp = 8f
-private const val AnimatedLayerInitialAlphaProgress = 0.6f
-
-/**
- * Represents an animation scope for dialogs, allowing customization of dialog animations
- * and associated visual properties.
- *
- * This interface provides methods to apply transformations and modify visual properties
- * during dialog animations.
- *
- * Note: This API is experimental and may change in the future.
- */
-@ExperimentalComposeUiApi
-@Immutable
-interface DialogAnimationScope {
-    /**
-     * Applies graphics layer transformations and customizations within the specified [GraphicsLayerScope].
-     * This method can be used to modify visual properties like rotation, scale, translation,
-     * shadow, and other effects.
-     *
-     * @param modify A lambda receiver of [GraphicsLayerScope] allowing customization of graphics layer properties.
-     */
-    fun graphicsLayer(modify: GraphicsLayerScope.() -> Unit)
-
-    /**
-     * Defines the color of the scrim used during dialog animations.
-     *
-     * The scrim is a semi-transparent layer displayed behind the dialog to
-     * focus the user's attention on the foreground content. This property
-     * allows customization of the scrim's appearance to match desired visual
-     * aesthetics or themes.
-     */
-    var scrimColor: Color
-}
+private const val AnimatedLayerOffsetDp = 10f
+private const val AnimatedLayerInitialAlpha = 0.0f
+private const val AnimatedLayerScale = 0.05f
 
 /**
  * Properties used to customize the behavior of a [Dialog].
@@ -118,8 +79,6 @@ interface DialogAnimationScope {
  * @property useSoftwareKeyboardInset Whether the size of the dialog's content should be limited by
  * software keyboard inset.
  * @property scrimColor Color of background fill.
- * @property onAppearEffect The effect to be applied when the dialog appears.
- * @property onDisappearEffect The effect to be applied when the dialog disappears.
  */
 @Immutable
 actual class DialogProperties constructor(
@@ -129,12 +88,6 @@ actual class DialogProperties constructor(
     val usePlatformInsets: Boolean = true,
     val useSoftwareKeyboardInset: Boolean = true,
     val scrimColor: Color = DefaultScrimColor,
-    @property:ExperimentalComposeUiApi
-    val onAppearEffect: suspend DialogAnimationScope.() -> Unit =
-        DialogAnimationScope::defaultDialogAppearEffect,
-    @property:ExperimentalComposeUiApi
-    val onDisappearEffect: suspend DialogAnimationScope.() -> Unit =
-        DialogAnimationScope::defaultDialogDisappearEffect,
 ) {
     actual constructor(
         dismissOnBackPress: Boolean,
@@ -147,25 +100,6 @@ actual class DialogProperties constructor(
         usePlatformInsets = true,
         useSoftwareKeyboardInset = true,
         scrimColor = DefaultScrimColor,
-    )
-
-    @ExperimentalComposeUiApi
-    constructor(
-        dismissOnBackPress: Boolean = true,
-        dismissOnClickOutside: Boolean = true,
-        usePlatformDefaultWidth: Boolean = true,
-        usePlatformInsets: Boolean = true,
-        useSoftwareKeyboardInset: Boolean = true,
-        scrimColor: Color = DefaultScrimColor,
-    ) : this(
-        dismissOnBackPress = dismissOnBackPress,
-        dismissOnClickOutside = dismissOnClickOutside,
-        usePlatformDefaultWidth = usePlatformDefaultWidth,
-        usePlatformInsets = usePlatformInsets,
-        useSoftwareKeyboardInset = useSoftwareKeyboardInset,
-        scrimColor = scrimColor,
-        onAppearEffect = DialogAnimationScope::defaultDialogAppearEffect,
-        onDisappearEffect = DialogAnimationScope::defaultDialogDisappearEffect,
     )
 
     override fun equals(other: Any?): Boolean {
@@ -250,8 +184,6 @@ private fun DialogLayout(
     val layer = rememberComposeSceneLayer(
         focusable = true
     )
-    layer.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
-    layer.scrimColor = properties.scrimColor
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
     val dialogAnimationScope = remember {
         object : DialogAnimationScope {
@@ -266,7 +198,7 @@ private fun DialogLayout(
     }
     layer.Content {
         LaunchedEffect(Unit) {
-            properties.onAppearEffect(dialogAnimationScope)
+            dialogAnimationScope.defaultDialogAppearEffect()
             graphicsLayerScopeUpdate = {}
             layer.scrimColor = properties.scrimColor
         }
@@ -294,34 +226,68 @@ private fun DialogLayout(
     DisposableEffect(Unit) {
         onDispose {
             CoroutineScope(compositionContext.effectCoroutineContext).launch {
-                properties.onDisappearEffect(dialogAnimationScope)
+                dialogAnimationScope.defaultDialogDisappearEffect()
                 layer.close()
             }
         }
     }
 }
 
+/**
+ * Represents an animation scope for dialogs, allowing customization of dialog animations
+ * and associated visual properties.
+ *
+ * This interface provides methods to apply transformations and modify visual properties
+ * during dialog animations.
+ */
+@Immutable
+private interface DialogAnimationScope {
+    /**
+     * Applies graphics layer transformations and customizations within the specified [GraphicsLayerScope].
+     * This method can be used to modify visual properties like rotation, scale, translation,
+     * shadow, and other effects.
+     *
+     * @param modify A lambda receiver of [GraphicsLayerScope] allowing customization of graphics layer properties.
+     */
+    fun graphicsLayer(modify: GraphicsLayerScope.() -> Unit)
+
+    /**
+     * Defines the color of the scrim used during dialog animations.
+     *
+     * The scrim is a semi-transparent layer displayed behind the dialog to
+     * focus the user's attention on the foreground content. This property
+     * allows customization of the scrim's appearance to match desired visual
+     * aesthetics or themes.
+     */
+    var scrimColor: Color
+}
+
 private suspend fun DialogAnimationScope.defaultDialogAppearEffect() {
     val initialScrimColor = this.scrimColor
-    withAnimationProgress(0.15.seconds, timingFunction = ::easeOutTimingFunction) { progress ->
-        val animatedAlpha =
-            AnimatedLayerInitialAlphaProgress + progress * (1f - AnimatedLayerInitialAlphaProgress)
+    withAnimationProgress(0.20.seconds, timingFunction = ::easeOutTimingFunction) { progress ->
+        val animatedAlpha = AnimatedLayerInitialAlpha + progress * (1f - AnimatedLayerInitialAlpha)
         this.scrimColor = initialScrimColor.copy(initialScrimColor.alpha * animatedAlpha)
         this.graphicsLayer {
             this.alpha = animatedAlpha
-            this.translationY = (AnimatedLayerAppearanceOffsetDp * (1f - progress)) * density
+            val scale = 1f + (progress - 1f) * AnimatedLayerScale
+            this.scaleX = scale
+            this.scaleY = scale
+            this.translationY = (AnimatedLayerOffsetDp * (1f - progress)) * density
         }
     }
 }
 
 private suspend fun DialogAnimationScope.defaultDialogDisappearEffect() {
     val initialScrimColor = this.scrimColor
-    withAnimationProgress(0.10.seconds, timingFunction = ::easeOutTimingFunction) { progress ->
-        val animatedAlpha = 1f - progress * AnimatedLayerInitialAlphaProgress
+    withAnimationProgress(0.15.seconds, timingFunction = ::easeOutTimingFunction) { progress ->
+        val animatedAlpha = AnimatedLayerInitialAlpha + (1f - progress) * (1f - AnimatedLayerInitialAlpha)
         this.scrimColor = initialScrimColor.copy(initialScrimColor.alpha * animatedAlpha)
         this.graphicsLayer {
             this.alpha = animatedAlpha
-            this.translationY = -AnimatedLayerDisappearanceOffsetDp * progress * density
+            val scale = 1f - progress * AnimatedLayerScale
+            this.scaleX = scale
+            this.scaleY = scale
+            this.translationY = AnimatedLayerOffsetDp * progress * density
         }
     }
 }
