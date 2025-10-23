@@ -36,7 +36,7 @@ internal class UIKitInteropContainer(
     // views.
     override val root: InteropViewGroup get() = backgroundContainer
 
-    private var interopViews = mutableMapOf<InteropView, UIKitInteropElementHolder<*>>()
+    private val interopViews = mutableMapOf<InteropView, InteropViewHolder>()
     private var transaction = UIKitInteropMutableTransaction(isInteropActive = false)
 
     val hasInteropViews: Boolean get() = interopViews.isNotEmpty()
