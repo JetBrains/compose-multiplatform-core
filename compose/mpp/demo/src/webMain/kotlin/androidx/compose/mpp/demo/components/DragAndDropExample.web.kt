@@ -71,13 +71,13 @@ actual fun DragAndDropExample() {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                DraggableColorSource("red", Color.Red)
-                DraggableColorSource("orange", Color(0xFFFFA500))
-                DraggableColorSource("yellow", Color.Yellow)
-                DraggableColorSource("green", Color.Green)
-                DraggableColorSource("light blue", Color(0xFFADD8E6))
-                DraggableColorSource("blue", Color.Blue)
-                DraggableColorSource("violet", Color(0xFF8A2BE2))
+                DraggableColorSource(Color.Red)
+                DraggableColorSource(Color(0xFFFFA500))
+                DraggableColorSource(Color.Yellow)
+                DraggableColorSource(Color.Green)
+                DraggableColorSource(Color(0xFFADD8E6))
+                DraggableColorSource(Color.Blue)
+                DraggableColorSource(Color(0xFF8A2BE2))
             }
         }
 
@@ -209,7 +209,7 @@ actual fun DragAndDropExample() {
 }
 
 @Composable
-private fun DraggableColorSource(name: String, color: Color) {
+private fun DraggableColorSource(color: Color) {
     Box(
         Modifier
             .size(56.dp)
