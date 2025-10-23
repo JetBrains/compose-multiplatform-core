@@ -445,3 +445,5 @@ w: file://\$SUPPORT/compose/runtime/runtime/.+\.kt:[0-9]+:[0-9]+ This declaratio
 # > Task :kotlinWasmToolingSetup
 \(node:[0-9]+\) \[DEP[0-9]+\] DeprecationWarning: The `punycode` module is deprecated\. Please use a userland alternative instead\.
 \(Use `node \-\-trace\-deprecation \.\.\.` to show where the warning was created\)
+# > Task :kruth:kruth:compileNativeMainKotlinMetadata
+w: KLIB resolver: The same 'unique_name=kotlin\-stdlib\-common' found in more than one library: \$OUT_DIR/androidx/kruth/kruth/build/kotlinTransformedMetadataLibraries/commonMain/org\.jetbrains\.kotlin\-kotlin\-stdlib\-[0-9]+\.[0-9]+\.[0-9]+\-commonMain\-Y[0-9]+sbrw\.klib, \$OUT_DIR/androidx/kruth/kruth/build/kotlinTransformedMetadataLibraries/nonJvmMain/org\.jetbrains\.kotlin\-kotlin\-stdlib\-[0-9]+\.[0-9]+\.[0-9]+\-commonNonJvmMain\-Y[0-9]+sbrw\.klib, \$OUT_DIR/androidx/kruth/kruth/build/kotlinTransformedMetadataLibraries/nonJvmMain/org\.jetbrains\.kotlin\-kotlin\-stdlib\-[0-9]+\.[0-9]+\.[0-9]+\-webMain\-Y[0-9]+sbrw\.klib

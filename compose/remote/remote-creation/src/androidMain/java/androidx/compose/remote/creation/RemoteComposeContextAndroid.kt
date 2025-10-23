@@ -86,4 +86,91 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
     public fun createCirclePath(x: Float, y: Float, rad: Float): RemotePath {
         return RemotePath.createCirclePath(mRemoteWriter, x, y, rad)
     }
+
+    public fun drawRoundRect(
+        x: Number,
+        y: Number,
+        w: Number,
+        h: Number,
+        radX: Number,
+        radY: Number,
+    ) {
+        drawRoundRect(
+            x.toFloat(),
+            y.toFloat(),
+            w.toFloat(),
+            h.toFloat(),
+            radX.toFloat(),
+            radY.toFloat(),
+        )
+    }
+
+    public fun drawLine(x1: Number, y1: Number, x2: Number, y2: Number) {
+        drawLine(x1.toFloat(), y1.toFloat(), x2.toFloat(), y2.toFloat())
+    }
+
+    public fun save(content: RemoteComposeContextAndroid.() -> Unit) {
+        save()
+        content()
+        restore()
+    }
+
+    public fun rotate(angle: Number) {
+        rotate(angle.toFloat())
+    }
+
+    public fun rotate(angle: Number, x: Number, y: Number) {
+        rotate(angle.toFloat(), x.toFloat(), y.toFloat())
+    }
+
+    public fun scale(sx: Number, sy: Number, centerX: Number, centerY: Number) {
+        scale(sx.toFloat(), sy.toFloat(), centerX.toFloat(), centerX.toFloat())
+    }
+
+    public fun drawArc(
+        left: Number,
+        top: Number,
+        right: Number,
+        bottom: Number,
+        startAngle: Number,
+        sweepAngle: Number,
+    ) {
+        drawArc(
+            left.toFloat(),
+            top.toFloat(),
+            right.toFloat(),
+            bottom.toFloat(),
+            startAngle.toFloat(),
+            sweepAngle.toFloat(),
+        )
+    }
+
+    public fun drawSector(
+        left: Number,
+        top: Number,
+        right: Number,
+        bottom: Number,
+        startAngle: Number,
+        sweepAngle: Number,
+    ) {
+        drawSector(
+            left.toFloat(),
+            top.toFloat(),
+            right.toFloat(),
+            bottom.toFloat(),
+            startAngle.toFloat(),
+            sweepAngle.toFloat(),
+        )
+    }
+
+    public fun drawTextAnchored(
+        id: Int,
+        x: Number,
+        y: Number,
+        panX: Number,
+        panY: Number,
+        flags: Int,
+    ) {
+        drawTextAnchored(id, x.toFloat(), y.toFloat(), panX.toFloat(), panY.toFloat(), flags)
+    }
 }

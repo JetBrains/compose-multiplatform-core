@@ -30,7 +30,7 @@ import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.creation.RemoteComposeContext;
 import androidx.compose.remote.creation.RemoteComposeContextAndroid;
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
-import androidx.compose.remote.player.core.RemoteComposeDocument;
+import androidx.compose.remote.player.core.RemoteDocument;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 
@@ -49,8 +49,8 @@ public class ContentBehaviorTest {
     // TEST UTILS
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    private RemoteComposeDocument createDoc(RemoteComposeContext buffer) {
-        return new RemoteComposeDocument(
+    private RemoteDocument createDoc(RemoteComposeContext buffer) {
+        return new RemoteDocument(
                 new ByteArrayInputStream(buffer.buffer(), 0, buffer.bufferSize()));
     }
 
@@ -73,7 +73,7 @@ public class ContentBehaviorTest {
         return doc;
     }
 
-    private RemoteComposeDocument createDocument(
+    private RemoteDocument createDocument(
             RemoteContext context, Bitmap lightImage, Bitmap darkImage) {
         int tw = lightImage.getWidth();
         int th = lightImage.getHeight();
@@ -97,7 +97,7 @@ public class ContentBehaviorTest {
                             return null;
                         });
 
-        RemoteComposeDocument recreatedDocument = createDoc(doc);
+        RemoteDocument recreatedDocument = createDoc(doc);
         recreatedDocument.initializeContext(context);
         return recreatedDocument;
     }
@@ -141,7 +141,7 @@ public class ContentBehaviorTest {
             int alignment,
             int sizing,
             int mode) {
-        RemoteComposeDocument doc1 =
+        RemoteDocument doc1 =
                 createDoc(remoteComposeWriter(tw, th, scrolling, alignment, sizing, mode));
 
         doc1.getDocument().setWidth(tw);

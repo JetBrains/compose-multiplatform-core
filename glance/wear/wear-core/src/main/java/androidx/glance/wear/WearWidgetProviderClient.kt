@@ -23,6 +23,7 @@ import android.content.ServiceConnection
 import android.os.Build
 import android.os.IBinder
 import android.os.UserHandle
+import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY
 import androidx.glance.wear.ContainerInfo.ContainerType
@@ -32,11 +33,11 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Executor
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.guava.future
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Client for a [IWearWidgetProvider] provider.
@@ -56,7 +57,10 @@ public class WearWidgetProviderClient(
     /** Call [IWearWidgetProvider.onActivated] on the provider and wait for completion. */
     public suspend fun sendActivationNotice(instanceId: Int, @ContainerType containerType: Int) {
         withBoundService { service ->
-            suspendCoroutine { continuation ->
+            suspendCancellableCoroutine { continuation ->
+                continuation.invokeOnCancellation {
+                    Log.d(TAG, "sendActivationNotice for instanceId=$instanceId cancelled")
+                }
                 service.onActivated(
                     ActiveWearWidgetHandle(componentName, instanceId, containerType).toParcel(),
                     ContinuationCallback(continuation),
@@ -78,7 +82,10 @@ public class WearWidgetProviderClient(
     /** Call [IWearWidgetProvider.onDeactivated] on the provider and wait for completion. */
     public suspend fun sendDeactivationNotice(instanceId: Int, @ContainerType containerType: Int) {
         withBoundService { service ->
-            suspendCoroutine { continuation ->
+            suspendCancellableCoroutine { continuation ->
+                continuation.invokeOnCancellation {
+                    Log.d(TAG, "sendDeactivationNotice for instanceId=$instanceId cancelled")
+                }
                 service.onDeactivated(
                     ActiveWearWidgetHandle(componentName, instanceId, containerType).toParcel(),
                     ContinuationCallback(continuation),
@@ -123,7 +130,7 @@ public class WearWidgetProviderClient(
         }
     }
 
-    private inner class Connection : ServiceConnection {
+    private class Connection : ServiceConnection {
         val serviceDeferred = CompletableDeferred<IWearWidgetProvider>()
 
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -153,10 +160,12 @@ public class WearWidgetProviderClient(
         IExecutionCallback.Stub() {
         override fun onSuccess() = continuation.resume(Unit)
 
+        // This means the provider failed to handle the event.
         override fun onError() = continuation.resume(Unit)
     }
 
     private companion object {
+        private const val TAG = "WearWidgetProviderClient"
         private const val ACTION_BIND_WEAR_WIDGET_PROVIDER =
             "androidx.glance.wear.action.BIND_WEAR_WIDGET_PROVIDER"
     }

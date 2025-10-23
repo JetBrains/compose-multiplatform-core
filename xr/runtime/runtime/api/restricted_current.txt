@@ -390,7 +390,8 @@ package androidx.xr.runtime {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class XrDisplay {
     ctor public XrDisplay();
-    method public androidx.xr.runtime.XrDisplay.BlendMode getPreferredBlendMode(androidx.xr.runtime.Session session);
+    method public static androidx.xr.runtime.XrDisplay.BlendMode getPreferredBlendMode(androidx.xr.runtime.Session session);
+    field public static final androidx.xr.runtime.XrDisplay.Companion Companion;
   }
 
   public static final class XrDisplay.BlendMode {
@@ -404,6 +405,10 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.XrDisplay.BlendMode ADDITIVE;
     property public androidx.xr.runtime.XrDisplay.BlendMode ALPHA_BLEND;
     property public androidx.xr.runtime.XrDisplay.BlendMode NOT_APPLICABLE;
+  }
+
+  public static final class XrDisplay.Companion {
+    method public androidx.xr.runtime.XrDisplay.BlendMode getPreferredBlendMode(androidx.xr.runtime.Session session);
   }
 
 }

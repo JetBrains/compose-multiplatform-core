@@ -65,7 +65,6 @@ import androidx.camera.testing.impl.FileUtil.generateVideoFileOutputOptions
 import androidx.camera.testing.impl.FileUtil.generateVideoMediaStoreOptions
 import androidx.camera.testing.impl.FileUtil.getAbsolutePathFromUri
 import androidx.camera.testing.impl.util.EdgeToEdgeUtil
-import androidx.camera.video.ExperimentalHighSpeedVideo
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.HighSpeedVideoSessionConfig
 import androidx.camera.video.MediaStoreOutputOptions
@@ -83,7 +82,6 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 
 /** Activity for verifying behavior of high speed video recording. */
-@kotlin.OptIn(ExperimentalHighSpeedVideo::class)
 @SuppressLint("RestrictedApiAndroidX")
 class HighSpeedVideoActivity : AppCompatActivity() {
 

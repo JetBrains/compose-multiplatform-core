@@ -100,7 +100,7 @@ class HitTestActivity : AppCompatActivity() {
                     val headScenePose =
                         session!!.scene.perceptionSpace.getScenePoseFromPerceptionPose(headPose)
                     val hitTest = headScenePose.hitTest(Vector3(), Vector3(0f, 0f, -1f))
-                    if (hitTest.hitPosition != null && hitTest.surfaceNormal != null) {
+                    if (hitTest != null && hitTest.surfaceNormal != null) {
                         val updatedRotation =
                             Quaternion.fromLookTowards(
                                 hitTest.surfaceNormal!!,

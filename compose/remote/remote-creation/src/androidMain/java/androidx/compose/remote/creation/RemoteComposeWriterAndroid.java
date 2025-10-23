@@ -38,8 +38,8 @@ public class RemoteComposeWriterAndroid extends RemoteComposeWriter {
     }
 
     public RemoteComposeWriterAndroid(int width, int height, @NonNull String contentDescription,
-            int apilLevel, int profiles, @NonNull RcPlatformServices platform) {
-        super(width, height, contentDescription, apilLevel, profiles, platform);
+            int apiLevel, int profiles, @NonNull RcPlatformServices platform) {
+        super(width, height, contentDescription, apiLevel, profiles, platform);
     }
 
     public RemoteComposeWriterAndroid(@NonNull RcPlatformServices platform, int apiLevel,

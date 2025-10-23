@@ -87,6 +87,14 @@ constructor(
     private val cameraMetadata: CameraMetadata?,
 ) {
     private val closeCameraOnCameraGraphClose = CloseCameraOnCameraGraphClose()
+    private val supportedDynamicRangeProfiles =
+        if (Build.VERSION.SDK_INT >= 33) {
+            cameraMetadata
+                ?.let { DynamicRangeProfilesCompat.fromCameraMetaData(it) }
+                ?.toDynamicRangeProfiles()
+        } else {
+            null
+        }
 
     public data class CameraGraphCreationResult(
         val config: CameraGraph.Config,
@@ -133,7 +141,7 @@ constructor(
                 val mirrorMode = outputConfig.mirrorMode
                 val outputStreamConfig =
                     OutputStream.Config.create(
-                        dynamicRangeProfile = dynamicRange.toDynamicRangeProfiles(cameraMetadata),
+                        dynamicRangeProfile = dynamicRange.toDynamicRangeProfile(),
                         size = deferrableSurface.prescribedSize,
                         format = StreamFormat(deferrableSurface.prescribedStreamFormat),
                         camera =
@@ -444,23 +452,15 @@ constructor(
         )
     }
 
-    private fun DynamicRange.toDynamicRangeProfiles(
-        cameraMetadata: CameraMetadata?
-    ): DynamicRangeProfile? {
+    private fun DynamicRange.toDynamicRangeProfile(): DynamicRangeProfile? {
         var dynamicRangeProfile: DynamicRangeProfile? = null
 
         if (Build.VERSION.SDK_INT >= 33) {
             dynamicRangeProfile = DynamicRangeProfile.STANDARD
 
-            val dynamicRangeProfilesCompat =
-                cameraMetadata?.let { metadata ->
-                    DynamicRangeProfilesCompat.fromCameraMetaData(metadata)
-                }
-            val supportedProfiles = dynamicRangeProfilesCompat?.toDynamicRangeProfiles()
-
-            if (supportedProfiles != null) {
+            if (supportedDynamicRangeProfiles != null) {
                 val firstSupportedProfile =
-                    dynamicRangeToFirstSupportedProfile(this, supportedProfiles)
+                    dynamicRangeToFirstSupportedProfile(this, supportedDynamicRangeProfiles)
                 if (firstSupportedProfile != null) {
                     dynamicRangeProfile = DynamicRangeProfile(firstSupportedProfile)
                 } else {

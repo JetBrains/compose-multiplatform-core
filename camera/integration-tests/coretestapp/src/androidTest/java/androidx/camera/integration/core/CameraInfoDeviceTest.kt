@@ -38,7 +38,6 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
-import androidx.camera.video.ExperimentalHighSpeedVideo
 import androidx.camera.video.HighSpeedVideoSessionConfig
 import androidx.camera.video.Quality
 import androidx.camera.video.QualitySelector
@@ -270,7 +269,6 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
         assertThat(allSupportedFps).containsAtLeastElementsIn(supportedFpsForSessionConfig)
     }
 
-    @OptIn(ExperimentalHighSpeedVideo::class)
     @Test
     fun getSupportedFrameRateRanges_withHighSpeedVideoSessionConfig() {
         // Arrange.

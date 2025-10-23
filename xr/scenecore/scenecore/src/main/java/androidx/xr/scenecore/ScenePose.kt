@@ -66,14 +66,15 @@ public interface ScenePose {
     public annotation class HitTestFilterValue
 
     /**
-     * Creates a hit test from the specified origin in the specified direction into the Scene.
+     * Perform a hit test from the specified origin in the specified direction into the Scene.
      *
      * @param origin The translation of the origin of the hit test relative to this ScenePose.
      * @param direction The direction for the hit test ray from the origin.
-     * @return a HitResult. The HitResult describes if it hit something and where relative to this
-     *   ScenePose.
+     * @return The [HitTestResult], or null if the hit test did not find an intersection. The
+     *   HitTestResult describes the location and normal of the object closest to the hit, relative
+     *   to this ScenePose.
      */
-    public suspend fun hitTest(origin: Vector3, direction: Vector3): HitTestResult
+    public suspend fun hitTest(origin: Vector3, direction: Vector3): HitTestResult?
 
     /**
      * Creates a hit test from the specified origin in the specified direction into the scene.
@@ -82,14 +83,15 @@ public interface ScenePose {
      * @param direction The direction for the hit test ray from the origin
      * @param hitTestFilter Filter for which scenes to hit test. Hitting other scenes is only
      *   allowed for apps with the `com.android.extensions.xr.ACCESS_XR_OVERLAY_SPACE` permission.
-     * @return a HitResult. The HitResult describes if it hit something and where relative to this
-     *   ScenePose.
+     * @return The [HitTestResult], or null if the hit test did not find an intersection. The
+     *   HitTestResult describes the location and normal of the object closest to the hit, relative
+     *   to this ScenePose.
      */
     public suspend fun hitTest(
         origin: Vector3,
         direction: Vector3,
         @HitTestFilterValue hitTestFilter: Int,
-    ): HitTestResult
+    ): HitTestResult?
 }
 
 /** The BaseScenePose implements the [ScenePose] interface. */
@@ -114,14 +116,14 @@ protected constructor(internal val rtScenePose: RtScenePoseType) : ScenePose {
         origin: Vector3,
         direction: Vector3,
         @ScenePose.HitTestFilterValue hitTestFilter: Int,
-    ): HitTestResult {
+    ): HitTestResult? {
         val hitTestRtFuture =
             this.rtScenePose.hitTest(origin, direction, hitTestFilter.toRtHitTestFilter())
         val deferredHitTestResult: RtHitTestResult = hitTestRtFuture.awaitSuspending()
         return deferredHitTestResult.toHitTestResult()
     }
 
-    override suspend fun hitTest(origin: Vector3, direction: Vector3): HitTestResult {
+    override suspend fun hitTest(origin: Vector3, direction: Vector3): HitTestResult? {
         return hitTest(origin, direction, ScenePose.HitTestFilter.SELF_SCENE.toRtHitTestFilter())
     }
 }

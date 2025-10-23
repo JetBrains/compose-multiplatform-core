@@ -92,10 +92,10 @@ import androidx.camera.core.ImageCaptureCapabilities;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.Preview;
-import androidx.camera.core.SessionConfig;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.extensions.ExtensionMode;
+import androidx.camera.extensions.ExtensionSessionConfig;
 import androidx.camera.extensions.ExtensionsManager;
 import androidx.camera.integration.extensions.utils.CameraSelectorUtil;
 import androidx.camera.integration.extensions.utils.ExtensionModeUtil;
@@ -277,27 +277,29 @@ public class CameraExtensionsActivity extends AppCompatActivity
     }
 
     @OptIn(markerClass = {ExperimentalCamera2Interop.class})
+    @SuppressLint("RestrictedApiAndroidX")
     boolean bindUseCasesWithCurrentExtensionMode() {
         if (!mExtensionsManager.isExtensionAvailable(mCurrentCameraSelector,
                 mCurrentExtensionMode)) {
             return false;
         }
 
-        CameraSelector cameraSelector = mExtensionsManager.getExtensionEnabledCameraSelector(
-                mCurrentCameraSelector, mCurrentExtensionMode);
-
-        mCamera = mCameraProvider.bindToLifecycle(this, cameraSelector);
+        // Obtains the CameraInfo with the extension session config.
+        CameraInfo cameraInfo = mCameraProvider.getCameraInfo(mCurrentCameraSelector,
+                new ExtensionSessionConfig.Builder(mCurrentExtensionMode,
+                        mExtensionsManager).build());
+        // Obtains the ImageCaptureCapabilities from the CameraInfo.
+        ImageCaptureCapabilities imageCaptureCapabilities =
+                ImageCapture.getImageCaptureCapabilities(cameraInfo);
 
         // Reset to the default JPEG output format if the format set previously is not supported by
         // the new extensions mode or the different lens facing camera.
-        if (!ImageCapture.getImageCaptureCapabilities(
-                mCamera.getCameraInfo()).getSupportedOutputFormats().contains(mImageOutputFormat)) {
+        if (!imageCaptureCapabilities.getSupportedOutputFormats().contains(mImageOutputFormat)) {
             mImageOutputFormat = OUTPUT_FORMAT_JPEG;
         }
         setUpImageOutputFormatButton();
 
-        final boolean isPostviewSupported = ImageCapture.getImageCaptureCapabilities(
-                mCamera.getCameraInfo()).isPostviewSupported();
+        final boolean isPostviewSupported = imageCaptureCapabilities.isPostviewSupported();
 
         resetPreviewViewStreamingStateIdlingResource();
         resetPreviewViewIdleStateIdlingResource();
@@ -367,8 +369,11 @@ public class CameraExtensionsActivity extends AppCompatActivity
             useCaseList.add(checkNotNull(mVideoCapture));
         }
 
-        mCamera = mCameraProvider.bindToLifecycle(this, cameraSelector,
-                new SessionConfig.Builder(useCaseList).build());
+        ExtensionSessionConfig extensionSessionConfig = new ExtensionSessionConfig.Builder(
+                mCurrentExtensionMode, mExtensionsManager, useCaseList).build();
+
+        mCamera = mCameraProvider.bindToLifecycle(this, mCurrentCameraSelector,
+                extensionSessionConfig);
 
         // Update the UI and save location for ImageCapture
         Button toggleButton = findViewById(R.id.PhotoToggle);

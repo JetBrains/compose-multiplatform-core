@@ -252,6 +252,7 @@ data class FilesData(
     val readOnlyUri: AppFunctionUriGrant,
     val writeOnlyUri: AppFunctionUriGrant,
     val readWriteUri: AppFunctionUriGrant,
+    val persistReadWriteUri: AppFunctionUriGrant,
 )
 
 @Suppress("UNUSED_PARAMETER")
@@ -468,6 +469,17 @@ class TestFunctions {
                     modeFlags =
                         Intent.FLAG_GRANT_READ_URI_PERMISSION or
                             Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                ),
+            persistReadWriteUri =
+                AppFunctionUriGrant(
+                    uri =
+                        Uri.parse(
+                            "content://androidx.appfunctions.integration.tests.provider/persist_read_write_test_file.txt"
+                        ),
+                    modeFlags =
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION,
                 ),
         )
     }

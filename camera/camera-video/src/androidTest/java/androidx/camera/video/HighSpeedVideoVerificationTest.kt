@@ -72,7 +72,6 @@ import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalHighSpeedVideo::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class HighSpeedVideoVerificationTest(

@@ -68,7 +68,7 @@ internal class AnchorRenderer(
     }
 
     override fun onPause(owner: LifecycleOwner) {
-        updateJob.complete()
+        updateJob.cancel()
         clearRenderedAnchors()
     }
 

@@ -393,6 +393,14 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
         return lifecycleCameraProvider.getCameraInfo(cameraSelector)
     }
 
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    override fun getCameraInfo(
+        cameraSelector: CameraSelector,
+        sessionConfig: SessionConfig,
+    ): CameraInfo {
+        return lifecycleCameraProvider.getCameraInfo(cameraSelector, sessionConfig)
+    }
+
     override fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener) {
         lifecycleCameraProvider.addCameraPresenceListener(executor, listener)
     }

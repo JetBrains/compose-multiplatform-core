@@ -90,7 +90,6 @@ import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
  * @See androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  * @See Recorder.getHighSpeedVideoCapabilities
  */
-@ExperimentalHighSpeedVideo
 public class HighSpeedVideoSessionConfig
 @JvmOverloads
 constructor(

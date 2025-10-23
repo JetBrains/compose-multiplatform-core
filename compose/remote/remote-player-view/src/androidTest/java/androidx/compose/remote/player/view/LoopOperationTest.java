@@ -30,7 +30,7 @@ import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.creation.RemoteComposeContext;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices;
-import androidx.compose.remote.player.core.RemoteComposeDocument;
+import androidx.compose.remote.player.core.RemoteDocument;
 import androidx.test.filters.SdkSuppress;
 
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class LoopOperationTest {
         void run(RemoteComposeContext foo);
     }
 
-    private RemoteComposeDocument createDocument(RemoteContext context, final Callback cb) {
+    private RemoteDocument createDocument(RemoteContext context, final Callback cb) {
 
         RemoteComposeContext doc =
                 new RemoteComposeContext(
@@ -68,8 +68,8 @@ public class LoopOperationTest {
         byte[] buffer = doc.buffer();
         int bufferSize = doc.bufferSize();
         System.out.println("size of doc " + bufferSize / 1024 + "KB");
-        RemoteComposeDocument recreatedDocument =
-                new RemoteComposeDocument(new ByteArrayInputStream(buffer, 0, bufferSize));
+        RemoteDocument recreatedDocument =
+                new RemoteDocument(new ByteArrayInputStream(buffer, 0, bufferSize));
         recreatedDocument.initializeContext(context);
         return recreatedDocument;
     }
@@ -80,7 +80,7 @@ public class LoopOperationTest {
         DebugPlayerContext debugContext = new DebugPlayerContext();
         debugContext.setHideString(true);
 
-        RemoteComposeDocument doc = createDocument(debugContext, run);
+        RemoteDocument doc = createDocument(debugContext, run);
         doc.paint(debugContext, Theme.UNSPECIFIED);
 
         return debugContext.getTestResults();
@@ -92,7 +92,7 @@ public class LoopOperationTest {
         DebugPlayerContext debugContext = new DebugPlayerContext();
         debugContext.setHideString(false);
 
-        RemoteComposeDocument doc = createDocument(debugContext, run);
+        RemoteDocument doc = createDocument(debugContext, run);
         doc.paint(debugContext, Theme.UNSPECIFIED);
 
         return doc.toString();

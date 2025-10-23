@@ -51,6 +51,7 @@ import androidx.xr.scenecore.runtime.ScenePose as RtScenePose
 import androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue as RtHitTestFilterValue
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.Space as RtSpace
+import androidx.xr.scenecore.runtime.SpaceValue
 import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
 import androidx.xr.scenecore.runtime.SurfaceEntity as RtSurfaceEntity
 import com.google.common.truth.Truth.assertThat

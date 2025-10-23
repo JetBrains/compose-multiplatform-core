@@ -80,7 +80,7 @@ import androidx.compose.remote.integration.view.demos.examples.countDown
 import androidx.compose.remote.integration.view.demos.examples.cube3d
 import androidx.compose.remote.integration.view.demos.examples.shaderFireworks
 import androidx.compose.remote.integration.view.demos.utils.RCDoc
-import androidx.compose.remote.player.core.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -141,13 +141,13 @@ fun getComposeDoc(
     cRun: @Composable () -> Unit,
 ): RCDoc {
     return object : RCDoc {
-        var remoteComposeDocument: RemoteComposeDocument? = null
+        var remoteComposeDocument: RemoteDocument? = null
         var document: CoreDocument? = null
         var created = false
 
         override fun run() {}
 
-        override fun getDoc(): RemoteComposeDocument? {
+        override fun getDoc(): RemoteDocument? {
             if (remoteComposeDocument != null) {
                 return remoteComposeDocument!!
             }
@@ -156,7 +156,7 @@ fun getComposeDoc(
                 rememberRemoteDocument(context, cRun)
             }
             if (document != null && document is CoreDocument) {
-                remoteComposeDocument = RemoteComposeDocument(document!!)
+                remoteComposeDocument = RemoteDocument(document!!)
             }
             return remoteComposeDocument
         }
@@ -281,9 +281,7 @@ class ExperimentActivity : ComponentActivity() {
             @Composable
             override fun getDoc(): MutableState<CoreDocument?> {
                 val doc =
-                    RemoteComposeDocument(
-                        ByteArrayInputStream(gen().buffer(), 0, gen().bufferSize())
-                    )
+                    RemoteDocument(ByteArrayInputStream(gen().buffer(), 0, gen().bufferSize()))
                 val doc2: MutableState<CoreDocument?> = remember { mutableStateOf(doc.document) }
                 return doc2
             }
@@ -566,7 +564,7 @@ private fun DocumentView(
             factory = {
                 val player = RemoteComposePlayer(it)
                 if (currentDocument.value != null) {
-                    player.setDocument(RemoteComposeDocument(currentDocument.value!!))
+                    player.setDocument(RemoteDocument(currentDocument.value!!))
                 }
                 player.setShaderControl(shaderControl)
                 player.addIdActionListener { _id, _metadata -> println("click $_id $_metadata") }
@@ -575,7 +573,7 @@ private fun DocumentView(
             update = {
                 it.setTheme(playbackTheme)
                 if (currentDocument.value != null) {
-                    it.setDocument(RemoteComposeDocument(currentDocument.value!!))
+                    it.setDocument(RemoteDocument(currentDocument.value!!))
                 }
                 it.setDebug(debugMode)
             },
@@ -630,7 +628,7 @@ fun DisplayStats(fileReady: Boolean, func: RemoteComposeFunc) {
                 factory = {
                     val player = RemoteComposePlayer(it)
                     if (currentDocument.value != null) {
-                        player.setDocument(RemoteComposeDocument(currentDocument.value!!))
+                        player.setDocument(RemoteDocument(currentDocument.value!!))
                     }
                     player.setShaderControl(shaderControl)
                     playerRef.value = player
@@ -642,7 +640,7 @@ fun DisplayStats(fileReady: Boolean, func: RemoteComposeFunc) {
                 update = {
                     it.setTheme(playbackTheme)
                     if (currentDocument.value != null) {
-                        it.setDocument(RemoteComposeDocument(currentDocument.value!!))
+                        it.setDocument(RemoteDocument(currentDocument.value!!))
                     }
                     it.setDebug(debugMode)
                 },
@@ -730,7 +728,7 @@ fun DisplayDoc(fileReady: Boolean, func: RemoteComposeFunc) {
                 factory = {
                     val player = RemoteComposePlayer(it)
                     if (currentDocument.value != null) {
-                        player.setDocument(RemoteComposeDocument(currentDocument.value!!))
+                        player.setDocument(RemoteDocument(currentDocument.value!!))
                     }
                     player.setShaderControl(shaderControl)
                     player.addIdActionListener { _id, _metadata ->
@@ -741,7 +739,7 @@ fun DisplayDoc(fileReady: Boolean, func: RemoteComposeFunc) {
                 update = {
                     it.setTheme(playbackTheme)
                     if (currentDocument.value != null) {
-                        it.setDocument(RemoteComposeDocument(currentDocument.value!!))
+                        it.setDocument(RemoteDocument(currentDocument.value!!))
                     }
                     it.setDebug(debugMode)
                 },
@@ -792,7 +790,7 @@ fun DisplayMain(
                     factory = {
                         val player = RemoteComposePlayer(it)
                         if (currentDocument.value != null) {
-                            player.setDocument(RemoteComposeDocument(currentDocument.value!!))
+                            player.setDocument(RemoteDocument(currentDocument.value!!))
                         }
                         player.setShaderControl(shaderControl)
                         player.addIdActionListener { _id, _metadata ->
@@ -805,7 +803,7 @@ fun DisplayMain(
                     update = {
                         it.setTheme(playbackTheme)
                         if (currentDocument.value != null) {
-                            it.setDocument(RemoteComposeDocument(currentDocument.value!!))
+                            it.setDocument(RemoteDocument(currentDocument.value!!))
                         }
                         it.setDebug(debugMode)
                     },

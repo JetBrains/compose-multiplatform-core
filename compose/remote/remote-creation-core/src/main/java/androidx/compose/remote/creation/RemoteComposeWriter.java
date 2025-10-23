@@ -151,7 +151,7 @@ public class RemoteComposeWriter {
      * @param width original document width
      * @param height original document height
      * @param contentDescription content description
-     * @param apilLevel document api level
+     * @param apiLevel document api level
      * @param profiles bitmap for the profiles
      * @param platform the platform to use
      */
@@ -159,12 +159,12 @@ public class RemoteComposeWriter {
             int width,
             int height,
             @NonNull String contentDescription,
-            int apilLevel,
+            int apiLevel,
             int profiles,
             @NonNull RcPlatformServices platform) {
         this(
                 platform,
-                apilLevel,
+                apiLevel,
                 hTag(Header.DOC_WIDTH, width),
                 hTag(Header.DOC_HEIGHT, height),
                 hTag(Header.DOC_CONTENT_DESCRIPTION, contentDescription),

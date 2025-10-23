@@ -97,6 +97,46 @@ class WearWidgetProviderClientTest {
         assertThat(shadowApp.boundServiceConnections).isEmpty()
     }
 
+    @Test
+    fun sendActivationNotice_cancelled() = runTest {
+        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
+        val instanceId = 123
+        val containerType = CONTAINER_TYPE_LARGE
+
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+
+        val job = launch { client.sendActivationNotice(instanceId, containerType) }
+        // Actual binding runs on the main thread.
+        advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        job.cancel()
+        advanceUntilIdle()
+
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+    }
+
+    @Test
+    fun sendDeactivationNotice_cancelled() = runTest {
+        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
+        val instanceId = 123
+        val containerType = CONTAINER_TYPE_LARGE
+
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+
+        val job = launch { client.sendDeactivationNotice(instanceId, containerType) }
+        // Actual binding runs on the main thread.
+        advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        job.cancel()
+        advanceUntilIdle()
+
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+    }
+
     private class FakeWearWidgetProvider : IWearWidgetProvider.Stub() {
         var activatedHandleParcel: ActiveWearWidgetHandleParcel? = null
         var deactivatedHandleParcel: ActiveWearWidgetHandleParcel? = null

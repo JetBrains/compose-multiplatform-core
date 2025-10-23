@@ -40,6 +40,7 @@ dependencies {
     implementation(project(":benchmark:benchmark-traceprocessor"))
     implementation(project(":benchmark:benchmark-junit4"))
     implementation(project(":benchmark:benchmark-common"))
+    implementation(project(":benchmark:benchmark-macro"))
     implementation(project(":benchmark:benchmark-macro-junit4"))
 
     implementation(libs.testExtJunit)

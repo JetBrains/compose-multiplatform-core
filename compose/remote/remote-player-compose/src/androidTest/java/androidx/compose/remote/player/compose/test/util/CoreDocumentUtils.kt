@@ -21,7 +21,7 @@ import androidx.compose.remote.core.operations.Header
 import androidx.compose.remote.creation.RemoteComposeContextAndroid
 import androidx.compose.remote.creation.RemoteComposeWriter
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
-import androidx.compose.remote.player.core.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteDocument
 import java.io.ByteArrayInputStream
 import kotlin.apply
 
@@ -36,7 +36,7 @@ fun getCoreDocument(
         ) + extraTags
     val rcContext =
         RemoteComposeContextAndroid(AndroidxRcPlatformServices(), *tags) { apply(content) }
-    return RemoteComposeDocument(
+    return RemoteDocument(
             ByteArrayInputStream(rcContext.mRemoteWriter.buffer(), 0, rcContext.bufferSize())
         )
         .document

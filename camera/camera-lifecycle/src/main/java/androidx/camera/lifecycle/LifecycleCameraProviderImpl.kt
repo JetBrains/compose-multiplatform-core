@@ -606,22 +606,31 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
     ): Camera =
         trace("CX:bindToLifecycle-internal") {
             Threads.checkMainThread()
+
+            val (finalPrimaryCameraSelector, finalSecondaryCameraSelector) =
+                getSelectorsWithSessionFilter(
+                    sessionConfig,
+                    primaryCameraSelector,
+                    secondaryCameraSelector,
+                )
+
             // TODO(b/153096869): override UseCase's target rotation.
 
             // Get the LifecycleCamera if existed.
             val primaryCameraInternal =
-                primaryCameraSelector.select(cameraX!!.cameraRepository.cameras)
+                finalPrimaryCameraSelector.select(cameraX!!.cameraRepository.cameras)
             primaryCameraInternal.setPrimary(true)
-            val primaryAdapterCameraInfo = getCameraInfo(primaryCameraSelector) as AdapterCameraInfo
+            val primaryAdapterCameraInfo =
+                getCameraInfo(finalPrimaryCameraSelector) as AdapterCameraInfo
 
             var secondaryCameraInternal: CameraInternal? = null
             var secondaryAdapterCameraInfo: AdapterCameraInfo? = null
-            if (secondaryCameraSelector != null) {
+            if (finalSecondaryCameraSelector != null) {
                 secondaryCameraInternal =
-                    secondaryCameraSelector.select(cameraX!!.cameraRepository.cameras)
+                    finalSecondaryCameraSelector!!.select(cameraX!!.cameraRepository.cameras)
                 secondaryCameraInternal.setPrimary(false)
                 secondaryAdapterCameraInfo =
-                    getCameraInfo(secondaryCameraSelector) as AdapterCameraInfo
+                    getCameraInfo(finalSecondaryCameraSelector!!) as AdapterCameraInfo
             }
 
             // This identifier must be constructed identically to the one inside
@@ -697,6 +706,26 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
             return@trace lifecycleCameraToBind
         }
 
+    private fun getSelectorsWithSessionFilter(
+        sessionConfig: SessionConfig,
+        primaryCameraSelector: CameraSelector,
+        secondaryCameraSelector: CameraSelector?,
+    ): Pair<CameraSelector, CameraSelector?> {
+        val sessionFilter =
+            sessionConfig.cameraFilter ?: return primaryCameraSelector to secondaryCameraSelector
+
+        val finalPrimary =
+            CameraSelector.Builder.fromSelector(primaryCameraSelector)
+                .addCameraFilter(sessionFilter)
+                .build()
+        val finalSecondary =
+            secondaryCameraSelector?.let {
+                CameraSelector.Builder.fromSelector(it).addCameraFilter(sessionFilter).build()
+            }
+
+        return finalPrimary to finalSecondary
+    }
+
     override fun getCameraInfo(cameraSelector: CameraSelector): CameraInfo =
         trace("CX:getCameraInfo") {
             val cameraInfoInternal =
@@ -720,6 +749,19 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
 
             return@trace adapterCameraInfo!!
         }
+
+    override fun getCameraInfo(
+        cameraSelector: CameraSelector,
+        sessionConfig: SessionConfig,
+    ): CameraInfo {
+        return sessionConfig.cameraFilter?.let { sessionFilter ->
+            val finalCameraSelector =
+                CameraSelector.Builder.fromSelector(cameraSelector)
+                    .addCameraFilter(sessionFilter)
+                    .build()
+            getCameraInfo(finalCameraSelector)
+        } ?: getCameraInfo(cameraSelector)
+    }
 
     override fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener) =
         cameraX!!.cameraAvailabilityProvider.addCameraPresenceListener(listener, executor)

@@ -31,10 +31,13 @@ import androidx.appfunctions.AppFunctionManagerCompat
 import androidx.appfunctions.AppFunctionResourceContainer.Companion.asAppFunctionResourceContainer
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.AppFunctionTextResource
+import androidx.appfunctions.AppFunctionUriGrant
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
 import androidx.appfunctions.ExecuteAppFunctionResponse.Success.Companion.PROPERTY_RETURN_VALUE
 import androidx.appfunctions.integration.tests.AppSearchMetadataHelper.isDynamicIndexerAvailable
+import androidx.appfunctions.integration.tests.TestUtil.assertNotPersistedGranted
+import androidx.appfunctions.integration.tests.TestUtil.assertPersistedGranted
 import androidx.appfunctions.integration.tests.TestUtil.assertReadAccessible
 import androidx.appfunctions.integration.tests.TestUtil.assertReadInaccessible
 import androidx.appfunctions.integration.tests.TestUtil.assertWriteAccessible
@@ -166,6 +169,14 @@ class IntegrationTest {
                 enumFunctionMetadata.parameters.associateBy { it.name }["stringEnum"]?.dataType
             )
         assertThat(stringEnumParamMetadata.enumValues).containsExactly("A", "B")
+        val intEnumSerializableMetadata =
+            assertIs<AppFunctionObjectTypeMetadata>(
+                enumFunctionMetadata.components.dataTypes[
+                        "androidx.appfunctions.integration.tests.IntEnumSerializable"]
+            )
+        val enumValues =
+            assertIs<AppFunctionIntTypeMetadata>(intEnumSerializableMetadata.properties["value"])
+        assertThat(enumValues.enumValues).containsExactly(10, 20)
     }
 
     @Test
@@ -1508,6 +1519,44 @@ class IntegrationTest {
     }
 
     @Test
+    fun executeAppFunction_getFileData_persistUriGrantingShouldSucceed() = doBlocking {
+        val request =
+            ExecuteAppFunctionRequest(
+                targetPackageName = context.packageName,
+                functionIdentifier =
+                    "androidx.appfunctions.integration.tests.TestFunctions#getFilesData",
+                functionParameters = AppFunctionData.EMPTY,
+            )
+
+        val response = appFunctionManager.executeAppFunction(request)
+        val successResponse = assertIs<ExecuteAppFunctionResponse.Success>(response)
+        val filesData =
+            checkNotNull(
+                successResponse.returnValue
+                    .getAppFunctionData(PROPERTY_RETURN_VALUE)
+                    ?.deserialize(FilesData::class.java)
+            )
+        val persistGrantedUri = filesData.persistReadWriteUri
+
+        // Persist URI still has read/write access before taking persist granting
+        targetContext.assertReadAccessible(persistGrantedUri.uri)
+        targetContext.assertWriteAccessible(persistGrantedUri.uri)
+        targetContext.assertNotPersistedGranted(persistGrantedUri.uri)
+        // Persist URI is persisted after taking persist granting
+        targetContext.contentResolver.takePersistableUriPermission(
+            persistGrantedUri.uri,
+            persistGrantedUri.getValidPersistableUriFlags(),
+        )
+        targetContext.assertPersistedGranted(persistGrantedUri.uri)
+        // Persist URI is not persisted after releasing
+        targetContext.contentResolver.releasePersistableUriPermission(
+            persistGrantedUri.uri,
+            persistGrantedUri.getValidPersistableUriFlags(),
+        )
+        targetContext.assertNotPersistedGranted(persistGrantedUri.uri)
+    }
+
+    @Test
     fun executeAppFunction_requestCancellation_isIsolated() = doBlocking {
         val requestA =
             ExecuteAppFunctionRequest(
@@ -1761,6 +1810,11 @@ class IntegrationTest {
             .first()
             .flatMap { it.appFunctions }
             .single { it.id == id }
+    }
+
+    private fun AppFunctionUriGrant.getValidPersistableUriFlags(): Int {
+        return modeFlags and
+            (Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
     }
 
     private suspend fun Context.awaitAppFunctionsIndexed(

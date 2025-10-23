@@ -105,7 +105,9 @@ constructor(
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public open val sessionType: Int = SESSION_TYPE_REGULAR
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    internal open val requireNonEmptyUseCases: Boolean = true
+    public open val requireNonEmptyUseCases: Boolean = true
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public open val cameraFilter: CameraFilter? = null
 
     /**
      * Gets the feature selection listener set to this session config.

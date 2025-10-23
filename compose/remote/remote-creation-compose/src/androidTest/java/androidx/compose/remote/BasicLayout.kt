@@ -67,7 +67,7 @@ import androidx.compose.remote.creation.compose.modifier.width
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
-import androidx.compose.remote.player.core.RemoteComposeDocument
+import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.remote.player.view.RemoteComposePlayer
 import androidx.compose.remote.serialization.yaml.YAMLSerializer
 import androidx.compose.runtime.Composable
@@ -144,10 +144,10 @@ class LayoutTest {
                     var documentWidth by remember { mutableStateOf(300) }
                     var documentHeight by remember { mutableStateOf(300) }
                     var documentContent = remember { mutableStateOf("") }
-                    var docu = remember(doc.value) { mutableStateOf<RemoteComposeDocument?>(null) }
+                    var docu = remember(doc.value) { mutableStateOf<RemoteDocument?>(null) }
 
                     if (doc.value != null) {
-                        docu.value = RemoteComposeDocument(doc.value!!)
+                        docu.value = RemoteDocument(doc.value!!)
                     }
                     AndroidView(
                         modifier =
@@ -214,10 +214,10 @@ class LayoutTest {
                     var documentWidth by remember { mutableStateOf(300) }
                     var documentHeight by remember { mutableStateOf(300) }
                     var documentContent = remember { mutableStateOf("") }
-                    var docu = remember(doc.value) { mutableStateOf<RemoteComposeDocument?>(null) }
+                    var docu = remember(doc.value) { mutableStateOf<RemoteDocument?>(null) }
 
                     if (doc.value != null) {
-                        docu.value = RemoteComposeDocument(doc.value!!)
+                        docu.value = RemoteDocument(doc.value!!)
                     }
                     AndroidView(
                         modifier =
@@ -304,10 +304,10 @@ class LayoutTest {
                     var documentWidth by remember { mutableStateOf(300) }
                     var documentHeight by remember { mutableStateOf(300) }
                     var documentContent = remember { mutableStateOf("") }
-                    var docu = remember(doc.value) { mutableStateOf<RemoteComposeDocument?>(null) }
+                    var docu = remember(doc.value) { mutableStateOf<RemoteDocument?>(null) }
 
                     if (doc.value != null) {
-                        docu.value = RemoteComposeDocument(doc.value!!)
+                        docu.value = RemoteDocument(doc.value!!)
                     }
                     AndroidView(
                         modifier =
