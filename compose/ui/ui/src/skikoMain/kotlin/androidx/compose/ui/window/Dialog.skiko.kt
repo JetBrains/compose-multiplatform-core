@@ -28,6 +28,7 @@ import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.animation.easeOutTimingFunction
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.graphics.BlendMode
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 
 /**
@@ -180,7 +182,9 @@ private fun DialogLayout(
 ) {
     val currentContent by rememberUpdatedState(content)
     val compositionContext = rememberCompositionContext()
-    var graphicsLayerScopeUpdate by remember { mutableStateOf<GraphicsLayerScope.() -> Unit>({}) }
+    var graphicsLayerScopeUpdate by remember {
+        mutableStateOf<GraphicsLayerScope.() -> Unit>({ alpha = 0f })
+    }
     val layer = rememberComposeSceneLayer(
         focusable = true
     )
@@ -199,7 +203,7 @@ private fun DialogLayout(
     layer.Content {
         LaunchedEffect(Unit) {
             dialogAnimationScope.defaultDialogAppearEffect()
-            graphicsLayerScopeUpdate = {}
+            graphicsLayerScopeUpdate = { alpha = 1f }
             layer.scrimColor = properties.scrimColor
         }
         val platformInsets = properties.platformInsets
@@ -262,9 +266,16 @@ private interface DialogAnimationScope {
     var scrimColor: Color
 }
 
+private suspend fun durationScale(): Float {
+    return currentCoroutineContext()[MotionDurationScale]?.scaleFactor ?: 1f
+}
+
 private suspend fun DialogAnimationScope.defaultDialogAppearEffect() {
     val initialScrimColor = this.scrimColor
-    withAnimationProgress(0.20.seconds, timingFunction = ::easeOutTimingFunction) { progress ->
+    withAnimationProgress(
+        duration = (durationScale() * 0.2).seconds,
+        timingFunction = ::easeOutTimingFunction
+    ) { progress ->
         val animatedAlpha = AnimatedLayerInitialAlpha + progress * (1f - AnimatedLayerInitialAlpha)
         this.scrimColor = initialScrimColor.copy(initialScrimColor.alpha * animatedAlpha)
         this.graphicsLayer {
@@ -279,8 +290,12 @@ private suspend fun DialogAnimationScope.defaultDialogAppearEffect() {
 
 private suspend fun DialogAnimationScope.defaultDialogDisappearEffect() {
     val initialScrimColor = this.scrimColor
-    withAnimationProgress(0.15.seconds, timingFunction = ::easeOutTimingFunction) { progress ->
-        val animatedAlpha = AnimatedLayerInitialAlpha + (1f - progress) * (1f - AnimatedLayerInitialAlpha)
+    withAnimationProgress(
+        duration = (durationScale() * 0.15).seconds,
+        timingFunction = ::easeOutTimingFunction
+    ) { progress ->
+        val animatedAlpha =
+            AnimatedLayerInitialAlpha + (1f - progress) * (1f - AnimatedLayerInitialAlpha)
         this.scrimColor = initialScrimColor.copy(initialScrimColor.alpha * animatedAlpha)
         this.graphicsLayer {
             this.alpha = animatedAlpha
