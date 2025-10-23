@@ -21,8 +21,11 @@ import org.w3c.dom.DragEvent
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.ImageData
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.ShadowRoot
 
-internal abstract class WebDragAndDropManager(eventListener: EventTargetListener, globalEventsListener: EventTargetListener, private val density: Density) :
+internal abstract class WebDragAndDropManager(
+    private val canvas: HTMLElement, eventListener: EventTargetListener, globalEventsListener: EventTargetListener, private val density: Density
+) :
     PlatformDragAndDropManager {
     override val isRequestDragAndDropTransferRequired: Boolean
         get() = false
@@ -45,9 +48,13 @@ internal abstract class WebDragAndDropManager(eventListener: EventTargetListener
             setProperty("pointer-events", "none")
         }
 
-        // non-image elements passed to setDragImage should be present on document
+        // https://developer.mozilla.org/en-US/docs/Web/API/Node/getRootNode
+        val rootNode = canvas.getRootNode()
+        val dragHolder = if (rootNode is ShadowRoot) rootNode else document.body
+
+        // non-image elements passed to setDragImage should be present on a document
         // the only browser the only browser not burdened with this limitation is Firefox
-        document.body?.appendChild(ghostImage)
+        dragHolder?.appendChild(ghostImage)
 
         dataTransfer?.setDragImage(ghostImage, 0, 0)
 

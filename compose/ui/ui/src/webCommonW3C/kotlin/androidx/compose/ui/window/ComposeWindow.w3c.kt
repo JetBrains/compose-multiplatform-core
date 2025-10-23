@@ -216,7 +216,9 @@ internal class ComposeWindow(
         override val architectureComponentsOwner get() = archComponentsOwner
         override val inputModeManager: InputModeManager = DefaultInputModeManager()
 
-        override val dragAndDropManager: PlatformDragAndDropManager = object : WebDragAndDropManager(canvasEvents, state.globalEvents, density) {
+        override val dragAndDropManager: PlatformDragAndDropManager = object : WebDragAndDropManager(
+         canvas, canvasEvents, state.globalEvents, density
+        ) {
             override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                 get() = scene.rootDragAndDropNode
         }
