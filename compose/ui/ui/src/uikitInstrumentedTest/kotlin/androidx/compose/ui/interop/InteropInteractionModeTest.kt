@@ -51,7 +51,7 @@ internal class InteropInteractionModeTest {
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
                 properties = UIKitInteropProperties(
                     UIKitInteropInteractionMode.Cooperative(),
-                    placeAsOverlay = overlay
+                    placedAsOverlay = overlay
                 )
             )
         }
@@ -84,7 +84,7 @@ internal class InteropInteractionModeTest {
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
                 properties = UIKitInteropProperties(
                     interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 1000),
-                    placeAsOverlay = overlay
+                    placedAsOverlay = overlay
                 )
             )
         }
@@ -114,7 +114,7 @@ internal class InteropInteractionModeTest {
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
                 properties = UIKitInteropProperties(
                     interactionMode = UIKitInteropInteractionMode.Cooperative(delayMillis = 800),
-                    placeAsOverlay = overlay
+                    placedAsOverlay = overlay
                 )
             )
         }
@@ -152,7 +152,7 @@ internal class InteropInteractionModeTest {
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
                 properties = UIKitInteropProperties(
                     interactionMode = null,
-                    placeAsOverlay = true
+                    placedAsOverlay = true
                 )
             )
         }
@@ -180,7 +180,7 @@ internal class InteropInteractionModeTest {
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
                 properties = UIKitInteropProperties(
                     UIKitInteropInteractionMode.NonCooperative,
-                    placeAsOverlay = overlay
+                    placedAsOverlay = overlay
                 )
             )
         }
@@ -209,7 +209,7 @@ internal class InteropInteractionModeTest {
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
                 properties = UIKitInteropProperties(
                     UIKitInteropInteractionMode.NonCooperative,
-                    placeAsOverlay = overlay
+                    placedAsOverlay = overlay
                 )
             )
         }
@@ -239,7 +239,7 @@ internal class InteropInteractionModeTest {
                 modifier = Modifier.fillMaxWidth().height(50.dp).testTag("Button"),
                 properties = UIKitInteropProperties(
                     UIKitInteropInteractionMode.NonCooperative,
-                    placeAsOverlay = overlay
+                    placedAsOverlay = overlay
                 )
             )
         }

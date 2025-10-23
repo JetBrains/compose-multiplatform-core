@@ -61,7 +61,7 @@ class InteropTextFocusTest {
                 UIKitView(
                     factory = { nativeTextField },
                     modifier = Modifier.height(40.dp).fillMaxWidth(),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }

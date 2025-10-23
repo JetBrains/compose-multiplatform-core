@@ -42,19 +42,19 @@ class InteropInsidePlacementTest {
                 UIKitView(
                     factory = { interopView1 },
                     modifier = Modifier.size(100.dp),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 if (middleViewVisible.value) {
                     UIKitView(
                         factory = { interopView2 },
                         modifier = Modifier.size(100.dp),
-                        properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                        properties = UIKitInteropProperties(placedAsOverlay = overlay)
                     )
                 }
                 UIKitView(
                     factory = { interopView3 },
                     modifier = Modifier.size(100.dp),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -87,17 +87,17 @@ class InteropInsidePlacementTest {
                 UIKitView(
                     factory = { overlayInteropView },
                     modifier = Modifier.size(100.dp),
-                    properties = UIKitInteropProperties(placeAsOverlay = true)
+                    properties = UIKitInteropProperties(placedAsOverlay = true)
                 )
                 UIKitView(
                     factory = { dynamicInteropView },
                     modifier = Modifier.size(100.dp),
-                    properties = UIKitInteropProperties(placeAsOverlay = isOverlay.value)
+                    properties = UIKitInteropProperties(placedAsOverlay = isOverlay.value)
                 )
                 UIKitView(
                     factory = { backgroundInteropView },
                     modifier = Modifier.size(100.dp),
-                    properties = UIKitInteropProperties(placeAsOverlay = false)
+                    properties = UIKitInteropProperties(placedAsOverlay = false)
                 )
             }
         }

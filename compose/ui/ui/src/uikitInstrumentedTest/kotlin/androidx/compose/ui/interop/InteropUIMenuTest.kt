@@ -72,7 +72,7 @@ internal class InteropUIMenuTest {
                         .fillMaxWidth()
                         .height(40.dp)
                         .testTag("MenuButton"),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -121,7 +121,7 @@ internal class InteropUIMenuTest {
                             .fillMaxWidth()
                             .height(40.dp)
                             .testTag("MenuButton"),
-                        properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                        properties = UIKitInteropProperties(placedAsOverlay = overlay)
                     )
                 }
             }
@@ -158,7 +158,7 @@ internal class InteropUIMenuTest {
                         .fillMaxWidth()
                         .height(400.dp)
                         .testTag("UIButton"),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 UIKitView(
                     factory = {
@@ -170,7 +170,7 @@ internal class InteropUIMenuTest {
                         .fillMaxWidth()
                         .height(40.dp)
                         .testTag("MenuButton"),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -202,7 +202,7 @@ internal class InteropUIMenuTest {
                     button
                 },
                 modifier = Modifier.fillMaxWidth().height(400.dp).testTag("MenuButton"),
-                properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                properties = UIKitInteropProperties(placedAsOverlay = overlay)
             )
         }
 

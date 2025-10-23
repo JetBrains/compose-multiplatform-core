@@ -101,9 +101,9 @@ internal class UIKitInteropContainer(
 
         val isAdded = interopViews.put(interopView, holder) == null
         val countBelow = countInteropComponentsBelow(holder) {
-            contains(it) && (it as UIKitInteropElementHolder<*>).placeAsOverlay == holder.placeAsOverlay
+            contains(it) && (it as UIKitInteropElementHolder<*>).placedAsOverlay == holder.placedAsOverlay
         }
-        val container = if (holder.placeAsOverlay) overlayContainer else backgroundContainer
+        val container = if (holder.placedAsOverlay) overlayContainer else backgroundContainer
 
         if (isAdded) {
             scheduleUpdate {
@@ -126,7 +126,7 @@ internal class UIKitInteropContainer(
             transaction.isInteropActive = false
             snapshotObserver.stop()
         }
-        val container = if (holder.placeAsOverlay) overlayContainer else backgroundContainer
+        val container = if (holder.placedAsOverlay) overlayContainer else backgroundContainer
 
         scheduleUpdate {
             holder.removeInteropView(root = container)

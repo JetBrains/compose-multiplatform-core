@@ -67,7 +67,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
     private var currentClippedRect: IntRect? = null
     private var currentUserComponentRect: IntRect? = null
 
-    val placeAsOverlay: Boolean get() = properties.placeAsOverlay
+    val placedAsOverlay: Boolean get() = properties.placedAsOverlay
 
     var properties = properties
         set(value) {
@@ -183,7 +183,7 @@ internal abstract class UIKitInteropElementHolder<T : InteropView>(
         ).not()
 
     private fun Modifier.clearBackgroundIfNeeded(): Modifier =
-        if (placeAsOverlay) {
+        if (placedAsOverlay) {
             this
         } else {
             drawBehind {

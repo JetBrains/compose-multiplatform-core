@@ -563,7 +563,7 @@ internal class ScrollTest {
                         .height(200.dp)
                         .onGloballyPositioned { labelRect = it.boundsInWindow().toDpRect(density) }
                         .testTag("UIKit.UILabel"),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
 
                 Box(modifier = Modifier
@@ -906,7 +906,7 @@ private fun VerticalUIKitScrollInsideVerticalScroll(
                     DpSize(it.width.toDp(), it.height.toDp())
                 }
             },
-            properties = UIKitInteropProperties(placeAsOverlay = placeUIKitViewAsOverlay)
+            properties = UIKitInteropProperties(placedAsOverlay = placeUIKitViewAsOverlay)
         )
 
         Box(
@@ -954,7 +954,7 @@ private fun VerticalScrollWithHorizontalUIKitScroll(
                 .height(uiKitScrollViewHeight)
                 .testTag("UIKit.UIScrollView"),
             update = {},
-            properties = UIKitInteropProperties(placeAsOverlay = placeUIKitViewAsOverlay)
+            properties = UIKitInteropProperties(placedAsOverlay = placeUIKitViewAsOverlay)
         )
 
         Box(

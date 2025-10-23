@@ -45,7 +45,7 @@ class InteropInsidePopupsTest {
                 UIKitViewController(
                     factory = { controller },
                     modifier = Modifier.fillMaxSize(),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -64,7 +64,7 @@ class InteropInsidePopupsTest {
                 UIKitViewController(
                     factory = { controller },
                     modifier = Modifier.fillMaxSize(),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -85,7 +85,7 @@ class InteropInsidePopupsTest {
                 UIKitView(
                     factory = { view },
                     modifier = Modifier.fillMaxSize(),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -104,7 +104,7 @@ class InteropInsidePopupsTest {
                 UIKitView(
                     factory = { view },
                     modifier = Modifier.fillMaxSize(),
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }

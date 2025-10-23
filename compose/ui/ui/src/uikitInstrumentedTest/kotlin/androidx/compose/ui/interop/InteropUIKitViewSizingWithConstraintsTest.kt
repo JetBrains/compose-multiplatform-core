@@ -56,7 +56,7 @@ class InteropUIKitViewSizingWithConstraintsTest {
                     }
                 },
                 modifier = Modifier.onGloballyPositioned { rect = it.boundsInRoot().toDpRect(density) },
-                properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                properties = UIKitInteropProperties(placedAsOverlay = overlay)
             )
         }
 
@@ -83,7 +83,7 @@ class InteropUIKitViewSizingWithConstraintsTest {
                 modifier = Modifier
                     .size(width = 100.dp, height = 200.dp)
                     .onGloballyPositioned { rect = it.boundsInRoot().toDpRect(density) },
-                properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                properties = UIKitInteropProperties(placedAsOverlay = overlay)
             )
         }
 
@@ -110,7 +110,7 @@ class InteropUIKitViewSizingWithConstraintsTest {
                     },
                     modifier = Modifier
                         .onGloballyPositioned { uiKitRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -145,7 +145,7 @@ class InteropUIKitViewSizingWithConstraintsTest {
                     modifier = Modifier
                         .fillMaxSize()
                         .onGloballyPositioned { uiKitRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -170,7 +170,7 @@ class InteropUIKitViewSizingWithConstraintsTest {
                 modifier = Modifier
                     .size(100.dp, 200.dp)
                     .onGloballyPositioned { rect = it.boundsInRoot().toDpRect(density) },
-                properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                properties = UIKitInteropProperties(placedAsOverlay = overlay)
             )
         }
 
@@ -196,7 +196,7 @@ class InteropUIKitViewSizingWithConstraintsTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { uiKitRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -223,7 +223,7 @@ class InteropUIKitViewSizingWithConstraintsTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { uiKitRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }

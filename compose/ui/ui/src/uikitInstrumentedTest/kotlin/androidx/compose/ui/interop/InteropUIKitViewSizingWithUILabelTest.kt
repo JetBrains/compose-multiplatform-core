@@ -64,7 +64,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                     }
                 },
                 modifier = Modifier.onGloballyPositioned { interopRect = it.boundsInRoot().toDpRect(density) },
-                properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                properties = UIKitInteropProperties(placedAsOverlay = overlay)
             )
         }
 
@@ -87,7 +87,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                     }
                 },
                 modifier = Modifier.onGloballyPositioned { interopRect = it.boundsInRoot().toDpRect(density) },
-                properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                properties = UIKitInteropProperties(placedAsOverlay = overlay)
             )
         }
 
@@ -110,7 +110,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                     }
                 },
                 modifier = Modifier.onGloballyPositioned { interopRect = it.boundsInRoot().toDpRect(density) },
-                properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                properties = UIKitInteropProperties(placedAsOverlay = overlay)
             )
         }
 
@@ -133,7 +133,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                     }
                 },
                 modifier = Modifier.onGloballyPositioned { interopRect = it.boundsInRoot().toDpRect(density) },
-                properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                properties = UIKitInteropProperties(placedAsOverlay = overlay)
             )
         }
 
@@ -155,7 +155,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { singleLineLabel = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 UIKitView(
                     factory = {
@@ -165,7 +165,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { multiLineLabel = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -193,7 +193,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { singleLineText = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 UIKitView(
                     factory = {
@@ -203,7 +203,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { multiLineText = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -228,7 +228,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { referenceViewRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 UIKitView(
                     factory = {
@@ -240,7 +240,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                     modifier = Modifier
                         .width(200.dp)
                         .onGloballyPositioned { fixedWidthViewRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -264,7 +264,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { referenceViewRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 UIKitView(
                     factory = {
@@ -276,7 +276,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                     modifier = Modifier
                         .height(200.dp)
                         .onGloballyPositioned { fixedWidthViewRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -300,7 +300,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { referenceViewRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 UIKitView(
                     factory = {
@@ -312,7 +312,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                     modifier = Modifier
                         .size(width = 200.dp, height = 400.dp)
                         .onGloballyPositioned { fixedSizeViewRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -336,7 +336,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { unboundedTextRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 UIKitView(
                     factory = {
@@ -348,7 +348,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                     modifier = Modifier
                         .width(width = 200.dp)
                         .onGloballyPositioned { boundedWidthTextRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -373,7 +373,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { unboundedTextRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 UIKitView(
                     factory = {
@@ -385,7 +385,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                     modifier = Modifier
                         .height(100.dp)
                         .onGloballyPositioned { boundedHeightTextRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -413,7 +413,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { uiKitRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
@@ -442,7 +442,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned { uiKitRect = it.boundsInRoot().toDpRect(density) },
-                    properties = UIKitInteropProperties(placeAsOverlay = overlay)
+                    properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }

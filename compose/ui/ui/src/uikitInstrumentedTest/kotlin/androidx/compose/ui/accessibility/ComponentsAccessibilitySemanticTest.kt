@@ -639,7 +639,7 @@ class ComponentsAccessibilitySemanticTest {
                     },
                     properties = UIKitInteropProperties(
                         isNativeAccessibilityEnabled = false,
-                        placeAsOverlay = overlay
+                        placedAsOverlay = overlay
                     ),
                     modifier = Modifier.size(10.dp)
                 )
@@ -652,7 +652,7 @@ class ComponentsAccessibilitySemanticTest {
                     },
                     properties = UIKitInteropProperties(
                         isNativeAccessibilityEnabled = true,
-                        placeAsOverlay = overlay
+                        placedAsOverlay = overlay
                     ),
                     modifier = Modifier.size(10.dp)
                 )
@@ -665,7 +665,7 @@ class ComponentsAccessibilitySemanticTest {
                     },
                     properties = UIKitInteropProperties(
                         isNativeAccessibilityEnabled = true,
-                        placeAsOverlay = overlay
+                        placedAsOverlay = overlay
                     ),
                     modifier = Modifier.testTag("Container Tag").size(10.dp),
                 )
@@ -679,7 +679,7 @@ class ComponentsAccessibilitySemanticTest {
                     properties = UIKitInteropProperties(
                         interactionMode = null,
                         isNativeAccessibilityEnabled = true,
-                        placeAsOverlay = overlay
+                        placedAsOverlay = overlay
                     ),
                     modifier = Modifier.size(10.dp)
                 )
