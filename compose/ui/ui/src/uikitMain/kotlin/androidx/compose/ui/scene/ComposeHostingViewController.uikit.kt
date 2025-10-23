@@ -448,11 +448,11 @@ internal class ComposeHostingViewController(
             override val platformContext: PlatformContext = platformContext
 
             override fun createLayer(
-                density: Density,
                 layoutDirection: LayoutDirection,
                 focusable: Boolean,
                 compositionContext: CompositionContext
             ): ComposeSceneLayer {
+
                 val layer = UIKitComposeSceneLayer(
                     onClosed = {
                         layersHolder.getLayersViewController().detach(it)
@@ -461,7 +461,7 @@ internal class ComposeHostingViewController(
                     createComposeSceneContext = { createComposeSceneContext(it, layersHolder) },
                     hostCompositionLocals = { ProvideContainerCompositionLocals(it) },
                     layersViewController = layersHolder.getLayersViewController(),
-                    initDensity = density,
+                    initDensity = layersHolder.getLayersViewController().view.density,
                     initLayoutDirection = layoutDirection,
                     onFocusBehavior = configuration.onFocusBehavior,
                     onAccessibilityChanged = ::onAccessibilityChanged,

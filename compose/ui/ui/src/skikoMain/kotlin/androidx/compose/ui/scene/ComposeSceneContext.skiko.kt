@@ -55,7 +55,6 @@ interface ComposeSceneContext {
     /**
      * Creates a scene layer to display content as a new [LayoutNode] tree.
      *
-     * @param density The density of the layer.
      * @param layoutDirection The layout direction of the layer.
      * @param focusable Indicates whether the layer is focusable.
      * @param compositionContext The composition context for the layer.
@@ -64,7 +63,6 @@ interface ComposeSceneContext {
      * @see ComposeSceneLayer
      */
     fun createLayer(
-        density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
         compositionContext: CompositionContext,

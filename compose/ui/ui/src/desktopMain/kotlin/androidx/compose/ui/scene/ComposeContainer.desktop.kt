@@ -531,12 +531,11 @@ internal class ComposeContainer(
         override val platformContext: PlatformContext,
     ) : ComposeSceneContext {
         override fun createLayer(
-            density: Density,
             layoutDirection: LayoutDirection,
             focusable: Boolean,
             compositionContext: CompositionContext
         ): ComposeSceneLayer = createPlatformLayer(
-            density = density,
+            density = container.density,
             layoutDirection = layoutDirection,
             focusable = focusable,
             compositionContext = compositionContext

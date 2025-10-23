@@ -31,7 +31,6 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.node.LayoutNode
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.unit.Density
@@ -179,13 +178,11 @@ internal fun rememberComposeSceneLayer(
     focusable: Boolean = false
 ): ComposeSceneLayer {
     val sceneContext = LocalComposeSceneContext.requireCurrent()
-    val density = LocalDensity.current
     val layoutDirection = LocalLayoutDirection.current
     val parentComposition = rememberCompositionContext()
     val compositionLocalContext = currentCompositionLocalContext
     val layer = remember {
         sceneContext.createLayer(
-            density = density,
             layoutDirection = layoutDirection,
             focusable = focusable,
             compositionContext = parentComposition,
@@ -193,7 +190,6 @@ internal fun rememberComposeSceneLayer(
     }
     layer.focusable = focusable
     layer.compositionLocalContext = compositionLocalContext
-    layer.density = density
     layer.layoutDirection = layoutDirection
 
     DisposableEffect(Unit) {

@@ -418,7 +418,6 @@ private class CanvasLayersComposeSceneImpl(
     }
 
     override fun createLayer(
-        density: Density,
         layoutDirection: LayoutDirection,
         focusable: Boolean,
         compositionContext: CompositionContext,
