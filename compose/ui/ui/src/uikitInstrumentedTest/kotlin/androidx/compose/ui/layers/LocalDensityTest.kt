@@ -16,9 +16,14 @@
 
 package androidx.compose.ui.layers
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.Button
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Density
@@ -84,6 +89,7 @@ class LocalDensityTest {
         }
 
         assertNotEquals(outerDensity.density, actualOuterDensity)
+        assertEquals(hostingViewController.view.density.density, actualOuterDensity)
         assertEquals(innerDensity.density, actualInnerDensity)
     }
 
@@ -108,6 +114,119 @@ class LocalDensityTest {
         }
 
         assertNotEquals(outerDensity.density, actualOuterDensity)
+        assertEquals(hostingViewController.view.density.density, actualOuterDensity)
         assertEquals(innerDensity.density, actualInnerDensity)
+    }
+
+    @Test
+    fun testTapInteractionsInDialogWithOuterCustomDensity() = runUIKitInstrumentedTest {
+        val density = Density(density = 5f)
+        val interactionButtonNumber = 8
+        var interactionCount = 0
+
+        setContent {
+            CompositionLocalProvider(LocalDensity provides density) {
+                Dialog(onDismissRequest = {}) {
+                    Column {
+                        repeat(10) { number ->
+                            Button(
+                                onClick = { if (number == interactionButtonNumber) { interactionCount++ } },
+                                modifier = Modifier.fillMaxWidth().weight(1f).testTag("Button $number")
+                            ) {}
+                        }
+                    }
+                }
+            }
+        }
+
+        findNodeWithTag("Button $interactionButtonNumber").tap()
+
+        waitForIdle()
+
+        assertEquals(1, interactionCount)
+    }
+
+    @Test
+    fun testTapInteractionsInPopupWithOuterCustomDensity() = runUIKitInstrumentedTest {
+        val density = Density(density = 5f)
+        val targetButtonIndex = 8
+        var tappedButtonIndex = -1
+
+        setContent {
+            CompositionLocalProvider(LocalDensity provides density) {
+                Popup {
+                    Column {
+                        repeat(10) { index ->
+                            Button(
+                                onClick = { tappedButtonIndex = index },
+                                modifier = Modifier.fillMaxWidth().weight(1f).testTag("Button $index")
+                            ) {}
+                        }
+                    }
+                }
+            }
+        }
+
+        findNodeWithTag("Button $targetButtonIndex").tap()
+
+        waitForIdle()
+
+        assertEquals(targetButtonIndex, tappedButtonIndex)
+    }
+
+    @Test
+    fun testTapInteractionsInDialogWithInnerCustomDensity() = runUIKitInstrumentedTest {
+        val density = Density(density = 5f)
+        val targetButtonIndex = 8
+        var tappedButtonIndex = -1
+
+        setContent {
+            Dialog(onDismissRequest = {}) {
+                CompositionLocalProvider(LocalDensity provides density) {
+                    Column {
+                        repeat(10) { index ->
+                            Button(
+                                onClick = { tappedButtonIndex = index },
+                                modifier = Modifier.fillMaxWidth().weight(1f).testTag("Button $index")
+                            ) {}
+                        }
+                    }
+                }
+            }
+        }
+
+        findNodeWithTag("Button $targetButtonIndex").tap()
+
+        waitForIdle()
+
+        assertEquals(targetButtonIndex, tappedButtonIndex)
+    }
+
+    @Test
+    fun testTapInteractionsInPopupWithInnerCustomDensity() = runUIKitInstrumentedTest {
+        val density = Density(density = 5f)
+        val targetButtonIndex = 8
+        var tappedButtonIndex = -1
+
+        setContent {
+            Popup {
+                CompositionLocalProvider(LocalDensity provides density) {
+                    Column {
+                        repeat(10) { index ->
+                            Button(
+                                onClick = { tappedButtonIndex = index },
+                                modifier = Modifier.fillMaxWidth().weight(1f).testTag("Button $index")
+                            ) {}
+                        }
+                    }
+                }
+            }
+        }
+
+        findNodeWithTag("Button $targetButtonIndex").tap()
+
+        waitForIdle()
+
+        assertEquals(targetButtonIndex, tappedButtonIndex)
     }
 }
