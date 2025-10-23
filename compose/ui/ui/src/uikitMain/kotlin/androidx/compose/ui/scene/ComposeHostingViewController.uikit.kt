@@ -122,7 +122,8 @@ internal class ComposeHostingViewController(
     }
     private val navigationEventInput = UIKitNavigationEventInput(
         density = rootView.density,
-        getTopLeftOffsetInWindow = { IntOffset.Zero } //full screen
+        getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen
+        endEdgeGestureBehavior = configuration.endEdgeGestureBehavior
     )
 
     fun hasInvalidations(): Boolean {
@@ -464,6 +465,7 @@ internal class ComposeHostingViewController(
                     initDensity = density,
                     initLayoutDirection = layoutDirection,
                     onFocusBehavior = configuration.onFocusBehavior,
+                    endEdgeGestureBehavior = configuration.endEdgeGestureBehavior,
                     onAccessibilityChanged = ::onAccessibilityChanged,
                     focusedViewsList = if (focusable) focusedViewsList?.childFocusedViewsList() else null,
                     compositionContext = compositionContext,

@@ -67,6 +67,19 @@ class ComposeUIViewControllerConfiguration {
      */
     @ExperimentalComposeUiApi
     var parallelRendering: Boolean = false
+
+    /**
+     * Determines how the end edge gestures will be handled.
+     * In LTR layouts, the end edge is the right edge of the screen.
+     * In RTL layouts, the end edge is the left edge of the screen.
+     *
+     * Note: this setting only affects the behavior of the end edge gestures.
+     * The start edge gestures will always be handled as back navigation events.
+     *
+     * Default value is [EndEdgeGestureBehavior.Disabled].
+     */
+    @ExperimentalComposeUiApi
+    var endEdgeGestureBehavior: EndEdgeGestureBehavior = EndEdgeGestureBehavior.Disabled
 }
 
 /**
@@ -121,4 +134,22 @@ sealed interface OnFocusBehavior {
      * A focusable element should be displayed above the keyboard.
      */
     data object FocusableAboveKeyboard : OnFocusBehavior
+}
+
+@ExperimentalComposeUiApi
+sealed interface EndEdgeGestureBehavior {
+    /**
+     * No navigation events will be sent on the end edge.
+     */
+    data object Disabled : EndEdgeGestureBehavior
+
+    /**
+     * Back navigation events will be sent on the end edge.
+     */
+    data object Back : EndEdgeGestureBehavior
+
+    /**
+     * Forward navigation events will be sent on the end edge.
+     */
+    data object Forward : EndEdgeGestureBehavior
 }
