@@ -260,8 +260,8 @@ class ComposeDialog : JDialog {
     }
 
     override fun dispose() {
-        composePanel.dispose()
         super.dispose()
+        composePanel.dispose()
     }
 
     override fun setUndecorated(value: Boolean) {
@@ -291,6 +291,19 @@ class ComposeDialog : JDialog {
      */
     fun onRenderApiChanged(action: () -> Unit) {
         composePanel.onRenderApiChanged(action)
+    }
+
+    /**
+     * Renders the dialog's content synchronously.
+     *
+     * This doesn't need to be used in most cases, as the content will be rendered as needed
+     * automatically. It can, however, be used to force the rendering sooner than it normally would
+     * occur. Specifically, it allows rendering the content after the dialog has been made
+     * displayable, but before it has been shown, to avoid a brief flicker.
+     */
+    @ExperimentalComposeUiApi
+    fun renderImmediately() {
+        composePanel.renderImmediately()
     }
 
     /**

@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.ru() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Основная панель",
+    Strings.defaultPaneTitleSecondary to "Вспомогательная панель",
+    Strings.defaultPaneTitleTertiary to "Дополнительная панель",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Маркер перемещения для расширения панели",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Пропорция разделения панелей, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Изменить пропорцию разделения панелей на %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "Значение в процентах: %d",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP с начала",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP с конца",
+    Strings.dragToResizeClickToExpandDescription to "развернуть",
+    Strings.dragToResizeClickToCollapseDescription to "свернуть",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "частично развернуть",
+    Strings.dragToResizeExpandedStateDescription to "развернуто",
+    Strings.dragToResizeCollapsedStateDescription to "свернуто",
+    Strings.dragToResizePartiallyExpandedStateDescription to "в частично развернутом виде",
 )

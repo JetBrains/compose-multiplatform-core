@@ -25,7 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.OnUnplacedModifierNode
+import androidx.compose.ui.node.UnplacedStateAwareModifierNode
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,7 +42,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PlacementReusableNodeTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun onPlacedCalledOnReuseInsideLazyColumn() {
@@ -166,7 +167,7 @@ private data class TrackInteropPlacementModifierElement(
 private class TrackInteropPlacementModifierNode(
     var onAddedToPlatformHierarchy: () -> Unit,
     var onRemovedFromPlatformHierarchy: () -> Unit,
-) : Modifier.Node(), LayoutAwareModifierNode, OnUnplacedModifierNode {
+) : Modifier.Node(), LayoutAwareModifierNode, UnplacedStateAwareModifierNode {
     private var isPlaced = false
 
     override fun onPlaced(coordinates: LayoutCoordinates) {
@@ -177,14 +178,5 @@ private class TrackInteropPlacementModifierNode(
     override fun onUnplaced() {
         onRemovedFromPlatformHierarchy()
         isPlaced = false
-    }
-
-    override fun onDetach() {
-        // TODO(b/309776096): Remove workaround for missing [onUnplaced]
-        //  once it will be reliable implemented
-        if (isPlaced) {
-            onUnplaced()
-        }
-        super.onDetach()
     }
 }

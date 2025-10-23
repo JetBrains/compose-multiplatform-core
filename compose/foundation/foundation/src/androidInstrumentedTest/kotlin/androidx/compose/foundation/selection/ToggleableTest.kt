@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertModifierIsPure
 import androidx.compose.testutils.first
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -59,6 +60,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -90,6 +92,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -101,7 +104,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ToggleableTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun before() {
@@ -148,6 +151,18 @@ class ToggleableTest {
                 ToggleableState.Indeterminate,
             )
 
+        fun autofillFillActionSet(): SemanticsMatcher =
+            SemanticsMatcher.keyIsDefined(SemanticsActions.OnFillData)
+
+        fun autofillDataToggleSet(): SemanticsMatcher =
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.ContentDataType,
+                ContentDataType.Toggle,
+            )
+
+        fun autofillFillDataSet(): SemanticsMatcher =
+            SemanticsMatcher.keyIsDefined(SemanticsProperties.FillableData)
+
         fun roleNotSet(): SemanticsMatcher =
             SemanticsMatcher.keyNotDefined(SemanticsProperties.Role)
 
@@ -156,18 +171,27 @@ class ToggleableTest {
             .assert(roleNotSet())
             .assertIsEnabled()
             .assertIsOn()
+            .assert(autofillDataToggleSet())
+            .assert(autofillFillActionSet())
+            .assert(autofillFillDataSet())
             .assertHasClickAction()
         rule
             .onNodeWithTag("unCheckedToggleable")
             .assert(roleNotSet())
             .assertIsEnabled()
             .assertIsOff()
+            .assert(autofillDataToggleSet())
+            .assert(autofillFillActionSet())
+            .assert(autofillFillDataSet())
             .assertHasClickAction()
         rule
             .onNodeWithTag("indeterminateToggleable")
             .assert(roleNotSet())
             .assertIsEnabled()
             .assert(hasIndeterminateState())
+            .assert(autofillDataToggleSet())
+            .assert(autofillFillActionSet())
+            .assert(autofillFillDataSet())
             .assertHasClickAction()
     }
 

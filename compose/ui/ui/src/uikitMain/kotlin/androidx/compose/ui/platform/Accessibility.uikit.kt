@@ -118,9 +118,7 @@ import platform.UIKit.UIAccessibilityTraits
 import platform.UIKit.UICoordinateSpaceProtocol
 import platform.UIKit.UIEdgeInsetsInsetRect
 import platform.UIKit.UIFocusAnimationCoordinator
-import platform.UIKit.UIFocusEffect
 import platform.UIKit.UIFocusEnvironmentProtocol
-import platform.UIKit.UIFocusHaloEffect
 import platform.UIKit.UIFocusItemContainerProtocol
 import platform.UIKit.UIFocusItemProtocol
 import platform.UIKit.UIFocusItemScrollableContainerProtocol
@@ -133,6 +131,7 @@ import platform.UIKit.accessibilityElementCount
 import platform.UIKit.accessibilityElements
 import platform.UIKit.accessibilityFrame
 import platform.UIKit.isAccessibilityElement
+import platform.UIKit.setAutomationElements
 import platform.darwin.NSObject
 import platform.objc.objc_getProtocol
 import platform.objc.protocol_isEqual
@@ -314,6 +313,8 @@ private sealed interface AccessibilityNode {
         override fun didBecomeFocused() {
             mediator.scrollToAccessibilityElement(key)
             mediator.keyboardFocusedElementKey = key
+
+            semanticsNode.config.getOrNull(SemanticsActions.RequestFocus)?.action?.invoke()
         }
 
         override fun didResignFocused() {
@@ -510,11 +511,10 @@ private class AccessibilityElement(
     init {
         setAccessibilityElements(children + nodeSemanticsElements())
         children.forEach { it.setAccessibilityContainer(this) }
+        if (available(OS.Ios to OSVersion(major = 17))) {
+            setAutomationElements(children + nodeSemanticsElements())
+        }
     }
-
-    override fun focusEffect(): UIFocusEffect = UIFocusHaloEffect.effectWithRect(
-        rect = convertRect(rect = bounds, toCoordinateSpace = mediator.view)
-    )
 
     private fun nodeSemanticsElements(): List<Any> =
         getOrElse(CachedAccessibilityPropertyKeys.accessibilityElements) {
@@ -533,6 +533,9 @@ private class AccessibilityElement(
             (it as? CMPAccessibilityElement)?.setAccessibilityContainer(null)
         }
         setAccessibilityElements(children + nodeSemanticsElements())
+        if (available(OS.Ios to OSVersion(major = 17))) {
+            setAutomationElements(children + nodeSemanticsElements())
+        }
         children.forEach { it.setAccessibilityContainer(this) }
         this.cachedProperties.clear()
     }
@@ -545,6 +548,7 @@ private class AccessibilityElement(
         isAlive = false
         setAccessibilityContainer(null)
         setAccessibilityElements(emptyList<Any>())
+        setAutomationElements(null)
         cachedProperties.clear()
     }
 
@@ -702,6 +706,8 @@ private class AccessibilityElement(
     } else {
         convertRect(rect = bounds(), toCoordinateSpace = mediator.view)
     }
+
+    override fun focusEffectRect(): CValue<CGRect> = convertRect(rect = bounds, toCoordinateSpace = mediator.view)
 
     override fun bounds(): CValue<CGRect> {
         val offset = contentOffset()
@@ -1604,7 +1610,11 @@ internal class AccessibilityMediator(
                 }
             }
 
-            repeat(element.accessibilityElementCount().toInt()) { index ->
+            element.accessibilityElements?.takeIf { it.isNotEmpty() }?.forEach { element ->
+                findElement(element as NSObject, point)?.let {
+                    return it
+                }
+            } ?: repeat(element.accessibilityElementCount().toInt()) { index ->
                 element.accessibilityElementAtIndex(index.toLong())?.let { element ->
                     findElement(element as NSObject, point)?.let {
                         return it
@@ -1650,7 +1660,9 @@ internal class AccessibilityMediator(
         if (nsNode.isAccessibilityElement) {
             return nsNode
         }
-        repeat(node.accessibilityElementCount().toInt()) { index ->
+        nsNode.accessibilityElements?.takeIf { it.isNotEmpty() }?.forEach {
+            findFocusableElement(it as Any)
+        } ?: repeat(node.accessibilityElementCount().toInt()) { index ->
             node.accessibilityElementAtIndex(index.toLong())?.let {
                 findFocusableElement(it)
             }
@@ -1700,10 +1712,10 @@ private fun debugTraverse(debugLogger: AccessibilityDebugLogger, accessibilityOb
         is AccessibilityElement -> {
             accessibilityObject.debugLog(debugLogger, depth)
 
-            val count = accessibilityObject.accessibilityElementCount()
-            for (index in 0 until count) {
-                val element = accessibilityObject.accessibilityElementAtIndex(index)
-                element?.let {
+            accessibilityObject.accessibilityElements?.takeIf { it.isNotEmpty() }?.forEach {
+                debugTraverse(debugLogger, it as Any, depth + 1)
+            } ?: repeat(accessibilityObject.accessibilityElementCount().toInt()) { index ->
+                accessibilityObject.accessibilityElementAtIndex(index.toLong())?.let { element ->
                     debugTraverse(debugLogger, element, depth + 1)
                 }
             }

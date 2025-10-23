@@ -42,7 +42,7 @@ private class DisplayLinkConditions(
     val setPausedCallback: (Boolean) -> Unit
 ) {
     /**
-     * see [MetalRedrawer.needsProactiveDisplayLink]
+     * see [MetalRedrawer.ongoingInteractionEventsCount]
      */
     var needsToBeProactive: Boolean = false
         set(value) {
@@ -54,7 +54,7 @@ private class DisplayLinkConditions(
     /**
      * Indicates that application is running foreground now
      */
-    var isApplicationActive: Boolean = false
+    var isActive: Boolean = true
         set(value) {
             field = value
 
@@ -89,7 +89,7 @@ private class DisplayLinkConditions(
     }
 
     private fun update() {
-        val isUnpaused = isApplicationActive && (needsToBeProactive || scheduledRedrawsCount > 0)
+        val isUnpaused = isActive && (needsToBeProactive || scheduledRedrawsCount > 0)
         setPausedCallback(!isUnpaused)
     }
 
@@ -141,7 +141,7 @@ internal class MetalRedrawer(
     // Workaround for KN compiler bug
     // Type mismatch: inferred type is objcnames.protocols.MTLDeviceProtocol but platform.Metal.MTLDeviceProtocol was expected
     @Suppress("USELESS_CAST")
-    private val device = metalLayer.device as platform.Metal.MTLDeviceProtocol?
+    private val device = metalLayer.device as MTLDeviceProtocol?
         ?: throw IllegalStateException("CAMetalLayer.device can not be null")
     private val queue = getCachedCommandQueue(device)
     private val context = DirectContext.makeMetal(device.objcPtr(), queue.objcPtr())
@@ -151,6 +151,7 @@ internal class MetalRedrawer(
     // Semaphore for preventing command buffers count more than swapchain size to be scheduled/executed at the same time
     private val inflightSemaphore =
         dispatch_semaphore_create(metalLayer.maximumDrawableCount.toLong())
+    private val drawCanvasSemaphore = dispatch_semaphore_create(1)
     private val inflightCommandBuffers =
         InflightCommandBuffers(metalLayer.maximumDrawableCount.toInt())
 
@@ -237,30 +238,27 @@ internal class MetalRedrawer(
     private val currentTargetTimestamp: NSTimeInterval?
         get() = caDisplayLink?.targetTimestamp
 
-    private val applicationForegroundStateListener = ApplicationForegroundStateListener { isApplicationActive ->
-        displayLinkConditions.isApplicationActive = isApplicationActive
-
-        if (!isApplicationActive) {
-            // If application goes background, synchronously schedule all inflightCommandBuffers, as per
-            // https://developer.apple.com/documentation/metal/gpu_devices_and_work_submission/preparing_your_metal_app_to_run_in_the_background?language=objc
-            inflightCommandBuffers.waitUntilAllAreScheduled()
-        }
-    }
-
     init {
         val caDisplayLink = caDisplayLink
             ?: throw IllegalStateException("caDisplayLink is null during redrawer init")
-
-        // UIApplication can be in UIApplicationStateInactive state (during app launch before it gives control back to run loop)
-        // and won't receive UIApplicationWillEnterForegroundNotification
-        // so we compare the state with UIApplicationStateBackground instead of UIApplicationStateActive
-        displayLinkConditions.isApplicationActive =
-            ApplicationForegroundStateListener.isApplicationForeground
 
         caDisplayLink.addToRunLoop(NSRunLoop.mainRunLoop, NSRunLoopCommonModes)
 
         updateLayerOpacity()
     }
+
+    var isActive: Boolean = true
+        set(newValue) {
+            if (field == newValue) {
+                field = newValue
+                setNeedsRedraw()
+
+                displayLinkConditions.isActive = newValue
+                if (!newValue) {
+                    inflightCommandBuffers.waitUntilAllAreScheduled()
+                }
+            }
+        }
 
     fun dispose() {
         check(caDisplayLink != null) { "MetalRedrawer.dispose() was called more than once" }
@@ -275,8 +273,6 @@ internal class MetalRedrawer(
         render = { _, _ -> }
 
         releaseCachedCommandQueue(queue)
-
-        applicationForegroundStateListener.dispose()
 
         caDisplayLink?.invalidate()
         caDisplayLink = null
@@ -422,16 +418,21 @@ internal class MetalRedrawer(
                 isInteropActive = true
             }
 
-            // TODO: encoding on separate thread requires investigation for reported crashes
-            //  https://github.com/JetBrains/compose-multiplatform/issues/3862
-            //  https://youtrack.jetbrains.com/issue/COMPOSE-608/iOS-reproduce-and-investigate-parallel-rendering-encoding-crash
             val mustEncodeAndPresentOnMainThread = presentsWithTransaction || waitUntilCompletion || !useSeparateRenderThreadWhenPossible
 
             val encodeAndPresentBlock = {
                 trace("MetalRedrawer:draw:encodeAndPresent") {
+                    if (useSeparateRenderThreadWhenPossible) {
+                        dispatch_semaphore_wait(drawCanvasSemaphore, DISPATCH_TIME_FOREVER)
+                    }
+
                     surface.canvas.drawPicture(picture)
                     picture.close()
                     surface.flushAndSubmit()
+
+                    if (useSeparateRenderThreadWhenPossible) {
+                        dispatch_semaphore_signal(drawCanvasSemaphore)
+                    }
 
                     val commandBuffer = queue.commandBuffer()!!
                     commandBuffer.label = "Present"
@@ -486,9 +487,7 @@ internal class MetalRedrawer(
                 encodeAndPresentBlock()
             } else {
                 dispatch_async(renderingDispatchQueue) {
-                    autoreleasepool {
-                        encodeAndPresentBlock()
-                    }
+                    encodeAndPresentBlock()
                 }
             }
         }

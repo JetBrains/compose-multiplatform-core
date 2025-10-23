@@ -29,11 +29,9 @@ import androidx.compose.ui.awt.AwtEventFilter
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.RenderSettings
-import androidx.compose.ui.backhandler.DesktopBackGestureDispatcher
-import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.platform.DisposableSaveableStateRegistry
-import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
@@ -48,14 +46,14 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.layoutDirectionFor
-import androidx.compose.ui.window.sizeInPx
 import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.enableSavedStateHandles
+import androidx.navigationevent.NavigationEventDispatcher
+import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.savedstate.SavedState
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
@@ -107,6 +105,7 @@ internal class ComposeContainer(
 ) : WindowFocusListener,
     WindowListener,
     LifecycleOwner,
+    NavigationEventDispatcherOwner,
     SavedStateRegistryOwner,
     ViewModelStoreOwner {
     val windowContext = PlatformWindowContext()
@@ -141,6 +140,12 @@ internal class ComposeContainer(
             onWindowContainerPositionChanged()
         }
 
+    val architectureComponentsOwner = object : PlatformArchitectureComponentsOwner {
+        override val lifecycleOwner get() = this@ComposeContainer
+        override val navigationEventDispatcherOwner get() = this@ComposeContainer
+        override val viewModelStoreOwner get() = this@ComposeContainer
+    }
+
     private val coroutineExceptionHandler = DesktopCoroutineExceptionHandler()
     private val coroutineContext = MainUIDispatcher + coroutineExceptionHandler
 
@@ -154,6 +159,7 @@ internal class ComposeContainer(
             DetectEventOutsideLayer(),
             FocusableLayerEventFilter()
         ),
+        architectureComponentsOwner = architectureComponentsOwner,
         coroutineContext = coroutineContext,
         skiaLayerComponentFactory = ::createSkiaLayerComponent,
         composeSceneFactory = ::createComposeScene,
@@ -199,7 +205,7 @@ internal class ComposeContainer(
         get() = savedStateController.savedStateRegistry
     override val viewModelStore = ViewModelStore()
 
-    private val backGestureDispatcher = DesktopBackGestureDispatcher()
+    override val navigationEventDispatcher = NavigationEventDispatcher()
 
     private var isDisposed = false
     private var isDetached = true
@@ -281,7 +287,7 @@ internal class ComposeContainer(
     private fun onWindowContainerSizeChanged() {
         if (!container.isDisplayable) return
 
-        windowContext.setContainerSize(windowContainer.sizeInPx)
+        windowContext.setContainerSizeFromComponent(windowContainer)
         mediator.onContainerSizeChanged()
         layers.fastForEach(DesktopComposeSceneLayer::onWindowContainerSizeChanged)
 
@@ -321,6 +327,10 @@ internal class ComposeContainer(
         mediator.onRenderApiChanged(action)
     }
 
+    fun renderImmediately() {
+        mediator.renderImmediately()
+    }
+
     fun addNotify() {
         mediator.onComponentAttached()
         setWindow(SwingUtilities.getWindowAncestor(container))
@@ -334,6 +344,7 @@ internal class ComposeContainer(
     }
 
     fun removeNotify() {
+        mediator.onComponentDetached()
         isDetached = true
         updateLifecycleState()
         setWindow(null)
@@ -374,15 +385,13 @@ internal class ComposeContainer(
     ) {
         mediator.setKeyEventListeners(
             onPreviewKeyEvent = onPreviewKeyEvent,
-            onKeyEvent = {
-                onKeyEvent(it) || backGestureDispatcher.onKeyEvent(it)
-            }
+            onKeyEvent = onKeyEvent
         )
     }
 
     fun setContent(content: @Composable () -> Unit) {
         mediator.setContent {
-            ProvideContainerCompositionLocals(this, backGestureDispatcher) {
+            ProvideContainerCompositionLocals(this) {
                 content()
             }
         }
@@ -569,20 +578,17 @@ internal class ComposeContainer(
 @Composable
 private fun ProvideContainerCompositionLocals(
     composeContainer: ComposeContainer,
-    backGestureDispatcher: DesktopBackGestureDispatcher,
     content: @Composable () -> Unit,
 ) {
+    // TODO: Move to ProvidePlatformCompositionLocals
     val saveableStateRegistry = remember {
         DisposableSaveableStateRegistry("ComposeContainer", composeContainer)
     }
     DisposableEffect(Unit) { onDispose { saveableStateRegistry.dispose() } }
 
     CompositionLocalProvider(
-        LocalLifecycleOwner provides composeContainer,
         LocalSavedStateRegistryOwner provides composeContainer,
         LocalSaveableStateRegistry provides saveableStateRegistry,
-        LocalInternalViewModelStoreOwner provides composeContainer,
-        LocalBackGestureDispatcher provides backGestureDispatcher,
         content = content,
     )
 }

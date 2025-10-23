@@ -16,41 +16,48 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.platform.IOSLifecycleOwner
+import androidx.compose.ui.platform.UIKitArchitectureComponentsOwner
 import androidx.lifecycle.Lifecycle
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import platform.Foundation.NSNotificationCenter
-import platform.UIKit.UIApplication
-import platform.UIKit.UIApplicationDidBecomeActiveNotification
-import platform.UIKit.UIApplicationDidEnterBackgroundNotification
-import platform.UIKit.UIApplicationWillEnterForegroundNotification
-import platform.UIKit.UIApplicationWillResignActiveNotification
+import platform.UIKit.UISceneDidActivateNotification
+import platform.UIKit.UISceneDidEnterBackgroundNotification
+import platform.UIKit.UISceneWillDeactivateNotification
+import platform.UIKit.UISceneWillEnterForegroundNotification
+import platform.UIKit.UIWindowScene
 
 class ViewControllerBasedLifecycleOwnerTest {
     @Test
     fun allEvents() {
         val notificationCenter = NSNotificationCenter()
-        val lifecycleOwner = IOSLifecycleOwner()
+        val lifecycleOwner = UIKitArchitectureComponentsOwner()
         val lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner, notificationCenter)
+        val scene = UIWindowScene()
+        lifecycleDelegate.windowScene = scene
+        assertEquals(Lifecycle.State.CREATED, lifecycleOwner.lifecycle.currentState)
+
+        notificationCenter.postNotificationName(UISceneWillEnterForegroundNotification, scene)
         assertEquals(Lifecycle.State.CREATED, lifecycleOwner.lifecycle.currentState)
 
         lifecycleDelegate.viewControllerWillAppear()
+        assertEquals(Lifecycle.State.STARTED, lifecycleOwner.lifecycle.currentState)
+
+        notificationCenter.postNotificationName(UISceneDidActivateNotification, scene)
         assertEquals(Lifecycle.State.RESUMED, lifecycleOwner.lifecycle.currentState)
 
         // app is visible, but not active, e.g. App switcher is shown
-        notificationCenter.postNotificationName(UIApplicationWillResignActiveNotification, UIApplication.sharedApplication)
+        notificationCenter.postNotificationName(UISceneWillDeactivateNotification, scene)
         assertEquals(Lifecycle.State.STARTED, lifecycleOwner.lifecycle.currentState)
 
-        notificationCenter.postNotificationName(UIApplicationDidBecomeActiveNotification, UIApplication.sharedApplication)
+        notificationCenter.postNotificationName(UISceneDidActivateNotification, scene)
         assertEquals(Lifecycle.State.RESUMED, lifecycleOwner.lifecycle.currentState)
 
         // app in background, e.g. Home button is pressed
-        notificationCenter.postNotificationName(UIApplicationDidEnterBackgroundNotification, UIApplication.sharedApplication)
+        notificationCenter.postNotificationName(UISceneDidEnterBackgroundNotification, scene)
         assertEquals(Lifecycle.State.CREATED, lifecycleOwner.lifecycle.currentState)
 
-        notificationCenter.postNotificationName(UIApplicationWillEnterForegroundNotification, UIApplication.sharedApplication)
+        notificationCenter.postNotificationName(UISceneWillEnterForegroundNotification, scene)
         assertEquals(Lifecycle.State.RESUMED, lifecycleOwner.lifecycle.currentState)
 
         lifecycleDelegate.viewControllerDidDisappear()
@@ -63,10 +70,13 @@ class ViewControllerBasedLifecycleOwnerTest {
     @Test
     fun foregroundThenViewWillAppear() {
         val notificationCenter = NSNotificationCenter()
-        val lifecycleOwner = IOSLifecycleOwner()
+        val lifecycleOwner = UIKitArchitectureComponentsOwner()
         val lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner, notificationCenter)
+        val scene = UIWindowScene()
+        lifecycleDelegate.windowScene = scene
 
-        notificationCenter.postNotificationName(UIApplicationWillEnterForegroundNotification, UIApplication.sharedApplication)
+        notificationCenter.postNotificationName(UISceneDidActivateNotification, scene)
+        notificationCenter.postNotificationName(UISceneWillEnterForegroundNotification, scene)
         assertEquals(Lifecycle.State.CREATED, lifecycleOwner.lifecycle.currentState)
 
         lifecycleDelegate.viewControllerWillAppear()
@@ -76,18 +86,21 @@ class ViewControllerBasedLifecycleOwnerTest {
     @Test
     fun viewDidDisappearThenBackground() {
         val notificationCenter = NSNotificationCenter()
-        val lifecycleOwner = IOSLifecycleOwner()
+        val lifecycleOwner = UIKitArchitectureComponentsOwner()
         val lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner, notificationCenter)
+        val scene = UIWindowScene()
+        lifecycleDelegate.windowScene = scene
         lifecycleDelegate.viewControllerWillAppear()
 
-        notificationCenter.postNotificationName(UIApplicationWillEnterForegroundNotification, UIApplication.sharedApplication)
+        notificationCenter.postNotificationName(UISceneWillEnterForegroundNotification, scene)
+        notificationCenter.postNotificationName(UISceneDidActivateNotification, scene)
         assertEquals(Lifecycle.State.RESUMED, lifecycleOwner.lifecycle.currentState)
 
         lifecycleDelegate.viewControllerDidDisappear()
         assertEquals(Lifecycle.State.CREATED, lifecycleOwner.lifecycle.currentState)
 
         // this should not happen, but let's protect against it anyway
-        notificationCenter.postNotificationName(UIApplicationDidEnterBackgroundNotification, UIApplication.sharedApplication)
+        notificationCenter.postNotificationName(UISceneDidEnterBackgroundNotification, scene)
         assertEquals(Lifecycle.State.CREATED, lifecycleOwner.lifecycle.currentState)
     }
 }

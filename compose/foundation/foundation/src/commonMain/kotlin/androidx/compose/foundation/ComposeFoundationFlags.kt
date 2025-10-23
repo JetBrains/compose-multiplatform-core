@@ -68,7 +68,7 @@ object ComposeFoundationFlags {
      * [BasicTextField][androidx.compose.foundation.text.BasicTextField]s. If false, the previous
      * context menu that has no public APIs will be used instead.
      */
-    @Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = true
+    @Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = false
 
     /**
      * Whether to use the new smart selection feature in
@@ -83,22 +83,7 @@ object ComposeFoundationFlags {
      * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
      * and then continue composing the rest of it in the next frames.
      */
-    @Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = false
-
-    /**
-     * Flag that enables an optimized implementation for the [clickable] overload without an
-     * [Indication] parameter. This also applies to [combinedClickable],
-     * [androidx.compose.foundation.selection.selectable], and
-     * [androidx.compose.foundation.selection.toggleable], which also use [clickable]. When this
-     * flag is true, [clickable] will no longer use [androidx.compose.ui.composed], which leads to
-     * improved performance and allows for composables with a [clickable] modifier to skip. However,
-     * this means that only [IndicationNodeFactory] instances can be supported - if a
-     * non-[IndicationNodeFactory] instance is provided to [LocalIndication], [clickable] will crash
-     * at runtime. To resolve this either migrate the [Indication] implementation used to a
-     * [IndicationNodeFactory], or use the other [clickable] overload with an explicit [Indication]
-     * parameter - this flag can be disabled as a temporary migration aid.
-     */
-    @Suppress("MutableBareField") @JvmField var isNonComposedClickableEnabled = true
+    @Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = true
 
     /**
      * With this flag on we don't use suspend pointer input as part of Modifier.clickable

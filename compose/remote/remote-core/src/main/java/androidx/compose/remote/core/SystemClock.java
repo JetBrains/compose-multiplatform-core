@@ -15,6 +15,8 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -23,6 +25,7 @@ import java.time.ZoneId;
  * An implementation of {@link Clock} which returns the current time in the system default time
  * zone.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class SystemClock extends RemoteClock {
     @Override
     public ZoneId getZone() {

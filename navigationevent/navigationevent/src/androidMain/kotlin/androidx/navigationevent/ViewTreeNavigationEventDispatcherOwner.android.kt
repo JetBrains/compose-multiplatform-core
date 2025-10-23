@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:JvmName("ViewTreeNavigationEventDispatcherOwner")
+
 package androidx.navigationevent
 
 import android.view.View
@@ -32,7 +34,7 @@ import androidx.core.viewtree.getParentOrViewTreeDisjointParent
  */
 @JvmName("set")
 public fun View.setViewTreeNavigationEventDispatcherOwner(
-    navigationEventDispatcherOwner: NavigationEventDispatcherOwner
+    navigationEventDispatcherOwner: NavigationEventDispatcherOwner?
 ) {
     setTag(R.id.view_tree_navigation_event_dispatcher_owner, navigationEventDispatcherOwner)
 }

@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
@@ -51,6 +52,7 @@ import kotlin.test.assertNull
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assume.assumeFalse
 import org.junit.Before
@@ -74,17 +76,18 @@ class UiErrorTraceTests(private val lookahead: Boolean) {
     @get:Rule
     val rule =
         createAndroidComposeRule<ComponentActivity>(
-            CoroutineExceptionHandler { _, e -> exceptionHandler.invoke(e) }
+            CoroutineExceptionHandler { _, e -> exceptionHandler.invoke(e) } +
+                StandardTestDispatcher()
         )
 
     @Before
     fun setUp() {
-        Composer.setDiagnosticStackTraceEnabled(true)
+        Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.SourceInformation)
     }
 
     @After
     fun tearDown() {
-        Composer.setDiagnosticStackTraceEnabled(false)
+        Composer.setDiagnosticStackTraceMode(ComposeStackTraceMode.Auto)
     }
 
     @Test

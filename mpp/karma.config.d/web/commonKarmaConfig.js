@@ -5,10 +5,17 @@ function configLaunchers(config) {
             base: "Chrome",
             flags: ["--no-sandbox", "--disable-search-engine-choice-screen"]
         },
+        ChromiumForComposeTests: {
+            base: "Chromium"
+        },
         FirefoxForComposeTests: {
             base: "Firefox",
             prefs: {
-                'dom.w3c_touch_events.enabled': 1
+                'dom.w3c_touch_events.enabled': 1,
+
+                // https://firefox-source-docs.mozilla.org/toolkit/components/telemetry/internals/preferences.html
+                // Records the version of the policy notified to the user. This preference is also used on Android, used in tests, it allows to skip the notification check.
+                'datareporting.policy.dataSubmissionPolicyBypassNotification': true
             }
         },
         SafariForComposeTests: {
@@ -19,6 +26,9 @@ function configLaunchers(config) {
     config.browsers = [];
     if (process.env["jetbrains.androidx.web.tests.enableChrome"]) {
         config.browsers.push("ChromeForComposeTests");
+    }
+    if (process.env["jetbrains.androidx.web.tests.enableChromium"]) {
+        config.browsers.push("ChromiumForComposeTests");
     }
     if (process.env["jetbrains.androidx.web.tests.enableFirefox"]) {
         config.browsers.push("FirefoxForComposeTests");

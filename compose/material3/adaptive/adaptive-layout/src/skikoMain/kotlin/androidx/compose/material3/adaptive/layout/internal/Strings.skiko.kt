@@ -29,23 +29,21 @@ import kotlin.jvm.JvmInline
 @Immutable
 internal actual value class Strings(val value: Int) {
     actual companion object {
-        actual val defaultPaneExpansionDragHandleContentDescription
-            get() = Strings(0)
-
-        actual val defaultPaneExpansionDragHandleStateDescription
-            get() = Strings(1)
-
-        actual val defaultPaneExpansionDragHandleActionDescription
-            get() = Strings(2)
-
-        actual val defaultPaneExpansionProportionAnchorDescription
-            get() = Strings(3)
-
-        actual val defaultPaneExpansionStartOffsetAnchorDescription
-            get() = Strings(4)
-
-        actual val defaultPaneExpansionEndOffsetAnchorDescription
-            get() = Strings(5)
+        actual val defaultPaneTitlePrimary = Strings(0)
+        actual val defaultPaneTitleSecondary = Strings(1)
+        actual val defaultPaneTitleTertiary = Strings(2)
+        actual val defaultPaneExpansionDragHandleContentDescription = Strings(3)
+        actual val defaultPaneExpansionDragHandleStateDescription = Strings(4)
+        actual val defaultPaneExpansionDragHandleActionDescription = Strings(5)
+        actual val defaultPaneExpansionProportionAnchorDescription = Strings(6)
+        actual val defaultPaneExpansionStartOffsetAnchorDescription = Strings(7)
+        actual val defaultPaneExpansionEndOffsetAnchorDescription = Strings(8)
+        actual val dragToResizeClickToExpandDescription = Strings(9)
+        actual val dragToResizeClickToCollapseDescription = Strings(10)
+        actual val dragToResizeClickToPartiallyExpandDescription = Strings(11)
+        actual val dragToResizeExpandedStateDescription = Strings(12)
+        actual val dragToResizeCollapsedStateDescription = Strings(13)
+        actual val dragToResizePartiallyExpandedStateDescription = Strings(14)
     }
 }
 
@@ -63,31 +61,33 @@ internal fun String.format(vararg formatArgs: Any?): String {
     return result
 }
 
-private fun getString(string: Strings, locale: Locale): String {
+private fun getTranslation(string: Strings, locale: Locale): String {
     val tag = localeTag(language = locale.language, region = locale.region)
     val translation = translationByLocaleTag.getOrPut(tag) {
         findTranslation(locale)
     }
-    return translation[string] ?: error("Missing translation for $string")
+    return translation[string]
+        ?: Translations.en()[string] // There are a few missing translations in AOSP, so use EN as backup
+        ?: error("Missing translation for $string")
 }
 
 @Composable
 @ReadOnlyComposable
 internal actual fun getString(string: Strings): String {
     val locale = Locale.current
-    return getString(string, locale)
+    return getTranslation(string, locale)
 }
 
 @Composable
 @ReadOnlyComposable
 internal actual fun getString(string: Strings, vararg formatArgs: Any): String {
     val locale = Locale.current
-    return getString(string, locale).format(*formatArgs)
+    return getTranslation(string, locale).format(*formatArgs)
 }
 
 internal actual fun CompositionLocalConsumerModifierNode.getString(string: Strings): String {
     val locale = Locale.current
-    return getString(string, locale)
+    return getTranslation(string, locale)
 }
 
 internal actual fun CompositionLocalConsumerModifierNode.getString(
@@ -95,7 +95,7 @@ internal actual fun CompositionLocalConsumerModifierNode.getString(
     vararg formatArgs: Any
 ): String {
     val locale = Locale.current
-    return getString(string, locale).format(*formatArgs)
+    return getTranslation(string, locale).format(*formatArgs)
 }
 
 /**

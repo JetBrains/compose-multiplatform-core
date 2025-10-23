@@ -19,7 +19,6 @@
 package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.input.key.KeyEvent
@@ -28,6 +27,7 @@ import androidx.compose.ui.input.pointer.MacosCursor
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.MacosTextInputService
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.WindowInfoImpl
@@ -37,11 +37,10 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
@@ -89,15 +88,17 @@ private class ComposeWindow(
     title: String,
     size: DpSize,
     content: @Composable WindowScope.() -> Unit,
-) : LifecycleOwner, WindowScope {
+) : WindowScope {
     private var isDisposed = false
     private val macosTextInputService = MacosTextInputService()
     private val _windowInfo = WindowInfoImpl().apply {
         isWindowFocused = true
     }
+    private val archComponentsOwner = DefaultArchitectureComponentsOwner()
     private val platformContext: PlatformContext =
         object : PlatformContext by PlatformContext.Empty {
             override val windowInfo get() = _windowInfo
+            override val architectureComponentsOwner get() = archComponentsOwner
             override val textInputService get() = macosTextInputService
             override fun setPointerIcon(pointerIcon: PointerIcon) {
                 val cursor = (pointerIcon as? MacosCursor)?.cursor ?: NSCursor.arrowCursor
@@ -114,12 +115,11 @@ private class ComposeWindow(
         override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
             val sizeInPx = IntSize(width, height)
             _windowInfo.containerSize = sizeInPx
+            _windowInfo.containerDpSize = sizeInPx.toSize().toDpSize(scene.density)
             scene.size = sizeInPx // TODO: Move it out from onRender to avoid extra invalidation
             scene.render(canvas.asComposeCanvas(), nanoTime)
         }
     }
-
-    override val lifecycle = LifecycleRegistry(this)
 
     private val windowStyle =
         NSWindowStyleMaskTitled or
@@ -217,21 +217,18 @@ private class ComposeWindow(
 
         scene.density = Density(window.backingScaleFactor.toFloat())
         scene.setContent {
-            CompositionLocalProvider(
-                LocalLifecycleOwner provides this
-            ) {
-                content()
-            }
+            content()
         }
 
         // TODO: Properly handle lifecycle events
-        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
     // TODO: need to call .dispose() on window close.
     fun dispose() {
         check(!isDisposed) { "ComposeWindow is already disposed" }
-        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        archComponentsOwner.viewModelStore.clear()
         skiaLayer.detach()
         scene.close()
         isDisposed = true

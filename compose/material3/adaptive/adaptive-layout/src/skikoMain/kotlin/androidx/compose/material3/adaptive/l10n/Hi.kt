@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.hi() = mapOf(
+    Strings.defaultPaneTitlePrimary to "प्राइमरी पैनल",
+    Strings.defaultPaneTitleSecondary to "सेकंडरी पैनल",
+    Strings.defaultPaneTitleTertiary to "टर्शरी पैनल",
     Strings.defaultPaneExpansionDragHandleContentDescription to "पैनल को बड़ा करने के लिए, खींचकर छोड़ने वाला हैंडल",
     Strings.defaultPaneExpansionDragHandleStateDescription to "पैनल स्प्लिट की मौजूदा स्थिति, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "पैनल स्प्लिट को %s में बदलें",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d प्रतिशत",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "शुरुआत से %d डीपी",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "आखिर में %d डीपी",
+    Strings.dragToResizeClickToExpandDescription to "बड़ा करें",
+    Strings.dragToResizeClickToCollapseDescription to "छोटा करें",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "कुछ हिस्से को बड़ा करें",
+    Strings.dragToResizeExpandedStateDescription to "बड़ा किया गया",
+    Strings.dragToResizeCollapsedStateDescription to "छोटा किया गया",
+    Strings.dragToResizePartiallyExpandedStateDescription to "कुछ हिस्से को बड़ा किया गया",
 )

@@ -40,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.autofill.ContentDataType
 import androidx.compose.ui.autofill.ContentType
 import androidx.compose.ui.autofill.FillableData
+import androidx.compose.ui.autofill.createFromText
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.Layout
@@ -78,6 +79,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.max
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -92,7 +94,7 @@ import org.junit.runner.RunWith
 class SemanticsTests {
     private val TestTag = "semantics-test-tag"
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun before() {
@@ -327,7 +329,7 @@ class SemanticsTests {
         rule.setContent {
             SimpleTestLayout(
                 Modifier.testTag(TestTag).semantics {
-                    FillableData("foo")?.let { fillableData = it }
+                    FillableData.createFromText("foo")?.let { fillableData = it }
                 }
             ) {}
         }
@@ -367,7 +369,7 @@ class SemanticsTests {
             ) {}
         }
 
-        val fillableData = FillableData("foo")
+        val fillableData = FillableData.createFromText("foo")
         rule.onNodeWithTag(TestTag).performSemanticsAction(SemanticsActions.OnFillData) {
             fillableData?.let { data -> it(data) }
         }

@@ -19,6 +19,7 @@ package androidx.compose.ui.platform
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -26,7 +27,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.retain
+import androidx.compose.runtime.retain.LocalRetainScope
+import androidx.compose.runtime.retain.RetainScope
+import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.node.RootForTest
@@ -38,6 +41,13 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasTextExactly
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.core.view.get
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.rules.activityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -45,7 +55,10 @@ import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertSame
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.runner.RunWith
 
@@ -53,7 +66,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ActivityRetainTest {
     @get:Rule val activityScenarioRule = activityScenarioRule<ComponentActivity>()
-    @get:Rule val composeTestRule = createEmptyComposeRule()
+    @get:Rule val composeTestRule = createEmptyComposeRule(StandardTestDispatcher())
 
     private val activityScenario
         get() = activityScenarioRule.scenario
@@ -191,12 +204,179 @@ class ActivityRetainTest {
         checkViewHierarchy(previouslyCreatedViews = 5)
     }
 
-    private fun waitForIdleSync() = InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+    @Test
+    fun test_ambiguousViewRestoration() {
+        var retained1: Any? = null
+        var retained2: Any? = null
+
+        fun createActivityContentView(activity: ComponentActivity) =
+            FrameLayout(activity).apply {
+                addView(
+                    ComposeView(activity).apply {
+                        setViewTreeLifecycleOwner(
+                            object : LifecycleOwner {
+                                override val lifecycle = activity.lifecycle
+                            }
+                        )
+                        setContent { retained1 = retain { Any() } }
+                    }
+                )
+
+                addView(
+                    ComposeView(activity).apply {
+                        setViewTreeLifecycleOwner(
+                            object : LifecycleOwner {
+                                override val lifecycle = activity.lifecycle
+                            }
+                        )
+                        setContent { retained2 = retain { Any() } }
+                    }
+                )
+            }
+
+        activityScenario.onActivity { activity ->
+            activity.setContentView(createActivityContentView(activity))
+        }
+
+        waitForIdleSync()
+        val originalRetained1 = retained1
+        val originalRetained2 = retained2
+        retained1 = null
+        retained2 = null
+
+        assertNotNull(originalRetained1, "First view did not retain a value")
+        assertNotNull(originalRetained2, "Second view did not retain a value")
+
+        activityScenario.recreate()
+        activityScenario.onActivity { activity ->
+            activity.setContentView(createActivityContentView(activity))
+        }
+        waitForIdleSync()
+
+        assertSame(originalRetained1, retained1, "First view retained unexpected value")
+        assertSame(originalRetained2, retained2, "Second view retained unexpected value")
+    }
+
+    @Test
+    fun test_stableIdViewRestoration() {
+        var reverseViewOrder = false
+        val id1 = View.generateViewId()
+        val id2 = View.generateViewId()
+        val retained = mutableMapOf<Int, String>()
+        var retainsCalled = 0
+
+        fun createActivityContentView(activity: ComponentActivity) =
+            FrameLayout(activity).apply {
+                val content: @Composable () -> Unit = {
+                    val viewId = LocalView.current.findParentOrNull { it is ComposeView }!!.id
+                    retained[viewId] = retain { "Retained value ${retainsCalled++}" }
+                }
+
+                addView(
+                    ComposeView(activity).apply {
+                        id = if (reverseViewOrder) id2 else id1
+                        setViewTreeLifecycleOwner(
+                            object : LifecycleOwner {
+                                override val lifecycle = activity.lifecycle
+                            }
+                        )
+                        setContent(content)
+                    }
+                )
+
+                addView(
+                    ComposeView(activity).apply {
+                        id = if (reverseViewOrder) id1 else id2
+                        setViewTreeLifecycleOwner(
+                            object : LifecycleOwner {
+                                override val lifecycle = activity.lifecycle
+                            }
+                        )
+                        setContent(content)
+                    }
+                )
+            }
+
+        activityScenario.onActivity { activity ->
+            activity.setContentView(createActivityContentView(activity))
+        }
+
+        waitForIdleSync()
+
+        assertEquals(mapOf(id1 to "Retained value 0", id2 to "Retained value 1"), retained)
+        retained.clear()
+
+        activityScenario.recreate()
+        reverseViewOrder = true
+        activityScenario.onActivity { activity ->
+            activity.setContentView(createActivityContentView(activity))
+        }
+        waitForIdleSync()
+        assertEquals(mapOf(id1 to "Retained value 0", id2 to "Retained value 1"), retained)
+    }
+
+    // Regression test for b/444009903
+    @Test
+    fun test_lifecycleCallbackAbuse() {
+        val owner =
+            object : ViewModelStoreOwner, LifecycleOwner {
+                override val viewModelStore = ViewModelStore()
+                override val lifecycle = LifecycleRegistry(this)
+            }
+
+        var retainCount = 0
+        var retainedValue: String? = null
+        lateinit var retainScope: RetainScope
+        activityScenario.onActivity { activity ->
+            owner.lifecycle.currentState = Lifecycle.State.RESUMED
+
+            activity.setContentView(
+                FrameLayout(activity).apply {
+                    setViewTreeLifecycleOwner(owner)
+                    setViewTreeViewModelStoreOwner(owner)
+                    addView(
+                        ComposeView(activity).apply {
+                            setContent {
+                                retainScope = LocalRetainScope.current
+                                retainedValue = retain { "Retained Instance ${retainCount++}" }
+                            }
+                        }
+                    )
+                }
+            )
+        }
+
+        waitForIdleSync()
+        activityScenario.onActivity {
+            owner.lifecycle.currentState = Lifecycle.State.CREATED
+            owner.lifecycle.currentState = Lifecycle.State.RESUMED
+            owner.lifecycle.currentState = Lifecycle.State.CREATED
+            owner.viewModelStore.clear()
+        }
+
+        waitForIdleSync()
+        assertEquals("Retained Instance 0", retainedValue)
+        assertFalse(
+            retainScope.isKeepingExitedValues,
+            "RetainScope should not be keeping exited values",
+        )
+    }
+
+    private fun waitForIdleSync() {
+        composeTestRule.waitForIdle()
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+    }
 
     private fun <T : ComponentActivity> ActivityScenario<T>.setContent(
         content: @Composable () -> Unit
     ) {
         onActivity { it.setContent(null, content) }
+    }
+
+    private fun View.findParentOrNull(predicate: (View) -> Boolean): View? {
+        var current = parent as? View
+        while (current != null && !predicate(current)) current = parent.parent as? View
+        return current
     }
 }
 

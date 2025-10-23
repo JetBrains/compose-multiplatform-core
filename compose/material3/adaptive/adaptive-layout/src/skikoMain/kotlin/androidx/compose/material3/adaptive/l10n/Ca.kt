@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.ca() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Subfinestra principal",
+    Strings.defaultPaneTitleSecondary to "Subfinestra secundària",
+    Strings.defaultPaneTitleTertiary to "Subfinestra terciària",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Ansa per arrossegar l\'expansió de la subfinestra",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Divisió de la subfinestra actual, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Canvia la divisió de la subfinestra a %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "percentatge de %d",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d píxels independents de la densitat des de l\'inici",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d píxels independents de la densitat des del final",
+    Strings.dragToResizeClickToExpandDescription to "desplega",
+    Strings.dragToResizeClickToCollapseDescription to "replega",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "desplega parcialment",
+    Strings.dragToResizeExpandedStateDescription to "s\'ha desplegat",
+    Strings.dragToResizeCollapsedStateDescription to "s\'ha replegat",
+    Strings.dragToResizePartiallyExpandedStateDescription to "s\'ha desplegat parcialment",
 )

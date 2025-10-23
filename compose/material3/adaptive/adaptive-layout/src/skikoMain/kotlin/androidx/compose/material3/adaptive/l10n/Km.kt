@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.km() = mapOf(
+    Strings.defaultPaneTitlePrimary to "ផ្ទាំងចម្បង",
+    Strings.defaultPaneTitleSecondary to "ផ្ទាំងទីពីរ",
+    Strings.defaultPaneTitleTertiary to "ផ្ទាំងទីបី",
     Strings.defaultPaneExpansionDragHandleContentDescription to "ដង​អូស​ពង្រីកផ្ទាំង",
     Strings.defaultPaneExpansionDragHandleStateDescription to "ការបំបែកផ្ទាំងបច្ចុប្បន្ន %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "ប្ដូរការបំបែកផ្ទាំងទៅ %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d ភាគរយ",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP ពីពេលចាប់ផ្ដើម",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP ពីពេលបញ្ចប់",
+    Strings.dragToResizeClickToExpandDescription to "ពង្រីក",
+    Strings.dragToResizeClickToCollapseDescription to "បង្រួម",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "ពង្រីកមួយផ្នែក",
+    Strings.dragToResizeExpandedStateDescription to "បានពង្រីក",
+    Strings.dragToResizeCollapsedStateDescription to "បានបង្រួម",
+    Strings.dragToResizePartiallyExpandedStateDescription to "បានពង្រីកខ្លះ",
 )

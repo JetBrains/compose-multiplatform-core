@@ -15,19 +15,19 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.JetbrainsAndroidXPlugin
 import androidx.build.LibraryType
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("JetbrainsAndroidXPlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetbrainsAndroidXPlugin.applyAndConfigure(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 androidXComposeMultiplatform {
     android()
@@ -41,7 +41,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(project(":navigation:navigation-compose"))
+                implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.1")
                 implementation(project(":compose:material:material"))
                 implementation(libs.kotlinStdlib)
             }

@@ -54,7 +54,9 @@ import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -64,7 +66,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class FlowRowColumnTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun testFlowRow_wrapsToTheNextLine() {
@@ -887,6 +889,165 @@ class FlowRowColumnTest {
 
         rule.waitForIdle()
         Truth.assertThat(positionInParentX).isEqualTo(expectedResult)
+    }
+
+    @Test
+    fun testRow_withCustomVertical_alignment() {
+        val rowHeight = 200
+        val boxSize = 20
+        var boxOffset = 0f
+        var capturedSpace = 0
+        var capturedSize = 0
+        rule.setContent {
+            with(LocalDensity.current) {
+                FlowRow(
+                    itemVerticalAlignment =
+                        object : Alignment.Vertical {
+                            override fun align(size: Int, space: Int): Int {
+                                capturedSpace = space
+                                capturedSize = size
+                                val offset = (space - size) / 2
+                                return offset.coerceIn(0, space - size)
+                            }
+                        }
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.size(boxSize.toDp()).onPlaced { coordinates ->
+                                boxOffset = coordinates.positionInParent().y
+                            }
+                    )
+                    Box(modifier = Modifier.size(rowHeight.toDp()))
+                }
+            }
+        }
+        rule.waitForIdle()
+        val expectedOffset = ((rowHeight - boxSize) / 2).toFloat()
+        assertEquals(expectedOffset, boxOffset)
+        assertEquals(rowHeight, capturedSize)
+        assertEquals(rowHeight, capturedSpace)
+    }
+
+    @Test
+    fun testColumn_withCustomHorizontal_alignment() {
+        val columnWidth = 300
+        val boxSize = 40
+        var boxOffset = 0f
+        var capturedSpace = 0
+        var capturedSize = 0
+        rule.setContent {
+            with(LocalDensity.current) {
+                FlowColumn(
+                    itemHorizontalAlignment =
+                        object : Alignment.Horizontal {
+                            override fun align(
+                                size: Int,
+                                space: Int,
+                                layoutDirection: LayoutDirection,
+                            ): Int {
+                                capturedSpace = space
+                                capturedSize = size
+                                val offset = (space - size) / 2
+                                return offset.coerceIn(0, space - size)
+                            }
+                        }
+                ) {
+                    Box(
+                        modifier =
+                            Modifier.size(boxSize.toDp()).onPlaced { coordinates ->
+                                boxOffset = coordinates.positionInParent().x
+                            }
+                    )
+                    Box(modifier = Modifier.size(columnWidth.toDp()))
+                }
+            }
+        }
+        rule.waitForIdle()
+        val expectedOffset = ((columnWidth - boxSize) / 2).toFloat()
+        assertEquals(expectedOffset, boxOffset)
+        assertEquals(columnWidth, capturedSize)
+        assertEquals(columnWidth, capturedSpace)
+    }
+
+    @Test
+    fun testColumn_withCustomHorizontalAlignModifier() {
+        val columnWidth = 300
+        val boxSize = 20
+        var boxOffset = 0f
+        var capturedSpace = 0
+        var capturedSize = 0
+        rule.setContent {
+            with(LocalDensity.current) {
+                FlowColumn {
+                    Box(
+                        modifier =
+                            Modifier.size(boxSize.toDp())
+                                .align(
+                                    object : Alignment.Horizontal {
+                                        override fun align(
+                                            size: Int,
+                                            space: Int,
+                                            layoutDirection: LayoutDirection,
+                                        ): Int {
+                                            capturedSpace = space
+                                            capturedSize = size
+                                            val offset = (space - size) / 2
+                                            return offset.coerceIn(0, space - size)
+                                        }
+                                    }
+                                )
+                                .onPlaced { coordinates ->
+                                    boxOffset = coordinates.positionInParent().x
+                                }
+                    )
+                    Box(modifier = Modifier.size(columnWidth.toDp()))
+                }
+            }
+        }
+        rule.waitForIdle()
+        val expectedOffset = ((columnWidth - boxSize) / 2).toFloat()
+        assertEquals(expectedOffset, boxOffset)
+        assertEquals(boxSize, capturedSize)
+        assertEquals(columnWidth, capturedSpace)
+    }
+
+    @Test
+    fun testRow_withCustomVerticalAlignModifier() {
+        val rowHeight = 200
+        val boxSize = 20
+        var boxOffset = 0f
+        var capturedSpace = 0
+        var capturedSize = 0
+        val expectedOffset = ((rowHeight - boxSize) / 2).toFloat()
+        rule.setContent {
+            with(LocalDensity.current) {
+                FlowRow {
+                    Box(
+                        modifier =
+                            Modifier.size(boxSize.toDp())
+                                .align(
+                                    object : Alignment.Vertical {
+                                        override fun align(size: Int, space: Int): Int {
+                                            capturedSpace = space
+                                            capturedSize = size
+                                            val offset = (space - size) / 2
+                                            return offset.coerceIn(0, space - size)
+                                        }
+                                    }
+                                )
+                                .onPlaced { coordinates ->
+                                    boxOffset = coordinates.positionInParent().y
+                                }
+                    )
+
+                    Box(modifier = Modifier.size(rowHeight.toDp()))
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertEquals(expectedOffset, boxOffset)
+        assertEquals(boxSize, capturedSize)
+        assertEquals(rowHeight, capturedSpace)
     }
 
     @Test

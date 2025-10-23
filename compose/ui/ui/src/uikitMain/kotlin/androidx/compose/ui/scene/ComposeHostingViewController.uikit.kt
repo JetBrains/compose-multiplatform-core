@@ -25,16 +25,14 @@ import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
-import androidx.compose.ui.backhandler.LocalBackGestureDispatcher
-import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
-import androidx.compose.ui.platform.IOSLifecycleOwner
+import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalInternalViewModelStoreOwner
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.UIKitArchitectureComponentsOwner
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
@@ -51,14 +49,13 @@ import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
-import androidx.compose.ui.window.ApplicationActiveStateListener
+import androidx.compose.ui.window.SceneActiveStateListener
 import androidx.compose.ui.window.ComposeView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
@@ -98,9 +95,10 @@ import platform.darwin.dispatch_get_main_queue
 internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
     private val content: @Composable () -> Unit,
-    private val lifecycleOwner: IOSLifecycleOwner = IOSLifecycleOwner(),
-    coroutineContext: CoroutineContext = Dispatchers.Main
-) : CMPViewController(lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner)) {
+    private val architectureComponentsOwner: UIKitArchitectureComponentsOwner = UIKitArchitectureComponentsOwner(),
+    coroutineContext: CoroutineContext = Dispatchers.Main,
+    private val lifecycleDelegate: ViewControllerLifecycleDelegate = ViewControllerLifecycleDelegate(architectureComponentsOwner)
+) : CMPViewController(lifecycleDelegate = lifecycleDelegate) {
     private val hapticFeedback = CupertinoHapticFeedback()
 
     private val rootView = ComposeView(
@@ -114,7 +112,7 @@ internal class ComposeHostingViewController(
     private var layersHolder: ComposeLayersHolder? = null
     private val layoutDirection get() = getLayoutDirection()
     private val motionDurationScale = MotionDurationScaleImpl()
-    private var applicationActiveStateListener: ApplicationActiveStateListener? = null
+    private var activeStateListener: SceneActiveStateListener? = null
     private val composeCoroutineContext: CoroutineContext = coroutineContext + motionDurationScale
     private var savableStateRegistry = SaveableStateRegistry(
         restoredValues = null, canBeSaved = { true }
@@ -122,9 +120,7 @@ internal class ComposeHostingViewController(
     private val interfaceOrientationObserver = SceneGeometryObserver {
         updateInterfaceOrientationState()
     }
-
-    private val backGestureDispatcher = UIKitBackGestureDispatcher(
-        enableBackGesture = configuration.enableBackGesture,
+    private val navigationEventInput = UIKitNavigationEventInput(
         density = rootView.density,
         getTopLeftOffsetInWindow = { IntOffset.Zero } //full screen
     )
@@ -154,9 +150,9 @@ internal class ComposeHostingViewController(
         get() {
             return InterfaceOrientation.getByRawValue(
                 if (available(OS.Ios to OSVersion(16))) {
-                    view.window?.windowScene?.effectiveGeometry?.interfaceOrientation
+                    windowScene?.effectiveGeometry?.interfaceOrientation
                 } else {
-                    view.window?.windowScene?.interfaceOrientation
+                    windowScene?.interfaceOrientation
                 } ?: UIApplication.sharedApplication.statusBarOrientation
             )
         }
@@ -207,16 +203,17 @@ internal class ComposeHostingViewController(
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
-        backGestureDispatcher.onDidMoveToWindow(window, rootView)
+        navigationEventInput.onDidMoveToWindow(window, rootView)
         interfaceOrientationObserver.windowScene = window?.windowScene
 
-        val windowContainer = window ?: return
+        window ?: return
 
         updateInterfaceOrientationState()
 
         layersHolder?.layersViewController?.referenceWindow = view.window
-        windowContext.setWindowContainer(windowContainer)
+        windowContext.window = window
         updateMotionSpeed()
+        lifecycleDelegate.windowScene = window.windowScene
     }
 
     private fun updateInterfaceOrientationState() {
@@ -265,7 +262,7 @@ internal class ComposeHostingViewController(
 
         // Because the container view can change during the modal transition animation,
         // the gesture handlers and layers view are added back when the animation ends.
-        backGestureDispatcher.onDidMoveToWindow(view.window, rootView)
+        navigationEventInput.onDidMoveToWindow(view.window, rootView)
     }
 
     @Suppress("DEPRECATION")
@@ -274,7 +271,7 @@ internal class ComposeHostingViewController(
         mediator?.sceneWillDisappear()
         configuration.delegate.viewWillDisappear(animated)
 
-        backGestureDispatcher.onDidMoveToWindow(null, rootView)
+        navigationEventInput.onDidMoveToWindow(null, rootView)
     }
 
     @Suppress("DEPRECATION")
@@ -317,12 +314,13 @@ internal class ComposeHostingViewController(
             onFocusBehavior = configuration.onFocusBehavior,
             focusedViewsList = focusedViewsList,
             windowContext = windowContext,
+            architectureComponentsOwner = architectureComponentsOwner,
             coroutineContext = composeCoroutineContext,
             redrawer = metalView.redrawer,
             composeSceneFactory = { invalidate, context ->
                 createComposeScene(invalidate, context, holder)
             },
-            backGestureDispatcher = backGestureDispatcher,
+            navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
         ).also { mediator ->
             rootView.embedSubview(mediator.inputView)
@@ -335,14 +333,19 @@ internal class ComposeHostingViewController(
             }
         }
 
-        applicationActiveStateListener = ApplicationActiveStateListener { isApplicationActive ->
-            if (isApplicationActive) {
+        activeStateListener = SceneActiveStateListener(
+            getScene = ::windowScene
+        ) { isSceneActive ->
+            if (isSceneActive) {
                 updateMotionSpeed()
             }
         }
+
         interfaceOrientationObserver.isObservingEnabled = true
 
-        backGestureDispatcher.onDidMoveToWindow(view.window, rootView)
+        architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
+        lifecycleDelegate.windowScene = windowScene
+        navigationEventInput.onDidMoveToWindow(view.window, rootView)
         onAccessibilityChanged()
     }
 
@@ -358,18 +361,21 @@ internal class ComposeHostingViewController(
         )
 
         rootView.updateMetalView(metalView = null)
-        backGestureDispatcher.onDidMoveToWindow(null, rootView)
+        navigationEventInput.onDidMoveToWindow(null, rootView)
+        architectureComponentsOwner.navigationEventDispatcher.removeInput(navigationEventInput)
 
         mediator?.dispose()
         mediator = null
 
-        applicationActiveStateListener?.dispose()
-        applicationActiveStateListener = null
+        activeStateListener?.dispose()
+        activeStateListener = null
 
         layersHolder?.disposeIfNeeded()
         layersHolder = null
 
         interfaceOrientationObserver.isObservingEnabled = false
+
+        windowContext.dispose()
     }
 
     @OptIn(NativeRuntimeApi::class)
@@ -459,11 +465,12 @@ internal class ComposeHostingViewController(
                     initLayoutDirection = layoutDirection,
                     onFocusBehavior = configuration.onFocusBehavior,
                     onAccessibilityChanged = ::onAccessibilityChanged,
-                    focusedViewsList = if (focusable) focusedViewsList else null,
+                    focusedViewsList = if (focusable) focusedViewsList?.childFocusedViewsList() else null,
                     compositionContext = compositionContext,
+                    ownerProvider = architectureComponentsOwner,
                     coroutineContext = composeCoroutineContext,
-                    enableBackGesture = configuration.enableBackGesture,
-                    interfaceOrientationState = interfaceOrientationState
+                    interfaceOrientationState = interfaceOrientationState,
+                    navigationEventDispatcher = architectureComponentsOwner.navigationEventDispatcher,
                 )
 
                 layersHolder.getLayersViewController().attach(layer)
@@ -510,9 +517,8 @@ internal class ComposeHostingViewController(
             LocalHapticFeedback provides hapticFeedback,
             LocalUIViewController provides this,
             LocalSystemTheme provides systemThemeState.value,
-            LocalLifecycleOwner provides lifecycleOwner,
-            LocalInternalViewModelStoreOwner provides lifecycleOwner,
-            LocalBackGestureDispatcher provides backGestureDispatcher,
+
+            // TODO: Move to ProvidePlatformCompositionLocals
             LocalSaveableStateRegistry provides savableStateRegistry,
             content = content
         )
@@ -532,6 +538,9 @@ internal class ComposeHostingViewController(
             1f / (view.window?.layer?.speed?.takeIf { it > 0 } ?: 1f)
         }
     }
+
+    private val windowScene: UIWindowScene? get() =
+        view.window?.windowScene
 }
 
 private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {

@@ -16,21 +16,20 @@
 
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.JetbrainsAndroidXPlugin
 import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
+import org.jetbrains.androidx.build.UpdateTranslationsTask
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
     id("kotlinx-atomicfu")
-    id("JetbrainsAndroidXPlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetbrainsAndroidXPlugin.applyAndConfigure(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 dependencies {
 
@@ -169,6 +168,10 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             commonTest.dependencies {
                 implementation(libs.kotlinTest)
                 implementation(libs.kotlinCoroutinesTest)
+                def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+                implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
+                implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
+                implementation(project(":navigationevent:navigationevent-compose"))
             }
 
             androidAndroidTest.dependencies {
@@ -198,8 +201,13 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     implementation(libs.skikoCommon)
                 }
             }
+
             nonJvmTest {
                 dependsOn(skikoTest)
+            }
+
+            webTest {
+                dependsOn(nonJvmTest)
             }
 
             desktopTest {
@@ -227,8 +235,9 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             desktopTest.kotlin.srcDirs("src/desktopTest/kotlin")
 
             nativeTest.dependsOn(nonJvmTest)
-            jsTest.dependsOn(nonJvmTest)
-            wasmJsTest.dependsOn(nonJvmTest)
+
+            jsTest.dependsOn(webTest)
+            wasmJsTest.dependsOn(webTest)
 
             configureEach {
                 languageSettings.optIn("androidx.compose.foundation.ExperimentalFoundationApi")

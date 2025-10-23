@@ -47,7 +47,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.AbsoluteAlignment
+import androidx.compose.ui.ComposeUiFlags.isCanScrollUsingLastDownEventFixEnabled
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -61,6 +64,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -84,12 +88,14 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
 import kotlin.test.assertNotEquals
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.instanceOf
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -97,7 +103,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ComposeViewTest {
-    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val rule = createAndroidComposeRule<ComponentActivity>(StandardTestDispatcher())
 
     @FlakyTest(bugId = 256017578)
     @Test
@@ -617,6 +623,29 @@ class ComposeViewTest {
 
         // No down event yet, should not be scrollable in any direction
         rule.runOnIdle { composeView.assertCanScroll() }
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun canScrollVertically_returnsTrue_ifWeMoveOutsideScrollable() {
+        Assume.assumeTrue(isCanScrollUsingLastDownEventFixEnabled)
+        lateinit var composeView: View
+        rule.setContent {
+            composeView = LocalView.current
+            ScrollableAndNonScrollable(vertical = true)
+        }
+
+        // No down event yet, should not be scrollable in any direction
+        rule.runOnIdle { composeView.assertCanScroll() }
+
+        // Send a down event.
+        rule.onRoot().performTouchInput {
+            down(topCenter.copy(y = topCenter.y + 20f))
+            moveBy(Offset(0f, -100f))
+        }
+
+        // No down event yet, should not be scrollable in any direction
+        rule.runOnIdle { composeView.assertCanScroll(up = true, down = true) }
     }
 
     @Test

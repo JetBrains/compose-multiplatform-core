@@ -21,9 +21,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.filters.LargeTest
@@ -64,7 +67,7 @@ class PagerCacheWindowTest(val config: ParamConfig) : BasePagerTest(config) {
     }
 
     @Test
-    fun prefetchingForwardInitially() {
+    fun doNotPrefetchingForwardInitially() {
         createPager(
             modifier = Modifier.size(pagesSizeDp * 1.5f),
             pageSize = { PageSize.Fixed(pagesSizeDp) },
@@ -72,11 +75,9 @@ class PagerCacheWindowTest(val config: ParamConfig) : BasePagerTest(config) {
         )
         waitForPrefetch()
         if (config.beyondViewportPageCount == 0) {
-            // window will fill automatically 1 extra item
-            rule.onNodeWithTag("2").assertExists()
+            rule.onNodeWithTag("2").assertDoesNotExist()
         } else {
-            // window will fill automatically 1 extra item
-            rule.onNodeWithTag("3").assertExists()
+            rule.onNodeWithTag("3").assertDoesNotExist()
         }
     }
 
@@ -177,7 +178,7 @@ class PagerCacheWindowTest(val config: ParamConfig) : BasePagerTest(config) {
     }
 
     @Test
-    fun scrollBackward_shouldNotDisposeItemsInWindow() {
+    fun scrollBackward_shouldDisposeItemsInWindow() {
         // at first, item 6 is fully visible and item 5 is partially visible
         createPager(
             modifier =
@@ -214,16 +215,37 @@ class PagerCacheWindowTest(val config: ParamConfig) : BasePagerTest(config) {
         rule.onNodeWithTag("2").assertExists()
         rule.onNodeWithTag("3").assertIsDisplayed()
         rule.onNodeWithTag("4").assertIsDisplayed()
-        rule.onNodeWithTag("5").assertExists()
+
         if (config.beyondViewportPageCount == 0) {
-            rule.onNodeWithTag("6").assertDoesNotExist() // at this point we have removed this
-            rule.onNodeWithTag("7").assertDoesNotExist() // at this point we have removed this
-            rule.onNodeWithTag("8").assertDoesNotExist() // at this point we have removed this
+            rule.onNodeWithTag("5").assertDoesNotExist()
         } else {
-            rule.onNodeWithTag("7").assertDoesNotExist() // at this point we have removed this
-            rule.onNodeWithTag("8").assertDoesNotExist() // at this point we have removed this
-            rule.onNodeWithTag("9").assertDoesNotExist() // at this point we have removed this
+            rule.onNodeWithTag("5").assertExists()
+            rule.onNodeWithTag("6").assertDoesNotExist()
         }
+    }
+
+    @Test
+    fun updateItemCount_shouldUpdateKeepAroundCorrectly() {
+        val itemCount = mutableIntStateOf(3)
+        rule.setContent {
+            val state = rememberPagerState { itemCount.intValue }
+            HorizontalOrVerticalPager(
+                modifier =
+                    Modifier.testTag(PagerTestTag).onSizeChanged {
+                        pagerSize = if (vertical) it.height else it.width
+                    },
+                state = state,
+                beyondViewportPageCount = 2,
+                pageSize = PageSize.Fill,
+            ) {
+                Page(it)
+            }
+        }
+
+        rule.runOnIdle { itemCount.intValue = 2 }
+
+        rule.onNodeWithTag("0").assertExists()
+        rule.onNodeWithTag("1").assertExists()
     }
 
     private fun waitForPrefetch() {

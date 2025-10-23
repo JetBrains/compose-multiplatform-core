@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.el() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Κύριο πλαίσιο",
+    Strings.defaultPaneTitleSecondary to "Δευτερεύον πλαίσιο",
+    Strings.defaultPaneTitleTertiary to "Τριτεύον πλαίσιο",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Λαβή μεταφοράς επέκτασης πλαισίου",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Τρέχων επιμερισμός πλαισίου, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Αλλαγή επιμερισμού πλαισίου σε %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d τοις εκατό",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DPs από την αρχή",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DPs από το τέλος",
+    Strings.dragToResizeClickToExpandDescription to "ανάπτυξη",
+    Strings.dragToResizeClickToCollapseDescription to "σύμπτυξη",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "μερική ανάπτυξη",
+    Strings.dragToResizeExpandedStateDescription to "αναπτυγμένo",
+    Strings.dragToResizeCollapsedStateDescription to "συμπτυγμένo",
+    Strings.dragToResizePartiallyExpandedStateDescription to "μερικώς αναπτυγμένo",
 )

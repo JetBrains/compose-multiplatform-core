@@ -17,7 +17,8 @@
 package androidx.compose.ui.integrations
 
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
+import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
@@ -86,6 +87,7 @@ class ComposeSceneMediatorTest {
             onFocusBehavior = OnFocusBehavior.DoNothing,
             focusedViewsList = null,
             windowContext = PlatformWindowContext(),
+            architectureComponentsOwner = DefaultArchitectureComponentsOwner(),
             coroutineContext = Dispatchers.Main,
             redrawer = MetalRedrawer(
                 metalLayer = CAMetalLayer(),
@@ -98,8 +100,7 @@ class ComposeSceneMediatorTest {
                 useSeparateRenderThreadWhenPossible = false,
                 render = { _, _ -> }
             ),
-            backGestureDispatcher = UIKitBackGestureDispatcher(
-                enableBackGesture = false,
+            navigationEventInput = UIKitNavigationEventInput(
                 density = Density(1f),
                 getTopLeftOffsetInWindow = { IntOffset.Zero }
             ),

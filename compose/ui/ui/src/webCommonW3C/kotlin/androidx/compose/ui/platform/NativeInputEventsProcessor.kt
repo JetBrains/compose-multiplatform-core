@@ -23,6 +23,8 @@ import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.DeleteSurroundingTextCommand
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastForEach
 import org.w3c.dom.events.CompositionEvent
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.UIEvent
@@ -43,6 +45,7 @@ internal abstract class NativeInputEventsProcessor(
     private val collectedEvents = mutableListOf<UIEvent>()
     private var isCheckpointScheduled = false
     private var lastCompositionEndTimestamp = 0.0 // Double because of k/wasm where Number.toLong() leads to a compilation error
+    var lastProcessedEventIsBackspace: Boolean = false
 
     /**
      * Schedules a checkpoint for processing input events.
@@ -65,7 +68,7 @@ internal abstract class NativeInputEventsProcessor(
 
         collectedEvents.sortBy { it.timeStamp.toInt() }
 
-        val isInIMEComposition = collectedEvents.any {
+        val isInIMEComposition = collectedEvents.fastAny {
             it.type == "compositionstart"
                 || it.type == "compositionupdate"
                 || it.type == "compositionend"
@@ -73,17 +76,15 @@ internal abstract class NativeInputEventsProcessor(
                 || it.type == "beforeinput" && (it as InputEvent).isComposing
         }
 
-        var lastProcessedEventIsBackspace: Boolean = false
-
-        collectedEvents.forEach { evt ->
+        collectedEvents.fastForEach { evt ->
             val timestamp = evt.timeStamp.toDouble()
 
             when (evt.type) {
                 "keydown" -> {
-                    if (isInIMEComposition) return@forEach
+                    if (isInIMEComposition) return@fastForEach
 
                     evt as KeyboardEvent
-                    if (isTypedEvent(evt)) return@forEach
+                    if (isTypedEvent(evt)) return@fastForEach
 
                     val isFromLastComposition = timestamp < lastCompositionEndTimestamp
 
@@ -136,6 +137,10 @@ internal abstract class NativeInputEventsProcessor(
                     val deleteSize = deleteContentBackwardSize
                     if (deleteSize > 0) {
                         add(DeleteSurroundingTextCommand(deleteSize, 0))
+                    } else if (deleteSize == 0) {
+                        // under specific circumstance previous symbol can be deleted while inputing new one
+                        // see https://youtrack.jetbrains.com/issue/CMP-8773
+                        add(BackspaceCommand())
                     }
                 }
             }

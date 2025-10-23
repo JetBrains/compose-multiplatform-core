@@ -15,12 +15,15 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 import java.util.Set;
 
 /** The base communication buffer capable of encoding and decoding various types */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WireBuffer {
     private static final int BUFFER_SIZE = 1024 * 1024;
     int mMaxSize;

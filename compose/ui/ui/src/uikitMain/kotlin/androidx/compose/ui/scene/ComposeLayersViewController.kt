@@ -103,7 +103,7 @@ internal class ComposeLayersViewController(
         }
 
     private fun show() {
-        windowContext.setWindowContainer(window)
+        windowContext.window = window
         window.rootViewController = this
         window.windowLevel = UIWindowLevelAlert + 1
         window.setHidden(false)
@@ -130,6 +130,7 @@ internal class ComposeLayersViewController(
         hide()
         rootView.updateMetalView(metalView = null)
         referenceWindow = null
+        windowContext.dispose()
     }
 
     fun attach(layer: UIKitComposeSceneLayer) {
@@ -314,6 +315,18 @@ internal class ComposeLayersViewController(
 
 private class LayersWindow: UIWindow(frame = UIScreen.mainScreen.bounds) {
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
-        return rootViewController?.view?.hitTest(point, withEvent)
+        // Hit-testing only the Compose view or any view that located on top of it.
+        for (subview in subviews.reversed()) {
+            subview as UIView
+            val isDescendantOfComposeView = rootViewController?.view?.isDescendantOfView(subview)
+            if (isDescendantOfComposeView == true) {
+                return rootViewController?.view?.hitTest(point, withEvent)
+            } else {
+                subview.hitTest(point, withEvent)?.let {
+                    return it
+                }
+            }
+        }
+        return null
     }
 }

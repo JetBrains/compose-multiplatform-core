@@ -25,7 +25,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.animation.withAnimationProgress
-import androidx.compose.ui.backhandler.UIKitBackGestureDispatcher
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -45,12 +44,14 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.layout.OffsetToFocusedRect
+import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
 import androidx.compose.ui.platform.EmptyViewConfiguration
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformInsets
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -82,7 +83,6 @@ import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.UIKitInteropContainer
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
-import androidx.compose.ui.window.ApplicationForegroundStateListener
 import androidx.compose.ui.window.ComposeSceneKeyboardOffsetManager
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.KeyboardVisibilityListener
@@ -186,9 +186,10 @@ internal class ComposeSceneMediator(
     private val onFocusBehavior: OnFocusBehavior,
     private val focusedViewsList: FocusedViewsList?,
     private val windowContext: PlatformWindowContext,
+    private val architectureComponentsOwner: PlatformArchitectureComponentsOwner,
     private val coroutineContext: CoroutineContext,
     private val redrawer: MetalRedrawer,
-    private val backGestureDispatcher: UIKitBackGestureDispatcher,
+    private val navigationEventInput: UIKitNavigationEventInput,
     interfaceOrientationState: State<InterfaceOrientation>,
     composeSceneFactory: (
         invalidate: () -> Unit,
@@ -258,16 +259,6 @@ internal class ComposeSceneMediator(
 
     val hasInteropViews: Boolean get() = interopContainer.hasInteropViews
 
-    private val applicationForegroundStateListener =
-        ApplicationForegroundStateListener { _ ->
-            // Sometimes the application can trigger animation and go background before the animation is
-            // finished. The scheduled GPU work is performed, but no presentation can be done, causing
-            // mismatch between visual state and application state. This can be fixed by forcing
-            // a redraw when app returns to foreground, which will ensure that the visual state is in
-            // sync with the application state even if such sequence of events took a place.
-            redrawer.setNeedsRedraw()
-        }
-
     /**
      * View wrapping the hierarchy managed by this Mediator.
      */
@@ -287,7 +278,7 @@ internal class ComposeSceneMediator(
         ::onCancelScroll,
         ::onHoverEvent,
         ::onKeyboardPresses,
-        backGestureDispatcher::isBackGestureActive
+        navigationEventInput::isBackGestureActive
     )
 
     val inputView: UIView get() = userInputView
@@ -519,15 +510,13 @@ internal class ComposeSceneMediator(
 
     private var lastFocusedRect: Rect? = null
     private fun getFocusedRect(): Rect? {
-        return scene.focusManager.getFocusRect()?.also {
+        return scene.focusManager.getFocusRect(afterLayout = false)?.also {
             lastFocusedRect = it
         } ?: lastFocusedRect
     }
 
     fun setContent(content: @Composable () -> Unit) {
         _overlayView.runOnceOnAppeared {
-            focusedViewsList?.addAndFocus(userInputView)
-
             scene.setContent {
                 ProvideComposeSceneMediatorCompositionLocals {
                     FocusAboveKeyboardIfNeeded {
@@ -619,8 +608,6 @@ internal class ComposeSceneMediator(
 
         _overlayView.dispose()
         textInputService.stopInput()
-        applicationForegroundStateListener.dispose()
-        focusedViewsList?.remove(userInputView)
         keyboardManager.dispose()
         userInputView.dispose()
 
@@ -684,11 +671,12 @@ internal class ComposeSceneMediator(
         textInputService.onPreviewKeyEvent(keyEvent) // TODO: fix redundant call
             || onPreviewKeyEvent(keyEvent)
             || scene.sendKeyEvent(keyEvent)
-            || backGestureDispatcher.onKeyEvent(keyEvent)
             || onKeyEvent(keyEvent)
+            || navigationEventInput.onKeyEvent(keyEvent)
 
     private inner class PlatformContextImpl : PlatformContext {
         override val windowInfo: WindowInfo get() = windowContext.windowInfo
+        override val architectureComponentsOwner get() = this@ComposeSceneMediator.architectureComponentsOwner
         override val screenReader: PlatformScreenReader get() = platformScreenReader
 
         override fun convertLocalToWindowPosition(localPosition: Offset): Offset =

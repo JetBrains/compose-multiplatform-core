@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.fi() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Ensisijainen ruutu",
+    Strings.defaultPaneTitleSecondary to "Toissijainen ruutu",
+    Strings.defaultPaneTitleTertiary to "Kolmas ruutu",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Ruudun laajennusvetokahva",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Nykyinen ruudun jako, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Muuta ruudun jaoksi %s",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d prosenttia",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d DP:tä alusta",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d DP:tä lopusta",
+    Strings.dragToResizeClickToExpandDescription to "laajenna",
+    Strings.dragToResizeClickToCollapseDescription to "tiivistä",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "laajenna osittain",
+    Strings.dragToResizeExpandedStateDescription to "laajennettu",
+    Strings.dragToResizeCollapsedStateDescription to "tiivistetty",
+    Strings.dragToResizePartiallyExpandedStateDescription to "osittain laajennettu",
 )

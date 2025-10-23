@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.am() = mapOf(
+    Strings.defaultPaneTitlePrimary to "ዋና ፔን",
+    Strings.defaultPaneTitleSecondary to "ሁለተኛ ፔን",
+    Strings.defaultPaneTitleTertiary to "ሦስተኛ ፔን",
     Strings.defaultPaneExpansionDragHandleContentDescription to "የፔን መዘርጋት መያዣ ይጎትቱ",
     Strings.defaultPaneExpansionDragHandleStateDescription to "የአሁን ፔን መከፋፈል፣ %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "ፔን መከፋፈልን ወደ %s ይለውጡ",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d መቶኛ",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "%d ዲፒዎች ከመጀመሪያ",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "%d ዲፒዎች ከማብቂያ",
+    Strings.dragToResizeClickToExpandDescription to "ዘርጋ",
+    Strings.dragToResizeClickToCollapseDescription to "ሰብስብ",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "በከፊል ዘርጋ",
+    Strings.dragToResizeExpandedStateDescription to "ተዘርግቷል",
+    Strings.dragToResizeCollapsedStateDescription to "ተሰብስቧል",
+    Strings.dragToResizePartiallyExpandedStateDescription to "በከፊል የተዘረጋ",
 )

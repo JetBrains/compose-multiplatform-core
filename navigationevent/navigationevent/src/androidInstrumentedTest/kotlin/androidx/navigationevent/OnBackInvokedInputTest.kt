@@ -16,7 +16,8 @@
 
 package androidx.navigationevent
 
-import androidx.navigationevent.testing.TestNavigationEventCallback
+import android.window.OnBackInvokedDispatcher
+import androidx.navigationevent.testing.TestNavigationEventHandler
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
@@ -27,23 +28,23 @@ import org.junit.runner.RunWith
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 33)
-class OnBackInvokedInputTest {
+class OnBackInvokedDefaultInputTest {
 
     @Test
     fun testSimpleInvoker() {
         val invoker = TestOnBackInvokedDispatcher()
 
         val dispatcher = NavigationEventDispatcher {}
-        val input = OnBackInvokedInput(invoker)
+        val input = OnBackInvokedDefaultInput(invoker)
         dispatcher.addInput(input)
 
-        val callback = TestNavigationEventCallback()
+        val handler = TestNavigationEventHandler()
 
-        dispatcher.addCallback(callback)
+        dispatcher.addHandler(handler)
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
-        callback.remove()
+        handler.remove()
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
     }
@@ -54,208 +55,238 @@ class OnBackInvokedInputTest {
 
         val dispatcher = NavigationEventDispatcher {}
 
-        val input = OnBackInvokedInput(invoker)
+        val input = OnBackInvokedDefaultInput(invoker)
         dispatcher.addInput(input)
 
-        val callback = TestNavigationEventCallback()
+        val handler = TestNavigationEventHandler(isBackEnabled = true, isForwardEnabled = false)
 
-        dispatcher.addCallback(callback)
+        dispatcher.addHandler(handler)
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
-        callback.isEnabled = false
+        handler.isBackEnabled = false
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
 
-        callback.isEnabled = true
+        handler.isBackEnabled = true
 
         assertThat(invoker.registerCount).isEqualTo(2)
     }
 
     @Test
-    fun testCallbackEnabledDisabled() {
-        val callback = TestNavigationEventCallback(isEnabled = false)
-        assertThat(callback.isEnabled).isFalse()
+    fun testHandlerEnabledDisabled() {
+        val handler = TestNavigationEventHandler(isBackEnabled = false, isForwardEnabled = false)
+        assertThat(handler.isBackEnabled).isFalse()
 
-        callback.isEnabled = true
-        assertThat(callback.isEnabled).isTrue()
+        handler.isBackEnabled = true
+        assertThat(handler.isBackEnabled).isTrue()
 
-        callback.isEnabled = false
-        assertThat(callback.isEnabled).isFalse()
+        handler.isBackEnabled = false
+        assertThat(handler.isBackEnabled).isFalse()
     }
 
     @Test
-    fun testInvokerAddDisabledCallback() {
+    fun testInvokerAddDisabledHandler() {
         val invoker = TestOnBackInvokedDispatcher()
 
         val dispatcher = NavigationEventDispatcher {}
 
-        val callback = TestNavigationEventCallback(isEnabled = false)
+        val handler = TestNavigationEventHandler(isBackEnabled = false, isForwardEnabled = false)
 
-        val input = OnBackInvokedInput(invoker)
+        val input = OnBackInvokedDefaultInput(invoker)
         dispatcher.addInput(input)
 
-        dispatcher.addCallback(callback)
+        dispatcher.addHandler(handler)
 
         assertThat(invoker.registerCount).isEqualTo(0)
 
-        callback.isEnabled = true
+        handler.isBackEnabled = true
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
-        callback.isEnabled = false
+        handler.isBackEnabled = false
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
     }
 
     @Test
-    fun testInvokerAddEnabledCallbackBeforeSet() {
+    fun testInvokerAddEnabledHandlerBeforeSet() {
         val invoker = TestOnBackInvokedDispatcher()
 
         val dispatcher = NavigationEventDispatcher {}
 
-        val callback = TestNavigationEventCallback()
+        val handler = TestNavigationEventHandler(isBackEnabled = true, isForwardEnabled = false)
 
-        dispatcher.addCallback(callback)
+        dispatcher.addHandler(handler)
 
-        val input = OnBackInvokedInput(invoker)
+        val input = OnBackInvokedDefaultInput(invoker)
         dispatcher.addInput(input)
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
-        callback.isEnabled = false
+        handler.isBackEnabled = false
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 34)
-    fun testSimpleAnimatedCallback() {
+    fun testSimpleAnimatedHandler() {
         val invoker = TestOnBackInvokedDispatcher()
 
         val dispatcher = NavigationEventDispatcher {}
 
-        val input = OnBackInvokedInput(invoker)
+        val input = OnBackInvokedDefaultInput(invoker)
         dispatcher.addInput(input)
 
-        val callback = TestNavigationEventCallback()
+        val handler = TestNavigationEventHandler()
 
-        dispatcher.addCallback(callback)
+        dispatcher.addHandler(handler)
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
         invoker.dispatchOnBackStarted(TestBackEvent())
-        assertThat(callback.startedInvocations).isEqualTo(1)
+        assertThat(handler.onBackStartedInvocations).isEqualTo(1)
 
         invoker.dispatchOnBackProgressed(TestBackEvent())
-        assertThat(callback.progressedInvocations).isEqualTo(1)
+        assertThat(handler.onBackProgressedInvocations).isEqualTo(1)
 
         invoker.dispatchOnBackCancelled()
-        assertThat(callback.cancelledInvocations).isEqualTo(1)
+        assertThat(handler.onBackCancelledInvocations).isEqualTo(1)
 
-        callback.remove()
-
-        assertThat(invoker.unregisterCount).isEqualTo(1)
-    }
-
-    @Test
-    @SdkSuppress(minSdkVersion = 34)
-    fun testSimpleAnimatedCallbackRemovedCancel() {
-        val invoker = TestOnBackInvokedDispatcher()
-
-        val dispatcher = NavigationEventDispatcher {}
-
-        val input = OnBackInvokedInput(invoker)
-        dispatcher.addInput(input)
-
-        val callback = TestNavigationEventCallback()
-
-        dispatcher.addCallback(callback)
-
-        assertThat(invoker.registerCount).isEqualTo(1)
-
-        invoker.dispatchOnBackStarted(TestBackEvent())
-
-        callback.remove()
-        assertThat(callback.cancelledInvocations).isEqualTo(1)
+        handler.remove()
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 34)
-    fun testSimpleAnimatedCallbackRemovedCancelInHandleOnStarted() {
+    fun testSimpleAnimatedHandlerRemovedCancel() {
         val invoker = TestOnBackInvokedDispatcher()
 
         val dispatcher = NavigationEventDispatcher {}
 
-        val input = OnBackInvokedInput(invoker)
+        val input = OnBackInvokedDefaultInput(invoker)
         dispatcher.addInput(input)
 
-        val callback = TestNavigationEventCallback(onEventStarted = { remove() })
+        val handler = TestNavigationEventHandler()
 
-        dispatcher.addCallback(callback)
+        dispatcher.addHandler(handler)
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
         invoker.dispatchOnBackStarted(TestBackEvent())
 
-        assertThat(callback.cancelledInvocations).isEqualTo(1)
+        handler.remove()
+        assertThat(handler.onBackCancelledInvocations).isEqualTo(1)
 
         assertThat(invoker.unregisterCount).isEqualTo(1)
     }
 
     @Test
     @SdkSuppress(minSdkVersion = 34)
-    fun testSimpleAnimatedCallbackAddedContinue() {
+    fun testSimpleAnimatedHandlerRemovedCancelInHandleOnStarted() {
         val invoker = TestOnBackInvokedDispatcher()
+
         val dispatcher = NavigationEventDispatcher {}
 
-        val input = OnBackInvokedInput(invoker)
+        val input = OnBackInvokedDefaultInput(invoker)
         dispatcher.addInput(input)
 
-        val callback = TestNavigationEventCallback()
+        val handler = TestNavigationEventHandler(onBackStarted = { remove() })
 
-        dispatcher.addCallback(callback)
+        dispatcher.addHandler(handler)
 
         assertThat(invoker.registerCount).isEqualTo(1)
 
         invoker.dispatchOnBackStarted(TestBackEvent())
 
-        dispatcher.addCallback(TestNavigationEventCallback())
+        assertThat(handler.onBackCancelledInvocations).isEqualTo(1)
+
+        assertThat(invoker.unregisterCount).isEqualTo(1)
+    }
+
+    @Test
+    @SdkSuppress(minSdkVersion = 34)
+    fun testSimpleAnimatedHandlerAddedContinue() {
+        val invoker = TestOnBackInvokedDispatcher()
+        val dispatcher = NavigationEventDispatcher {}
+
+        val input = OnBackInvokedDefaultInput(invoker)
+        dispatcher.addInput(input)
+
+        val handler = TestNavigationEventHandler()
+
+        dispatcher.addHandler(handler)
+
+        assertThat(invoker.registerCount).isEqualTo(1)
+
+        invoker.dispatchOnBackStarted(TestBackEvent())
+
+        dispatcher.addHandler(TestNavigationEventHandler())
 
         invoker.dispatchOnBackInvoked()
 
-        assertThat(callback.completedInvocations).isEqualTo(1)
+        assertThat(handler.onBackCompletedInvocations).isEqualTo(1)
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 34)
-    fun testDoubleStartCallbackCausesCancel() {
+    fun testDefaultPriority() {
         val invoker = TestOnBackInvokedDispatcher()
 
-        val dispatcher = NavigationEventDispatcher {}
-        val input = OnBackInvokedInput(invoker)
-        dispatcher.addInput(input)
+        val dispatcher = NavigationEventDispatcher()
+        dispatcher.addInput(OnBackInvokedDefaultInput(invoker))
 
-        val callback1 = TestNavigationEventCallback()
-
-        dispatcher.addCallback(callback1)
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler, NavigationEventDispatcher.PRIORITY_DEFAULT)
 
         assertThat(invoker.registerCount).isEqualTo(1)
+        assertThat(invoker.priority).isEqualTo(OnBackInvokedDispatcher.PRIORITY_DEFAULT)
+    }
 
-        invoker.dispatchOnBackStarted(TestBackEvent())
+    @Test
+    fun testOverlayPriority() {
+        val invoker = TestOnBackInvokedDispatcher()
 
-        val callback2 = TestNavigationEventCallback()
+        val dispatcher = NavigationEventDispatcher()
+        dispatcher.addInput(OnBackInvokedOverlayInput(invoker))
 
-        dispatcher.addCallback(callback2)
-
-        invoker.dispatchOnBackStarted(TestBackEvent())
+        val handler = TestNavigationEventHandler()
+        dispatcher.addHandler(handler, NavigationEventDispatcher.PRIORITY_OVERLAY)
 
         assertThat(invoker.registerCount).isEqualTo(1)
+        assertThat(invoker.priority).isEqualTo(OnBackInvokedDispatcher.PRIORITY_OVERLAY)
+    }
 
-        assertThat(callback1.cancelledInvocations).isEqualTo(1)
+    @Test
+    fun defaultInputCanDispatchToOverlayHandler() {
+        val invoker = TestOnBackInvokedDispatcher()
+        val dispatcher = NavigationEventDispatcher()
+        val defaultInput = OnBackInvokedDefaultInput(invoker)
+        dispatcher.addInput(defaultInput, NavigationEventDispatcher.PRIORITY_DEFAULT)
 
-        assertThat(callback2.startedInvocations).isEqualTo(1)
+        val defaultHandler = TestNavigationEventHandler()
+        dispatcher.addHandler(defaultHandler, NavigationEventDispatcher.PRIORITY_DEFAULT)
+
+        val overlayHandler = TestNavigationEventHandler()
+        dispatcher.addHandler(overlayHandler, NavigationEventDispatcher.PRIORITY_OVERLAY)
+
+        invoker.dispatchOnBackInvoked()
+        assertThat(defaultHandler.onBackCompletedInvocations).isEqualTo(0)
+        assertThat(overlayHandler.onBackCompletedInvocations).isEqualTo(1)
+    }
+
+    @Test
+    fun overlayInputCanNotDispatchToDefaultHandler() {
+        val invoker = TestOnBackInvokedDispatcher()
+        val dispatcher = NavigationEventDispatcher()
+        val overlayInput = OnBackInvokedOverlayInput(invoker)
+        dispatcher.addInput(overlayInput, NavigationEventDispatcher.PRIORITY_OVERLAY)
+
+        val defaultHandler = TestNavigationEventHandler()
+        dispatcher.addHandler(defaultHandler, NavigationEventDispatcher.PRIORITY_DEFAULT)
+
+        invoker.dispatchOnBackInvoked()
+        assertThat(defaultHandler.onBackCompletedInvocations).isEqualTo(0)
     }
 }

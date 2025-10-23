@@ -20,7 +20,9 @@ import android.graphics.Rect
 import android.text.InputType
 import android.util.SparseArray
 import android.view.View
+import android.view.View.AUTOFILL_TYPE_DATE
 import android.view.View.AUTOFILL_TYPE_TEXT
+import android.view.View.AUTOFILL_TYPE_TOGGLE
 import android.view.ViewStructure
 import android.view.autofill.AutofillValue
 import android.view.inputmethod.EditorInfo
@@ -33,8 +35,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -47,8 +53,12 @@ import androidx.compose.ui.semantics.contentDataType
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.contentType
 import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.editableText
+import androidx.compose.ui.semantics.fillableData
 import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.isSensitiveData
 import androidx.compose.ui.semantics.maxTextLength
+import androidx.compose.ui.semantics.onFillData
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.password
 import androidx.compose.ui.semantics.requestFocus
@@ -64,6 +74,8 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
@@ -73,6 +85,7 @@ import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Ignore
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -84,7 +97,7 @@ import org.junit.runner.RunWith
 // TODO(MNUZEN): split into filling / saving etc. when more of Autofill goes live and more
 // data types are supported.
 class PerformAndroidAutofillManagerTest {
-    @get:Rule val rule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val rule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
     private val height = 200.dp
     private val width = 200.dp
 
@@ -188,10 +201,12 @@ class PerformAndroidAutofillManagerTest {
         assertThat(viewStructure)
             .isEqualTo(
                 FakeViewStructure().apply {
+                    dataIsSensitive = true
                     autofillId = view.autofillId
                     bounds = Rect(0, 0, width.dpToPx(), height.dpToPx())
                     children.add(
                         FakeViewStructure().apply {
+                            dataIsSensitive = true
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             autofillId = view.autofillId
                             bounds = Rect(0, 0, width.dpToPx(), height.dpToPx())
@@ -241,6 +256,7 @@ class PerformAndroidAutofillManagerTest {
                         ViewStructure(view) {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -277,6 +293,44 @@ class PerformAndroidAutofillManagerTest {
                     children.add(
                         ViewStructure(view) {
                             autofillType = AUTOFILL_TYPE_TEXT
+                            virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
+                        }
+                    )
+                    virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                }
+            )
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun populateViewStructure_contentDataType_toggle() {
+        // Arrange.
+        lateinit var view: View
+        val viewStructure: ViewStructure = FakeViewStructure()
+        rule.setContent {
+            view = LocalView.current
+            Box(
+                Modifier.semantics { contentDataType = ContentDataType.Toggle }
+                    .size(height, width)
+                    .testTag(contentTag)
+            )
+        }
+
+        // Act.
+        rule.runOnIdle {
+            // Compose does not use the Autofill flags parameter, passing in 0 as a placeholder flag
+            view.onProvideAutofillVirtualStructure(viewStructure, 0)
+        }
+
+        // Assert.
+        assertThat(viewStructure)
+            .isEqualTo(
+                ViewStructure(view) {
+                    children.add(
+                        ViewStructure(view) {
+                            autofillType = AUTOFILL_TYPE_TOGGLE
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
                         }
                     )
@@ -318,6 +372,7 @@ class PerformAndroidAutofillManagerTest {
                             isClickable = true
                             isFocusable = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -359,6 +414,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             contentDescription = contentTag
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -407,6 +463,7 @@ class PerformAndroidAutofillManagerTest {
                             isFocusable = true
                             isSelected = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -458,6 +515,7 @@ class PerformAndroidAutofillManagerTest {
                             isFocusable = true
                             isSelected = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -509,6 +567,7 @@ class PerformAndroidAutofillManagerTest {
                             isFocusable = true
                             isSelected = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -560,6 +619,7 @@ class PerformAndroidAutofillManagerTest {
                             isFocusable = true
                             isSelected = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -602,6 +662,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
                             visibility = View.VISIBLE
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -642,6 +703,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
                             visibility = View.INVISIBLE
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -681,6 +743,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
                             visibility = View.VISIBLE
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -722,6 +785,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
                             visibility = View.INVISIBLE
+                            dataIsSensitive = true
                         }
                     )
                 }
@@ -762,6 +826,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             isLongClickable = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -803,6 +868,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             isFocusable = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -844,6 +910,7 @@ class PerformAndroidAutofillManagerTest {
                             isFocusable = true
                             isFocused = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -882,6 +949,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             isEnabled = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -923,6 +991,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             isEnabled = false
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -967,6 +1036,7 @@ class PerformAndroidAutofillManagerTest {
                             className = "android.widget.EditText"
                             maxTextLength = 5
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -1008,6 +1078,7 @@ class PerformAndroidAutofillManagerTest {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             maxTextLength = -1
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -1047,9 +1118,10 @@ class PerformAndroidAutofillManagerTest {
                     children.add(
                         ViewStructure(view) {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
-                            autofillType = View.AUTOFILL_TYPE_TOGGLE
+                            autofillType = AUTOFILL_TYPE_TOGGLE
                             isCheckable = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -1089,10 +1161,11 @@ class PerformAndroidAutofillManagerTest {
                     children.add(
                         ViewStructure(view) {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
-                            autofillType = View.AUTOFILL_TYPE_TOGGLE
+                            autofillType = AUTOFILL_TYPE_TOGGLE
                             isCheckable = true
                             isChecked = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -1130,12 +1203,14 @@ class PerformAndroidAutofillManagerTest {
                     children.add(
                         ViewStructure(view) {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
-                            autofillType = View.AUTOFILL_TYPE_TOGGLE
+                            autofillType = AUTOFILL_TYPE_TOGGLE
+                            autofillValue = AutofillValue.forToggle(true)
                             isCheckable = true
                             isChecked = true
                             isClickable = true
                             isFocusable = true
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -1185,6 +1260,7 @@ class PerformAndroidAutofillManagerTest {
                             text = ""
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
                             visibility = View.VISIBLE
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -1234,6 +1310,7 @@ class PerformAndroidAutofillManagerTest {
                             text = ""
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
                             visibility = View.VISIBLE
+                            dataIsSensitive = true
                         }
                     )
                     virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
@@ -1350,6 +1427,202 @@ class PerformAndroidAutofillManagerTest {
     @Test
     @SmallTest
     @SdkSuppress(minSdkVersion = 26)
+    fun populateViewStructure_email_asKeyboardType() {
+        // Arrange.
+        lateinit var view: View
+        val viewStructure = FakeViewStructure()
+        rule.setContent {
+            view = LocalView.current
+            Column {
+                BasicTextField(
+                    state = remember { TextFieldState("test@email.com") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                    modifier = Modifier.size(height, width).testTag(contentTag),
+                )
+            }
+        }
+
+        // Act.
+        rule.runOnIdle {
+            // Compose does not use the Autofill flags parameter, passing in 0 as a placeholder flag
+            view.onProvideAutofillVirtualStructure(viewStructure, 0)
+        }
+
+        // Assert.
+        assertThat(viewStructure)
+            .isEqualTo(
+                ViewStructure(view) {
+                    children.add(
+                        ViewStructure(view) {
+                            autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_EMAIL_ADDRESS)
+                            autofillType = AUTOFILL_TYPE_TEXT
+                            autofillValue = AutofillValue.forText("test@email.com")
+                            className = "android.widget.EditText"
+                            dataIsSensitive = true
+                            isClickable = true
+                            isFocusable = true
+                            isLongClickable = true
+                            text = ""
+                            virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            visibility = View.VISIBLE
+                        }
+                    )
+                    virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                }
+            )
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun populateViewStructure_password_asKeyboardType() {
+        // Arrange.
+        lateinit var view: View
+        val viewStructure = FakeViewStructure()
+        rule.setContent {
+            view = LocalView.current
+            Column {
+                BasicTextField(
+                    state = remember { TextFieldState("testPassword") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    modifier = Modifier.size(height, width).testTag(contentTag),
+                )
+            }
+        }
+
+        // Act.
+        rule.runOnIdle {
+            // Compose does not use the Autofill flags parameter, passing in 0 as a placeholder flag
+            view.onProvideAutofillVirtualStructure(viewStructure, 0)
+        }
+
+        // Assert.
+        assertThat(viewStructure)
+            .isEqualTo(
+                ViewStructure(view) {
+                    children.add(
+                        ViewStructure(view) {
+                            autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_PASSWORD)
+                            autofillType = AUTOFILL_TYPE_TEXT
+                            autofillValue = AutofillValue.forText("testPassword")
+                            className = "android.widget.EditText"
+                            dataIsSensitive = true
+                            inputType =
+                                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_PASSWORD
+                            isClickable = true
+                            isFocusable = true
+                            isLongClickable = true
+                            text = ""
+                            virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            visibility = View.VISIBLE
+                        }
+                    )
+                    virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                }
+            )
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun populateViewStructure_numberPassword_asKeyboardType() {
+        // Arrange.
+        lateinit var view: View
+        val viewStructure = FakeViewStructure()
+        rule.setContent {
+            view = LocalView.current
+            Column {
+                BasicTextField(
+                    state = remember { TextFieldState("123456") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    modifier = Modifier.size(height, width).testTag(contentTag),
+                )
+            }
+        }
+
+        // Act.
+        rule.runOnIdle {
+            // Compose does not use the Autofill flags parameter, passing in 0 as a placeholder flag
+            view.onProvideAutofillVirtualStructure(viewStructure, 0)
+        }
+
+        // Assert.
+        assertThat(viewStructure)
+            .isEqualTo(
+                ViewStructure(view) {
+                    children.add(
+                        ViewStructure(view) {
+                            autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_PASSWORD)
+                            autofillType = AUTOFILL_TYPE_TEXT
+                            autofillValue = AutofillValue.forText("123456")
+                            className = "android.widget.EditText"
+                            dataIsSensitive = true
+                            inputType =
+                                InputType.TYPE_CLASS_TEXT or EditorInfo.TYPE_TEXT_VARIATION_PASSWORD
+                            isClickable = true
+                            isFocusable = true
+                            isLongClickable = true
+                            text = ""
+                            virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            visibility = View.VISIBLE
+                        }
+                    )
+                    virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                }
+            )
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun populateViewStructure_phone_asKeyboardType() {
+        // Arrange.
+        lateinit var view: View
+        val viewStructure = FakeViewStructure()
+        rule.setContent {
+            view = LocalView.current
+            Column {
+                BasicTextField(
+                    state = remember { TextFieldState("1234567890") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.size(height, width).testTag(contentTag),
+                )
+            }
+        }
+
+        // Act.
+        rule.runOnIdle {
+            // Compose does not use the Autofill flags parameter, passing in 0 as a placeholder flag
+            view.onProvideAutofillVirtualStructure(viewStructure, 0)
+        }
+
+        // Assert.
+        assertThat(viewStructure)
+            .isEqualTo(
+                ViewStructure(view) {
+                    children.add(
+                        ViewStructure(view) {
+                            autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_PHONE_NUMBER)
+                            autofillType = AUTOFILL_TYPE_TEXT
+                            autofillValue = AutofillValue.forText("1234567890")
+                            className = "android.widget.EditText"
+                            dataIsSensitive = true
+                            isClickable = true
+                            isFocusable = true
+                            isLongClickable = true
+                            text = ""
+                            virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            visibility = View.VISIBLE
+                        }
+                    )
+                    virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                }
+            )
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
     fun populateViewStructure_password_asSemanticProperty() {
         // Arrange.
         lateinit var view: View
@@ -1382,6 +1655,133 @@ class PerformAndroidAutofillManagerTest {
                         ViewStructure(view) {
                             autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
                             dataIsSensitive = true
+                            virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                        }
+                    )
+                    virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                }
+            )
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun populateViewStructure_contentDataType_date() {
+        // Arrange.
+        lateinit var view: View
+        val viewStructure: ViewStructure = FakeViewStructure()
+        rule.setContent {
+            view = LocalView.current
+            Box(
+                Modifier.semantics { contentDataType = ContentDataType.Date }
+                    .size(height, width)
+                    .testTag(contentTag)
+            )
+        }
+
+        // Act.
+        rule.runOnIdle {
+            // Compose does not use the Autofill flags parameter, passing in 0 as a placeholder flag
+            view.onProvideAutofillVirtualStructure(viewStructure, 0)
+        }
+
+        // Assert.
+        assertThat(viewStructure)
+            .isEqualTo(
+                ViewStructure(view) {
+                    children.add(
+                        ViewStructure(view) {
+                            autofillType = AUTOFILL_TYPE_DATE
+                            virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                        }
+                    )
+                    virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                }
+            )
+    }
+
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun populateViewStructure_autofillValueOverwrites_editableText() {
+        // Arrange.
+        lateinit var view: View
+        val viewStructure: ViewStructure = FakeViewStructure()
+        val fillableDataText = checkNotNull(FillableData.createFromText("fillableData-test"))
+        rule.setContent {
+            view = LocalView.current
+            Box(
+                Modifier.semantics {
+                        contentType = ContentType.Username
+                        // This will set an autofill value from text
+                        fillableData = fillableDataText
+                        // This value will be overwritten.
+                        editableText = AnnotatedString("editableText-test")
+                    }
+                    .size(height, width)
+                    .testTag(contentTag)
+            )
+        }
+
+        // Act.
+        rule.runOnIdle {
+            // Compose does not use the Autofill flags parameter, passing in 0 as a placeholder flag
+            view.onProvideAutofillVirtualStructure(viewStructure, 0)
+        }
+
+        // Assert.
+        assertThat(viewStructure)
+            .isEqualTo(
+                ViewStructure(view) {
+                    children.add(
+                        ViewStructure(view) {
+                            autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
+                            autofillValue = AutofillValue.forText("fillableData-test")
+                            virtualId = rule.onNodeWithTag(contentTag).semanticsId()
+                            dataIsSensitive = true
+                        }
+                    )
+                    virtualId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                }
+            )
+    }
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun populateViewStructure_sensitiveSemanticProperty() {
+        // Arrange.
+        lateinit var view: View
+        val viewStructure = FakeViewStructure()
+
+        rule.setContent {
+            view = LocalView.current
+            Box(
+                modifier =
+                    Modifier.semantics {
+                            contentType = ContentType.Username
+                            isSensitiveData = false
+                        }
+                        .size(height, width)
+                        .testTag(contentTag)
+            )
+        }
+
+        // Act.
+        rule.runOnIdle {
+            // Compose does not use the Autofill flags parameter, passing in 0 as a placeholder flag
+            view.onProvideAutofillVirtualStructure(viewStructure, 0)
+        }
+
+        // Assert.
+        assertThat(viewStructure)
+            .isEqualTo(
+                ViewStructure(view) {
+                    children.add(
+                        ViewStructure(view) {
+                            autofillHints = mutableListOf(HintConstants.AUTOFILL_HINT_USERNAME)
+                            dataIsSensitive = false
                             virtualId = rule.onNodeWithTag(contentTag).semanticsId()
                         }
                     )
@@ -1481,6 +1881,87 @@ class PerformAndroidAutofillManagerTest {
         rule.onNodeWithTag(securityCodeTag).assertTextEquals("123")
     }
 
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun performAutofill_toggle() {
+        // Arrange.
+        lateinit var view: View
+
+        val toggleTag = "toggle_id"
+
+        val newToggleValue = false
+        var checked = true
+        val onCheckedChange: (Boolean) -> Unit = { checked = it }
+
+        rule.setContent {
+            view = LocalView.current
+            Box(
+                Modifier.toggleable(value = checked, onValueChange = onCheckedChange)
+                    .testTag(toggleTag)
+            )
+        }
+
+        // Act.
+        val toggleId = rule.onNodeWithTag(toggleTag).semanticsId()
+        rule.runOnIdle {
+            view.autofill(
+                SparseArray<AutofillValue>().apply {
+                    append(toggleId, AutofillValue.forToggle(newToggleValue))
+                }
+            )
+        }
+
+        rule.onNodeWithTag(toggleTag).assert(toggleDataFalse(newToggleValue))
+    }
+
+    fun toggleDataFalse(bool: Boolean): SemanticsMatcher =
+        SemanticsMatcher.expectValue(SemanticsProperties.ToggleableState, ToggleableState(bool))
+
+    @Test
+    @SmallTest
+    @SdkSuppress(minSdkVersion = 26)
+    fun performAutofill_customToggle() {
+        // Arrange.
+        lateinit var view: View
+
+        val toggleTag = "toggle_id"
+        val newToggleValue = false
+        val actualIsCheckedState = mutableStateOf(true)
+
+        rule.setContent {
+            view = LocalView.current
+            var isChecked by actualIsCheckedState
+            Box(
+                modifier =
+                    Modifier.testTag(toggleTag)
+                        .clickable { isChecked = !isChecked }
+                        .semantics {
+                            FillableData.createFromBoolean(isChecked)?.let {
+                                this.fillableData = it
+                            }
+                            onFillData(label = "CustomToggle") { fillableData ->
+                                fillableData.booleanValue?.let { isChecked = it }
+                                true
+                            }
+                        }
+            )
+        }
+        rule.runOnIdle { assertThat(actualIsCheckedState.value).isEqualTo(true) }
+
+        // Act.
+        val toggleId = rule.onNodeWithTag(toggleTag).semanticsId()
+        rule.runOnIdle {
+            view.autofill(
+                SparseArray<AutofillValue>().apply {
+                    append(toggleId, AutofillValue.forToggle(newToggleValue))
+                }
+            )
+        }
+
+        rule.runOnIdle { assertThat(actualIsCheckedState.value).isEqualTo(newToggleValue) }
+    }
+
     // ============================================================================================
     // Helper functions
     // ============================================================================================
@@ -1495,6 +1976,7 @@ class PerformAndroidAutofillManagerTest {
             bounds = Rect(0, 0, width.dpToPx(), height.dpToPx())
             isEnabled = true
             packageName = view.context.applicationInfo.packageName
+            dataIsSensitive = true
             block()
         }
     }

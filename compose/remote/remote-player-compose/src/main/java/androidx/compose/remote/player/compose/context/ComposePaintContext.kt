@@ -36,7 +36,7 @@ import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerMod
 import androidx.compose.remote.core.operations.paint.PaintBundle
 import androidx.compose.remote.player.compose.utils.FloatsToPath
 import androidx.compose.remote.player.compose.utils.copy
-import androidx.compose.remote.player.view.platform.AndroidComputedTextLayout
+import androidx.compose.remote.player.core.platform.AndroidComputedTextLayout
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
@@ -48,7 +48,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.PathOperation
-import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.nativeCanvas
 import kotlin.math.atan2
@@ -628,14 +627,14 @@ internal class ComposePaintContext(
 
     private fun getNativePath(id: Int, start: Float, end: Float): android.graphics.Path {
         val androidContext = mContext as ComposeRemoteContext
-        val p = androidContext.mRemoteComposeState.getPath(id) as Path?
+        val p = androidContext.mRemoteComposeState.getPath(id) as? android.graphics.Path
         if (p != null) {
-            return p.asAndroidPath()
+            return p
         }
         val path = android.graphics.Path()
         val pathData = androidContext.mRemoteComposeState.getPathData(id)
         if (pathData != null) {
-            androidx.compose.remote.player.view.platform.FloatsToPath.genPath(
+            androidx.compose.remote.player.core.platform.FloatsToPath.genPath(
                 path,
                 pathData,
                 start,

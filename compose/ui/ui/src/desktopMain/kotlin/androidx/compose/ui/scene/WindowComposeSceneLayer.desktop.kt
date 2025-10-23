@@ -55,15 +55,15 @@ internal class WindowComposeSceneLayer(
     compositionContext: CompositionContext,
     private val renderSettings: RenderSettings
 ) : DesktopComposeSceneLayer(composeContainer, density, layoutDirection) {
-    private val parentWindow get() = requireNotNull(composeContainer.window)
+    // WindowComposeSceneLayer is tied to the window it was created with
+    private val parentWindow = requireNotNull(composeContainer.window)
+
     private val windowContext = PlatformWindowContext().also {
         it.isWindowTransparent = true
-        it.setContainerSize(windowContainer.sizeInPx)
+        it.setContainerSizeFromComponent(windowContainer)
     }
 
-    private val layerWindow = JDialog(
-        parentWindow,
-    ).also {
+    private val layerWindow = JDialog(parentWindow).also {
         it.isAlwaysOnTop = true
         it.focusableWindowState = focusable
         it.isUndecorated = true
@@ -82,6 +82,11 @@ internal class WindowComposeSceneLayer(
             if (focusable) {
                 mediator?.contentComponent?.requestFocusInWindow()
             }
+        }
+
+        override fun removeNotify() {
+            mediator?.onComponentDetached()
+            super.removeNotify()
         }
     }.also {
         it.layout = null
@@ -118,6 +123,7 @@ internal class WindowComposeSceneLayer(
             },
             eventListener = eventListener,
             measureDrawLayerBounds = true,
+            architectureComponentsOwner = composeContainer.architectureComponentsOwner,
             coroutineContext = compositionContext.effectCoroutineContext,
             skiaLayerComponentFactory = ::createSkiaLayerComponent,
             composeSceneFactory = ::createComposeScene,
@@ -155,7 +161,7 @@ internal class WindowComposeSceneLayer(
     }
 
     override fun onWindowContainerSizeChanged() {
-        windowContext.setContainerSize(windowContainer.sizeInPx)
+        windowContext.setContainerSizeFromComponent(windowContainer)
 
         // Update compose constrains based on main window size
         mediator?.sceneBoundsInPx = Rect(

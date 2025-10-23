@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalSharedTransitionApi::class)
-
 package androidx.compose.animation.demos.sharedelement
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds
 import androidx.compose.animation.samples.R
@@ -66,6 +63,7 @@ fun SharedElementDemos() {
             "Container Transform" to { ContainerTransformDemo() },
             "Dynamically Enabled Shared Elements" to { DynamicallyEnableSharedElementsDemo() },
             "Shared Element\n Caller Managed Vis" to { SharedElementWithCallerManagedVisibility() },
+            "Fling Shared Elements" to { SharedElementWithFlingDemo() },
             "FABInOverlay" to { SharedElementWithFABInOverlaySample() },
             "AnimatedContent" to { SharedElementInAnimatedContentSample() },
             "Text transform" to { TextSharedBoundsExperiments() },

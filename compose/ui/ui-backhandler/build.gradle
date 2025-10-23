@@ -15,19 +15,19 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.JetbrainsAndroidXPlugin
 import androidx.build.Publish
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("JetbrainsAndroidXPlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetbrainsAndroidXPlugin.applyAndConfigure(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 androidXComposeMultiplatform {
     android()
@@ -46,7 +46,6 @@ kotlin {
                 implementation(project(":annotation:annotation"))
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-util"))
-                implementation(project(":lifecycle:lifecycle-runtime-compose"))
             }
         }
 
@@ -60,7 +59,13 @@ kotlin {
             }
         }
 
-        jbMain.dependsOn(commonMain)
+        jbMain {
+            dependsOn(commonMain)
+            dependencies {
+                def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+                implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
+            }
+        }
         desktopMain.dependsOn(jbMain)
         nonJvmMain.dependsOn(jbMain)
         nativeMain.dependsOn(nonJvmMain)

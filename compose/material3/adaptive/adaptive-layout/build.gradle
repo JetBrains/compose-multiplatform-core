@@ -23,19 +23,20 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.JetbrainsAndroidXPlugin
 import androidx.build.LibraryType
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
+import org.jetbrains.androidx.build.UpdateTranslationsTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("JetbrainsAndroidXPlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetbrainsAndroidXPlugin.applyAndConfigure(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 androidXComposeMultiplatform {
     android()
@@ -152,12 +153,21 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
     kotlinStringsPackageName = "androidx.compose.material3.adaptive.layout.internal"
     stringByResourceName = [
             // These come are from the material3.adaptive-layout module resources
+            "m3_adaptive_default_pane_title_primary"                            : "defaultPaneTitlePrimary",
+            "m3_adaptive_default_pane_title_secondary"                          : "defaultPaneTitleSecondary",
+            "m3_adaptive_default_pane_title_tertiary"                           : "defaultPaneTitleTertiary",
             "m3_adaptive_default_pane_expansion_drag_handle_content_description": "defaultPaneExpansionDragHandleContentDescription",
             "m3_adaptive_default_pane_expansion_drag_handle_state_description"  : "defaultPaneExpansionDragHandleStateDescription",
             "m3_adaptive_default_pane_expansion_drag_handle_action_description" : "defaultPaneExpansionDragHandleActionDescription",
             "m3_adaptive_default_pane_expansion_proportion_anchor_description"  : "defaultPaneExpansionProportionAnchorDescription",
             "m3_adaptive_default_pane_expansion_start_offset_anchor_description": "defaultPaneExpansionStartOffsetAnchorDescription",
             "m3_adaptive_default_pane_expansion_end_offset_anchor_description"  : "defaultPaneExpansionEndOffsetAnchorDescription",
+            "m3_adaptive_drag_to_resize_click_to_expand_description"            : "dragToResizeClickToExpandDescription",
+            "m3_adaptive_drag_to_resize_click_to_collapse_description"          : "dragToResizeClickToCollapseDescription",
+            "m3_adaptive_drag_to_resize_click_to_partially_expand_description"  : "dragToResizeClickToPartiallyExpandDescription",
+            "m3_adaptive_drag_to_resize_expanded_state_description"             : "dragToResizeExpandedStateDescription",
+            "m3_adaptive_drag_to_resize_collapsed_state_description"            : "dragToResizeCollapsedStateDescription",
+            "m3_adaptive_drag_to_resize_partially_expanded_state_description"   : "dragToResizePartiallyExpandedStateDescription",
     ]
     // This is all the locales translated by Compose on Android in the ui module:
     // https://github.com/androidx/androidx/tree/androidx-main/compose/material3/adaptive/adaptive-layout/src/androidMain/res

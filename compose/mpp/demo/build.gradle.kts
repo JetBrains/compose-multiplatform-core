@@ -15,8 +15,8 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.JetbrainsAndroidXPlugin
 import java.util.*
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
@@ -27,11 +27,11 @@ plugins {
     id("kotlin-multiplatform")
 //  [1.4 Update]  id("application")
     kotlin("plugin.serialization") version "1.9.21"
-    id("JetbrainsAndroidXPlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetbrainsAndroidXPlugin.applyAndConfigure(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 dependencies {
 
@@ -207,6 +207,10 @@ kotlin {
             dependsOn(skikoMain)
             resources.setSrcDirs(resources.srcDirs)
             resources.srcDirs(unzipTask.map { it.destinationDir })
+
+            dependencies {
+                implementation(libs.kotlinSerializationJson)
+            }
         }
 
         val jsMain by getting {
@@ -300,7 +304,7 @@ if (System.getProperty("os.name") == "Mac OS X") {
 }
 
 tasks.create("runDesktop", JavaExec::class.java) {
-    dependsOn(":compose:desktop:desktop:jar")
+    dependsOn(":compose:desktop:desktop:jvmJar")
     mainClass.set("androidx.compose.mpp.demo.Main_desktopKt")
     args = listOfNotNull(project.findProperty("args")?.toString())
     systemProperty("skiko.fps.enabled", "true")

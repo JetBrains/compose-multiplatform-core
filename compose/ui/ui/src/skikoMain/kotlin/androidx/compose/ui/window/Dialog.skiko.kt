@@ -20,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +48,7 @@ import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.exclude
+import androidx.compose.ui.platform.findDefaultNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.union
 import androidx.compose.ui.scene.ComposeSceneLayer
 import androidx.compose.ui.scene.Content
@@ -119,7 +122,7 @@ interface DialogAnimationScope {
  * @property onDisappearEffect The effect to be applied when the dialog disappears.
  */
 @Immutable
-actual class DialogProperties @ExperimentalComposeUiApi constructor(
+actual class DialogProperties constructor(
     actual val dismissOnBackPress: Boolean = true,
     actual val dismissOnClickOutside: Boolean = true,
     actual val usePlatformDefaultWidth: Boolean = true,
@@ -190,6 +193,7 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
     }
 }
 
+@OptIn(InternalComposeApi::class)
 @Composable
 actual fun Dialog(
     onDismissRequest: () -> Unit,
@@ -197,18 +201,19 @@ actual fun Dialog(
     content: @Composable () -> Unit
 ) {
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
-
-    val onKeyEvent = if (properties.dismissOnBackPress) {
-        { event: KeyEvent ->
-            if (event.isDismissRequest()) {
-                currentOnDismissRequest()
-                true
-            } else {
-                false
-            }
-        }
-    } else {
-        null
+    val onBackHandler = remember {
+        OnBackClickEventHandler { currentOnDismissRequest() }
+    }
+    LaunchedEffect(onBackHandler, properties.dismissOnBackPress) {
+        onBackHandler.backClickIsEnabled = properties.dismissOnBackPress
+    }
+    val navigationEventDispatcher =
+        requireNotNull(findDefaultNavigationEventDispatcherOwner()) {
+            error("NavigationEventDispatcherOwner not found")
+        }.navigationEventDispatcher
+    DisposableEffect(navigationEventDispatcher) {
+        navigationEventDispatcher.addHandler(onBackHandler)
+        onDispose { onBackHandler.remove() }
     }
     val onOutsidePointerEvent = if (properties.dismissOnClickOutside) {
         { eventType: PointerEventType, button: PointerButton? ->
@@ -226,7 +231,6 @@ actual fun Dialog(
     }
     DialogLayout(
         modifier = Modifier.semantics { dialog() },
-        onKeyEvent = onKeyEvent,
         onOutsidePointerEvent = onOutsidePointerEvent,
         properties = properties,
         content = content
@@ -237,8 +241,6 @@ actual fun Dialog(
 private fun DialogLayout(
     properties: DialogProperties,
     modifier: Modifier = Modifier,
-    onPreviewKeyEvent: ((KeyEvent) -> Boolean)? = null,
-    onKeyEvent: ((KeyEvent) -> Boolean)? = null,
     onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
@@ -249,6 +251,7 @@ private fun DialogLayout(
         focusable = true
     )
     layer.setKeyEventListener(onPreviewKeyEvent, onKeyEvent)
+    layer.scrimColor = properties.scrimColor
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
     val dialogAnimationScope = remember {
         object : DialogAnimationScope {
@@ -351,16 +354,14 @@ private fun rememberDialogMeasurePolicy(
         platformInsets = platformInsets,
         usePlatformDefaultWidth = properties.usePlatformDefaultWidth
     ) { contentSize ->
-        val positionWithInsets = positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
-            sizeWithoutInsets.center - contentSize.center
-        }
+        val positionWithInsets =
+            positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
+                sizeWithoutInsets.center - contentSize.center
+            }
         layer.boundsInWindow = IntRect(positionWithInsets, contentSize)
         layer.calculateLocalPosition(positionWithInsets)
     }
 }
-
-private fun KeyEvent.isDismissRequest() =
-    type == KeyEventType.KeyDown && key == Key.Escape
 
 internal fun getDialogScrimBlendMode(isWindowTransparent: Boolean) =
     if (isWindowTransparent) {

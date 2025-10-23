@@ -77,30 +77,32 @@ internal actual value class Strings(val value: Int) {
         actual val DateRangeInputInvalidRangeInput = Strings(46)
         actual val FloatingToolbarCollapse = Strings(47)
         actual val FloatingToolbarExpand = Strings(48)
-        actual val BottomSheetPaneTitle = Strings(49)
-        actual val BottomSheetDragHandleDescription = Strings(50)
-        actual val BottomSheetPartialExpandDescription = Strings(51)
-        actual val BottomSheetDismissDescription = Strings(52)
-        actual val BottomSheetExpandDescription = Strings(53)
-        actual val TooltipLongPressLabel = Strings(54)
-        actual val TimePickerAM = Strings(55)
-        actual val TimePickerPM = Strings(56)
-        actual val TimePickerPeriodToggle = Strings(57)
-        actual val TimePickerHourSelection = Strings(58)
-        actual val TimePickerMinuteSelection = Strings(59)
-        actual val TimePickerHourSuffix = Strings(60)
-        actual val TimePicker24HourSuffix = Strings(61)
-        actual val TimePickerMinuteSuffix = Strings(62)
-        actual val TimePickerHour = Strings(63)
-        actual val TimePickerMinute = Strings(64)
-        actual val TimePickerHourTextField = Strings(65)
-        actual val TimePickerMinuteTextField = Strings(66)
-        actual val TimePickerDialogTitle = Strings(67)
-        actual val TimeInputDialogTitle = Strings(68)
-        actual val TimePickerToggleKeyboard = Strings(69)
-        actual val TimePickerToggleTouch = Strings(70)
-        actual val TooltipPaneDescription = Strings(71)
-        actual val WideNavigationRailPaneTitle = Strings(72)
+        actual val FloatingToolbarMoreOptions = Strings(49)
+        actual val BottomSheetPaneTitle = Strings(50)
+        actual val BottomSheetDragHandleDescription = Strings(51)
+        actual val BottomSheetPartialExpandDescription = Strings(52)
+        actual val BottomSheetDismissDescription = Strings(53)
+        actual val BottomSheetExpandDescription = Strings(54)
+        actual val TooltipLongPressLabel = Strings(55)
+        actual val TimePickerAM = Strings(56)
+        actual val TimePickerPM = Strings(57)
+        actual val TimePickerPeriodToggle = Strings(58)
+        actual val TimePickerHourSelection = Strings(59)
+        actual val TimePickerMinuteSelection = Strings(60)
+        actual val TimePickerHourSuffix = Strings(61)
+        actual val TimePicker24HourSuffix = Strings(62)
+        actual val TimePickerMinuteSuffix = Strings(63)
+        actual val TimePickerHour = Strings(64)
+        actual val TimePickerMinute = Strings(65)
+        actual val TimePickerHourTextField = Strings(66)
+        actual val TimePickerMinuteTextField = Strings(67)
+        actual val TimePickerDialogTitle = Strings(68)
+        actual val TimeInputDialogTitle = Strings(69)
+        actual val TimePickerToggleKeyboard = Strings(70)
+        actual val TimePickerToggleTouch = Strings(71)
+        actual val TooltipPaneDescription = Strings(72)
+        actual val WideNavigationRailPaneTitle = Strings(73)
+        actual val ButtonGroupMoreOptions = Strings(74)
         // When adding values here, make sure to also add them in material3/build.gradle,
         // updateTranslations task (stringByResourceName parameter), and re-run the task
     }
@@ -120,10 +122,7 @@ internal actual fun formatString(string: String, vararg formatArgs: Any?): Strin
     return result
 }
 
-@Composable
-@ReadOnlyComposable
-internal actual fun getString(string: Strings): String {
-    val locale = Locale.current
+private fun getTranslation(string: Strings, locale: Locale): String {
     val tag = localeTag(language = locale.language, region = locale.region)
     val translation = translationByLocaleTag.getOrPut(tag) {
         findTranslation(locale)
@@ -133,8 +132,17 @@ internal actual fun getString(string: Strings): String {
 
 @Composable
 @ReadOnlyComposable
-internal actual fun getString(string: Strings, vararg formatArgs: Any): String =
-    formatString(getString(string), *formatArgs)
+internal actual fun getString(string: Strings): String {
+    val locale = Locale.current
+    return getTranslation(string, locale)
+}
+
+@Composable
+@ReadOnlyComposable
+internal actual fun getString(string: Strings, vararg formatArgs: Any): String {
+    val locale = Locale.current
+    return formatString(getTranslation(string, locale), *formatArgs)
+}
 
 /**
  * A single translation; should contain all the [Strings].

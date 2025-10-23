@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.node.RootForTest
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformDragAndDropManager
@@ -38,7 +39,10 @@ import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.toSize
+import androidx.lifecycle.Lifecycle
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -223,6 +227,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         @InternalTestApi
         set
 
+    private val architectureComponentsOwner = DefaultArchitectureComponentsOwner(enforceMainThread = false)
     private val testOwner = SkikoTestOwner()
     private val testContext = TestContext(testOwner)
 
@@ -260,11 +265,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
     }
 
     private inline fun <R> withScene(block: () -> R): R {
-        scene = runOnUiThread(::createUi)
+        runOnUiThread(::createScene)
         try {
             return block()
         } finally {
-            runOnUiThread(scene::close)
+            runOnUiThread(::closeScene)
             // After the scene is closed, run all left foreground TestDispatchEvent.
             // They might've been added outside the runTest call, using the provided coroutineDispatcher:
             coroutineDispatcher.scheduler.advanceUntilIdle()
@@ -300,13 +305,21 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         )
     }
 
-    private fun createUi(): ComposeScene = CanvasLayersComposeScene(
-        density = density,
-        size = size,
-        coroutineContext = coroutineContext,
-        platformContext = TestContext(),
-        invalidate = { }
-    )
+    private fun createScene() {
+        scene = CanvasLayersComposeScene(
+            density = density,
+            size = size,
+            coroutineContext = coroutineContext,
+            platformContext = TestContext(),
+            invalidate = { }
+        )
+        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    }
+
+    private fun closeScene() {
+        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        scene.close()
+    }
 
     private fun advanceIfNeededAndRenderNextFrame() {
         if (mainClock.autoAdvance) {
@@ -464,9 +477,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         override val isWindowFocused: Boolean
             get() = true
 
-        @ExperimentalComposeUiApi
         override val containerSize: IntSize
             get() = size
+
+        override val containerDpSize: DpSize
+            get() = with(density) { size.toSize().toDpSize() }
     }
 
     private inner class TestDragAndDropManager : PlatformDragAndDropManager {
@@ -498,7 +513,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
 
     private inner class TestContext : PlatformContext by PlatformContext.Empty {
         override val windowInfo: WindowInfo = TestWindowInfo()
-
+        override val architectureComponentsOwner get() = this@SkikoComposeUiTest.architectureComponentsOwner
         override val rootForTestListener: PlatformContext.RootForTestListener
             get() = composeRootRegistry
 

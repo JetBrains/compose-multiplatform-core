@@ -21,10 +21,19 @@ import androidx.compose.material3.adaptive.layout.internal.Translations
 
 @Suppress("UnusedReceiverParameter", "DuplicatedCode")
 internal fun Translations.kk() = mapOf(
+    Strings.defaultPaneTitlePrimary to "Негізгі панель",
+    Strings.defaultPaneTitleSecondary to "Қосалқы панель",
+    Strings.defaultPaneTitleTertiary to "Үшінші панель",
     Strings.defaultPaneExpansionDragHandleContentDescription to "Панельді жаюға арналған сүйрейтін тетік",
     Strings.defaultPaneExpansionDragHandleStateDescription to "Қазіргі панельді бөлу деңгейі, %s",
     Strings.defaultPaneExpansionDragHandleActionDescription to "Панельді бөлу деңгейін %s етіп өзгерту",
     Strings.defaultPaneExpansionProportionAnchorDescription to "%d пайыз",
     Strings.defaultPaneExpansionStartOffsetAnchorDescription to "Басынан %d DP",
     Strings.defaultPaneExpansionEndOffsetAnchorDescription to "Соңынан %d DP",
+    Strings.dragToResizeClickToExpandDescription to "жаю",
+    Strings.dragToResizeClickToCollapseDescription to "жию",
+    Strings.dragToResizeClickToPartiallyExpandDescription to "жартылай жаю",
+    Strings.dragToResizeExpandedStateDescription to "жайылды",
+    Strings.dragToResizeCollapsedStateDescription to "жиылды",
+    Strings.dragToResizePartiallyExpandedStateDescription to "жартылай жайылды",
 )

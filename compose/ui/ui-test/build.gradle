@@ -15,19 +15,18 @@
  */
 
 import androidx.build.AndroidXComposePlugin
-import androidx.build.JetbrainsAndroidXPlugin
 import androidx.build.LibraryType
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.androidx.build.JetBrainsAndroidXPlugin
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("JetbrainsAndroidXPlugin")
+    id("JetBrainsAndroidXPlugin")
 }
 
 AndroidXComposePlugin.applyAndConfigureKotlinPlugin(project)
-JetbrainsAndroidXPlugin.applyAndConfigure(project)
+JetBrainsAndroidXPlugin.applyAndConfigure(project)
 
 android {
     if (!AndroidXComposePlugin.isMultiplatformEnabled(project)) {
@@ -151,6 +150,18 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 dependsOn(commonMain)
                 dependencies {
                     implementation(libs.atomicFu)
+
+                    // Required to properly resolve supertypes of DefaultArchitectureComponentsOwner
+                    // Keep in sync with :ui:ui module
+                    implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.5")
+                    implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.9.5")
+
+                    // Use direct dependency to AOSP's artifact instead of using project reference
+                    // because this module supports all KMP platforms from the beginning
+                    // Project dependency (commented out version) is required for `integration` branch setup
+                    // implementation(project(":navigationevent:navigationevent"))
+                    def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
+                    implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
                 }
             }
 

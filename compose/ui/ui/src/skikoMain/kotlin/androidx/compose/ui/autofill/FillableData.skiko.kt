@@ -22,6 +22,7 @@ import kotlin.jvm.JvmName
 
 // TODO https://youtrack.jetbrains.com/issue/CMP-8576
 
-actual fun FillableData(booleanValue: Boolean): FillableData? = null
-actual fun FillableData(textValue: CharSequence): FillableData? = null
-actual fun FillableData(listIndexValue: Int): FillableData? = null
+actual fun FillableData.Companion.createFromBoolean(booleanValue: Boolean): FillableData? = null
+actual fun FillableData.Companion.createFromText(textValue: CharSequence): FillableData? = null
+actual fun FillableData.Companion.createFromListIndex(listIndexValue: Int): FillableData? = null
+actual fun FillableData.Companion.createFromDateMillis(dateMillisValue: Long): FillableData? = null

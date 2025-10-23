@@ -32,7 +32,7 @@ import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.handwriting.stylusHandwriting
 import androidx.compose.foundation.text.input.internal.CoreTextFieldSemanticsModifier
 import androidx.compose.foundation.text.input.internal.legacyTextInputAdapter
-import androidx.compose.foundation.text.input.internal.legacyTextInputServiceAdapterAndService
+import androidx.compose.foundation.text.input.internal.createLegacyPlatformTextInputServiceAdapter
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.OffsetProvider
 import androidx.compose.foundation.text.selection.SelectedTextType
@@ -43,7 +43,6 @@ import androidx.compose.foundation.text.selection.SimpleLayout
 import androidx.compose.foundation.text.selection.TextFieldSelectionHandle
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.selection.addBasicTextFieldTextContextMenuComponents
-import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.isSelectionHandleInVisibleBound
 import androidx.compose.foundation.text.selection.rememberPlatformSelectionBehaviors
 import androidx.compose.foundation.text.selection.textFieldMagnifier
@@ -210,8 +209,10 @@ internal fun CoreTextField(
     textScrollerPosition: TextFieldScrollerPosition? = null,
 ) {
     val focusRequester = remember { FocusRequester() }
-    val (legacyTextInputServiceAdapter, textInputService) =
-        legacyTextInputServiceAdapterAndService()
+    val legacyTextInputServiceAdapter = remember { createLegacyPlatformTextInputServiceAdapter() }
+    val textInputService: TextInputService = remember {
+        TextInputService(legacyTextInputServiceAdapter)
+    }
 
     // CompositionLocals
     val density = LocalDensity.current
@@ -308,12 +309,11 @@ internal fun CoreTextField(
             rememberPlatformSelectionBehaviors(SelectedTextType.EditableText, textStyle.localeList)
     }
 
-    // TODO: Upstreaming https://youtrack.jetbrains.com/issue/CMP-7517
     rememberClipboardEventsHandler(
         isEnabled = state.hasFocus,
-        onCopy = { manager.onCopyWithResult() },
-        onCut = { manager.onCutWithResult() },
-        onPaste = { manager.paste(AnnotatedString(it)) }
+        onCopy = { manager.copyWithResult() },
+        onCut = { manager.cutWithResult() },
+        onPaste = { manager.paste(it) },
     )
 
     // Focus

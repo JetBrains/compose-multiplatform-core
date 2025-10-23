@@ -17,6 +17,7 @@
 package androidx.compose.foundation
 
 import android.os.Build.VERSION.SDK_INT
+import android.os.Looper
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
@@ -49,7 +50,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.testutils.assertModifierIsPure
 import androidx.compose.testutils.first
-import androidx.compose.ui.ExperimentalIndirectTouchTypeApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusManager
@@ -79,6 +79,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.MouseButton
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
@@ -108,13 +109,17 @@ import androidx.test.filters.MediumTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Correspondence
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.reflect.KClass
 import kotlin.test.Ignore
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -123,12 +128,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalIndirectTouchTypeApi::class)
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ClickableTest {
 
-    @get:Rule val rule = createComposeRule()
+    private val dispatcher = StandardTestDispatcher()
+    @get:Rule val rule = createComposeRule(dispatcher)
 
     private val InstanceOf =
         Correspondence.from<Any, KClass<*>>(
@@ -268,11 +273,11 @@ class ClickableTest {
         rule.runOnIdle { inputModeManager.requestInputMode(InputMode.Keyboard) }
         rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
 
-        rule.onNodeWithTag("myClickable").sendIndirectPressReleaseEvent()
+        rule.onNodeWithTag("myClickable").sendIndirectPressReleaseEvent(rule)
 
         rule.runOnIdle { assertThat(counter).isEqualTo(1) }
 
-        rule.onNodeWithTag("myClickable").sendIndirectPressReleaseEvent()
+        rule.onNodeWithTag("myClickable").sendIndirectPressReleaseEvent(rule)
 
         rule.runOnIdle { assertThat(counter).isEqualTo(2) }
     }
@@ -458,14 +463,17 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(currentTime = 0L)
+        val downEvent =
+            rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, currentTime = 0L)
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchReleaseEvent(currentTime = 16L)
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchReleaseEvent(rule, currentTime = 16L, previousEvent = downEvent)
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -555,8 +563,10 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
-        rule.onNodeWithTag("myClickable").sendIndirectTouchReleaseEvent(16L)
+        val downEvent = rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L)
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchReleaseEvent(rule, 16L, previousEvent = downEvent)
 
         // Press finished so we should see both press and release
         rule.runOnIdle {
@@ -645,7 +655,7 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(sendMoveEvents = false)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(rule, sendMoveEvents = false)
 
         // We are not in a scrollable container, so we should see a press and immediate cancel
         rule.runOnIdle {
@@ -691,65 +701,6 @@ class ClickableTest {
             down(centerLeft)
             moveTo(centerRight)
         }
-
-        // The press should fire, and then the drag should instantly cancel it
-        rule.runOnIdle {
-            assertThat(interactions).hasSize(2)
-            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
-            assertThat(interactions[1]).isInstanceOf(PressInteraction.Cancel::class.java)
-            assertThat((interactions[1] as PressInteraction.Cancel).press)
-                .isEqualTo(interactions[0])
-        }
-    }
-
-    @Test
-    fun interactionSource_immediateDrag_noScrollableContainer_indirectTouch() {
-        val interactionSource = MutableInteractionSource()
-        lateinit var inputModeManager: InputModeManager
-        val focusRequester = FocusRequester()
-
-        lateinit var scope: CoroutineScope
-
-        rule.mainClock.autoAdvance = false
-
-        rule.setContent {
-            inputModeManager = LocalInputModeManager.current
-            scope = rememberCoroutineScope()
-            Box {
-                BasicText(
-                    "ClickableText",
-                    modifier =
-                        Modifier.testTag("myClickable").focusRequester(focusRequester).clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                        ) {},
-                )
-            }
-        }
-
-        rule.runOnIdle { inputModeManager.requestInputMode(Keyboard) }
-        rule.runOnIdle { assertThat(focusRequester.requestFocus()).isTrue() }
-
-        val interactions = mutableListOf<Interaction>()
-
-        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
-
-        rule.runOnIdle { assertThat(interactions).isEmpty() }
-
-        val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
-
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
-
-        rule
-            .onNodeWithTag("myClickable")
-            .sendIndirectTouchMoveEvents(
-                3,
-                16L,
-                pressPosition,
-                16L,
-                Offset(50f, 0f),
-                IndirectTouchEventPrimaryDirectionalMotionAxis.X,
-            )
 
         // The press should fire, and then the drag should instantly cancel it
         rule.runOnIdle {
@@ -851,7 +802,7 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
+        val pressEvent = rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L)
 
         val halfTapIndicationDelay = TapIndicationDelay / 2
 
@@ -870,7 +821,11 @@ class ClickableTest {
 
         rule
             .onNodeWithTag("myClickable")
-            .sendIndirectTouchReleaseEvent(halfTapIndicationDelay + 16L)
+            .sendIndirectTouchReleaseEvent(
+                rule,
+                halfTapIndicationDelay + 16L,
+                previousEvent = pressEvent,
+            )
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -959,8 +914,10 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L)
-        rule.onNodeWithTag("myClickable").sendIndirectTouchReleaseEvent(16L)
+        val downEvent = rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L)
+        rule
+            .onNodeWithTag("myClickable")
+            .sendIndirectTouchReleaseEvent(rule, 16L, previousEvent = downEvent)
 
         // We haven't reached the tap delay, but we have finished a press so we should have
         // emitted both press and release
@@ -1045,7 +1002,7 @@ class ClickableTest {
 
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(sendMoveEvents = false)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(rule, sendMoveEvents = false)
 
         // We haven't reached the tap delay, and a cancel was emitted, so no press should ever be
         // shown
@@ -1128,10 +1085,11 @@ class ClickableTest {
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L, pressPosition)
         rule
             .onNodeWithTag("myClickable")
             .sendIndirectTouchMoveEvents(
+                rule,
                 3,
                 16L,
                 pressPosition,
@@ -1232,7 +1190,7 @@ class ClickableTest {
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L, pressPosition)
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
 
@@ -1244,6 +1202,7 @@ class ClickableTest {
         rule
             .onNodeWithTag("myClickable")
             .sendIndirectTouchMoveEvents(
+                rule,
                 3,
                 16L,
                 pressPosition,
@@ -1345,7 +1304,7 @@ class ClickableTest {
         rule.runOnIdle { assertThat(interactions).isEmpty() }
 
         val pressPosition = Offset((TouchPadEnd - TouchPadStart) / 2f, 0f)
-        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(0L, pressPosition)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchPressEvent(rule, 0L, pressPosition)
 
         rule.mainClock.advanceTimeBy(TapIndicationDelay)
 
@@ -1354,7 +1313,7 @@ class ClickableTest {
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
         }
 
-        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(sendMoveEvents = false)
+        rule.onNodeWithTag("myClickable").sendIndirectTouchCancelEvent(rule, sendMoveEvents = false)
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -1371,8 +1330,6 @@ class ClickableTest {
         var emitClickableText by mutableStateOf(true)
 
         lateinit var scope: CoroutineScope
-
-        rule.mainClock.autoAdvance = false
 
         rule.setContent {
             scope = rememberCoroutineScope()
@@ -1398,8 +1355,6 @@ class ClickableTest {
 
         rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
 
-        rule.mainClock.advanceTimeBy(TapIndicationDelay)
-
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
@@ -1407,8 +1362,6 @@ class ClickableTest {
 
         // Dispose clickable
         rule.runOnIdle { emitClickableText = false }
-
-        rule.mainClock.advanceTimeByFrame()
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -1425,8 +1378,6 @@ class ClickableTest {
         var key by mutableStateOf(true)
 
         lateinit var scope: CoroutineScope
-
-        rule.mainClock.autoAdvance = false
 
         rule.setContent {
             scope = rememberCoroutineScope()
@@ -1452,8 +1403,6 @@ class ClickableTest {
 
         rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
 
-        rule.mainClock.advanceTimeBy(TapIndicationDelay)
-
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
@@ -1461,8 +1410,6 @@ class ClickableTest {
 
         // Change the key to trigger reuse
         rule.runOnIdle { key = false }
-
-        rule.mainClock.advanceTimeByFrame()
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -1479,8 +1426,6 @@ class ClickableTest {
         var moveContent by mutableStateOf(false)
 
         lateinit var scope: CoroutineScope
-
-        rule.mainClock.autoAdvance = false
 
         val content = movableContentOf {
             BasicText(
@@ -1510,8 +1455,6 @@ class ClickableTest {
 
         rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
 
-        rule.mainClock.advanceTimeBy(TapIndicationDelay)
-
         rule.runOnIdle {
             assertThat(interactions).hasSize(1)
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
@@ -1519,8 +1462,6 @@ class ClickableTest {
 
         // Move the content
         rule.runOnIdle { moveContent = true }
-
-        rule.mainClock.advanceTimeByFrame()
 
         rule.runOnIdle {
             assertThat(interactions).hasSize(2)
@@ -1602,7 +1543,81 @@ class ClickableTest {
 
         rule.onNodeWithTag("myClickable").performMouseInput {
             enter(center)
+            advanceEventTime(50)
             click()
+            advanceEventTime(50)
+            exit(Offset(-1f, -1f))
+        }
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(4)
+            assertThat(interactions[0]).isInstanceOf(HoverInteraction.Enter::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[2]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat(interactions[3]).isInstanceOf(HoverInteraction.Exit::class.java)
+            assertThat((interactions[2] as PressInteraction.Release).press)
+                .isEqualTo(interactions[1])
+            assertThat((interactions[3] as HoverInteraction.Exit).enter).isEqualTo(interactions[0])
+        }
+    }
+
+    @Test
+    fun interactionSource_hover_and_press_scrollableContainer() {
+        val interactionSource = MutableInteractionSource()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").performMouseInput {
+            enter(center)
+            advanceEventTime(50)
+            press(MouseButton.Primary)
+        }
+
+        val halfTapIndicationDelay = TapIndicationDelay / 2
+
+        rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
+
+        // Haven't reached the tap delay yet, so we shouldn't have started a press, we should only
+        // see the hover
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(1)
+            assertThat(interactions[0]).isInstanceOf(HoverInteraction.Enter::class.java)
+        }
+
+        // Advance past the tap delay
+        rule.mainClock.advanceTimeBy(halfTapIndicationDelay)
+
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions[0]).isInstanceOf(HoverInteraction.Enter::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Press::class.java)
+        }
+
+        rule.onNodeWithTag("myClickable").performMouseInput {
+            release(MouseButton.Primary)
+            advanceEventTime(50)
             exit(Offset(-1f, -1f))
         }
 
@@ -1737,6 +1752,40 @@ class ClickableTest {
             assertThat(clickCounter).isEqualTo(1)
             assertThat(outerCounter).isEqualTo(0)
         }
+    }
+
+    @Test
+    fun performClick_executesCallbackOnUiThread() {
+        var counter = 0
+        val wasOnUiThread = AtomicBoolean(false)
+        val onClick: () -> Unit = {
+            ++counter
+            val isOnUiThread = Thread.currentThread() == Looper.getMainLooper().thread
+            wasOnUiThread.set(isOnUiThread)
+        }
+
+        rule.setContent {
+            Box(modifier = Modifier.clickable(onClick = onClick)) {
+                BasicText("Foo")
+                BasicText("Bar")
+            }
+        }
+
+        rule.onNodeWithText("Foo").assertExists()
+        rule.onNodeWithText("Bar").assertExists()
+
+        rule.onNodeWithText("Foo").performClick()
+
+        rule.waitForIdle()
+        assertThat(counter).isEqualTo(1)
+        assertTrue(wasOnUiThread.get(), "The onClick() was not invoked on the UI thread.")
+
+        wasOnUiThread.set(false)
+        rule.onNodeWithText("Bar").performClick()
+
+        rule.waitForIdle()
+        assertThat(counter).isEqualTo(2)
+        assertTrue(wasOnUiThread.get(), "The onClick() was not invoked on the UI thread.")
     }
 
     // Helper functions for next several tests
@@ -4701,29 +4750,6 @@ class ClickableTest {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
-    @Test
-    fun localIndication_indication_flagDisabled_stillSupported() {
-        try {
-            var created = false
-            val indication = TestIndication { created = true }
-            ComposeFoundationFlags.isNonComposedClickableEnabled = false
-            rule.setContent {
-                CompositionLocalProvider(LocalIndication provides indication) {
-                    Box(Modifier.padding(10.dp)) {
-                        BasicText(
-                            "ClickableText",
-                            modifier = Modifier.testTag("clickable").clickable {},
-                        )
-                    }
-                }
-            }
-            rule.runOnIdle { assertThat(created).isTrue() }
-        } finally {
-            ComposeFoundationFlags.isNonComposedClickableEnabled = true
-        }
-    }
-
     @Test
     fun localIndication_interactionSource_eagerlyCreated() {
         val interactionSource = MutableInteractionSource()
@@ -4945,7 +4971,7 @@ class ClickableTest {
         }
 
         // The indirect touch event should cause the indication node to be created
-        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(0L, Offset.Zero)
+        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(rule, 0L, Offset.Zero)
 
         rule.runOnIdle {
             assertThat(created).isTrue()
@@ -5954,7 +5980,7 @@ class ClickableTest {
         }
 
         // The indirect touch event should cause the indication node to be created
-        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(0L, Offset.Zero)
+        rule.onNodeWithTag("clickable").sendIndirectTouchPressEvent(rule, 0L, Offset.Zero)
 
         rule.runOnIdle {
             assertThat(created).isTrue()
@@ -7327,6 +7353,149 @@ class ClickableTest {
             assertThat(created).isTrue()
             assertThat(interactions).hasSize(1)
             assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+        }
+    }
+
+    /**
+     * Regression test for b/414319919 - when inside a scrollable container (presses are delayed),
+     * if a press, release, and press happen before coroutines are dispatched (in real life this is
+     * only really reproducible if the main thread is blocked), and a follow up release happens
+     * before the initial press delay expires, previously we would 'lose' the press delay job
+     * tracking the initial press, and so the second release would neither cancel the press, nor
+     * emit a release.
+     */
+    @Test
+    fun interactionSource_scrollableContainer_fastSuccessivePressesAndReleases() {
+        val interactionSource = MutableInteractionSource()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput {
+            down(center)
+            up()
+            down(center)
+        }
+
+        // Wait a small amount of time before we inject the second release, to make sure that
+        // coroutines from the initial gestures are launched.
+        dispatcher.scheduler.advanceTimeBy(10.milliseconds)
+
+        // Inject the following release
+        rule.onNodeWithTag("myClickable").performTouchInput { up() }
+
+        // Run past the press delays
+        dispatcher.scheduler.advanceUntilIdle()
+
+        // We should receive a press -> release -> press -> release
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(4)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
+            assertThat(interactions[2]).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[3]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[3] as PressInteraction.Release).press)
+                .isEqualTo(interactions[2])
+        }
+    }
+
+    /**
+     * Regression test for b/444588128 - when inside a scrollable container (presses are delayed),
+     * if a release happens _just_ before the press delay finishes, any coroutines launched by the
+     * release will be executed after the press has finished, introducing a race condition if the
+     * coroutine's body is expected to cancel the delaying press. Instead we should cancel the press
+     * before waiting for a coroutine to execute.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun interactionSource_scrollableContainer_releaseJustBeforeTapDelayFinishes() {
+        val interactionSource = MutableInteractionSource()
+
+        lateinit var scope: CoroutineScope
+
+        rule.mainClock.autoAdvance = false
+
+        rule.setContent {
+            scope = rememberCoroutineScope()
+            Box(Modifier.verticalScroll(rememberScrollState())) {
+                BasicText(
+                    "ClickableText",
+                    modifier =
+                        Modifier.testTag("myClickable").clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                        ) {},
+                )
+            }
+        }
+
+        val interactions = mutableListOf<Interaction>()
+
+        scope.launch { interactionSource.interactions.collect { interactions.add(it) } }
+
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        rule.onNodeWithTag("myClickable").performTouchInput { down(center) }
+
+        // Advance until just before the tap delay is reached
+        rule.mainClock.advanceTimeBy(TapIndicationDelay - 1, ignoreFrameDuration = true)
+
+        // We are just before the delay, so there should be no interaction
+        rule.runOnIdle { assertThat(interactions).isEmpty() }
+
+        // We want to emulate the case where we launch a coroutine before the delay has finished,
+        // but the coroutine only starts to execute after the delay. Advancing time also causes
+        // coroutines to launch / execute, so we can't directly reproduce that in a test.
+        // Instead we advance time first (to reach the delay), and then immediately
+        // dispatch the release. This means that the suspended coroutine still hasn't resumed, so
+        // the release event handling has a chance to interact before the coroutine resumes. However
+        // if the release needs to launch a coroutine, that coroutine won't execute until after
+        // the press delay job resumes and emits a press, which matches the original scenario we
+        // want to test.
+        rule.onNodeWithTag("myClickable").performTouchInput {
+            // NOTE: we need to advance time inside this block. We cannot do it before, as
+            // performTouchInput waits for idle (which will cause the delay to resume). And we
+            // cannot do it after, as that will run any coroutines launched by handling the up.
+
+            // NOTE: This test will still work if this line is moved after the up() - but that is
+            // misleading, up() just enqueues an up event, it doesn't actually emit it so the
+            // advanceTimeBy in that case would still be executed _before_ the event is emitted.
+            // Buffered input events are injected after this lambda executes, so this is more like a
+            // 'builder' for input events.
+            dispatcher.scheduler.advanceTimeBy(1)
+            up()
+        }
+
+        // We should exactly receive a press -> release
+        rule.runOnIdle {
+            assertThat(interactions).hasSize(2)
+            assertThat(interactions.first()).isInstanceOf(PressInteraction.Press::class.java)
+            assertThat(interactions[1]).isInstanceOf(PressInteraction.Release::class.java)
+            assertThat((interactions[1] as PressInteraction.Release).press)
+                .isEqualTo(interactions[0])
         }
     }
 }

@@ -10,8 +10,10 @@ public final class androidx/compose/material3/adaptive/layout/AdaptStrategy$Comp
 public final class androidx/compose/material3/adaptive/layout/AdaptStrategy$Levitate : androidx/compose/material3/adaptive/layout/AdaptStrategy {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun <init> (Landroidx/compose/ui/Alignment;Landroidx/compose/material3/adaptive/layout/Scrim;)V
-	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Landroidx/compose/material3/adaptive/layout/Scrim;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Lkotlin/jvm/functions/Function2;)V
+	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Landroidx/compose/ui/Alignment;Lkotlin/jvm/functions/Function2;Landroidx/compose/material3/adaptive/layout/DragToResizeState;)V
+	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Lkotlin/jvm/functions/Function2;Landroidx/compose/material3/adaptive/layout/DragToResizeState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public final fun onlyIf (ZLandroidx/compose/runtime/Composer;I)Landroidx/compose/material3/adaptive/layout/AdaptStrategy;
@@ -35,6 +37,7 @@ public final class androidx/compose/material3/adaptive/layout/AnimatedPaneOverri
 	public static final field $stable I
 	public final fun getBoundsAnimationSpec ()Landroidx/compose/animation/core/FiniteAnimationSpec;
 	public final fun getContent ()Lkotlin/jvm/functions/Function3;
+	public final fun getDragToResizeHandle ()Lkotlin/jvm/functions/Function3;
 	public final fun getEnterTransition ()Landroidx/compose/animation/EnterTransition;
 	public final fun getExitTransition ()Landroidx/compose/animation/ExitTransition;
 	public final fun getModifier ()Landroidx/compose/ui/Modifier;
@@ -83,6 +86,7 @@ public abstract interface class androidx/compose/material3/adaptive/layout/Exten
 }
 
 public abstract interface class androidx/compose/material3/adaptive/layout/ExtendedPaneScaffoldScope : androidx/compose/material3/adaptive/layout/PaneScaffoldScope, androidx/compose/material3/adaptive/layout/PaneScaffoldTransitionScope, androidx/compose/ui/layout/LookaheadScope {
+	public abstract fun getFocusRequesters ()Ljava/util/Map;
 }
 
 public final class androidx/compose/material3/adaptive/layout/HingePolicy {
@@ -103,6 +107,16 @@ public final class androidx/compose/material3/adaptive/layout/HingePolicy$Compan
 	public final fun getAvoidOccluding-u6eov6g ()I
 	public final fun getAvoidSeparating-u6eov6g ()I
 	public final fun getNeverAvoid-u6eov6g ()I
+}
+
+public final class androidx/compose/material3/adaptive/layout/LevitatedPaneScrimDefaults {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/material3/adaptive/layout/LevitatedPaneScrimDefaults;
+	public final fun getColor-0d7_KjU ()J
+}
+
+public final class androidx/compose/material3/adaptive/layout/LevitatedPaneScrimKt {
+	public static final fun LevitatedPaneScrim-FNF3uiM (Landroidx/compose/ui/Modifier;Lkotlin/jvm/functions/Function0;JLandroidx/compose/runtime/Composer;II)V
 }
 
 public final class androidx/compose/material3/adaptive/layout/ListDetailPaneScaffoldDefaults {
@@ -150,11 +164,11 @@ public final class androidx/compose/material3/adaptive/layout/PaneAdaptedValue$C
 
 public final class androidx/compose/material3/adaptive/layout/PaneAdaptedValue$Levitated : androidx/compose/material3/adaptive/layout/PaneAdaptedValue {
 	public static final field $stable I
-	public fun <init> (Landroidx/compose/ui/Alignment;Landroidx/compose/material3/adaptive/layout/Scrim;)V
-	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Landroidx/compose/material3/adaptive/layout/Scrim;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Lkotlin/jvm/functions/Function2;)V
+	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Lkotlin/jvm/functions/Function2;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Landroidx/compose/ui/Alignment;Lkotlin/jvm/functions/Function2;Landroidx/compose/material3/adaptive/layout/DragToResizeState;)V
+	public synthetic fun <init> (Landroidx/compose/ui/Alignment;Lkotlin/jvm/functions/Function2;Landroidx/compose/material3/adaptive/layout/DragToResizeState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getAlignment ()Landroidx/compose/ui/Alignment;
-	public final fun getScrim ()Landroidx/compose/material3/adaptive/layout/Scrim;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -163,7 +177,6 @@ public final class androidx/compose/material3/adaptive/layout/PaneAdaptedValue$R
 	public static final field $stable I
 	public fun <init> (Landroidx/compose/material3/adaptive/layout/PaneScaffoldRole;)V
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getReflowUnder ()Landroidx/compose/material3/adaptive/layout/PaneScaffoldRole;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
@@ -250,13 +263,28 @@ public abstract interface class androidx/compose/material3/adaptive/layout/PaneE
 }
 
 public final class androidx/compose/material3/adaptive/layout/PaneExpansionStateKt {
-	public static final fun rememberPaneExpansionState (Landroidx/compose/material3/adaptive/layout/PaneExpansionStateKey;Ljava/util/List;ILandroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/foundation/gestures/FlingBehavior;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/layout/PaneExpansionState;
-	public static final fun rememberPaneExpansionState (Landroidx/compose/material3/adaptive/layout/PaneExpansionStateKeyProvider;Ljava/util/List;ILandroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/foundation/gestures/FlingBehavior;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/layout/PaneExpansionState;
+	public static final synthetic fun rememberPaneExpansionState (Landroidx/compose/material3/adaptive/layout/PaneExpansionStateKey;Ljava/util/List;ILandroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/foundation/gestures/FlingBehavior;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/layout/PaneExpansionState;
+	public static final fun rememberPaneExpansionState (Landroidx/compose/material3/adaptive/layout/PaneExpansionStateKey;Ljava/util/List;ILandroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/foundation/gestures/FlingBehavior;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/layout/PaneExpansionState;
+	public static final synthetic fun rememberPaneExpansionState (Landroidx/compose/material3/adaptive/layout/PaneExpansionStateKeyProvider;Ljava/util/List;ILandroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/foundation/gestures/FlingBehavior;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/layout/PaneExpansionState;
+	public static final fun rememberPaneExpansionState (Landroidx/compose/material3/adaptive/layout/PaneExpansionStateKeyProvider;Ljava/util/List;ILandroidx/compose/animation/core/FiniteAnimationSpec;Landroidx/compose/foundation/gestures/FlingBehavior;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)Landroidx/compose/material3/adaptive/layout/PaneExpansionState;
 }
 
 public final class androidx/compose/material3/adaptive/layout/PaneKt {
-	public static final fun AnimatedPane (Landroidx/compose/material3/adaptive/layout/ExtendedPaneScaffoldPaneScope;Landroidx/compose/ui/Modifier;Landroidx/compose/animation/EnterTransition;Landroidx/compose/animation/ExitTransition;Landroidx/compose/animation/core/FiniteAnimationSpec;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final synthetic fun AnimatedPane (Landroidx/compose/material3/adaptive/layout/ExtendedPaneScaffoldPaneScope;Landroidx/compose/ui/Modifier;Landroidx/compose/animation/EnterTransition;Landroidx/compose/animation/ExitTransition;Landroidx/compose/animation/core/FiniteAnimationSpec;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun AnimatedPane (Landroidx/compose/material3/adaptive/layout/ExtendedPaneScaffoldPaneScope;Landroidx/compose/ui/Modifier;Landroidx/compose/animation/EnterTransition;Landroidx/compose/animation/ExitTransition;Landroidx/compose/animation/core/FiniteAnimationSpec;Lkotlin/jvm/functions/Function3;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 	public static final fun getLocalAnimatedPaneOverride ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+}
+
+public abstract interface class androidx/compose/material3/adaptive/layout/PaneMargins {
+	public static final field Companion Landroidx/compose/material3/adaptive/layout/PaneMargins$Companion;
+	public fun getPaneBottom (Landroidx/compose/ui/layout/Placeable$PlacementScope;II)I
+	public fun getPaneLeft (Landroidx/compose/ui/layout/Placeable$PlacementScope;I)I
+	public fun getPaneRight (Landroidx/compose/ui/layout/Placeable$PlacementScope;II)I
+	public fun getPaneTop (Landroidx/compose/ui/layout/Placeable$PlacementScope;I)I
+}
+
+public final class androidx/compose/material3/adaptive/layout/PaneMargins$Companion {
+	public final fun getUnspecified ()Landroidx/compose/material3/adaptive/layout/PaneMargins;
 }
 
 public abstract interface class androidx/compose/material3/adaptive/layout/PaneMotion {
@@ -362,6 +390,14 @@ public final class androidx/compose/material3/adaptive/layout/PaneScaffoldDirect
 	public static synthetic fun calculatePaneScaffoldDirectiveWithTwoPanesOnMediumWidth-A-ymEG0$default (Landroidx/compose/material3/adaptive/WindowAdaptiveInfo;IILjava/lang/Object;)Landroidx/compose/material3/adaptive/layout/PaneScaffoldDirective;
 }
 
+public abstract interface class androidx/compose/material3/adaptive/layout/PaneScaffoldHorizontalOrder {
+	public abstract fun forEach (Lkotlin/jvm/functions/Function1;)V
+	public abstract fun forEachIndexed (Lkotlin/jvm/functions/Function2;)V
+	public abstract fun forEachIndexedReversed (Lkotlin/jvm/functions/Function2;)V
+	public abstract fun getSize ()I
+	public abstract fun indexOf (Landroidx/compose/material3/adaptive/layout/PaneScaffoldRole;)I
+}
+
 public abstract interface class androidx/compose/material3/adaptive/layout/PaneScaffoldMotionDataProvider {
 	public abstract fun get (I)Landroidx/compose/material3/adaptive/layout/PaneMotionData;
 	public abstract fun get (Landroidx/compose/material3/adaptive/layout/PaneScaffoldRole;)Landroidx/compose/material3/adaptive/layout/PaneMotionData;
@@ -373,11 +409,12 @@ public abstract interface class androidx/compose/material3/adaptive/layout/PaneS
 public abstract interface class androidx/compose/material3/adaptive/layout/PaneScaffoldPaneScope {
 	public abstract fun getPaneMotion ()Landroidx/compose/material3/adaptive/layout/PaneMotion;
 	public abstract fun getPaneRole ()Landroidx/compose/material3/adaptive/layout/PaneScaffoldRole;
+	public abstract fun isInteractable ()Z
 }
 
 public abstract interface class androidx/compose/material3/adaptive/layout/PaneScaffoldParentData {
-	public abstract fun getDragToResizeState ()Landroidx/compose/material3/adaptive/layout/DragToResizeState;
 	public abstract fun getMinTouchTargetSize-D9Ej5fM ()F
+	public abstract fun getPaneMargins ()Landroidx/compose/material3/adaptive/layout/PaneMargins;
 	public abstract fun getPreferredHeight-D9Ej5fM ()F
 	public abstract fun getPreferredHeightInProportion ()F
 	public abstract fun getPreferredWidth-D9Ej5fM ()F
@@ -389,10 +426,11 @@ public abstract interface class androidx/compose/material3/adaptive/layout/PaneS
 }
 
 public abstract interface class androidx/compose/material3/adaptive/layout/PaneScaffoldScope {
-	public fun dragToResize (Landroidx/compose/ui/Modifier;Landroidx/compose/material3/adaptive/layout/DragToResizeState;)Landroidx/compose/ui/Modifier;
 	public abstract fun getSaveableStateHolder ()Landroidx/compose/runtime/saveable/SaveableStateHolder;
 	public abstract fun paneExpansionDraggable-TDGSqEk (Landroidx/compose/ui/Modifier;Landroidx/compose/material3/adaptive/layout/PaneExpansionState;FLandroidx/compose/foundation/interaction/MutableInteractionSource;Lkotlin/jvm/functions/Function1;)Landroidx/compose/ui/Modifier;
 	public static synthetic fun paneExpansionDraggable-TDGSqEk$default (Landroidx/compose/material3/adaptive/layout/PaneScaffoldScope;Landroidx/compose/ui/Modifier;Landroidx/compose/material3/adaptive/layout/PaneExpansionState;FLandroidx/compose/foundation/interaction/MutableInteractionSource;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Landroidx/compose/ui/Modifier;
+	public abstract fun paneMargins (Landroidx/compose/ui/Modifier;Landroidx/compose/foundation/layout/PaddingValues;[Landroidx/compose/ui/layout/RectRulers;Landroidx/compose/runtime/Composer;I)Landroidx/compose/ui/Modifier;
+	public abstract fun paneMargins (Landroidx/compose/ui/Modifier;[Landroidx/compose/ui/layout/RectRulers;Landroidx/compose/runtime/Composer;I)Landroidx/compose/ui/Modifier;
 	public abstract fun preferredHeight (Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
 	public abstract fun preferredHeight-3ABfNKs (Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
 	public abstract fun preferredWidth (Landroidx/compose/ui/Modifier;F)Landroidx/compose/ui/Modifier;
@@ -407,17 +445,6 @@ public abstract interface class androidx/compose/material3/adaptive/layout/PaneS
 
 public abstract interface class androidx/compose/material3/adaptive/layout/PaneScaffoldValue {
 	public abstract fun get (Landroidx/compose/material3/adaptive/layout/PaneScaffoldRole;)Landroidx/compose/material3/adaptive/layout/PaneAdaptedValue;
-}
-
-public final class androidx/compose/material3/adaptive/layout/Scrim {
-	public static final field $stable I
-	public synthetic fun <init> (JLkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (JLkotlin/jvm/functions/Function0;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public fun equals (Ljava/lang/Object;)Z
-	public final fun getColor-0d7_KjU ()J
-	public final fun getOnClick ()Lkotlin/jvm/functions/Function0;
-	public fun hashCode ()I
-	public fun toString ()Ljava/lang/String;
 }
 
 public final class androidx/compose/material3/adaptive/layout/SupportingPaneScaffoldDefaults {

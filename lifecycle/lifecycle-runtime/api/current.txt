@@ -3,6 +3,7 @@ package androidx.lifecycle {
 
   public final class FlowExtKt {
     method public static <T> kotlinx.coroutines.flow.Flow<T> flowWithLifecycle(kotlinx.coroutines.flow.Flow<? extends T>, androidx.lifecycle.Lifecycle lifecycle, optional androidx.lifecycle.Lifecycle.State minActiveState);
+    method @BytecodeOnly public static kotlinx.coroutines.flow.Flow! flowWithLifecycle$default(kotlinx.coroutines.flow.Flow!, androidx.lifecycle.Lifecycle!, androidx.lifecycle.Lifecycle.State!, int, Object!);
   }
 
   public final class LifecycleDestroyedException extends java.util.concurrent.CancellationException {
@@ -13,12 +14,12 @@ package androidx.lifecycle {
     ctor public LifecycleRegistry(androidx.lifecycle.LifecycleOwner provider);
     method @MainThread public void addObserver(androidx.lifecycle.LifecycleObserver observer);
     method @VisibleForTesting public static final androidx.lifecycle.LifecycleRegistry createUnsafe(androidx.lifecycle.LifecycleOwner owner);
-    method public androidx.lifecycle.Lifecycle.State getCurrentState();
-    method public int getObserverCount();
+    method @InaccessibleFromKotlin public androidx.lifecycle.Lifecycle.State getCurrentState();
+    method @InaccessibleFromKotlin public int getObserverCount();
     method public void handleLifecycleEvent(androidx.lifecycle.Lifecycle.Event event);
     method @Deprecated @MainThread public void markState(androidx.lifecycle.Lifecycle.State state);
     method @MainThread public void removeObserver(androidx.lifecycle.LifecycleObserver observer);
-    method public void setCurrentState(androidx.lifecycle.Lifecycle.State);
+    method @InaccessibleFromKotlin public void setCurrentState(androidx.lifecycle.Lifecycle.State);
     property public androidx.lifecycle.Lifecycle.State currentState;
     property public kotlinx.coroutines.flow.StateFlow<androidx.lifecycle.Lifecycle.State> currentStateFlow;
     property public int observerCount;
@@ -43,8 +44,10 @@ package androidx.lifecycle {
   }
 
   public final class ViewTreeLifecycleOwner {
-    method public static androidx.lifecycle.LifecycleOwner? get(android.view.View);
-    method public static void set(android.view.View, androidx.lifecycle.LifecycleOwner? lifecycleOwner);
+    method @KotlinOnly public static androidx.lifecycle.LifecycleOwner? findViewTreeLifecycleOwner(android.view.View);
+    method @InaccessibleFromKotlin public static androidx.lifecycle.LifecycleOwner? get(android.view.View);
+    method @InaccessibleFromKotlin public static void set(android.view.View, androidx.lifecycle.LifecycleOwner? lifecycleOwner);
+    method @KotlinOnly public static void setViewTreeLifecycleOwner(android.view.View, androidx.lifecycle.LifecycleOwner? lifecycleOwner);
   }
 
   public final class WithLifecycleStateKt {

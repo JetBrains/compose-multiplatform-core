@@ -1,14 +1,12 @@
 ## General requirements
 
 - Java 17 (should be specified in JAVA_HOME)
-- [macOs/Linux] Android SDK downloaded via `./jbdeps/android-sdk/downloadAndroidSdk`
-- [Windows] Android SDK downloaded from Android Studio and specified in ANDROID_SDK_ROOT
+- Android SDK downloaded from Android Studio and specified in `ANDROID_SDK_ROOT`
 
 ## Developing in IDE
 
 1. Download Android Studio from [the official site](https://developer.android.com/studio/archive) (it is mandatory to use the version, written [here](https://github.com/JetBrains/androidx/blob/jb-main/gradle/libs.versions.toml#L11)). As an alternative you can use IDEA, which is compatible with [this AGP version](https://github.com/JetBrains/androidx/blob/jb-main/gradle/libs.versions.toml#L5), or you can disable Android plugin in IDEA plugins, to develop non-Android targets.
-2. [macOs/Linux] Download Android SDK via `./jbdeps/android-sdk/downloadAndroidSdk`
-3. [Windows] Download Android SDK via [Android Studio](https://developer.android.com/studio/intro/update#sdk-manager) and specify it in ANDROID_SDK_ROOT environment variable. Components, their versions and folder structure should be the same as in downloaded via script `./jbdeps/android-sdk/downloadAndroidSdk` SDK for other platforms.
+2. Download Android SDK via [Android Studio](https://developer.android.com/studio/intro/update#sdk-manager) and specify it in `ANDROID_SDK_ROOT` environment variable.
 4. Specify Gradle JVM to use JDK 17 in InteliJ IDEA Preferences (`Build, Execution, Deployment -> Build Tools -> Gradle`)
 
 ### Run tests
@@ -85,18 +83,18 @@ Compose Multiplatform core libraries can be published to local Maven with the fo
    `-Pjetbrains.publication.version.CORE_BUNDLE`,
    `-Pjetbrains.publication.version.CORE_URI`,
    `-Pjetbrains.publication.version.COMPOSE`,
-   `-Pjetbrains.publication.version.COMPOSE_MATERIAL_NAVIGATION`,
    `-Pjetbrains.publication.version.COMPOSE_MATERIAL3_ADAPTIVE`,
    `-Pjetbrains.publication.version.LIFECYCLE`,
    `-Pjetbrains.publication.version.NAVIGATION`,
    `-Pjetbrains.publication.version.NAVIGATION_3`,
+   `-Pjetbrains.publication.version.NAVIGATION_EVENT`,
    `-Pjetbrains.publication.version.SAVEDSTATE`,
    `-Pjetbrains.publication.version.WINDOW`,
 
    The default value for the version is `0.0.0-SNAPSHOT`
 
    And library groups:
-   `-Pjetbrains.publication.libraries=COMPOSE,COMPOSE_MATERIAL_NAVIGATION,COMPOSE_MATERIAL3_ADAPTIVE,LIFECYCLE,NAVIGATION,NAVIGATION_3,SAVEDSTATE,WINDOW`
+   `-Pjetbrains.publication.libraries=COMPOSE,COMPOSE_MATERIAL3_ADAPTIVE,LIFECYCLE,NAVIGATION,NAVIGATION_3,NAVIGATION_EVENT,SAVEDSTATE,WINDOW`
 
    The default value includes all libraries.
 
@@ -192,19 +190,9 @@ To use a locally built compose in [KMP with Compose wizard project](https://kmp.
 
 Now the project will build with the locally published Compose.
 
-### Run mpp/demo-uikit sample on iOS
+### Run mpp/demo-swiftui sample on iOS with Xcode
 
-- Install plugin **Kotlin Multiplatform Mobile** for AppCode
-- Disable Android Plugin in IDE preferences
-- Open root of repository with AppCode
-- Increase AppCode IDE memory more that 10GB
-- Restart AppCode
-- Wait while project synchronization with Gradle
-- [Optional] To run on real iOS device
-  - Device should be at least with iOS 16.5. And Xcode should be at least 14.3
-  - Find your TEAM_ID with instruction <https://github.com/JetBrains/compose-multiplatform-template#running-on-a-real-ios-device>
-  - Create file project.properties in the root of repository. Add property `TEAM_ID=[your team id]` without double quotes, for example `TEAM_ID=ABC123ABC1`.
-- Choose run configuration **iOS App**
+Open the `iosApp.xcodeproj` with XCode and press the Run button.
 
 ### Run mpp/demo sample on iOS with Xcode
 

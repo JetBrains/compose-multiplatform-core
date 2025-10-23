@@ -17,11 +17,11 @@
 package androidx.navigationevent.compose
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.ui.platform.findDefaultNavigationEventDispatcherOwner
 import androidx.navigationevent.NavigationEventDispatcherOwner
 
+@OptIn(InternalComposeApi::class)
 @Composable
-internal actual fun findViewTreeNavigationEventDispatcherOwner(): NavigationEventDispatcherOwner? {
-    // For non-Android platforms (e.g., Desktop, Web), the concept of a
-    // 'ViewTree' doesn't exist in the same way. Therefore, returns null.
-    return null
-}
+internal actual fun findViewTreeNavigationEventDispatcherOwner(): NavigationEventDispatcherOwner? =
+    findDefaultNavigationEventDispatcherOwner()
