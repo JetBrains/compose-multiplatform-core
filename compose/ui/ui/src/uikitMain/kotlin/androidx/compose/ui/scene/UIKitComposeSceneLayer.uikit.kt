@@ -29,7 +29,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
-import androidx.compose.ui.uikit.EndEdgeGestureBehavior
+import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.OnFocusBehavior
@@ -64,7 +64,7 @@ internal class UIKitComposeSceneLayer(
     private val initLayoutDirection: LayoutDirection,
     private val onAccessibilityChanged: () -> Unit,
     onFocusBehavior: OnFocusBehavior,
-    endEdgeGestureBehavior: EndEdgeGestureBehavior,
+    endEdgeGestureBehavior: EndEdgePanGestureBehavior,
     private var focusedViewsList: FocusedViewsList?,
     compositionContext: CompositionContext,
     private val ownerProvider: PlatformArchitectureComponentsOwner,
@@ -92,7 +92,7 @@ internal class UIKitComposeSceneLayer(
     private val navigationEventInput = UIKitNavigationEventInput(
         density = interactionView.density,
         getTopLeftOffsetInWindow = { boundsInWindow.topLeft },
-        endEdgeGestureBehavior = endEdgeGestureBehavior
+        endEdgePanGestureBehavior = endEdgeGestureBehavior
     ).also { navigationEventDispatcher.addInput(it) }
 
     private val mediator = ComposeSceneMediator(

@@ -69,17 +69,17 @@ class ComposeUIViewControllerConfiguration {
     var parallelRendering: Boolean = false
 
     /**
-     * Determines how the end edge gestures will be handled.
+     * Determines how the end edge pan gestures will be handled.
      * In LTR layouts, the end edge is the right edge of the screen.
      * In RTL layouts, the end edge is the left edge of the screen.
      *
-     * Note: this setting only affects the behavior of the end edge gestures.
-     * The start edge gestures will always be handled as back navigation events.
+     * Note: this setting only affects the behavior of the end edge pan gestures.
+     * The start edge pan gestures will always be handled as back navigation events.
      *
-     * Default value is [EndEdgeGestureBehavior.Disabled].
+     * Default value is [EndEdgePanGestureBehavior.Disabled].
      */
     @ExperimentalComposeUiApi
-    var endEdgeGestureBehavior: EndEdgeGestureBehavior = EndEdgeGestureBehavior.Disabled
+    var endEdgePanGestureBehavior: EndEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled
 }
 
 /**
@@ -137,19 +137,19 @@ sealed interface OnFocusBehavior {
 }
 
 @ExperimentalComposeUiApi
-sealed interface EndEdgeGestureBehavior {
+sealed interface EndEdgePanGestureBehavior {
     /**
      * No navigation events will be sent on the end edge.
      */
-    data object Disabled : EndEdgeGestureBehavior
+    data object Disabled : EndEdgePanGestureBehavior
 
     /**
      * Back navigation events will be sent on the end edge.
      */
-    data object Back : EndEdgeGestureBehavior
+    data object Back : EndEdgePanGestureBehavior
 
     /**
      * Forward navigation events will be sent on the end edge.
      */
-    data object Forward : EndEdgeGestureBehavior
+    data object Forward : EndEdgePanGestureBehavior
 }

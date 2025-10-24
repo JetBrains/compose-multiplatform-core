@@ -17,7 +17,7 @@
 package androidx.compose.ui.navigationevent
 
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.uikit.EndEdgeGestureBehavior
+import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.utils.CMPScreenEdgePanGestureRecognizer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -50,7 +50,7 @@ import platform.darwin.NSObject
 
 internal class UIKitNavigationEventInput(
     private val density: Density,
-    private val endEdgeGestureBehavior: EndEdgeGestureBehavior,
+    private val endEdgePanGestureBehavior: EndEdgePanGestureBehavior,
     private val getTopLeftOffsetInWindow: () -> IntOffset
 ) : BackNavigationEventInput() {
     companion object {
@@ -104,7 +104,7 @@ internal class UIKitNavigationEventInput(
         if (isRecognizersEnabled) {
             startEdgePanGestureRecognizer.enabled = true
             endEdgePanGestureRecognizer.enabled =
-                endEdgeGestureBehavior != EndEdgeGestureBehavior.Disabled
+                endEdgePanGestureBehavior != EndEdgePanGestureBehavior.Disabled
         } else {
             startEdgePanGestureRecognizer.enabled = false
             endEdgePanGestureRecognizer.enabled = false
@@ -144,7 +144,7 @@ internal class UIKitNavigationEventInput(
     inner class UiKitScreenEdgePanGestureHandler : NSObject() {
         private val UIScreenEdgePanGestureRecognizer.isBackEdge: Boolean
             get() = this === startEdgePanGestureRecognizer ||
-                (this === endEdgePanGestureRecognizer && endEdgeGestureBehavior == EndEdgeGestureBehavior.Back)
+                (this === endEdgePanGestureRecognizer && endEdgePanGestureBehavior == EndEdgePanGestureBehavior.Back)
 
         private fun dispatchOnEventStarted(
             recognizer: UIScreenEdgePanGestureRecognizer,
