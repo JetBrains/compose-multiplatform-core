@@ -17,6 +17,7 @@
 package androidx.camera.camera2.pipe.compat
 
 import android.graphics.ColorSpace
+import android.hardware.HardwareBuffer
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
@@ -33,6 +34,7 @@ import android.hardware.camera2.params.InputConfiguration
 import android.hardware.camera2.params.MultiResolutionStreamInfo
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
+import android.media.Image
 import android.media.ImageReader
 import android.media.ImageWriter
 import android.os.Handler
@@ -43,6 +45,7 @@ import androidx.annotation.RequiresPermission
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.availableVideoStabilizationModes
 import java.util.concurrent.Executor
+import kotlin.reflect.KClass
 
 @RequiresApi(24)
 internal object Api24Compat {
@@ -223,6 +226,15 @@ internal object Api28Compat {
     @JvmStatic
     fun discardFreeBuffers(imageReader: ImageReader) {
         imageReader.discardFreeBuffers()
+    }
+
+    @JvmStatic
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> unwrapAsHardwareBuffer(image: Image, type: KClass<T>): T? {
+        if (type == HardwareBuffer::class) {
+            return image.getHardwareBuffer() as T?
+        }
+        return null
     }
 }
 

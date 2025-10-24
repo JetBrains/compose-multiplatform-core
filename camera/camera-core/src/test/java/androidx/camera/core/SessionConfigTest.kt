@@ -32,6 +32,10 @@ import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
 import androidx.camera.testing.impl.fakes.FakeSurfaceProcessor
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -415,6 +419,49 @@ class SessionConfigTest {
     }
 
     @Test
+    fun sessionConfig_recordingQualitySetToUseCaseWithAnyFeature_illegalArgExceptionThrown() {
+        val sdVideoCapture = createVideoCapture(Quality.SD)
+        val hdVideoCapture = createVideoCapture(Quality.HD)
+        val unspecifiedQualityVideoCapture = createVideoCapture()
+
+        // Verifications for preferred features
+
+        // SD set to VideoCapture, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(sdVideoCapture), preferredFeatureGroup = listOf(FPS_60))
+        }
+
+        // HD set to VideoCapture, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(hdVideoCapture), preferredFeatureGroup = listOf(FPS_60))
+        }
+
+        // Default VideoCapture, preferred feature group set with another feature, no exception
+        SessionConfig(
+            useCases = listOf(unspecifiedQualityVideoCapture),
+            preferredFeatureGroup = listOf(FPS_60),
+        )
+
+        // Verifications for required features
+
+        // SD set to VideoCapture, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(sdVideoCapture), requiredFeatureGroup = setOf(FPS_60))
+        }
+
+        // HD set to VideoCapture, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(hdVideoCapture), requiredFeatureGroup = setOf(FPS_60))
+        }
+
+        // Default VideoCapture, required feature group set with another feature, no exception
+        SessionConfig(
+            useCases = listOf(unspecifiedQualityVideoCapture),
+            requiredFeatureGroup = setOf(FPS_60),
+        )
+    }
+
+    @Test
     fun sessionConfig_fpsRangeSetToUseCaseWithAnyGroupableFeature_illegalArgExceptionThrown() {
         val preview30Fps = Preview.Builder().setTargetFrameRate(Range(30, 30)).build()
         val preview60Fps = Preview.Builder().setTargetFrameRate(Range(60, 60)).build()
@@ -584,6 +631,18 @@ class SessionConfigTest {
                 contains("effects=[]")
                 contains("frameRateRange=[0, 0]")
             }
+    }
+
+    private fun createVideoCapture(quality: Quality? = null): VideoCapture<Recorder> {
+        return VideoCapture.withOutput(
+            Recorder.Builder()
+                .apply {
+                    if (quality != null) {
+                        setQualitySelector(QualitySelector.from(quality))
+                    }
+                }
+                .build()
+        )
     }
 
     data class FakeDynamicRangeFeature(private val dynamicRange: DynamicRange) :

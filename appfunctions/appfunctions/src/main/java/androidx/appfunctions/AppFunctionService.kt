@@ -17,7 +17,7 @@
 package androidx.appfunctions
 
 import android.app.appfunctions.AppFunctionException as PlatformAppFunctionException
-import android.app.appfunctions.AppFunctionService
+import android.app.appfunctions.AppFunctionService as PlatformAppFunctionService
 import android.app.appfunctions.ExecuteAppFunctionRequest as PlatformExecuteAppFunctionRequest
 import android.app.appfunctions.ExecuteAppFunctionResponse as PlatformExecuteAppFunctionResponse
 import android.content.pm.SigningInfo
@@ -50,10 +50,13 @@ import kotlinx.coroutines.withContext
  * </service>
  * ```
  *
- * @see [AppFunctionService]
+ * For supporting AppFunction(s) on devices targeting below Android 16, use
+ * [ExtensionsAppFunctionService]
+ *
+ * @see [android.app.appfunctions.AppFunctionService]
  */
 @RequiresApi(Build.VERSION_CODES.BAKLAVA)
-public abstract class AppFunctionCompatService : AppFunctionService() {
+public abstract class AppFunctionService : PlatformAppFunctionService() {
     private val workerCoroutineScope = CoroutineScope(Dispatchers.Worker)
 
     /**
@@ -86,11 +89,11 @@ public abstract class AppFunctionCompatService : AppFunctionService() {
                     try {
                         val appFunctionMetadata =
                             getAppFunctionMetadata(
-                                this@AppFunctionCompatService,
+                                this@AppFunctionService,
                                 request.functionIdentifier,
                             )
                                 ?: throw AppFunctionFunctionNotFoundException(
-                                    "No function found with identifier: ${request.functionIdentifier} in package: ${this@AppFunctionCompatService.packageName}"
+                                    "No function found with identifier: ${request.functionIdentifier} in package: ${this@AppFunctionService.packageName}"
                                 )
                         withContext(Dispatchers.Main) {
                             executeFunction(
@@ -107,7 +110,7 @@ public abstract class AppFunctionCompatService : AppFunctionService() {
                 when (result) {
                     is ExecuteAppFunctionResponse.Success -> {
                         result.grantUriAccess(
-                            context = this@AppFunctionCompatService,
+                            context = this@AppFunctionService,
                             callingPackageName = callingPackage,
                         )
                         callback.onResult(result.toPlatformClass())

@@ -68,6 +68,7 @@ android {
     defaultConfig {
         // This disables the builds tools automatic vector -> PNG generation
         generatedDensities = []
+        consumerProguardFiles("proguard-rules.pro")
     }
     aaptOptions {
         additionalParameters "--no-version-vectors"
@@ -76,10 +77,6 @@ android {
 
     testOptions {
         animationsDisabled = true
-    }
-
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
     }
 
     useLibrary "android.test.runner"

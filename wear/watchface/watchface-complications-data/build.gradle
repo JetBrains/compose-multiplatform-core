@@ -64,9 +64,7 @@ android {
     }
     defaultConfig {
         minSdk = 26
-    }
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
     }
     namespace = "androidx.wear.watchface.complications.data"
 }

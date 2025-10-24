@@ -517,3 +517,27 @@ class NotesFunctions : CreateNoteAppFunction {
 data class IntEnumSerializable(
     @property:AppFunctionIntValueConstraint(enumValues = [10, 20]) val value: Int
 )
+
+class OneOfFunctions {
+    @AppFunctionSerializable
+    sealed interface OneOfSealedInterface {
+        val interfaceProperty: String
+    }
+
+    @AppFunctionSerializable
+    data class ASubclass(override val interfaceProperty: String, val str: String) :
+        OneOfSealedInterface
+
+    @AppFunctionSerializable
+    data class BSubclass(override val interfaceProperty: String, val integer: Int) :
+        OneOfSealedInterface
+
+    @AppFunctionSerializable
+    data class OneOfSealedNestedSerializable(val sealedInterface: OneOfSealedInterface)
+
+    @AppFunction
+    fun oneOfFunction(
+        appFunctionContext: AppFunctionContext,
+        oneOfList: List<OneOfSealedInterface>,
+    ) = oneOfList.map { OneOfSealedNestedSerializable(sealedInterface = it) }
+}

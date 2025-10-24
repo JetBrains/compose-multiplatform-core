@@ -60,7 +60,5 @@ android {
     namespace = "androidx.compose.benchmarkutils"
 
     // workarounds for b/328649293
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
 }

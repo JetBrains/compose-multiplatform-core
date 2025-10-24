@@ -25,6 +25,8 @@
 
 import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
+import com.google.devtools.ksp.gradle.KspAATask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -59,3 +61,10 @@ androidx {
     kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
+// TODO(b/430983364): Workaround KSP incremental issues
+tasks.withType(KotlinCompile).configureEach {
+    incremental = false
+}
+tasks.withType(KspAATask).configureEach {
+    it.kspConfig.incremental.set(false)
+}

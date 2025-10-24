@@ -270,7 +270,5 @@ private val nonSupportingPaneEntry: NavEntry<TestKey> = NavEntry(HomeKey) {}
 private val MockDualVerticalPaneScaffoldDirective =
     PaneScaffoldDirective.Default.copy(maxVerticalPartitions = 2)
 
-private val EmptySceneStrategyScope = SceneStrategyScope<TestKey> {}
-
 private fun SupportingPaneSceneStrategy<TestKey>.calculateScene(entries: List<NavEntry<TestKey>>) =
-    with(this) { EmptySceneStrategyScope.calculateScene(entries) }
+    with(this) { SceneStrategyScope<TestKey>().calculateScene(entries) }

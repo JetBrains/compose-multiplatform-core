@@ -93,8 +93,8 @@ android {
     androidResources {
         noCompress += "ttf"
     }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
         stableAidl {
             version = 1
         }

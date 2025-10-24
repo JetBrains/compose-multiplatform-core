@@ -290,7 +290,7 @@ private fun KSType.toTypeName(arguments: List<KSTypeArgument> = emptyList()): Ty
                 val typeClassName = declaration.toClassName()
                 typeClassName.withTypeArguments(arguments.map { it.toTypeName() })
             }
-            else -> throw ProcessingException("Unable to resolve TypeName", null)
+            else -> throw ProcessingException("Unable to resolve TypeName", this.declaration)
         }
     return type.copy(nullable = isMarkedNullable)
 }

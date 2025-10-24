@@ -1041,4 +1041,29 @@ class AppFunctionCompilerTest {
             "oneofserializable/\$NestedOneOfSerializableWithinSerializableFactory.KT",
         )
     }
+
+    @Test
+    fun testOneOfSerializableFunctions_genAppFunctionInventoryXml_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf(
+                        "oneofserializable/OneOfSealedClass.KT",
+                        "oneofserializable/OneOfSealedInterface.KT",
+                        "oneofserializable/OneOfFunctions.KT",
+                    ),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}OneOfFunctions_AppFunctionInventory.kt",
+            goldenFileName = "oneofserializable/${'$'}OneOfFunctions_AppFunctionInventory.KT",
+        )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "oneofserializable/oneOfFunctions_app_function_dynamic_schema.xml",
+        )
+    }
 }

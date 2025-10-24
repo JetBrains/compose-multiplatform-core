@@ -46,6 +46,7 @@ import androidx.camera.camera2.impl.TorchControl
 import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.impl.VideoUsageControl
 import androidx.camera.camera2.impl.ZoomControl
+import androidx.camera.camera2.internal.IntrinsicZoomCalculator
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.camera2.pipe.CameraId
@@ -83,6 +84,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
             EvCompControl.Bindings::class,
             FlashControl.Bindings::class,
             FocusMeteringControl.Bindings::class,
+            IntrinsicZoomCalculator.Bindings::class,
             State3AControl.Bindings::class,
             StillCaptureRequestControl.Bindings::class,
             TorchControl.Bindings::class,

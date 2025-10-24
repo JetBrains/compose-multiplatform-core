@@ -17,6 +17,7 @@
 package androidx.camera.integration.featurecombo
 
 import android.util.Log
+import android.util.Range
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
@@ -121,9 +122,12 @@ class FeatureGroupQueryBindAlignmentTest(
                             if (verificationScenario == PREFERRED_FEATURES) {
                                 setFeatureSelectionListener { selectedFeatures ->
                                     if (isExpectedToBeSupported) {
+                                        // All features should be selected if query result was true
                                         assertThat(selectedFeatures)
                                             .containsExactlyElementsIn(featureGroup)
                                     } else {
+                                        // Not all features should be selected if query result was
+                                        // false
                                         VerifiableCollection.assertThat(selectedFeatures)
                                             .doesNotContainAllIn(featureGroup)
                                     }
@@ -155,7 +159,7 @@ class FeatureGroupQueryBindAlignmentTest(
         override val size: Int = base.size,
     ) : Collection<E> {
         fun doesNotContainAllIn(fullCollection: Collection<@UnsafeVariance E>) {
-            val intersection = base.intersect(fullCollection)
+            val intersection = base.intersect(fullCollection.toSet())
             assertThat(intersection.size).isLessThan(fullCollection.size)
         }
 
@@ -185,8 +189,12 @@ class FeatureGroupQueryBindAlignmentTest(
                 CameraUtil.getAvailableCameraSelectors().forEach { selector ->
                     val lens = selector.lensFacing
 
+                    for (featureGroup in
                     // Generates all non-empty subsets of the features to test all combinations
-                    for (featureGroup in allFeatures.toPowerSet().filter { it.isNotEmpty() }) {
+                    allHighQualityFeatures.toPowerSet().filter {
+                            // Do not test more than 3 features at once to save time
+                            Range(1, 3).contains(it.size)
+                        }) {
                         useCaseCombinationsToTest.forEach { useCases ->
                             add(
                                 arrayOf(

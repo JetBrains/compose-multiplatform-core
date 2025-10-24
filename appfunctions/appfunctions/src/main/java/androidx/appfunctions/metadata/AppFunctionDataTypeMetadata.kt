@@ -18,7 +18,6 @@ package androidx.appfunctions.metadata
 
 import android.annotation.SuppressLint
 import androidx.annotation.IntDef
-import androidx.annotation.RestrictTo
 import androidx.appsearch.annotation.Document
 import java.util.Objects
 
@@ -172,6 +171,8 @@ constructor(
  *
  * For example, consider the following objects:
  * ```
+ * package com.example.myapp
+ *
  * open class Address (
  *     open val street: String,
  *     open val city: String,
@@ -194,7 +195,7 @@ constructor(
  *
  * ```
  * val personWithAddressType = AppFunctionAllOfTypeMetadata(
- *     qualifiedName = "androidx.appfunctions.metadata.PersonWithAddress",
+ *     qualifiedName = "com.example.myapp.PersonWithAddress",
  *     matchAll = listOf(
  *         AppFunctionObjectTypeMetadata(
  *             properties = mapOf(
@@ -204,7 +205,7 @@ constructor(
  *                 "zipCode" to AppFunctionStringTypeMetadata(...),
  *             ),
  *             required = listOf("street", "city", "state", "zipCode"),
- *             qualifiedName = "androidx.appfunctions.metadata.Address",
+ *             qualifiedName = "com.example.myapp.Address",
  *             isNullable = false,
  *         ),
  *         AppFunctionObjectTypeMetadata(
@@ -213,7 +214,7 @@ constructor(
  *                 "age" to AppFunctionIntTypeMetadata(...),
  *             ),
  *             required = listOf("name", "age"),
- *             qualifiedName = "androidx.appfunctions.metadata.PersonWithAddress",
+ *             qualifiedName = "com.example.myapp.PersonWithAddress",
  *             isNullable = false,
  *         ),
  *     ),
@@ -340,6 +341,8 @@ constructor(
  *
  * For example, consider the following sealed interface and its implementations:
  * ```
+ * package com.example.myapp
+ *
  * sealed interface Animal {
  *     val name: String
  * }
@@ -361,10 +364,10 @@ constructor(
  *
  * ```
  * val animalType = AppFunctionOneOfTypeMetadata(
- *     qualifiedName = "androidx.appfunctions.metadata.Animal",
+ *     qualifiedName = "com.example.myapp.Animal",
  *     matchOneOf = listOf(
  *         AppFunctionObjectTypeMetadata(
- *             qualifiedName = "androidx.appfunctions.metadata.Dog",
+ *             qualifiedName = "com.example.myapp.Dog",
  *             properties = mapOf(
  *                 "name" to AppFunctionStringTypeMetadata(...),
  *                 "breed" to AppFunctionStringTypeMetadata(...),
@@ -373,7 +376,7 @@ constructor(
  *             isNullable = false,
  *         ),
  *         AppFunctionObjectTypeMetadata(
- *             qualifiedName = "androidx.appfunctions.metadata.Cat",
+ *             qualifiedName = "com.example.myapp.Cat",
  *             properties = mapOf(
  *                 "name" to AppFunctionStringTypeMetadata(...),
  *                 "livesLeft" to AppFunctionIntTypeMetadata(...),
@@ -388,21 +391,18 @@ constructor(
  *
  * This data type can be used to define the schema of an input or output type.
  */
-@RestrictTo(
-    // TODO: b/449915612 - Make it public
-    RestrictTo.Scope.LIBRARY_GROUP
-)
-public class AppFunctionOneOfTypeMetadata(
+public class AppFunctionOneOfTypeMetadata
+@JvmOverloads
+constructor(
     /** The list of possible data types that an object can match. */
     public val matchOneOf: List<AppFunctionDataTypeMetadata>,
     /**
-     * The parent object's qualified name if available. For example,
-     * "androidx.appfunctions.metadata.Animal".
+     * The parent object's qualified name if available. For example, "com.example.myapp.Animal".
      *
      * Use this value to set [androidx.appfunctions.AppFunctionData.qualifiedName] when trying to
      * build the parameters for [androidx.appfunctions.ExecuteAppFunctionRequest].
      */
-    public val qualifiedName: String?,
+    public val qualifiedName: String,
     /** Whether this data type is nullable. */
     isNullable: Boolean,
     /** A description of the data type and its intended use. */
@@ -427,14 +427,22 @@ public class AppFunctionOneOfTypeMetadata(
     override fun hashCode(): Int {
         var result = super.hashCode()
         result = 31 * result + matchOneOf.hashCode()
-        if (qualifiedName != null) {
-            result = 31 * result + qualifiedName.hashCode()
-        }
+        result = 31 * result + qualifiedName.hashCode()
         return result
     }
 
     override fun toString(): String {
         return "AppFunctionOneOfTypeMetadata(matchOneOf=$matchOneOf, isNullable=$isNullable, description=$description)"
+    }
+
+    internal fun getObjectMetadataForOneOfType(qualifiedName: String): AppFunctionDataTypeMetadata {
+        return matchOneOf.singleOrNull {
+            when (it) {
+                is AppFunctionObjectTypeMetadata -> it.qualifiedName == qualifiedName
+                is AppFunctionReferenceTypeMetadata -> it.referenceDataType == qualifiedName
+                else -> throw IllegalArgumentException("Unexpected data type $it for one of type")
+            }
+        } ?: throw IllegalArgumentException("No object metadata found for $qualifiedName")
     }
 
     public companion object {
@@ -1078,7 +1086,7 @@ internal data class AppFunctionDataTypeMetadataDocument(
             AppFunctionDataTypeMetadata.TYPE_ONE_OF ->
                 AppFunctionOneOfTypeMetadata(
                     matchOneOf = oneOf.map { it.toAppFunctionDataTypeMetadata() },
-                    qualifiedName = objectQualifiedName,
+                    qualifiedName = checkNotNull(objectQualifiedName),
                     isNullable = isNullable,
                     description = description ?: "",
                 )

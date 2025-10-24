@@ -631,6 +631,9 @@ public class TimePickerColors(
     }
 }
 
+private val TimePickerType.isTwoColumnPicker
+    get() = this == TimePickerType.HoursMinutes24H || this == TimePickerType.MinutesSeconds
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 private fun ColumnScope.TimePickerContent(
@@ -936,7 +939,7 @@ private fun rememberPickerLayoutConfig(
             .value
 
     val optionTextStyle =
-        if (isLargeScreen || timePickerType == TimePickerType.HoursMinutes24H) {
+        if (isLargeScreen) {
                 TimePickerTokens.ContentLargeTypography
             } else {
                 TimePickerTokens.ContentTypography
@@ -964,7 +967,7 @@ private fun rememberPickerLayoutConfig(
         LocalTypography.current,
     ) {
         val (minimumOptionHeight, maximumOptionHeight) =
-            if (isLargeScreen || timePickerType == TimePickerType.HoursMinutes24H) {
+            if (isLargeScreen) {
                 46.dp to 58.dp
             } else {
                 36.dp to 48.dp
@@ -973,8 +976,8 @@ private fun rememberPickerLayoutConfig(
         val optionSpacing = if (isLargeScreen) 6.dp else 4.dp
         val separatorPadding =
             when {
-                timePickerType == TimePickerType.HoursMinutes24H && isLargeScreen -> 12.dp
-                timePickerType == TimePickerType.HoursMinutes24H && !isLargeScreen -> 8.dp
+                timePickerType.isTwoColumnPicker && isLargeScreen -> 12.dp
+                timePickerType.isTwoColumnPicker && !isLargeScreen -> 8.dp
                 timePickerType == TimePickerType.HoursMinutesAmPm12H && isLargeScreen -> 0.dp
                 isLargeScreen -> 6.dp
                 else -> 2.dp

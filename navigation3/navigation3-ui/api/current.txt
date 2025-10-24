@@ -58,7 +58,6 @@ package androidx.navigation3.scene {
 
   @androidx.compose.runtime.Immutable public final class SceneStrategyScope<T> {
     ctor public SceneStrategyScope();
-    ctor public SceneStrategyScope(optional kotlin.jvm.functions.Function0<kotlin.Unit> onBack);
     method @InaccessibleFromKotlin public kotlin.jvm.functions.Function0<kotlin.Unit> getOnBack();
     property public kotlin.jvm.functions.Function0<kotlin.Unit> onBack;
   }

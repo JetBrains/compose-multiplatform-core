@@ -106,12 +106,8 @@ android {
                                 "-Wl,--undefined-version"
             }
         }
-    }
-
-    buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
-
     buildFeatures.prefab = true
 
     externalNativeBuild {

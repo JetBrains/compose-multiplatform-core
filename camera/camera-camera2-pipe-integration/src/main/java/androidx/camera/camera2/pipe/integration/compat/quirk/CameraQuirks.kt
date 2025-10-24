@@ -264,6 +264,14 @@ constructor(
         ) {
             quirks.add(AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk())
         }
+        if (
+            quirkSettings.shouldEnableQuirk(
+                UltraWideFlashCaptureUnderexposureQuirk::class.java,
+                UltraWideFlashCaptureUnderexposureQuirk.isEnabled(cameraMetadata),
+            )
+        ) {
+            quirks.add(UltraWideFlashCaptureUnderexposureQuirk())
+        }
 
         Quirks(quirks).also {
             Logger.d(TAG, "camera2-pipe-integration CameraQuirks = " + Quirks.toString(it))

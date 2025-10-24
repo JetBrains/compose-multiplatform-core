@@ -97,10 +97,7 @@ dependencies {
 
 android {
     compileSdk = 36
-
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
 
     lint {
         enable.add("CameraXQuirksClassDetector")

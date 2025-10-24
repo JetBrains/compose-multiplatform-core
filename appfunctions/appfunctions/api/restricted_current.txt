@@ -12,12 +12,6 @@ package androidx.appfunctions {
     ctor public AppFunctionCancelledException(optional String? errorMessage);
   }
 
-  @RequiresApi(android.os.Build.VERSION_CODES.BAKLAVA) public abstract class AppFunctionCompatService extends android.app.appfunctions.AppFunctionService {
-    ctor public AppFunctionCompatService();
-    method @MainThread public abstract suspend Object? executeFunction(androidx.appfunctions.ExecuteAppFunctionRequest request, kotlin.coroutines.Continuation<? super androidx.appfunctions.ExecuteAppFunctionResponse>);
-    method public final void onExecuteFunction(android.app.appfunctions.ExecuteAppFunctionRequest request, String callingPackage, android.content.pm.SigningInfo signingInfo, android.os.CancellationSignal cancellationSignal, android.os.OutcomeReceiver<android.app.appfunctions.ExecuteAppFunctionResponse,android.app.appfunctions.AppFunctionException> callback);
-  }
-
   public interface AppFunctionContext {
     method @InaccessibleFromKotlin public android.content.Context getContext();
     property public abstract android.content.Context context;
@@ -197,6 +191,12 @@ package androidx.appfunctions {
     property public abstract boolean isDescribedByKdoc;
   }
 
+  @RequiresApi(android.os.Build.VERSION_CODES.BAKLAVA) public abstract class AppFunctionService extends android.app.appfunctions.AppFunctionService {
+    ctor public AppFunctionService();
+    method @MainThread public abstract suspend Object? executeFunction(androidx.appfunctions.ExecuteAppFunctionRequest request, kotlin.coroutines.Continuation<? super androidx.appfunctions.ExecuteAppFunctionResponse>);
+    method public final void onExecuteFunction(android.app.appfunctions.ExecuteAppFunctionRequest request, String callingPackage, android.content.pm.SigningInfo signingInfo, android.os.CancellationSignal cancellationSignal, android.os.OutcomeReceiver<android.app.appfunctions.ExecuteAppFunctionResponse,android.app.appfunctions.AppFunctionException> callback);
+  }
+
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.VALUE_PARAMETER}) public @interface AppFunctionStringValueConstraint {
     ctor @KotlinOnly public AppFunctionStringValueConstraint(optional String[] enumValues);
     method @InaccessibleFromKotlin public abstract String[] enumValues();
@@ -259,9 +259,9 @@ package androidx.appfunctions {
     property public static String PROPERTY_RETURN_VALUE;
   }
 
-  @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public abstract class ExtensionsAppFunctionCompatService extends com.android.extensions.appfunctions.AppFunctionService {
-    ctor public ExtensionsAppFunctionCompatService();
-    method public abstract suspend Object? executeFunction(androidx.appfunctions.ExecuteAppFunctionRequest request, kotlin.coroutines.Continuation<? super androidx.appfunctions.ExecuteAppFunctionResponse>);
+  @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public abstract class ExtensionsAppFunctionService extends com.android.extensions.appfunctions.AppFunctionService {
+    ctor public ExtensionsAppFunctionService();
+    method @MainThread public abstract suspend Object? executeFunction(androidx.appfunctions.ExecuteAppFunctionRequest request, kotlin.coroutines.Continuation<? super androidx.appfunctions.ExecuteAppFunctionResponse>);
     method public final void onExecuteFunction(com.android.extensions.appfunctions.ExecuteAppFunctionRequest request, String callingPackage, android.os.CancellationSignal cancellationSignal, android.os.OutcomeReceiver<com.android.extensions.appfunctions.ExecuteAppFunctionResponse,com.android.extensions.appfunctions.AppFunctionException> callback);
     field public static final String SERVICE_INTERFACE = "android.app.appfunctions.AppFunctionService";
   }
@@ -389,6 +389,19 @@ package androidx.appfunctions.metadata {
   }
 
   public static final class AppFunctionObjectTypeMetadata.Companion {
+  }
+
+  public final class AppFunctionOneOfTypeMetadata extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata {
+    ctor public AppFunctionOneOfTypeMetadata(java.util.List<? extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata> matchOneOf, String qualifiedName, boolean isNullable);
+    ctor public AppFunctionOneOfTypeMetadata(java.util.List<? extends androidx.appfunctions.metadata.AppFunctionDataTypeMetadata> matchOneOf, String qualifiedName, boolean isNullable, optional String description);
+    method @InaccessibleFromKotlin public java.util.List<androidx.appfunctions.metadata.AppFunctionDataTypeMetadata> getMatchOneOf();
+    method @InaccessibleFromKotlin public String getQualifiedName();
+    property public java.util.List<androidx.appfunctions.metadata.AppFunctionDataTypeMetadata> matchOneOf;
+    property public String qualifiedName;
+    field public static final androidx.appfunctions.metadata.AppFunctionOneOfTypeMetadata.Companion Companion;
+  }
+
+  public static final class AppFunctionOneOfTypeMetadata.Companion {
   }
 
   public final class AppFunctionPackageMetadata {

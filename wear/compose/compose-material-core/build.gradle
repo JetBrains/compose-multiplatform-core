@@ -62,8 +62,6 @@ android {
 
     defaultConfig {
         minSdk = 25
-    }
-    buildTypes.configureEach {
         consumerProguardFiles("proguard-rules.pro")
     }
     lint {

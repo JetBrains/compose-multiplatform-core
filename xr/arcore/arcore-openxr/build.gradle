@@ -62,9 +62,7 @@ android {
     sourceSets.main {
         jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/android")
     }
-    defaultConfig {
-        consumerProguardFiles 'proguard-rules.pro'
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     sourceSets.androidTest {
         jniLibs.srcDirs += new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/native/androidTest")
     }

@@ -18,14 +18,17 @@ package com.testdata.oneofserializable
 
 import androidx.appfunctions.AppFunctionSerializable
 
-@AppFunctionSerializable
+/** I am a KDoc for OneOfSealedClass */
+@AppFunctionSerializable(isDescribedByKdoc = true)
 sealed class OneOfSealedClass {
 
     abstract val interfaceProperty: String
 
-    @AppFunctionSerializable
+    /** I am a KDoc for OneOfSealedClass.ASubclass */
+    @AppFunctionSerializable(isDescribedByKdoc = true)
     class ASubclass(override val interfaceProperty: String, val str: String) : OneOfSealedClass()
 
-    @AppFunctionSerializable
+    /** I am a KDoc for OneOfSealedClass.BSubclass */
+    @AppFunctionSerializable(isDescribedByKdoc = true)
     class BSubclass(override val interfaceProperty: String, val integer: Int) : OneOfSealedClass()
 }

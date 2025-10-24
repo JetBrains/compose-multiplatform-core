@@ -42,6 +42,7 @@ abstract class AppFunctionDataTypeMetadata() {
         internal const val TYPE_REFERENCE: Int = 11
         internal const val TYPE_ALL_OF: Int = 12
         internal const val TYPE_PENDING_INTENT: Int = 13
+        internal const val TYPE_ONE_OF = 14
     }
 }
 
@@ -83,6 +84,28 @@ data class AppFunctionAllOfTypeMetadata(
 
     companion object {
         const val TYPE: Int = TYPE_ALL_OF
+    }
+}
+
+data class AppFunctionOneOfTypeMetadata(
+    val matchOneOf: List<AppFunctionDataTypeMetadata>,
+    val qualifiedName: String?,
+    override val isNullable: Boolean,
+    override val description: String,
+) : AppFunctionDataTypeMetadata() {
+    override fun toAppFunctionDataTypeMetadataDocument(): AppFunctionDataTypeMetadataDocument {
+        val oneOfDocuments = matchOneOf.map { it.toAppFunctionDataTypeMetadataDocument() }
+        return AppFunctionDataTypeMetadataDocument(
+            type = TYPE,
+            oneOf = oneOfDocuments,
+            isNullable = isNullable,
+            objectQualifiedName = qualifiedName,
+            description = description,
+        )
+    }
+
+    companion object {
+        const val TYPE: Int = TYPE_ONE_OF
     }
 }
 
@@ -322,6 +345,7 @@ data class AppFunctionDataTypeMetadataDocument(
     val itemType: AppFunctionDataTypeMetadataDocument? = null,
     val properties: List<AppFunctionNamedDataTypeMetadataDocument> = emptyList(),
     val allOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
+    val oneOf: List<AppFunctionDataTypeMetadataDocument> = emptyList(),
     val required: List<String> = emptyList(),
     val dataTypeReference: String? = null,
     val isNullable: Boolean = false,
@@ -405,6 +429,13 @@ data class AppFunctionDataTypeMetadataDocument(
 
             AppFunctionDataTypeMetadata.TYPE_PENDING_INTENT ->
                 AppFunctionPendingIntentTypeMetadata(
+                    isNullable = isNullable,
+                    description = description,
+                )
+            AppFunctionDataTypeMetadata.TYPE_ONE_OF ->
+                AppFunctionOneOfTypeMetadata(
+                    matchOneOf = oneOf.map { it.toAppFunctionDataTypeMetadata() },
+                    qualifiedName = objectQualifiedName,
                     isNullable = isNullable,
                     description = description,
                 )

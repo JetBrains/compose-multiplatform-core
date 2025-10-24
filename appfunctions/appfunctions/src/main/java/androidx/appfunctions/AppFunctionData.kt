@@ -460,7 +460,7 @@ internal constructor(
                 null
             } else {
                 AppFunctionData(
-                    spec?.getPropertyObjectSpec(key),
+                    spec?.getPropertyObjectSpec(key, array[0].schemaType),
                     array[0],
                     extras.getBundle(extrasKey(key)) ?: Bundle.EMPTY,
                 )
@@ -754,12 +754,11 @@ internal constructor(
      */
     @Suppress("NullableCollection")
     public fun getAppFunctionDataList(key: String): List<AppFunctionData>? {
-        val propertySpec = spec?.getPropertyObjectSpec(key)
         val dataArrayValue =
             unsafeGetProperty(key, Array<GenericDocument>::class.java)?.mapIndexed { index, element
                 ->
                 AppFunctionData(
-                    propertySpec,
+                    spec?.getPropertyObjectSpec(key, element.schemaType),
                     element,
                     extras.getBundle(extrasKey(key, index)) ?: Bundle.EMPTY,
                 )
@@ -1278,7 +1277,7 @@ internal constructor(
                 isCollection = false,
                 targetValue = value,
             )
-            spec?.getPropertyObjectSpec(key)?.validateDataSpecMatches(value)
+            spec?.getPropertyObjectSpec(key, value.qualifiedName)?.validateDataSpecMatches(value)
 
             genericDocumentBuilder.setPropertyDocument(key, value.genericDocument)
             if (!value.extras.isEmpty()) {
@@ -1483,7 +1482,9 @@ internal constructor(
                 *value.map { it.genericDocument }.toTypedArray(),
             )
             value.forEachIndexed { index, element ->
-                spec?.getPropertyObjectSpec(key)?.validateDataSpecMatches(element)
+                spec
+                    ?.getPropertyObjectSpec(key, element.qualifiedName)
+                    ?.validateDataSpecMatches(element)
                 if (!element.extras.isEmpty()) {
                     extrasBuilder.putBundle(extrasKey(key, index), element.extras)
                 }

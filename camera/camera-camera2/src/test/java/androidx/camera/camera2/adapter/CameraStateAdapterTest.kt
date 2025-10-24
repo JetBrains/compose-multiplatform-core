@@ -443,8 +443,8 @@ internal class CameraStateAdapterTest {
     private class TestStateListener : Consumer<CameraState> {
         val states = mutableListOf<CameraState>()
 
-        override fun accept(t: CameraState) {
-            states.add(t)
+        override fun accept(value: CameraState) {
+            states.add(value)
         }
     }
 }

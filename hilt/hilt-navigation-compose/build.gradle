@@ -39,9 +39,6 @@ android {
     defaultConfig {
         testInstrumentationRunner "androidx.hilt.navigation.compose.TestRunner"
     }
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
     namespace = "androidx.hilt.navigation.compose"
 }
 

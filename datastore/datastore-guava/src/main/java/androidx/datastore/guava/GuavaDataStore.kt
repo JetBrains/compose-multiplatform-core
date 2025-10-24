@@ -18,6 +18,7 @@ package androidx.datastore.guava
 
 import android.content.Context
 import androidx.concurrent.futures.SuspendToFutureAdapter.launchFuture
+import androidx.core.util.Function
 import androidx.datastore.core.CurrentDataProviderStore
 import androidx.datastore.core.DataMigration
 import androidx.datastore.core.DataStore
@@ -30,7 +31,6 @@ import com.google.common.util.concurrent.ListenableFuture
 import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Executor
-import java.util.function.Function
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -64,12 +64,12 @@ internal constructor(
      * persisted and returned. Concurrent updates are serialized (at most one update running at a
      * time).
      *
-     * Ideally the shape of the [DataTransform] param would have been a `T -> R` but we choose to
-     * keep it as `T -> T` to match [DataStore.updateData].
+     * Ideally the shape of the [Function] param would have been a `T -> R` but we choose to keep it
+     * as `T -> T` to match [DataStore.updateData].
      */
-    public fun updateDataAsync(dataTransform: DataTransform<T, T>): ListenableFuture<T> {
+    public fun updateDataAsync(dataTransform: Function<T, T>): ListenableFuture<T> {
         return launchFuture(context = coroutineContext, launchUndispatched = false) {
-            dataStore.updateData { dataTransform.transform(it) }
+            dataStore.updateData { dataTransform.apply(it) }
         }
     }
 
@@ -241,20 +241,4 @@ internal constructor(
             )
         }
     }
-}
-
-/**
- * A functional interface for transforming data within [GuavaDataStore].
- *
- * @param I The type of the input data.
- * @param O The type of the output data.
- */
-public fun interface DataTransform<I, O> {
-    /**
-     * Applies a transformation to the input data.
-     *
-     * @param input The input data to be transformed.
-     * @return The transformed output data.
-     */
-    public fun transform(input: I): O
 }

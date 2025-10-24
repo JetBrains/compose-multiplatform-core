@@ -21,8 +21,6 @@ import android.content.pm.PackageManager.FEATURE_CAMERA_CONCURRENT
 import androidx.annotation.GuardedBy
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn as JavaOptIn
-import androidx.annotation.RestrictTo
-import androidx.annotation.RestrictTo.Scope
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraFilter
@@ -725,11 +723,9 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
             return@trace adapterCameraInfo!!
         }
 
-    @RestrictTo(Scope.LIBRARY_GROUP)
     override fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener) =
         cameraX!!.cameraAvailabilityProvider.addCameraPresenceListener(listener, executor)
 
-    @RestrictTo(Scope.LIBRARY_GROUP)
     override fun removeCameraPresenceListener(listener: CameraPresenceListener) =
         cameraX!!.cameraAvailabilityProvider.removeCameraPresenceListener(listener)
 

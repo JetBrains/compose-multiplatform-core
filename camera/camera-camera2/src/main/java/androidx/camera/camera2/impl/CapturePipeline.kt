@@ -46,6 +46,7 @@ import androidx.camera.camera2.compat.workaround.isFlashAvailable
 import androidx.camera.camera2.compat.workaround.shouldStopRepeatingBeforeCapture
 import androidx.camera.camera2.config.UseCaseCameraScope
 import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.impl.Camera2Logger.debug
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.MAIN_CAPTURE
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.POST_CAPTURE
 import androidx.camera.camera2.impl.CapturePipelineImpl.PipelineTask.PRE_CAPTURE
@@ -135,13 +136,6 @@ constructor(
     private val useCaseCameraState: UseCaseCameraState,
     useCaseGraphConfig: UseCaseGraphConfig,
 ) : CapturePipeline {
-    private val graph = useCaseGraphConfig.graph
-
-    // If there is no flash unit, skip the flash related task instead of failing the pipeline.
-    private val hasFlashUnit = cameraProperties.isFlashAvailable()
-
-    override var template: Int = CameraDevice.TEMPLATE_PREVIEW
-
     private enum class PipelineTask {
         PRE_CAPTURE,
         MAIN_CAPTURE,
@@ -153,6 +147,36 @@ constructor(
         val requestTemplate: RequestTemplate,
         val sessionConfigOptions: Config,
     )
+
+    private val graph = useCaseGraphConfig.graph
+
+    // If there is no flash unit, skip the flash related task instead of failing the pipeline.
+    private val hasFlashUnit = cameraProperties.isFlashAvailable()
+
+    override var template: Int = CameraDevice.TEMPLATE_PREVIEW
+
+    /**
+     * A [FrameMetadata] that pipeline tasks can use to determine various info, e.g. whether the
+     * flash is required.
+     */
+    private var frameMetadata: FrameMetadata? = null
+
+    /**
+     * Returns a [FrameMetadata] that pipeline tasks can use to determine various info, e.g. whether
+     * the flash is required.
+     *
+     * If [frameMetadata] is not already cached, this function will wait for a new [FrameInfo] from
+     * the camera and cache its [FrameMetadata] for the duration of a whole capture. The cache is
+     * invalidated at the start of each new capture.
+     */
+    private suspend fun getFrameMetadata(): FrameMetadata? {
+        if (frameMetadata == null) {
+            debug { "getFrameMetadata: waiting for result" }
+            frameMetadata = waitForResult(CHECK_FLASH_REQUIRED_TIMEOUT_IN_NS)?.metadata
+        }
+        debug { "getFrameMetadata: frameMetadata = $frameMetadata" }
+        return frameMetadata
+    }
 
     /**
      * Invokes various capture pipelines (e.g. pre-capture or main capture or post-capture).
@@ -171,10 +195,17 @@ constructor(
         @FlashType flashType: Int,
         mainCaptureParams: MainCaptureParams?,
     ): List<Deferred<Void?>> {
-        Camera2Logger.debug {
+        debug {
             "CapturePipeline#invokeCaptureTasks: tasks = $pipelineTasks" +
                 ", captureMode = $captureMode, flashMode = $flashMode, flashType = $flashType"
         }
+
+        // frameMetadata is cleared for each new capture pipeline invocation. It is assumed that
+        // different captures are not intertwined. Usually, camera-core ImageCapture ensures that
+        // captures are queued, so we can assume individual captures are processed one-by-one
+        // through this class. If this changes in future, we should ensure each different capture
+        // has its own pipeline properties, specially the frameMetadata.
+        frameMetadata = null
 
         if (pipelineTasks.contains(MAIN_CAPTURE)) {
             checkNotNull(mainCaptureParams) { "Must not be null for PipelineType.MAIN_CAPTURE" }
@@ -256,25 +287,31 @@ constructor(
         crossinline preCapture: suspend () -> Unit,
         crossinline postCapture: suspend () -> Unit,
     ): List<Deferred<Void?>> {
-        Camera2Logger.debug { "CapturePipeline#List<PipelineTask>.invoke: tasks = $this" }
+        debug { "CapturePipeline#List<PipelineTask>.invoke: tasks = $this" }
         if (contains(PRE_CAPTURE)) {
+            debug { "CapturePipeline#List<PipelineTask>.invoke: starting PRE_CAPTURE" }
             preCapture()
+            debug { "CapturePipeline#List<PipelineTask>.invoke: PRE_CAPTURE completed" }
         }
         return if (contains(MAIN_CAPTURE)) {
-                submitRequestInternal(checkNotNull(mainCaptureParams))
+                debug { "CapturePipeline#List<PipelineTask>.invoke: starting MAIN_CAPTURE" }
+                submitRequestInternal(checkNotNull(mainCaptureParams)).also {
+                    debug { "CapturePipeline#List<PipelineTask>.invoke: MAIN_CAPTURE completed" }
+                }
             } else {
                 listOf(CompletableDeferred(value = null))
             }
             .also { captureSignal ->
                 if (contains(POST_CAPTURE)) {
                     threads.sequentialScope.launch {
-                        Camera2Logger.debug {
-                            "CapturePipeline#List<PipelineTask>.invoke: Waiting for capture signal"
+                        debug {
+                            "CapturePipeline#List<PipelineTask>.invoke:" +
+                                " Waiting for POST_CAPTURE signal"
                         }
                         captureSignal.joinAll()
-                        Camera2Logger.debug {
+                        debug {
                             "CapturePipeline#List<PipelineTask>.invoke:" +
-                                " Waiting for capture signal done"
+                                " Waiting for POST_CAPTURE signal done"
                         }
                         postCapture()
                     }
@@ -288,16 +325,16 @@ constructor(
         @FlashMode flashMode: Int,
         pipelineTasks: List<PipelineTask>,
     ): List<Deferred<Void?>> {
-        Camera2Logger.debug { "CapturePipeline#torchAsFlashCapture" }
+        debug { "CapturePipeline#torchAsFlashCapture" }
         return if (hasFlashUnit && isPhysicalFlashRequired(flashMode)) {
             torchApplyCapture(
                 mainCaptureParams,
                 captureMode,
                 CHECK_3A_WITH_FLASH_TIMEOUT_IN_NS,
                 pipelineTasks,
-                // TODO: b/339846763 - Disable AE precap only for the quirks where AE precapture
-                //  is problematic, instead of all TorchAsFlash quirks.
-                !useTorchAsFlash.shouldUseTorchAsFlash() && !videoUsageControl.isInVideoUsage(),
+                // TODO: b/339846763 - Further refine AE precap disabling for specific
+                //  legacy quirks, instead of disabling for all older UseTorchAsFlash quirks.
+                !useTorchAsFlash.shouldDisableAePrecapture() && !videoUsageControl.isInVideoUsage(),
             )
         } else {
             defaultNoFlashCapture(mainCaptureParams, captureMode, pipelineTasks)
@@ -330,24 +367,22 @@ constructor(
         @CaptureMode captureMode: Int,
         pipelineTasks: List<PipelineTask>,
     ): List<Deferred<Void?>> {
-        Camera2Logger.debug { "CapturePipeline#defaultNoFlashCapture" }
+        debug { "CapturePipeline#defaultNoFlashCapture" }
         val lock3ARequired = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY
         return pipelineTasks.invoke(
             mainCaptureParams = mainCaptureParams,
             preCapture = {
                 if (lock3ARequired) {
-                    Camera2Logger.debug { "CapturePipeline#defaultNoFlashCapture: Locking 3A" }
+                    debug { "CapturePipeline#defaultNoFlashCapture: Locking 3A" }
                     lockAf(CHECK_3A_TIMEOUT_IN_NS, isTorchAsFlash = false)
-                    Camera2Logger.debug { "CapturePipeline#defaultNoFlashCapture: Locking 3A done" }
+                    debug { "CapturePipeline#defaultNoFlashCapture: Locking 3A done" }
                 }
             },
             postCapture = {
                 if (lock3ARequired) {
-                    Camera2Logger.debug { "CapturePipeline#defaultNoFlashCapture: Unlocking 3A" }
+                    debug { "CapturePipeline#defaultNoFlashCapture: Unlocking 3A" }
                     unlockAf(CHECK_3A_TIMEOUT_IN_NS)
-                    Camera2Logger.debug {
-                        "CapturePipeline#defaultNoFlashCapture: Unlocking 3A done"
-                    }
+                    debug { "CapturePipeline#defaultNoFlashCapture: Unlocking 3A done" }
                 }
             },
         )
@@ -360,7 +395,7 @@ constructor(
         pipelineTasks: List<PipelineTask>,
         triggerAePreCapture: Boolean,
     ): List<Deferred<Void?>> {
-        Camera2Logger.debug { "CapturePipeline#torchApplyCapture" }
+        debug { "CapturePipeline#torchApplyCapture" }
         val torchOnRequired = torchControl.torchStateLiveData.value == TorchState.OFF
         val lock3ARequired = torchOnRequired || captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY
 
@@ -368,15 +403,13 @@ constructor(
             mainCaptureParams = mainCaptureParams,
             preCapture = {
                 if (torchOnRequired) {
-                    Camera2Logger.debug { "CapturePipeline#torchApplyCapture: Setting torch" }
+                    debug { "CapturePipeline#torchApplyCapture: Setting torch" }
                     torchControl.setTorchAsync(TorchMode.USED_AS_FLASH).join()
-                    Camera2Logger.debug { "CapturePipeline#torchApplyCapture: Setting torch done" }
+                    debug { "CapturePipeline#torchApplyCapture: Setting torch done" }
                 }
 
                 if (triggerAePreCapture) {
-                    Camera2Logger.debug {
-                        "CapturePipeline#torchApplyCapture: Locking 3A for capture"
-                    }
+                    debug { "CapturePipeline#torchApplyCapture: Locking 3A for capture" }
                     val result3A =
                         graph.acquireSession().use {
                             it.lock3AForCapture(
@@ -386,7 +419,7 @@ constructor(
                                 )
                                 .await()
                         }
-                    Camera2Logger.debug {
+                    debug {
                         "CapturePipeline#torchApplyCapture: Locking 3A for capture done" +
                             ", result3A = $result3A"
                     }
@@ -398,22 +431,18 @@ constructor(
                     //  AE/AWB too.
                     if (lock3ARequired) {
                         if (captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY) {
-                            Camera2Logger.debug { "CapturePipeline#torchApplyCapture: Locking 3A" }
+                            debug { "CapturePipeline#torchApplyCapture: Locking 3A" }
                             lockAf(timeLimitNs, isTorchAsFlash = true)
-                            Camera2Logger.debug {
-                                "CapturePipeline#torchApplyCapture: Locking 3A done"
-                            }
+                            debug { "CapturePipeline#torchApplyCapture: Locking 3A done" }
                         } else {
-                            Camera2Logger.debug {
-                                "CapturePipeline#torchApplyCapture: Awaiting 3A convergence"
-                            }
+                            debug { "CapturePipeline#torchApplyCapture: Awaiting 3A convergence" }
                             waitForResult(waitTimeoutNanos = timeLimitNs) {
                                 ConvergenceUtils.is3AConverged(
                                     it.metadata.toCameraCaptureResult(),
                                     /* isTorchAsFlash = */ true,
                                 )
                             }
-                            Camera2Logger.debug {
+                            debug {
                                 "CapturePipeline#torchApplyCapture: 3A convergence waiting done"
                             }
                         }
@@ -422,16 +451,12 @@ constructor(
             },
             postCapture = {
                 if (torchOnRequired) {
-                    Camera2Logger.debug { "CapturePipeline#torchApplyCapture: Unsetting torch" }
+                    debug { "CapturePipeline#torchApplyCapture: Unsetting torch" }
                     @Suppress("DeferredResultUnused") torchControl.setTorchAsync(TorchMode.OFF)
-                    Camera2Logger.debug {
-                        "CapturePipeline#torchApplyCapture: Unsetting torch done"
-                    }
+                    debug { "CapturePipeline#torchApplyCapture: Unsetting torch done" }
                 }
                 if (triggerAePreCapture) {
-                    Camera2Logger.debug {
-                        "CapturePipeline#torchApplyCapture: Unlocking 3A for capture"
-                    }
+                    debug { "CapturePipeline#torchApplyCapture: Unlocking 3A for capture" }
                     @Suppress("DeferredResultUnused")
                     graph.acquireSession().use {
                         it.unlock3APostCapture(
@@ -440,11 +465,9 @@ constructor(
                     }
                 } else {
                     if (lock3ARequired && captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY) {
-                        Camera2Logger.debug { "CapturePipeline#torchApplyCapture: Unlocking 3A" }
+                        debug { "CapturePipeline#torchApplyCapture: Unlocking 3A" }
                         unlockAf(CHECK_3A_TIMEOUT_IN_NS)
-                        Camera2Logger.debug {
-                            "CapturePipeline#torchApplyCapture: Unlocking 3A done"
-                        }
+                        debug { "CapturePipeline#torchApplyCapture: Unlocking 3A done" }
                     }
                 }
             },
@@ -457,40 +480,36 @@ constructor(
         @CaptureMode captureMode: Int,
         pipelineTasks: List<PipelineTask>,
     ): List<Deferred<Void?>> {
-        Camera2Logger.debug { "CapturePipeline#aePreCaptureApplyCapture" }
+        debug { "CapturePipeline#aePreCaptureApplyCapture" }
 
         return pipelineTasks.invoke(
             mainCaptureParams = mainCaptureParams,
             preCapture = {
-                Camera2Logger.debug {
+                debug {
                     "CapturePipeline#aePreCaptureApplyCapture: Acquiring session for locking 3A"
                 }
                 graph.acquireSession().use {
-                    Camera2Logger.debug {
-                        "CapturePipeline#aePreCaptureApplyCapture: Locking 3A for capture"
-                    }
+                    debug { "CapturePipeline#aePreCaptureApplyCapture: Locking 3A for capture" }
                     it.lock3AForCapture(
                             timeLimitNs = timeLimitNs,
                             triggerAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
                             waitForAwb = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
                         )
                         .join()
-                    Camera2Logger.debug {
+                    debug {
                         "CapturePipeline#aePreCaptureApplyCapture: Locking 3A for capture done"
                     }
                 }
             },
             postCapture = {
-                Camera2Logger.debug {
+                debug {
                     "CapturePipeline#aePreCaptureApplyCapture: Acquiring session for unlocking 3A"
                 }
                 graph.acquireSession().use {
-                    Camera2Logger.debug { "CapturePipeline#aePreCaptureApplyCapture: Unlocking 3A" }
+                    debug { "CapturePipeline#aePreCaptureApplyCapture: Unlocking 3A" }
                     @Suppress("DeferredResultUnused")
                     it.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
-                    Camera2Logger.debug {
-                        "CapturePipeline#aePreCaptureApplyCapture: Unlocking 3A done"
-                    }
+                    debug { "CapturePipeline#aePreCaptureApplyCapture: Unlocking 3A done" }
                 }
             },
         )
@@ -501,7 +520,7 @@ constructor(
         @CaptureMode captureMode: Int,
         pipelineTasks: List<PipelineTask>,
     ): List<Deferred<Void?>> {
-        Camera2Logger.debug { "CapturePipeline#screenFlashCapture" }
+        debug { "CapturePipeline#screenFlashCapture" }
 
         return pipelineTasks.invoke(
             mainCaptureParams = mainCaptureParams,
@@ -525,7 +544,7 @@ constructor(
 
         graph.acquireSession().use { session ->
             // Trigger AE precapture & wait for 3A converge
-            Camera2Logger.debug { "screenFlashPreCapture: Locking 3A for capture" }
+            debug { "screenFlashPreCapture: Locking 3A for capture" }
             val result3A =
                 session
                     .lock3AForCapture(
@@ -534,9 +553,7 @@ constructor(
                         waitForAwb = true,
                     )
                     .await()
-            Camera2Logger.debug {
-                "screenFlashPreCapture: Locking 3A for capture done, result3A = $result3A"
-            }
+            debug { "screenFlashPreCapture: Locking 3A for capture done, result3A = $result3A" }
         }
     }
 
@@ -545,12 +562,12 @@ constructor(
         flashControl.stopScreenFlashCaptureTasks()
 
         // Unlock 3A
-        Camera2Logger.debug { "screenFlashPostCapture: Acquiring session for unlocking 3A" }
+        debug { "screenFlashPostCapture: Acquiring session for unlocking 3A" }
         graph.acquireSession().use { session ->
-            Camera2Logger.debug { "screenFlashPostCapture: Unlocking 3A" }
+            debug { "screenFlashPostCapture: Unlocking 3A" }
             @Suppress("DeferredResultUnused")
             session.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
-            Camera2Logger.debug { "screenFlashPostCapture: Unlocking 3A done" }
+            debug { "screenFlashPostCapture: Unlocking 3A done" }
         }
     }
 
@@ -630,7 +647,7 @@ constructor(
         graph.acquireSession().use { it.unlock3A(af = true, timeLimitNs = timeLimitNs) }.await()
 
     private fun submitRequestInternal(params: MainCaptureParams): List<Deferred<Void?>> {
-        Camera2Logger.debug {
+        debug {
             "CapturePipeline#submitRequestInternal; Submitting ${params.configs} with CameraPipe"
         }
         val deferredList = mutableListOf<CompletableDeferred<Void?>>()
@@ -701,7 +718,7 @@ constructor(
         }
 
         threads.sequentialScope.launch {
-            Camera2Logger.debug {
+            debug {
                 "CapturePipeline#submitRequestInternal: Acquiring session for submitting requests"
             }
             // graph.acquireSession may fail if camera has entered closing stage
@@ -732,9 +749,7 @@ constructor(
                     it.stopRepeating()
                 }
 
-                Camera2Logger.debug {
-                    "CapturePipeline#submitRequestInternal: Submitting $requests"
-                }
+                debug { "CapturePipeline#submitRequestInternal: Submitting $requests" }
                 it.submit(requests)
 
                 if (requiresStopRepeating) {
@@ -751,9 +766,8 @@ constructor(
         when (flashMode) {
             FLASH_MODE_ON -> true
             FLASH_MODE_AUTO -> {
-                waitForResult(CHECK_FLASH_REQUIRED_TIMEOUT_IN_NS)
-                    ?.metadata
-                    ?.get(CaptureResult.CONTROL_AE_STATE) == CONTROL_AE_STATE_FLASH_REQUIRED
+                getFrameMetadata()?.get(CaptureResult.CONTROL_AE_STATE) ==
+                    CONTROL_AE_STATE_FLASH_REQUIRED
             }
             FLASH_MODE_OFF -> false
             FLASH_MODE_SCREEN -> false
@@ -785,10 +799,10 @@ constructor(
             }
     }
 
-    private fun isTorchAsFlash(@FlashType flashType: Int): Boolean {
+    private suspend fun isTorchAsFlash(@FlashType flashType: Int): Boolean {
         return template == CameraDevice.TEMPLATE_RECORD ||
             flashType == FLASH_TYPE_USE_TORCH_AS_FLASH ||
-            useTorchAsFlash.shouldUseTorchAsFlash()
+            useTorchAsFlash.shouldUseTorchAsFlash({ getFrameMetadata() })
     }
 }
 
@@ -837,7 +851,7 @@ public class ResultListener(
                 currentTimestampNs - timestampOfFirstUpdateNs > timeLimitNs
         ) {
             completeSignal.complete(null)
-            Camera2Logger.debug {
+            debug {
                 "Wait for capture result timeout, current: $currentTimestampNs " +
                     "first: $timestampOfFirstUpdateNs"
             }

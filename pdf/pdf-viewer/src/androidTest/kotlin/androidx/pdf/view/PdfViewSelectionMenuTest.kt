@@ -103,7 +103,7 @@ class PdfViewSelectionMenuTest {
 
         val selectionMenuItemPreparer = SelectionMenuItemPreparer { components ->
             components.add(
-                SelectionMenuComponent(AddCommentKey, addCommentLabel) {
+                SelectionMenuComponent(AddCommentKey, addCommentLabel, "add comment") {
                     // Increment counter to assert onClick is called
                     addCommentClickCounter++
                 }

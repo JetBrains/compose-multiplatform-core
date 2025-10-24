@@ -2297,7 +2297,6 @@ class VideoCaptureTest {
         val videoCapabilities: VideoCapabilities = CAMERA_0_VIDEO_CAPABILITIES,
         val surfaceRequestCallback: (SurfaceRequest, Timebase) -> Unit,
     ) : VideoOutput {
-
         private val streamInfoObservable: MutableStateObservable<StreamInfo> =
             MutableStateObservable.withInitialState(streamInfo)
 
@@ -2329,6 +2328,13 @@ class VideoCaptureTest {
 
         fun updateStreamInfo(streamInfo: StreamInfo) {
             streamInfoObservable.setState(streamInfo)
+        }
+
+        override fun isQualitySelectorDefault(): Boolean {
+            val currentSelector = mediaSpec.fetchData().get()?.videoSpec?.qualitySelector
+            // For tests, both null and the Recorder-default are considered as default quality
+            // selector.
+            return currentSelector == null || currentSelector == Recorder.DEFAULT_QUALITY_SELECTOR
         }
     }
 

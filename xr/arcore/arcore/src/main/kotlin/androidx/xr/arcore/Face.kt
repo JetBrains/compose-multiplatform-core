@@ -16,6 +16,7 @@
 
 package androidx.xr.arcore
 
+import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Face as RuntimeFace
 import androidx.xr.runtime.Config.FaceTrackingMode
@@ -142,7 +143,8 @@ public class Face internal constructor(internal val runtimeFace: RuntimeFace) : 
         /**
          * Represents the blend shapes of the face.
          *
-         * @return a map of [FaceBlendShapeType] to the corresponding blend shape value.
+         * @return a map of [FaceBlendShapeType] to the corresponding blend shape value in the range
+         *   `[0.0, 1.0]`.
          */
         public val blendShapes: Map<FaceBlendShapeType, Float> =
             blendShapeMapKeys.zip(blendShapeValues.toList()).toMap()
@@ -151,9 +153,11 @@ public class Face internal constructor(internal val runtimeFace: RuntimeFace) : 
          * Gets the confidence value of the face tracker for the given region.
          *
          * @param region the [FaceConfidenceRegion] to get the confidence value for.
-         * @return the confidence value of the face tracker for the given region.
+         * @return the confidence value in the range `[0.0, 1.0]` of the face tracker for the given
+         *   region.
          * @throws IllegalArgumentException if the region does not exist.
          */
+        @FloatRange(from = 0.0, to = 1.0, fromInclusive = true, toInclusive = true)
         public fun getConfidence(region: FaceConfidenceRegion): Float =
             when (region) {
                 FaceConfidenceRegion.FACE_CONFIDENCE_REGION_LOWER -> confidenceValues[0]

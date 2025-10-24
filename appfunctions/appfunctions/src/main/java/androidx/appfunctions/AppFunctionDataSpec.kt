@@ -28,6 +28,7 @@ import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionOneOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
@@ -58,19 +59,25 @@ internal abstract class AppFunctionDataSpec {
      * If the property associated with [key] is an Array, it would return the item object's
      * specification.
      *
+     * @param key The property key.
+     * @param qualifiedName The qualified name of the object, used in creating the corresponding
+     *   [AppFunctionData].
      * @throws IllegalArgumentException If this is no child specification associated with [key].
      */
-    fun getPropertyObjectSpec(key: String): AppFunctionDataSpec {
+    fun getPropertyObjectSpec(key: String, qualifiedName: String): AppFunctionDataSpec {
         val childDataType =
             getDataType(key)
                 ?: throw IllegalArgumentException("Value associated with $key is not an object")
-        return getPropertyObjectSpec(childDataType)
+        return getPropertyObjectSpec(childDataType, qualifiedName)
     }
 
-    private fun getPropertyObjectSpec(type: AppFunctionDataTypeMetadata): AppFunctionDataSpec {
+    private fun getPropertyObjectSpec(
+        type: AppFunctionDataTypeMetadata,
+        qualifiedName: String,
+    ): AppFunctionDataSpec {
         return when (type) {
             is AppFunctionArrayTypeMetadata -> {
-                getPropertyObjectSpec(type.itemType)
+                getPropertyObjectSpec(type.itemType, qualifiedName)
             }
             is AppFunctionObjectTypeMetadata -> {
                 ObjectSpec(type, componentMetadata)
@@ -81,10 +88,14 @@ internal abstract class AppFunctionDataSpec {
                         ?: throw IllegalStateException(
                             "Unable to resolve data type for ${type.referenceDataType}"
                         )
-                getPropertyObjectSpec(resolvedDataType)
+                getPropertyObjectSpec(resolvedDataType, qualifiedName)
             }
             is AppFunctionAllOfTypeMetadata -> {
                 ObjectSpec(type.getPseudoObjectTypeMetadata(componentMetadata), componentMetadata)
+            }
+            is AppFunctionOneOfTypeMetadata -> {
+                val oneOfType = type.getObjectMetadataForOneOfType(qualifiedName)
+                getPropertyObjectSpec(oneOfType, qualifiedName)
             }
             else -> {
                 throw IllegalStateException("Unexpected data type $type")
@@ -330,6 +341,9 @@ internal abstract class AppFunctionDataSpec {
             is AppFunctionReferenceTypeMetadata -> {
                 !isCollection && this.conform(typeClazz)
             }
+            is AppFunctionOneOfTypeMetadata -> {
+                !isCollection && this.conform(typeClazz)
+            }
             else -> {
                 throw IllegalStateException("Unexpected data type ${this.javaClass}")
             }
@@ -345,6 +359,10 @@ internal abstract class AppFunctionDataSpec {
     }
 
     private fun AppFunctionAllOfTypeMetadata.conform(typeClass: Class<*>): Boolean {
+        return typeClass == AppFunctionData::class.java
+    }
+
+    private fun AppFunctionOneOfTypeMetadata.conform(typeClass: Class<*>): Boolean {
         return typeClass == AppFunctionData::class.java
     }
 

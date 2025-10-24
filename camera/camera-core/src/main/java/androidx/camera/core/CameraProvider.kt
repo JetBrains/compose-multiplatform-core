@@ -111,8 +111,9 @@ public interface CameraProvider {
      * @param executor The [Executor] on which the listener's methods will be invoked.
      * @param listener The listener to be added.
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
-    public fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener)
+    public fun addCameraPresenceListener(executor: Executor, listener: CameraPresenceListener) {
+        throw UnsupportedOperationException("The camera provider is not implemented properly.")
+    }
 
     /**
      * Removes a previously registered camera presence listener.
@@ -122,8 +123,9 @@ public interface CameraProvider {
      *
      * @param listener The same listener instance that was passed to [addCameraPresenceListener].
      */
-    @RestrictTo(Scope.LIBRARY_GROUP)
-    public fun removeCameraPresenceListener(listener: CameraPresenceListener)
+    public fun removeCameraPresenceListener(listener: CameraPresenceListener) {
+        throw UnsupportedOperationException("The camera provider is not implemented properly.")
+    }
 
     /** Returns the [CameraXConfig] implementation type. */
     @get:RestrictTo(Scope.LIBRARY_GROUP) @CameraXConfig.ImplType public val configImplType: Int

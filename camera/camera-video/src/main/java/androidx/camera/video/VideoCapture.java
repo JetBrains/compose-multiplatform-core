@@ -39,6 +39,7 @@ import static androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_CONFIG_UNPA
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_STREAM_USE_CASE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SURFACE_OCCUPANCY_PRIORITY;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_FRAME_RATE;
+import static androidx.camera.core.impl.UseCaseConfig.OPTION_IS_VIDEO_QUALITY_SELECTOR_DEFAULT;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_VIDEO_STABILIZATION_MODE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_ZSL_DISABLED;
 import static androidx.camera.core.impl.utils.Threads.isMainThread;
@@ -76,12 +77,14 @@ import android.view.Display;
 import android.view.Surface;
 
 import androidx.annotation.MainThread;
+import androidx.annotation.OptIn;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
 import androidx.camera.core.AspectRatio;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.DynamicRange;
+import androidx.camera.core.ExperimentalSessionConfig;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.Logger;
 import androidx.camera.core.MirrorMode;
@@ -91,6 +94,7 @@ import androidx.camera.core.SurfaceRequest;
 import androidx.camera.core.SurfaceRequest.TransformationInfo;
 import androidx.camera.core.UseCase;
 import androidx.camera.core.ViewPort;
+import androidx.camera.core.featuregroup.GroupableFeature;
 import androidx.camera.core.impl.CameraCaptureCallback;
 import androidx.camera.core.impl.CameraCaptureResult;
 import androidx.camera.core.impl.CameraControlInternal;
@@ -128,6 +132,7 @@ import androidx.camera.core.processing.SurfaceProcessorNode;
 import androidx.camera.core.processing.util.OutConfig;
 import androidx.camera.core.resolutionselector.ResolutionSelector;
 import androidx.camera.video.StreamInfo.StreamState;
+import androidx.camera.video.featuregroup.RecordingQualityFeature;
 import androidx.camera.video.impl.VideoCaptureConfig;
 import androidx.camera.video.internal.VideoValidatedEncoderProfilesProxy;
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks;
@@ -1502,13 +1507,21 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
     private void updateCustomOrderedResolutionsByQuality(@NonNull CameraInfoInternal cameraInfo,
             UseCaseConfig.@NonNull Builder<?, ?, ?> builder) throws IllegalArgumentException {
         MediaSpec mediaSpec = getMediaSpecOrThrow();
-        QualitySelector qualitySelector = mediaSpec.getVideoSpec().getQualitySelector();
+
+        QualitySelector qualitySelector = getQualitySelector(mediaSpec);
+
         VideoCaptureConfig<T> config = (VideoCaptureConfig<T>) builder.getUseCaseConfig();
         if (config.containsOption(OPTION_CUSTOM_ORDERED_RESOLUTIONS)) {
-            checkArgument(qualitySelector == VideoSpec.QUALITY_SELECTOR_AUTO,
+            checkArgument(getOutput().isQualitySelectorDefault(),
                     "Custom ordered resolutions and QualitySelector can't both be set");
-            // If custom ordered resolutions is set and QualitySelector is not set, the default
-            // QualitySelector is skipped to avoid overwriting the custom ordered resolutions.
+
+            checkArgument(getFeatureGroupQualitySelector() == null,
+                    "Can't set both custom ordered resolutions and QualitySelector  through"
+                            + " a groupable feature (e.g. GroupableFeatures.UHD_RECORDING)");
+
+            // If custom ordered resolutions is set and QualitySelector is not set by user or
+            // feature groups, the default QualitySelector is skipped to avoid overwriting the
+            // custom ordered resolutions.
             return;
         }
 
@@ -1558,6 +1571,35 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
 
         // set to custom ordered resolutions
         setCustomOrderedResolutions(builder, supportedQualityToSizeMap);
+    }
+
+    @NonNull
+    private QualitySelector getQualitySelector(@NonNull MediaSpec mediaSpec) {
+        QualitySelector qualitySelector = getFeatureGroupQualitySelector();
+        if (qualitySelector == null) {
+            qualitySelector = mediaSpec.getVideoSpec().getQualitySelector();
+        }
+        return qualitySelector;
+    }
+
+    @OptIn(markerClass = ExperimentalSessionConfig.class)
+    @Nullable
+    private QualitySelector getFeatureGroupQualitySelector() {
+        Set<@NonNull GroupableFeature> featureGroup = getFeatureGroup();
+
+        if (featureGroup == null) {
+            return null;
+        }
+
+        List<Quality> qualities = new ArrayList<>();
+
+        for (GroupableFeature feature : featureGroup) {
+            if (feature instanceof RecordingQualityFeature) {
+                qualities.add(((RecordingQualityFeature) feature).getQuality());
+            }
+        }
+
+        return qualities.isEmpty() ? null : QualitySelector.fromOrderedList(qualities);
     }
 
     @NonNull
@@ -1932,6 +1974,8 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
                 @NonNull T videoOutput) {
             MutableOptionsBundle bundle = MutableOptionsBundle.create();
             bundle.insertOption(OPTION_VIDEO_OUTPUT, videoOutput);
+            bundle.insertOption(OPTION_IS_VIDEO_QUALITY_SELECTOR_DEFAULT,
+                    videoOutput.isQualitySelectorDefault());
             return bundle;
         }
 

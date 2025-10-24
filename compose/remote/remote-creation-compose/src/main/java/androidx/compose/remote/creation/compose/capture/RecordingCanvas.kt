@@ -84,7 +84,7 @@ import androidx.compose.ui.graphics.asAndroidPath
  *   compose perspective (are paint objects reused this way?)
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
+public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
 
     private var lastStyleOrdinal: Int = -1
     private var typeface: Int = -1

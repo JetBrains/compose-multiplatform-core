@@ -16,7 +16,9 @@
 
 package androidx.compose.integration.hero.pokedex.macrobenchmark.target
 
+import android.graphics.Color
 import android.os.Bundle
+import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -34,20 +36,39 @@ import kotlinx.coroutines.withContext
  * itself in order to allow benchmarks more control over its lifecycle.
  */
 class PokedexSetupActivity : ComponentActivity() {
+
+    /**
+     * We specifically use opposite colors to ensure the text is visible regardless of the theme.
+     */
+    private val containerBackgroundColor = Color.WHITE
+    private val textColor = Color.BLACK
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val amountOfImagesRequested = intent.getIntExtra(EXTRA_AMOUNT_OF_IMAGES, 150)
-        val container = FrameLayout(this)
+        val container =
+            FrameLayout(this).apply {
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+                setBackgroundColor(containerBackgroundColor)
+            }
         setContentView(container)
         val statusText =
             TextView(this).apply {
                 layoutParams =
-                    ViewGroup.LayoutParams(
+                    FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT,
                     )
+                // Center the text as it could otherwise end up obscured by the status bar and not
+                //  be picked up by UiAutomator.
+                gravity = Gravity.CENTER
                 text = POKEDEX_SETTING_UP_IMAGES
+                setTextColor(textColor)
             }
         container.addView(statusText)
         lifecycleScope.launch(Dispatchers.IO) {

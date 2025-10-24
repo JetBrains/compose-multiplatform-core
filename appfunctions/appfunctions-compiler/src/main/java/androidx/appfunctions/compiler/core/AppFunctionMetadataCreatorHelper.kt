@@ -40,6 +40,7 @@ import androidx.appfunctions.compiler.core.metadata.AppFunctionFloatTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionOneOfTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionReferenceTypeMetadata
@@ -378,11 +379,76 @@ class AppFunctionMetadataCreatorHelper(
     }
 
     /**
+     * Adds the [AppFunctionOneOfTypeMetadata] for a serializable/capability type to the shared data
+     * type map.
+     *
+     * @param unvisitedSerializableProperties a map of unvisited serializable properties. This map
+     *   is used to track the properties that have not yet been visited. The map is updated as the
+     *   properties are visited.
+     * @param sharedDataTypeMap a map of shared data types. This map is used to store the
+     *   [AppFunctionDataTypeMetadata] for all serializable/capability types that are used in an app
+     *   function. This map is used to avoid duplicating the metadata for the same serializable
+     *   type.
+     * @param seenDataTypeQualifiers a set of seen data type qualifiers. This set is used to avoid
+     *   processing the same serializable type multiple times.
+     * @param resolvedAnnotatedSerializableProxies The resolved annotated serializable proxies.
+     * @param allowSerializableInterfaceTypes Whether to allow the serializable to use serializable
+     *   interface types. The @AppFunctionSerializableInterface should only be considered as a
+     *   supported type when processing schema definitions.
+     */
+    private fun addOneOfSerializableTypeMetadataToSharedDataTypeMap(
+        annotatedSerializable: AnnotatedOneOfAppFunctionSerializable,
+        unvisitedSerializableProperties: MutableMap<String, AppFunctionPropertyDeclaration>,
+        sharedDataTypeMap: MutableMap<String, AppFunctionDataTypeMetadata>,
+        seenDataTypeQualifiers: MutableSet<String>,
+        resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
+        allowSerializableInterfaceTypes: Boolean,
+    ) {
+        val matchOneOfList = buildList {
+            // Add entries for all oneOfSerializables
+            for (oneOfSerializable in annotatedSerializable.oneOfSerializables) {
+                addSerializableTypeMetadataToSharedDataTypeMap(
+                    oneOfSerializable,
+                    unvisitedSerializableProperties.apply {
+                        putAll(
+                            oneOfSerializable
+                                .getProperties(sharedDataTypeDescriptionMap)
+                                .associateBy { checkNotNull(it.name).toString() }
+                                .toMutableMap()
+                        )
+                    },
+                    sharedDataTypeMap,
+                    seenDataTypeQualifiers,
+                    resolvedAnnotatedSerializableProxies,
+                    allowSerializableInterfaceTypes,
+                )
+
+                add(
+                    AppFunctionReferenceTypeMetadata(
+                        referenceDataType = oneOfSerializable.jvmQualifiedName,
+                        // Whether the field is nullable should be determined by the super
+                        // class/interface site usage.
+                        isNullable = true,
+                        // Description will be covered in ObjectTypeMetadata for this reference.
+                        description = "",
+                    )
+                )
+            }
+        }
+
+        sharedDataTypeMap[annotatedSerializable.jvmQualifiedName] =
+            AppFunctionOneOfTypeMetadata(
+                qualifiedName = annotatedSerializable.jvmQualifiedName,
+                matchOneOf = matchOneOfList,
+                isNullable = true,
+                description = annotatedSerializable.getDescription(sharedDataTypeDescriptionMap),
+            )
+    }
+
+    /**
      * Adds the [AppFunctionDataTypeMetadata] for a serializable/capability type to the shared data
      * type map.
      *
-     * @param appFunctionSerializableType the [AnnotatedAppFunctionSerializable] for the
-     *   serializable or capability type being processed.
      * @param unvisitedSerializableProperties a map of unvisited serializable properties. This map
      *   is used to track the properties that have not yet been visited. The map is updated as the
      *   properties are visited.
@@ -399,18 +465,30 @@ class AppFunctionMetadataCreatorHelper(
      */
     // TODO: Document traversal rules.
     private fun addSerializableTypeMetadataToSharedDataTypeMap(
-        appFunctionSerializableType: AppFunctionSerializableType,
+        annotatedSerializable: AppFunctionSerializableType,
         unvisitedSerializableProperties: MutableMap<String, AppFunctionPropertyDeclaration>,
         sharedDataTypeMap: MutableMap<String, AppFunctionDataTypeMetadata>,
         seenDataTypeQualifiers: MutableSet<String>,
         resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
         allowSerializableInterfaceTypes: Boolean,
     ) {
+        if (annotatedSerializable is AnnotatedOneOfAppFunctionSerializable) {
+            addOneOfSerializableTypeMetadataToSharedDataTypeMap(
+                annotatedSerializable,
+                unvisitedSerializableProperties,
+                sharedDataTypeMap,
+                seenDataTypeQualifiers,
+                resolvedAnnotatedSerializableProxies,
+                allowSerializableInterfaceTypes,
+            )
+            return
+        }
+
         val serializableTypeQualifiedName =
-            if (appFunctionSerializableType is AnnotatedAppFunctionSerializableProxy) {
-                appFunctionSerializableType.targetClassDeclaration.getJvmQualifiedName()
+            if (annotatedSerializable is AnnotatedAppFunctionSerializableProxy) {
+                annotatedSerializable.targetClassDeclaration.getJvmQualifiedName()
             } else {
-                appFunctionSerializableType.jvmQualifiedName
+                annotatedSerializable.jvmQualifiedName
             }
         // This type has already been added to the sharedDataMap.
         if (seenDataTypeQualifiers.contains(serializableTypeQualifiedName)) {
@@ -419,35 +497,34 @@ class AppFunctionMetadataCreatorHelper(
         seenDataTypeQualifiers.add(serializableTypeQualifiedName)
 
         val serializableDescription =
-            appFunctionSerializableType.getDescription(sharedDataTypeDescriptionMap)
+            annotatedSerializable.getDescription(sharedDataTypeDescriptionMap)
 
         val superTypesWithSerializableAnnotation =
-            appFunctionSerializableType.findSuperTypesWithSerializableAnnotation()
+            annotatedSerializable.findSuperTypesWithSerializableAnnotation()
         val superTypesWithCapabilityAnnotation =
-            appFunctionSerializableType.findSuperTypesWithCapabilityAnnotation()
+            annotatedSerializable.findSuperTypesWithCapabilityAnnotation()
         if (
             superTypesWithSerializableAnnotation.isEmpty() &&
                 superTypesWithCapabilityAnnotation.isEmpty()
         ) {
             // If there is no super type, then this is a base serializable object.
-            sharedDataTypeMap.put(
-                serializableTypeQualifiedName,
+            sharedDataTypeMap[serializableTypeQualifiedName] =
                 buildObjectTypeMetadataForObjectParameters(
                     serializableTypeQualifiedName,
-                    appFunctionSerializableType.getProperties(sharedDataTypeDescriptionMap),
+                    annotatedSerializable.getProperties(sharedDataTypeDescriptionMap),
                     unvisitedSerializableProperties,
                     sharedDataTypeMap,
                     seenDataTypeQualifiers,
                     resolvedAnnotatedSerializableProxies,
                     allowSerializableInterfaceTypes,
                     serializableDescription,
-                ),
-            )
+                )
         } else {
             // If there are superTypes, we first need to build the list of superTypes for this
             // serializable to match.
             val matchAllSuperTypesList: List<AppFunctionDataTypeMetadata> = buildList {
                 for (serializableSuperType in superTypesWithSerializableAnnotation) {
+
                     addSerializableTypeMetadataToSharedDataTypeMap(
                         AnnotatedAppFunctionSerializable(serializableSuperType),
                         unvisitedSerializableProperties,
@@ -519,8 +596,7 @@ class AppFunctionMetadataCreatorHelper(
 
             // Finally add allOf of the datatypes required to build this composed objects to the
             // components map
-            sharedDataTypeMap.put(
-                serializableTypeQualifiedName,
+            sharedDataTypeMap[serializableTypeQualifiedName] =
                 AppFunctionAllOfTypeMetadata(
                     qualifiedName = serializableTypeQualifiedName,
                     matchAll = matchAllSuperTypesList,
@@ -529,8 +605,7 @@ class AppFunctionMetadataCreatorHelper(
                     // can add further constraint (i.e. non-null) if required.
                     isNullable = true,
                     description = serializableDescription,
-                ),
-            )
+                )
         }
     }
 
@@ -577,7 +652,11 @@ class AppFunctionMetadataCreatorHelper(
                 // This is because before processing a subclass we process its superclass first
                 // so the unvisitedSerializableProperties could still contain properties not
                 // directly included in the current class being processed.
-                add(checkNotNull(unvisitedSerializableProperties.remove(property.name)))
+                add(
+                    checkNotNull(unvisitedSerializableProperties.remove(property.name)) {
+                        "${property.name} is not in unvisitedSerializableProperties"
+                    }
+                )
             }
         }
         return buildObjectTypeMetadataForObjectProperty(
@@ -680,23 +759,13 @@ class AppFunctionMetadataCreatorHelper(
         appFunctionTypeReference: AppFunctionTypeReference,
         allowSerializableInterfaceTypes: Boolean,
     ): AppFunctionSerializableType {
-        val appFunctionSerializableClassDeclaration =
-            appFunctionTypeReference.selfOrItemTypeReference.resolve().declaration
-                as KSClassDeclaration
-        val isSerializableInterface =
-            appFunctionSerializableClassDeclaration.annotations.findAnnotation(
-                IntrospectionHelper.AppFunctionSerializableInterfaceAnnotation.CLASS_NAME
-            ) != null
-        return if (isSerializableInterface) {
-            AnnotatedAppFunctionSerializableInterface(appFunctionSerializableClassDeclaration)
-                .validate(allowSerializableInterfaceTypes)
-        } else {
-            AnnotatedAppFunctionSerializable(appFunctionSerializableClassDeclaration)
-                .parameterizedBy(
-                    appFunctionTypeReference.selfOrItemTypeReference.resolve().arguments
-                )
-                .validate(allowSerializableInterfaceTypes)
-        }
+        val appFunctionSerializableKSType =
+            appFunctionTypeReference.selfOrItemTypeReference.resolve()
+        return AppFunctionSerializableType.create(
+                classDeclaration = appFunctionSerializableKSType.declaration as KSClassDeclaration,
+                typeArguments = appFunctionSerializableKSType.arguments,
+            )
+            .validate(allowSerializableInterfaceTypes)
     }
 
     private fun createPrimitiveDataTypeMetadata(

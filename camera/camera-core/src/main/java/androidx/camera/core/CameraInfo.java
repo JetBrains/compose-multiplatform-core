@@ -635,7 +635,6 @@ public interface CameraInfo {
      * @return The {@link CameraIdentifier} for this camera, or {@code null} if one is not
      * available.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Nullable
     default CameraIdentifier getCameraIdentifier() {
         // For classes that implement CameraInfo but do not override this method,

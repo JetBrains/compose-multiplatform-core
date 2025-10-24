@@ -24,9 +24,12 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
@@ -34,17 +37,28 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.xr.compose.platform.LocalCoreEntity
+import androidx.xr.compose.platform.LocalCoreMainPanelEntity
 import androidx.xr.compose.platform.LocalDialogManager
+import androidx.xr.compose.platform.LocalOpaqueEntity
+import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.subspace.layout.CorePanelEntity
+import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
+import androidx.xr.compose.subspace.rememberComposeView
+import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter.Companion.meters
 import androidx.xr.compose.unit.toMeter
+import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.PanelEntity
 
 /**
  * Properties for configuring a [SpatialDialog].
@@ -159,6 +173,11 @@ private fun LayoutSpatialDialog(
     // Start elevation at Level0 to prevent effects where the dialog flashes behind its parent.
     var spatialElevationLevel by remember { mutableStateOf(SpatialElevationLevel.Level0) }
     val dialogManager = LocalDialogManager.current
+    val session = checkNotNull(LocalSession.current) { "session must be initialized" }
+    val parentEntity = LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current ?: return
+    val view = rememberComposeView()
+    val density = LocalDensity.current
+
     BackHandler {
         if (properties.dismissOnBackPress) {
             // TODO(b/401028662) Investigate if we need the animation inside of this scope.
@@ -187,7 +206,7 @@ private fun LayoutSpatialDialog(
         Spacer(Modifier.size(1.dp))
     }
 
-    var contentSize: IntSize? by remember { mutableStateOf(null) }
+    var contentSize: IntSize by remember { mutableStateOf(IntSize.Zero) }
 
     val zDepth by
         updateTransition(targetState = spatialElevationLevel, label = "restingLevelTransition")
@@ -198,12 +217,40 @@ private fun LayoutSpatialDialog(
                 state.toMeter().toM()
             }
 
-    ElevatedPanel(
-        contentSize = contentSize ?: IntSize.Zero,
-        pose = Pose(translation = MeterPosition(z = zDepth.meters).toVector3()),
-    ) {
-        Box(modifier = Modifier.constrainTo(Constraints()).onSizeChanged { contentSize = it }) {
-            content()
+    val panelEntity: CorePanelEntity = remember {
+        CorePanelEntity(
+                PanelEntity.create(
+                    session = session,
+                    view = view,
+                    pixelDimensions = contentSize.run { IntSize2d(width, height) },
+                    name = "ElevatedPanel:${view.id}",
+                )
+            )
+            .also { it.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density) }
+    }
+
+    LaunchedEffect(density) {
+        panelEntity.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density)
+    }
+
+    view.setContent {
+        CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) {
+            Box(modifier = Modifier.constrainTo(Constraints()).onSizeChanged { contentSize = it }) {
+                content()
+            }
         }
     }
+
+    DisposableEffect(panelEntity) { onDispose { panelEntity.dispose() } }
+
+    SideEffect {
+        panelEntity.poseInMeters = Pose(translation = MeterPosition(z = zDepth.meters).toVector3())
+    }
+
+    LaunchedEffect(contentSize) {
+        panelEntity.size =
+            IntVolumeSize(width = contentSize.width, height = contentSize.height, depth = 0)
+    }
+
+    LaunchedEffect(parentEntity) { panelEntity.parent = parentEntity }
 }
