@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// "Declaration annotated with '@OptionalExpectation' can only be used in common module sources."
+// because of IgnoreJsTarget. https://youtrack.jetbrains.com/issue/KTIJ-22326
+@file:Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
+
 package androidx.compose.ui.platform.a11y
 
 import androidx.compose.material.Button
