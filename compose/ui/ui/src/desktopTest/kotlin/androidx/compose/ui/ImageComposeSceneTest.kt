@@ -35,6 +35,7 @@ import androidx.compose.ui.test.junit4.DesktopScreenshotTestRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.runBlocking
@@ -94,13 +95,17 @@ class ImageComposeSceneTest {
 
     @Test
     fun `run dialog in center`() {
-        val image = renderComposeScene(
+        val image = ImageComposeScene(
             width = 80,
             height = 40,
         ) {
             Dialog(onDismissRequest = {}) {
                 Box(Modifier.size(20.dp).background(Color.Red))
             }
+        }.use {
+            it.render()
+            // Skip animation for the Dialog appearance
+            it.render(500.milliseconds)
         }
         screenshotRule.assertImageAgainstGolden(image)
     }
