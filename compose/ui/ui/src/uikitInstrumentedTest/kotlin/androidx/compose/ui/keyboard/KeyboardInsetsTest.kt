@@ -631,7 +631,7 @@ internal class KeyboardInsetsTest {
     }
 
     @Test
-    fun textInsetsInDialogWhenUseSoftwareKeyboardInsetEnabled() = runUIKitInstrumentedTest {
+    fun testInsetsInDialogWhenUseSoftwareKeyboardInsetEnabled() = runUIKitInstrumentedTest {
         var frame: DpRect? = null
         setContent {
             Dialog(
@@ -665,7 +665,7 @@ internal class KeyboardInsetsTest {
     }
 
     @Test
-    fun textInsetsInDialogWhenUseSoftwareKeyboardInsetDisabled() = runUIKitInstrumentedTest {
+    fun testInsetsInDialogWhenUseSoftwareKeyboardInsetDisabled() = runUIKitInstrumentedTest {
         var frame: DpRect? = null
         setContent {
             Dialog(
