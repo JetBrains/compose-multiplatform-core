@@ -34,7 +34,6 @@ import androidx.compose.ui.animation.easeOutTimingFunction
 import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -190,12 +189,12 @@ private fun DialogLayout(
     val compositionContext = rememberCompositionContext()
     val layer = rememberComposeSceneLayer(focusable = true)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
+
     val animator = remember {
-        DialogAnimator(
-            layer = layer,
-            coroutineContext = compositionContext.effectCoroutineContext,
-            scrimColor = properties.scrimColor
-        ).apply { setupAnimator() }
+        DialogAnimator(layer = layer, coroutineContext = compositionContext.effectCoroutineContext)
+    }
+    LaunchedEffect(properties.scrimColor) {
+        animator.scrimColor = properties.scrimColor
     }
 
     layer.Content {
@@ -234,20 +233,21 @@ private fun DialogLayout(
 private class DialogAnimator(
     private val layer: ComposeSceneLayer,
     private val coroutineContext: CoroutineContext,
-    private val scrimColor: Color,
 ) {
     private val appearanceProgress = mutableStateOf(0f)
     private var appearAnimationJob: Job? = null
     val modifier = mutableStateOf<Modifier>(Modifier)
+    var scrimColor: Color = Color.Transparent
+        set(value) {
+            field = value
+            updateScrimLayerColor()
+        }
 
-    fun setupAnimator() {
+    init {
         if (ComposeUiFlags.isDialogAnimationEnabled) {
-            appearanceProgress.value = 0f
-            layer.scrimColor = Color.Transparent
             modifier.value = Modifier.animationLayerTransform(appearanceProgress)
         } else {
             appearanceProgress.value = 1f
-            layer.scrimColor = scrimColor
         }
     }
 
@@ -260,7 +260,7 @@ private class DialogAnimator(
                         timingFunction = ::easeOutTimingFunction
                     ) { progress ->
                         appearanceProgress.value = progress
-                        updateScrimAlpha()
+                        updateScrimLayerColor()
                     }
 
                     modifier.value = Modifier
@@ -283,7 +283,7 @@ private class DialogAnimator(
                     timingFunction = ::easeOutTimingFunction
                 ) { progress ->
                     appearanceProgress.value = (1f - progress) * initialProgress
-                    updateScrimAlpha()
+                    updateScrimLayerColor()
                 }
 
                 layer.close()
@@ -293,7 +293,7 @@ private class DialogAnimator(
         }
     }
 
-    private fun updateScrimAlpha() {
+    fun updateScrimLayerColor() {
         val scrimAlpha =
             AnimatedLayerInitialAlpha + appearanceProgress.value * (1f - AnimatedLayerInitialAlpha)
         layer.scrimColor = scrimColor.copy(scrimColor.alpha * scrimAlpha)
