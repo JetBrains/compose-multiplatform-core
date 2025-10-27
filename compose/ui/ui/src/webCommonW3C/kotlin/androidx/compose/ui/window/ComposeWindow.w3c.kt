@@ -753,7 +753,7 @@ fun ComposeViewport(
         }
     """.trimIndent()
 
-    shadowRoot.prepend(shadowRootStyle, layerRoot)
+    shadowRoot.append(shadowRootStyle, layerRoot)
     layerRoot.appendChild(canvas)
 
     val interopContainerElement = document.createElement("div") as HTMLDivElement
