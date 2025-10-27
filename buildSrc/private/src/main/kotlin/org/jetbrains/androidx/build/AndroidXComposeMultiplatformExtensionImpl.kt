@@ -328,9 +328,10 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
                 //
                 // Fixes problem when instrumented tests compilation is not properly applied to
                 // the framework configuration.
-                it.linkTaskProvider.configure {
-                    @Suppress("DEPRECATION")
-                    it.kotlinOptions.freeCompilerArgs += flags
+                it.compilation.compileTaskProvider.configure {
+                    it.compilerOptions {
+                        freeCompilerArgs.addAll(flags)
+                    }
                 }
             }
         }

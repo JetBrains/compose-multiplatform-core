@@ -845,9 +845,8 @@ class AndroidXImplPlugin @Inject constructor(val componentFactory: SoftwareCompo
                     //
                     // Fixes problem when instrumented tests compilation is not properly applied to
                     // the framework configuration.
-                    it.linkTaskProvider.configure {
-                        @Suppress("DEPRECATION")
-                        it.kotlinOptions.freeCompilerArgs += "-Xallocator=std"
+                    it.compilation.compileTaskProvider.configure {
+                        it.compilerOptions.freeCompilerArgs.add("-Xallocator=std")
                     }
                 }
             }
