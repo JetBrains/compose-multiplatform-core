@@ -244,7 +244,7 @@ private class DialogAnimator(
         if (ComposeUiFlags.isDialogAnimationEnabled) {
             appearanceProgress.value = 0f
             layer.scrimColor = Color.Transparent
-            modifier.value = Modifier.graphicsLayer(animationLayerTransform(appearanceProgress))
+            modifier.value = Modifier.animationLayerTransform(appearanceProgress)
         } else {
             appearanceProgress.value = 1f
             layer.scrimColor = scrimColor
@@ -276,7 +276,7 @@ private class DialogAnimator(
                 val initialProgress = appearanceProgress.value
                 val duration =
                     durationScale() * initialProgress * AnimatedLayerDisappearanceDuration
-                modifier.value = Modifier.graphicsLayer(animationLayerTransform(appearanceProgress))
+                modifier.value = Modifier.animationLayerTransform(appearanceProgress)
 
                 withAnimationProgress(
                     duration = duration.seconds,
@@ -301,17 +301,15 @@ private class DialogAnimator(
 
     private fun durationScale(): Float = coroutineContext[MotionDurationScale]?.scaleFactor ?: 1f
 
-    private fun animationLayerTransform(progress: State<Float>): GraphicsLayerScope.() -> Unit {
-        return {
-            this.alpha =
-                AnimatedLayerInitialAlpha + (1f - AnimatedLayerInitialAlpha) * progress.value
+    private fun Modifier.animationLayerTransform(progress: State<Float>): Modifier = graphicsLayer {
+        this.alpha =
+            AnimatedLayerInitialAlpha + (1f - AnimatedLayerInitialAlpha) * progress.value
 
-            val reversedProgress = 1f - progress.value
-            val scale = 1f - reversedProgress * AnimatedLayerScale
-            this.scaleX = scale
-            this.scaleY = scale
-            this.translationY = AnimatedLayerOffsetDp * reversedProgress * density
-        }
+        val reversedProgress = 1f - progress.value
+        val scale = 1f - reversedProgress * AnimatedLayerScale
+        this.scaleX = scale
+        this.scaleY = scale
+        this.translationY = AnimatedLayerOffsetDp * reversedProgress * density
     }
 }
 
