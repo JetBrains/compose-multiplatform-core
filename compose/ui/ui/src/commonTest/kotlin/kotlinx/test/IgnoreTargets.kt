@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package androidx.compose.mpp.demo.bugs
+@file:OptIn(ExperimentalMultiplatform::class)
 
-import androidx.compose.mpp.demo.Screen
+package kotlinx.test
 
-val BugsScreen = Screen.Selection("Web Bug Reproducers", screens = listOf(
-    Screen.Example("Text Fields in Scrollable") {
-        TextFieldsInTallScrollableContainer()
-    },
-    Screen.Example("Touch events") {
-        // https://youtrack.jetbrains.com/issue/CMP-9030/wasm-canvas-incorrect-handling-of-multi-touch-input
-        PointerInputDebugOverlay()
-    }
-))
+@OptionalExpectation
+expect annotation class IgnoreWasmTarget()
 
+@OptionalExpectation
+expect annotation class IgnoreJsTarget()

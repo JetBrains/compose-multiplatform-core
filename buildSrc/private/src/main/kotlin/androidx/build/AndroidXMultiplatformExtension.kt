@@ -858,7 +858,7 @@ private fun Project.configureBinaryen() {
     }
 }
 
-private fun Project.configurePinnedKotlinLibraries(platform: PlatformIdentifier) {
+internal fun Project.configurePinnedKotlinLibraries(platform: PlatformIdentifier) {
     multiplatformExtension?.let {
         val kotlinLibSuffix =
             when (platform) {
