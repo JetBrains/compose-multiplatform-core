@@ -146,12 +146,4 @@ private fun renderComposeSceneOnIdle(
     height = height,
     density = density,
     content = content
-).use {
-    var timeMs = 0
-    var frame = it.render()
-    while (it.hasInvalidations()) {
-        timeMs += 10
-        frame = it.render(timeMs.milliseconds)
-    }
-    frame
-}
+).renderOnIdle()

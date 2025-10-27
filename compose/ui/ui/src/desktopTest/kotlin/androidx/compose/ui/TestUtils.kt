@@ -41,6 +41,9 @@ import java.awt.image.MultiResolutionImage
 import java.text.AttributedString
 import javax.swing.Icon
 import javax.swing.ImageIcon
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.jetbrains.skiko.MainUIDispatcher
@@ -272,4 +275,18 @@ internal inline fun <R> ImageComposeScene.useInUiThread(
     crossinline block: (ImageComposeScene) -> R
 ): R = runBlocking(MainUIDispatcher) {
     use(block)
+}
+
+@OptIn(ExperimentalTime::class)
+internal fun ImageComposeScene.renderOnIdle(
+    initialTime: Duration = Duration.ZERO,
+    frameDuration: Duration = 16.milliseconds
+): org.jetbrains.skia.Image {
+    var time = initialTime
+    var frame = render(time)
+    while (hasInvalidations()) {
+        time += frameDuration
+        frame = render(time)
+    }
+    return frame
 }
