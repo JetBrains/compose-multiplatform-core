@@ -89,7 +89,7 @@ private const val AnimatedLayerScale = 0.05f
  * @property scrimColor Color of background fill.
  */
 @Immutable
-actual class DialogProperties constructor(
+actual class DialogProperties(
     actual val dismissOnBackPress: Boolean = true,
     actual val dismissOnClickOutside: Boolean = true,
     actual val usePlatformDefaultWidth: Boolean = true,
@@ -189,9 +189,6 @@ private fun DialogLayout(
     val currentContent by rememberUpdatedState(content)
     val compositionContext = rememberCompositionContext()
     val appearanceProgress = remember { mutableStateOf(0f) }
-    var graphicsLayerScopeUpdate by remember {
-        mutableStateOf(animationLayerTransform(appearanceProgress))
-    }
     val layer = rememberComposeSceneLayer(focusable = true)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
 
@@ -201,11 +198,21 @@ private fun DialogLayout(
         layer.scrimColor = properties.scrimColor.copy(properties.scrimColor.alpha * scrimAlpha)
     }
 
+    var graphicsLayerScopeUpdate: (GraphicsLayerScope.() -> Unit)? by remember {
+        mutableStateOf(null)
+    }
+    if (ComposeUiFlags.isDialogAnimationEnabled) {
+        graphicsLayerScopeUpdate = animationLayerTransform(appearanceProgress)
+    } else {
+        appearanceProgress.value = 1f
+        layer.scrimColor = properties.scrimColor
+    }
+
     val appearanceScope = CoroutineScope(rememberCoroutineScope().coroutineContext)
     layer.Content {
-        LaunchedEffect(Unit) {
-            appearanceScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                if (ComposeUiFlags.isDialogAnimationEnabled) {
+        if (ComposeUiFlags.isDialogAnimationEnabled) {
+            LaunchedEffect(Unit) {
+                appearanceScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     withAnimationProgress(
                         duration = (durationScale() * 0.2).seconds,
                         timingFunction = ::easeOutTimingFunction
@@ -215,7 +222,7 @@ private fun DialogLayout(
                     }
                 }
 
-                graphicsLayerScopeUpdate = { alpha = 1f }
+                graphicsLayerScopeUpdate = null
                 layer.scrimColor = properties.scrimColor
             }
         }
@@ -229,13 +236,17 @@ private fun DialogLayout(
             platformInsets = platformInsets
         )
 
+        val contentModifier = (graphicsLayerScopeUpdate?.let {
+            Modifier.graphicsLayer(it)
+        } ?: Modifier).then(modifier)
+
         LocalPlatformWindowInsets.current.exclude(
             safeInsets = properties.usePlatformInsets,
             ime = properties.useSoftwareKeyboardInset
         ) {
             Layout(
                 content = currentContent,
-                modifier = Modifier.graphicsLayer(graphicsLayerScopeUpdate).then(modifier),
+                modifier = contentModifier,
                 measurePolicy = measurePolicy
             )
         }
