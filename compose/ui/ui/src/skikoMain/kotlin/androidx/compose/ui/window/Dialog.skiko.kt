@@ -193,9 +193,7 @@ private fun DialogLayout(
     val animator = remember {
         DialogAnimator(layer = layer, coroutineContext = compositionContext.effectCoroutineContext)
     }
-    LaunchedEffect(properties.scrimColor) {
-        animator.scrimColor = properties.scrimColor
-    }
+    animator.scrimColor = properties.scrimColor
 
     layer.Content {
         LaunchedEffect(Unit) {
