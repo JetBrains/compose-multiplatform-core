@@ -17,12 +17,15 @@
 package androidx.compose.ui
 
 import kotlin.jvm.JvmField
-import kotlin.jvm.JvmName
 
 internal object SkikoComposeUiFlags {
     @Suppress("MutableBareField")
     @JvmField
     var useLegacyRenderNodeLayers: Boolean = false
+
+    @Suppress("MutableBareField")
+    @JvmField
+    var isClearFocusOnPointerDownEnabled: Boolean = false
 }
 
 /**
@@ -33,3 +36,7 @@ internal object SkikoComposeUiFlags {
  */
 @ExperimentalComposeUiApi
 var ComposeUiFlags.useLegacyRenderNodeLayers by SkikoComposeUiFlags::useLegacyRenderNodeLayers
+
+/** This flag enables clearing focus on pointer down by default. */
+@ExperimentalComposeUiApi
+var ComposeUiFlags.isClearFocusOnPointerDownEnabled by SkikoComposeUiFlags::isClearFocusOnPointerDownEnabled
