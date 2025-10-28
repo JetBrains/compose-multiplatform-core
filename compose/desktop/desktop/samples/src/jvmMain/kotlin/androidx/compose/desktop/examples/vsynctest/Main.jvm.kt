@@ -26,7 +26,7 @@ import androidx.compose.ui.window.application
 
 fun main() = application {
     AppWindow()
-//    AppWindow()
+    AppWindow()
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

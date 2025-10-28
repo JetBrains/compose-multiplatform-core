@@ -67,7 +67,7 @@ data class MetalViewContext(
         break
       }
       catch (e: Throwable) {
-          println("Error during rendering")
+          println("Error during rendering: $e")
       } finally {
         renderTaskLock.withLock {
           pendingTask?.onComplete?.invoke()

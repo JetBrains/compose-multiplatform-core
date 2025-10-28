@@ -169,7 +169,7 @@ tasks.register('runVsync', JavaExec) {
     dependsOn(":compose:desktop:desktop:jar")
     mainClass = "androidx.compose.desktop.examples.vsynctest.Main_jvmKt"
     environment("MTL_HUD_ENABLED", "1")
-    jvmArgs("-verbose:gc")
+    jvmArgs("-ea", "-verbose:gc")
     def compilation = kotlin.jvm().compilations["main"]
     classpath =
             compilation.output.allOutputs +
@@ -182,7 +182,8 @@ tasks.register('runVsyncKdt', JavaExec) {
     def logFile = layout.buildDirectory.file("test-logs/desktop_native.log")
     def kdtExtractedDir = layout.buildDirectory.dir("kdt-extracted")
     environment("MTL_HUD_ENABLED", "1")
-    jvmArgs("--add-opens",
+    jvmArgs("-ea",
+            "--add-opens",
             "java.desktop/sun.font=ALL-UNNAMED",
             "--enable-preview",
             "--enable-native-access=ALL-UNNAMED",
