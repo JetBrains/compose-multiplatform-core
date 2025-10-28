@@ -487,7 +487,7 @@ internal class ComposeHostingViewController(
         platformContext: PlatformContext,
         layersHolder: ComposeLayersHolder
     ): ComposeScene = PlatformLayersComposeScene(
-        density = mediator?.screenDensity ?: view.density,
+        density = view.density,
         layoutDirection = layoutDirection,
         coroutineContext = composeCoroutineContext,
         composeSceneContext = createComposeSceneContext(
