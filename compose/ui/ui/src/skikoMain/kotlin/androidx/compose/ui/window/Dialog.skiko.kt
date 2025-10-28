@@ -292,17 +292,17 @@ private class DialogAnimator(
     }
 
     fun updateScrimLayerColor() {
-        val scrimAlpha =
-            AnimatedLayerInitialAlpha + appearanceProgress.value * (1f - AnimatedLayerInitialAlpha)
+        val scrimAlpha = contentAlpha(appearanceProgress.value)
         layer.scrimColor = scrimColor.copy(scrimColor.alpha * scrimAlpha)
     }
+
+    private fun contentAlpha(progress: Float): Float =
+        AnimatedLayerInitialAlpha + (1f - AnimatedLayerInitialAlpha) * progress
 
     private fun durationScale(): Float = coroutineContext[MotionDurationScale]?.scaleFactor ?: 1f
 
     private fun Modifier.animationLayerTransform(progress: State<Float>): Modifier = graphicsLayer {
-        this.alpha =
-            AnimatedLayerInitialAlpha + (1f - AnimatedLayerInitialAlpha) * progress.value
-
+        this.alpha = contentAlpha(progress.value)
         val reversedProgress = 1f - progress.value
         val scale = 1f - reversedProgress * AnimatedLayerScale
         this.scaleX = scale
