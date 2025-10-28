@@ -462,7 +462,7 @@ internal class ComposeHostingViewController(
                     createComposeSceneContext = { createComposeSceneContext(it, layersHolder) },
                     hostCompositionLocals = { ProvideContainerCompositionLocals(it) },
                     layersViewController = layersHolder.getLayersViewController(),
-                    initLayoutDirection = layoutDirection,
+                    initialLayoutDirection = layoutDirection,
                     onFocusBehavior = configuration.onFocusBehavior,
                     endEdgeGestureBehavior = configuration.endEdgePanGestureBehavior,
                     onAccessibilityChanged = ::onAccessibilityChanged,
