@@ -49,7 +49,6 @@ import org.w3c.dom.get
 
 // It's flaky on Firefox JS. After ignoring one test it fails on another.
 // FIXME: https://youtrack.jetbrains.com/issue/CMP-9069
-@IgnoreJsTarget
 class CfWA11YTest : OnCanvasTests {
 
     @Test
