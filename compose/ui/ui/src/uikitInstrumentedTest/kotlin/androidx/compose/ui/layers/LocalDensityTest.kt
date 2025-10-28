@@ -46,7 +46,7 @@ import kotlin.test.assertNotEquals
 
 class LocalDensityTest {
     @Test
-    fun testCustomDensityPropagatedToDialog() = runUIKitInstrumentedTest {
+    fun testCustomDensityNotPropagatedToDialog() = runUIKitInstrumentedTest {
         val customDensity = Density(density = 5f)
         var density = -1f
 
@@ -58,8 +58,8 @@ class LocalDensityTest {
             }
         }
 
-        assertEquals(customDensity.density, density)
-        assertNotEquals(hostingViewController.view.density.density, density)
+        assertNotEquals(customDensity.density, density)
+        assertEquals(hostingViewController.view.density.density, density)
     }
 
     @Test
@@ -75,8 +75,8 @@ class LocalDensityTest {
             }
         }
 
-        assertEquals(customDensity.density, density)
-        assertNotEquals(hostingViewController.view.density.density, density)
+        assertNotEquals(customDensity.density, density)
+        assertEquals(hostingViewController.view.density.density, density)
     }
 
     @Test
@@ -99,8 +99,8 @@ class LocalDensityTest {
             }
         }
 
-        assertEquals(outerDensity.density, actualOuterDensity)
-        assertNotEquals(hostingViewController.view.density.density, actualOuterDensity)
+        assertNotEquals(outerDensity.density, actualOuterDensity)
+        assertEquals(hostingViewController.view.density.density, actualOuterDensity)
         assertEquals(innerDensity.density, actualInnerDensity)
     }
 
@@ -124,8 +124,8 @@ class LocalDensityTest {
             }
         }
 
-        assertEquals(outerDensity.density, actualOuterDensity)
-        assertNotEquals(hostingViewController.view.density.density, actualOuterDensity)
+        assertNotEquals(outerDensity.density, actualOuterDensity)
+        assertEquals(hostingViewController.view.density.density, actualOuterDensity)
         assertEquals(innerDensity.density, actualInnerDensity)
     }
 
