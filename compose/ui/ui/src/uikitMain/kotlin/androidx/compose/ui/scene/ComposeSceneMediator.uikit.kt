@@ -234,6 +234,13 @@ internal class ComposeSceneMediator(
             }
         }
 
+    /**
+     * Density used by the Compose scene for dp/px conversions within Compose.
+     *
+     * This value is intentionally separate from [screenDensity] so we can support setting custom
+     * composeSceneDensity without regressions (merging [screenDensity] and [composeSceneDensity]
+     * into one causes rendering and interaction issues because they are semantically different).
+     */
     var composeSceneDensity: Density
         get() = scene.density
         set(value) {
@@ -242,6 +249,12 @@ internal class ComposeSceneMediator(
             }
         }
 
+    /**
+     * Density of the hosting UIKit screen.
+     *
+     * This value is intentionally separate from [composeSceneDensity] so we can support setting
+     * composeSceneDensity without regressions.
+     */
     val screenDensity: Density get() = _overlayView.density
 
     var layoutDirection: LayoutDirection
