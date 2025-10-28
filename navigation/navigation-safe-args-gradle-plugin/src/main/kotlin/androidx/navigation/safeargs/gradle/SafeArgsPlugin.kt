@@ -30,8 +30,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 
-private const val PLUGIN_DIRNAME = "navigation-args"
-internal const val GENERATED_PATH = "generated/source/$PLUGIN_DIRNAME"
+internal const val TASK_NAME_PREFIX = "generateSafeArgs"
 internal const val INCREMENTAL_PATH = "intermediates/incremental"
 
 abstract class SafeArgsPlugin protected constructor() : Plugin<Project> {
@@ -84,7 +83,7 @@ abstract class SafeArgsPlugin protected constructor() : Plugin<Project> {
 
             val task =
                 project.tasks.register(
-                    "generateSafeArgs${variant.name.replaceFirstChar {
+                    "$TASK_NAME_PREFIX${variant.name.replaceFirstChar {
                         if (it.isLowerCase()) it.titlecase(Locale.US) else it.toString()
                     }}",
                     ArgumentsGenerationTask::class.java,
@@ -128,7 +127,25 @@ abstract class SafeArgsPlugin protected constructor() : Plugin<Project> {
                 .flatMap { navFolder -> navFolder.listFiles()?.asIterable() ?: emptyList() }
                 .filter { file -> file.isFile }
                 .groupBy { file -> file.name }
-                .map { entry -> entry.value.last() }
+                .map { entry ->
+                    entry.value.singleOrNull()
+                        ?: entry.value.minBy { file ->
+                            when {
+                                // matches variant name exactly
+                                file.path.substringBefore("/res/").endsWith(variant.name) -> 0
+                                // matches variant flavor
+                                variant.flavorName?.let {
+                                    file.path.substringBefore("/res/").endsWith(it)
+                                } == true -> 1
+                                // matches variant buildType
+                                variant.buildType?.let {
+                                    file.path.substringBefore("/res/").endsWith(it)
+                                } == true -> 2
+                                // fall back to main
+                                else -> 3
+                            }
+                        }
+                }
         }
     }
 }
