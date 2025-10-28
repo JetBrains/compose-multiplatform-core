@@ -26,6 +26,7 @@ import androidx.compose.ui.kdt.toDpSize
 import androidx.compose.ui.kdt.toIntSize
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.InputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -33,6 +34,9 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.platform.PlatformContext
+import androidx.compose.ui.platform.PlatformScreenReader
+import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import kotlinx.atomicfu.atomic
@@ -62,7 +66,9 @@ class ComposeWindowMacOs(
 
     val scene = CanvasLayersComposeScene(
         density = Density(window.scaleFactor().toFloat()),
+        // layoutDirection = ,
         size = window.contentSize.toIntSize(),
+        platformContext = PlatformContext.Empty, // todo[ps]
         coroutineContext = ComposeUIDispatcher,
         invalidate = {
             isFrameScheduled.compareAndSet(expect = false, update = true)
@@ -150,7 +156,7 @@ class ComposeWindowMacOs(
                     eventType = PointerEventType.Press,
                     position = event.toOffset(window.scaleFactor()),
                     timeMillis = event.toTimeMillis(),
-                    buttons = getPointerButtons(),
+//                    buttons = getPointerButtons(),
                     keyboardModifiers = getKeyboardModifiers(),
                     nativeEvent = event,
                     button = event.button.toComposePointerButton()
@@ -162,7 +168,7 @@ class ComposeWindowMacOs(
                     eventType = PointerEventType.Release,
                     position = event.toOffset(window.scaleFactor()),
                     timeMillis = event.toTimeMillis(),
-                    buttons = getPointerButtons(),
+//                    buttons = getPointerButtons(),
                     keyboardModifiers = getKeyboardModifiers(),
                     nativeEvent = event,
                     button = event.button.toComposePointerButton()
@@ -174,7 +180,7 @@ class ComposeWindowMacOs(
                     eventType = PointerEventType.Move,
                     position = event.toOffset(window.scaleFactor()),
                     timeMillis = event.toTimeMillis(),
-                    buttons = getPointerButtons(),
+//                    buttons = getPointerButtons(),
                     keyboardModifiers = getKeyboardModifiers(),
                     nativeEvent = event
                 )
@@ -185,7 +191,7 @@ class ComposeWindowMacOs(
                     eventType = PointerEventType.Move,
                     position = event.toOffset(window.scaleFactor()),
                     timeMillis = event.toTimeMillis(),
-                    buttons = getPointerButtons(),
+//                    buttons = getPointerButtons(),
                     keyboardModifiers = getKeyboardModifiers(),
                     nativeEvent = event
                 )
@@ -196,7 +202,7 @@ class ComposeWindowMacOs(
                     eventType = PointerEventType.Enter,
                     position = event.toOffset(window.scaleFactor()),
                     timeMillis = event.toTimeMillis(),
-                    buttons = getPointerButtons(),
+//                    buttons = getPointerButtons(),
                     keyboardModifiers = getKeyboardModifiers(),
                     nativeEvent = event
                 )
@@ -207,7 +213,7 @@ class ComposeWindowMacOs(
                     eventType = PointerEventType.Exit,
                     position = event.toOffset(window.scaleFactor()),
                     timeMillis = event.toTimeMillis(),
-                    buttons = getPointerButtons(),
+//                    buttons = getPointerButtons(),
                     keyboardModifiers = getKeyboardModifiers(),
                     nativeEvent = event
                 )
@@ -219,7 +225,7 @@ class ComposeWindowMacOs(
                     position = event.toOffset(window.scaleFactor()),
                     scrollDelta = Offset(event.scrollingDeltaX.toFloat(), event.scrollingDeltaY.toFloat()),
                     timeMillis = event.toTimeMillis(),
-                    buttons = getPointerButtons(),
+//                    buttons = getPointerButtons(),
                     keyboardModifiers = getKeyboardModifiers(),
                     nativeEvent = event
                 )
