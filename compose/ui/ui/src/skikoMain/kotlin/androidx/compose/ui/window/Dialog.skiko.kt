@@ -200,7 +200,7 @@ private fun DialogLayout(
 
     layer.Content {
         LaunchedEffect(Unit) {
-            animator.showDialog()
+            animator.onDialogShown()
         }
 
         val platformInsets = properties.platformInsets
@@ -234,7 +234,7 @@ private fun DialogLayout(
 private interface DialogAppearanceController {
     var scrimColor: Color?
     val modifier: Modifier
-    fun showDialog()
+    fun onDialogShown()
     fun hideDialog()
 }
 
@@ -266,7 +266,7 @@ private class AnimatedDialogAppearanceController(
             updateScrimLayerColor()
         }
 
-    override fun showDialog() {
+    override fun onDialogShown() {
         appearAnimationJob =
             CoroutineScope(coroutineContext).launch(start = CoroutineStart.UNDISPATCHED) {
                 withAnimationProgress(
@@ -329,7 +329,7 @@ private class NonAnimatedDialogAppearanceController(
     private val layer: ComposeSceneLayer
 ) : DialogAppearanceController {
     override var scrimColor: Color? by layer::scrimColor
-    override fun showDialog() {}
+    override fun onDialogShown() {}
     override fun hideDialog() = layer.close()
     override val modifier = Modifier
 }
