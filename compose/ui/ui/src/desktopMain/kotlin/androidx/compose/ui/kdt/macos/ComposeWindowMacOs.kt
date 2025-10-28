@@ -18,31 +18,29 @@ package androidx.compose.ui.kdt.macos
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ComposeUIDispatcher
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.kdt.ComposeWindow
-import androidx.compose.ui.kdt.toDpSize
-import androidx.compose.ui.kdt.toIntSize
-import androidx.compose.ui.scene.CanvasLayersComposeScene
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.InputModeManager
-import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent as ComposeKeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
+import androidx.compose.ui.kdt.ComposeWindow
+import androidx.compose.ui.kdt.toDpSize
+import androidx.compose.ui.kdt.toIntSize
 import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformScreenReader
-import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
+import kotlinx.atomicfu.AtomicBoolean
 import kotlinx.atomicfu.atomic
 import org.jetbrains.desktop.macos.DisplayLink
 import org.jetbrains.desktop.macos.Event
 import org.jetbrains.desktop.macos.GrandCentralDispatch
+import org.jetbrains.desktop.macos.LogicalSize
 import org.jetbrains.desktop.macos.MouseButton
 import org.jetbrains.desktop.macos.Window
 import org.jetbrains.desktop.macos.WindowEvent
@@ -53,16 +51,18 @@ class ComposeWindowMacOs(
     val application: ComposeApplicationMacOs,
     val onCloseRequested: () -> Unit
 ) : ComposeWindow {
-    val window = Window.create()
+    val window = Window.create(size = LogicalSize(800.0, 800.0))
     val viewContext = application.gpuContext.createMetalViewContext()
 
     init {
+        window.minSize = LogicalSize(320.0, 240.0)
         window.attachView(viewContext.view)
     }
 
     val pictureRecorder = PictureRecorder()
 
-    internal val isFrameScheduled = atomic(false)
+    @Volatile
+    internal var isFrameScheduled = false
 
     val scene = CanvasLayersComposeScene(
         density = Density(window.scaleFactor().toFloat()),
@@ -71,7 +71,7 @@ class ComposeWindowMacOs(
         platformContext = PlatformContext.Empty, // todo[ps]
         coroutineContext = ComposeUIDispatcher,
         invalidate = {
-            isFrameScheduled.compareAndSet(expect = false, update = true)
+            isFrameScheduled = true
         }
     )
 
@@ -87,17 +87,21 @@ class ComposeWindowMacOs(
         return PresentablePicture(pictureRecorder.finishRecordingAsPicture(), size)
     }
 
+    private val isFrameInProgress: AtomicBoolean = atomic(false)
+
     fun setupDisplayLink() {
         displayLink?.close()
         displayLink = DisplayLink.create(window.screenId()) {
-            if (isFrameScheduled.compareAndSet(expect = true, update = false)) {
+            if (isFrameScheduled && isFrameInProgress.compareAndSet(false, update = true)) {
                 GrandCentralDispatch.dispatchOnMain(highPriority = true) {
+                    isFrameScheduled = false
                     val presentablePicture = preparePicture()
                     viewContext.presentAsync(
                         presentablePicture,
                         waitForCATransaction = false,
                         onComplete = {
                             presentablePicture.close()
+                            isFrameInProgress.value = false
                         })
                 }
             }
@@ -116,7 +120,7 @@ class ComposeWindowMacOs(
 
     fun repaintSynchronously() {
         displayLink?.setRunning(false)
-        isFrameScheduled.value = false
+        isFrameScheduled = false
         preparePicture().use { picture ->
             viewContext.presentSync(picture, waitForCATransaction = true)
         }
@@ -327,14 +331,6 @@ internal fun getKeyboardModifiers(): PointerKeyboardModifiers {
     return PointerKeyboardModifiers()
 }
 
-// Keyboard event conversion utilities
-internal fun org.jetbrains.desktop.macos.KeyCode.toComposeKey(): Key {
-    // Map macOS KeyCode to Compose Key
-    // KeyCode is a value class wrapping an Int representing the macOS key code
-    // We use hashCode() which returns the underlying Int value
-    return Key(this.hashCode().toLong())
-}
-
 internal fun org.jetbrains.desktop.macos.KeyModifiersSet.toPointerKeyboardModifiers(): PointerKeyboardModifiers {
     return PointerKeyboardModifiers(
         isCtrlPressed = control,
@@ -353,7 +349,7 @@ internal fun Event.toComposeKeyEvent(): ComposeKeyEvent? {
                 nativeKeyEvent = androidx.compose.ui.input.key.InternalKeyEvent(
                     key = keyCode.toComposeKey(),
                     type = KeyEventType.KeyDown,
-                    codePoint = typedCharacters.firstOrNull()?.code ?: 0,
+                    codePoint = keyWithModifiers.firstOrNull()?.code ?: 0,
                     modifiers = modifiers.toPointerKeyboardModifiers(),
                     nativeEvent = this
                 )
@@ -364,7 +360,7 @@ internal fun Event.toComposeKeyEvent(): ComposeKeyEvent? {
                 nativeKeyEvent = androidx.compose.ui.input.key.InternalKeyEvent(
                     key = keyCode.toComposeKey(),
                     type = KeyEventType.KeyUp,
-                    codePoint = typedCharacters.firstOrNull()?.code ?: 0,
+                    codePoint = keyWithModifiers.firstOrNull()?.code ?: 0,
                     modifiers = modifiers.toPointerKeyboardModifiers(),
                     nativeEvent = this
                 )

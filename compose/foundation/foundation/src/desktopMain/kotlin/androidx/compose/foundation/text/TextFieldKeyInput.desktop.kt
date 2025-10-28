@@ -18,7 +18,13 @@ package androidx.compose.foundation.text
 
 import androidx.compose.foundation.InternalFoundationApi
 import androidx.compose.ui.awt.awtEventOrNull
+import androidx.compose.ui.awt.kdeEventOrNull
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.utf16CodePoint
 
 private fun Char.isPrintable(): Boolean {
     val block = Character.UnicodeBlock.of(this)
@@ -33,5 +39,30 @@ private fun Char.isPrintable(): Boolean {
 // However, starting with 1.9 it's marked as NOT a public-stable API with compatibility guarantees.
 @InternalFoundationApi
 actual val KeyEvent.isTypedEvent: Boolean
-    get() = awtEventOrNull?.id == java.awt.event.KeyEvent.KEY_TYPED &&
-        awtEventOrNull?.keyChar?.let { it.isPrintable() || it.isWhitespace() } == true
+    get() {
+        return when {
+            awtEventOrNull != null -> {
+                awtEventOrNull?.id == java.awt.event.KeyEvent.KEY_TYPED &&
+                    awtEventOrNull?.keyChar?.let { it.isPrintable() || it.isWhitespace() } == true
+            }
+
+            this.kdeEventOrNull != null -> {
+                type == KeyEventType.KeyDown &&
+                    !isISOControl(utf16CodePoint) &&
+                    !isAppKitReserved(utf16CodePoint) &&
+                    !isMetaPressed &&
+                    !isCtrlPressed
+            }
+
+            else -> false
+        }
+    }
+
+
+private fun isISOControl(codePoint: Int): Boolean =
+    codePoint in 0x00..0x1F ||
+        codePoint in 0x7F..0x9F
+
+// https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/CORPCHAR.TXT
+private fun isAppKitReserved(codePoint: Int): Boolean =
+    codePoint in 0xF700..0xF8FF

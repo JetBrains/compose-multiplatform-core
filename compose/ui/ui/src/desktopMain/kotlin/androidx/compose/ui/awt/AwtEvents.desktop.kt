@@ -33,3 +33,7 @@ val PointerEvent.awtEventOrNull: java.awt.event.MouseEvent? get() {
 val KeyEvent.awtEventOrNull: java.awt.event.KeyEvent? get() {
     return internal.nativeEvent as? java.awt.event.KeyEvent?
 }
+
+val KeyEvent.kdeEventOrNull: Any? get() {
+    return internal.nativeEvent as? org.jetbrains.desktop.macos.Event?
+}
