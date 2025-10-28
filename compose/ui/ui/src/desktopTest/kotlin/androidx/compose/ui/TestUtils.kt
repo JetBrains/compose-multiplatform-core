@@ -278,15 +278,15 @@ internal inline fun <R> ImageComposeScene.useInUiThread(
 }
 
 @OptIn(ExperimentalTime::class)
-internal fun ImageComposeScene.renderOnIdle(
+internal fun ImageComposeScene.runUntilIdle(
     initialTime: Duration = Duration.ZERO,
     frameDuration: Duration = 16.milliseconds
-): org.jetbrains.skia.Image {
+): Duration {
     var time = initialTime
-    var frame = render(time)
+    render(time)
     while (hasInvalidations()) {
         time += frameDuration
-        frame = render(time)
+        render(time)
     }
-    return frame
+    return time
 }

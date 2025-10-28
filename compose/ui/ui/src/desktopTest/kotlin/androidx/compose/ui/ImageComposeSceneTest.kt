@@ -145,4 +145,7 @@ private fun renderComposeSceneOnIdle(
     height = height,
     density = density,
     content = content
-).renderOnIdle()
+).use {
+    val time = it.runUntilIdle()
+    it.render(time)
+}
