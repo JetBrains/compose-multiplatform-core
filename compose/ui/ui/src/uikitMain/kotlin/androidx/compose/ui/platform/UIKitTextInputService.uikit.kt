@@ -134,6 +134,10 @@ internal class UIKitTextInputService(
     private var _tempCursorPos: Int? = null
     private val mainScope = MainScope()
 
+    fun setUpdateTouchMode(updateTouchMode: ((Boolean) -> Unit)?) {
+        textUIView?.updateTouchMode = updateTouchMode
+    }
+
     override fun startInput(
         value: TextFieldValue,
         imeOptions: ImeOptions,

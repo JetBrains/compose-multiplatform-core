@@ -164,7 +164,10 @@ internal actual fun createLegacyPlatformTextInputServiceAdapter():
                 focusedRectInRoot = { focusedRectInRoot },
                 textFieldRectInRoot = { textFieldRectInRoot },
                 textClippingRectInRoot = { textClippingRectInRoot },
-                editText = editBlock
+                editText = editBlock,
+                updateTouchMode = {
+                    textInputModifierNode?.legacyTextFieldState?.isInTouchMode = it
+                }
             )
         }
     }

@@ -111,7 +111,8 @@ internal actual suspend fun PlatformTextInputSession.platformSpecificTextInputSe
                 focusedRectInRoot = ::focusedRectInRoot,
                 textFieldRectInRoot = ::textFieldRectInRoot,
                 textClippingRectInRoot = ::textClippingRectInRoot,
-                editText = ::editText
+                editText = ::editText,
+                updateTouchMode = { updateTouchMode(it) }
             )
         )
     }
@@ -235,5 +236,6 @@ internal data class SkikoPlatformTextInputMethodRequest(
     override val focusedRectInRoot: () -> Rect?,
     override val textFieldRectInRoot: () -> Rect?,
     override val textClippingRectInRoot: () -> Rect?,
-    override val editText: (block: TextEditingScope.() -> Unit) -> Unit
+    override val editText: (block: TextEditingScope.() -> Unit) -> Unit,
+    override val updateTouchMode: (Boolean) -> Unit,
 ): PlatformTextInputMethodRequest

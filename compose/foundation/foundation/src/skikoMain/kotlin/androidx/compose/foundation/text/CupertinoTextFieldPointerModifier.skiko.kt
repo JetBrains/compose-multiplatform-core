@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.getTextFieldSelectionLayout
 import androidx.compose.foundation.text.selection.isSelectionHandleInVisibleBound
+import androidx.compose.foundation.text.selection.updateSelectionTouchMode
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -50,31 +51,28 @@ internal fun Modifier.cupertinoTextFieldPointer(
     readOnly: Boolean,
     offsetMapping: OffsetMapping
 ): Modifier = if (enabled) {
-    // TODO switch to ".updateSelectionTouchMode { state.isInTouchMode = it }" as in defaultTextFieldPointer
-    if (isInTouchMode) {
-        val longPressHandlerModifier = getLongPressHandlerModifier(state, offsetMapping, manager)
-        val tapHandlerModifier = getTapHandlerModifier(
-            interactionSource,
-            state,
-            focusRequester,
-            readOnly,
-            offsetMapping,
-            manager
+    this
+        .updateSelectionTouchMode {
+            state.isInTouchMode = it
+        }
+        .then(
+            getTapHandlerModifier(
+                interactionSource,
+                state,
+                focusRequester,
+                readOnly,
+                offsetMapping,
+                manager
+            )
         )
-        this
-            .then(tapHandlerModifier)
-            .then(longPressHandlerModifier)
-            .pointerHoverIcon(PointerIcon.Text)
-    } else {
-        this
-            .pointerInput(manager.mouseSelectionObserver, manager.touchSelectionObserver) {
-                awaitSelectionGestures(
-                    manager.mouseSelectionObserver,
-                    manager.touchSelectionObserver,
-                )
-            }
-            .pointerHoverIcon(PointerIcon.Text)
-    }
+        .then(getLongPressHandlerModifier(state, offsetMapping, manager))
+        .pointerInput(manager.mouseSelectionObserver, manager.touchSelectionObserver) {
+            awaitSelectionGestures(
+                manager.mouseSelectionObserver,
+                manager.touchSelectionObserver,
+            )
+        }
+        .pointerHoverIcon(PointerIcon.Text)
 } else {
     this
 }

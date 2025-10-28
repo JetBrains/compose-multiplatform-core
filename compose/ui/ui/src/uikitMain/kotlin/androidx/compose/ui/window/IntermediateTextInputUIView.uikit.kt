@@ -49,6 +49,14 @@ import platform.UIKit.NSWritingDirectionNatural
 import platform.UIKit.UIEvent
 import platform.UIKit.UIKeyInputProtocol
 import platform.UIKit.UIKeyboardAppearance
+import platform.UIKit.UIKeyboardHIDUsageKeyboardLeftAlt
+import platform.UIKit.UIKeyboardHIDUsageKeyboardLeftControl
+import platform.UIKit.UIKeyboardHIDUsageKeyboardLeftGUI
+import platform.UIKit.UIKeyboardHIDUsageKeyboardLeftShift
+import platform.UIKit.UIKeyboardHIDUsageKeyboardRightAlt
+import platform.UIKit.UIKeyboardHIDUsageKeyboardRightControl
+import platform.UIKit.UIKeyboardHIDUsageKeyboardRightGUI
+import platform.UIKit.UIKeyboardHIDUsageKeyboardRightShift
 import platform.UIKit.UIKeyboardType
 import platform.UIKit.UIPress
 import platform.UIKit.UIPressesEvent
@@ -95,10 +103,12 @@ internal class IntermediateTextInputUIView(
     private val mainScope = MainScope()
 
     /**
-     * Callback to handle keyboard presses. The parameter is a [Set] of [UIPress] objects.
+     * Callback to handle physical keyboard presses. The parameter is a [Set] of [UIPress] objects.
      * Erasure happens due to K/N not supporting Obj-C lightweight generics.
      */
     var onKeyboardPresses: (Set<*>) -> Unit = NoOpOnKeyboardPresses
+
+    var updateTouchMode: ((Boolean) -> Unit)? = null
 
     var inputTraits: SkikoUITextInputTraits = EmptyInputTraits
 
@@ -126,14 +136,23 @@ internal class IntermediateTextInputUIView(
     }
 
     override fun pressesBegan(presses: Set<*>, withEvent: UIPressesEvent?) {
-        onKeyboardPresses(presses)
+        @Suppress("UNCHECKED_CAST")
+        if (!onlyModifiersPressed(presses as Set<UIPress>)) {
+            // Touch mode update, this shouldn't be triggered if only modifiers keys are pressed
+            updateTouchMode?.invoke(false)
+        }
 
+        onKeyboardPresses(presses)
         super.pressesBegan(presses, withEvent)
     }
 
     override fun pressesEnded(presses: Set<*>, withEvent: UIPressesEvent?) {
         onKeyboardPresses(presses)
         super.pressesEnded(presses, withEvent)
+    }
+
+    private fun onlyModifiersPressed(presses: Set<UIPress>): Boolean {
+        return presses.all { it.key?.keyCode in modifierKeys }
     }
 
     override fun hitTest(point: CValue<CGPoint>, withEvent: UIEvent?): UIView? {
@@ -580,3 +599,17 @@ private fun UITextRange.toTextRange(): TextRange {
 
 private fun TextRange.toUITextRange(): UITextRange =
     IntermediateTextRange(start = start, end = end)
+
+/**
+ * A set of keyboard modifier keys used for handling input events.
+ */
+private val modifierKeys = setOf(
+    UIKeyboardHIDUsageKeyboardLeftShift,
+    UIKeyboardHIDUsageKeyboardRightShift,
+    UIKeyboardHIDUsageKeyboardLeftControl,
+    UIKeyboardHIDUsageKeyboardRightControl,
+    UIKeyboardHIDUsageKeyboardLeftAlt,
+    UIKeyboardHIDUsageKeyboardRightAlt,
+    UIKeyboardHIDUsageKeyboardLeftGUI,   // Left Command / Super / Win
+    UIKeyboardHIDUsageKeyboardRightGUI,  // Right Command / Super / Win
+)

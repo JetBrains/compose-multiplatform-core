@@ -744,6 +744,8 @@ internal class ComposeSceneMediator(
                         onImeActionPerformed = request.onImeAction ?: {}
                     )
 
+                    textInputService.setUpdateTouchMode(request.updateTouchMode)
+
                     continuation.invokeOnCancellation {
                         textInputService.stopInput()
                     }

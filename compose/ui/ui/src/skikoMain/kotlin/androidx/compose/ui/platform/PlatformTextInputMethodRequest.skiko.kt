@@ -87,4 +87,7 @@ actual interface PlatformTextInputMethodRequest {
      */
     @ExperimentalComposeUiApi
     val editText: (block: TextEditingScope.() -> Unit) -> Unit
+
+    @ExperimentalComposeUiApi
+    val updateTouchMode: (Boolean) -> Unit
 }
