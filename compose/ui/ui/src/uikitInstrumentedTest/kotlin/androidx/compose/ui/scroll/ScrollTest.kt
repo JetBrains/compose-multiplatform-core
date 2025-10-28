@@ -122,7 +122,7 @@ internal class ScrollTest {
         var boxRect = DpRectZero()
 
         setContent {
-            CompositionLocalProvider(LocalDensity provides Density(5f)) {
+            CompositionLocalProvider(LocalDensity provides Density(0.5f)) {
                 Dialog(
                     onDismissRequest = { },
                     properties = DialogProperties(
@@ -206,7 +206,7 @@ internal class ScrollTest {
         var boxRect = DpRectZero()
 
         setContent {
-            CompositionLocalProvider(LocalDensity provides Density(5f)) {
+            CompositionLocalProvider(LocalDensity provides Density(0.5f)) {
                 Dialog(
                     onDismissRequest = { },
                     properties = DialogProperties(
