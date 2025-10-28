@@ -236,13 +236,13 @@ internal class ComposeSceneMediator(
 
     var composeSceneDensity: Density
         get() = scene.density
-        set(value) {
+        set(_) {
             if (!disposed) {
-                scene.density = value
+                // compose scene density of the root cannot be customized
             }
         }
 
-    private val screenDensity: Density get() = _overlayView.density
+    val screenDensity: Density get() = _overlayView.density
 
     var layoutDirection: LayoutDirection
         get() = scene.layoutDirection

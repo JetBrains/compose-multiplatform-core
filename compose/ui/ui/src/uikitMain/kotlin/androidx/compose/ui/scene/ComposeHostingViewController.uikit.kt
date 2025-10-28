@@ -462,7 +462,6 @@ internal class ComposeHostingViewController(
                     createComposeSceneContext = { createComposeSceneContext(it, layersHolder) },
                     hostCompositionLocals = { ProvideContainerCompositionLocals(it) },
                     layersViewController = layersHolder.getLayersViewController(),
-                    initComposeSceneDensity = density,
                     initLayoutDirection = layoutDirection,
                     onFocusBehavior = configuration.onFocusBehavior,
                     endEdgeGestureBehavior = configuration.endEdgePanGestureBehavior,
@@ -488,7 +487,7 @@ internal class ComposeHostingViewController(
         platformContext: PlatformContext,
         layersHolder: ComposeLayersHolder
     ): ComposeScene = PlatformLayersComposeScene(
-        density = view.density,
+        density = mediator?.screenDensity ?: view.density,
         layoutDirection = layoutDirection,
         coroutineContext = composeCoroutineContext,
         composeSceneContext = createComposeSceneContext(

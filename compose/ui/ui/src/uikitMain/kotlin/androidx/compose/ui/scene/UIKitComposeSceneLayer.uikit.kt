@@ -60,7 +60,6 @@ internal class UIKitComposeSceneLayer(
     private val hostCompositionLocals: @Composable (@Composable () -> Unit) -> Unit,
 
     private val layersViewController: ComposeLayersViewController,
-    private val initComposeSceneDensity: Density,
     private val initLayoutDirection: LayoutDirection,
     private val onAccessibilityChanged: () -> Unit,
     onFocusBehavior: OnFocusBehavior,
@@ -117,7 +116,7 @@ internal class UIKitComposeSceneLayer(
         platformContext: PlatformContext
     ): ComposeScene =
         PlatformLayersComposeScene(
-            density = initComposeSceneDensity,
+            density = mediator.screenDensity,
             layoutDirection = initLayoutDirection,
             coroutineContext = coroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
