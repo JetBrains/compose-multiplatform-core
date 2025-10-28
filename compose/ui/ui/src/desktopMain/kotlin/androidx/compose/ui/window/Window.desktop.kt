@@ -328,7 +328,7 @@ fun singleWindowApplication(
     alwaysOnTop: Boolean = false,
     onPreviewKeyEvent: (KeyEvent) -> Boolean = { false },
     onKeyEvent: (KeyEvent) -> Boolean = { false },
-    onLayout: ClosureContext.(WindowData) -> Unit = {},
+    onLayout: (WindowData) -> Unit = {},
     content: @Composable FrameWindowScope.() -> Unit,
 ) = application {
     Window(
