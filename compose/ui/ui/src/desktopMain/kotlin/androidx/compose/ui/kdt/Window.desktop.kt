@@ -43,6 +43,10 @@ interface ComposeWindow : AutoCloseable {
     fun setContent(content: @Composable () -> Unit)
 }
 
+interface ComposableWindowExt {
+    // todo[ps] move non api methods here
+}
+
 @Composable
 fun Window(
     onCloseRequested: () -> Unit,
@@ -57,14 +61,16 @@ fun Window(
             composeWindow.close()
         }
     }
-    val windowScope = object : ComposeWindowScope {
-        override val window: ComposeWindow = composeWindow
+    val windowScope = remember {
+        object : ComposeWindowScope {
+            override val window: ComposeWindow = composeWindow
+        }
     }
     // We need this launch effect here to prevent Recomposer form joining
     LaunchedEffect(Unit) {
+        composeWindow.setContent {
+            windowScope.content()
+        }
         awaitCancellation()
-    }
-    composeWindow.setContent {
-        windowScope.content()
     }
 }
