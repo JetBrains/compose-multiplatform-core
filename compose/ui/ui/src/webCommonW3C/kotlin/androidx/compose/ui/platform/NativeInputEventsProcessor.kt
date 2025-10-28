@@ -136,7 +136,11 @@ internal abstract class NativeInputEventsProcessor(
                     // The system first tells us to delete the old text,
                     // and then it would send the "insertText" event.
                     if (textRangeSize > 0) {
-                        add(DeleteSurroundingTextCommand(textRangeSize, 0))
+                        // deleteContentBackward can happen under very non-trivial circumstances,
+                        // for instance; when an input suggestion on Android Chrome is accepted,
+                        // the browser then deletes space after the word just to add space again
+                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                        add(BackspaceCommand())
                     } else if (textRangeSize == 0) {
                         // under specific circumstance previous symbol can be deleted while inputing new one
                         // see https://youtrack.jetbrains.com/issue/CMP-8773

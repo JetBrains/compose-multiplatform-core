@@ -202,17 +202,17 @@ class NativeInputEventsProcessorTest {
 
         processor.registerEvent(
             (beforeInput("deleteContentBackward", "") as InputEvent).apply {
-                textRangeStart = 2
-                textRangeEnd = 3
+                textRangeStart = 3
+                textRangeEnd = 4
             }
         )
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
 
-        assertEquals(1, communicator.editCommands.size)
+        assertEquals(2, communicator.editCommands.size)
         val command = communicator.editCommands[0]
-        assertTrue(command is DeleteSurroundingTextCommand)
-        assertEquals(1, command.lengthBeforeCursor)
-        assertEquals(0, command.lengthAfterCursor)
+        assertTrue(command is SetSelectionCommand)
+        assertEquals(3, command.start)
+        assertEquals(4, command.end)
 
         assertEquals("tes", communicator.currentTextFieldValue().text)
     }
@@ -590,11 +590,11 @@ class NativeInputEventsProcessorTest {
         // Process the event with a collapsed selection
         processor.manuallyRunCheckpoint(communicator.currentTextFieldValue())
 
-        assertEquals(1, communicator.editCommands.size)
+        assertEquals(2, communicator.editCommands.size)
         val command = communicator.editCommands[0]
-        assertTrue(command is DeleteSurroundingTextCommand)
-        assertEquals(2, command.lengthBeforeCursor)
-        assertEquals(0, command.lengthAfterCursor)
+        assertTrue(command is SetSelectionCommand)
+        assertEquals(3, command.start)
+        assertEquals(5, command.end)
 
         assertEquals("exale text", communicator.currentTextFieldValue().text)
     }
