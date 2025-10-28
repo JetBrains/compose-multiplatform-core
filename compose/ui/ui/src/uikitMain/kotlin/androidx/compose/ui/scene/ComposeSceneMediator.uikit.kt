@@ -236,9 +236,9 @@ internal class ComposeSceneMediator(
 
     var composeSceneDensity: Density
         get() = scene.density
-        set(_) {
+        set(value) {
             if (!disposed) {
-                scene.density = screenDensity
+                scene.density = value
             }
         }
 
