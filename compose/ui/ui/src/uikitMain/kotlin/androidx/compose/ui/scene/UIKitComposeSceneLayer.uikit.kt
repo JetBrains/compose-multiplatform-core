@@ -127,7 +127,11 @@ internal class UIKitComposeSceneLayer(
 
     var isAccessibilityEnabled by mediator::isAccessibilityEnabled
 
-    override var density by mediator::composeSceneDensity
+    override var density: Density
+        get() = mediator.composeSceneDensity
+        set(_) {
+            // density of the layer cannot be customized
+        }
 
     override var layoutDirection by mediator::layoutDirection
 

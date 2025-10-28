@@ -238,7 +238,7 @@ internal class ComposeSceneMediator(
         get() = scene.density
         set(_) {
             if (!disposed) {
-                // compose scene density of the root cannot be customized
+                scene.density = screenDensity
             }
         }
 
