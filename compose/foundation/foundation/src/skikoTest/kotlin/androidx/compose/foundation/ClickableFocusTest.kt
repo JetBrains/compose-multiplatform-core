@@ -46,11 +46,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.isFocused
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.runComposeUiTest
@@ -270,7 +272,7 @@ class ClickableFocusTest {
     }
 
     @Test
-    fun clickOutsideClearsFocus() = runComposeUiTest {
+    fun mouseClickOutsideClearsFocus() = runComposeUiTest {
         val focusRequester = FocusRequester()
         setContent {
             Column(Modifier.size(300.dp, 400.dp)) {
@@ -288,7 +290,7 @@ class ClickableFocusTest {
         }
 
         onNodeWithTag("textField").assertIsFocused()
-        onNodeWithTag("box").performClick()
+        onNodeWithTag("box").performMouseInput { click() }
         onNodeWithTag("textField").assertIsNotFocused()
         onNode(isFocused()).assertDoesNotExist()
     }
