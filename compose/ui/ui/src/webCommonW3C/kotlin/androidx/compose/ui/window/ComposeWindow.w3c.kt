@@ -107,7 +107,6 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
-import org.w3c.dom.pointerevents.PointerEventInit
 
 private val actualDensity
     get() = window.devicePixelRatio
@@ -146,21 +145,21 @@ private sealed interface KeyboardModeState {
 }
 
 internal class DefaultWindowState(private val viewportContainer: Element) : ComposeWindowState {
-    private val channel = Channel<IntSize>(CONFLATED)
+    private val resizeChannel = Channel<IntSize>(CONFLATED)
 
     override val globalEvents = EventTargetListener(window)
 
     override fun init() {
 
         globalEvents.addDisposableEvent("resize") {
-            channel.trySend(getParentContainerBox())
+            resizeChannel.trySend(getParentContainerBox())
         }
 
         initMediaEventListener {
-            channel.trySend(getParentContainerBox())
+            resizeChannel.trySend(getParentContainerBox())
         }
 
-        channel.trySend(getParentContainerBox())
+        resizeChannel.trySend(getParentContainerBox())
     }
 
     private fun getParentContainerBox(): IntSize {
@@ -179,7 +178,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
             }, AddEventListenerOptions(capture = true, once = true))
     }
 
-    override fun sizeFlow() = channel.receiveAsFlow()
+    override fun sizeFlow() = resizeChannel.receiveAsFlow()
 }
 
 @OptIn(InternalComposeApi::class)
