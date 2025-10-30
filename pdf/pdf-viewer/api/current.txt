@@ -290,7 +290,7 @@ package androidx.pdf.view {
     method public final void addOnSelectionChangedListener(androidx.pdf.view.PdfView.OnSelectionChangedListener listener);
     method public final void addOnViewportChangedListener(androidx.pdf.view.PdfView.OnViewportChangedListener listener);
     method public final void addSelectionMenuItemPreparer(androidx.pdf.view.PdfView.SelectionMenuItemPreparer selectionMenuItemPreparer);
-    method public final void clearSelection();
+    method public final void clearCurrentSelection();
     method @InaccessibleFromKotlin public final androidx.pdf.selection.Selection? getCurrentSelection();
     method @InaccessibleFromKotlin public final android.graphics.drawable.Drawable getFastScrollPageIndicatorBackgroundDrawable();
     method @InaccessibleFromKotlin public final int getFastScrollPageIndicatorMarginEnd();

@@ -113,6 +113,17 @@ androidXMultiplatform {
     }
 }
 
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 1.3.5, this module is published as empty artifact with dependency
+        // to this androidx module.
+        commonMainImplementation("org.jetbrains.androidx.savedstate:savedstate-compose:1.3.5") {
+            because "prevents symbols duplication"
+        }
+    }
+}
+
 androidx {
     name = "Saved State Compose"
     type = SoftwareType.PUBLISHED_LIBRARY

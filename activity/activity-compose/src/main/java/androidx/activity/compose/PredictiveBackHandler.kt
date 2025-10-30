@@ -21,6 +21,8 @@ import androidx.activity.ActivityFlags
 import androidx.activity.BackEventCompat
 import androidx.activity.ExperimentalActivityApi
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.internal.BackHandlerCompat
+import androidx.activity.compose.internal.BackHandlerDispatcherCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
@@ -30,9 +32,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
-import androidx.navigationevent.NavigationEvent
-import androidx.navigationevent.NavigationEventDispatcherOwner
-import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import java.util.concurrent.CancellationException
@@ -116,20 +115,32 @@ public fun PredictiveBackHandler(
         suspend (progress: @JvmSuppressWildcards Flow<BackEventCompat>) -> @JvmSuppressWildcards
             Unit,
 ) {
-    // Use NavigationEventDispatcher local composition if available,
-    // otherwise use the legacy dispatcher to maintain compatibility.
-    val mainOwner = LocalNavigationEventDispatcherOwner.current
-    val fallbackOwner = LocalOnBackPressedDispatcherOwner.current
-    val owner = mainOwner ?: fallbackOwner as? NavigationEventDispatcherOwner
-    checkNotNull(owner) {
-        "No NavigationEventDispatcher was provided via LocalNavigationEventDispatcherOwner"
+    val navigationEventDispatcherOwner = LocalNavigationEventDispatcherOwner.current
+    val onBackPressedDispatcherOwner = LocalOnBackPressedDispatcherOwner.current
+    val owner =
+        requireNotNull(navigationEventDispatcherOwner ?: onBackPressedDispatcherOwner) {
+            "No NavigationEventDispatcherOwner was provided via " +
+                "LocalNavigationEventDispatcherOwner and no OnBackPressedDispatcherOwner was " +
+                "provided via LocalOnBackPressedDispatcherOwner. Please provide one of the two."
+        }
+
+    val dispatcher = remember {
+        // Create a dispatcher compatibility layer that decides whether to use the new
+        // 'NavigationEventDispatcher' or the legacy 'OnBackPressedDispatcher'.
+        BackHandlerDispatcherCompat(
+            navigationEventDispatcher = navigationEventDispatcherOwner?.navigationEventDispatcher,
+            onBackPressedDispatcher = onBackPressedDispatcherOwner?.onBackPressedDispatcher,
+        )
     }
 
     val scope = rememberCoroutineScope()
     val compositeKey = currentCompositeKeyHashCode
     val handler =
-        remember(owner, compositeKey) {
-            ComposePredictiveBackHandler(scope, PredictiveBackHandlerInfo(owner, compositeKey))
+        remember(dispatcher, compositeKey) {
+            ComposePredictiveBackHandler(
+                scope,
+                info = PredictiveBackHandlerInfo(owner, compositeKey),
+            )
         }
 
     if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
@@ -139,26 +150,26 @@ public fun PredictiveBackHandler(
         // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
         // avoiding the frame delay that happens with state-based APIs like collectAsState().
         LifecycleStartEffect(enabled, handler) {
-            handler.currentEnabled = enabled
-            onStopOrDispose { handler.currentEnabled = false }
+            handler.isBackEnabled = enabled
+            onStopOrDispose { handler.isBackEnabled = false }
         }
 
-        DisposableEffect(owner, handler) {
-            owner.navigationEventDispatcher.addHandler(handler)
-            onDispose { handler.remove() }
+        DisposableEffect(dispatcher, handler) {
+            dispatcher.addHandler(handler)
+            onDispose { dispatcher.removeHandler(handler) }
         }
     } else {
         // Keep the handler instance stable across recompositions, but update the active parameters.
         SideEffect {
-            handler.currentEnabled = enabled
+            handler.isBackEnabled = enabled
             handler.currentOnBack = onBack
         }
 
         // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
         // avoiding the frame delay that happens with state-based APIs like collectAsState().
-        LifecycleStartEffect(owner, handler) {
-            owner.navigationEventDispatcher.addHandler(handler)
-            onStopOrDispose { handler.remove() }
+        LifecycleStartEffect(dispatcher, handler) {
+            dispatcher.addHandler(handler)
+            onStopOrDispose { dispatcher.removeHandler(handler) }
         }
     }
 }
@@ -168,7 +179,7 @@ public fun PredictiveBackHandler(
  *
  * One instance services at most one active gesture. It exposes two mutable inputs that are updated
  * by the composable:
- * - [currentEnabled]: maps to `isBackEnabled` in the base class.
+ * - [isBackEnabled]: maps to `isBackEnabled` in the base class.
  * - [currentOnBack]: the lambda to invoke for each gesture; it must consume the progress flow.
  *
  * Internally we create a new [Channel] and [Job] per gesture. Closing/cancelling them signals
@@ -177,7 +188,7 @@ public fun PredictiveBackHandler(
 private class ComposePredictiveBackHandler(
     val scope: CoroutineScope,
     info: PredictiveBackHandlerInfo,
-) : NavigationEventHandler<NavigationEventInfo>(initialInfo = info, isBackEnabled = false) {
+) : BackHandlerCompat(info) {
 
     /** Latest `onBack` implementation to run for the next gesture. */
     var currentOnBack: suspend (progress: Flow<BackEventCompat>) -> Unit = {}
@@ -187,15 +198,15 @@ private class ComposePredictiveBackHandler(
      * finished (`isActive == false`), perform best-effort cleanup of any lingering resources. (If
      * the job is `null`, there’s nothing to clean.)
      */
-    var currentEnabled: Boolean
-        get() = isBackEnabled
+    override var isBackEnabled: Boolean
+        get() = super.isBackEnabled
         set(value) {
             // If the handler is being disabled with no active gesture, ensure we clean up any
             // leftover resources from a prior gesture.
-            if (!value && isBackEnabled && activeJob?.isActive == false) {
+            if (!value && super.isBackEnabled && activeJob?.isActive == false) {
                 onBackCancelled()
             }
-            isBackEnabled = value
+            super.isBackEnabled = value
         }
 
     // Gesture-scoped resources. A new channel/job is created per gesture and torn down on end.
@@ -211,7 +222,7 @@ private class ComposePredictiveBackHandler(
         activeChannel = Channel(capacity = BUFFERED, onBufferOverflow = SUSPEND)
         activeJob =
             scope.launch {
-                if (currentEnabled) {
+                if (isBackEnabled) {
                     var completed = false
                     currentOnBack(activeChannel!!.consumeAsFlow().onCompletion { completed = true })
                     check(completed) { "You must collect the progress flow" }
@@ -219,19 +230,19 @@ private class ComposePredictiveBackHandler(
             }
     }
 
-    override fun onBackStarted(event: NavigationEvent) {
+    override fun onBackStarted(event: BackEventCompat) {
         // Defensive: if a previous gesture wasn't fully cleaned up, cancel it first.
         onBackCancelled()
-        if (currentEnabled) {
+        if (isBackEnabled) {
             isPredictiveBack = true
             launchNewGesture()
         }
     }
 
-    override fun onBackProgressed(event: NavigationEvent) {
+    override fun onBackProgressed(event: BackEventCompat) {
         // Non-blocking send. With BUFFERED+SUSPEND, trySend will **not** suspend; on a full buffer,
         // the send fails and the event is dropped. This is intentional to avoid blocking callbacks.
-        activeChannel?.trySend(element = BackEventCompat(navigationEvent = event))
+        activeChannel?.trySend(element = event)
     }
 
     override fun onBackCompleted() {
@@ -261,7 +272,5 @@ private class ComposePredictiveBackHandler(
     }
 }
 
-private data class PredictiveBackHandlerInfo(
-    val owner: NavigationEventDispatcherOwner,
-    val compositeKey: Long,
-) : NavigationEventInfo()
+private data class PredictiveBackHandlerInfo(val owner: Any, val compositeKey: Long) :
+    NavigationEventInfo()

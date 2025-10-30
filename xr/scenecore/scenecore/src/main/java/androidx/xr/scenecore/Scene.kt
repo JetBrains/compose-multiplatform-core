@@ -223,8 +223,8 @@ public class Scene : SessionConnector {
      * Adds the given [Consumer] as a listener to be invoked when this [Session]'s spatial
      * capabilities change.
      *
-     * @param listener The Consumer to be invoked asynchronously on the given callbackExecutor. The
-     *   set includes every currently-available [SpatialCapability].
+     * @param listener The Consumer to be invoked asynchronously, on the main thread. The set
+     *   includes every currently-available [SpatialCapability].
      */
     public fun addSpatialCapabilitiesChangedListener(
         listener: Consumer<Set<SpatialCapability>>

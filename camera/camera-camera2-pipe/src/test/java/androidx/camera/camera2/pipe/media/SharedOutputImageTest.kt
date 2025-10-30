@@ -22,8 +22,6 @@ import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.testing.FakeImage
 import com.google.common.truth.Truth.assertThat
-import junit.framework.TestCase.assertTrue
-import kotlin.test.assertEquals
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -78,7 +76,7 @@ class SharedOutputImageTest {
         sharedImage.close()
         sharedImage.close()
         sharedImage.close()
-        assertTrue(fakeImage.numberOfTimesClosed == 1)
+        assertThat(fakeImage.numberOfTimesClosed).isEqualTo(1)
     }
 
     @Test
@@ -130,7 +128,7 @@ class SharedOutputImageTest {
         val hardwareBuffer = sharedImage.unwrapAs(HardwareBuffer::class)
 
         checkNotNull(hardwareBuffer)
-        assertEquals(imageHardwareBuffer, hardwareBuffer)
+        assertThat(imageHardwareBuffer).isSameInstanceAs(hardwareBuffer)
     }
 
     @Config(minSdk = Build.VERSION_CODES.P)
@@ -145,7 +143,7 @@ class SharedOutputImageTest {
         val hardwareBuffer = sharedImage.hardwareBuffer
 
         checkNotNull(hardwareBuffer)
-        assertEquals(imageHardwareBuffer, hardwareBuffer)
+        assertThat(imageHardwareBuffer).isSameInstanceAs(hardwareBuffer)
     }
 
     @Test

@@ -34,6 +34,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,6 +59,7 @@ class InvalidationTrackerBenchmark(
     }
 
     @Test
+    @Ignore // 410015038
     fun largeTransaction() {
         val db =
             Room.databaseBuilder(context, TestDatabase::class.java, DB_NAME)

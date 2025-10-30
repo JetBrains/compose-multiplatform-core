@@ -25,6 +25,15 @@ import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.addOutline
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
@@ -75,9 +84,18 @@ public fun VerticalStack(
         key = { page -> stackItemHolderState.value.getKey(page) },
         beyondViewportPageCount = MaxNextVisibleItemCount,
     ) { page ->
-        StackItemLayout(page = page, state = state) {
-            stackItemHolderState.value.withInterval(page) { localIndex, itemInterval ->
-                itemInterval.item(StackItemScopeImpl(), localIndex)
+        val stackItemHolder = stackItemHolderState.value
+        stackItemHolder.withInterval(page) { localIndex, itemInterval ->
+            val key =
+                itemInterval.getKeyOrDefault(globalIndex = page, localIntervalIndex = localIndex)
+            val itemScope = itemInterval.getOrCreateItemScope(key)
+            StackItemLayout(
+                page = page,
+                state = state,
+                stackItemHolder = stackItemHolder,
+                itemScope = itemScope,
+            ) {
+                itemInterval.item(itemScope, localIndex)
             }
         }
     }
@@ -87,12 +105,15 @@ public fun VerticalStack(
 private fun StackItemLayout(
     page: Int,
     state: StackState,
+    stackItemHolder: StackItemHolder,
+    itemScope: StackItemScopeImpl,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    Layout(content = content, modifier = modifier.zIndex(-page.toFloat())) {
-        measurables,
-        constraints ->
+    Layout(
+        content = content,
+        modifier = modifier.zIndex(-page.toFloat()).clipToItemAbove(page, state, stackItemHolder),
+    ) { measurables, constraints ->
         var maxWidth = 0
         var maxHeight = 0
         val placeables =
@@ -152,6 +173,91 @@ private fun StackItemLayout(
         }
     }
 }
+
+/** Clips the item at the given index such that only the part below the item above is displayed. */
+private fun Modifier.clipToItemAbove(
+    index: Int,
+    state: StackState,
+    stackItemHolder: StackItemHolder,
+): Modifier =
+    this.drawWithCache {
+        if (index == 0) {
+            // The first item is never clipped.
+            return@drawWithCache onDrawWithContent { drawContent() }
+        }
+
+        val clipPath = Path() // Ensure the clip path is cached.
+        var previousClipOffset = Float.NaN
+        var cachedItemAboveSize: Size? = null
+        var cachedItemAboveShape: Shape? = null
+
+        onDrawWithContent {
+            val clipOffset =
+                state.calculateClipOffset(
+                    index = index,
+                    topItem = state.topItem,
+                    revealHeight = RevealAreaSize.roundToPx(),
+                )
+            if (clipOffset.isNaN()) {
+                drawContent()
+                return@onDrawWithContent
+            }
+
+            val clipOffsetDiff =
+                if (previousClipOffset.isNaN()) clipOffset else clipOffset - previousClipOffset
+            previousClipOffset = clipOffset
+
+            val itemAboveScope = stackItemHolder.getItemScope(index - 1)
+            if (itemAboveScope == null) {
+                drawContent()
+                return@onDrawWithContent
+            }
+
+            // TODO(b/446933128): add support for multiple item decorations.
+            val itemAboveDecoration = itemAboveScope.firstDecoration()
+            val itemAboveSize = itemAboveDecoration?.size
+            val itemAboveShape = itemAboveDecoration?.shape
+
+            if (cachedItemAboveSize != itemAboveSize || cachedItemAboveShape != itemAboveShape) {
+                cachedItemAboveSize = itemAboveSize
+                cachedItemAboveShape = itemAboveShape
+
+                // The size or shape of the item above changed, we have to update the clip path.
+                clipPath.apply {
+                    reset()
+                    if (itemAboveSize != null && itemAboveShape != null) {
+                        addOutline(
+                            itemAboveShape.createOutline(
+                                size = itemAboveSize,
+                                layoutDirection = this@drawWithCache.layoutDirection,
+                                density = this@drawWithCache,
+                            )
+                        )
+                        // Extend the clip region from the middle of the item above to the top of
+                        // the viewport so that larger items are fully clipped.
+                        addRect(
+                            Rect(
+                                left = 0f,
+                                top = (itemAboveSize.height / 2f) - size.height,
+                                right = itemAboveSize.width,
+                                bottom = itemAboveSize.height / 2f,
+                            )
+                        )
+                    }
+                }
+            }
+
+            if (clipPath.isEmpty) {
+                drawContent()
+                return@onDrawWithContent
+            }
+
+            clipPath.translate(Offset(x = 0f, y = -clipOffsetDiff))
+            clipPath(path = clipPath, clipOp = ClipOp.Difference) {
+                this@onDrawWithContent.drawContent()
+            }
+        }
+    }
 
 private fun Int.isTopItem(topItem: Int) = this == topItem
 
@@ -246,6 +352,36 @@ private fun StackState.calculateTopPositionOffset(itemHeight: Int, revealHeight:
 /** Calculates the initial offset for an item when it is positioned behind the item above it. */
 private fun calculateInitialBehindPosition(itemAboveBottom: Float, itemBehindHeight: Int): Float =
     itemAboveBottom - itemBehindHeight * NextItemPositioningScale
+
+/** Calculates the offset for the clip shape to clip the item at the given index. */
+private fun StackState.calculateClipOffset(index: Int, topItem: Int, revealHeight: Int): Float =
+    when {
+        index.isNextItem(topItem = topItem) -> {
+            val topItemTranslationY =
+                topItemTranslationY(
+                    revealHeight = revealHeight,
+                    topItemHeight = layoutInfoInternal.measuredTopItemHeight,
+                )
+            val maxItemHeight = layoutInfoInternal.viewportSize.height - revealHeight
+            maxItemHeight - topItemTranslationY
+        }
+
+        index.isNextNextItem(topItem = topItem) -> {
+            val nextItemTranslationY =
+                nextItemTranslationY(
+                    revealHeight = revealHeight,
+                    topItem = topItem,
+                    nextItemHeight = layoutInfoInternal.measuredNextItemHeight,
+                )
+            if (nextItemTranslationY.isNaN()) Float.NaN
+            else {
+                val maxItemHeight = layoutInfoInternal.viewportSize.height - revealHeight
+                maxItemHeight - nextItemTranslationY
+            }
+        }
+
+        else -> Float.NaN
+    }
 
 /** The main axis offset of the item in pixels from the top of the viewport. */
 private fun PagerState.pageOffset(page: Int): Int? =

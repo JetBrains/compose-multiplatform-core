@@ -69,6 +69,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.abs
@@ -306,6 +307,7 @@ class CarouselTest {
         rule.onNodeWithText("Play 0", useUnmergedTree = true).assertIsDisplayed().assertIsFocused()
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/454425755
     @Test
     fun carousel_parentContainerGainsFocus_onBackPress() {
         rule.setContent {
@@ -335,6 +337,7 @@ class CarouselTest {
         rule.onNodeWithTag("box-container").assertIsFocused()
     }
 
+    @SdkSuppress(maxSdkVersion = 35) // b/454425755
     @Test
     fun carousel_withCarouselItem_parentContainerGainsFocusOnBackPress() {
         rule.setContent {

@@ -304,7 +304,6 @@ dependencies {
     docs(project(":privacysandbox:activity:activity-provider"))
     docs(project(":privacysandbox:ads:ads-adservices"))
     docs(project(":privacysandbox:ads:ads-adservices-java"))
-    docs(project(":privacysandbox:ondevicepersonalization:ondevicepersonalization-client"))
     docs(project(":privacysandbox:sdkruntime:sdkruntime-client"))
     docs(project(":privacysandbox:sdkruntime:sdkruntime-core"))
     docs(project(":privacysandbox:sdkruntime:sdkruntime-provider"))

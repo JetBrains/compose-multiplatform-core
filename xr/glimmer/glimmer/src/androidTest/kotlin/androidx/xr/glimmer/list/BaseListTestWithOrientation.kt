@@ -16,6 +16,7 @@
 
 package androidx.xr.glimmer.list
 
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -75,6 +76,7 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
         horizontalArrangement: Arrangement.Horizontal = Arrangement.Center,
         verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
         verticalArrangement: Arrangement.Vertical = Arrangement.Center,
+        overscrollEffect: OverscrollEffect? = null,
         state: ListState = rememberListState(),
         itemsCount: Int = Int.MAX_VALUE,
         keyProvider: ((index: Int) -> Any)? = null,
@@ -89,6 +91,7 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
             horizontalArrangement = horizontalArrangement,
             verticalAlignment = verticalAlignment,
             verticalArrangement = verticalArrangement,
+            overscrollEffect = overscrollEffect,
             modifier = modifier.testTag(LIST_TEST_TAG),
             contentPadding = contentPadding,
         ) {

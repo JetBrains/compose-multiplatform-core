@@ -39,13 +39,6 @@ dependencies {
 
     implementation("androidx.arch.core:core-runtime:2.2.0")
     implementation(libs.kotlinCoroutinesRx3)
-
-    testImplementation(project(":kruth:kruth"))
-    testImplementation(libs.kotlinTest)
-    testImplementation(libs.mockitoCore4)
-    testImplementation(libs.mockitoKotlin4)
-    testImplementation("androidx.arch.core:core-testing:2.2.0")
-    testImplementation("androidx.lifecycle:lifecycle-livedata:2.0.0") // for mocking invalidation tracker
 }
 
 androidx {
@@ -58,5 +51,4 @@ androidx {
 
 android {
     namespace = "androidx.room3.rxjava3"
-    testOptions.unitTests.returnDefaultValues = true
 }

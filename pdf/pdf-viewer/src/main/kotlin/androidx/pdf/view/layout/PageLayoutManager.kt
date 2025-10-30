@@ -28,6 +28,7 @@ import androidx.pdf.PdfPoint
 import androidx.pdf.PdfRect
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.exceptions.RequestMetadata
+import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.util.PAGE_INFO_REQUEST_NAME
 import androidx.pdf.view.PdfFormFillingState
 import kotlinx.coroutines.CoroutineScope
@@ -49,9 +50,11 @@ internal class PageLayoutManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
     topPageMarginPx: Float = 0f,
-    pageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
+    verticalPageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
     internal val paginationModel: PaginationModel =
-        PaginationModel(pageSpacingPx, pdfDocument.pageCount, topPageMarginPx),
+        PaginationModel(verticalPageSpacingPx, pdfDocument.pageCount, topPageMarginPx),
+    internal var layoutStrategy: LayoutStrategy =
+        SinglePageLayoutStrategy(pdfDocument.pageCount, verticalPageSpacingPx, topPageMarginPx),
     internal val pdfFormFillingState: PdfFormFillingState =
         PdfFormFillingState(pdfDocument.pageCount),
     private val errorFlow: MutableSharedFlow<Throwable>,
@@ -104,6 +107,24 @@ internal class PageLayoutManager(
     /** The 0-indexed maximum page whose dimensions have been requested */
     private var requestedReach: Int = paginationModel.reach
 
+    /** The maximum width of the PDF content. */
+    val maxContentWidth: Float
+        get() =
+            if (PdfFeatureFlags.isLayoutStrategyEnabled) {
+                layoutStrategy.maxWidth
+            } else {
+                paginationModel.maxWidth
+            }
+
+    /** The total height of the PDF content. */
+    val contentHeight: Float
+        get() =
+            if (PdfFeatureFlags.isLayoutStrategyEnabled) {
+                layoutStrategy.totalHeight
+            } else {
+                paginationModel.totalEstimatedHeight
+            }
+
     /**
      * The current [Job] that is handling dimensions loading work
      *
@@ -132,9 +153,27 @@ internal class PageLayoutManager(
         increaseReach(DEFAULT_PREFETCH_RADIUS)
     }
 
+    /** Calculates the content coordinate location for a 0-indexed [pageNum] */
+    private fun calculatePageLocation(pageNum: Int, viewport: RectF): RectF {
+        return if (PdfFeatureFlags.isLayoutStrategyEnabled) {
+            layoutStrategy.getPageLocation(viewport, pageNum, paginationModel.getPageSize(pageNum))
+        } else {
+            paginationModel.getPageLocation(pageNum, viewport)
+        }
+    }
+
     /** Returns the current content coordinate location of a 0-indexed [pageNum] */
     fun getPageLocation(pageNum: Int, viewport: RectF): RectF {
-        return pageLocations.get(pageNum) ?: paginationModel.getPageLocation(pageNum, viewport)
+        return pageLocations.get(pageNum) ?: calculatePageLocation(pageNum, viewport)
+    }
+
+    /** Returns the pages currently visible within the given [viewport]. */
+    fun getVisiblePages(viewport: RectF, includePartial: Boolean = true): PagesInViewport {
+        return if (PdfFeatureFlags.isLayoutStrategyEnabled) {
+            layoutStrategy.getVisiblePages(viewport, includePartial)
+        } else {
+            paginationModel.getPagesInViewport(viewport.top, viewport.bottom, includePartial)
+        }
     }
 
     /** Returns the size of the page at [pageNum], or null if we don't know that page's size yet */
@@ -270,13 +309,10 @@ internal class PageLayoutManager(
     private fun computeVisiblePages(viewport: RectF): Boolean {
         val prevVisible = visiblePages
         val prevFullyVisible = fullyVisiblePages
-        val newPagesInViewport = paginationModel.getPagesInViewport(viewport.top, viewport.bottom)
+        val newPagesInViewport = getVisiblePages(viewport)
         visiblePages = newPagesInViewport.pages
         layingOutPages = newPagesInViewport.layoutInProgress
-        fullyVisiblePages =
-            paginationModel
-                .getPagesInViewport(viewport.top, viewport.bottom, includePartial = false)
-                .pages
+        fullyVisiblePages = getVisiblePages(viewport, includePartial = false).pages
         if (prevVisible != visiblePages) {
             val peekAhead =
                 if (layingOutPages) {
@@ -299,7 +335,7 @@ internal class PageLayoutManager(
         val prevLocations = pageLocations
         val pageLocations = SparseArray<RectF>(visiblePages.upper - visiblePages.lower + 1)
         for (i in visiblePages.lower..visiblePages.upper) {
-            pageLocations.put(i, paginationModel.getPageLocation(i, viewport))
+            pageLocations.put(i, calculatePageLocation(i, viewport))
         }
         this.pageLocations = pageLocations
         return !prevLocations.contentEquals(this@PageLayoutManager.pageLocations)
@@ -351,6 +387,7 @@ internal class PageLayoutManager(
                     // Add the value to the model before emitting, and on the main thread
                     withContext(Dispatchers.Main) {
                         paginationModel.addPage(pageNum, size)
+                        layoutStrategy.setPagePositions(pageNum, size)
                         pdfFormFillingState.addPageFormWidgetInfos(
                             pageNum,
                             pageMetadata.formWidgetInfos,

@@ -92,7 +92,6 @@ import androidx.camera.core.ImageCaptureCapabilities;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.MeteringPoint;
 import androidx.camera.core.Preview;
-import androidx.camera.core.UseCase;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.extensions.ExtensionMode;
 import androidx.camera.extensions.ExtensionSessionConfig;
@@ -356,23 +355,21 @@ public class CameraExtensionsActivity extends AppCompatActivity
             updateInfoBlock();
         });
 
-        ArrayList<UseCase> useCaseList = new ArrayList<>();
-        useCaseList.add(mPreview);
-        useCaseList.add(mImageCapture);
+        ExtensionSessionConfig.Builder extensionSessionConfigBuilder =
+                new ExtensionSessionConfig.Builder(mCurrentExtensionMode, mExtensionsManager);
+        extensionSessionConfigBuilder.addUseCase(mPreview);
+        extensionSessionConfigBuilder.addUseCase(mImageCapture);
         // Setup VideoCapture.
         stopRecording();
         mVideoCapture = null;
         if (mToggleVideoCapture.isChecked()) {
             Recorder recorder = new Recorder.Builder().build();
             mVideoCapture = VideoCapture.withOutput(recorder);
-            useCaseList.add(checkNotNull(mVideoCapture));
+            extensionSessionConfigBuilder.addUseCase(checkNotNull(mVideoCapture));
         }
 
-        ExtensionSessionConfig extensionSessionConfig = new ExtensionSessionConfig.Builder(
-                mCurrentExtensionMode, mExtensionsManager, useCaseList).build();
-
         mCamera = mCameraProvider.bindToLifecycle(this, mCurrentCameraSelector,
-                extensionSessionConfig);
+                extensionSessionConfigBuilder.build());
 
         // Update the UI and save location for ImageCapture
         Button toggleButton = findViewById(R.id.PhotoToggle);

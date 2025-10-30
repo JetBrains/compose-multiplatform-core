@@ -304,6 +304,28 @@
         </activity>
 
         <activity
+            android:name=".SwitchButtonActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.SWITCH_BUTTON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SplitSwitchButtonActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.SPLIT_SWITCH_BUTTON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".StartupActivity"
             android:theme="@style/AppTheme"
             android:exported="true">

@@ -16,14 +16,15 @@
 
 package androidx.xr.glimmer.list
 
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.layout.LazyLayout
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.foundation.scrollableArea
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,6 +46,9 @@ import androidx.compose.ui.unit.dp
  *   after it has been clipped, which is not possible via [modifier] param. You can use it to add a
  *   padding before the first item or after the last one.
  * @param userScrollEnabled If user gestures are enabled.
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use Modifier.overscroll separately.
  * @param reverseLayout reverses the direction of scrolling and layout.
  * @param horizontalAlignment aligns items horizontally.
  * @param verticalArrangement is arrangement for items. This only applies if the content is smaller
@@ -58,6 +62,7 @@ public fun VerticalList(
     state: ListState = rememberListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
     userScrollEnabled: Boolean = true,
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     reverseLayout: Boolean = false,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
@@ -70,6 +75,7 @@ public fun VerticalList(
         reverseLayout = reverseLayout,
         contentPadding = contentPadding,
         userScrollEnabled = userScrollEnabled,
+        overscrollEffect = overscrollEffect,
         horizontalAlignment = horizontalAlignment,
         verticalArrangement = verticalArrangement,
         verticalAlignment = null,
@@ -89,6 +95,9 @@ public fun VerticalList(
  *   after it has been clipped, which is not possible via [modifier] param. You can use it to add a
  *   padding before the first item or after the last one.
  * @param userScrollEnabled If user gestures are enabled.
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use Modifier.overscroll separately.
  * @param reverseLayout reverses the direction of scrolling and layout.
  * @param horizontalAlignment aligns items horizontally. It's required and used only if
  *   [orientation] is [Orientation.Vertical].
@@ -109,6 +118,7 @@ internal fun List(
     state: ListState = rememberListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
     userScrollEnabled: Boolean = true,
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     reverseLayout: Boolean = false,
     horizontalAlignment: Alignment.Horizontal? = null,
     verticalArrangement: Arrangement.Vertical? = null,
@@ -163,12 +173,13 @@ internal fun List(
                 )
                 // TODO: b/433235501 - Behaviour conflicts between the AutoFocus and BeyondBounds.
                 .then(beyondBoundsModifier)
+                .edgeScrim(state, orientation)
                 .scrollableArea(
                     state = state,
                     orientation = orientation,
                     enabled = scrollEnabled,
                     interactionSource = state.internalInteractionSource,
-                    overscrollEffect = null,
+                    overscrollEffect = overscrollEffect,
                 ),
         itemProvider = itemProvider,
         measurePolicy = measurePolicy,

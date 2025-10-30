@@ -258,7 +258,7 @@ class TransformingLazyColumnLayoutInfoTest {
             }
         }
 
-        rule.runOnIdle { runBlocking { state.scrollToItem(2, scrollOffset = -10) } }
+        rule.runOnIdle { runBlocking { state.scrollToItem(2, scrollOffset = 10) } }
         rule.runOnIdle {
             state.layoutInfo.assertVisibleItems(count = 4, startIndex = 1, startOffset = -10)
         }

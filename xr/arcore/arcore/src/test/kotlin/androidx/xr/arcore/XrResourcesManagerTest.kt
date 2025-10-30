@@ -19,14 +19,14 @@ package androidx.xr.arcore
 import androidx.activity.ComponentActivity
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.arcore.runtime.Earth as RuntimeEarth
+import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.testing.FakePerceptionManager
 import androidx.xr.arcore.testing.FakeRuntimeAnchor
 import androidx.xr.arcore.testing.FakeRuntimeArDevice
 import androidx.xr.arcore.testing.FakeRuntimeAugmentedObject
 import androidx.xr.arcore.testing.FakeRuntimeDepthMap
-import androidx.xr.arcore.testing.FakeRuntimeEarth
 import androidx.xr.arcore.testing.FakeRuntimeFace
+import androidx.xr.arcore.testing.FakeRuntimeGeospatial
 import androidx.xr.arcore.testing.FakeRuntimeHand
 import androidx.xr.arcore.testing.FakeRuntimePlane
 import androidx.xr.arcore.testing.FakeRuntimeRenderViewpoint
@@ -208,16 +208,16 @@ class XrResourcesManagerTest {
     }
 
     @Test
-    fun update_earthUpdated() = doBlocking {
-        val runtimeEarth = FakeRuntimeEarth()
-        underTest.initiateEarth(runtimeEarth)
+    fun update_geospatialUpdated() = doBlocking {
+        val runtimeGeospatial = FakeRuntimeGeospatial()
+        underTest.initiateGeospatial(runtimeGeospatial)
         underTest.update()
-        check(underTest.earth.state.value == Earth.State.STOPPED)
-        runtimeEarth.state = RuntimeEarth.State.RUNNING
+        check(underTest.geospatial.state.value == Geospatial.State.NOT_RUNNING)
+        runtimeGeospatial.state = RuntimeGeospatial.State.RUNNING
 
         underTest.update()
 
-        assertThat(underTest.earth.state.value).isEqualTo(Earth.State.RUNNING)
+        assertThat(underTest.geospatial.state.value).isEqualTo(Geospatial.State.RUNNING)
     }
 
     @Test

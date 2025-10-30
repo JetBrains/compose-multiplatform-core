@@ -22,61 +22,48 @@ import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
-import android.database.Cursor
-import android.os.CancellationSignal
 import android.os.Looper
 import android.util.Log
 import androidx.annotation.CallSuper
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
-import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.room3.Room.LOG_TAG
+import androidx.room3.autoclose.AutoCloser
+import androidx.room3.autoclose.AutoCloserConfig
+import androidx.room3.autoclose.AutoClosingSQLiteDriver
 import androidx.room3.concurrent.CloseBarrier
+import androidx.room3.coroutines.TransactionElement
 import androidx.room3.coroutines.runBlockingUninterruptible
+import androidx.room3.coroutines.withTransactionContext
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.migration.Migration
+import androidx.room3.prepackage.CopyFromAssetPath
+import androidx.room3.prepackage.CopyFromFile
+import androidx.room3.prepackage.CopyFromInputStream
 import androidx.room3.prepackage.PrePackagedCopySQLiteDriver
-import androidx.room3.support.AutoCloser
-import androidx.room3.support.AutoClosingRoomOpenHelper
-import androidx.room3.support.AutoClosingRoomOpenHelperFactory
-import androidx.room3.support.QueryInterceptorOpenHelperFactory
 import androidx.room3.util.contains as containsCommon
 import androidx.room3.util.findAndInstantiateDatabaseImpl
 import androidx.room3.util.findMigrationPath as findMigrationPathExt
-import androidx.room3.util.performBlocking
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
-import androidx.sqlite.db.SimpleSQLiteQuery
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteOpenHelper
-import androidx.sqlite.db.SupportSQLiteQuery
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
-import androidx.sqlite.driver.SupportSQLiteConnection
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import java.io.File
 import java.io.InputStream
 import java.util.TreeMap
 import java.util.concurrent.Callable
 import java.util.concurrent.Executor
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
-import kotlin.coroutines.resume
 import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asContextElement
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 
 /**
  * Base class for all Room databases. All classes that are annotated with [Database] must extend
@@ -95,37 +82,21 @@ actual constructor() {
 
     private lateinit var configuration: DatabaseConfiguration
     private lateinit var coroutineScope: CoroutineScope
-    private lateinit var transactionContext: CoroutineContext
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val path: String?
         get() = configuration.name?.let { configuration.context.getDatabasePath(it).path }
 
-    /** The Executor in use by this database for async queries. */
-    public open val queryExecutor: Executor
-        get() = internalQueryExecutor
-
-    private lateinit var internalQueryExecutor: Executor
-
-    /** The Executor in use by this database for async transactions. */
-    public open val transactionExecutor: Executor
-        get() = internalTransactionExecutor
-
-    private lateinit var internalTransactionExecutor: Executor
-
     /**
-     * The SQLite open helper used by this database.
+     * The executor for thread-confined transactions, such as those from the [AndroidSQLiteDriver]
+     * or any driver that report to have an internal pool via [SQLiteDriver.hasConnectionPool].
      *
-     * @throws IllegalStateException If a [SQLiteDriver] is configured with this database.
+     * @see androidx.room3.coroutines.startTransactionCoroutine
      */
-    // TODO(b/408062492): @Deprecate with replace to wrapper
-    public open val openHelper: SupportSQLiteOpenHelper
-        get() =
-            connectionManager.supportOpenHelper
-                ?: error(
-                    "Cannot return a SupportSQLiteOpenHelper since no " +
-                        "SupportSQLiteOpenHelper.Factory was configured with Room."
-                )
+    internal val transactionLimitedExecutor: Executor
+        get() = internalTransactionLimitedExecutor
+
+    private lateinit var internalTransactionLimitedExecutor: Executor
 
     private lateinit var connectionManager: RoomConnectionManager
 
@@ -164,9 +135,6 @@ actual constructor() {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val suspendingTransactionContext: ThreadLocal<CoroutineContext> =
         ThreadLocal<CoroutineContext>()
-
-    private val isThreadInSuspendingTransaction: Boolean
-        get() = suspendingTransactionContext.get()?.get(TransactionElement) != null
 
     private val typeConverters: MutableMap<KClass<*>, Any> = mutableMapOf()
 
@@ -208,56 +176,29 @@ actual constructor() {
         this.configuration = configuration
         useTempTrackingTable = configuration.useTempTrackingTable
 
+        this.autoCloser = configuration.autoCloseConfig?.let { AutoCloser(it) }
         val openDelegate = createOpenDelegate() as RoomOpenDelegate
         val configuration = wrapDriverConfiguration(configuration, openDelegate.version)
         connectionManager = createConnectionManager(configuration, openDelegate)
         internalTracker = createInvalidationTracker()
+        autoCloser?.let {
+            connectionManager.setAutoCloser(it)
+            invalidationTracker.setAutoCloser(it)
+        }
         validateAutoMigrations(configuration)
         validateTypeConverters(configuration)
 
-        if (configuration.queryCoroutineContext != null) {
-            // For backwards compatibility with internals not converted to Coroutines, use the
-            // provided dispatcher as executor.
-            val dispatcher =
-                configuration.queryCoroutineContext[ContinuationInterceptor] as CoroutineDispatcher
-            internalQueryExecutor = dispatcher.asExecutor()
-            internalTransactionExecutor = TransactionExecutor(internalQueryExecutor)
-            // For Room's coroutine scope, we use the provided context but add a SupervisorJob that
-            // is tied to the given Job (if any).
-            val parentJob = configuration.queryCoroutineContext[Job]
-            coroutineScope =
-                CoroutineScope(configuration.queryCoroutineContext + SupervisorJob(parentJob))
-            transactionContext =
-                if (inCompatibilityMode()) {
-                    // To prevent starvation due to primary connection blocking in
-                    // SupportSQLiteDatabase a limited dispatcher is used for transactions.
-                    @OptIn(ExperimentalCoroutinesApi::class) // For limitedParallelism(1)
-                    coroutineScope.coroutineContext + dispatcher.limitedParallelism(1)
-                } else {
-                    // When a SQLiteDriver is provided a suspending connection pool is used and
-                    // there is no reason to limit parallelism.
-                    coroutineScope.coroutineContext
-                }
-        } else {
-            internalQueryExecutor = configuration.queryExecutor
-            internalTransactionExecutor = TransactionExecutor(configuration.transactionExecutor)
-            // For Room's coroutine scope, we use the provided executor as dispatcher along with a
-            // SupervisorJob.
-            coroutineScope =
-                CoroutineScope(internalQueryExecutor.asCoroutineDispatcher() + SupervisorJob())
-            transactionContext =
-                coroutineScope.coroutineContext +
-                    internalTransactionExecutor.asCoroutineDispatcher()
-        }
+        // For Room's coroutine scope, we use the provided context but add a SupervisorJob that
+        // is tied to the given Job (if any).
+        val parentJob = configuration.queryCoroutineContext[Job]
+        coroutineScope =
+            CoroutineScope(configuration.queryCoroutineContext + SupervisorJob(parentJob))
+        val dispatcher =
+            configuration.queryCoroutineContext[ContinuationInterceptor] as CoroutineDispatcher
+        internalTransactionLimitedExecutor = dispatcher.asExecutor()
 
         allowMainThreadQueries = configuration.allowMainThreadQueries
-
-        // Configure AutoClosingRoomOpenHelper if it is available
-        unwrapOpenHelper<AutoClosingRoomOpenHelper>(connectionManager.supportOpenHelper)?.let {
-            autoCloser = it.autoCloser
-            it.autoCloser.initCoroutineScope(coroutineScope)
-            invalidationTracker.setAutoCloser(it.autoCloser)
-        }
+        autoCloser?.initCoroutineScope(coroutineScope)
 
         // Configure multi-instance invalidation, if enabled
         if (configuration.multiInstanceInvalidationServiceIntent != null) {
@@ -270,29 +211,37 @@ actual constructor() {
         }
     }
 
+    /** Wraps the configured [SQLiteDriver] based on various builder set functionalities. */
     private fun wrapDriverConfiguration(
         configuration: DatabaseConfiguration,
         databaseVersion: Int,
     ): DatabaseConfiguration {
-        if (configuration.sqliteDriver == null) {
-            return configuration
+        // The order of wrapping is significant, the last wrap being the outer-most and first to be
+        // invoked by the connection manager, while the first one being the inner-most, being the
+        // last to be invoked.
+        var newConfiguration = configuration
+        if (configuration.autoCloseConfig != null) {
+            newConfiguration =
+                configuration.copy(
+                    sqliteDriver =
+                        AutoClosingSQLiteDriver(
+                            autoCloser = checkNotNull(autoCloser),
+                            delegateDriver = configuration.sqliteDriver,
+                        )
+                )
         }
-        val prePackagedCopyEnabled =
-            configuration.copyFromAssetPath != null ||
-                configuration.copyFromFile != null ||
-                configuration.copyFromInputStream != null
-        return if (prePackagedCopyEnabled) {
-            configuration.copy(
-                sqliteDriver =
-                    PrePackagedCopySQLiteDriver(
-                        configuration.sqliteDriver,
-                        configuration,
-                        databaseVersion,
-                    )
-            )
-        } else {
-            configuration
+        if (configuration.copyFromConfig != null) {
+            newConfiguration =
+                configuration.copy(
+                    sqliteDriver =
+                        PrePackagedCopySQLiteDriver(
+                            configuration.sqliteDriver,
+                            configuration,
+                            databaseVersion,
+                        )
+                )
         }
+        return newConfiguration
     }
 
     /**
@@ -308,7 +257,7 @@ actual constructor() {
         return RoomConnectionManager(
             config = configuration,
             openDelegate = openDelegate,
-            transactionWrapper = ::compatTransactionCoroutineExecute,
+            transactionWrapper = ::withTransactionContext,
         )
     }
 
@@ -316,33 +265,6 @@ actual constructor() {
     public actual abstract fun createAutoMigrations(
         autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
     ): List<Migration>
-
-    /**
-     * Unwraps (delegating) open helpers until it finds [T], otherwise returns null.
-     *
-     * @param openHelper the open helper to search through
-     * @param T the type of open helper type to search for
-     * @return the instance of [T], otherwise null
-     */
-    private inline fun <reified T : SupportSQLiteOpenHelper> unwrapOpenHelper(
-        openHelper: SupportSQLiteOpenHelper?
-    ): T? {
-        if (openHelper == null) {
-            return null
-        }
-        var current: SupportSQLiteOpenHelper = openHelper
-        while (true) {
-            if (current is T) {
-                return current
-            }
-            if (current is DelegatingOpenHelper) {
-                current = current.delegate
-            } else {
-                break
-            }
-        }
-        return null
-    }
 
     /**
      * Creates a delegate to configure and initialize the database when it is being opened. An
@@ -373,10 +295,6 @@ actual constructor() {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getQueryContext(): CoroutineContext {
         return coroutineScope.coroutineContext.minusKey(Job)
-    }
-
-    internal fun getTransactionContext(): CoroutineContext {
-        return transactionContext.minusKey(Job)
     }
 
     /**
@@ -438,7 +356,6 @@ actual constructor() {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     protected fun performClear(hasForeignKeys: Boolean, vararg tableNames: String) {
         assertNotMainThread()
-        assertNotSuspendingTransaction()
         runBlockingUninterruptible {
             connectionManager.useConnection(isReadOnly = false) { connection ->
                 if (!connection.inTransaction()) {
@@ -459,22 +376,9 @@ actual constructor() {
         }
     }
 
-    /**
-     * True if database connection is open and initialized.
-     *
-     * When Room is configured with [RoomDatabase.Builder.setAutoCloseTimeout] the database is
-     * considered open even if internally the connection has been closed, unless manually closed.
-     *
-     * @return true if the database connection is open, false otherwise.
-     */
-    public open val isOpen: Boolean
-        get() = autoCloser?.isActive ?: connectionManager.isSupportDatabaseOpen()
-
     /** True if the actual database connection is open, regardless of auto-close. */
     internal val isOpenInternal: Boolean
-        get() =
-            autoCloser?.let { it.delegateDatabase?.isOpen ?: false }
-                ?: connectionManager.isSupportDatabaseOpen()
+        get() = autoCloser?.isOpen() ?: true
 
     /**
      * Closes the database.
@@ -507,15 +411,6 @@ actual constructor() {
         }
     }
 
-    /** Asserts that we are not on a suspending transaction. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public open fun assertNotSuspendingTransaction() {
-        check(!inCompatibilityMode() || inTransaction() || !isThreadInSuspendingTransaction) {
-            "Cannot access database on a different coroutine" +
-                " context inherited from a suspending transaction."
-        }
-    }
-
     /**
      * Use a connection to perform database operations.
      *
@@ -532,159 +427,6 @@ actual constructor() {
     }
 
     /**
-     * Return true if this database is operating in compatibility mode, otherwise false.
-     *
-     * Room is considered in compatibility mode in Android when no [SQLiteDriver] was provided and
-     * [androidx.sqlite.db] APIs are used instead (SupportSQLite*).
-     *
-     * @see RoomConnectionManager
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun inCompatibilityMode(): Boolean = connectionManager.supportOpenHelper != null
-
-    // Below, there are wrapper methods for SupportSQLiteDatabase. This helps us track which
-    // methods we are using and also helps unit tests to mock this class without mocking
-    // all SQLite database methods.
-    /**
-     * Convenience method to query the database with arguments.
-     *
-     * @param query The sql query
-     * @param args The bind arguments for the placeholders in the query
-     * @return A Cursor obtained by running the given query in the Room database.
-     * @throws IllegalStateException If a [SQLiteDriver] is configured with this database.
-     */
-    public open fun query(query: String, args: Array<out Any?>?): Cursor {
-        assertNotMainThread()
-        assertNotSuspendingTransaction()
-        return openHelper.writableDatabase.query(SimpleSQLiteQuery(query, args))
-    }
-
-    /**
-     * Wrapper for [SupportSQLiteDatabase.query].
-     *
-     * @param query The Query which includes the SQL and a bind callback for bind arguments.
-     * @param signal The cancellation signal to be attached to the query.
-     * @return Result of the query.
-     * @throws IllegalStateException If a [SQLiteDriver] is configured with this database.
-     */
-    @JvmOverloads
-    public open fun query(query: SupportSQLiteQuery, signal: CancellationSignal? = null): Cursor {
-        assertNotMainThread()
-        assertNotSuspendingTransaction()
-        return if (signal != null) {
-            openHelper.writableDatabase.query(query, signal)
-        } else {
-            openHelper.writableDatabase.query(query)
-        }
-    }
-
-    /**
-     * Wrapper for [SupportSQLiteDatabase.beginTransaction].
-     *
-     * @throws IllegalStateException If a [SQLiteDriver] is configured with this database.
-     */
-    @Deprecated("beginTransaction() is deprecated", ReplaceWith("runInTransaction(Runnable)"))
-    public open fun beginTransaction() {
-        assertNotMainThread()
-        internalBeginTransaction()
-    }
-
-    private fun internalBeginTransaction() {
-        assertNotMainThread()
-        val database = openHelper.writableDatabase
-        if (!database.inTransaction()) {
-            invalidationTracker.syncBlocking()
-        }
-        if (database.isWriteAheadLoggingEnabled) {
-            database.beginTransactionNonExclusive()
-        } else {
-            database.beginTransaction()
-        }
-    }
-
-    /**
-     * Wrapper for [SupportSQLiteDatabase.endTransaction].
-     *
-     * @throws IllegalStateException If a [SQLiteDriver] is configured with this database.
-     */
-    @Deprecated("endTransaction() is deprecated", ReplaceWith("runInTransaction(Runnable)"))
-    public open fun endTransaction() {
-        internalEndTransaction()
-    }
-
-    private fun internalEndTransaction() {
-        openHelper.writableDatabase.endTransaction()
-        if (!inTransaction()) {
-            // enqueue refresh only if we are NOT in a transaction. Otherwise, wait for the last
-            // endTransaction call to do it.
-            invalidationTracker.refreshVersionsAsync()
-        }
-    }
-
-    /**
-     * Wrapper for [SupportSQLiteDatabase.setTransactionSuccessful].
-     *
-     * @throws IllegalStateException If a [SQLiteDriver] is configured with this database.
-     */
-    @Deprecated(
-        "setTransactionSuccessful() is deprecated",
-        ReplaceWith("runInTransaction(Runnable)"),
-    )
-    public open fun setTransactionSuccessful() {
-        openHelper.writableDatabase.setTransactionSuccessful()
-    }
-
-    /**
-     * Executes the specified [Runnable] in a database transaction. The transaction will be marked
-     * as successful unless an exception is thrown in the [Runnable].
-     *
-     * Room will only perform at most one transaction at a time.
-     *
-     * If a [SQLiteDriver] is configured with this database, then it is best to use
-     * [useWriterConnection] along with [immediateTransaction] to perform transactional operations.
-     *
-     * @param body The piece of code to execute.
-     */
-    public open fun runInTransaction(body: Runnable) {
-        runInTransaction { body.run() }
-    }
-
-    /**
-     * Executes the specified [Callable] in a database transaction. The transaction will be marked
-     * as successful unless an exception is thrown in the [Callable].
-     *
-     * Room will only perform at most one transaction at a time.
-     *
-     * If a [SQLiteDriver] is configured with this database, then it is best to use
-     * [useWriterConnection] along with [immediateTransaction] to perform transactional operations.
-     *
-     * @param body The piece of code to execute.
-     * @param V The type of the return value.
-     * @return The value returned from the [Callable].
-     */
-    public open fun <V> runInTransaction(body: Callable<V>): V {
-        return runInTransaction { body.call() }
-    }
-
-    @Suppress("DEPRECATION") // Usage of try-finally transaction idiom APIs
-    private fun <T> runInTransaction(body: () -> T): T {
-        if (inCompatibilityMode()) {
-            beginTransaction()
-            try {
-                val result = body.invoke()
-                setTransactionSuccessful()
-                return result
-            } finally {
-                endTransaction()
-            }
-        } else {
-            return performBlocking(db = this, isReadOnly = false, inTransaction = true) {
-                body.invoke()
-            }
-        }
-    }
-
-    /**
      * Initialize invalidation tracker. Note that this method is called when the [RoomDatabase] is
      * initialized and opens a database connection.
      *
@@ -693,18 +435,6 @@ actual constructor() {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
     protected actual fun internalInitInvalidationTracker(connection: SQLiteConnection) {
         invalidationTracker.internalInit(connection)
-    }
-
-    /**
-     * Wrapper for [SupportSQLiteDatabase.inTransaction]. Returns true if current thread is in a
-     * transaction.
-     *
-     * @return True if there is an active transaction in current thread, false otherwise.
-     * @throws IllegalStateException If a [SQLiteDriver] is configured with this database.
-     * @see SupportSQLiteDatabase.inTransaction
-     */
-    public open fun inTransaction(): Boolean {
-        return isOpenInternal && openHelper.writableDatabase.inTransaction()
     }
 
     /**
@@ -791,14 +521,8 @@ actual constructor() {
 
         private val callbacks: MutableList<Callback> = mutableListOf()
         private var prepackagedDatabaseCallback: PrepackagedDatabaseCallback? = null
-        private var queryCallback: QueryCallback? = null
-        private var queryCallbackExecutor: Executor? = null
-        private var queryCallbackCoroutineContext: CoroutineContext? = null
         private val typeConverters: MutableList<Any> = mutableListOf()
-        private var queryExecutor: Executor? = null
-        private var transactionExecutor: Executor? = null
 
-        private var supportOpenHelperFactory: SupportSQLiteOpenHelper.Factory? = null
         private var allowMainThreadQueries = false
         private var journalMode: JournalMode = JournalMode.AUTOMATIC
         private var multiInstanceInvalidationIntent: Intent? = null
@@ -959,10 +683,10 @@ actual constructor() {
          * This method is not supported for an in memory database [Builder].
          *
          * @param inputStreamCallable A callable that returns an InputStream from which to copy the
-         *   database. The callable will be invoked in a thread from the Executor set via
-         *   [setQueryExecutor]. The callable is only invoked if Room needs to create and open the
-         *   database from the pre-package database, usually the first time it is created or during
-         *   a destructive migration.
+         *   database. The callable will be invoked in a thread from the dispatcher set via
+         *   [setQueryCoroutineContext]. The callable is only invoked if Room needs to create and
+         *   open the database from the pre-package database, usually the first time it is created
+         *   or during a destructive migration.
          * @return This builder instance.
          */
         @SuppressLint("BuilderSetStyle") // To keep naming consistency.
@@ -988,10 +712,10 @@ actual constructor() {
          * This method is not supported for an in memory database [Builder].
          *
          * @param inputStreamCallable A callable that returns an InputStream from which to copy the
-         *   database. The callable will be invoked in a thread from the Executor set via
-         *   [setQueryExecutor]. The callable is only invoked if Room needs to create and open the
-         *   database from the pre-package database, usually the first time it is created or during
-         *   a destructive migration.
+         *   database. The callable will be invoked in a thread from the dispatcher set via
+         *   [setQueryCoroutineContext]. The callable is only invoked if Room needs to create and
+         *   open the database from the pre-package database, usually the first time it is created
+         *   or during a destructive migration.
          * @param callback The pre-packaged callback.
          * @return This builder instance.
          */
@@ -1003,17 +727,6 @@ actual constructor() {
             this.prepackagedDatabaseCallback = callback
             this.copyFromInputStream = inputStreamCallable
         }
-
-        /**
-         * Sets the database factory. If not set, it defaults to [FrameworkSQLiteOpenHelperFactory].
-         *
-         * @param factory The factory to use to access the database.
-         * @return This builder instance.
-         */
-        public open fun openHelperFactory(factory: SupportSQLiteOpenHelper.Factory?): Builder<T> =
-            apply {
-                this.supportOpenHelperFactory = factory
-            }
 
         /**
          * Adds a migration to the builder.
@@ -1080,70 +793,6 @@ actual constructor() {
          */
         public actual open fun setJournalMode(journalMode: JournalMode): Builder<T> = apply {
             this.journalMode = journalMode
-        }
-
-        /**
-         * Sets the [Executor] that will be used to execute all non-blocking asynchronous queries
-         * and tasks, including `LiveData` invalidation, `Flowable` scheduling and
-         * `ListenableFuture` tasks.
-         *
-         * When both the query executor and transaction executor are unset, then a default
-         * `Executor` will be used. The default `Executor` allocates and shares threads amongst
-         * Architecture Components libraries. If the query executor is unset but a transaction
-         * executor was set via [setTransactionExecutor], then the same `Executor` will be used for
-         * queries.
-         *
-         * For best performance the given `Executor` should be bounded (max number of threads is
-         * limited).
-         *
-         * The input `Executor` cannot run tasks on the UI thread.
-         *
-         * If either [setQueryCoroutineContext] has been called, then this function will throw an
-         * [IllegalArgumentException].
-         *
-         * @return This builder instance.
-         * @throws IllegalArgumentException if this builder was already configured with a
-         *   [CoroutineContext].
-         */
-        public open fun setQueryExecutor(executor: Executor): Builder<T> = apply {
-            require(queryCoroutineContext == null) {
-                "This builder has already been configured with a CoroutineContext. A RoomDatabase" +
-                    "can only be configured with either an Executor or a CoroutineContext."
-            }
-            this.queryExecutor = executor
-        }
-
-        /**
-         * Sets the [Executor] that will be used to execute all non-blocking asynchronous
-         * transaction queries and tasks, including `LiveData` invalidation, `Flowable` scheduling
-         * and `ListenableFuture` tasks.
-         *
-         * When both the transaction executor and query executor are unset, then a default
-         * `Executor` will be used. The default `Executor` allocates and shares threads amongst
-         * Architecture Components libraries. If the transaction executor is unset but a query
-         * executor was set using [setQueryExecutor], then the same `Executor` will be used for
-         * transactions.
-         *
-         * If the given `Executor` is shared then it should be unbounded to avoid the possibility of
-         * a deadlock. Room will not use more than one thread at a time from this executor since
-         * only one transaction at a time can be executed, other transactions will be queued on a
-         * first come, first serve order.
-         *
-         * The input `Executor` cannot run tasks on the UI thread.
-         *
-         * If either [setQueryCoroutineContext] has been called, then this function will throw an
-         * [IllegalArgumentException].
-         *
-         * @return This builder instance.
-         * @throws IllegalArgumentException if this builder was already configured with a
-         *   [CoroutineContext].
-         */
-        public open fun setTransactionExecutor(executor: Executor): Builder<T> = apply {
-            require(queryCoroutineContext == null) {
-                "This builder has already been configured with a CoroutineContext. A RoomDatabase" +
-                    "can only be configured with either an Executor or a CoroutineContext."
-            }
-            this.transactionExecutor = executor
         }
 
         /**
@@ -1293,59 +942,6 @@ actual constructor() {
         }
 
         /**
-         * Sets a [QueryCallback] to be invoked when queries are executed.
-         *
-         * The callback is invoked whenever a query is executed, note that adding this callback has
-         * a small cost and should be avoided in production builds unless needed.
-         *
-         * A use case for providing a callback is to allow logging executed queries. When the
-         * callback implementation logs then it is recommended to use an immediate executor.
-         *
-         * If a previous callback was set with [setQueryCallback] then this call will override it,
-         * including removing the Coroutine context previously set, if any.
-         *
-         * @param queryCallback The query callback.
-         * @param executor The executor on which the query callback will be invoked.
-         * @return This builder instance.
-         */
-        @Suppress("MissingGetterMatchingBuilder")
-        public open fun setQueryCallback(
-            queryCallback: QueryCallback,
-            executor: Executor,
-        ): Builder<T> = apply {
-            this.queryCallback = queryCallback
-            this.queryCallbackExecutor = executor
-            this.queryCallbackCoroutineContext = null
-        }
-
-        /**
-         * Sets a [QueryCallback] to be invoked when queries are executed.
-         *
-         * The callback is invoked whenever a query is executed, note that adding this callback has
-         * a small cost and should be avoided in production builds unless needed.
-         *
-         * A use case for providing a callback is to allow logging executed queries. When the
-         * callback implementation simply logs then it is recommended to use
-         * [kotlinx.coroutines.Dispatchers.Unconfined].
-         *
-         * If a previous callback was set with [setQueryCallback] then this call will override it,
-         * including removing the executor previously set, if any.
-         *
-         * @param context The coroutine context on which the query callback will be invoked.
-         * @param queryCallback The query callback.
-         * @return This builder instance.
-         */
-        @Suppress("MissingGetterMatchingBuilder")
-        public fun setQueryCallback(
-            context: CoroutineContext,
-            queryCallback: QueryCallback,
-        ): Builder<T> = apply {
-            this.queryCallback = queryCallback
-            this.queryCallbackExecutor = null
-            this.queryCallbackCoroutineContext = context
-        }
-
-        /**
          * Adds a type converter instance to the builder.
          *
          * @param typeConverter The converter instance that is annotated with
@@ -1375,18 +971,16 @@ actual constructor() {
          *
          * The auto-closing database operation runs on the query executor.
          *
-         * The database will not be re-opened if the RoomDatabase or the SupportSqliteOpenHelper is
-         * closed manually (by calling [RoomDatabase.close] or [SupportSQLiteOpenHelper.close]. If
-         * the database is closed manually, you must create a new database using
-         * [RoomDatabase.Builder.build].
+         * The database will not be re-opened if the RoomDatabase is closed manually (by calling
+         * [RoomDatabase.close]). If the database is closed manually, you must create a new database
+         * using [RoomDatabase.Builder.build].
          *
          * @param autoCloseTimeout the amount of time after the last usage before closing the
          *   database. Must greater or equal to zero.
          * @param autoCloseTimeUnit the timeunit for autoCloseTimeout.
          * @return This builder instance.
          */
-        @ExperimentalRoomApi // When experimental is removed, add these parameters to
-        // DatabaseConfiguration
+        @ExperimentalRoomApi
         @Suppress("MissingGetterMatchingBuilder")
         public open fun setAutoCloseTimeout(
             @IntRange(from = 0) autoCloseTimeout: Long,
@@ -1401,11 +995,6 @@ actual constructor() {
          * Sets the [SQLiteDriver] implementation to be used by Room to open database connections.
          * For example, an instance of [androidx.sqlite.driver.AndroidSQLiteDriver] or
          * [androidx.sqlite.driver.bundled.BundledSQLiteDriver].
-         *
-         * Once a driver is configured using this function, various callbacks that receive a
-         * [SupportSQLiteDatabase] will not be invoked, such as [RoomDatabase.Callback.onCreate].
-         * Moreover, APIs that use SupportSQLite will also throw an exception, such as
-         * [RoomDatabase.openHelper].
          *
          * See the documentation on
          * [Migrating to SQLite Driver](https://d.android.com/training/data-storage/room/room-kmp-migration#migrate_from_support_sqlite_to_sqlite_driver)
@@ -1426,11 +1015,7 @@ actual constructor() {
          * If no [CoroutineDispatcher] is present in the [context] then this function will throw an
          * [IllegalArgumentException]
          *
-         * If no context is provided, then Room wil default to using the [Executor] set via
-         * [setQueryExecutor] as the context via the conversion function [asCoroutineDispatcher].
-         *
-         * If either [setQueryExecutor] or [setTransactionExecutor] has been called, then this
-         * function will throw an [IllegalArgumentException].
+         * If no context is provided, then Room will default to `Dispatchers.IO`.
          *
          * @param context The context
          * @return This [Builder] instance
@@ -1439,10 +1024,6 @@ actual constructor() {
          */
         @Suppress("MissingGetterMatchingBuilder")
         public actual fun setQueryCoroutineContext(context: CoroutineContext): Builder<T> = apply {
-            require(queryExecutor == null && transactionExecutor == null) {
-                "This builder has already been configured with an Executor. A RoomDatabase can" +
-                    "only be configured with either an Executor or a CoroutineContext."
-            }
             require(context[ContinuationInterceptor] != null) {
                 "It is required that the coroutine context contain a dispatcher."
             }
@@ -1475,122 +1056,67 @@ actual constructor() {
          * @throws IllegalArgumentException if the builder was misconfigured.
          */
         public actual open fun build(): T {
-            if (queryExecutor == null && transactionExecutor == null) {
-                transactionExecutor = ArchTaskExecutor.getIOThreadExecutor()
-                queryExecutor = transactionExecutor
-            } else if (queryExecutor != null && transactionExecutor == null) {
-                transactionExecutor = queryExecutor
-            } else if (queryExecutor == null) {
-                queryExecutor = transactionExecutor
-            }
-
             validateMigrationsNotRequired(migrationStartAndEndVersions, migrationsNotRequiredFrom)
 
-            val initialFactory: SupportSQLiteOpenHelper.Factory? =
-                if (driver == null && supportOpenHelperFactory == null) {
-                    // No driver and no factory, compatibility mode, create the default factory
-                    FrameworkSQLiteOpenHelperFactory()
-                } else if (driver == null) {
-                    // No driver but a factory was provided, use it in compatibility mode
-                    supportOpenHelperFactory
-                } else if (supportOpenHelperFactory == null) {
-                    // A driver was provided, no need to create the default factory
-                    null
+            if (driver == null) {
+                // No driver, use default one for Android
+                driver = AndroidSQLiteDriver()
+            }
+            val autoCloseConfig =
+                if (autoCloseTimeout > 0) {
+                    AutoCloserConfig(autoCloseTimeout, requireNotNull(autoCloseTimeUnit))
                 } else {
-                    // Both driver and factory provided, invalid configuration.
-                    throw IllegalArgumentException(
-                        "A RoomDatabase cannot be configured with both a SQLiteDriver and a " +
-                            "SupportOpenHelper.Factory."
-                    )
+                    null
                 }
-            val autoCloseEnabled = autoCloseTimeout > 0
-            val prePackagedCopyEnabled =
-                copyFromAssetPath != null || copyFromFile != null || copyFromInputStream != null
-            if (prePackagedCopyEnabled) {
-                requireNotNull(name) {
-                    "Cannot create from asset or file for an in-memory database."
-                }
-                val copyFromAssetPathConfig = if (copyFromAssetPath == null) 0 else 1
-                val copyFromFileConfig = if (copyFromFile == null) 0 else 1
-                val copyFromInputStreamConfig = if (copyFromInputStream == null) 0 else 1
-                val copyConfigurations =
-                    copyFromAssetPathConfig + copyFromFileConfig + copyFromInputStreamConfig
-
-                require(copyConfigurations == 1) {
-                    "More than one of createFromAsset(), " +
-                        "createFromInputStream(), and createFromFile() were called on this " +
-                        "Builder, but the database can only be created using one of the " +
-                        "three configurations."
-                }
-            }
-            val queryCallbackEnabled = queryCallback != null
-            val supportOpenHelperFactory =
-                initialFactory
-                    ?.let {
-                        if (autoCloseEnabled) {
-                            requireNotNull(name) {
-                                "Cannot create auto-closing database for an in-memory database."
-                            }
-                            val autoCloser =
-                                AutoCloser(
-                                    timeoutAmount = autoCloseTimeout,
-                                    timeUnit = requireNotNull(autoCloseTimeUnit),
-                                )
-                            AutoClosingRoomOpenHelperFactory(delegate = it, autoCloser = autoCloser)
-                        } else {
-                            it
-                        }
+            val copyFromConfig =
+                if (
+                    copyFromAssetPath != null || copyFromFile != null || copyFromInputStream != null
+                ) {
+                    requireNotNull(name) {
+                        "Cannot create from asset or file for an in-memory database."
                     }
-                    ?.let {
-                        if (queryCallbackEnabled) {
-                            val queryCallbackContext =
-                                queryCallbackExecutor?.asCoroutineDispatcher()
-                                    ?: requireNotNull(queryCallbackCoroutineContext)
-                            QueryInterceptorOpenHelperFactory(
-                                delegate = it,
-                                queryCallbackScope = CoroutineScope(queryCallbackContext),
-                                queryCallback = requireNotNull(queryCallback),
-                            )
-                        } else {
-                            it
-                        }
+                    val copyFromAssetPathConfig = if (copyFromAssetPath == null) 0 else 1
+                    val copyFromFileConfig = if (copyFromFile == null) 0 else 1
+                    val copyFromInputStreamConfig = if (copyFromInputStream == null) 0 else 1
+                    val copyConfigurations =
+                        copyFromAssetPathConfig + copyFromFileConfig + copyFromInputStreamConfig
+                    require(copyConfigurations == 1) {
+                        "More than one of createFromAsset(), createFromInputStream() and " +
+                            "createFromFile() were called on this Builder, but the database can " +
+                            "only be created using one of the " +
+                            "three configurations."
                     }
-            // No open helper means a driver is to be used.
-            if (supportOpenHelperFactory == null) {
-                require(!autoCloseEnabled) {
-                    "Auto Closing Database is not supported when an SQLiteDriver is configured."
+                    copyFromAssetPath?.let { CopyFromAssetPath(context, it) }
+                        ?: copyFromFile?.let { CopyFromFile(it) }
+                        ?: copyFromInputStream?.let { CopyFromInputStream(it) }
+                } else {
+                    null
                 }
-                require(!queryCallbackEnabled) {
-                    "Query Callback is not supported when an SQLiteDriver is configured."
-                }
-            }
             val configuration =
                 DatabaseConfiguration(
                         context = context,
                         name = name,
-                        sqliteOpenHelperFactory = supportOpenHelperFactory,
                         migrationContainer = migrationContainer,
                         callbacks = callbacks,
                         allowMainThreadQueries = allowMainThreadQueries,
                         journalMode = journalMode.resolve(context),
-                        queryExecutor = requireNotNull(queryExecutor),
-                        transactionExecutor = requireNotNull(transactionExecutor),
                         multiInstanceInvalidationServiceIntent = multiInstanceInvalidationIntent,
                         requireMigration = requireMigration,
                         allowDestructiveMigrationOnDowngrade = allowDestructiveMigrationOnDowngrade,
                         migrationNotRequiredFrom = migrationsNotRequiredFrom,
-                        copyFromAssetPath = copyFromAssetPath,
-                        copyFromFile = copyFromFile,
-                        copyFromInputStream = copyFromInputStream,
                         prepackagedDatabaseCallback = prepackagedDatabaseCallback,
                         typeConverters = typeConverters,
                         autoMigrationSpecs = autoMigrationSpecs,
                         allowDestructiveMigrationForAllTables =
                             allowDestructiveMigrationForAllTables,
-                        sqliteDriver = driver,
-                        queryCoroutineContext = queryCoroutineContext,
+                        sqliteDriver = requireNotNull(driver),
+                        queryCoroutineContext = queryCoroutineContext ?: Dispatchers.IO,
                     )
-                    .apply { this.useTempTrackingTable = inMemoryTrackingTableMode }
+                    .apply {
+                        this.useTempTrackingTable = inMemoryTrackingTableMode
+                        this.copyFromConfig = copyFromConfig
+                        this.autoCloseConfig = autoCloseConfig
+                    }
             val db = factory?.invoke() ?: findAndInstantiateDatabaseImpl(klass.java)
             db.init(configuration)
             return db
@@ -1695,73 +1221,27 @@ actual constructor() {
     /** Callback for [RoomDatabase]. */
     public actual abstract class Callback {
         /**
-         * Called when the database is created for the first time. This is called after all the
-         * tables are created.
-         *
-         * This function is only called when Room is configured without a driver. If a driver is set
-         * using [Builder.setDriver], then only the version that receives a [SQLiteConnection] is
-         * called.
-         *
-         * @param db The database.
-         */
-        public open fun onCreate(db: SupportSQLiteDatabase) {}
-
-        /**
          * Called when the database is created for the first time.
          *
          * This function called after all the tables are created.
          *
          * @param connection The database connection.
          */
-        public actual open fun onCreate(connection: SQLiteConnection) {
-            if (connection is SupportSQLiteConnection) {
-                onCreate(connection.db)
-            }
-        }
-
-        /**
-         * Called after the database was destructively migrated
-         *
-         * This function is only called when Room is configured without a driver. If a driver is set
-         * using [Builder.setDriver], then only the version that receives a [SQLiteConnection] is
-         * called.
-         *
-         * @param db The database.
-         */
-        public open fun onDestructiveMigration(db: SupportSQLiteDatabase) {}
+        public actual open fun onCreate(connection: SQLiteConnection) {}
 
         /**
          * Called after the database was destructively migrated.
          *
          * @param connection The database connection.
          */
-        public actual open fun onDestructiveMigration(connection: SQLiteConnection) {
-            if (connection is SupportSQLiteConnection) {
-                onDestructiveMigration(connection.db)
-            }
-        }
-
-        /**
-         * Called when the database has been opened.
-         *
-         * This function is only called when Room is configured without a driver. If a driver is set
-         * using [Builder.setDriver], then only the version that receives a [SQLiteConnection] is
-         * called.
-         *
-         * @param db The database.
-         */
-        public open fun onOpen(db: SupportSQLiteDatabase) {}
+        public actual open fun onDestructiveMigration(connection: SQLiteConnection) {}
 
         /**
          * Called when the database has been opened.
          *
          * @param connection The database connection.
          */
-        public actual open fun onOpen(connection: SQLiteConnection) {
-            if (connection is SupportSQLiteConnection) {
-                onOpen(connection.db)
-            }
-        }
+        public actual open fun onOpen(connection: SQLiteConnection) {}
     }
 
     /**
@@ -1773,39 +1253,15 @@ actual constructor() {
      * callback can be useful for updating the pre-package DB schema to satisfy Room's schema
      * validation.
      */
+    // TODO(b/339934813): Move pre-package out of Room and into a set of utility drivers.
     public abstract class PrepackagedDatabaseCallback {
-        /**
-         * Called when the pre-packaged database has been copied.
-         *
-         * @param db The database.
-         */
-        public open fun onOpenPrepackagedDatabase(db: SupportSQLiteDatabase) {}
 
         /**
          * Called when the pre-packaged database has been copied.
          *
          * @param connection The database connection.
          */
-        public open fun onOpenPrepackagedDatabase(connection: SQLiteConnection) {
-            if (connection is SupportSQLiteConnection) {
-                onOpenPrepackagedDatabase(connection.db)
-            }
-        }
-    }
-
-    /**
-     * Callback interface for when SQLite queries are executed.
-     *
-     * Can be set using [RoomDatabase.Builder.setQueryCallback].
-     */
-    public fun interface QueryCallback {
-        /**
-         * Called when a SQL query is executed.
-         *
-         * @param sqlQuery The SQLite query statement.
-         * @param bindArgs Arguments of the query if available, empty list otherwise.
-         */
-        public fun onQuery(sqlQuery: String, bindArgs: List<Any?>)
+        public abstract fun onOpenPrepackagedDatabase(connection: SQLiteConnection)
     }
 
     public companion object {
@@ -1815,112 +1271,4 @@ actual constructor() {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
         public const val MAX_BIND_PARAMETER_CNT: Int = 999
     }
-}
-
-/** Calls the specified suspending [block] with Room's transaction context. */
-internal suspend fun <R> RoomDatabase.withTransactionContext(block: suspend () -> R): R {
-    val transactionBlock: suspend CoroutineScope.() -> R = transaction@{
-        checkNotNull(coroutineContext[TransactionElement]) {
-            "Expected a TransactionElement in the CoroutineContext but none was found."
-        }
-        return@transaction block.invoke()
-    }
-    // Use inherited transaction context if available, this allows nested suspending transactions.
-    val transactionDispatcher = coroutineContext[TransactionElement]?.transactionDispatcher
-    return if (transactionDispatcher != null) {
-        withContext(transactionDispatcher, transactionBlock)
-    } else {
-        startTransactionCoroutine(transactionBlock)
-    }
-}
-
-/**
- * Suspend caller coroutine and start the transaction coroutine in a thread from the
- * [RoomDatabase.transactionExecutor], resuming the caller coroutine with the result once done. The
- * caller's `context` will be a parent of the started coroutine to propagating cancellation and
- * release the thread when cancelled.
- */
-private suspend fun <R> RoomDatabase.startTransactionCoroutine(
-    transactionBlock: suspend CoroutineScope.() -> R
-): R = suspendCancellableCoroutine { continuation ->
-    try {
-        transactionExecutor.execute {
-            try {
-                // Thread acquired, start the transaction coroutine using the parent context.
-                // The started coroutine will have an event loop dispatcher that we'll use for the
-                // transaction context.
-                runBlocking(continuation.context.minusKey(ContinuationInterceptor)) {
-                    val dispatcher = coroutineContext[ContinuationInterceptor]!!
-                    val transactionContext = createTransactionContext(dispatcher)
-                    continuation.resume(withContext(transactionContext, transactionBlock))
-                }
-            } catch (ex: Throwable) {
-                // If anything goes wrong, propagate exception to the calling coroutine.
-                continuation.cancel(ex)
-            }
-        }
-    } catch (ex: RejectedExecutionException) {
-        // Couldn't acquire a thread, cancel coroutine.
-        continuation.cancel(
-            IllegalStateException(
-                "Unable to acquire a thread to perform the database transaction.",
-                ex,
-            )
-        )
-    }
-}
-
-/**
- * Creates a [CoroutineContext] for performing database operations within a coroutine transaction.
- *
- * The context is a combination of a dispatcher, a [TransactionElement] and a thread local element.
- * * The dispatcher will dispatch coroutines to a single thread that is taken over from the Room
- *   transaction executor. If the coroutine context is switched, suspending DAO functions will be
- *   able to dispatch to the transaction thread. In reality the dispatcher is the event loop of a
- *   [runBlocking] started on the dedicated thread.
- * * The [TransactionElement] serves as an indicator for inherited context, meaning, if there is a
- *   switch of context, suspending DAO methods will be able to use the indicator to dispatch the
- *   database operation to the transaction thread.
- * * The thread local element serves as a second indicator and marks threads that are used to
- *   execute coroutines within the coroutine transaction, more specifically it allows us to identify
- *   if a blocking DAO method is invoked within the transaction coroutine.
- */
-private fun RoomDatabase.createTransactionContext(
-    dispatcher: ContinuationInterceptor
-): CoroutineContext {
-    val baseContext = dispatcher + TransactionElement(dispatcher)
-    val threadLocalElement = suspendingTransactionContext.asContextElement(baseContext)
-    return baseContext + threadLocalElement
-}
-
-/**
- * A [CoroutineContext.Element] that indicates there is an on-going database transaction.
- *
- * Even though all this element contains is a [ContinuationInterceptor], it is required since its
- * key will be unique which prevents the interceptor to be overridden during a context folding.
- */
-internal class TransactionElement(internal val transactionDispatcher: ContinuationInterceptor) :
-    CoroutineContext.Element {
-
-    companion object Key : CoroutineContext.Key<TransactionElement>
-
-    override val key: CoroutineContext.Key<TransactionElement>
-        get() = TransactionElement
-}
-
-/**
- * Compatibility suspend transaction execution with driver usage. This will maintain the dispatcher
- * behaviour in `withTransaction` (now deleted API) when Room is in compatibility mode executing
- * driver transactions and maintains compatibility with suspend DAO usages.
- *
- * TODO: Check if this still needed even if SupportSQLite is removed with AndroidSQLiteDriver
- */
-internal suspend fun <R> RoomDatabase.compatTransactionCoroutineExecute(block: suspend () -> R): R {
-    if (inCompatibilityMode() && isOpenInternal && inTransaction()) {
-        return block.invoke()
-    }
-    if (coroutineContext[RoomExternalOperationElement] == null) {
-        return block.invoke()
-    }
-    return withTransactionContext(block)
 }

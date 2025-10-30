@@ -38,11 +38,12 @@ import org.robolectric.shadows.ShadowDisplayManager
 import org.robolectric.util.ReflectionHelpers
 import org.robolectric.util.ReflectionHelpers.ClassParameter
 
-@Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+@Config(sdk = [Build.VERSION_CODES.BAKLAVA])
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
 class ProjectedContextTest {
 
+    private var virtualDisplay: VirtualDisplay? = null
     val context: ContextWrapper = ApplicationProvider.getApplicationContext()
     val virtualDeviceManager =
         context.getSystemService(Context.VIRTUAL_DEVICE_SERVICE) as VirtualDeviceManager
@@ -139,6 +140,7 @@ class ProjectedContextTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
     @Test
     fun isProjectedDeviceConnected_projectedDeviceCreated_isTrue() = runBlocking {
         createVirtualDevice()
@@ -147,13 +149,36 @@ class ProjectedContextTest {
             .isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
+    @Test
+    fun isProjectedDeviceConnected_displayAddedLater_isTrue() = runBlocking {
+        val virtualDevice = createVirtualDevice(shouldCreateVirtualDisplay = false)
+        val flow = ProjectedContext.isProjectedDeviceConnected(context, coroutineContext)
+        createVirtualDisplayForDevice(virtualDevice)
+
+        assertThat(flow.first()).isTrue()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
+    @Test
+    fun isProjectedDeviceConnected_displayRemoved_isFalse() = runBlocking {
+        createVirtualDevice(shouldCreateVirtualDisplay = true)
+        val flow = ProjectedContext.isProjectedDeviceConnected(context, coroutineContext)
+        assertThat(flow.first()).isTrue()
+
+        virtualDisplay?.release()
+
+        assertThat(flow.first()).isFalse()
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
     @Test
     fun isProjectedDeviceConnected_projectedDeviceNotCreated_isFalse() = runBlocking {
         assertThat(ProjectedContext.isProjectedDeviceConnected(context, coroutineContext).first())
             .isFalse()
     }
 
-    private fun createVirtualDevice(shouldCreateVirtualDisplay: Boolean = true) {
+    private fun createVirtualDevice(shouldCreateVirtualDisplay: Boolean = true): Any? {
         val virtualDeviceParamsBuilderClass =
             Class.forName("android.companion.virtual.VirtualDeviceParams\$Builder")
         val virtualDeviceParamsClass =
@@ -176,23 +201,27 @@ class ProjectedContextTest {
                 ClassParameter(virtualDeviceParamsClass, virtualDeviceParamsBuilder),
             )
 
-        val virtualDisplayConfig =
-            VirtualDisplayConfig.Builder(ProjectedContext.PROJECTED_DISPLAY_NAME, 10, 10, 10)
-                .build()
-
         if (shouldCreateVirtualDisplay) {
-            ReflectionHelpers.callInstanceMethod<Any?>(
-                virtualDevice,
-                "createVirtualDisplay",
-                ClassParameter(VirtualDisplayConfig::class.java, virtualDisplayConfig),
-                ClassParameter(Executor::class.java, null),
-                ClassParameter(VirtualDisplay.Callback::class.java, null),
-            )
+            virtualDisplay = createVirtualDisplayForDevice(virtualDevice)
         }
+        return virtualDevice
     }
 
     class LocalContextWrapper(context: Context, private val deviceId: Int) :
         ContextWrapper(context) {
         override fun getDeviceId() = deviceId
+    }
+
+    private fun createVirtualDisplayForDevice(virtualDevice: Any?): VirtualDisplay {
+        val virtualDisplayConfig =
+            VirtualDisplayConfig.Builder(ProjectedContext.PROJECTED_DISPLAY_NAME, 10, 10, 10)
+                .build()
+        return ReflectionHelpers.callInstanceMethod(
+            virtualDevice,
+            "createVirtualDisplay",
+            ClassParameter(VirtualDisplayConfig::class.java, virtualDisplayConfig),
+            ClassParameter(Executor::class.java, null),
+            ClassParameter(VirtualDisplay.Callback::class.java, null),
+        )
     }
 }

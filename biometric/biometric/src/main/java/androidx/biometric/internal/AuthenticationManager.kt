@@ -209,7 +209,6 @@ internal class AuthenticationManager(
         }
         viewModel.canceledFrom = canceledFrom
         viewModel.cancellationSignalProvider.cancel()
-        destroy()
     }
 
     /** Removes any associated UI from the client activity/fragment. */

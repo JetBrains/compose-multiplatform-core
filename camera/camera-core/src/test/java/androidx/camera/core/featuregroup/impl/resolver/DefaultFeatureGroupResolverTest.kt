@@ -42,6 +42,7 @@ import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FOR
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.stabilization.StabilizationMode.OFF
 import androidx.camera.core.impl.stabilization.StabilizationMode.ON
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import androidx.camera.core.internal.CameraUseCaseAdapter
 import androidx.camera.core.internal.StreamSpecQueryResult
 import androidx.camera.core.internal.StreamSpecsCalculator
@@ -109,7 +110,7 @@ class DefaultFeatureGroupResolverTest {
             expectedFrameRateRange = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED,
             imageFormat = INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE,
             previewStabilizationMode =
-                VideoStabilizationFeature.DEFAULT_STABILIZATION_MODE.toPreviewStabilizationMode(),
+                VideoStabilizationFeature.DEFAULT_STABILIZATION.toPreviewStabilizationMode(),
         )
 
     private val defaultJpegStreamSpec =
@@ -118,7 +119,7 @@ class DefaultFeatureGroupResolverTest {
             expectedFrameRateRange = StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED,
             imageFormat = ImageFormat.JPEG,
             previewStabilizationMode =
-                VideoStabilizationFeature.DEFAULT_STABILIZATION_MODE.toPreviewStabilizationMode(),
+                VideoStabilizationFeature.DEFAULT_STABILIZATION.toPreviewStabilizationMode(),
         )
 
     @Test
@@ -746,11 +747,12 @@ class DefaultFeatureGroupResolverTest {
         )
     }
 
-    private fun VideoStabilizationFeature.StabilizationMode.toPreviewStabilizationMode(): Int {
+    private fun VideoStabilization.toPreviewStabilizationMode(): Int {
         return when (this) {
-            VideoStabilizationFeature.StabilizationMode.OFF -> OFF
-            VideoStabilizationFeature.StabilizationMode.ON -> OFF
-            VideoStabilizationFeature.StabilizationMode.PREVIEW -> ON
+            VideoStabilization.UNSPECIFIED,
+            VideoStabilization.OFF,
+            VideoStabilization.ON -> OFF
+            VideoStabilization.PREVIEW -> ON
         }
     }
 }

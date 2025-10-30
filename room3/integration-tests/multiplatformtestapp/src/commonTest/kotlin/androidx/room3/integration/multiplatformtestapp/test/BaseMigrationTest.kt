@@ -199,7 +199,11 @@ abstract class BaseMigrationTest {
         // Create database with an invalid combination of destructive migration from
         assertThrows<IllegalArgumentException> {
                 getDatabaseBuilder()
-                    .addMigrations(object : Migration(1, 2) {})
+                    .addMigrations(
+                        object : Migration(1, 2) {
+                            override fun migrate(connection: SQLiteConnection) {}
+                        }
+                    )
                     .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1)
                     .build()
             }

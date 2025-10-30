@@ -108,13 +108,13 @@ public class CropRegionZoomCompat(private val cameraProperties: CameraProperties
         }
 
     private var currentCropRect: Rect? = null
+    private val sensorRect =
+        cameraProperties.metadata[CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE]!!
 
     override fun applyAsync(
         zoomRatio: Float,
         requestControl: UseCaseCameraRequestControl,
     ): Deferred<Unit> {
-        val sensorRect =
-            cameraProperties.metadata[CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE]!!
         currentCropRect = computeCropRect(sensorRect, zoomRatio)
         return requestControl.setParametersAsync(
             values = mapOf(CaptureRequest.SCALER_CROP_REGION to (currentCropRect as Any))
@@ -127,9 +127,7 @@ public class CropRegionZoomCompat(private val cameraProperties: CameraProperties
         )
     }
 
-    override fun getCropSensorRegion(): Rect =
-        currentCropRect
-            ?: cameraProperties.metadata[CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE]!!
+    override fun getCropSensorRegion(): Rect = currentCropRect ?: sensorRect
 
     private fun computeCropRect(sensorRect: Rect, zoomRatio: Float): Rect {
         var ratio = zoomRatio

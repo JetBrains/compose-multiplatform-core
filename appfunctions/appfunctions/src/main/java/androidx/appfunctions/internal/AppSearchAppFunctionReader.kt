@@ -25,6 +25,7 @@ import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadataDocument
+import androidx.appfunctions.metadata.AppFunctionDeprecationMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadataDocument
 import androidx.appfunctions.metadata.AppFunctionPackageMetadata
@@ -297,6 +298,7 @@ internal class AppSearchAppFunctionReader(
                 schemaMetadata,
                 sharedTopLevelComponentsByPackage,
             ) ?: return null
+        val deprecationMetadata = getAppFunctionDeprecationMetadata(staticMetadataDocument)
 
         return AppFunctionMetadata(
             id = functionId,
@@ -307,6 +309,7 @@ internal class AppSearchAppFunctionReader(
             response = responseMetadata,
             components = componentMetadata,
             description = staticMetadataDocument.description ?: "",
+            deprecation = deprecationMetadata,
         )
     }
 
@@ -467,6 +470,12 @@ internal class AppSearchAppFunctionReader(
         } else {
             schemaAppFunctionInventory?.componentsMetadata
         }
+    }
+
+    private fun getAppFunctionDeprecationMetadata(
+        appFunctionMetadataDocument: AppFunctionMetadataDocument
+    ): AppFunctionDeprecationMetadata? {
+        return appFunctionMetadataDocument.deprecation?.toAppFunctionDeprecationMetadata()
     }
 
     private fun isAppFunctionMetadataDocumentFromDynamicIndexer(

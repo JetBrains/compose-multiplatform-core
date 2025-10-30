@@ -464,9 +464,12 @@ private class SurfaceNode(
             val progress = focusedHighlightProgress
             if (progress > 0f) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val rotationProgressRadians =
+                        (FocusedHighlightRotationEndAngleRadians -
+                            FocusedHighlightRotationStartAngleRadians) *
+                            focusedHighlightRotationProgress
                     val rotationRadians =
-                        FocusedHighlightRotationStartAngleRadians +
-                            focusedHighlightRotationProgress * Math.TAU
+                        FocusedHighlightRotationStartAngleRadians + rotationProgressRadians
                     shader =
                         HighlightShaderHelper.configureShader(
                             shader = shader,
@@ -579,9 +582,11 @@ private val FocusedExitAnimationSpec: AnimationSpec<Float> =
     spring(dampingRatio = 1f, stiffness = 100f)
 
 private val FocusedHighlightRotationAnimationSpec: AnimationSpec<Float> =
-    tween(durationMillis = 3_000, easing = LinearOutSlowInEasing, delayMillis = 300)
+    tween(durationMillis = 700, easing = LinearOutSlowInEasing, delayMillis = 40)
 
-private val FocusedHighlightRotationStartAngleRadians: Double = Math.toRadians(40.0)
+private val FocusedHighlightRotationStartAngleRadians: Double = Math.toRadians(-100.0)
+
+private val FocusedHighlightRotationEndAngleRadians: Double = Math.toRadians(35.0)
 
 private val PressedOverlayColor = Color.White
 
@@ -622,10 +627,10 @@ uniform float iAlphaProgress;
 half4 main(float2 fragCoord) {
     // Horizontal gradient
     half4 colors[4];
-    colors[0] = half4(1.0, 1.0, 1.0, 0.8 * iAlphaProgress); // White with 80% alpha
-    colors[1] = half4(1.0, 1.0, 1.0, 0.0); // Transparent
-    colors[2] = half4(1.0, 1.0, 1.0, 0.0); // Transparent
-    colors[3] = half4(1.0, 1.0, 1.0, 0.2 * iAlphaProgress); // White with 20% alpha
+    colors[0] = half4(1.0, 1.0, 1.0, 1.0 * iAlphaProgress); // White with 100% alpha
+    colors[1] = half4(1.0, 1.0, 1.0, 0.2 * iAlphaProgress); // White with 20% alpha
+    colors[2] = half4(1.0, 1.0, 1.0, 0.2 * iAlphaProgress); // White with 20% alpha
+    colors[3] = half4(1.0, 1.0, 1.0, 0.8 * iAlphaProgress); // White with 80% alpha
 
     // Stops for the horizontal gradient
     float stops[4];

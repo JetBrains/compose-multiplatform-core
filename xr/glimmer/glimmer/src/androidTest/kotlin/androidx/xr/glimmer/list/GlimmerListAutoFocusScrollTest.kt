@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -44,7 +43,6 @@ import org.junit.runners.Parameterized
 internal class GlimmerListAutoFocusScrollTest(private val testCase: FocusStrategyScrollTestCase) :
     BaseListTestWithOrientation(Orientation.Vertical) {
 
-    @SdkSuppress(minSdkVersion = 24) // b/452710559
     @Test
     fun verifyFocusIsSetCorrectlyAtEachScrollStep() {
         val state = ListState()

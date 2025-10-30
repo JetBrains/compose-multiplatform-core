@@ -33,10 +33,6 @@ import java.util.Locale
 /**
  * A [SupportSQLiteDatabase] implementation that is backed by a [RoomDatabase] for compatibility
  * with existing usages of [SupportSQLiteDatabase].
- *
- * This wrapper is useful when an `SQLiteDriver` has been configured with the [RoomDatabase] which
- * causes [RoomDatabase.openHelper] to throw an exception since the backing database is no longer a
- * real [SupportSQLiteDatabase].
  */
 internal class RoomSupportSQLiteDatabase(roomDatabase: RoomDatabase) : SupportSQLiteDatabase {
 

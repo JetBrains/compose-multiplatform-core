@@ -67,6 +67,12 @@ internal class FeaturePreferencesDialog(
                 context.getString(R.string.thumbnail_preview),
             ),
             FeatureFlagConfig(
+                R.id.layout_strategy_switch,
+                PdfFeatureFlags::isLayoutStrategyEnabled,
+                FeatureFlagNames.LAYOUT_STRATEGY,
+                context.getString(R.string.layout_strategy),
+            ),
+            FeatureFlagConfig(
                 R.id.form_filling_switch,
                 PdfFeatureFlags::isFormFillingEnabled,
                 FeatureFlagNames.FORM_FILLING,
@@ -129,7 +135,7 @@ interface FeatureFlagListener {
 object FeatureFlagNames {
     const val CUSTOM_LINK_HANDLING: String = "CUSTOM_LINK_HANDLING"
     const val EXTERNAL_HARDWARE_INTERACTION: String = "EXTERNAL_HARDWARE_INTERACTION"
-    const val LINK_SELECTION: String = "LINK_SELECTION"
     const val THUMBNAIL_PREVIEW: String = "THUMBNAIL_PREVIEW"
+    const val LAYOUT_STRATEGY: String = "LAYOUT_STRATEGY"
     const val FORM_FILLING: String = "FORM_FILLING"
 }

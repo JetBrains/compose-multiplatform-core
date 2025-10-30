@@ -22,8 +22,6 @@ import android.media.Image
 import android.os.Build
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -63,22 +61,22 @@ class AndroidImageTest {
 
     @Test
     fun getHeight_returnsImageHeight() {
-        assertEquals(mockImage.height, androidImage.height)
+        assertThat(mockImage.height).isEqualTo(androidImage.height)
     }
 
     @Test
     fun getWidth_returnsImageWidth() {
-        assertEquals(mockImage.width, androidImage.width)
+        assertThat(mockImage.width).isEqualTo(androidImage.width)
     }
 
     @Test
     fun getFormat_returnsImageFormat() {
-        assertEquals(mockImage.format, androidImage.format)
+        assertThat(mockImage.format).isEqualTo(androidImage.format)
     }
 
     @Test
     fun getTimestamp_returnsTimestamp() {
-        assertEquals(mockImage.timestamp, androidImage.timestamp)
+        assertThat(mockImage.timestamp).isEqualTo(androidImage.timestamp)
     }
 
     @Test
@@ -86,7 +84,7 @@ class AndroidImageTest {
     fun unwrapAsHardwareBuffer_returnsImageHardwareBuffer() {
         val hardwareBuffer = androidImage.unwrapAs(HardwareBuffer::class)
 
-        assertNotNull(hardwareBuffer)
+        assertThat(hardwareBuffer).isNotNull()
     }
 
     @Test
@@ -94,7 +92,7 @@ class AndroidImageTest {
     fun getHardwareBuffer_returnsImageHardwareBuffer() {
         val hardwareBuffer = androidImage.hardwareBuffer
 
-        assertNotNull(hardwareBuffer)
+        assertThat(hardwareBuffer).isNotNull()
     }
 
     @Test

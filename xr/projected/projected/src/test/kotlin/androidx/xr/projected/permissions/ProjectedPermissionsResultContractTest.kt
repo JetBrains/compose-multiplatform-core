@@ -126,8 +126,8 @@ class ProjectedPermissionsResultContractTest {
             // verify that no request is made
             assertThat(request).isNull()
 
-            val continueButtonText = appContext.getString(R.string.continue_button)
-            val cancelButtonText = appContext.getString(R.string.cancel_button)
+            val continueButtonText = appContext.getString(R.string.projected_continue_button)
+            val cancelButtonText = appContext.getString(R.string.projected_cancel_button)
 
             // verify that the rationale text and buttons are visible
             composeTestRule.onNodeWithText("My rationale").assertIsDisplayed()
@@ -219,7 +219,7 @@ class ProjectedPermissionsResultContractTest {
             )
         ) { activity, projectedActivityScenario ->
             // user rejects rationale
-            val cancelButtonText = appContext.getString(R.string.cancel_button)
+            val cancelButtonText = appContext.getString(R.string.projected_cancel_button)
             composeTestRule.onNodeWithText(cancelButtonText).performClick()
 
             val request = getLastRequestedPermission(activity)
@@ -260,7 +260,7 @@ class ProjectedPermissionsResultContractTest {
             )
         ) { activity, projectedActivityScenario ->
             // user rejects rationale
-            val cancelButtonText = appContext.getString(R.string.cancel_button)
+            val cancelButtonText = appContext.getString(R.string.projected_cancel_button)
             composeTestRule.onNodeWithText(cancelButtonText).performClick()
 
             val request = getLastRequestedPermission(activity)
@@ -306,8 +306,8 @@ class ProjectedPermissionsResultContractTest {
                 ),
             )
         ) { activity, projectedActivityScenario ->
-            val continueButtonText = appContext.getString(R.string.continue_button)
-            val cancelButtonText = appContext.getString(R.string.cancel_button)
+            val continueButtonText = appContext.getString(R.string.projected_continue_button)
+            val cancelButtonText = appContext.getString(R.string.projected_cancel_button)
 
             // user taps on cancel button for the first rationale
             composeTestRule.onNodeWithText(cancelButtonText).performClick()
@@ -368,8 +368,8 @@ class ProjectedPermissionsResultContractTest {
         // This test verifies a user journey with multiple requests, which some accepted, some
         // declined,
         // and some rejected at the rationale screen.
-        val continueButtonText = appContext.getString(R.string.continue_button)
-        val cancelButtonText = appContext.getString(R.string.cancel_button)
+        val continueButtonText = appContext.getString(R.string.projected_continue_button)
+        val cancelButtonText = appContext.getString(R.string.projected_cancel_button)
 
         launchHostActivity(
             listOf(
@@ -543,8 +543,8 @@ class ProjectedPermissionsResultContractTest {
                 // verify that no request is made
                 assertThat(request).isNull()
             }
-            val continueButtonText = appContext.getString(R.string.continue_button)
-            val cancelButtonText = appContext.getString(R.string.cancel_button)
+            val continueButtonText = appContext.getString(R.string.projected_continue_button)
+            val cancelButtonText = appContext.getString(R.string.projected_cancel_button)
 
             // verify that the rationale text and buttons are visible
             composeTestRule.onNodeWithText("My rationale").assertIsDisplayed()
@@ -590,8 +590,8 @@ class ProjectedPermissionsResultContractTest {
                 ),
             )
         ) { hostActivityScenario, projectedActivityScenario ->
-            val continueButtonText = appContext.getString(R.string.continue_button)
-            val cancelButtonText = appContext.getString(R.string.cancel_button)
+            val continueButtonText = appContext.getString(R.string.projected_continue_button)
+            val cancelButtonText = appContext.getString(R.string.projected_cancel_button)
             // user taps on continue button on the first rationale screen
             composeTestRule.onNodeWithText(continueButtonText).performClick()
             hostActivityScenario.onActivity { activity ->
@@ -647,7 +647,7 @@ class ProjectedPermissionsResultContractTest {
                 ),
             )
         ) { hostActivityScenario, projectedActivityScenario ->
-            val continueButtonText = appContext.getString(R.string.continue_button)
+            val continueButtonText = appContext.getString(R.string.projected_continue_button)
             // user taps on continue button on the first rationale screen
             composeTestRule.onNodeWithText(continueButtonText).performClick()
             hostActivityScenario.onActivity { activity ->
@@ -1026,8 +1026,9 @@ class ProjectedPermissionsResultContractTest {
 
                                 // Get button texts for Compose finders
                                 val continueButtonText =
-                                    appContext.getString(R.string.continue_button)
-                                val cancelButtonText = appContext.getString(R.string.cancel_button)
+                                    appContext.getString(R.string.projected_continue_button)
+                                val cancelButtonText =
+                                    appContext.getString(R.string.projected_cancel_button)
 
                                 // Verify that the new rationale is displayed
                                 composeTestRule.onNodeWithText("rationale 3").assertIsDisplayed()

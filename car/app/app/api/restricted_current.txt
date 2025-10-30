@@ -266,7 +266,7 @@ package androidx.car.app.hardware {
 
 }
 
-package androidx.car.app.hardware.climate {
+package @SuppressCompatibility androidx.car.app.hardware.climate {
 
   @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public final class CabinTemperatureProfile {
     method public java.util.Map<java.util.Set<androidx.car.app.hardware.common.CarZone!>!,android.util.Pair<java.lang.Float!,java.lang.Float!>!> getCarZoneSetsToCabinCelsiusTemperatureRanges();
@@ -880,7 +880,7 @@ package androidx.car.app.media {
 
 }
 
-package androidx.car.app.media.model {
+package @SuppressCompatibility androidx.car.app.media.model {
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public class MediaPlaybackTemplate implements androidx.car.app.model.Template {
     method public androidx.car.app.model.Header? getHeader();
@@ -938,7 +938,7 @@ package androidx.car.app.mediaextensions.analytics {
 
 }
 
-package androidx.car.app.mediaextensions.analytics.client {
+package @SuppressCompatibility androidx.car.app.mediaextensions.analytics.client {
 
   @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public interface AnalyticsCallback {
     method public void onBrowseNodeChangeEvent(androidx.car.app.mediaextensions.analytics.event.BrowseChangeEvent);
@@ -1674,6 +1674,7 @@ package androidx.car.app.model {
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol public final class Row implements androidx.car.app.model.Item {
     method @androidx.car.app.annotations.RequiresCarApi(6) public java.util.List<androidx.car.app.model.Action!> getActions();
+    method @androidx.car.app.annotations.RequiresCarApi(8) public androidx.car.app.model.CarIcon? getEndImage();
     method public androidx.car.app.model.CarIcon? getImage();
     method public androidx.car.app.model.Metadata? getMetadata();
     method @androidx.car.app.annotations.RequiresCarApi(6) public int getNumericDecoration();
@@ -1702,6 +1703,7 @@ package androidx.car.app.model {
     method public androidx.car.app.model.Row build();
     method public androidx.car.app.model.Row.Builder setBrowsable(boolean);
     method @androidx.car.app.annotations.RequiresCarApi(5) public androidx.car.app.model.Row.Builder setEnabled(boolean);
+    method @androidx.car.app.annotations.RequiresCarApi(8) public androidx.car.app.model.Row.Builder setEndImage(androidx.car.app.model.CarIcon);
     method public androidx.car.app.model.Row.Builder setImage(androidx.car.app.model.CarIcon);
     method public androidx.car.app.model.Row.Builder setImage(androidx.car.app.model.CarIcon, int);
     method @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public androidx.car.app.model.Row.Builder setIndexable(boolean);
@@ -1787,11 +1789,15 @@ package androidx.car.app.model {
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public final class SectionedItemTemplate implements androidx.car.app.model.Template {
     method public java.util.List<androidx.car.app.model.Action!> getActions();
+    method public int getAlphabeticalIndexingStrategy();
     method public androidx.car.app.model.Header? getHeader();
     method public int getScrollStatePersistenceStrategy();
     method public java.util.List<androidx.car.app.model.Section<? extends java.lang.Object!>!> getSections();
-    method public boolean isAlphabeticalIndexingAllowed();
+    method @Deprecated public boolean isAlphabeticalIndexingAllowed();
     method public boolean isLoading();
+    field public static final int ALPHABETICAL_INDEXING_DISABLED = 0; // 0x0
+    field public static final int ALPHABETICAL_INDEXING_TITLE_AS_IS = 1; // 0x1
+    field public static final int ALPHABETICAL_INDEXING_TITLE_IGNORE_ARTICLES_AND_SYMBOLS = 2; // 0x2
     field public static final int SCROLL_STATE_PRESERVE_INDEX = 1; // 0x1
     field public static final int SCROLL_STATE_RESET_TO_TOP = 0; // 0x0
   }
@@ -1805,7 +1811,8 @@ package androidx.car.app.model {
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder clearActions();
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder clearSections();
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setActions(java.util.List<androidx.car.app.model.Action!>);
-    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setAlphabeticalIndexingAllowed(boolean);
+    method @Deprecated @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setAlphabeticalIndexingAllowed(boolean);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setAlphabeticalIndexingStrategy(int);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setHeader(androidx.car.app.model.Header?);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setLoading(boolean);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setScrollStatePersistenceStrategy(int);
@@ -1910,7 +1917,7 @@ package androidx.car.app.model {
 
 }
 
-package androidx.car.app.model.signin {
+package @SuppressCompatibility androidx.car.app.model.signin {
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.RequiresCarApi(2) public final class InputSignInMethod implements androidx.car.app.model.signin.SignInTemplate.SignInMethod {
     method public androidx.car.app.model.CarText? getDefaultValue();
@@ -2428,7 +2435,7 @@ package androidx.car.app.suggestion {
 
 }
 
-package androidx.car.app.suggestion.model {
+package @SuppressCompatibility androidx.car.app.suggestion.model {
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol public final class Suggestion {
     method public android.app.PendingIntent? getAction();

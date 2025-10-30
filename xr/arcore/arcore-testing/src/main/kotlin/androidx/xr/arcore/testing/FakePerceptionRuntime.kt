@@ -19,7 +19,7 @@ package androidx.xr.arcore.testing
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.XrDisplay.BlendMode
+import androidx.xr.runtime.XrDevice.DisplayBlendMode
 import kotlin.time.ComparableTimeMark
 
 /** Test-only implementation of [androidx.xr.arcore.runtime.PerceptionRuntime] */
@@ -29,8 +29,8 @@ public data class FakePerceptionRuntime(
     override val lifecycleManager: FakeLifecycleManager,
     override val perceptionManager: FakePerceptionManager,
 ) : PerceptionRuntime {
-    /** The value that will be returned by [androidx.xr.runtime.XrDisplay.getPreferredBlendMode] */
-    public var xrDisplayPreferredBlendMode: BlendMode = BlendMode.NOT_APPLICABLE
+    /** The value that will be returned by [androidx.xr.runtime.XrDevice.getPreferredBlendMode] */
+    public var xrDevicePreferredDisplayBlendMode: DisplayBlendMode = DisplayBlendMode.NO_DISPLAY
 
     override fun initialize() {
         lifecycleManager.create()
@@ -40,8 +40,8 @@ public data class FakePerceptionRuntime(
         lifecycleManager.configure(config)
     }
 
-    override fun getPreferredBlendMode(): BlendMode {
-        return xrDisplayPreferredBlendMode
+    override fun getPreferredDisplayBlendMode(): DisplayBlendMode {
+        return xrDevicePreferredDisplayBlendMode
     }
 
     override fun resume() {

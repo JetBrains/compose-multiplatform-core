@@ -110,7 +110,6 @@ internal class SubspaceLayoutModifierNodeCoordinator(
     override val size: IntVolumeSize
         get() = IntVolumeSize(width = measuredWidth, height = measuredHeight, depth = measuredDepth)
 
-    private var lastConstraints: VolumeConstraints? = null
     private var subspaceMeasureResult: SubspaceMeasureResult? = null
     private var layoutPose: Pose? = null
 
@@ -136,8 +135,6 @@ internal class SubspaceLayoutModifierNodeCoordinator(
      *   by its parent layout.
      */
     override fun measure(constraints: VolumeConstraints): SubspacePlaceable {
-        lastConstraints = constraints
-
         with(layoutModifierNode) {
             val measurable: SubspaceMeasurable = child ?: layoutNode!!.measurableLayout
             val subspaceMeasureResult: SubspaceMeasureResult =
@@ -151,19 +148,6 @@ internal class SubspaceLayoutModifierNodeCoordinator(
         }
 
         return this
-    }
-
-    /**
-     * Measures this layout node using the most recently provided constraints.
-     *
-     * Returns true if the measured size has changed.
-     */
-    internal fun remeasure(): Boolean {
-        return lastConstraints?.let {
-            val oldSize = size
-            measure(it)
-            oldSize != size
-        } ?: false
     }
 
     /**

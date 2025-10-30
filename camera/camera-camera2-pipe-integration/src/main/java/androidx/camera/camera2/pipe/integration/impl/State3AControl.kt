@@ -76,6 +76,8 @@ constructor(
 
     private val lock = Any()
     private val invalidateLock = Any()
+    private val isExternalFlashAeModeSupported =
+        cameraProperties.metadata.isExternalFlashAeModeSupported()
 
     @GuardedBy("lock") private val updateSignals = mutableSetOf<CompletableDeferred<Unit>>()
 
@@ -147,12 +149,11 @@ constructor(
 
         // Overwrite AE mode to ON_EXTERNAL_FLASH only if required and explicitly supported
         if (tryExternalFlashAeMode) {
-            val isSupported = cameraProperties.metadata.isExternalFlashAeModeSupported()
             Camera2Logger.debug {
                 "State3AControl.invalidate: trying external flash AE mode" +
-                    ", supported = $isSupported"
+                    ", supported = $isExternalFlashAeModeSupported"
             }
-            if (isSupported) {
+            if (isExternalFlashAeModeSupported) {
                 preferAeMode = CaptureRequest.CONTROL_AE_MODE_ON_EXTERNAL_FLASH
             }
         }
@@ -167,35 +168,36 @@ constructor(
     public fun invalidate() {
         // TODO(b/276779600): Refactor and move the setting of these parameter to
         //  CameraGraph.Config(requiredParameters = mapOf(....)).
-        synchronized(invalidateLock) {
+        val (preferAeMode, preferAfMode) =
+            synchronized(invalidateLock) {
                 val preferAeMode = getFinalPreferredAeMode()
                 val preferAfMode = preferredFocusMode ?: getDefaultAfMode()
 
-                val parameters: MutableMap<CaptureRequest.Key<*>, Any> =
-                    mutableMapOf(
-                        CaptureRequest.CONTROL_AE_MODE to
-                            cameraProperties.metadata.getSupportedAeMode(preferAeMode),
-                        CaptureRequest.CONTROL_AF_MODE to
-                            cameraProperties.metadata.getSupportedAfMode(preferAfMode),
-                        CaptureRequest.CONTROL_AWB_MODE to
-                            cameraProperties.metadata.getSupportedAwbMode(
-                                CaptureRequest.CONTROL_AWB_MODE_AUTO
-                            ),
-                    )
-
-                requestControl?.setParametersAsync(values = parameters)
+                Pair(preferAeMode, preferAfMode)
             }
-            ?.apply {
-                toCompletableDeferred().also { signal ->
-                    synchronized(lock) {
-                        updateSignals.add(signal)
-                        updateSignal = signal
-                        signal.invokeOnCompletion {
-                            synchronized(lock) { updateSignals.remove(signal) }
-                        }
+        val valueFactory: () -> Map<CaptureRequest.Key<*>, Any> = {
+            mapOf(
+                CaptureRequest.CONTROL_AE_MODE to
+                    cameraProperties.metadata.getSupportedAeMode(preferAeMode),
+                CaptureRequest.CONTROL_AF_MODE to
+                    cameraProperties.metadata.getSupportedAfMode(preferAfMode),
+                CaptureRequest.CONTROL_AWB_MODE to
+                    cameraProperties.metadata.getSupportedAwbMode(
+                        CaptureRequest.CONTROL_AWB_MODE_AUTO
+                    ),
+            )
+        }
+        requestControl?.setParametersAsync(valuesFactory = valueFactory)?.apply {
+            toCompletableDeferred().also { signal ->
+                synchronized(lock) {
+                    updateSignals.add(signal)
+                    updateSignal = signal
+                    signal.invokeOnCompletion {
+                        synchronized(lock) { updateSignals.remove(signal) }
                     }
                 }
-            } ?: run { synchronized(lock) { updateSignal = CompletableDeferred(Unit) } }
+            }
+        } ?: run { synchronized(lock) { updateSignal = CompletableDeferred(Unit) } }
     }
 
     private fun getDefaultAfMode(): Int =

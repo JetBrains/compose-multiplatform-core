@@ -25,6 +25,11 @@ import android.view.MotionEvent.ACTION_POINTER_DOWN
 import android.view.MotionEvent.ACTION_POINTER_INDEX_SHIFT
 import android.view.MotionEvent.ACTION_POINTER_UP
 import android.view.MotionEvent.ACTION_UP
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.DraggableState
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.mutableStateOf
@@ -594,6 +599,13 @@ class IndirectPointerGestureTest {
 
         dispatchIndirectPointerEvent(p1Up, p1Move)
 
+        // The gesture should not be processed based on p1
+        rule.runOnIdle {
+            assertThat(onClickCount).isEqualTo(0)
+            assertThat(onSwipeForwardCount).isEqualTo(0)
+            assertThat(onSwipeBackwardCount).isEqualTo(0)
+        }
+
         val p0Up =
             buildMotionEvent(
                 action = ACTION_UP,
@@ -608,6 +620,117 @@ class IndirectPointerGestureTest {
         // The gesture is processed based on p0, which was a click.
         rule.runOnIdle {
             assertThat(onClickCount).isEqualTo(1)
+            assertThat(onSwipeForwardCount).isEqualTo(0)
+            assertThat(onSwipeBackwardCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun gesturesFromSecondaryPointer_whenFirstPointerEventsAreConsumed_areIgnored() {
+        var onClickCount = 0
+        var onSwipeForwardCount = 0
+        var onSwipeBackwardCount = 0
+
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onClick = { onClickCount++ },
+                            onSwipeForward = { onSwipeForwardCount++ },
+                            onSwipeBackward = { onSwipeBackwardCount++ },
+                        )
+                        .focusTarget()
+            )
+        }
+
+        val downTime = System.currentTimeMillis()
+        var eventTime = downTime
+
+        val p0 = getPointerProperties(0)
+        val p1 = getPointerProperties(1)
+
+        val p0Coords = getPointerCoords(x = 0f, y = 0f)
+        val p1Coords = getPointerCoords(0f, y = 0f)
+
+        val p0Down =
+            buildMotionEvent(
+                action = ACTION_DOWN,
+                pointers = listOf(p0),
+                pointerCoords = listOf(p0Coords),
+                downTime = downTime,
+                eventTime = eventTime,
+            )
+
+        dispatchIndirectPointerEvent(p0Down, consumeEvents = true)
+
+        eventTime += 10
+
+        val p1Down =
+            buildMotionEvent(
+                action = ACTION_POINTER_DOWN or (1 shl ACTION_POINTER_INDEX_SHIFT),
+                pointers = listOf(p0, p1),
+                pointerCoords = listOf(p0Coords, p1Coords),
+                downTime = downTime,
+                eventTime = eventTime,
+            )
+
+        dispatchIndirectPointerEvent(p1Down)
+
+        eventTime += 10
+
+        p1Coords.x = touchSlop * 4
+        // Only move p1
+        val p1Move =
+            buildMotionEvent(
+                action = ACTION_MOVE,
+                pointers = listOf(p0, p1),
+                pointerCoords = listOf(p0Coords, p1Coords),
+                downTime = downTime,
+                eventTime = eventTime,
+            )
+
+        dispatchIndirectPointerEvent(p1Move, p1Down)
+
+        eventTime += 10
+
+        val p0Up =
+            buildMotionEvent(
+                action = ACTION_UP,
+                pointers = listOf(p0),
+                pointerCoords = listOf(p0Coords),
+                downTime = downTime,
+                eventTime = eventTime,
+            )
+
+        dispatchIndirectPointerEvent(p0Up, p1Move, consumeEvents = true)
+
+        // The gesture should not processed since events were consumed for p0.
+        rule.runOnIdle {
+            assertThat(onClickCount).isEqualTo(0)
+            assertThat(onSwipeForwardCount).isEqualTo(0)
+            assertThat(onSwipeBackwardCount).isEqualTo(0)
+        }
+
+        val p1Up =
+            buildMotionEvent(
+                action = ACTION_POINTER_UP or (1 shl ACTION_POINTER_INDEX_SHIFT),
+                pointers = listOf(p0, p1),
+                pointerCoords = listOf(p0Coords, p1Coords),
+                downTime = downTime,
+                eventTime = eventTime,
+            )
+
+        dispatchIndirectPointerEvent(p1Up, p1Move)
+
+        // The gesture should not be processed since we were tracking for p0 while p1 got entered.
+        rule.runOnIdle {
+            assertThat(onClickCount).isEqualTo(0)
             assertThat(onSwipeForwardCount).isEqualTo(0)
             assertThat(onSwipeBackwardCount).isEqualTo(0)
         }
@@ -816,7 +939,86 @@ class IndirectPointerGestureTest {
     }
 
     @Test
-    fun consumedGesture_isIgnored_andDoesNotBlockSubsequentGestures() {
+    fun onGesture_subsequentGesture_detectedAfterDescendantUpConsumption() {
+        var onClickCount = 0
+        var onSwipeForwardCount = 0
+        var onSwipeBackwardCount = 0
+
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onClick = { onClickCount++ },
+                            onSwipeForward = { onSwipeForwardCount++ },
+                            onSwipeBackward = { onSwipeBackwardCount++ },
+                        )
+                        .focusTarget()
+            )
+        }
+
+        val downTime = SystemClock.uptimeMillis()
+        var eventTime = downTime
+        val p0 = getPointerProperties(0)
+        val p0Coords = getPointerCoords(x = 0f, y = 0f)
+
+        val p0Down =
+            buildMotionEvent(
+                action = ACTION_DOWN,
+                pointers = listOf(p0),
+                pointerCoords = listOf(p0Coords),
+                downTime = downTime,
+                eventTime = eventTime,
+            )
+        dispatchIndirectPointerEvent(p0Down)
+
+        eventTime += 10
+        p0Coords.x = touchSlop * 4
+        val p0Move =
+            buildMotionEvent(
+                action = ACTION_MOVE,
+                pointers = listOf(p0),
+                pointerCoords = listOf(p0Coords),
+                downTime = downTime,
+                eventTime = eventTime,
+            )
+        dispatchIndirectPointerEvent(p0Move, p0Down)
+
+        eventTime += 20L
+        val p0Up =
+            buildMotionEvent(
+                action = ACTION_UP,
+                pointers = listOf(p0),
+                pointerCoords = listOf(p0Coords),
+                downTime = downTime,
+                eventTime = eventTime,
+            )
+        dispatchIndirectPointerEvent(p0Up, p0Move, consumeEvents = true)
+
+        // The consumed 'up' in gesture should reset so no callback is called.
+        rule.runOnIdle {
+            assertThat(onClickCount).isEqualTo(0)
+            assertThat(onSwipeForwardCount).isEqualTo(0)
+            assertThat(onSwipeBackwardCount).isEqualTo(0)
+        }
+
+        // A new, valid gesture should be processed correctly
+        rule.onNodeWithTag(ROOT_TEST_TAG).performIndirectClick(rule)
+
+        rule.runOnIdle {
+            assertThat(onClickCount).isEqualTo(1)
+            assertThat(onSwipeForwardCount).isEqualTo(0)
+            assertThat(onSwipeBackwardCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun onGesture_subsequentGesture_detectedAfterDescendantMoveConsumption() {
         var onClickCount = 0
         var onSwipeForwardCount = 0
         var onSwipeBackwardCount = 0
@@ -887,15 +1089,11 @@ class IndirectPointerGestureTest {
         // A new, valid gesture should be processed correctly
         rule.onNodeWithTag(ROOT_TEST_TAG).performIndirectClick(rule)
 
-        rule.runOnIdle {
-            assertThat(onClickCount).isEqualTo(1)
-            assertThat(onSwipeForwardCount).isEqualTo(0)
-            assertThat(onSwipeBackwardCount).isEqualTo(0)
-        }
+        rule.runOnIdle { assertThat(onClickCount).isEqualTo(1) }
     }
 
     @Test
-    fun gestureEventsIgnored_whenDisabledDuringGesture() {
+    fun onGesture_disabledMidGesture_isIgnored() {
         var onClickCount = 0
         var onSwipeForwardCount = 0
         var onSwipeBackwardCount = 0
@@ -956,7 +1154,7 @@ class IndirectPointerGestureTest {
     }
 
     @Test
-    fun gestureEventsRegistered_whenModifierIsReEnabled() {
+    fun onGesture_whenReEnabled_isDetected() {
         var onClickCount = 0
         var onSwipeForwardCount = 0
         var onSwipeBackwardCount = 0
@@ -995,6 +1193,207 @@ class IndirectPointerGestureTest {
             assertThat(onSwipeForwardCount).isEqualTo(0)
             assertThat(onSwipeBackwardCount).isEqualTo(0)
         }
+    }
+
+    @Test
+    fun onClick_descendantConsumesClick_notTriggered() {
+        var innerOnClickCount = 0
+        var onClickCount = 0
+
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(enabled = true, onClick = { onClickCount++ })
+            ) {
+                Box(modifier = Modifier.clickable(onClick = { innerOnClickCount++ }))
+            }
+        }
+
+        rule.onNodeWithTag(ROOT_TEST_TAG).performIndirectClick(rule, durationMillis = 40L)
+
+        rule.runOnIdle {
+            assertThat(innerOnClickCount).isEqualTo(1)
+            assertThat(onClickCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun onSwipeForward_descendantConsumesClick_triggered() {
+        var innerOnClickCount = 0
+        var onSwipeForwardCount = 0
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onSwipeForward = { onSwipeForwardCount++ },
+                        )
+            ) {
+                Box(modifier = Modifier.clickable(onClick = { innerOnClickCount++ }))
+            }
+        }
+
+        // Perform forward swipe
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = touchSlop * 2, moveDuration = 10L)
+
+        rule.runOnIdle {
+            assertThat(innerOnClickCount).isEqualTo(0)
+            assertThat(onSwipeForwardCount).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun onSwipeBackward_descendantConsumesClick_triggered() {
+        var innerOnClickCount = 0
+        var onSwipeBackwardCount = 0
+        var touchSlop = 0f
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onSwipeBackward = { onSwipeBackwardCount++ },
+                        )
+            ) {
+                Box(modifier = Modifier.clickable(onClick = { innerOnClickCount++ }))
+            }
+        }
+
+        // Perform backward swipe
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = -(touchSlop * 2), moveDuration = 10L)
+
+        rule.runOnIdle {
+            assertThat(innerOnClickCount).isEqualTo(0)
+            assertThat(onSwipeBackwardCount).isEqualTo(1)
+        }
+    }
+
+    @Test
+    fun onSwipeForward_descendantConsumesDrag_notTriggered() {
+        var draggableOnStartCalled = false
+        var draggableOnStoppedCalled = false
+        var touchSlop = 0f
+        var onSwipeForwardCount = 0
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onSwipeForward = { onSwipeForwardCount++ },
+                        )
+            ) {
+                Box(
+                    modifier =
+                        Modifier.draggable(
+                                state = DraggableState {},
+                                orientation = Orientation.Horizontal,
+                                onDragStarted = { draggableOnStartCalled = true },
+                                onDragStopped = { draggableOnStoppedCalled = true },
+                            )
+                            .focusable()
+                )
+            }
+        }
+
+        // Perform forward swipe
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = touchSlop * 2, moveDuration = 10L)
+
+        rule.runOnIdle {
+            assertThat(draggableOnStartCalled).isTrue()
+            assertThat(draggableOnStoppedCalled).isTrue()
+            assertThat(onSwipeForwardCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun onSwipeBackward_descendantConsumesDrag_notTriggered() {
+        var draggableOnStartCalled = false
+        var draggableOnStoppedCalled = false
+        var touchSlop = 0f
+        var onSwipeBackwardCount = 0
+
+        rule.setContent {
+            touchSlop = LocalViewConfiguration.current.touchSlop
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(
+                            enabled = true,
+                            onSwipeBackward = { onSwipeBackwardCount++ },
+                        )
+            ) {
+                Box(
+                    modifier =
+                        Modifier.draggable(
+                                state = DraggableState {},
+                                orientation = Orientation.Horizontal,
+                                onDragStarted = { draggableOnStartCalled = true },
+                                onDragStopped = { draggableOnStoppedCalled = true },
+                            )
+                            .focusable()
+                )
+            }
+        }
+
+        // Perform forward swipe
+        rule
+            .onNodeWithTag(ROOT_TEST_TAG)
+            .performIndirectSwipe(rule = rule, distance = -(touchSlop * 2), moveDuration = 10L)
+
+        rule.runOnIdle {
+            assertThat(draggableOnStartCalled).isTrue()
+            assertThat(draggableOnStoppedCalled).isTrue()
+            assertThat(onSwipeBackwardCount).isEqualTo(0)
+        }
+    }
+
+    @Test
+    fun onClick_descendantConsumesDrag_triggered() {
+        var onClickCount = 0
+
+        rule.setContent {
+            Box(
+                modifier =
+                    Modifier.testTag(ROOT_TEST_TAG)
+                        .size(10.dp)
+                        .onIndirectPointerGesture(enabled = true, onClick = { onClickCount++ })
+            ) {
+                Box(
+                    modifier =
+                        Modifier.draggable(
+                                state = DraggableState {},
+                                orientation = Orientation.Horizontal,
+                            )
+                            .focusable()
+                )
+            }
+        }
+
+        rule.onNodeWithTag(ROOT_TEST_TAG).performIndirectClick(rule = rule, durationMillis = 40L)
+
+        rule.runOnIdle { assertThat(onClickCount).isEqualTo(1) }
     }
 
     private fun buildMotionEvent(

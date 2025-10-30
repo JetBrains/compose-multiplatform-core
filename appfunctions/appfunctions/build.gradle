@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.kotlinCoroutinesGuava) {
         exclude group: "com.google.guava", module: "guava"
     }
+    implementation("com.google.errorprone:error_prone_annotations:2.30.0")
     // Manually specify the dependency on kotlinMetadataJvm due to missing prebuilt for appsearch
     // compiler.
     kapt(libs.kotlinMetadataJvm)

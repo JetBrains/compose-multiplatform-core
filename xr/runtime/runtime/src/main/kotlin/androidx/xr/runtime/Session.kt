@@ -25,6 +25,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import androidx.xr.runtime.Config.ConfigMode
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
@@ -342,11 +343,23 @@ public constructor(
         get() = (this as LifecycleOwner).lifecycle
 
     /**
-     * Sets or changes the configuration to use.
+     * Sets or changes the [Config] to use for the Session.
      *
+     * The passed [config] will overwrite all [ConfigMode] values. Not all runtimes will support
+     * every [ConfigMode], and the desired modes should first be queried for availability using
+     * [ConfigMode.isSupported] before configuring.
+     *
+     * It is recommended to use and modify the [Config.copy] of the current [Session.config] to
+     * maintain the current configuration state aside from the desired changes.
+     *
+     * Note that enabling most configurations will increase hardware resource consumption and should
+     * only be enabled if needed.
+     *
+     * @param config the [Config] that will be enabled if successful.
      * @return the result of the operation. This will be a [SessionConfigureSuccess] if the
      *   configuration was successful, or another [SessionConfigureResult] if a certain
-     *   configuration criteria was not met.
+     *   configuration criteria was not met. In the case of the latter, the previous
+     *   [Session.config] will remain active.
      * @throws [IllegalStateException] if the session has been destroyed.
      * @throws [UnsupportedOperationException] if the configuration is not supported.
      * @throws [SecurityException] if the necessary permissions have not been granted to the calling

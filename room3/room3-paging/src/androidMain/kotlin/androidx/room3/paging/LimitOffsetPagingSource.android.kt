@@ -22,11 +22,9 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomRawQuery
-import androidx.room3.RoomSQLiteQuery
 import androidx.room3.paging.CommonLimitOffsetImpl.Companion.BUG_LINK
 import androidx.room3.paging.util.getClippedRefreshKey
 import androidx.room3.util.performSuspending
-import androidx.sqlite.db.SupportSQLiteQuery
 
 /**
  * An implementation of [PagingSource] to perform a LIMIT OFFSET query
@@ -42,21 +40,6 @@ actual constructor(
     public actual val db: RoomDatabase,
     vararg tables: String,
 ) : PagingSource<Int, Value>() {
-    public constructor(
-        sourceQuery: RoomSQLiteQuery,
-        db: RoomDatabase,
-        vararg tables: String,
-    ) : this(sourceQuery = sourceQuery.toRoomRawQuery(), db = db, tables = tables)
-
-    public constructor(
-        supportSQLiteQuery: SupportSQLiteQuery,
-        db: RoomDatabase,
-        vararg tables: String,
-    ) : this(
-        sourceQuery = RoomSQLiteQuery.copyFrom(supportSQLiteQuery).toRoomRawQuery(),
-        db = db,
-        tables = tables,
-    )
 
     private val implementation = CommonLimitOffsetImpl(tables, this, ::convertRows)
 

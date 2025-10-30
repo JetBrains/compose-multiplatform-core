@@ -24,6 +24,7 @@
 
 
 import androidx.build.KotlinTarget
+import com.google.devtools.ksp.gradle.KspAATask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import androidx.build.SoftwareType
 
@@ -64,3 +65,10 @@ android {
     namespace = "androidx.room3.paging.rxjava3"
 }
 
+// TODO(b/430983364): Workaround KSP incremental issues
+tasks.withType(KotlinCompile).configureEach {
+    incremental = false
+}
+tasks.withType(KspAATask).configureEach {
+    it.kspConfig.incremental.set(false)
+}

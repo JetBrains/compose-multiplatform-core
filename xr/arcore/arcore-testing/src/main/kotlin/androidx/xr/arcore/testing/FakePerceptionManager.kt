@@ -20,15 +20,13 @@ import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
 import androidx.xr.arcore.runtime.AnchorInvalidUuidException
 import androidx.xr.arcore.runtime.DepthMap
-import androidx.xr.arcore.runtime.Earth
 import androidx.xr.arcore.runtime.Eye
 import androidx.xr.arcore.runtime.Face
+import androidx.xr.arcore.runtime.Geospatial
 import androidx.xr.arcore.runtime.Hand
 import androidx.xr.arcore.runtime.HitResult
 import androidx.xr.arcore.runtime.PerceptionManager
 import androidx.xr.arcore.runtime.Trackable
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
@@ -74,7 +72,7 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     override val userFace: Face? = FakeRuntimeFace()
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override val earth: Earth = FakeRuntimeEarth()
+    override val geospatial: Geospatial = FakeRuntimeGeospatial()
 
     override val leftDepthMap: DepthMap? = FakeRuntimeDepthMap()
 
@@ -121,14 +119,6 @@ public class FakePerceptionManager : PerceptionManager, AnchorHolder {
     override fun detachAnchor(anchor: Anchor) {
         anchors.remove(anchor)
         anchor.uuid?.let { anchorUuids.remove(it) }
-    }
-
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override suspend fun checkVpsAvailability(
-        latitude: Double,
-        longitude: Double,
-    ): VpsAvailabilityResult {
-        return VpsAvailabilityAvailable()
     }
 
     /**

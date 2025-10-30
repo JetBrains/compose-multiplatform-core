@@ -82,9 +82,7 @@ class ImageCaptureExtenderValidationTest(private val config: CameraXExtensionTes
         val (_, cameraXConfig, cameraId, extensionMode) = config
         ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         baseCameraSelector = CameraSelectorUtil.createCameraSelectorById(cameraId)
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
@@ -107,9 +105,7 @@ class ImageCaptureExtenderValidationTest(private val config: CameraXExtensionTes
             ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         withContext(Dispatchers.Main) { cameraProvider.shutdownAsync() }
 
-        val extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        val extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
         extensionsManager.shutdown()
     }
 

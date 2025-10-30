@@ -23,6 +23,7 @@ import android.os.Looper;
 import android.view.Surface;
 
 import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.ResolvableFuture;
 import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec;
 import androidx.xr.scenecore.runtime.TextureSampler;
@@ -42,7 +43,7 @@ import java.util.Map;
  * Fake implementation of the JNI API for communicating with the Impress Split Engine instance for
  * testing purposes.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class FakeImpressApiImpl implements ImpressApi {
     static class AnimationInProgress {
         public String name;
@@ -222,6 +223,10 @@ public class FakeImpressApiImpl implements ImpressApi {
 
     @Override
     public void setup(@Nullable View view) {}
+
+    @VisibleForTesting
+    @Override
+    public void setup(long nativeTestViewHandle) {}
 
     @Override
     public void onResume() {}

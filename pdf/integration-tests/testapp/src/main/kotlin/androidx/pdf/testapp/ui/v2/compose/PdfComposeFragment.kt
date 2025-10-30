@@ -86,7 +86,7 @@ class PdfComposeFragment() : Fragment() {
                                         .show()
                                 }
                                 close()
-                                pdfViewerState.clearSelection()
+                                pdfViewerState.clearCurrentSelection()
                             }
                         },
                     )

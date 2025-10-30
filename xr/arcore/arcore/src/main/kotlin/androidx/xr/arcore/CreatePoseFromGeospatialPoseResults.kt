@@ -16,32 +16,22 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 
-/** Result of a call to [Earth.createPoseFromGeospatialPose]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/** Result of a call to [Geospatial.createPoseFromGeospatialPose]. */
 public sealed class CreatePoseFromGeospatialPoseResult
 
 /**
- * Result of a successful [Earth.createPoseFromGeospatialPose] call.
+ * Result of a successful [Geospatial.createPoseFromGeospatialPose] call.
  *
  * @property pose the [Pose] that was created.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class CreatePoseFromGeospatialPoseSuccess(public val pose: Pose) :
     CreatePoseFromGeospatialPoseResult()
 
 /**
- * Result of an unsuccessful [Earth.createPoseFromGeospatialPose] call. Required tracking is not
- * available.
+ * Result of an unsuccessful [Geospatial.createPoseFromGeospatialPose] call. Geospatial is not yet
+ * tracking. Geospatial may need additional time to start tracking, or the device itself may not be
+ * tracking.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class CreatePoseFromGeospatialPoseNotTracking() : CreatePoseFromGeospatialPoseResult()
-
-/**
- * Result of an unsuccessful [Earth.createPoseFromGeospatialPose] call. The [Earth] encountered an
- * error, such as if Geospatial was not enabled.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class CreatePoseFromGeospatialPoseIllegalState() : CreatePoseFromGeospatialPoseResult()

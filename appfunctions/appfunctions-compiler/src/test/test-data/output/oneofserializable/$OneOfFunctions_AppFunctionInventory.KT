@@ -1,6 +1,7 @@
 package com.testdata.oneofserializable
 
 import androidx.appfunctions.`internal`.AppFunctionInventory
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
@@ -132,36 +133,117 @@ public class `$OneOfFunctions_AppFunctionInventory` : AppFunctionInventory {
           description = ""
       )
 
-  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE_PROPERTIES_MAP_INTERFACEPROPERTY:
+  private val ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE_PROPERTIES_MAP_MIMETYPE:
       AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
           isNullable = false,
           description = "",
           enumValues = null,
       )
 
-  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE_PROPERTIES_MAP_STR:
+  private val ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE_PROPERTIES_MAP_CONTENT:
       AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
           isNullable = false,
           description = "",
           enumValues = null,
       )
 
-  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE_PROPERTIES_MAP:
+  private val ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE_PROPERTIES_MAP:
       Map<String, AppFunctionDataTypeMetadata> = mapOf(
-    "interfaceProperty" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE_PROPERTIES_MAP_INTERFACEPROPERTY,
-    "str" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE_PROPERTIES_MAP_STR,
+    "mimeType" to ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE_PROPERTIES_MAP_MIMETYPE,
+    "content" to ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE_PROPERTIES_MAP_CONTENT,
   )
 
-  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
+  private val ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST:
+      List<String> = listOf(
+    "mimeType",
+    "content",
+  )
+
+  private val ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE:
+      AppFunctionObjectTypeMetadata = AppFunctionObjectTypeMetadata(
+          properties = ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE_PROPERTIES_MAP,
+          required = ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
+          qualifiedName = "androidx.appfunctions.AppFunctionTextResource",
+          isNullable = true,
+          description = ""
+      )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_PROPERTIES_MAP_RESOURCES_REFERENCE_ITEM_TYPE:
+      AppFunctionReferenceTypeMetadata = AppFunctionReferenceTypeMetadata(
+          referenceDataType = "androidx.appfunctions.AppFunctionTextResource",
+          isNullable = false,
+          description = ""
+      )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_PROPERTIES_MAP_RESOURCES:
+      AppFunctionArrayTypeMetadata = AppFunctionArrayTypeMetadata(
+          itemType = COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_PROPERTIES_MAP_RESOURCES_REFERENCE_ITEM_TYPE,
+          isNullable = false,
+          description = ""
+      )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_PROPERTIES_MAP:
+      Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    "resources" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_PROPERTIES_MAP_RESOURCES,
+  )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_REQUIRED_PROPERTIES_LIST:
+      List<String> = listOf(
+  )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0:
+      AppFunctionObjectTypeMetadata = AppFunctionObjectTypeMetadata(
+          properties = COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_PROPERTIES_MAP,
+          required = COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0_REQUIRED_PROPERTIES_LIST,
+          qualifiedName = "androidx.appfunctions.AppFunctionResourceContainer",
+          isNullable = true,
+          description = "I am a KDoc for OneOfSealedClass.ASubclass "
+      )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_INTERFACEPROPERTY:
+      AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = null,
+      )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_STR:
+      AppFunctionStringTypeMetadata = AppFunctionStringTypeMetadata(
+          isNullable = false,
+          description = "",
+          enumValues = null,
+      )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP:
+      Map<String, AppFunctionDataTypeMetadata> = mapOf(
+    "interfaceProperty" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_INTERFACEPROPERTY,
+    "str" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP_STR,
+  )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_REQUIRED_PROPERTIES_LIST:
       List<String> = listOf(
     "interfaceProperty",
     "str",
   )
 
-  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE:
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1:
       AppFunctionObjectTypeMetadata = AppFunctionObjectTypeMetadata(
-          properties = COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE_PROPERTIES_MAP,
-          required = COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE_REQUIRED_PROPERTIES_LIST,
+          properties = COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_PROPERTIES_MAP,
+          required = COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1_REQUIRED_PROPERTIES_LIST,
+          qualifiedName = "com.testdata.oneofserializable.OneOfSealedClass${'$'}ASubclass",
+          isNullable = true,
+          description = "I am a KDoc for OneOfSealedClass.ASubclass "
+      )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST:
+      List<AppFunctionDataTypeMetadata> = listOf(
+    COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_0,
+    COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST_ITEM_1,
+  )
+
+  private val COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE:
+      AppFunctionAllOfTypeMetadata = AppFunctionAllOfTypeMetadata(
+          matchAll = COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE_MATCH_ALL_LIST,
           qualifiedName = "com.testdata.oneofserializable.OneOfSealedClass${'$'}ASubclass",
           isNullable = true,
           description = "I am a KDoc for OneOfSealedClass.ASubclass "
@@ -260,7 +342,8 @@ public class `$OneOfFunctions_AppFunctionInventory` : AppFunctionInventory {
     "com.testdata.oneofserializable.ASubclass" to COM_TESTDATA_ONEOFSERIALIZABLE_ASUBCLASS_OBJECT_DATA_TYPE,
     "com.testdata.oneofserializable.BSubclass" to COM_TESTDATA_ONEOFSERIALIZABLE_BSUBCLASS_OBJECT_DATA_TYPE,
     "com.testdata.oneofserializable.OneOfSealedInterface" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDINTERFACE_ONE_OF_DATA_TYPE,
-    "com.testdata.oneofserializable.OneOfSealedClass${'$'}ASubclass" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_OBJECT_DATA_TYPE,
+    "androidx.appfunctions.AppFunctionTextResource" to ANDROIDX_APPFUNCTIONS_APPFUNCTIONTEXTRESOURCE_OBJECT_DATA_TYPE,
+    "com.testdata.oneofserializable.OneOfSealedClass${'$'}ASubclass" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ASUBCLASS_ALL_OF_DATA_TYPE,
     "com.testdata.oneofserializable.OneOfSealedClass${'$'}BSubclass" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_BSUBCLASS_OBJECT_DATA_TYPE,
     "com.testdata.oneofserializable.OneOfSealedClass" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDCLASS_ONE_OF_DATA_TYPE,
     "com.testdata.oneofserializable.OneOfSealedNestedSerializable" to COM_TESTDATA_ONEOFSERIALIZABLE_ONEOFSEALEDNESTEDSERIALIZABLE_OBJECT_DATA_TYPE,

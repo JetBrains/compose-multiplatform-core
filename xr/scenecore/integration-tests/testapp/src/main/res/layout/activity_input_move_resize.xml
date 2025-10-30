@@ -63,13 +63,15 @@
                 android:id="@+id/systemMovable"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/system_movable_label" />
+                android:text="@string/system_movable_label"
+                android:visibility="gone" />
 
             <CheckBox
                 android:id="@+id/scaleInZ"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/scale_in_z_label" />
+                android:text="@string/scale_in_z_label"
+                android:visibility="gone" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
@@ -104,7 +106,8 @@
                 android:id="@+id/radioGroup1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:visibility="gone">
 
                 <RadioButton
                     android:id="@+id/radioButton1"

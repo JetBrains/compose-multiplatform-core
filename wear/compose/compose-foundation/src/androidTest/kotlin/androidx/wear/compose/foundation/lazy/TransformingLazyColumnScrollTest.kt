@@ -91,16 +91,16 @@ class TransformingLazyColumnScrollTest {
     @Test
     fun scrollToItemWithOffset() =
         testScroll(scrollBlock = { state.scrollToItem(3, 10) }) {
-            assertThat(state.anchorItemIndex).isEqualTo(3)
-            assertThat(state.anchorItemScrollOffset).isEqualTo(10)
+            assertThat(state.layoutInfo.visibleItems.firstOrNull()?.index).isEqualTo(2)
+            val item3Offset = state.layoutInfo.visibleItems.first { it.index == 3 }.offset
+            assertThat(item3Offset).isEqualTo(itemSizePx - 10)
         }
 
     @Test
     fun scrollToItemWithNegativeOffset() =
         testScroll(scrollBlock = { state.scrollToItem(3, -10) }) {
-            assertThat(state.layoutInfo.visibleItems.firstOrNull()?.index).isEqualTo(2)
-            val item3Offset = state.layoutInfo.visibleItems.first { it.index == 3 }.offset
-            assertThat(item3Offset).isEqualTo(itemSizePx - 10)
+            assertThat(state.anchorItemIndex).isEqualTo(3)
+            assertThat(state.anchorItemScrollOffset).isEqualTo(-10)
         }
 
     @Test

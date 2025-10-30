@@ -32,6 +32,7 @@ import androidx.camera.core.impl.SurfaceConfig.ConfigType.JPEG
 import androidx.camera.core.impl.SurfaceConfig.ConfigType.JPEG_R
 import androidx.camera.core.impl.SurfaceConfig.ConfigType.PRIV
 import androidx.camera.core.impl.SurfaceSizeDefinition
+import androidx.camera.core.impl.stabilization.VideoStabilization
 
 public object GuaranteedConfigurationsUtil {
     /**
@@ -1085,7 +1086,7 @@ public object GuaranteedConfigurationsUtil {
 
     internal fun getQueryableFcqCombinations(
         cameraMetadata: CameraMetadata,
-        isPreviewStabilizationOn: Boolean,
+        videoStabilization: VideoStabilization,
     ): List<SurfaceCombination> {
         val combinations = mutableListOf<SurfaceCombination>()
 
@@ -1102,7 +1103,7 @@ public object GuaranteedConfigurationsUtil {
 
             if (
                 sessionConfigQueryVersion >= Build.VERSION_CODES.BAKLAVA &&
-                    !isPreviewStabilizationOn
+                    videoStabilization != VideoStabilization.PREVIEW
             ) {
                 combinations.addAll(QUERYABLE_BAKLAVA_FCQ_COMBINATIONS)
             }

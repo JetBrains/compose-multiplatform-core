@@ -222,7 +222,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         project.validateAllArchiveInputsRecognized()
         project.afterEvaluate {
             if (androidXExtension.shouldPublishSbom()) {
-                project.configureSbomPublishing()
+                project.configureSbomPublishing(androidXExtension.isIsolatedProjectsEnabled())
             }
             if (androidXExtension.shouldPublish()) {
                 project.validatePublishedMultiplatformHasDefault()
@@ -439,10 +439,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.extensions.getByType<KotlinMultiplatformExtension>().apply {
                 targets.withType<KotlinMultiplatformAndroidLibraryTarget>().configureEach { t ->
                     t.compilations.configureEach { compilation ->
-                        // Replace with compilation.compileJavaTaskProvider?.configure {}
-                        // when b/438995010 is fixed
-                        @Suppress("DEPRECATION")
-                        compilation.compilerOptions.configure { jvmTarget.set(defaultJvmTarget) }
                         compilation.compileTaskProvider.configure {
                             it.compilerOptions.jvmTarget.set(defaultJvmTarget)
                         }
@@ -502,7 +498,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     val args =
                         mutableListOf(
                             "-Xskip-metadata-version-check",
-                            "-Xjvm-default=all",
+                            "-jvm-default=no-compatibility",
                             // These two args can be removed once kotlin 2.1 is used
                             "-Xjspecify-annotations=strict",
                             "-Xtype-enhancement-improvements-strict-mode",
@@ -576,7 +572,9 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                     .configureEach { compilation ->
                         if (!compilation.name.contains("test", ignoreCase = true))
                             return@configureEach
-                        compilation.dependencies { implementation(kotlin("test-junit")) }
+                        compilation.defaultSourceSet.dependencies {
+                            implementation(kotlin("test-junit"))
+                        }
                     }
                 // TODO(b/452246814): Remove when built-in Kotlin adds kotlin-stdlib as an api
                 // dependency automatically
@@ -728,6 +726,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         }
 
         kotlinMultiplatformAndroidComponentsExtension.onVariants { variant ->
+            @Suppress("UnstableApiUsage")
+            variant.configureJavaCompileTask { compile ->
+                val defaultTargetJavaVersion =
+                    getDefaultTargetJavaVersion(androidXExtension.type, project.name).toString()
+                compile.sourceCompatibility = defaultTargetJavaVersion
+                compile.targetCompatibility = defaultTargetJavaVersion
+            }
             project.configureProjectForApiTasks(
                 AndroidMultiplatformApiTaskConfig(variant),
                 androidXExtension,

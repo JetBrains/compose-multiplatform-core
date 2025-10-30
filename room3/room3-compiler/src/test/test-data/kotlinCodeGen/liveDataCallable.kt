@@ -42,7 +42,7 @@ internal class MyDao_Impl(
         }
         val _columnIndexOfPk: Int = getColumnIndexOrThrow(_stmt, "pk")
         val _columnIndexOfOther: Int = getColumnIndexOrThrow(_stmt, "other")
-        val _result: MyEntity?
+        val _result: MyEntity
         if (_stmt.step()) {
           val _tmpPk: Int
           _tmpPk = _stmt.getLong(_columnIndexOfPk).toInt()
@@ -50,7 +50,7 @@ internal class MyDao_Impl(
           _tmpOther = _stmt.getText(_columnIndexOfOther)
           _result = MyEntity(_tmpPk,_tmpOther)
         } else {
-          _result = null
+          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
         }
         _result
       } finally {

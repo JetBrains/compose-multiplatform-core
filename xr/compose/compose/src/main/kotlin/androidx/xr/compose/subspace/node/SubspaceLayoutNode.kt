@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CoreEntityNode
+import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.compose.subspace.layout.LayoutSubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.OpaqueEntity
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
@@ -85,6 +86,12 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     internal val isAttached: Boolean
         get() = owner != null
 
+    internal val isPlaced: Boolean
+        get() = measurableLayout.isPlaced
+
+    internal val canMeasurementAffectOtherTrees: Boolean
+        get() = coreEntity is CoreMainPanelEntity
+
     internal val nodes: SubspaceModifierNodeChain = SubspaceModifierNodeChain(this)
 
     /**
@@ -97,6 +104,12 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     internal var depth: Int = 0
 
     override var measurePolicy: SubspaceMeasurePolicy = ErrorMeasurePolicy
+        set(value) {
+            if (field != value) {
+                field = value
+                requestMeasure()
+            }
+        }
 
     override var modifier: SubspaceModifier = SubspaceModifier
         set(value) {
@@ -124,6 +137,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             field = value
             density = value[LocalDensity]
             layoutDirection = value[LocalLayoutDirection]
+            nodes.invalidateCompositionLocals()
         }
 
     internal var density: Density = DefaultDensity
@@ -164,6 +178,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         children.add(index, instance)
 
         owner?.let { instance.attach(it) }
+
+        owner?.logger?.nodeInserted(instance, this, index)
     }
 
     /**
@@ -186,7 +202,11 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             val child = children.removeAt(fromIndex)
 
             children.add(toIndex, child)
+
+            owner?.logger?.nodeMoved(child, this, fromIndex, toIndex)
         }
+
+        requestMeasure()
     }
 
     /** Removes one or more children, starting at [index]. */
@@ -194,7 +214,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         require(count >= 0) { "count ($count) must be greater than 0." }
 
         for (i in index + count - 1 downTo index) {
-            onChildRemoved(children[i])
+            onChildRemoved(children[i], i)
         }
 
         children.removeAll(children.subList(index, index + count))
@@ -202,15 +222,18 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
     /** Removes all children nodes. */
     internal fun removeAll() {
-        children.reversed().forEach { child -> onChildRemoved(child) }
+        children.reversed().forEachIndexed { i, child ->
+            onChildRemoved(child, children.size - i - 1)
+        }
 
         children.clear()
     }
 
     /** Called when the [child] node is removed from this [SubspaceLayoutNode] hierarchy. */
-    private fun onChildRemoved(child: SubspaceLayoutNode) {
+    private fun onChildRemoved(child: SubspaceLayoutNode, index: Int) {
         owner?.let { child.detach() }
         child.parent = null
+        owner?.logger?.nodeRemoved(child, this, index)
     }
 
     /**
@@ -247,6 +270,9 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         nodes.markAsAttached()
         children.forEach { child -> child.attach(subspaceOwner) }
         nodes.runOnAttach()
+
+        requestMeasure()
+        parent?.requestMeasure()
     }
 
     /**
@@ -264,6 +290,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         }
 
         this.depth = 0
+        parent?.requestMeasure()
+
         nodes.runOnDetach()
         ignoreMeasureRequests { children.forEach { child -> child.detach() } }
         nodes.markAsDetached()
@@ -346,10 +374,10 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     /**
      * Measures this layout node using the most recently provided constraints.
      *
-     * Returns true if the measured size has changed.
+     * Returns true if the measured size has changed or the node has not been measured, in which
+     * case the parent layout node should be remeasured.
      */
-    internal fun remeasure(): Boolean =
-        outerCoordinator?.remeasure() ?: measurableLayout.remeasure()
+    internal fun remeasure(): Boolean = measurableLayout.remeasure()
 
     /** Places this layout node using the most recently provided pose. */
     internal fun replace() = outerCoordinator?.replace() ?: measurableLayout.replace()
@@ -377,9 +405,13 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
          */
         val tail: SubspaceModifier.Node = TailModifierNode()
 
+        val isPlaced
+            get() = layoutPose != null
+
         override fun measure(constraints: VolumeConstraints): SubspacePlaceable {
             layoutState = LayoutState.Measuring
             val placeable = nodes.measureChain(constraints, ::measureJustThis)
+            lastConstraints = constraints
             layoutState = LayoutState.Idle
             return placeable
         }
@@ -389,8 +421,6 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         }
 
         private fun measureJustThis(constraints: VolumeConstraints): SubspacePlaceable {
-            lastConstraints = constraints
-
             subspaceMeasureResult =
                 with(measurePolicy) {
                     LayoutSubspaceMeasureScope(this@SubspaceLayoutNode)
@@ -404,20 +434,23 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             measuredHeight = subspaceMeasureResult!!.height
             measuredDepth = subspaceMeasureResult!!.depth
 
+            owner?.logger?.nodeMeasured(this, constraints, size)
+
             return this
         }
 
         /**
          * Measures this layout node using the most recently provided constraints.
          *
-         * Returns true if the measured size has changed.
+         * Returns true if the measured size has changed or the node has not been measured, in which
+         * case the parent layout node should be remeasured.
          */
         internal fun remeasure(): Boolean {
             return lastConstraints?.let {
                 val oldSize = size
                 measure(it)
                 oldSize != size
-            } ?: false
+            } ?: true
         }
 
         /**
@@ -429,6 +462,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             layoutState = LayoutState.LayingOut
 
             layoutPose = pose
+
+            owner?.logger?.nodePlaced(this, pose)
 
             coreEntity?.applyCoreEntityNodes(nodes.getAll<CoreEntityNode>())
             coreEntity?.updatePoseFromLayout()

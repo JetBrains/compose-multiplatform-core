@@ -216,7 +216,7 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
     @Test
     public void getActivitySpaceScale_returnsUnitScale() {
         ActivitySpaceImpl activitySpaceImpl = mActivitySpace;
-        activitySpaceImpl.setOpenXrReferenceSpacePose(Matrix4.fromScale(5f));
+        activitySpaceImpl.setOpenXrReferenceSpaceTransform(Matrix4.fromScale(5f));
         assertVector3(activitySpaceImpl.getActivitySpaceScale(), new Vector3(1f, 1f, 1f));
     }
 

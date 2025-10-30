@@ -110,7 +110,7 @@ class SwitchAvailableModesStressTest(
     private var isTestStarted = false
 
     @Before
-    fun setup() {
+    fun setup(): Unit = runBlocking {
         assumeTrue(CameraUtil.deviceHasCamera())
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
         assumePcsSupportedForImageCapture(context)
@@ -119,9 +119,7 @@ class SwitchAvailableModesStressTest(
         val cameraProvider =
             ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
 
-        val extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        val extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         // Checks whether any extension mode can be supported first before launching the activity.
         CameraXExtensionsTestUtil.assumeAnyExtensionModeSupported(extensionsManager, cameraId)
@@ -146,9 +144,7 @@ class SwitchAvailableModesStressTest(
             ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         withContext(Dispatchers.Main) { cameraProvider.shutdownAsync() }
 
-        val extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        val extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
         extensionsManager.shutdown()
 
         if (isTestStarted) {

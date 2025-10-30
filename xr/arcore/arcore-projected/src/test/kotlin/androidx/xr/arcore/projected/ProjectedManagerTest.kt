@@ -16,6 +16,7 @@
 package androidx.xr.arcore.projected
 
 import android.app.Activity
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -23,18 +24,17 @@ import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Captor
 import org.mockito.Mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
@@ -46,9 +46,9 @@ import org.robolectric.RobolectricTestRunner
 class ProjectedManagerTest {
     @Mock private lateinit var mockActivity: Activity
     @Mock private lateinit var mockPerceptionService: IProjectedPerceptionService.Stub
-    @Captor
-    private lateinit var vpsAvailabilityCallbackCaptor: ArgumentCaptor<IVpsAvailabilityCallback>
+    @Captor private lateinit var projectedConfigCaptor: ArgumentCaptor<ProjectedConfig>
     private lateinit var perceptionManager: ProjectedPerceptionManager
+    private lateinit var underTest: ProjectedManager
 
     @Before
     fun setUp() {
@@ -57,11 +57,7 @@ class ProjectedManagerTest {
         `when`(mockPerceptionService.queryLocalInterface(anyString()))
             .thenReturn(mockPerceptionService)
         perceptionManager = ProjectedPerceptionManager(ProjectedTimeSource())
-    }
-
-    @Test
-    fun create_initializesPerceptionManager() = runTest {
-        val manager =
+        underTest =
             ProjectedManager(
                 mockActivity,
                 perceptionManager,
@@ -69,19 +65,10 @@ class ProjectedManagerTest {
                 Dispatchers.IO,
                 testPerceptionService = mockPerceptionService,
             )
-
-        manager.create()
-        launch { perceptionManager.checkVpsAvailability(1.0, 2.0) }
-        runCurrent()
-
-        verify(mockPerceptionService)
-            .checkVpsAvailability(eq(1.0), eq(2.0), vpsAvailabilityCallbackCaptor.capture())
-        vpsAvailabilityCallbackCaptor.value.onVpsAvailabilityChanged(0)
-        advanceUntilIdle()
     }
 
     @Test
-    fun update_updatesPerceptionManager() = runTest {
+    fun update_whenRunning_updatesPerceptionManagerState() = runTest {
         val projectedPose =
             ProjectedPose().apply {
                 vector =
@@ -104,21 +91,112 @@ class ProjectedManagerTest {
         expectedUpdateResult.earthTrackingState = ProjectedTrackingState.STOPPED
         expectedUpdateResult.devicePose = projectedPose
         `when`(mockPerceptionService.update()).thenReturn(expectedUpdateResult)
-        val manager =
-            ProjectedManager(
-                mockActivity,
-                perceptionManager,
-                ProjectedTimeSource(),
-                Dispatchers.IO,
-                testPerceptionService = mockPerceptionService,
-            )
-        manager.create()
+        underTest.create()
+        underTest.running.set(true)
 
-        manager.update()
+        underTest.update()
         assertThat(perceptionManager.xrResources.deviceTrackingState)
             .isEqualTo(TrackingState.TRACKING)
-        assertThat(perceptionManager.xrResources.earthTrackingState)
+        assertThat(perceptionManager.xrResources.geospatialTrackingState)
             .isEqualTo(TrackingState.STOPPED)
         assertThat(perceptionManager.arDevice.devicePose).isEqualTo(expectedPose)
+    }
+
+    @Test
+    fun configure_withGeospatialEnabled_startsService() {
+        underTest.create()
+        val config =
+            Config(
+                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+                geospatial = Config.GeospatialMode.VPS_AND_GPS,
+            )
+
+        underTest.configure(config)
+
+        verify(mockPerceptionService).startWithConfiguration(any())
+    }
+
+    @Test
+    fun configure_whenAllFeaturesAreDisabled_stopsService() {
+        underTest.create()
+        underTest.running.set(true)
+
+        val config =
+            Config(
+                deviceTracking = Config.DeviceTrackingMode.DISABLED,
+                geospatial = Config.GeospatialMode.DISABLED,
+            )
+        underTest.configure(config)
+
+        verify(mockPerceptionService).stop()
+    }
+
+    @Test
+    fun configure_withIncompatibleSettings_throwsException() {
+        val config =
+            Config(
+                deviceTracking = Config.DeviceTrackingMode.DISABLED,
+                geospatial = Config.GeospatialMode.VPS_AND_GPS,
+            )
+        assertThrows(UnsupportedOperationException::class.java) { underTest.configure(config) }
+    }
+
+    @Test
+    fun configure_withValidConfigs_sendsCorrectAidlConfig() {
+        underTest.create()
+        underTest.running.set(true)
+        val configWithGeospatial =
+            Config(
+                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+                geospatial = Config.GeospatialMode.VPS_AND_GPS,
+            )
+
+        underTest.configure(configWithGeospatial)
+
+        verify(mockPerceptionService).startWithConfiguration(projectedConfigCaptor.capture())
+        assertThat(projectedConfigCaptor.value.geospatialMode)
+            .isEqualTo(ProjectedGeospatialMode.ENABLED)
+        assertThat(projectedConfigCaptor.value.trackingMode)
+            .isEqualTo(ProjectedTrackingMode.PROJECTED_TRACKING_6DOF)
+
+        val configWithoutGeospatial =
+            Config(
+                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+                geospatial = Config.GeospatialMode.DISABLED,
+            )
+
+        underTest.configure(configWithoutGeospatial)
+        verify(mockPerceptionService, times(2))
+            .startWithConfiguration(projectedConfigCaptor.capture())
+        assertThat(projectedConfigCaptor.value.geospatialMode)
+            .isEqualTo(ProjectedGeospatialMode.DISABLED)
+        assertThat(projectedConfigCaptor.value.trackingMode)
+            .isEqualTo(ProjectedTrackingMode.PROJECTED_TRACKING_3DOF)
+    }
+
+    @Test
+    fun create_never_startsService() {
+        underTest.create()
+
+        verify(mockPerceptionService, never()).startWithConfiguration(any())
+    }
+
+    @Test
+    fun stop_whenServiceIsRunning_stopsService() {
+        underTest.create()
+        underTest.running.set(true)
+
+        underTest.stop()
+
+        verify(mockPerceptionService).stop()
+    }
+
+    @Test
+    fun stop_whenServiceIsNotRunning_doesNothing() {
+        underTest.running.set(false)
+
+        underTest.stop()
+
+        verify(mockPerceptionService, never()).stop()
     }
 }

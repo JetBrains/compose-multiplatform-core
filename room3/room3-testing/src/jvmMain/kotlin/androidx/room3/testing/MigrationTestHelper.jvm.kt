@@ -28,6 +28,7 @@ import java.nio.file.Path
 import kotlin.io.path.inputStream
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
+import kotlinx.coroutines.Dispatchers
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
@@ -180,6 +181,6 @@ public actual class MigrationTestHelper(
             autoMigrationSpecs = emptyList(),
             allowDestructiveMigrationForAllTables = false,
             sqliteDriver = driver,
-            queryCoroutineContext = null,
+            queryCoroutineContext = Dispatchers.IO,
         )
 }

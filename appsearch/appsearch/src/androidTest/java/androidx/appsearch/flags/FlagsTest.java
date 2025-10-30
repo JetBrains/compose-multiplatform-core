@@ -347,4 +347,10 @@ public class FlagsTest {
         assertThat(Flags.FLAG_ENABLE_SCHEMA_TYPE_ID_OPTIMIZATION).isEqualTo(
                 "com.android.appsearch.flags.enable_schema_type_id_optimization");
     }
+
+    @Test
+    public void testFlagValue_enableOptimizeImprovements() {
+        assertThat(Flags.FLAG_ENABLE_OPTIMIZE_IMPROVEMENTS).isEqualTo(
+                "com.android.appsearch.flags.enable_optimize_improvements");
+    }
 }

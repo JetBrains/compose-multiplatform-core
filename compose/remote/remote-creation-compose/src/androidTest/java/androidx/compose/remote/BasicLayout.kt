@@ -51,12 +51,12 @@ import androidx.compose.remote.creation.compose.layout.createIds
 import androidx.compose.remote.creation.compose.layout.rememberStateMachine
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.background
+import androidx.compose.remote.creation.compose.modifier.clickable
 import androidx.compose.remote.creation.compose.modifier.drawWithContent
 import androidx.compose.remote.creation.compose.modifier.fillMaxHeight
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.modifier.height
-import androidx.compose.remote.creation.compose.modifier.onClick
 import androidx.compose.remote.creation.compose.modifier.onTouchCancel
 import androidx.compose.remote.creation.compose.modifier.onTouchDown
 import androidx.compose.remote.creation.compose.modifier.onTouchUp
@@ -761,7 +761,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 RemoteBox(
-                    modifier = RemoteModifier.size(100.dp).onClick(HostAction("my_host_action"))
+                    modifier = RemoteModifier.size(100.dp).clickable(HostAction("my_host_action"))
                 )
             }
         }
@@ -793,7 +793,7 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
                 val param = rememberRemoteIntValue { 128 }
                 RemoteBox(
                     modifier =
-                        RemoteModifier.size(100.dp).onClick(HostAction("my_host_action", param))
+                        RemoteModifier.size(100.dp).clickable(HostAction("my_host_action", param))
                 )
             }
         }

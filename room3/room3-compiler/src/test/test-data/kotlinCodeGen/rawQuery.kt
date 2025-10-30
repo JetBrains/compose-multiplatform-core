@@ -1,11 +1,9 @@
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomRawQuery
-import androidx.room3.RoomSQLiteQuery
 import androidx.room3.coroutines.createFlow
 import androidx.room3.util.getColumnIndex
 import androidx.room3.util.performBlocking
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.db.SupportSQLiteQuery
 import javax.`annotation`.processing.Generated
 import kotlin.Double
 import kotlin.Float
@@ -27,13 +25,12 @@ internal class MyDao_Impl(
     this.__db = __db
   }
 
-  public override fun getEntitySupport(sql: SupportSQLiteQuery): MyEntity {
-    val _rawQuery: RoomRawQuery = RoomSQLiteQuery.copyFrom(sql).toRoomRawQuery()
-    val _sql: String = _rawQuery.sql
+  public override fun getEntitySupport(sql: RoomRawQuery): MyEntity {
+    val _sql: String = sql.sql
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        _rawQuery.getBindingFunction().invoke(_stmt)
+        sql.getBindingFunction().invoke(_stmt)
         val _result: MyEntity
         if (_stmt.step()) {
           _result = __entityStatementConverter_MyEntity(_stmt)
@@ -47,13 +44,12 @@ internal class MyDao_Impl(
     }
   }
 
-  public override fun getNullableEntitySupport(sql: SupportSQLiteQuery): MyEntity? {
-    val _rawQuery: RoomRawQuery = RoomSQLiteQuery.copyFrom(sql).toRoomRawQuery()
-    val _sql: String = _rawQuery.sql
+  public override fun getNullableEntitySupport(sql: RoomRawQuery): MyEntity? {
+    val _sql: String = sql.sql
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        _rawQuery.getBindingFunction().invoke(_stmt)
+        sql.getBindingFunction().invoke(_stmt)
         val _result: MyEntity?
         if (_stmt.step()) {
           _result = __entityStatementConverter_MyEntity(_stmt)
@@ -67,70 +63,12 @@ internal class MyDao_Impl(
     }
   }
 
-  public override fun getEntitySupportFlow(sql: SupportSQLiteQuery): Flow<MyEntity> {
-    val _rawQuery: RoomRawQuery = RoomSQLiteQuery.copyFrom(sql).toRoomRawQuery()
-    val _sql: String = _rawQuery.sql
+  public override fun getEntitySupportFlow(sql: RoomRawQuery): Flow<MyEntity> {
+    val _sql: String = sql.sql
     return createFlow(__db, false, arrayOf("MyEntity")) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        _rawQuery.getBindingFunction().invoke(_stmt)
-        val _result: MyEntity
-        if (_stmt.step()) {
-          _result = __entityStatementConverter_MyEntity(_stmt)
-        } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
-        }
-        _result
-      } finally {
-        _stmt.close()
-      }
-    }
-  }
-
-  public override fun getEntity(query: RoomRawQuery): MyEntity {
-    val _sql: String = query.sql
-    return performBlocking(__db, true, false) { _connection ->
-      val _stmt: SQLiteStatement = _connection.prepare(_sql)
-      try {
-        query.getBindingFunction().invoke(_stmt)
-        val _result: MyEntity
-        if (_stmt.step()) {
-          _result = __entityStatementConverter_MyEntity(_stmt)
-        } else {
-          error("The query result was empty, but expected a single row to return a NON-NULL object of type 'MyEntity'.")
-        }
-        _result
-      } finally {
-        _stmt.close()
-      }
-    }
-  }
-
-  public override fun getNullableEntity(query: RoomRawQuery): MyEntity? {
-    val _sql: String = query.sql
-    return performBlocking(__db, true, false) { _connection ->
-      val _stmt: SQLiteStatement = _connection.prepare(_sql)
-      try {
-        query.getBindingFunction().invoke(_stmt)
-        val _result: MyEntity?
-        if (_stmt.step()) {
-          _result = __entityStatementConverter_MyEntity(_stmt)
-        } else {
-          _result = null
-        }
-        _result
-      } finally {
-        _stmt.close()
-      }
-    }
-  }
-
-  public override fun getEntityFlow(query: RoomRawQuery): Flow<MyEntity> {
-    val _sql: String = query.sql
-    return createFlow(__db, false, arrayOf("MyEntity")) { _connection ->
-      val _stmt: SQLiteStatement = _connection.prepare(_sql)
-      try {
-        query.getBindingFunction().invoke(_stmt)
+        sql.getBindingFunction().invoke(_stmt)
         val _result: MyEntity
         if (_stmt.step()) {
           _result = __entityStatementConverter_MyEntity(_stmt)

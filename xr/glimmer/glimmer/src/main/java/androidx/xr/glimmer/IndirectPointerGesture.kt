@@ -122,7 +122,8 @@ private class IndirectPointerGestureNode(
 
     private var pointerId: PointerId = PointerId(UnassignedPointerId)
     private var initialPosition = Offset.Unspecified
-    private var isPointerInClickRegion = false
+    private var ignoreClickForGestureStream = false
+    private var ignoreSwipeForGestureStream = false
     private var previousValidPositionX = 0f
     private var totalHorizontalDistanceTraveled = 0f
 
@@ -143,27 +144,22 @@ private class IndirectPointerGestureNode(
         this.onSwipeBackward = onSwipeBackward
     }
 
+    override fun onDetach() {
+        super.onDetach()
+        resetGestureState()
+    }
+
     override fun onIndirectPointerEvent(event: IndirectPointerEvent, pass: PointerEventPass) {
-        // TODO(b/446641623): Temporary usage of Initial, use PointerEventPass.Main instead.
-        if (!enabled || pass != PointerEventPass.Initial) {
+        if (!enabled || pass != PointerEventPass.Main) {
             return
         }
 
-        var anyConsumed = false
+        var isTrackedPointerInEvent = false
 
         event.changes.fastForEach { change ->
-            if (change.isConsumed) {
-                return@fastForEach
-            }
-
-            // TODO(b/446865091): Consume every event due to no modifier available to disable input
-            // for descendants
-            change.consume()
-            anyConsumed = true
-
             if (pointerId.value == UnassignedPointerId) {
-                if (!change.pressed) {
-                    // This change already has an 'up' action, so we can ignore it.
+                if (!change.changedToDownIgnoreConsumed()) {
+                    // Gesture stream has not been tracked from the initial down event.
                     return@fastForEach
                 }
                 pointerId = change.id
@@ -171,17 +167,18 @@ private class IndirectPointerGestureNode(
 
             if (pointerId != change.id) {
                 // This 'change' is for a different pointer than the one we're tracking.
-                return@fastForEach // Continue to the next change
+                return@fastForEach
             }
+
+            isTrackedPointerInEvent = true
 
             if (velocityTracker == null) velocityTracker = VelocityTracker()
 
             requireVelocityTracker().addPosition(change.uptimeMillis, change.position)
-
             handleInputChange(change)
         }
 
-        if (!anyConsumed) {
+        if (!isTrackedPointerInEvent) {
             resetGestureState()
         }
     }
@@ -191,35 +188,55 @@ private class IndirectPointerGestureNode(
     }
 
     private fun handleInputChange(inputChange: IndirectPointerInputChange) {
+        when {
+            inputChange.changedToDownIgnoreConsumed() -> handleDownIgnoreConsumed(inputChange)
+            inputChange.isMovingIgnoreConsumed() -> handleMoveIgnoreConsumed(inputChange)
+            inputChange.changedToUp() -> handleUp(inputChange)
+            else -> resetGestureState()
+        }
+    }
+
+    private fun handleDownIgnoreConsumed(inputChange: IndirectPointerInputChange) {
+        if (inputChange.isConsumed) {
+            // If the down event was consumed, suppress the `onClick` callback.
+            // However, we still track for swipe gestures, similar to how draggable continues to
+            // track movement even if the initial `down` event is consumed.
+            ignoreClickForGestureStream = true
+        } else {
+            ignoreClickForGestureStream = false
+            inputChange.consume()
+        }
+        initialPosition = inputChange.position
+        previousValidPositionX = inputChange.position.x
+    }
+
+    private fun handleMoveIgnoreConsumed(inputChange: IndirectPointerInputChange) {
+        if (inputChange.isConsumed) {
+            // If a move event is consumed, should not trigger a swipe.
+            ignoreSwipeForGestureStream = true
+        }
+
+        totalHorizontalDistanceTraveled += abs(inputChange.position.x - previousValidPositionX)
+        val displacementFromInitial = inputChange.position - initialPosition
+
         val touchSlop = currentValueOf(LocalViewConfiguration).touchSlop
         val touchSlopSquared = touchSlop * touchSlop
 
-        if (inputChange.changedToDownIgnoreConsumed()) {
-            initialPosition = inputChange.position
-            isPointerInClickRegion = true
-            previousValidPositionX = inputChange.position.x
-        } else if (inputChange.isMoveIgnoreConsumed()) {
-            if (initialPosition == Offset.Unspecified) {
-                resetGestureState()
-                return
-            }
+        if (displacementFromInitial.getDistanceSquared() > touchSlopSquared) {
+            // We've moved outside the click region.
+            ignoreClickForGestureStream = true
+            if (!inputChange.isConsumed) inputChange.consume()
+        }
 
-            // This is a 'move' event.
-            totalHorizontalDistanceTraveled += abs(inputChange.position.x - previousValidPositionX)
-            if (isPointerInClickRegion) {
-                val displacementFromInitial = inputChange.position - initialPosition
-                if (displacementFromInitial.getDistanceSquared() > touchSlopSquared) {
-                    // We've moved outside the click region.
-                    isPointerInClickRegion = false
-                }
-            }
-            previousValidPositionX = inputChange.position.x
-        } else if (inputChange.changedToUpIgnoreConsumed()) {
-            if (initialPosition == Offset.Unspecified) {
-                resetGestureState()
-                return
-            }
+        previousValidPositionX = inputChange.position.x
+    }
 
+    private fun handleUp(inputChange: IndirectPointerInputChange) {
+        if (!ignoreClickForGestureStream) {
+            inputChange.consume()
+            onClick()
+        } else if (!ignoreSwipeForGestureStream) {
+            val touchSlop = currentValueOf(LocalViewConfiguration).touchSlop
             val swipeDistanceThresholdPx = touchSlop * TouchSlopToSwipeDistanceThresholdRatio
             val finalHorizontalDisplacement = inputChange.position.x - initialPosition.x
 
@@ -237,30 +254,25 @@ private class IndirectPointerGestureNode(
                         )
                 ) {
                     // It's a valid swipe (no backtrack) and it's fast enough.
+                    inputChange.consume()
                     if (finalHorizontalDisplacement < 0) {
                         onSwipeBackward()
-                    } else if (finalHorizontalDisplacement > 0) {
+                    } else {
                         onSwipeForward()
                     }
                 }
-            } else if (isPointerInClickRegion) {
-                // It's a click
-                onClick()
             }
-
-            resetGestureState()
-        } else {
-            // Unknown state
-            resetGestureState()
         }
+        resetGestureState()
     }
 
     private fun resetGestureState() {
         pointerId = PointerId(UnassignedPointerId)
         initialPosition = Offset.Unspecified
-        isPointerInClickRegion = false
         previousValidPositionX = 0f
         totalHorizontalDistanceTraveled = 0f
+        ignoreClickForGestureStream = false
+        ignoreSwipeForGestureStream = false
         velocityTracker?.resetTracking()
     }
 
@@ -279,9 +291,10 @@ private class IndirectPointerGestureNode(
     private fun IndirectPointerInputChange.changedToDownIgnoreConsumed() =
         !previousPressed && pressed
 
-    private fun IndirectPointerInputChange.isMoveIgnoreConsumed() = previousPressed && pressed
+    private fun IndirectPointerInputChange.isMovingIgnoreConsumed() = previousPressed && pressed
 
-    private fun IndirectPointerInputChange.changedToUpIgnoreConsumed() = previousPressed && !pressed
+    private fun IndirectPointerInputChange.changedToUp() =
+        !isConsumed && previousPressed && !pressed
 
     companion object {
         private const val UnassignedPointerId = -1L

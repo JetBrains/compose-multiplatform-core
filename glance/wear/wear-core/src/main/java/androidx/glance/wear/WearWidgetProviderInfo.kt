@@ -105,17 +105,34 @@ public constructor(
         /** Name for the `meta-data` tag for the provider info. */
         private const val META_DATA_WEAR_WIDGET_PROVIDER = "androidx.glance.wear.widget.provider"
 
+        /** Intent action for binding to a Widget Service. */
+        @RestrictTo(LIBRARY_GROUP)
+        public const val ACTION_BIND_WIDGET_PROVIDER: String =
+            "androidx.glance.wear.action.BIND_WIDGET_PROVIDER"
+
+        /**
+         * Extra boolean in the intent to signal support for
+         * [androidx.glance.wear.parcel.IWearWidgetProvider] interface.
+         */
+        @RestrictTo(LIBRARY_GROUP)
+        public const val EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED: String =
+            "androidx.glance.wear.extra.WEAR_WIDGET_PROVIDER_SUPPORTED"
+
         /**
          * Parses a [WearWidgetProviderInfo] from the metadata of a service.
          *
          * The metadata with name `androidx.glance.wear.widget.provider` should reference an XML
          * resource with the provider info.
          *
+         * If not present, the values for label, description and icon are taken from the <service>
+         * attributes.
+         *
          * @param context The [Context] to use for resolving resources and package manager.
          * @param providerService The [ComponentName] of the widget provider service.
          * @throws [PackageManager.NameNotFoundException] if the metadata is not found or the
          *   resource is invalid.
          * @throws [XmlPullParserException] if there is an error parsing the XML resource.
+         * @throws [IllegalArgumentException] if the contents of the XML are invalid.
          */
         @Throws(XmlPullParserException::class)
         @JvmStatic
@@ -123,16 +140,19 @@ public constructor(
             context: Context,
             providerService: ComponentName,
         ): WearWidgetProviderInfo {
-            val serviceInfo =
-                context.packageManager.getServiceInfo(providerService, PackageManager.GET_META_DATA)
+            val pm = context.packageManager
+            val serviceInfo = pm.getServiceInfo(providerService, PackageManager.GET_META_DATA)
+            val providerResources = pm.getResourcesForApplication(serviceInfo.applicationInfo)
             val xmlParser =
-                serviceInfo.loadXmlMetaData(context.packageManager, META_DATA_WEAR_WIDGET_PROVIDER)
+                serviceInfo.loadXmlMetaData(pm, META_DATA_WEAR_WIDGET_PROVIDER)
                     ?: throw PackageManager.NameNotFoundException(
                         "Invalid meta-data name $META_DATA_WEAR_WIDGET_PROVIDER for service $providerService"
                     )
             return xmlParser.parseWearWidgetProviderInfo(
-                context.resources,
+                providerResources,
+                pm,
                 providerService,
+                serviceInfo,
                 defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
                 defaultGroup = providerService.className,
             )

@@ -191,10 +191,9 @@ androidXMultiplatform {
 dependencies {
     constraints {
         // Prevents symbols duplication with old versions of JetBrains' fork.
-        // Starting with version 1.3.2, this module is published as empty artifact with dependency
+        // Starting with version 1.3.5, this module is published as empty artifact with dependency
         // to this androidx module.
-        // TODO: update this constrain to 1.3.3 once out due to https://youtrack.jetbrains.com/issue/CMP-8765
-        commonMainImplementation("org.jetbrains.androidx.savedstate:savedstate:1.3.2") {
+        commonMainImplementation("org.jetbrains.androidx.savedstate:savedstate:1.3.5") {
             because "prevents symbols duplication"
         }
     }

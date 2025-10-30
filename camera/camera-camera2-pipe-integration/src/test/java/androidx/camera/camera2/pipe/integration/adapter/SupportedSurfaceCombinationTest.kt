@@ -113,6 +113,7 @@ import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
 import androidx.camera.core.impl.stabilization.StabilizationMode
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import androidx.camera.core.impl.utils.CompareSizesByArea
 import androidx.camera.core.internal.StreamSpecsCalculator
 import androidx.camera.core.internal.utils.SizeUtil.RESOLUTION_1080P
@@ -1867,7 +1868,7 @@ class SupportedSurfaceCombinationTest {
         supportedHighSpeedSizeAndFpsMap: Map<Size, List<Range<Int>>>? = null,
         dynamicRangeProfiles: DynamicRangeProfiles? = null,
         default10BitProfile: Long? = null,
-        isPreviewStabilizationOn: Boolean = false,
+        videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
         hasVideoCapture: Boolean = false,
         findMaxSupportedFrameRate: Boolean = false,
         expectedSessionType: Int = SESSION_TYPE_REGULAR,
@@ -1905,7 +1906,7 @@ class SupportedSurfaceCombinationTest {
                 cameraMode,
                 attachedSurfaceInfoList,
                 useCaseConfigToOutputSizesMap,
-                isPreviewStabilizationOn,
+                videoStabilization,
                 hasVideoCapture,
                 isFeatureComboInvocation,
                 findMaxSupportedFrameRate,
@@ -4638,7 +4639,7 @@ class SupportedSurfaceCombinationTest {
                 supportedSurfaceCombination.checkSupported(
                     createFeatureSettings(
                         requiresFeatureComboQuery = true,
-                        isPreviewStabilizationOn = true,
+                        videoStabilization = VideoStabilization.PREVIEW,
                     ),
                     surfaceConfigList,
                     surfaceConfigList.associateWith { DynamicRange.UNSPECIFIED },
@@ -4680,7 +4681,12 @@ class SupportedSurfaceCombinationTest {
             useCasesOutputSizesMap = useCasesOutputSizesMap,
             dynamicRangeProfiles = if (Build.VERSION.SDK_INT >= 33) HLG10_CONSTRAINED else null,
             capabilities = intArrayOf(REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT),
-            isPreviewStabilizationOn = Build.VERSION.SDK_INT >= 33,
+            videoStabilization =
+                if (Build.VERSION.SDK_INT >= 33) {
+                    VideoStabilization.PREVIEW
+                } else {
+                    VideoStabilization.UNSPECIFIED
+                },
             isFeatureComboInvocation = true,
             featureCombinationQuery = fakeFeatureCombinationQuery.apply { isSupported = true },
             maxFpsBySizeMap =
@@ -4813,7 +4819,7 @@ class SupportedSurfaceCombinationTest {
         requiresFeatureComboQuery: Boolean = false,
         targetFpsRange: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
         isStrictFpsRequired: Boolean = false,
-        isPreviewStabilizationOn: Boolean = false,
+        videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
     ) =
         SupportedSurfaceCombination.FeatureSettings(
             CameraMode.DEFAULT,
@@ -4822,7 +4828,7 @@ class SupportedSurfaceCombinationTest {
             requiresFeatureComboQuery = requiresFeatureComboQuery,
             targetFpsRange = targetFpsRange,
             isStrictFpsRequired = isStrictFpsRequired,
-            isPreviewStabilizationOn = isPreviewStabilizationOn,
+            videoStabilization = videoStabilization,
         )
 
     private fun setupCamera(

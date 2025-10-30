@@ -17,6 +17,8 @@
 package androidx.camera.core.featuregroup.impl.feature
 
 import androidx.camera.core.featuregroup.GroupableFeature
+import androidx.camera.core.impl.stabilization.VideoStabilization
+import androidx.camera.core.impl.stabilization.VideoStabilization.OFF
 
 /**
  * Denotes the video stabilization mode that is applied to the camera.
@@ -24,20 +26,15 @@ import androidx.camera.core.featuregroup.GroupableFeature
  * This feature should not be instantiated directly for usage, instead use the
  * [GroupableFeature.PREVIEW_STABILIZATION] object.
  */
-public class VideoStabilizationFeature(public val mode: StabilizationMode) : GroupableFeature() {
-    public enum class StabilizationMode {
-        OFF,
-        ON,
-        PREVIEW,
-    }
-
+public class VideoStabilizationFeature(public val videoStabilization: VideoStabilization) :
+    GroupableFeature() {
     override val featureTypeInternal: FeatureTypeInternal = FeatureTypeInternal.VIDEO_STABILIZATION
 
     override fun toString(): String {
-        return "VideoStabilizationFeature(mode=${mode.name})"
+        return "VideoStabilizationFeature(mode=${videoStabilization.name})"
     }
 
     internal companion object {
-        @JvmField val DEFAULT_STABILIZATION_MODE = StabilizationMode.OFF
+        @JvmField val DEFAULT_STABILIZATION = OFF
     }
 }

@@ -22,8 +22,9 @@
  * modifying its settings.
  */
 
-import androidx.build.SoftwareType
+
 import androidx.build.PlatformIdentifier
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -63,6 +64,18 @@ androidXMultiplatform {
             dependencies {
                 implementation(libs.testRunner)
             }
+        }
+    }
+}
+
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 1.5.0-beta01, this module is published as empty artifact with dependency
+        // to this androidx module.
+        // TODO: update this stable version once out
+        commonMainImplementation("org.jetbrains.androidx.window:window-core:1.5.0-beta01") {
+            because "prevents symbols duplication"
         }
     }
 }

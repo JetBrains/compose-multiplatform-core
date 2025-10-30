@@ -30,6 +30,7 @@ import androidx.room3.MapInfo
 import androidx.room3.Query
 import androidx.room3.RawQuery
 import androidx.room3.RewriteQueriesToDropUnusedColumns
+import androidx.room3.RoomRawQuery
 import androidx.room3.Transaction
 import androidx.room3.Update
 import androidx.room3.integration.kotlintestapp.vo.Album
@@ -43,7 +44,6 @@ import androidx.room3.integration.kotlintestapp.vo.PlaylistSongXRef
 import androidx.room3.integration.kotlintestapp.vo.PlaylistWithSongs
 import androidx.room3.integration.kotlintestapp.vo.ReleasedAlbum
 import androidx.room3.integration.kotlintestapp.vo.Song
-import androidx.sqlite.db.SupportSQLiteQuery
 import com.google.common.collect.ImmutableListMultimap
 import com.google.common.collect.ImmutableMap
 import com.google.common.collect.ImmutableSetMultimap
@@ -81,7 +81,7 @@ interface MusicDao {
     @Transaction
     fun getAllArtistAndTheirAlbumsWithSongs(): Map<Artist, AlbumWithSongs>
 
-    @RawQuery fun getAllArtistAndTheirSongsRawQuery(query: SupportSQLiteQuery): Map<Artist, Song>
+    @RawQuery fun getAllArtistAndTheirSongsRawQuery(query: RoomRawQuery): Map<Artist, Song>
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
     fun getAllArtistAndTheirSongsAsLiveData(): LiveData<Map<Artist, Song>>
@@ -101,7 +101,7 @@ interface MusicDao {
     fun getAllArtistAndTheirAlbumsWithSongsList(): Map<Artist, List<AlbumWithSongs>>
 
     @RawQuery
-    fun getAllArtistAndTheirSongsRawQueryList(query: SupportSQLiteQuery): Map<Artist, List<Song>>
+    fun getAllArtistAndTheirSongsRawQueryList(query: RoomRawQuery): Map<Artist, List<Song>>
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
     fun getAllArtistAndTheirSongsAsLiveDataList(): LiveData<Map<Artist, List<Song>>>
@@ -122,8 +122,7 @@ interface MusicDao {
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
     fun getAllArtistAndTheirSongsSet(): Map<Artist, Set<Song>>
 
-    @RawQuery
-    fun getAllArtistAndTheirSongsRawQuerySet(query: SupportSQLiteQuery): Map<Artist, Set<Song>>
+    @RawQuery fun getAllArtistAndTheirSongsRawQuerySet(query: RoomRawQuery): Map<Artist, Set<Song>>
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
     fun allArtistAndTheirSongsAsLiveDataSet(): LiveData<Map<Artist, Set<Song>>>
@@ -137,7 +136,7 @@ interface MusicDao {
 
     @RawQuery
     fun getAllArtistAndTheirSongsRawQueryImmutableMap(
-        query: SupportSQLiteQuery
+        query: RoomRawQuery
     ): ImmutableMap<Artist, List<Song>>
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
@@ -162,12 +161,12 @@ interface MusicDao {
 
     @RawQuery
     fun getAllArtistAndTheirSongsRawQueryGuavaImmutableSetMultimap(
-        query: SupportSQLiteQuery
+        query: RoomRawQuery
     ): ImmutableSetMultimap<Artist, Song>
 
     @RawQuery
     fun getAllArtistAndTheirSongsRawQueryGuavaImmutableListMultimap(
-        query: SupportSQLiteQuery
+        query: RoomRawQuery
     ): ImmutableListMultimap<Artist, Song>
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
@@ -196,17 +195,17 @@ interface MusicDao {
     @RewriteQueriesToDropUnusedColumns
     @MapInfo(keyColumn = "mArtistName", valueColumn = "mArtist")
     @RawQuery
-    fun getArtistNameToSongsRawQuery(query: SupportSQLiteQuery): Map<String, List<Song>>
+    fun getArtistNameToSongsRawQuery(query: RoomRawQuery): Map<String, List<Song>>
 
     @RewriteQueriesToDropUnusedColumns
     @MapInfo(keyColumn = "mReleasedYear", valueColumn = "mReleasedYear")
     @RawQuery
-    fun getReleaseYearToAlbumsRawQuery(query: SupportSQLiteQuery): Map<Int, List<Song>>
+    fun getReleaseYearToAlbumsRawQuery(query: RoomRawQuery): Map<Int, List<Song>>
 
     @RewriteQueriesToDropUnusedColumns
     @MapInfo(keyColumn = "mReleasedYear", valueColumn = "mTitle")
     @RawQuery
-    fun getReleaseYearToSongNamesRawQuery(query: SupportSQLiteQuery): Map<Int, List<String>>
+    fun getReleaseYearToSongNamesRawQuery(query: RoomRawQuery): Map<Int, List<String>>
 
     @Query(
         "SELECT *, COUNT(mSongId) as songCount FROM Artist JOIN Song ON Artist.mArtistName = " +
@@ -219,7 +218,7 @@ interface MusicDao {
     @RewriteQueriesToDropUnusedColumns
     @MapInfo(valueColumn = "songCount")
     @RawQuery
-    fun getArtistAndSongCountMapRawQuery(query: SupportSQLiteQuery): Map<Artist, Int>
+    fun getArtistAndSongCountMapRawQuery(query: RoomRawQuery): Map<Artist, Int>
 
     // Other Map Key/Value Types
     @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
@@ -229,9 +228,7 @@ interface MusicDao {
 
     @MapInfo(valueColumn = "mAlbumCover")
     @RawQuery
-    fun getAllArtistsWithAlbumCoversRawQuery(
-        query: SupportSQLiteQuery
-    ): ImmutableMap<Artist, ByteBuffer>
+    fun getAllArtistsWithAlbumCoversRawQuery(query: RoomRawQuery): ImmutableMap<Artist, ByteBuffer>
 
     @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
     @MapInfo(valueColumn = "mImageYear")
@@ -240,9 +237,7 @@ interface MusicDao {
 
     @MapInfo(keyColumn = "mImageYear")
     @RawQuery
-    fun getAllAlbumCoverYearToArtistsWithRawQuery(
-        query: SupportSQLiteQuery
-    ): ImmutableMap<Long, Artist>
+    fun getAllAlbumCoverYearToArtistsWithRawQuery(query: RoomRawQuery): ImmutableMap<Long, Artist>
 
     @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
     @MapInfo(keyColumn = "mAlbumCover", valueColumn = "mIsActive")
@@ -251,7 +246,7 @@ interface MusicDao {
     @MapInfo(keyColumn = "mAlbumCover", valueColumn = "mIsActive")
     @RawQuery
     fun getAlbumCoversWithBandActivityRawQuery(
-        query: SupportSQLiteQuery
+        query: RoomRawQuery
     ): ImmutableMap<ByteBuffer, Boolean>
 
     @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
@@ -260,7 +255,7 @@ interface MusicDao {
 
     @MapInfo(keyColumn = "mDateReleased", valueColumn = "mIsActive")
     @RawQuery
-    fun getAlbumDateWithBandActivityRawQuery(query: SupportSQLiteQuery): ImmutableMap<Date, Boolean>
+    fun getAlbumDateWithBandActivityRawQuery(query: RoomRawQuery): ImmutableMap<Date, Boolean>
 
     @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
     @MapInfo(keyColumn = "mFormat", valueColumn = "mIsActive")
@@ -269,12 +264,12 @@ interface MusicDao {
     @MapInfo(keyColumn = "mFormat", valueColumn = "mIsActive")
     @RawQuery
     fun getImageFormatWithBandActivityRawQuery(
-        query: SupportSQLiteQuery
+        query: RoomRawQuery
     ): ImmutableMap<ImageFormat, Boolean>
 
     @MapInfo(keyColumn = "dog", valueColumn = "cat")
     @RawQuery
-    fun getMapWithInvalidColumnRawQuery(query: SupportSQLiteQuery): Map<Artist, Int>
+    fun getMapWithInvalidColumnRawQuery(query: RoomRawQuery): Map<Artist, Int>
 
     @Query("SELECT * FROM Artist LEFT JOIN Album ON Artist.mArtistName = Album.mAlbumArtist")
     fun artistAndAlbumsLeftJoin(): Map<Artist, List<Album>>
@@ -301,7 +296,7 @@ interface MusicDao {
     @MapInfo(keyColumn = "mImageYear")
     @RawQuery
     fun getAllAlbumCoverYearToArtistsWithRawQueryArrayMap(
-        query: SupportSQLiteQuery
+        query: RoomRawQuery
     ): ArrayMap<Long, Artist>
 
     @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
@@ -428,7 +423,7 @@ interface MusicDao {
     @RawQuery
     @RewriteQueriesToDropUnusedColumns
     fun getImageYearToArtistToAlbumsToSongsMultiMapColumn(
-        query: SupportSQLiteQuery
+        query: RoomRawQuery
     ): Map<
         Image,
         Map<

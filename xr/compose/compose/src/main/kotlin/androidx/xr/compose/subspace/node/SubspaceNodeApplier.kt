@@ -52,6 +52,6 @@ internal class SubspaceNodeApplier(private val owner: SubspaceOwner) :
     }
 
     override fun onEndChanges() {
-        owner.requestMeasure(owner.root)
+        owner.onRecompositionComplete()
     }
 }

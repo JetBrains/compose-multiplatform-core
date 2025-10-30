@@ -938,7 +938,7 @@ internal class TransformingLazyColumnStateAdapter(
 
             // Coerce item size to at least 1 to avoid divide by zero for zero height items
             val firstVisibleItemFraction =
-                firstVisibleItemSize.toFloat() /
+                firstVisibleItemSize /
                     (firstVisibleItem.transformedHeight + extraPadding).coerceAtLeast(1).toFloat()
             return firstVisibleItem.index.toFloat() - firstVisibleItemFraction
         } ?: 0f

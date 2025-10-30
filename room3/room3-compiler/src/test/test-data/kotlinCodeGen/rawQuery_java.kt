@@ -1,10 +1,8 @@
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomRawQuery
-import androidx.room3.RoomSQLiteQuery
 import androidx.room3.util.getColumnIndex
 import androidx.room3.util.performBlocking
 import androidx.sqlite.SQLiteStatement
-import androidx.sqlite.db.SupportSQLiteQuery
 import javax.`annotation`.processing.Generated
 import kotlin.Int
 import kotlin.String
@@ -23,34 +21,13 @@ internal class MyDao_Impl(
     this.__db = __db
   }
 
-  public override fun getEntitySupport(sql: SupportSQLiteQuery?): MyEntity? {
+  public override fun getEntitySupport(sql: RoomRawQuery?): MyEntity? {
     checkNotNull(sql)
-    val _rawQuery: RoomRawQuery = RoomSQLiteQuery.copyFrom(sql).toRoomRawQuery()
-    val _sql: String = _rawQuery.sql
+    val _sql: String = sql.sql
     return performBlocking(__db, true, false) { _connection ->
       val _stmt: SQLiteStatement = _connection.prepare(_sql)
       try {
-        _rawQuery.getBindingFunction().invoke(_stmt)
-        val _result: MyEntity?
-        if (_stmt.step()) {
-          _result = __entityStatementConverter_MyEntity(_stmt)
-        } else {
-          _result = null
-        }
-        _result
-      } finally {
-        _stmt.close()
-      }
-    }
-  }
-
-  public override fun getEntity(query: RoomRawQuery?): MyEntity? {
-    checkNotNull(query)
-    val _sql: String = query.sql
-    return performBlocking(__db, true, false) { _connection ->
-      val _stmt: SQLiteStatement = _connection.prepare(_sql)
-      try {
-        query.getBindingFunction().invoke(_stmt)
+        sql.getBindingFunction().invoke(_stmt)
         val _result: MyEntity?
         if (_stmt.step()) {
           _result = __entityStatementConverter_MyEntity(_stmt)

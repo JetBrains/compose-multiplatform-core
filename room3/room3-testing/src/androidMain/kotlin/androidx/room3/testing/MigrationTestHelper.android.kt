@@ -18,7 +18,6 @@ package androidx.room3.testing
 
 import android.app.Instrumentation
 import android.content.Context
-import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.room3.DatabaseConfiguration
 import androidx.room3.RoomDatabase
 import androidx.room3.migration.AutoMigrationSpec
@@ -32,6 +31,7 @@ import java.io.FileNotFoundException
 import java.lang.ref.WeakReference
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
+import kotlinx.coroutines.Dispatchers
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
@@ -267,32 +267,26 @@ private sealed class AndroidMigrationTestHelper(
 
     protected fun createDatabaseConfiguration(
         container: RoomDatabase.MigrationContainer,
-        sqliteDriver: SQLiteDriver?,
+        sqliteDriver: SQLiteDriver,
         databaseFileName: String?,
     ) =
         DatabaseConfiguration(
             context = instrumentation.targetContext,
             name = databaseFileName,
-            sqliteOpenHelperFactory = null,
             migrationContainer = container,
             callbacks = null,
             allowMainThreadQueries = true,
             journalMode = RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING,
-            queryExecutor = ArchTaskExecutor.getIOThreadExecutor(),
-            transactionExecutor = ArchTaskExecutor.getIOThreadExecutor(),
             multiInstanceInvalidationServiceIntent = null,
             requireMigration = true,
             allowDestructiveMigrationOnDowngrade = false,
             migrationNotRequiredFrom = emptySet(),
-            copyFromAssetPath = null,
-            copyFromFile = null,
-            copyFromInputStream = null,
             prepackagedDatabaseCallback = null,
             typeConverters = emptyList(),
             autoMigrationSpecs = emptyList(),
             allowDestructiveMigrationForAllTables = false,
             sqliteDriver = sqliteDriver,
-            queryCoroutineContext = null,
+            queryCoroutineContext = Dispatchers.IO,
         )
 }
 

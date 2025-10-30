@@ -164,18 +164,20 @@ class ExtensionsManagerTest(
     }
 
     @Test
-    fun getExtensionsCameraSelectorThrowsException_whenExtensionModeIsNotSupported() {
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
-        val baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
+    fun getExtensionsCameraSelectorThrowsException_whenExtensionModeIsNotSupported(): Unit =
+        runBlocking {
+            extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
+            val baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
-        assumeFalse(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
+            assumeFalse(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
 
-        assertThrows<IllegalArgumentException> {
-            extensionsManager.getExtensionEnabledCameraSelector(baseCameraSelector, extensionMode)
+            assertThrows<IllegalArgumentException> {
+                extensionsManager.getExtensionEnabledCameraSelector(
+                    baseCameraSelector,
+                    extensionMode,
+                )
+            }
         }
-    }
 
     @Test
     fun returnNewCameraSelector_whenExtensionModeIsSupprted() {
@@ -188,7 +190,7 @@ class ExtensionsManagerTest(
     }
 
     @Test
-    fun correctAvailability_whenExtensionIsNotAvailable() {
+    fun correctAvailability_whenExtensionIsNotAvailable(): Unit = runBlocking {
         // Skips the test if extensions availability is disabled by quirk.
         assumeFalse(
             ExtensionsTestUtil.extensionsDisabledByQuirk(
@@ -196,9 +198,7 @@ class ExtensionsManagerTest(
             )
         )
 
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
         val baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
 
         assumeFalse(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
@@ -271,10 +271,8 @@ class ExtensionsManagerTest(
     }
 
     @Test
-    fun getEstimatedCaptureLatencyRange_returnValueFromExtender() {
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+    fun getEstimatedCaptureLatencyRange_returnValueFromExtender(): Unit = runBlocking {
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         assumeTrue(
             extensionsManager.extensionsAvailability ==
@@ -436,10 +434,8 @@ class ExtensionsManagerTest(
     }
 
     @Test
-    fun isImageAnalysisSupportedReturnsFalse_whenHasNoAnalysisSizes() {
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+    fun isImageAnalysisSupportedReturnsFalse_whenHasNoAnalysisSizes(): Unit = runBlocking {
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         val fakeVendorExtender =
             object : VendorExtender {
@@ -466,10 +462,8 @@ class ExtensionsManagerTest(
     }
 
     @Test
-    fun isImageAnalysisSupportedReturnsTrue_whenHasAnalysisSizes() {
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+    fun isImageAnalysisSupportedReturnsTrue_whenHasAnalysisSizes(): Unit = runBlocking {
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         val fakeVendorExtender =
             object : VendorExtender {
@@ -692,9 +686,7 @@ class ExtensionsManagerTest(
     }
 
     private fun checkExtensionAvailabilityAndInit(): CameraSelector {
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = runBlocking { ExtensionsManager.getInstance(context, cameraProvider) }
 
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
 
@@ -708,9 +700,7 @@ class ExtensionsManagerTest(
     fun returnsCorrectExtensionStrengthFromCameraExtensionsInfoForNormalMode() = runBlocking {
         // Runs the test only when the parameterized extension mode is BOKEH to avoid wasting time
         assumeTrue(extensionMode == ExtensionMode.BOKEH)
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         val camera =
             withContext(Dispatchers.Main) {

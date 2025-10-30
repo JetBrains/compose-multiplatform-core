@@ -105,6 +105,14 @@ android {
 
 inspection {
     name = "compose-ui-inspection.jar"
+    excludedModules.addAll(
+            "org.jetbrains.kotlin:*",
+            "org.jetbrains:annotations",
+            "org.intellij.lang:annotations"
+    )
+    allowedModules.addAll(
+            "org.jetbrains.kotlin:kotlin-reflect"
+    )
 }
 
 // TODO(b/407640608): Fix :compose:ui:ui-inspection:connectedCheck to work without this block

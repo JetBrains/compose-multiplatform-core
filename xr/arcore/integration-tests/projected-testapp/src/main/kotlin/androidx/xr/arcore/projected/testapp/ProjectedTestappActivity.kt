@@ -18,13 +18,14 @@ package androidx.xr.arcore.projected.testapp
 
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.CreatePoseFromGeospatialPoseSuccess
-import androidx.xr.arcore.Earth
+import androidx.xr.arcore.Geospatial
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
@@ -48,32 +49,59 @@ import kotlinx.coroutines.launch
 /** Test app which tests projected perception API surface. */
 class ProjectedTestAppActivity : ComponentActivity() {
     private lateinit var session: Session
-    private lateinit var earth: Earth
+    private lateinit var geospatial: Geospatial
     private lateinit var textView: TextView
     private var initialGeospatialPose: GeospatialPose? = null
     private var vpsStatusMessage: String = "VPS status: checking..."
     private val sessionInitialized = CompletableDeferred<Unit>()
+    private var exceptionMessage: String? = null
     private val TAG = "ProjectedTestAppActivity"
-    val config: Config =
-        Config(
-            geospatial = Config.GeospatialMode.EARTH,
-            deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+    private val configs =
+        listOf(
+            "Geospatial On, 3DoF On" to
+                Config(
+                    geospatial = Config.GeospatialMode.VPS_AND_GPS,
+                    deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+                ),
+            "Geospatial Off, 3DoF On" to
+                Config(
+                    geospatial = Config.GeospatialMode.DISABLED,
+                    deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+                ),
+            "Geospatial Off, 3DoF Off" to
+                Config(
+                    geospatial = Config.GeospatialMode.DISABLED,
+                    deviceTracking = Config.DeviceTrackingMode.DISABLED,
+                ),
+            "Geospatial On, 3DoF Off" to
+                Config(
+                    geospatial = Config.GeospatialMode.VPS_AND_GPS,
+                    deviceTracking = Config.DeviceTrackingMode.DISABLED,
+                ),
         )
+    private var currentConfigIndex = 0
+    private val currentConfig: Config
+        get() = configs[currentConfigIndex].second
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.i(TAG, "onCreate")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        Log.i(TAG, "onResume")
         textView = TextView(this)
         textView.text = "\n\n\n\nWaiting for Geospatial Pose..."
         setContentView(textView)
         lifecycleScope.launch(Dispatchers.IO) {
-            delay(4000)
+            delay(4000) // TODO: b/436981970 - the onResume 2x is happening again with this change.
             tryCreateSession()
             lifecycleScope.launch {
                 Log.i(TAG, "before sessionInitialized.await()")
                 sessionInitialized.await()
                 Log.i(TAG, "sessionInitialized.await()")
-                earth = Earth.getInstance(session)
+                geospatial = Geospatial.getInstance(session)
                 // Check VPS availability
                 checkVpsAvailability(37.422, -122.084) // Googleplex coordinates
                 while (true) {
@@ -82,11 +110,6 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.i(TAG, "onResume")
     }
 
     override fun onPause() {
@@ -110,13 +133,37 @@ class ProjectedTestAppActivity : ComponentActivity() {
     }
 
     private fun update() {
-        val pose = ArDevice.getInstance(session).state.value.devicePose
-        var newText =
-            "\n\n\n\nDevicePose translation: ${pose.translation.x}, ${pose.translation.y}, ${pose.translation.z}"
-        newText +=
-            "\nDevicePose rotation: ${pose.rotation.x}, ${pose.rotation.y}, ${pose.rotation.z}, ${pose.rotation.w}"
+        var newText = "\n\n\nCurrent config: ${configs[currentConfigIndex].first}\n"
 
-        when (val geospatialPoseResult = earth.createGeospatialPoseFromDevicePose()) {
+        if (exceptionMessage != null) {
+            newText += "Exception: $exceptionMessage"
+            runOnUiThread { textView.text = newText }
+            return
+        }
+
+        val geoOn = currentConfig.geospatial == Config.GeospatialMode.VPS_AND_GPS
+        val trackingOn = currentConfig.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN
+
+        if (geoOn && trackingOn) {
+            newText += getDevicePoseText()
+            newText += getGeospatialPoseText()
+        } else if (!geoOn && trackingOn) {
+            newText += getDevicePoseText()
+        } else if (!geoOn && !trackingOn) {
+            newText += "All tracking is disabled."
+        }
+        runOnUiThread { textView.text = newText }
+    }
+
+    private fun getDevicePoseText(): String {
+        val pose = ArDevice.getInstance(session).state.value.devicePose
+        return "\nDevicePose translation: ${pose.translation.x}, ${pose.translation.y}, ${pose.translation.z}" +
+            "\nDevicePose rotation: ${pose.rotation.x}, ${pose.rotation.y}, ${pose.rotation.z}, ${pose.rotation.w}"
+    }
+
+    private fun getGeospatialPoseText(): String {
+        val devicePose = ArDevice.getInstance(session).state.value.devicePose
+        when (val geospatialPoseResult = geospatial.createGeospatialPoseFromPose(devicePose)) {
             is CreateGeospatialPoseFromPoseSuccess -> {
                 val currentGeospatialPose = geospatialPoseResult.pose
                 val isCurrentPoseValid =
@@ -124,8 +171,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
 
                 if (!isCurrentPoseValid) {
                     Log.w(TAG, "Skipping frame due to invalid currentGeospatialPose.")
-                    newText += "\nWaiting for a valid Geospatial Pose..."
-                    return
+                    return "\nWaiting for a valid Geospatial Pose..."
                 }
 
                 if (initialGeospatialPose == null) {
@@ -140,33 +186,22 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 )
                 val comparisonMessage = testGeospatialConversions(currentGeospatialPose)
 
-                displayToScreen(currentGeospatialPose, vpsStatusMessage, comparisonMessage)
+                var text = "\nGeospatialPose: ${currentGeospatialPose}"
+                text += "\nVPS availability: $vpsStatusMessage"
+                text += "\nComparison:\n$comparisonMessage"
+                return text
             }
             else -> {
                 Log.e(TAG, "Failed to get GeospatialPose from device pose: $geospatialPoseResult")
-                newText += "\nError getting GeospatialPose: $geospatialPoseResult"
+                return "\nError getting GeospatialPose: $geospatialPoseResult"
             }
-        }
-        runOnUiThread { textView.text = newText }
-    }
-
-    private fun displayToScreen(
-        currentGeospatialPose: GeospatialPose,
-        vpsStatusMessage: String,
-        comparisonMessage: String,
-    ) {
-        runOnUiThread {
-            var text = "\n\n\n\nGeospatialPose: ${currentGeospatialPose}"
-            text += "\n\nVPS availability: $vpsStatusMessage"
-            text += "\n\nComparison:\n$comparisonMessage"
-            textView.text = text
         }
     }
 
     private fun checkVpsAvailability(latitude: Double, longitude: Double) {
         Log.i(TAG, "checkVpsAvailability latitude: $latitude, longitude: $longitude")
         lifecycleScope.launch {
-            val vpsAvailabilityResult = Earth.checkVpsAvailability(session, latitude, longitude)
+            val vpsAvailabilityResult = geospatial.checkVpsAvailability(latitude, longitude)
             vpsStatusMessage = getVpsMessage(vpsAvailabilityResult)
             Log.i(TAG, "VPS availability: $vpsStatusMessage ($vpsAvailabilityResult)")
         }
@@ -191,8 +226,8 @@ class ProjectedTestAppActivity : ComponentActivity() {
     private fun testGeospatialConversions(currentGeospatialPose: GeospatialPose): String {
         val initialPose = initialGeospatialPose ?: return "Initial pose not set"
 
-        val initialNonGeoResult = earth.createPoseFromGeospatialPose(initialPose)
-        val currentNonGeoResult = earth.createPoseFromGeospatialPose(currentGeospatialPose)
+        val initialNonGeoResult = geospatial.createPoseFromGeospatialPose(initialPose)
+        val currentNonGeoResult = geospatial.createPoseFromGeospatialPose(currentGeospatialPose)
 
         if (
             initialNonGeoResult is CreatePoseFromGeospatialPoseSuccess &&
@@ -202,8 +237,10 @@ class ProjectedTestAppActivity : ComponentActivity() {
             val currentNonGeoPose = currentNonGeoResult.pose
 
             // Round trip the non-geo poses back to geospatial poses
-            val initialGeoRoundtripResult = earth.createGeospatialPoseFromPose(initialNonGeoPose)
-            val currentGeoRoundtripResult = earth.createGeospatialPoseFromPose(currentNonGeoPose)
+            val initialGeoRoundtripResult =
+                geospatial.createGeospatialPoseFromPose(initialNonGeoPose)
+            val currentGeoRoundtripResult =
+                geospatial.createGeospatialPoseFromPose(currentNonGeoPose)
 
             if (
                 initialGeoRoundtripResult is CreateGeospatialPoseFromPoseSuccess &&
@@ -253,27 +290,26 @@ class ProjectedTestAppActivity : ComponentActivity() {
             is SessionCreateSuccess -> {
                 session = result.session
                 try {
-                    Log.i(TAG, "session.configure(config)")
-                    when (val configResult = session.configure(config)) {
+                    Log.i(TAG, "session.configure(currentConfig)")
+                    when (val configResult = session.configure(currentConfig)) {
                         is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
                             Log.e(
                                 TAG,
                                 "Google Play Services Location Library is not linked, this should not happen.",
                             )
                         }
-
                         is SessionConfigureSuccess -> {
                             Log.i(TAG, "Session created successfully!!")
-                            sessionInitialized.complete(Unit)
                         }
-
                         else -> {
                             Log.e(TAG, "Session creation error")
                         }
                     }
                 } catch (e: UnsupportedOperationException) {
-                    Log.e(TAG, "Session configuration not supported.")
-                    this.finish()
+                    Log.e(TAG, "Session configuration not supported.", e)
+                    exceptionMessage = e.message
+                } finally {
+                    sessionInitialized.complete(Unit)
                 }
             }
             is SessionCreateApkRequired -> {
@@ -284,5 +320,41 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 finish()
             }
         }
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode != KeyEvent.KEYCODE_DPAD_CENTER) {
+            return super.onKeyUp(keyCode, event)
+        }
+        currentConfigIndex = (currentConfigIndex + 1) % configs.size
+        val newConfigName = configs[currentConfigIndex].first
+        Log.i(TAG, "Switching to config: $newConfigName")
+        exceptionMessage = null
+        lifecycleScope.launch {
+            sessionInitialized.await()
+            Log.i(TAG, "Reconfiguring session with config: $newConfigName")
+            try {
+                when (val configResult = session.configure(currentConfig)) {
+                    is SessionConfigureSuccess -> {
+                        Log.i(TAG, "Session reconfigured successfully!")
+                        // Reset initial pose when config changes for correct diffs
+                        initialGeospatialPose = null
+                    }
+                    is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
+                        Log.e(
+                            TAG,
+                            "Google Play Services Location Library is not linked, this should not happen.",
+                        )
+                    }
+                    else -> {
+                        Log.e(TAG, "Session reconfigure error: $configResult")
+                    }
+                }
+            } catch (e: UnsupportedOperationException) {
+                Log.e(TAG, "Configuration failed: ", e)
+                exceptionMessage = e.message
+            }
+        }
+        return true
     }
 }

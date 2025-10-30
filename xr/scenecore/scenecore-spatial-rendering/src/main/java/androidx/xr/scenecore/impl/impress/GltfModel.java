@@ -22,7 +22,7 @@ import androidx.xr.scenecore.runtime.GltfModelResource;
 import org.jspecify.annotations.NonNull;
 
 /** Wrapper class for the native glTF model. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public final class GltfModel extends BindingsResource implements GltfModelResource {
     private final ImpressApi mImpressApi;
 
