@@ -16,7 +16,6 @@
 
 package androidx.camera.core
 
-import android.os.Build
 import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
@@ -29,13 +28,11 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 /** Unit tests for [UseCaseGroup]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class UseCaseGroupTest {
 
     lateinit var processor: FakeSurfaceProcessorInternal

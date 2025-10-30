@@ -49,7 +49,7 @@ fun ListHeaderSample() {
             state = scrollState,
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            contentPadding = contentPadding
+            contentPadding = contentPadding,
         ) {
             item { ListHeader { Text("Settings") } }
             item {
@@ -60,7 +60,7 @@ fun ListHeaderSample() {
                             contentDescription = "Connectivity",
                         )
                     },
-                    label = { Text("Connectivity") }
+                    label = { Text("Connectivity") },
                 )
             }
             item {
@@ -71,7 +71,7 @@ fun ListHeaderSample() {
                         Icon(
                             painter = painterResource(R.drawable.ic_bluetooth),
                             contentDescription = "Bluetooth",
-                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                            modifier = Modifier.size(ButtonDefaults.IconSize),
                         )
                     },
                 ) {
@@ -86,7 +86,7 @@ fun ListHeaderSample() {
                         Icon(
                             painter = painterResource(R.drawable.ic_wifi),
                             contentDescription = "Wifi",
-                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                            modifier = Modifier.size(ButtonDefaults.IconSize),
                         )
                     },
                 ) {

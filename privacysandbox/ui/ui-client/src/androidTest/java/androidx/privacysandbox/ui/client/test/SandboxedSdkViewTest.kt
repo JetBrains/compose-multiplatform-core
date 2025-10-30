@@ -32,6 +32,7 @@ import android.widget.TextView
 import androidx.lifecycle.Lifecycle
 import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.core.BackwardCompatUtil
+import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.privacysandbox.ui.core.SandboxedUiAdapterSignalOptions
 import androidx.privacysandbox.ui.core.SessionData
@@ -62,6 +63,8 @@ import org.junit.runner.RunWith
 // TODO(b/374919355): Create a common test for View and Compose
 @RunWith(AndroidJUnit4::class)
 @LargeTest
+// OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
+@OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 class SandboxedSdkViewTest {
     private lateinit var uiDevice: UiDevice
     private lateinit var context: Context
@@ -75,7 +78,7 @@ class SandboxedSdkViewTest {
     private var signalOptions =
         setOf(
             SandboxedUiAdapterSignalOptions.GEOMETRY,
-            SandboxedUiAdapterSignalOptions.OBSTRUCTIONS
+            SandboxedUiAdapterSignalOptions.OBSTRUCTIONS,
         )
     @get:Rule var activityScenarioRule = ActivityScenarioRule(UiLibActivity::class.java)
 
@@ -89,7 +92,7 @@ class SandboxedSdkViewTest {
             layoutParams =
                 LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
                 )
             view.layoutParams = layoutParams
             testSandboxedUiAdapter = TestSandboxedUiAdapter(signalOptions)
@@ -104,6 +107,16 @@ class SandboxedSdkViewTest {
         testSandboxedUiAdapter.assertSessionOpened()
 
         activityScenarioRule.withActivity { view.setAdapter(null) }
+        testSandboxedUiAdapter.assertSessionClosed()
+    }
+
+    @Test
+    fun onDetachFromWindowClosesEstablishedSessionTest() {
+        addViewToLayout()
+        testSandboxedUiAdapter.assertSessionOpened()
+
+        removeAllViewsFromLayout()
+
         testSandboxedUiAdapter.assertSessionClosed()
     }
 
@@ -275,13 +288,13 @@ class SandboxedSdkViewTest {
         uiDevice.performActionAndWait(
             { uiDevice.setOrientationLeft() },
             Until.newWindow(),
-            UI_INTENSIVE_TIMEOUT
+            UI_INTENSIVE_TIMEOUT,
         )
         testSandboxedUiAdapter.assertSessionNotClosed()
         uiDevice.performActionAndWait(
             { uiDevice.setOrientationNatural() },
             Until.newWindow(),
-            UI_INTENSIVE_TIMEOUT
+            UI_INTENSIVE_TIMEOUT,
         )
         testSandboxedUiAdapter.assertSessionNotClosed()
     }
@@ -315,7 +328,7 @@ class SandboxedSdkViewTest {
                 initialHeight: Int,
                 isZOrderOnTop: Boolean,
                 clientExecutor: Executor,
-                client: SandboxedUiAdapter.SessionClient
+                client: SandboxedUiAdapter.SessionClient,
             ) {
                 clientExecutor.execute { client.onSessionOpened(CustomSession()) }
             }
@@ -352,7 +365,7 @@ class SandboxedSdkViewTest {
                 initialHeight: Int,
                 isZOrderOnTop: Boolean,
                 clientExecutor: Executor,
-                client: SandboxedUiAdapter.SessionClient
+                client: SandboxedUiAdapter.SessionClient,
             ) {
                 clientExecutor.execute { client.onSessionOpened(customSession) }
             }
@@ -423,7 +436,7 @@ class SandboxedSdkViewTest {
                 view.left + rightShift,
                 view.top - upperShift,
                 view.right + rightShift,
-                view.bottom - upperShift
+                view.bottom - upperShift,
             )
         }
         assertThat(testSandboxedUiAdapter.wasNotifyResizedCalled()).isFalse()
@@ -469,7 +482,7 @@ class SandboxedSdkViewTest {
                 layoutInflater.inflate(
                     R.layout.sandboxedsdkview_transition_group_false,
                     null,
-                    false
+                    false,
                 ) as ViewGroup
             assertFalse("XML overrides SandboxedSdkView.isTransitionGroup", view.isTransitionGroup)
         }
@@ -537,7 +550,7 @@ class SandboxedSdkViewTest {
             /* requestedWidth=*/ mainLayoutWidth - 100,
             /* requestedHeight=*/ mainLayoutHeight - 100,
             /* expectedWidth=*/ mainLayoutWidth - 100,
-            /* expectedHeight=*/ mainLayoutHeight - 100
+            /* expectedHeight=*/ mainLayoutHeight - 100,
         )
     }
 
@@ -550,7 +563,7 @@ class SandboxedSdkViewTest {
             /* requestedWidth=*/ mainLayoutWidth + 100,
             /* requestedHeight=*/ mainLayoutHeight + 100,
             /* expectedWidth=*/ mainLayoutWidth,
-            /* expectedHeight=*/ mainLayoutHeight
+            /* expectedHeight=*/ mainLayoutHeight,
         )
     }
 
@@ -565,7 +578,7 @@ class SandboxedSdkViewTest {
             /* requestedWidth=*/ currentWidth - 100,
             /* requestedHeight=*/ currentHeight - 100,
             /* expectedWidth=*/ currentWidth,
-            /* expectedHeight=*/ currentHeight
+            /* expectedHeight=*/ currentHeight,
         )
     }
 
@@ -756,7 +769,10 @@ class SandboxedSdkViewTest {
         val session = testSandboxedUiAdapter.testSession!!
         assertThat(session.sessionOpenedLatch.await(TIMEOUT, TimeUnit.MILLISECONDS)).isTrue()
         assertThat(session.supportedSignalOptions)
-            .containsExactly(SandboxedUiAdapterSignalOptions.GEOMETRY)
+            .containsExactly(
+                SandboxedUiAdapterSignalOptions.GEOMETRY,
+                SandboxedUiAdapterSignalOptions.OBSTRUCTIONS,
+            )
     }
 
     @Test
@@ -783,6 +799,7 @@ class SandboxedSdkViewTest {
         assertThat(obstruction.height()).isEqualTo(obstructionHeight)
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427464494
     @Test
     // TODO(b/345688233): Remove when no longer necessary.
     fun obstructionsNotReportedIfZAbove() {
@@ -807,6 +824,7 @@ class SandboxedSdkViewTest {
     }
 
     // TODO(b/406433094): Test Z-above transparent obstructions.
+    @SdkSuppress(maxSdkVersion = 34) // b/427464494
     @Test
     fun obstructionsNotReportedIfObstructionIsTransparent() {
         addViewToLayoutAndWaitToBeActive(placeInsideFrameLayout = true)
@@ -830,6 +848,7 @@ class SandboxedSdkViewTest {
         assertThat(sandboxedSdkViewUiInfo.obstructedGeometry).isEmpty()
     }
 
+    @SdkSuppress(maxSdkVersion = 34) // b/427464494
     @Test
     fun obstructionNotReportedIfElevationIsLowerThanTarget() {
         addViewToLayoutAndWaitToBeActive(placeInsideFrameLayout = true)
@@ -861,7 +880,7 @@ class SandboxedSdkViewTest {
         sandboxedSdkView.setAdapter(adapter)
         addViewToLayoutAndWaitToBeActive(
             placeInsideFrameLayout = true,
-            viewToAdd = sandboxedSdkView
+            viewToAdd = sandboxedSdkView,
         )
         sandboxedSdkView.orderProviderUiAboveClientUi(false)
         val session = adapter.testSession!!
@@ -901,7 +920,7 @@ class SandboxedSdkViewTest {
                 Runnable { view.removeViews(0, 0) },
                 Runnable { view.removeViewInLayout(View(context)) },
                 Runnable { view.removeAllViewsInLayout() },
-                Runnable { view.removeViewsInLayout(0, 0) }
+                Runnable { view.removeViewsInLayout(0, 0) },
             )
         removeChildRunnableArray.forEach { removeChildRunnable ->
             val exception =
@@ -912,10 +931,36 @@ class SandboxedSdkViewTest {
         }
     }
 
+    @Test
+    fun setContentView_calledTwice_throwsIllegalStateException() {
+        activityScenarioRule.withActivity {
+            val sandboxedSdkView = SandboxedSdkView(context)
+            sandboxedSdkView.setContentView(View(context))
+            val exception =
+                assertThrows(IllegalStateException::class.java) {
+                    sandboxedSdkView.setContentView(View(context))
+                }
+            assertThat(exception.message).isEqualTo("Child view is already attached")
+        }
+    }
+
+    @Test
+    fun setContentView_withTemporarySurfaceViewAttached_succeeds() {
+        activityScenarioRule.withActivity {
+            val sandboxedSdkView = SandboxedSdkView(context)
+            val surfaceView = SurfaceView(context)
+            sandboxedSdkView.setContentView(surfaceView)
+            sandboxedSdkView.tempSurfaceView = surfaceView
+            val newView = View(context)
+            // This call should not fail, since the only child is the temporary SurfaceView
+            sandboxedSdkView.setContentView(newView)
+        }
+    }
+
     private fun addViewToLayout(
         waitToBeActive: Boolean = false,
         placeInsideFrameLayout: Boolean = false,
-        viewToAdd: SandboxedSdkView = view
+        viewToAdd: SandboxedSdkView = view,
     ) {
         activityScenarioRule.withActivity {
             linearLayout = findViewById(R.id.mainlayout)
@@ -950,7 +995,7 @@ class SandboxedSdkViewTest {
 
     private fun addViewToLayoutAndWaitToBeActive(
         placeInsideFrameLayout: Boolean = false,
-        viewToAdd: SandboxedSdkView = view
+        viewToAdd: SandboxedSdkView = view,
     ) {
         addViewToLayout(waitToBeActive = true, placeInsideFrameLayout, viewToAdd)
     }
@@ -959,7 +1004,7 @@ class SandboxedSdkViewTest {
         requestedWidth: Int,
         requestedHeight: Int,
         expectedWidth: Int,
-        expectedHeight: Int
+        expectedHeight: Int,
     ) {
         val layoutLatch = CountDownLatch(1)
         var width = -1

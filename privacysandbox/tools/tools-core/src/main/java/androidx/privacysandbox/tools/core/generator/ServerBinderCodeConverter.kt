@@ -35,25 +35,25 @@ class ServerBinderCodeConverter(private val api: ParsedApi) : BinderCodeConverte
 
     override fun convertToInterfaceModelCode(
         annotatedInterface: AnnotatedInterface,
-        expression: String
+        expression: String,
     ): CodeBlock {
         if (annotatedInterface.inheritsUiAdapter) {
             return CodeBlock.of(
                 "(%L.binder as %T).delegate",
                 expression,
-                annotatedInterface.stubDelegateNameSpec()
+                annotatedInterface.stubDelegateNameSpec(),
             )
         }
         return CodeBlock.of(
             "(%L as %T).delegate",
             expression,
-            annotatedInterface.stubDelegateNameSpec()
+            annotatedInterface.stubDelegateNameSpec(),
         )
     }
 
     override fun convertToInterfaceBinderCode(
         annotatedInterface: AnnotatedInterface,
-        expression: String
+        expression: String,
     ): CodeBlock {
 
         if (annotatedInterface.inheritsUiAdapter) {
@@ -64,8 +64,8 @@ class ServerBinderCodeConverter(private val api: ParsedApi) : BinderCodeConverte
                         uiAdapterSpecs.toCoreLibInfoExpression,
                         hashMapOf<String, Any>(
                             "toCoreLibInfo" to toCoreLibInfoMethod,
-                            "context" to contextPropertyName
-                        )
+                            "context" to contextPropertyName,
+                        ),
                     )
                 }
             return CodeBlock.builder().build {
@@ -78,14 +78,14 @@ class ServerBinderCodeConverter(private val api: ParsedApi) : BinderCodeConverte
                         "coreLibInfoConverter" to
                             ClassName(
                                 annotatedInterface.type.packageName,
-                                annotatedInterface.coreLibInfoConverterName()
+                                annotatedInterface.coreLibInfoConverterName(),
                             ),
                         "toParcelable" to toParcelableMethodName,
                         "interface" to expression,
                         "toCoreLibInfoCall" to toCoreLibInfoCall,
                         "context" to contextPropertyName,
-                        "stubDelegate" to annotatedInterface.stubDelegateNameSpec()
-                    )
+                        "stubDelegate" to annotatedInterface.stubDelegateNameSpec(),
+                    ),
                 )
             }
         }
@@ -110,7 +110,7 @@ class ServerBinderCodeConverter(private val api: ParsedApi) : BinderCodeConverte
             value.converterNameSpec(),
             contextPropertyName,
             toParcelableMethodName,
-            expression
+            expression,
         )
 
     override fun convertToValueModelCode(value: AnnotatedValue, expression: String): CodeBlock =
@@ -123,11 +123,7 @@ class ServerBinderCodeConverter(private val api: ParsedApi) : BinderCodeConverte
         )
 
     override fun convertToActivityLauncherBinderCode(expression: String): CodeBlock =
-        CodeBlock.of(
-            "%T.getLauncherInfo(%L)",
-            activityLauncherWrapperClass,
-            expression,
-        )
+        CodeBlock.of("%T.getLauncherInfo(%L)", activityLauncherWrapperClass, expression)
 
     override fun convertToActivityLauncherModelCode(expression: String): CodeBlock =
         CodeBlock.of("%T(%L)", activityLauncherWrapperClass, expression)

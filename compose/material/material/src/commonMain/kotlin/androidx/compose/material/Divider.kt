@@ -47,7 +47,7 @@ fun Divider(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colors.onSurface.copy(alpha = DividerAlpha),
     thickness: Dp = 1.dp,
-    startIndent: Dp = 0.dp
+    startIndent: Dp = 0.dp,
 ) {
     val indentMod =
         if (startIndent.value != 0f) {

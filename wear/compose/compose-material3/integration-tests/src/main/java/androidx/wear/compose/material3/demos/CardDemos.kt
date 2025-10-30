@@ -66,6 +66,10 @@ import androidx.wear.compose.material3.samples.AppCardWithImageSample
 import androidx.wear.compose.material3.samples.CardFillContentSample
 import androidx.wear.compose.material3.samples.CardSample
 import androidx.wear.compose.material3.samples.CardWithOnLongClickSample
+import androidx.wear.compose.material3.samples.NonClickableAppCardSample
+import androidx.wear.compose.material3.samples.NonClickableCardSample
+import androidx.wear.compose.material3.samples.NonClickableOutlinedCardSample
+import androidx.wear.compose.material3.samples.NonClickableTitleCardSample
 import androidx.wear.compose.material3.samples.OutlinedAppCardSample
 import androidx.wear.compose.material3.samples.OutlinedCardSample
 import androidx.wear.compose.material3.samples.OutlinedTitleCardSample
@@ -80,6 +84,7 @@ fun CardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Card") } }
         item { CardSample() }
+        item { NonClickableCardSample() }
         item { CardWithOnLongClickSample { showOnLongClickToast(context) } }
         item { CardWithNestedImageDemo() }
         item { CardWithMultipleImagesDemo() }
@@ -93,6 +98,7 @@ fun OutlinedCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Outlined Card") } }
         item { OutlinedCardSample() }
+        item { NonClickableOutlinedCardSample() }
         item {
             OutlinedCard(onClick = { /* Do something */ }, enabled = false) {
                 Text("Disabled Outlined")
@@ -106,6 +112,8 @@ fun AppCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("App card") } }
         item { AppCardSample() }
+        item { NonClickableAppCardSample() }
+        item { AppCardDisabledDemo() }
         item { AppCardWithIconSample() }
         item { AppCardWithImageSample() }
         item { AppCardWithMultipleImagesDemo() }
@@ -118,6 +126,7 @@ fun TitleCardDemo() {
     ScalingLazyDemo {
         item { ListHeader { Text("Title card") } }
         item { TitleCardSample() }
+        item { NonClickableTitleCardSample() }
         item { TitleCardWithSubtitleDemo() }
         item { TitleCardWithSubtitleAndTimeSample() }
         item { TitleCardWithContentSubtitleAndTimeDemo() }
@@ -132,15 +141,13 @@ fun TitleCardDemo() {
 @Composable
 fun VerticallyCenteredBaseCard() {
     // Provide a demo of a base Card with vertically centered content
-    Card(
-        onClick = {},
-    ) {
+    Card(onClick = {}) {
         Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.Center) {
             Text(
                 "ABCD",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -148,9 +155,7 @@ fun VerticallyCenteredBaseCard() {
 
 @Composable
 fun CardWithNestedImageDemo() {
-    Card(
-        onClick = { /* Do something */ },
-    ) {
+    Card(onClick = { /* Do something */ }) {
         Spacer(Modifier.height(4.dp))
         ImageContent()
     }
@@ -158,11 +163,23 @@ fun CardWithNestedImageDemo() {
 
 @Composable
 fun CardWithMultipleImagesDemo() {
-    Card(
-        onClick = { /* Do something */ },
-    ) {
+    Card(onClick = { /* Do something */ }) {
         Spacer(Modifier.height(4.dp))
         MultipleImagesContent()
+    }
+}
+
+@Composable
+fun AppCardDisabledDemo() {
+    AppCard(
+        onClick = { /* Do something */ },
+        appName = { Text("App name") },
+        title = { Text("Card title") },
+        time = { Text("Now") },
+        enabled = false,
+    ) {
+        Text("Card content")
+        Text("Disabled state")
     }
 }
 
@@ -215,7 +232,7 @@ fun ImageCardBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 selected = alignment == alignmentValue,
                 onSelect = { alignment = alignmentValue },
-                label = { Text(label) }
+                label = { Text(label) },
             )
         }
 
@@ -237,7 +254,7 @@ fun ImageCardBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 selected = contentScale == contentScaleValue,
                 onSelect = { contentScale = contentScaleValue },
-                label = { Text(label) }
+                label = { Text(label) },
             )
         }
 
@@ -248,7 +265,7 @@ fun ImageCardBuilder() {
                 onValueChange = { alpha = it },
                 valueRange = 0f..1f,
                 steps = 99,
-                segmented = false
+                segmented = false,
             )
         }
 
@@ -258,7 +275,7 @@ fun ImageCardBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 checked = sizeToIntrinsics,
                 onCheckedChange = { sizeToIntrinsics = it },
-                label = { Text("Used") }
+                label = { Text("Used") },
             )
         }
 
@@ -283,7 +300,7 @@ fun ImageCardBuilder() {
                         sizeToIntrinsics = sizeToIntrinsics,
                         alignment = alignment,
                         contentScale = contentScale,
-                        alpha = alpha
+                        alpha = alpha,
                     ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = true,
@@ -311,7 +328,7 @@ fun TitleCardWithSubtitleDemo() {
     TitleCard(
         onClick = { /* Do something */ },
         title = { Text("Title card") },
-        subtitle = { Text("Subtitle") }
+        subtitle = { Text("Subtitle") },
     )
 }
 
@@ -321,7 +338,7 @@ fun TitleCardWithContentSubtitleAndTimeDemo() {
         onClick = { /* Do something */ },
         time = { Text("now") },
         title = { Text("Title card") },
-        subtitle = { Text("Subtitle") }
+        subtitle = { Text("Subtitle") },
     ) {
         Text("Card content")
     }
@@ -344,7 +361,7 @@ fun TitleCardWithImageDemo() {
         onClick = { /* Do something */ },
         title = { Text("Title card") },
         time = { Text("now") },
-        modifier = Modifier.semantics { contentDescription = "Background image" }
+        modifier = Modifier.semantics { contentDescription = "Background image" },
     ) {
         Spacer(Modifier.height(4.dp))
         ImageContent()
@@ -360,7 +377,7 @@ private fun ImageContent() {
             modifier = Modifier.weight(1f).aspectRatio(16f / 9f).clip(RoundedCornerShape(16.dp)),
             painter = painterResource(id = R.drawable.card_content_image),
             contentScale = ContentScale.Crop,
-            contentDescription = "Large blank image"
+            contentDescription = "Large blank image",
         )
         Spacer(modifier = Modifier.width(imageEndPaddingDp))
     }
@@ -377,7 +394,7 @@ private fun MultipleImagesContent() {
                     .clip(RoundedCornerShape(16.dp)),
             painter = painterResource(id = R.drawable.card_content_image),
             contentScale = ContentScale.Crop,
-            contentDescription = "Medium blank image"
+            contentDescription = "Medium blank image",
         )
         Spacer(Modifier.width(4.dp))
         Image(
@@ -388,7 +405,7 @@ private fun MultipleImagesContent() {
                     .clip(RoundedCornerShape(16.dp)),
             painter = painterResource(id = R.drawable.card_content_image),
             contentScale = ContentScale.Crop,
-            contentDescription = "Small blank image"
+            contentDescription = "Small blank image",
         )
     }
 }

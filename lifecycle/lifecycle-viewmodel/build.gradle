@@ -29,11 +29,17 @@ import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.lifecycle.viewmodel"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        androidResources.enable = true
+    }
     desktop()
     mac()
     linux()
@@ -54,7 +60,6 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api("androidx.annotation:annotation:1.9.1")
-                api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
             }
         }
@@ -86,14 +91,14 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(libs.mockitoCore4)
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation("androidx.core:core-ktx:1.2.0")
@@ -138,36 +143,6 @@ androidXMultiplatform {
             }
         }
 
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 if (target.konanTarget.family.appleFamily) {
@@ -191,11 +166,15 @@ androidXMultiplatform {
     }
 }
 
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 2.9.5, this module is published as empty artifact with dependency
+        // to this androidx module.
+        commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel:2.9.5") {
+            because "prevents symbols duplication"
+        }
     }
-    namespace = "androidx.lifecycle.viewmodel"
 }
 
 androidx {
@@ -203,5 +182,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Lifecycle ViewModel"
-    metalavaK2UastEnabled = false
 }

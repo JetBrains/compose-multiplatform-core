@@ -624,7 +624,6 @@ public class BiometricManagerTest {
     }
 
     @Test
-    @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
     public void testCanAuthenticate_ReturnsSuccess_WhenIdentityCheckIsNotOnly() {
         final int authenticators = Authenticators.IDENTITY_CHECK | Authenticators.BIOMETRIC_WEAK;
         android.hardware.biometrics.BiometricManager frameworkBiometricManager = null;

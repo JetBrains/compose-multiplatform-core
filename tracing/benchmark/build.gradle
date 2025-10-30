@@ -26,7 +26,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
     id("androidx.benchmark")
 }
 
@@ -40,7 +40,6 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(libs.kotlinCoroutinesTest)
 }
@@ -52,6 +51,12 @@ android {
             enableMinification = false
             testProguardFiles "proguard-rules.pro"
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        optIn.add("androidx.tracing.driver.DelicateTracingApi")
     }
 }
 

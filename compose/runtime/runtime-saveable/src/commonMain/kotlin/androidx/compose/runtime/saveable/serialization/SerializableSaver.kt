@@ -40,7 +40,7 @@ import kotlinx.serialization.serializer
  * @return A [Saver] for [Serializable].
  */
 internal inline fun <reified Serializable : Any> serializableSaver(
-    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT,
+    configuration: SavedStateConfiguration = SavedStateConfiguration.DEFAULT
 ): Saver<Serializable, SavedState> {
     return serializableSaver(configuration.serializersModule.serializer(), configuration)
 }
@@ -65,6 +65,6 @@ internal fun <Serializable : Any> serializableSaver(
 ): Saver<Serializable, SavedState> {
     return Saver(
         save = { original -> encodeToSavedState(serializer, original, configuration) },
-        restore = { savedState -> decodeFromSavedState(serializer, savedState, configuration) }
+        restore = { savedState -> decodeFromSavedState(serializer, savedState, configuration) },
     )
 }

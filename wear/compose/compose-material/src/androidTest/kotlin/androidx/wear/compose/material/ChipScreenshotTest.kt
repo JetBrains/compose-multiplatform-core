@@ -15,7 +15,6 @@
  */
 package androidx.wear.compose.material.test
 
-import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
@@ -48,7 +47,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ChipScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -80,7 +79,7 @@ class ChipScreenshotTest {
                 label = "Long label to show truncation which does not fit into 1 line",
                 secondaryLabel =
                     "Long secondary label that will not fit on one single lines and " +
-                        "flows onto another line"
+                        "flows onto another line",
             )
         }
 
@@ -153,7 +152,7 @@ class ChipScreenshotTest {
     @Composable
     private fun sampleOutlinedChip(
         enabled: Boolean = true,
-        colors: ChipColors = ChipDefaults.outlinedChipColors()
+        colors: ChipColors = ChipDefaults.outlinedChipColors(),
     ) {
         OutlinedChip(
             enabled = enabled,
@@ -179,7 +178,7 @@ class ChipScreenshotTest {
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) { content() }

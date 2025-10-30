@@ -47,6 +47,7 @@ public class RowTest {
         assertThat(row.getTitle().toString()).isEqualTo("Title");
         assertThat(row.getTexts()).isEmpty();
         assertThat(row.getImage()).isNull();
+        assertThat(row.getEndImage()).isNull();
         assertThat(row.getOnClickDelegate()).isNull();
         assertThat(row.isBrowsable()).isFalse();
         assertThat(row.getMetadata()).isEqualTo(Metadata.EMPTY_METADATA);
@@ -129,6 +130,35 @@ public class RowTest {
         CarIcon image1 = BACK;
         Row row = new Row.Builder().setTitle("Title").setImage(image1).build();
         assertThat(image1).isEqualTo(row.getImage());
+    }
+
+    @Test
+    public void setEndImage() {
+        CarIcon endImage = ALERT;
+        Row row = new Row.Builder().setTitle("Title").setEndImage(endImage).build();
+        assertThat(endImage).isEqualTo(row.getEndImage());
+    }
+
+    @Test
+    public void setEndImage_withToggle_throws() {
+        Toggle toggle = new Toggle.Builder(isChecked -> {}).build();
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> new Row.Builder().setTitle("Title")
+                        .setToggle(toggle)
+                        .setEndImage(ALERT)
+                        .build());
+    }
+
+    @Test
+    public void setEndImage_browsableRow_throws() {
+        assertThrows(
+                IllegalStateException.class,
+                () -> new Row.Builder().setTitle("Title")
+                        .setBrowsable(true)
+                        .setEndImage(ALERT)
+                        .build());
     }
 
     @Test
@@ -394,6 +424,7 @@ public class RowTest {
                 new Row.Builder()
                         .setTitle(title)
                         .setImage(BACK)
+                        .setEndImage(ALERT)
                         .setOnClickListener(() -> {
                         })
                         .setBrowsable(false)
@@ -406,6 +437,7 @@ public class RowTest {
                 new Row.Builder()
                         .setTitle(title)
                         .setImage(BACK)
+                        .setEndImage(ALERT)
                         .setOnClickListener(() -> {
                         })
                         .setBrowsable(false)
@@ -430,6 +462,15 @@ public class RowTest {
         Row row = new Row.Builder().setTitle("Title").setImage(BACK).build();
 
         assertThat(new Row.Builder().setTitle("Title").setImage(ALERT).build()).isNotEqualTo(row);
+    }
+
+    @Test
+    public void notEquals_differentEndImage() {
+        Row row = new Row.Builder().setTitle("Title").setEndImage(BACK).build();
+
+        assertThat(new Row.Builder().setTitle("Title").setEndImage(ALERT).build())
+                .isNotEqualTo(row);
+        assertThat(new Row.Builder().setTitle("Title").build()).isNotEqualTo(row);
     }
 
     @Test

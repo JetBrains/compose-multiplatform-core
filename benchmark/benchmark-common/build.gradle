@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    // Remove when b/442128557 is fixed
     id("org.jetbrains.kotlin.android")
     id("com.squareup.wire")
     id("com.google.devtools.ksp")
@@ -75,7 +76,6 @@ wire {
 
 dependencies {
     api(libs.jspecify)
-    implementation(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.annotation:annotation-experimental:1.4.1")
     api(project(":benchmark:benchmark-traceprocessor"))

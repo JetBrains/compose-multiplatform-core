@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import android.os.Build
+import androidx.compose.ui.FrameRateCategory
 import androidx.compose.ui.geometry.MutableRect
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.center
@@ -41,7 +42,6 @@ import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.internal.requirePrecondition
 import androidx.compose.ui.layout.GraphicLayerInfo
 import androidx.compose.ui.node.OwnedLayer
-import androidx.compose.ui.ui.FrameRateCategory
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -54,7 +54,7 @@ internal class GraphicsLayerOwnerLayer(
     private val context: GraphicsContext?,
     private val ownerView: AndroidComposeView,
     drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-    invalidateParentLayer: () -> Unit
+    invalidateParentLayer: () -> Unit,
 ) : OwnedLayer, GraphicLayerInfo {
     private var drawBlock: ((canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit)? = drawBlock
     private var invalidateParentLayer: (() -> Unit)? = invalidateParentLayer
@@ -142,7 +142,7 @@ internal class GraphicsLayerOwnerLayer(
                 graphicsLayer.pivotOffset =
                     Offset(
                         transformOrigin.pivotFractionX * size.width,
-                        transformOrigin.pivotFractionY * size.height
+                        transformOrigin.pivotFractionY * size.height,
                     )
             }
         }
@@ -184,7 +184,7 @@ internal class GraphicsLayerOwnerLayer(
         if (maybeChangedFields != 0 || outlineChanged) {
             triggerRepaint()
             if (ownerView.isArrEnabled) {
-                ownerView.requestedFrameRate = frameRate
+                ownerView.voteFrameRate(frameRate)
             }
         }
     }
@@ -226,7 +226,7 @@ internal class GraphicsLayerOwnerLayer(
 
     override fun move(position: IntOffset) {
         if (ownerView.isArrEnabled) {
-            ownerView.requestedFrameRate = FrameRateCategory.High.value
+            ownerView.voteFrameRate(FrameRateCategory.High.value)
         }
         graphicsLayer.topLeft = position
         triggerRepaint()
@@ -235,7 +235,7 @@ internal class GraphicsLayerOwnerLayer(
     override fun resize(size: IntSize) {
         if (size != this.size) {
             if (ownerView.isArrEnabled) {
-                ownerView.requestedFrameRate = FrameRateCategory.High.value
+                ownerView.voteFrameRate(FrameRateCategory.High.value)
             }
             this.size = size
             invalidate()
@@ -256,14 +256,14 @@ internal class GraphicsLayerOwnerLayer(
 
     override fun updateDisplayList() {
         if (ownerView.isArrEnabled && frameRate != 0f) {
-            ownerView.requestedFrameRate = frameRate
+            ownerView.voteFrameRate(frameRate)
         }
         if (isDirty) {
             if (transformOrigin != TransformOrigin.Center && graphicsLayer.size != size) {
                 graphicsLayer.pivotOffset =
                     Offset(
                         transformOrigin.pivotFractionX * size.width,
-                        transformOrigin.pivotFractionY * size.height
+                        transformOrigin.pivotFractionY * size.height,
                     )
             }
             graphicsLayer.record(density, layoutDirection, size, recordLambda)
@@ -324,7 +324,7 @@ internal class GraphicsLayerOwnerLayer(
 
     override fun reuseLayer(
         drawBlock: (canvas: Canvas, parentLayer: GraphicsLayer?) -> Unit,
-        invalidateParentLayer: () -> Unit
+        invalidateParentLayer: () -> Unit,
     ) {
         val context =
             checkPreconditionNotNull(context) {
@@ -411,17 +411,15 @@ internal class GraphicsLayerOwnerLayer(
                     }
 
                 matrixCache.resetToPivotedTransform(
-                    x,
-                    y,
-                    translationX,
-                    translationY,
-                    1.0f,
-                    rotationX,
-                    rotationY,
-                    rotationZ,
-                    scaleX,
-                    scaleY,
-                    1.0f
+                    pivotX = x,
+                    pivotY = y,
+                    translationX = translationX,
+                    translationY = translationY,
+                    rotationX = rotationX,
+                    rotationY = rotationY,
+                    rotationZ = rotationZ,
+                    scaleX = scaleX,
+                    scaleY = scaleY,
                 )
             }
             isMatrixDirty = false

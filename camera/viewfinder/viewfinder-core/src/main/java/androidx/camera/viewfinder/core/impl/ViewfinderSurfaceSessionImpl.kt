@@ -24,7 +24,7 @@ import kotlinx.atomicfu.atomic
 class ViewfinderSurfaceSessionImpl(
     override val surface: Surface,
     override val request: ViewfinderSurfaceRequest,
-    private val onClose: () -> Unit
+    private val onClose: () -> Unit,
 ) : ViewfinderSurfaceSession {
 
     private val closed = atomic(false)

@@ -86,12 +86,6 @@ include(":shared")
 // Without this, Gradle Enterprise erroneously reports a problem with 'buildSrc' build cache configuration.
 def isCI = System.getenv("CI") == "true"
 buildCache {
-    local {
-        // Aggressively clean up stale build cache entries on CI
-        if (isCI) {
-            removeUnusedEntriesAfterDays = 1
-        }
-    }
     remote(HttpBuildCache) {
         url = "https://ge.androidx.dev/cache/"
         var buildCachePassword = System.getenv("GRADLE_BUILD_CACHE_PASSWORD")

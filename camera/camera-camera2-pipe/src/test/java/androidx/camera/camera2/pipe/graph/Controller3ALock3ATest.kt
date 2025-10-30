@@ -20,7 +20,6 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.params.MeteringRectangle
-import android.os.Build
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Lock3ABehavior
@@ -47,11 +46,9 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 internal class Controller3ALock3ATest {
     private val graphTestContext = GraphTestContext()
     private val graphState3A = GraphState3A()
@@ -64,7 +61,7 @@ internal class Controller3ALock3ATest {
             mapOf(
                 CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
                     intArrayOf(CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE)
-            ),
+            )
         )
     private val controller3A = Controller3A(graphProcessor, fakeMetadata, graphState3A, listener3A)
 
@@ -81,11 +78,12 @@ internal class Controller3ALock3ATest {
         val result =
             controller3A.lock3A(
                 afLockBehavior = Lock3ABehavior.IMMEDIATE,
-                aeRegions = listOf(MeteringRectangle(0, 0, 100, 200, 10))
+                aeRegions = listOf(MeteringRectangle(0, 0, 100, 200, 10)),
             )
         assertThat(result.await().status).isEqualTo(Result3A.Status.SUBMIT_FAILED)
-        assertThat(graphState3A.aeRegions).isNotNull()
-        assertThat(graphState3A.aeRegions).containsExactly(MeteringRectangle(0, 0, 100, 200, 10))
+        assertThat(graphState3A.current.aeRegions).isNotNull()
+        assertThat(graphState3A.current.aeRegions)
+            .containsExactly(MeteringRectangle(0, 0, 100, 200, 10))
     }
 
     @Test
@@ -93,7 +91,7 @@ internal class Controller3ALock3ATest {
         val result =
             controller3A.lock3A(
                 afLockBehavior = Lock3ABehavior.IMMEDIATE,
-                aeLockBehavior = Lock3ABehavior.IMMEDIATE
+                aeLockBehavior = Lock3ABehavior.IMMEDIATE,
             )
         assertThat(result.isCompleted).isFalse()
 
@@ -114,9 +112,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -138,9 +136,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -162,7 +160,7 @@ internal class Controller3ALock3ATest {
         assertThat(event2.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_START
+                CaptureRequest.CONTROL_AF_TRIGGER_START,
             )
     }
 
@@ -174,7 +172,7 @@ internal class Controller3ALock3ATest {
             globalScope.async {
                 controller3A.lock3A(
                     afLockBehavior = Lock3ABehavior.IMMEDIATE,
-                    aeLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN
+                    aeLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN,
                 )
             }
         assertThat(lock3AAsyncTask.isCompleted).isFalse()
@@ -194,9 +192,9 @@ internal class Controller3ALock3ATest {
                                 CaptureResult.CONTROL_AF_STATE to
                                     CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
                                 CaptureResult.CONTROL_AE_STATE to
-                                    CaptureResult.CONTROL_AE_STATE_CONVERGED
-                            )
-                    )
+                                    CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -231,9 +229,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -246,7 +244,7 @@ internal class Controller3ALock3ATest {
         assertThat(event3.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_START
+                CaptureRequest.CONTROL_AF_TRIGGER_START,
             )
         globalScope.cancel()
     }
@@ -259,7 +257,7 @@ internal class Controller3ALock3ATest {
             globalScope.async {
                 controller3A.lock3A(
                     afLockBehavior = Lock3ABehavior.IMMEDIATE,
-                    aeLockBehavior = Lock3ABehavior.AFTER_NEW_SCAN
+                    aeLockBehavior = Lock3ABehavior.AFTER_NEW_SCAN,
                 )
             }
         assertThat(lock3AAsyncTask.isCompleted).isFalse()
@@ -279,9 +277,9 @@ internal class Controller3ALock3ATest {
                                 CaptureResult.CONTROL_AF_STATE to
                                     CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
                                 CaptureResult.CONTROL_AE_STATE to
-                                    CaptureResult.CONTROL_AE_STATE_CONVERGED
-                            )
-                    )
+                                    CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -311,9 +309,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -331,7 +329,7 @@ internal class Controller3ALock3ATest {
         assertThat(event3.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_START
+                CaptureRequest.CONTROL_AF_TRIGGER_START,
             )
 
         globalScope.cancel()
@@ -345,7 +343,7 @@ internal class Controller3ALock3ATest {
             globalScope.async {
                 controller3A.lock3A(
                     afLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN,
-                    aeLockBehavior = Lock3ABehavior.IMMEDIATE
+                    aeLockBehavior = Lock3ABehavior.IMMEDIATE,
                 )
             }
         assertThat(lock3AAsyncTask.isCompleted).isFalse()
@@ -364,9 +362,9 @@ internal class Controller3ALock3ATest {
                                 CaptureResult.CONTROL_AF_STATE to
                                     CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
                                 CaptureResult.CONTROL_AE_STATE to
-                                    CaptureResult.CONTROL_AE_STATE_CONVERGED
-                            )
-                    )
+                                    CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -388,9 +386,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -414,7 +412,7 @@ internal class Controller3ALock3ATest {
         assertThat(event3.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_START
+                CaptureRequest.CONTROL_AF_TRIGGER_START,
             )
         globalScope.cancel()
     }
@@ -427,7 +425,7 @@ internal class Controller3ALock3ATest {
             globalScope.async {
                 controller3A.lock3A(
                     afLockBehavior = Lock3ABehavior.AFTER_NEW_SCAN,
-                    aeLockBehavior = Lock3ABehavior.IMMEDIATE
+                    aeLockBehavior = Lock3ABehavior.IMMEDIATE,
                 )
             }
         assertThat(lock3AAsyncTask.isCompleted).isFalse()
@@ -446,9 +444,9 @@ internal class Controller3ALock3ATest {
                                 CaptureResult.CONTROL_AF_STATE to
                                     CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
                                 CaptureResult.CONTROL_AE_STATE to
-                                    CaptureResult.CONTROL_AE_STATE_CONVERGED
-                            )
-                    )
+                                    CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -470,9 +468,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -489,7 +487,7 @@ internal class Controller3ALock3ATest {
         assertThat(event1.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL
+                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL,
             )
 
         // There should be one request to monitor AF to finish its scan.
@@ -507,7 +505,7 @@ internal class Controller3ALock3ATest {
         assertThat(event3.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_START
+                CaptureRequest.CONTROL_AF_TRIGGER_START,
             )
         globalScope.cancel()
     }
@@ -520,7 +518,7 @@ internal class Controller3ALock3ATest {
             globalScope.async {
                 controller3A.lock3A(
                     afLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN,
-                    aeLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN
+                    aeLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN,
                 )
             }
         assertThat(lock3AAsyncTask.isCompleted).isFalse()
@@ -539,9 +537,9 @@ internal class Controller3ALock3ATest {
                                 CaptureResult.CONTROL_AF_STATE to
                                     CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
                                 CaptureResult.CONTROL_AE_STATE to
-                                    CaptureResult.CONTROL_AE_STATE_CONVERGED
-                            )
-                    )
+                                    CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -563,9 +561,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -596,7 +594,7 @@ internal class Controller3ALock3ATest {
         assertThat(request3Event.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_START
+                CaptureRequest.CONTROL_AF_TRIGGER_START,
             )
 
         globalScope.cancel()
@@ -609,7 +607,7 @@ internal class Controller3ALock3ATest {
             globalScope.async {
                 controller3A.lock3A(
                     afLockBehavior = Lock3ABehavior.AFTER_NEW_SCAN,
-                    aeLockBehavior = Lock3ABehavior.AFTER_NEW_SCAN
+                    aeLockBehavior = Lock3ABehavior.AFTER_NEW_SCAN,
                 )
             }
         assertThat(lock3AAsyncTask.isCompleted).isFalse()
@@ -628,9 +626,9 @@ internal class Controller3ALock3ATest {
                                 CaptureResult.CONTROL_AF_STATE to
                                     CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
                                 CaptureResult.CONTROL_AE_STATE to
-                                    CaptureResult.CONTROL_AE_STATE_CONVERGED
-                            )
-                    )
+                                    CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -652,9 +650,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -669,11 +667,11 @@ internal class Controller3ALock3ATest {
 
         // One request to cancel AF to start a new scan.
         val event1 = captureSequenceProcessor.nextEvent()
-        assertThat(event1.isCapture)
+        assertThat(event1.isCapture).isTrue()
         assertThat(event1.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL
+                CaptureRequest.CONTROL_AF_TRIGGER_CANCEL,
             )
 
         // There should be one request to unlock AE and monitor the current AF scan to finish.
@@ -690,7 +688,7 @@ internal class Controller3ALock3ATest {
         assertThat(event4.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_START
+                CaptureRequest.CONTROL_AF_TRIGGER_START,
             )
         globalScope.cancel()
     }
@@ -704,7 +702,7 @@ internal class Controller3ALock3ATest {
                 aeRegions = listOf(aeMeteringRegion),
                 afRegions = listOf(afMeteringRegion),
                 afLockBehavior = Lock3ABehavior.IMMEDIATE,
-                aeLockBehavior = Lock3ABehavior.IMMEDIATE
+                aeLockBehavior = Lock3ABehavior.IMMEDIATE,
             )
         assertThat(result.isCompleted).isFalse()
 
@@ -725,9 +723,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -749,9 +747,9 @@ internal class Controller3ALock3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_STATE to
                                 CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED
-                        )
-                )
+                            CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_LOCKED,
+                        ),
+                ),
             )
         }
 
@@ -759,11 +757,11 @@ internal class Controller3ALock3ATest {
         assertThat(result3A.frameMetadata!!.frameNumber.value).isEqualTo(101L)
         assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
 
-        val aeRegions = graphState3A.aeRegions!!
+        val aeRegions = graphState3A.current.aeRegions!!
         assertThat(aeRegions.size).isEqualTo(1)
         assertThat(aeRegions[0]).isEqualTo(aeMeteringRegion)
 
-        val afRegions = graphState3A.afRegions!!
+        val afRegions = graphState3A.current.afRegions!!
         assertThat(afRegions.size).isEqualTo(1)
         assertThat(afRegions[0]).isEqualTo(afMeteringRegion)
 
@@ -780,7 +778,7 @@ internal class Controller3ALock3ATest {
         assertThat(event2.requiredParameters)
             .containsEntry(
                 CaptureRequest.CONTROL_AF_TRIGGER,
-                CaptureRequest.CONTROL_AF_TRIGGER_START
+                CaptureRequest.CONTROL_AF_TRIGGER_START,
             )
         assertThat(event1.requiredParameters).containsEntry(CaptureRequest.CONTROL_AE_LOCK, true)
     }
@@ -792,7 +790,7 @@ internal class Controller3ALock3ATest {
                 mapOf(
                     CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES to
                         intArrayOf(CaptureRequest.CONTROL_AF_MODE_OFF)
-                ),
+                )
             )
         val controller3A = Controller3A(graphProcessor, fakeMetadata, graphState3A, listener3A)
         val result = controller3A.lock3A(afLockBehavior = Lock3ABehavior.AFTER_NEW_SCAN).await()
@@ -809,7 +807,7 @@ internal class Controller3ALock3ATest {
                     listOf(
                             CaptureResult.CONTROL_AE_STATE_CONVERGED,
                             CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED,
-                            CaptureResult.CONTROL_AE_STATE_LOCKED
+                            CaptureResult.CONTROL_AE_STATE_LOCKED,
                         )
                         .contains(it)
                 } ?: true
@@ -820,7 +818,7 @@ internal class Controller3ALock3ATest {
                             CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
                             CaptureResult.CONTROL_AF_STATE_PASSIVE_UNFOCUSED,
                             CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED
+                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED,
                         )
                         .contains(it)
                 } ?: true
@@ -829,7 +827,7 @@ internal class Controller3ALock3ATest {
                 frameMetadata[CaptureResult.CONTROL_AWB_STATE]?.let {
                     listOf(
                             CaptureResult.CONTROL_AWB_STATE_CONVERGED,
-                            CaptureResult.CONTROL_AWB_STATE_LOCKED
+                            CaptureResult.CONTROL_AWB_STATE_LOCKED,
                         )
                         .contains(it)
                 } ?: true
@@ -846,7 +844,7 @@ internal class Controller3ALock3ATest {
                 frameMetadata[CaptureResult.CONTROL_AF_STATE]?.let {
                     listOf(
                             CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED
+                            CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED,
                         )
                         .contains(it)
                 } ?: true
@@ -887,9 +885,9 @@ internal class Controller3ALock3ATest {
                                 CaptureResult.CONTROL_AF_STATE to
                                     CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED,
                                 CaptureResult.CONTROL_AWB_STATE to
-                                    CaptureResult.CONTROL_AWB_STATE_CONVERGED
-                            )
-                    )
+                                    CaptureResult.CONTROL_AWB_STATE_CONVERGED,
+                            ),
+                    ),
                 )
                 delay(FRAME_RATE_MS)
             }
@@ -909,9 +907,9 @@ internal class Controller3ALock3ATest {
                     mapOf(
                         CaptureResult.CONTROL_AF_STATE to
                             CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
-                        CaptureResult.CONTROL_AWB_STATE to CaptureResult.CONTROL_AWB_STATE_LOCKED
-                    )
-            )
+                        CaptureResult.CONTROL_AWB_STATE to CaptureResult.CONTROL_AWB_STATE_LOCKED,
+                    ),
+            ),
         )
 
         // Assert. lock3A task should be completed.

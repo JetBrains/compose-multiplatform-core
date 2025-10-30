@@ -32,27 +32,31 @@ interface RectRulers {
 
     /** The bottom position of the rectangle */
     val bottom: HorizontalRuler
+
+    companion object
 }
 
-/** Creates a [RectRulers] with the given optional [name] returned from [RectRulers.toString]. */
-fun RectRulers(name: String? = null): RectRulers = RectRulersImpl(name)
+/** Creates a [RectRulers]. */
+fun RectRulers(): RectRulers = RectRulersImpl(null)
 
-private class RectRulersImpl(private val name: String? = null) : RectRulers {
+internal fun RectRulers(name: String): RectRulers = RectRulersImpl(name)
+
+private class RectRulersImpl(private val name: String?) : RectRulers {
     override var left: VerticalRuler = VerticalRuler()
     override var top: HorizontalRuler = HorizontalRuler()
     override var right: VerticalRuler = VerticalRuler()
     override var bottom: HorizontalRuler = HorizontalRuler()
 
     override fun toString(): String {
-        return name ?: super.toString()
+        return if (name != null) "RectRulers($name)" else super.toString()
     }
 }
 
 /**
  * Merges multiple [RectRulers] into a single [RectRulers], using the inner-most value. That is, the
- * [left] will be the greatest [RectRulers.left], the [top] will be the greatest [RectRulers.top],
- * the [right] will be the least [RectRulers.right], and the [bottom] will be the least of all
- * [rulers].
+ * [RectRulers.left] will be the greatest [RectRulers.left], the [RectRulers.top] will be the
+ * greatest [RectRulers.top], the [RectRulers.right] will be the least [RectRulers.right], and the
+ * [RectRulers.bottom] will be the least of all [rulers].
  *
  * When [rulers] provide non-overlapping values, the result may have negative size. For example, if
  * one [RectRulers] provides (10, 20, 30, 40) as their ruler values, and another provides (1, 1, 5,
@@ -60,40 +64,44 @@ private class RectRulersImpl(private val name: String? = null) : RectRulers {
  *
  * If one of the [rulers] does not provide a value, it will not be considered in the calculation.
  */
-class InnerRectRulers(private vararg val rulers: RectRulers) : RectRulers {
-    override val left: VerticalRuler =
-        MergedVerticalRuler(shouldUseGreater = true, *Array(rulers.size) { rulers[it].left })
+fun RectRulers.Companion.innermostOf(vararg rulers: RectRulers): RectRulers =
+    InnerRectRulers(rulers)
+
+private class InnerRectRulers(private val rulers: Array<out RectRulers>) : RectRulers {
+    override val left: VerticalRuler = VerticalRuler.maxOf(*Array(rulers.size) { rulers[it].left })
     override val top: HorizontalRuler =
-        MergedHorizontalRuler(shouldUseGreater = true, *Array(rulers.size) { rulers[it].top })
+        HorizontalRuler.maxOf(*Array(rulers.size) { rulers[it].top })
     override val right: VerticalRuler =
-        MergedVerticalRuler(shouldUseGreater = false, *Array(rulers.size) { rulers[it].right })
+        VerticalRuler.minOf(*Array(rulers.size) { rulers[it].right })
     override val bottom: HorizontalRuler =
-        MergedHorizontalRuler(shouldUseGreater = false, *Array(rulers.size) { rulers[it].bottom })
+        HorizontalRuler.minOf(*Array(rulers.size) { rulers[it].bottom })
 
     override fun toString(): String {
-        return rulers.joinToString(prefix = "InnerRectRulers(", postfix = ")")
+        return rulers.joinToString(prefix = "innermostOf(", postfix = ")")
     }
 }
 
 /**
  * Merges multiple [RectRulers] into a single [RectRulers], using the outer-most value. That is, the
- * [left] will be the lest [RectRulers.left], the [top] will be the least [RectRulers.top], the
- * [right] will be the greatest [RectRulers.right], and the [bottom] will be the greatest of all
- * [rulers].
+ * [RectRulers.left] will be the least [RectRulers.left], the [RectRulers.top] will be the least
+ * [RectRulers.top], the [RectRulers.right] will be the greatest [RectRulers.right], and the
+ * [RectRulers.bottom] will be the greatest of all [rulers].
  *
  * If one of the [rulers] does not provide a value, it will not be considered in the calculation.
  */
-class OuterRectRulers(private vararg val rulers: RectRulers) : RectRulers {
-    override val left: VerticalRuler =
-        MergedVerticalRuler(shouldUseGreater = false, *Array(rulers.size) { rulers[it].left })
+fun RectRulers.Companion.outermostOf(vararg rulers: RectRulers): RectRulers =
+    OuterRectRulers(rulers)
+
+private class OuterRectRulers(private val rulers: Array<out RectRulers>) : RectRulers {
+    override val left: VerticalRuler = VerticalRuler.minOf(*Array(rulers.size) { rulers[it].left })
     override val top: HorizontalRuler =
-        MergedHorizontalRuler(shouldUseGreater = false, *Array(rulers.size) { rulers[it].top })
+        HorizontalRuler.minOf(*Array(rulers.size) { rulers[it].top })
     override val right: VerticalRuler =
-        MergedVerticalRuler(shouldUseGreater = true, *Array(rulers.size) { rulers[it].right })
+        VerticalRuler.maxOf(*Array(rulers.size) { rulers[it].right })
     override val bottom: HorizontalRuler =
-        MergedHorizontalRuler(shouldUseGreater = true, *Array(rulers.size) { rulers[it].bottom })
+        HorizontalRuler.maxOf(*Array(rulers.size) { rulers[it].bottom })
 
     override fun toString(): String {
-        return rulers.joinToString(prefix = "OuterRectRulers(", postfix = ")")
+        return rulers.joinToString(prefix = "outermostOf(", postfix = ")")
     }
 }

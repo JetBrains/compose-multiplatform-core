@@ -191,16 +191,6 @@
                 </properties>
                 <properties>
                     <dataTypeMetadata>
-                        <dataTypeReference>android.net.Uri</dataTypeReference>
-                        <id>unused</id>
-                        <isNullable>false</isNullable>
-                        <type>11</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>androidUri</name>
-                </properties>
-                <properties>
-                    <dataTypeMetadata>
                         <id>unused</id>
                         <isNullable>false</isNullable>
                         <itemType>
@@ -232,7 +222,6 @@
                 <required>localDateTime</required>
                 <required>localDateTimeList</required>
                 <required>localDateTimeNullable</required>
-                <required>androidUri</required>
                 <required>androidUriList</required>
                 <required>androidUriNullable</required>
                 <type>3</type>

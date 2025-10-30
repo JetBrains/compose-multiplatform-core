@@ -42,7 +42,7 @@ class CurvedSemanticsTest {
                     CurvedModifier.semantics {
                         contentDescription = "desc"
                         traversalIndex = 3.14f
-                    }
+                    },
                 )
             }
         }
@@ -91,7 +91,7 @@ class CurvedSemanticsTest {
                 basicCurvedText(
                     "text",
                     CurvedModifier.semantics { contentDescription = "first" }
-                        .clearAndSetSemantics { contentDescription = "second" }
+                        .clearAndSetSemantics { contentDescription = "second" },
                 )
             }
         }
@@ -105,7 +105,7 @@ class CurvedSemanticsTest {
             BasicText(
                 "text",
                 Modifier.semantics { contentDescription = "first" }
-                    .clearAndSetSemantics { contentDescription = "second" }
+                    .clearAndSetSemantics { contentDescription = "second" },
             )
         }
 
@@ -119,7 +119,7 @@ class CurvedSemanticsTest {
                 basicCurvedText(
                     "text",
                     CurvedModifier.clearAndSetSemantics { contentDescription = "first" }
-                        .semantics { contentDescription = "second" }
+                        .semantics { contentDescription = "second" },
                 )
             }
         }
@@ -133,7 +133,7 @@ class CurvedSemanticsTest {
             BasicText(
                 "text",
                 Modifier.clearAndSetSemantics { contentDescription = "first" }
-                    .semantics { contentDescription = "second" }
+                    .semantics { contentDescription = "second" },
             )
         }
 

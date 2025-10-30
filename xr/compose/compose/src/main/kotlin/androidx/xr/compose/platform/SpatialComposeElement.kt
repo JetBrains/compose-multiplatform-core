@@ -23,7 +23,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.CoreEntity
-import androidx.xr.compose.unit.VolumeConstraints
 
 /**
  * Base class for custom [SpatialElement]s implemented using Jetpack Compose UI.
@@ -132,7 +131,7 @@ internal abstract class AbstractComposeElement(
 
         GlobalSnapshotManager.ensureStarted()
         addChild(compositionOwner)
-        compositionOwner.root.coreEntity = rootCoreEntity
+        compositionOwner.root.entity = rootCoreEntity
         composition =
             WrappedComposition(
                     compositionOwner,
@@ -157,7 +156,7 @@ internal abstract class AbstractComposeElement(
      *
      * This method has no effect if the composition has already been disposed.
      */
-    public fun disposeComposition() {
+    fun disposeComposition() {
         composition?.dispose()
         composition = null
     }
@@ -182,12 +181,16 @@ internal class SpatialComposeElement(
     scene: SpatialComposeScene,
     compositionContext: CompositionContext? = null,
     rootCoreEntity: CoreEntity? = null,
-    rootVolumeConstraints: VolumeConstraints,
 ) : AbstractComposeElement(compositionContext, rootCoreEntity) {
     init {
         spatialComposeScene = scene
-        compositionOwner.rootVolumeConstraints = rootVolumeConstraints
     }
+
+    var rootVolumeConstraints
+        get() = compositionOwner.rootVolumeConstraints
+        set(value) {
+            compositionOwner.rootVolumeConstraints = value
+        }
 
     private val content = mutableStateOf<(@Composable @SubspaceComposable () -> Unit)?>(null)
 
@@ -209,7 +212,7 @@ internal class SpatialComposeElement(
      *
      * @param content the composable content to display in this element.
      */
-    public fun setContent(content: @Composable @SubspaceComposable () -> Unit) {
+    fun setContent(content: @Composable @SubspaceComposable () -> Unit) {
         shouldCreateCompositionOnAttachedToSpatialComposeScene = true
 
         this.content.value = content

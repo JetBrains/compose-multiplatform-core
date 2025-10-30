@@ -139,7 +139,7 @@ class SleepSessionRecord(
                 "deep" to STAGE_TYPE_DEEP,
                 "rem" to STAGE_TYPE_REM,
                 "awake_in_bed" to STAGE_TYPE_AWAKE_IN_BED,
-                "unknown" to STAGE_TYPE_UNKNOWN
+                "unknown" to STAGE_TYPE_UNKNOWN,
             )
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -171,11 +171,7 @@ class SleepSessionRecord(
      *
      * @see SleepSessionRecord
      */
-    class Stage(
-        val startTime: Instant,
-        val endTime: Instant,
-        @property:StageTypes val stage: Int,
-    ) {
+    class Stage(val startTime: Instant, val endTime: Instant, @property:StageTypes val stage: Int) {
         init {
             require(startTime.isBefore(endTime)) { "startTime must be before endTime." }
         }

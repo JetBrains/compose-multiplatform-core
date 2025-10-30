@@ -58,6 +58,7 @@ import androidx.camera.extensions.impl.advanced.HdrAdvancedExtenderImpl;
 import androidx.camera.extensions.impl.advanced.NightAdvancedExtenderImpl;
 import androidx.camera.extensions.internal.AdvancedVendorExtender;
 import androidx.camera.extensions.internal.BasicVendorExtender;
+import androidx.camera.extensions.internal.Camera2ExtensionsInfo;
 import androidx.camera.extensions.internal.Camera2ExtensionsVendorExtender;
 import androidx.camera.extensions.internal.ExtensionVersion;
 import androidx.camera.extensions.internal.VendorExtender;
@@ -332,10 +333,16 @@ public class ExtensionsTestUtil {
             @ExtensionMode.Mode int mode,
             @CameraXConfig.ImplType int configImplType) {
         if (configImplType == CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_PIPE) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Returns Camera2ExtensionsVendorExtender only when API level is 33 or above and
+            // configImplType is PIPE.
+            // CameraExtensionCharacteristics#getAvailableCaptureRequestKeys(int) is supported
+            // since API level 33 that allows app to clearly know whether features like
+            // tap-to-focus or zoom ratio are supported or not.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 CameraManager cameraManager = applicationContext.getSystemService(
                         CameraManager.class);
-                return new Camera2ExtensionsVendorExtender(mode, cameraManager);
+                return new Camera2ExtensionsVendorExtender(mode,
+                        new Camera2ExtensionsInfo(cameraManager));
             } else {
                 return new VendorExtender() {
                 };

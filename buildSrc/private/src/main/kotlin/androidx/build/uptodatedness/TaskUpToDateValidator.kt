@@ -135,6 +135,8 @@ val ALLOW_RERUNNING_TASKS =
 
         // https://youtrack.jetbrains.com/issue/KT-70008
         "kotlinNpmCachesSetup",
+        "kotlinKotlinNpmCachesSetup",
+        "kotlinWasmKotlinNpmCachesSetup",
     )
 
 // Additional tasks that are expected to be temporarily out-of-date after running once
@@ -155,6 +157,14 @@ val DONT_TRY_RERUNNING_TASKS =
 
         // https://github.com/spdx/spdx-gradle-plugin/issues/18
         "spdxSbomForRelease",
+
+        // Task not cacheable, will always rerun.
+        "validateIntegrationPatches",
+
+        // b/446696375
+        // no outputs, not cachable. Internal type so can't access via withType and
+        // .cacheEvenIfNoOutputs
+        "kmpPartiallyResolvedDependenciesChecker",
     )
 
 val DONT_TRY_RERUNNING_TASK_TYPES =
@@ -197,7 +207,7 @@ abstract class TaskUpToDateValidator :
                 // null list means the task already failed, so we'll skip emitting our error
                 return
             }
-            if (!isAllowedToRerunTask(name) && name.contains("lifecycle")) {
+            if (!isAllowedToRerunTask(name)) {
                 val reasonsString = result.executionReasons?.joinToString("\n  ")
                 throw GradleException(
                     "Ran two consecutive builds of the same tasks, and in the " +
@@ -221,10 +231,7 @@ abstract class TaskUpToDateValidator :
                 return true
             }
             val taskName = taskPath.substringAfterLast(":")
-            if (ALLOW_RERUNNING_TASKS.contains(taskName)) {
-                return true
-            }
-            return false
+            return ALLOW_RERUNNING_TASKS.contains(taskName)
         }
 
         private fun shouldTryRerunningTask(task: Task): Boolean {
@@ -247,7 +254,7 @@ abstract class TaskUpToDateValidator :
             val validatorProvider =
                 project.gradle.sharedServices.registerIfAbsent(
                     "TaskUpToDateValidator",
-                    TaskUpToDateValidator::class.java
+                    TaskUpToDateValidator::class.java,
                 ) { spec ->
                     spec.parameters.validate = validate
                 }

@@ -132,7 +132,7 @@ expect fun DropdownMenu(
     tonalElevation: Dp = MenuDefaults.TonalElevation,
     shadowElevation: Dp = MenuDefaults.ShadowElevation,
     border: BorderStroke? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 )
 
 /**
@@ -235,18 +235,18 @@ object MenuDefaults {
         get() {
             return defaultMenuItemColorsCached
                 ?: MenuItemColors(
-                        textColor = fromToken(ListTokens.ListItemLabelTextColor),
-                        leadingIconColor = fromToken(ListTokens.ListItemLeadingIconColor),
-                        trailingIconColor = fromToken(ListTokens.ListItemTrailingIconColor),
+                        textColor = fromToken(ListTokens.ItemLabelTextColor),
+                        leadingIconColor = fromToken(ListTokens.ItemLeadingIconColor),
+                        trailingIconColor = fromToken(ListTokens.ItemTrailingIconColor),
                         disabledTextColor =
-                            fromToken(ListTokens.ListItemDisabledLabelTextColor)
-                                .copy(alpha = ListTokens.ListItemDisabledLabelTextOpacity),
+                            fromToken(ListTokens.ItemDisabledLabelTextColor)
+                                .copy(alpha = ListTokens.ItemDisabledLabelTextOpacity),
                         disabledLeadingIconColor =
-                            fromToken(ListTokens.ListItemDisabledLeadingIconColor)
-                                .copy(alpha = ListTokens.ListItemDisabledLeadingIconOpacity),
+                            fromToken(ListTokens.ItemDisabledLeadingIconColor)
+                                .copy(alpha = ListTokens.ItemDisabledLeadingIconOpacity),
                         disabledTrailingIconColor =
-                            fromToken(ListTokens.ListItemDisabledTrailingIconColor)
-                                .copy(alpha = ListTokens.ListItemDisabledTrailingIconOpacity),
+                            fromToken(ListTokens.ItemDisabledTrailingIconColor)
+                                .copy(alpha = ListTokens.ItemDisabledTrailingIconOpacity),
                     )
                     .also { defaultMenuItemColorsCached = it }
         }
@@ -366,7 +366,7 @@ internal fun DropdownMenuContent(
     tonalElevation: Dp,
     shadowElevation: Dp,
     border: BorderStroke?,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     // Menu open/close animation.
     @Suppress("DEPRECATION") val transition = updateTransition(expandedState, "DropDownMenu")
@@ -410,7 +410,7 @@ internal fun DropdownMenuContent(
                     .padding(vertical = DropdownMenuVerticalPadding)
                     .width(IntrinsicSize.Max)
                     .verticalScroll(scrollState),
-            content = content
+            content = content,
         )
     }
 }
@@ -425,7 +425,7 @@ internal fun DropdownMenuItemContent(
     enabled: Boolean,
     colors: MenuItemColors,
     contentPadding: PaddingValues,
-    interactionSource: MutableInteractionSource?
+    interactionSource: MutableInteractionSource?,
 ) {
     Row(
         modifier =
@@ -434,25 +434,25 @@ internal fun DropdownMenuItemContent(
                     enabled = enabled,
                     onClick = onClick,
                     interactionSource = interactionSource,
-                    indication = ripple(true)
+                    indication = ripple(true),
                 )
                 .fillMaxWidth()
                 // Preferred min and max width used during the intrinsic measurement.
                 .sizeIn(
                     minWidth = DropdownMenuItemDefaultMinWidth,
                     maxWidth = DropdownMenuItemDefaultMaxWidth,
-                    minHeight = MenuListItemContainerHeight
+                    minHeight = MenuListItemContainerHeight,
                 )
                 .padding(contentPadding),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         // TODO(b/271818892): Align menu list item style with general list item style.
         ProvideTextStyle(MaterialTheme.typography.labelLarge) {
             if (leadingIcon != null) {
                 CompositionLocalProvider(
-                    LocalContentColor provides colors.leadingIconColor(enabled),
+                    LocalContentColor provides colors.leadingIconColor(enabled)
                 ) {
-                    Box(Modifier.defaultMinSize(minWidth = ListTokens.ListItemLeadingIconSize)) {
+                    Box(Modifier.defaultMinSize(minWidth = ListTokens.ItemLeadingIconSize)) {
                         leadingIcon()
                     }
                 }
@@ -472,7 +472,7 @@ internal fun DropdownMenuItemContent(
                                     DropdownMenuItemHorizontalPadding
                                 } else {
                                     0.dp
-                                }
+                                },
                         )
                 ) {
                     text()
@@ -482,7 +482,7 @@ internal fun DropdownMenuItemContent(
                 CompositionLocalProvider(
                     LocalContentColor provides colors.trailingIconColor(enabled)
                 ) {
-                    Box(Modifier.defaultMinSize(minWidth = ListTokens.ListItemTrailingIconSize)) {
+                    Box(Modifier.defaultMinSize(minWidth = ListTokens.ItemTrailingIconSize)) {
                         trailingIcon()
                     }
                 }

@@ -16,8 +16,6 @@
 
 package androidx.paging.internal
 
-internal actual typealias ReentrantLock = java.util.concurrent.locks.ReentrantLock
-
 internal actual typealias AtomicInt = java.util.concurrent.atomic.AtomicInteger
 
 internal actual typealias AtomicBoolean = java.util.concurrent.atomic.AtomicBoolean

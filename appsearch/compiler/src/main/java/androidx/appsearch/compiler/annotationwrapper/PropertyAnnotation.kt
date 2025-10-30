@@ -16,8 +16,8 @@
 package androidx.appsearch.compiler.annotationwrapper
 
 import androidx.appsearch.compiler.IntrospectionHelper
-import com.squareup.javapoet.ClassName
-import javax.lang.model.type.TypeMirror
+import androidx.room.compiler.codegen.XClassName
+import androidx.room.compiler.processing.XType
 
 /**
  * An instance of an AppSearch property annotation.
@@ -29,7 +29,7 @@ import javax.lang.model.type.TypeMirror
 interface PropertyAnnotation {
     enum class Kind {
         METADATA_PROPERTY,
-        DATA_PROPERTY
+        DATA_PROPERTY,
     }
 
     /**
@@ -38,7 +38,7 @@ interface PropertyAnnotation {
      * For example, `androidx.appsearch.annotation.Document.StringProperty` for a
      * [StringPropertyAnnotation].
      */
-    val className: ClassName
+    val className: XClassName
 
     /** The [Kind] of [PropertyAnnotation]. */
     val propertyKind: Kind
@@ -63,5 +63,5 @@ interface PropertyAnnotation {
      *
      * For example, [String] for [StringPropertyAnnotation].
      */
-    fun getUnderlyingTypeWithinGenericDoc(helper: IntrospectionHelper): TypeMirror
+    fun getUnderlyingTypeWithinGenericDoc(helper: IntrospectionHelper): XType
 }

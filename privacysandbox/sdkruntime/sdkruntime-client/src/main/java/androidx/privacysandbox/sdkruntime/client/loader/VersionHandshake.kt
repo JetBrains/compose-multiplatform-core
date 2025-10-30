@@ -25,7 +25,7 @@ internal class VersionHandshake(
     /** Override client version during handshake. */
     private val overrideClientVersion: Int? = null,
     /** Override sdk version during handshake. */
-    private val overrideSdkVersion: Int? = null
+    private val overrideSdkVersion: Int? = null,
 ) {
 
     @SuppressLint("BanUncheckedReflection") // calling method on Versions class
@@ -34,7 +34,7 @@ internal class VersionHandshake(
             Class.forName(
                 "androidx.privacysandbox.sdkruntime.core.Versions",
                 /* initialize = */ false,
-                classLoader
+                classLoader,
             )
         val handShakeMethod = versionsClass.getMethod("handShake", Int::class.javaPrimitiveType)
 
@@ -46,7 +46,7 @@ internal class VersionHandshake(
         } catch (ex: InvocationTargetException) {
             throw LoadSdkCompatException(
                 LoadSdkCompatException.LOAD_SDK_NOT_FOUND,
-                "Failed to perform version handshake: " + ex.targetException.message
+                "Failed to perform version handshake: " + ex.targetException.message,
             )
         }
     }

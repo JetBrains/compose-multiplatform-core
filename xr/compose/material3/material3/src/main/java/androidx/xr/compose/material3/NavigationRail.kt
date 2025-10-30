@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.FloatingActionButton
@@ -41,10 +42,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.material3.XrNavigationRailOverride.NavigationRail
-import androidx.xr.compose.spatial.EdgeOffset
+import androidx.xr.compose.material3.tokens.XrTokens
+import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.spatial.OrbiterDefaults
-import androidx.xr.compose.spatial.OrbiterEdge
+import androidx.xr.compose.spatial.OrbiterOffsetType
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 
 /**
@@ -86,41 +87,41 @@ public fun NavigationRail(
     header: @Composable (ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val orbiterProperties = LocalNavigationRailOrbiterProperties.current
+    val orbiterProperties =
+        LocalNavigationRailOrbiterProperties.current.copy(
+            shape = SpatialRoundedCornerShape(CornerSize(percent = 0))
+        )
     VerticalOrbiter(orbiterProperties) {
-        Surface(
-            color = containerColor,
-            contentColor = contentColor,
-            modifier = modifier,
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(XrNavigationRailTokens.VerticalPadding),
         ) {
-            Column(
-                // XR-changed: Original NavigationRail uses fillMaxHeight() and windowInsets,
-                // which do not produce the desired result in XR.
-                Modifier.widthIn(min = XrNavigationRailTokens.ContainerWidth)
-                    .padding(vertical = XrNavigationRailTokens.VerticalPadding)
-                    .selectableGroup(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(XrNavigationRailTokens.VerticalPadding),
-                content = content,
-            )
-        }
-    }
-    // Header goes inside a separate top-aligned Orbiter without an outline shape, as this is
-    // generally a FAB.
-    if (header != null) {
-        VerticalOrbiter(orbiterProperties.copy(alignment = Alignment.Top)) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(XrNavigationRailTokens.VerticalPadding),
-                content = header,
-            )
+            header?.let { it() }
+            Surface(
+                shape = CircleShape,
+                color = containerColor,
+                contentColor = contentColor,
+                modifier = modifier,
+            ) {
+                Column(
+                    // XR-changed: Original NavigationRail uses fillMaxHeight() and windowInsets,
+                    // which do not produce the desired result in XR.
+                    Modifier.widthIn(min = XrNavigationRailTokens.ContainerWidth)
+                        .padding(vertical = XrNavigationRailTokens.VerticalPadding)
+                        .selectableGroup(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement =
+                        Arrangement.spacedBy(XrNavigationRailTokens.VerticalPadding),
+                    content = content,
+                )
+            }
         }
     }
 }
 
-private object XrNavigationRailTokens {
-    /** The [EdgeOffset] for NavigationRail Orbiters in Full Space Mode (FSM). */
-    val OrbiterEdgeOffset = EdgeOffset.inner(24.dp)
+internal object XrNavigationRailTokens {
+    /** The [OrbiterOffset] for NavigationRail Orbiters in Full Space Mode (FSM). */
+    val OrbiterOffset = 24.dp
 
     /**
      * Vertical padding between the contents of the [NavigationRail] and its top/bottom, and
@@ -153,21 +154,17 @@ internal object XrNavigationRailOverride : NavigationRailOverride {
  * The default [VerticalOrbiterProperties] used by [NavigationRail] if none is specified in
  * [LocalNavigationRailOrbiterProperties].
  */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val DefaultNavigationRailOrbiterProperties: VerticalOrbiterProperties =
     VerticalOrbiterProperties(
-        position = OrbiterEdge.Vertical.Start,
-        offset = XrNavigationRailTokens.OrbiterEdgeOffset,
+        position = ContentEdge.Vertical.Start,
+        offset = XrNavigationRailTokens.OrbiterOffset,
+        offsetType = OrbiterOffsetType.InnerEdge,
         alignment = Alignment.CenterVertically,
-        settings = OrbiterDefaults.Settings,
-        shape = SpatialRoundedCornerShape(CornerSize(50)),
+        shape = XrTokens.ContainerShape,
     )
 
 /** The [VerticalOrbiterProperties] used by [NavigationRail]. */
-@Suppress("OPT_IN_MARKER_ON_WRONG_TARGET")
-@get:ExperimentalMaterial3XrApi
 @ExperimentalMaterial3XrApi
 public val LocalNavigationRailOrbiterProperties:
     ProvidableCompositionLocal<VerticalOrbiterProperties> =

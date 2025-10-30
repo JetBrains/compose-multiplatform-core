@@ -19,7 +19,6 @@ package androidx.camera.core.impl
 import android.content.Context
 import android.content.pm.ServiceInfo
 import android.content.res.Resources
-import android.os.Build
 import android.os.Bundle
 import androidx.camera.core.impl.QuirkSettingsLoader.KEY_DEFAULT_QUIRK_ENABLED
 import androidx.camera.core.impl.QuirkSettingsLoader.KEY_QUIRK_FORCE_DISABLED
@@ -37,7 +36,6 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class QuirkSettingsLoaderTest {
 
     companion object {
@@ -82,7 +80,7 @@ class QuirkSettingsLoaderTest {
             setMetadataHolderService(
                 defaultQuirkEnabled = false,
                 forceEnabledQuirks = setOf(quirk1.name, quirk2.name),
-                forceDisabledQuirks = setOf(quirk3.name, quirk4.name)
+                forceDisabledQuirks = setOf(quirk3.name, quirk4.name),
             )
 
         // Act.
@@ -102,7 +100,7 @@ class QuirkSettingsLoaderTest {
             setMetadataHolderService(
                 defaultQuirkEnabled = true,
                 forceEnabledQuirks = setOf(quirk1.name, quirk2.name, "invalid.class.name"),
-                forceDisabledQuirks = setOf(String::class.java.name /*Not a Quirk*/)
+                forceDisabledQuirks = setOf(String::class.java.name /*Not a Quirk*/),
             )
 
         // Act.

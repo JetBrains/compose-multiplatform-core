@@ -58,14 +58,9 @@ fun ScaffoldSample() {
             ScalingLazyColumn(
                 state = listState,
                 contentPadding = contentPadding,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             ) {
-                items(10) {
-                    Button(
-                        onClick = {},
-                        label = { Text("Item ${it + 1}") },
-                    )
-                }
+                items(10) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
             }
         }
     }
@@ -100,8 +95,8 @@ fun ScaffoldWithSLCEdgeButtonSample() {
                             reverseDirection = true,
                             // An overscroll effect should be applied to the EdgeButton for proper
                             // scrolling behavior.
-                            overscrollEffect = rememberOverscrollEffect()
-                        )
+                            overscrollEffect = rememberOverscrollEffect(),
+                        ),
                 ) {
                     Text("Clear All")
                 }
@@ -112,13 +107,9 @@ fun ScaffoldWithSLCEdgeButtonSample() {
                 modifier = Modifier.fillMaxSize(),
                 // Bottom spacing is derived from [ScreenScaffold.edgeButtonSpacing].
                 contentPadding = contentPadding,
+                autoCentering = null,
             ) {
-                items(10) {
-                    Button(
-                        onClick = {},
-                        label = { Text("Item ${it + 1}") },
-                    )
-                }
+                items(10) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
             }
         }
     }
@@ -153,8 +144,8 @@ fun ScaffoldWithTLCEdgeButtonSample() {
                             reverseDirection = true,
                             // An overscroll effect should be applied to the EdgeButton for proper
                             // scrolling behavior.
-                            overscrollEffect = rememberOverscrollEffect()
-                        )
+                            overscrollEffect = rememberOverscrollEffect(),
+                        ),
                 ) {
                     Text("Clear All")
                 }
@@ -166,12 +157,7 @@ fun ScaffoldWithTLCEdgeButtonSample() {
                 // Bottom spacing is derived from [ScreenScaffold.edgeButtonSpacing].
                 contentPadding = contentPadding,
             ) {
-                items(10) {
-                    Button(
-                        onClick = {},
-                        label = { Text("Item ${it + 1}") },
-                    )
-                }
+                items(10) { Button(onClick = {}, label = { Text("Item ${it + 1}") }) }
             }
         }
     }

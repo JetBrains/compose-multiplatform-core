@@ -58,11 +58,7 @@ class LazyGridCacheWindowParityTest(orientation: Orientation) :
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
-        fun initParameters(): Array<Any> =
-            arrayOf(
-                Orientation.Vertical,
-                Orientation.Horizontal,
-            )
+        fun initParameters(): Array<Any> = arrayOf(Orientation.Vertical, Orientation.Horizontal)
     }
 
     val itemsSizePx = 30
@@ -87,12 +83,12 @@ class LazyGridCacheWindowParityTest(orientation: Orientation) :
     fun rememberState(
         cacheWindow: LazyLayoutCacheWindow,
         initialFirstVisibleItemIndex: Int = 0,
-        initialFirstVisibleItemScrollOffset: Int = 0
+        initialFirstVisibleItemScrollOffset: Int = 0,
     ): LazyGridState = remember {
         LazyGridState(
             cacheWindow,
             initialFirstVisibleItemIndex,
-            initialFirstVisibleItemScrollOffset
+            initialFirstVisibleItemScrollOffset,
         )
     }
 
@@ -249,7 +245,7 @@ class LazyGridCacheWindowParityTest(orientation: Orientation) :
             cacheWindow = parityWindow,
             firstItem = 4,
             itemOffset = 5,
-            contentPadding = PaddingValues(mainAxis = halfItemSize)
+            contentPadding = PaddingValues(mainAxis = halfItemSize),
         )
         parityWindow.ahead = itemsSizePx
 
@@ -290,11 +286,7 @@ class LazyGridCacheWindowParityTest(orientation: Orientation) :
                     if (emit) {
                         subcompose(Unit) {
                                 state = rememberState(cacheWindow = parityWindow)
-                                LazyGrid(
-                                    2,
-                                    Modifier.mainAxisSize(itemsSizeDp * 1.5f),
-                                    state,
-                                ) {
+                                LazyGrid(2, Modifier.mainAxisSize(itemsSizeDp * 1.5f), state) {
                                     items(1000) { Spacer(Modifier.mainAxisSize(itemsSizeDp)) }
                                 }
                             }
@@ -413,7 +405,7 @@ class LazyGridCacheWindowParityTest(orientation: Orientation) :
         firstItem: Int = 0,
         itemOffset: Int = 0,
         reverseLayout: Boolean = false,
-        contentPadding: PaddingValues = PaddingValues(0.dp)
+        contentPadding: PaddingValues = PaddingValues(0.dp),
     ) {
         rule.setContent {
             LocalView.current.setTag(R.id.compose_prefetch_scheduler, scheduler)
@@ -421,14 +413,14 @@ class LazyGridCacheWindowParityTest(orientation: Orientation) :
                 rememberState(
                     cacheWindow = cacheWindow,
                     initialFirstVisibleItemIndex = firstItem,
-                    initialFirstVisibleItemScrollOffset = itemOffset
+                    initialFirstVisibleItemScrollOffset = itemOffset,
                 )
             LazyGrid(
                 2,
                 Modifier.mainAxisSize(itemsSizeDp * 1.5f),
                 state,
                 reverseLayout = reverseLayout,
-                contentPadding = contentPadding
+                contentPadding = contentPadding,
             ) {
                 items(100) {
                     DisposableEffect(it) {

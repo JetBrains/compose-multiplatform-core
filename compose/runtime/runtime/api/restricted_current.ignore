@@ -1,11 +1,11 @@
 // Baseline format: 1.0
-AddedAbstractMethod: androidx.compose.runtime.Composer#getCompositeKeyHashCode():
-    Added method androidx.compose.runtime.Composer.getCompositeKeyHashCode()
-
-
-RemovedClass: androidx.compose.runtime.Immutable:
-    Removed class androidx.compose.runtime.Immutable
-RemovedClass: androidx.compose.runtime.Stable:
-    Removed class androidx.compose.runtime.Stable
-RemovedClass: androidx.compose.runtime.StableMarker:
-    Removed class androidx.compose.runtime.StableMarker
+BecameUnchecked: androidx.compose.runtime.internal.LiveLiteralKt:
+    Removed class androidx.compose.runtime.internal.LiveLiteralKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.runtime.snapshots.tooling:
+    Removed package androidx.compose.runtime.snapshots.tooling from compatibility checked API surface
+BecameUnchecked: androidx.compose.runtime.snapshots.tooling.SnapshotObserverKt:
+    Removed class androidx.compose.runtime.snapshots.tooling.SnapshotObserverKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.runtime.tooling.CompositionObserverKt:
+    Removed class androidx.compose.runtime.tooling.CompositionObserverKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.runtime.tooling.SourceInformationKt:
+    Removed class androidx.compose.runtime.tooling.SourceInformationKt from compatibility checked API surface

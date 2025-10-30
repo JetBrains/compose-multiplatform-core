@@ -102,7 +102,7 @@ class WindowStateCallbackActivity : ComponentActivity() {
             override fun onConfigurationChanged(configuration: Configuration) {
                 onWindowStateCallbackInvoked(
                     R.string.application_configuration_title,
-                    configuration
+                    configuration,
                 )
             }
 
@@ -110,6 +110,7 @@ class WindowStateCallbackActivity : ComponentActivity() {
                 "Since API level 34 this is never called. Apps targeting API level 34 " +
                     "and above may provide an empty implementation."
             )
+            @Suppress("OVERRIDE_DEPRECATION") // b/446706247
             override fun onLowMemory() {}
         }
 
@@ -179,10 +180,7 @@ class WindowStateCallbackActivity : ComponentActivity() {
 
     private fun provideLatestWindowState() {
         viewModel.updateLatestWindowState(
-            queryWindowState(
-                R.string.latest_configuration_title,
-                "poll configuration every 500ms",
-            )
+            queryWindowState(R.string.latest_configuration_title, "poll configuration every 500ms")
         )
     }
 

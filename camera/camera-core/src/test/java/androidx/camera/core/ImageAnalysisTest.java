@@ -26,7 +26,6 @@ import static org.junit.Assert.assertThrows;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
-import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.SystemClock;
@@ -68,7 +67,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.ArrayList;
@@ -86,7 +84,6 @@ import java.util.concurrent.TimeoutException;
  */
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class ImageAnalysisTest {
 
     private static final Size APP_RESOLUTION = new Size(100, 200);
@@ -133,12 +130,15 @@ public class ImageAnalysisTest {
 
         CameraInternal camera = new FakeCamera();
 
-        CameraFactory.Provider cameraFactoryProvider = (ignored1, ignored2, ignored3, ignored4) -> {
-            FakeCameraFactory cameraFactory = new FakeCameraFactory();
-            cameraFactory.insertDefaultBackCamera(camera.getCameraInfoInternal().getCameraId(),
-                    () -> camera);
-            return cameraFactory;
-        };
+        CameraFactory.Provider cameraFactoryProvider =
+                (ignored0, ignored1, ignored2, ignored3,
+                        ignore4, ignored5) -> {
+                    FakeCameraFactory cameraFactory = new FakeCameraFactory();
+                    cameraFactory.insertDefaultBackCamera(
+                            camera.getCameraInfoInternal().getCameraId(),
+                            () -> camera);
+                    return cameraFactory;
+                };
         CameraXConfig cameraXConfig = CameraXConfig.Builder.fromConfig(
                 FakeAppConfig.create()).setCameraFactoryProvider(cameraFactoryProvider).build();
 

@@ -57,6 +57,8 @@ import javax.inject.Provider
 import javax.inject.Scope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 
 @Module(subcomponents = [Camera2ControllerComponent::class])
 internal abstract class Camera2Module {
@@ -110,7 +112,7 @@ internal abstract class Camera2Module {
         [
             Camera2ControllerConfig::class,
             Camera2ControllerModule::class,
-            Camera2CaptureSessionsModule::class
+            Camera2CaptureSessionsModule::class,
         ]
 )
 internal interface Camera2ControllerComponent {
@@ -132,6 +134,7 @@ internal class Camera2ControllerConfig(
     private val graphListener: GraphListener,
     private val streamGraph: StreamGraph,
     private val surfaceTracker: SurfaceTracker,
+    private val shutdownListener: Camera2CameraController.ShutdownListener,
 ) {
     @Provides fun provideCameraGraphConfig() = graphConfig
 
@@ -144,6 +147,8 @@ internal class Camera2ControllerConfig(
     @Provides fun provideGraphListener() = graphListener
 
     @Provides fun provideSurfaceGraph() = surfaceTracker
+
+    @Provides fun provideShutdownListener() = shutdownListener
 }
 
 @Module
@@ -161,9 +166,13 @@ internal abstract class Camera2ControllerModule {
     companion object {
         @Camera2ControllerScope
         @Provides
-        fun provideCoroutineScope(threads: Threads): CoroutineScope {
+        fun provideCoroutineScope(
+            threads: Threads,
+            @CameraPipeJob cameraPipeJob: Job,
+        ): CoroutineScope {
             return CoroutineScope(
-                threads.lightweightDispatcher.plus(CoroutineName("CXCP-Camera2Controller"))
+                SupervisorJob(cameraPipeJob) +
+                    threads.lightweightDispatcher.plus(CoroutineName("CXCP-Camera2Controller"))
             )
         }
 
@@ -172,9 +181,15 @@ internal abstract class Camera2ControllerModule {
         fun provideCameraStatusMonitor(
             cameraManager: Provider<CameraManager>,
             threads: Threads,
-            graphConfig: CameraGraph.Config
+            graphConfig: CameraGraph.Config,
+            @CameraPipeJob cameraPipeJob: Job,
         ): CameraStatusMonitor {
-            return Camera2CameraStatusMonitor(cameraManager, threads, graphConfig.camera)
+            return Camera2CameraStatusMonitor(
+                cameraManager,
+                threads,
+                graphConfig.camera,
+                cameraPipeJob,
+            )
         }
     }
 }

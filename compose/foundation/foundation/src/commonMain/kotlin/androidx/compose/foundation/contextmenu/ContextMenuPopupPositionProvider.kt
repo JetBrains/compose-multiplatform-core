@@ -69,7 +69,7 @@ internal class ContextMenuPopupPositionProvider(
         anchorBounds: IntRect,
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
-        popupContentSize: IntSize
+        popupContentSize: IntSize,
     ): IntOffset {
         val anchorPosition = anchorPositionBlock()
         val resultPosition =
@@ -79,14 +79,14 @@ internal class ContextMenuPopupPositionProvider(
                         position = anchorBounds.left + anchorPosition.x,
                         popupLength = popupContentSize.width,
                         windowLength = windowSize.width,
-                        closeAffinity = layoutDirection == LayoutDirection.Ltr
+                        closeAffinity = layoutDirection == LayoutDirection.Ltr,
                     ),
                 y =
                     alignPopupAxis(
                         position = anchorBounds.top + anchorPosition.y,
                         popupLength = popupContentSize.height,
                         windowLength = windowSize.height,
-                    )
+                    ),
             )
         onPositionCalculated?.invoke(anchorPosition, IntRect(resultPosition, popupContentSize))
         return resultPosition

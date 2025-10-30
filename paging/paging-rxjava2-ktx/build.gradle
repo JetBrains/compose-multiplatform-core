@@ -27,14 +27,13 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     api(project(":paging:paging-rxjava2"))
     // Ensure that the -ktx dependency graph mirrors the Java dependency graph
     api(project(":paging:paging-common-ktx"))
-    implementation(libs.kotlinStdlib)
 
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)

@@ -29,7 +29,6 @@ import androidx.camera.testing.impl.EncoderProfilesUtil
 import androidx.camera.video.VideoSpec
 import androidx.camera.video.internal.encoder.VideoEncoderDataSpace
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assume.assumeFalse
@@ -38,7 +37,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 21)
 class VideoEncoderConfigDefaultResolverTest {
 
     companion object {
@@ -55,7 +53,7 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val surfaceSizeCif = EncoderProfilesUtil.RESOLUTION_CIF
         val surfaceSize720p = EncoderProfilesUtil.RESOLUTION_720P
@@ -70,7 +68,7 @@ class VideoEncoderConfigDefaultResolverTest {
                 DEFAULT_VIDEO_SPEC,
                 surfaceSizeCif,
                 DynamicRange.SDR,
-                expectedCaptureFrameRateRange
+                expectedCaptureFrameRateRange,
             )
         val configSupplier720p =
             VideoEncoderConfigDefaultResolver(
@@ -79,7 +77,7 @@ class VideoEncoderConfigDefaultResolverTest {
                 DEFAULT_VIDEO_SPEC,
                 surfaceSize720p,
                 DynamicRange.SDR,
-                expectedCaptureFrameRateRange
+                expectedCaptureFrameRateRange,
             )
         val configSupplier1080p =
             VideoEncoderConfigDefaultResolver(
@@ -88,7 +86,7 @@ class VideoEncoderConfigDefaultResolverTest {
                 DEFAULT_VIDEO_SPEC,
                 surfaceSize1080p,
                 DynamicRange.SDR,
-                expectedCaptureFrameRateRange
+                expectedCaptureFrameRateRange,
             )
 
         val configCif = configSupplierCif.get()
@@ -118,7 +116,7 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val surfaceSize720p = EncoderProfilesUtil.RESOLUTION_720P
 
@@ -130,7 +128,7 @@ class VideoEncoderConfigDefaultResolverTest {
                     DEFAULT_VIDEO_SPEC,
                     surfaceSize720p,
                     DynamicRange.SDR,
-                    SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                    SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                 )
                 .get()
         val defaultBitrate = defaultConfig.bitrate
@@ -151,7 +149,7 @@ class VideoEncoderConfigDefaultResolverTest {
                         higherVideoSpec,
                         surfaceSize720p,
                         DynamicRange.SDR,
-                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                     )
                     .get()
                     .bitrate
@@ -165,7 +163,7 @@ class VideoEncoderConfigDefaultResolverTest {
                         lowerVideoSpec,
                         surfaceSize720p,
                         DynamicRange.SDR,
-                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                     )
                     .get()
                     .bitrate
@@ -178,7 +176,7 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val size = EncoderProfilesUtil.RESOLUTION_1080P
 
@@ -189,7 +187,7 @@ class VideoEncoderConfigDefaultResolverTest {
                         DEFAULT_VIDEO_SPEC,
                         size,
                         DynamicRange.SDR,
-                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                     )
                     .get()
                     .encodeFrameRate
@@ -202,7 +200,7 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val size = EncoderProfilesUtil.RESOLUTION_1080P
 
@@ -216,7 +214,7 @@ class VideoEncoderConfigDefaultResolverTest {
                         DEFAULT_VIDEO_SPEC,
                         size,
                         DynamicRange.SDR,
-                        expectedCaptureFrameRateRange
+                        expectedCaptureFrameRateRange,
                     )
                     .get()
                     .encodeFrameRate
@@ -229,12 +227,12 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         testMimeAndDynamicRangeResolveToProfile(
             MediaFormat.MIMETYPE_VIDEO_AVC,
             DynamicRange.HLG_10_BIT, // AVC does not support HLG10
-            EncoderProfilesProxy.CODEC_PROFILE_NONE
+            EncoderProfilesProxy.CODEC_PROFILE_NONE,
         )
     }
 
@@ -243,12 +241,12 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         testMimeAndDynamicRangeResolveToProfile(
             MediaFormat.MIMETYPE_VIDEO_HEVC,
             DynamicRange.DOLBY_VISION_10_BIT, // Dolby vision not supported by HEVC
-            EncoderProfilesProxy.CODEC_PROFILE_NONE
+            EncoderProfilesProxy.CODEC_PROFILE_NONE,
         )
     }
 
@@ -257,12 +255,12 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         testMimeAndDynamicRangeResolveToProfile(
             UNSUPPORTED_MIME_TYPE,
             DynamicRange.HLG_10_BIT,
-            EncoderProfilesProxy.CODEC_PROFILE_NONE
+            EncoderProfilesProxy.CODEC_PROFILE_NONE,
         )
     }
 
@@ -271,21 +269,21 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val dynamicRangeToExpectedProfiles =
             mapOf(
                 DynamicRange.SDR to CodecProfileLevel.HEVCProfileMain,
                 DynamicRange.HLG_10_BIT to CodecProfileLevel.HEVCProfileMain10,
                 DynamicRange.HDR10_10_BIT to CodecProfileLevel.HEVCProfileMain10HDR10,
-                DynamicRange.HDR10_PLUS_10_BIT to CodecProfileLevel.HEVCProfileMain10HDR10Plus
+                DynamicRange.HDR10_PLUS_10_BIT to CodecProfileLevel.HEVCProfileMain10HDR10Plus,
             )
 
         for (entry in dynamicRangeToExpectedProfiles) {
             testMimeAndDynamicRangeResolveToProfile(
                 MediaFormat.MIMETYPE_VIDEO_HEVC,
                 entry.key,
-                entry.value
+                entry.value,
             )
         }
     }
@@ -295,21 +293,21 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val dynamicRangeToExpectedProfiles =
             mapOf(
                 DynamicRange.SDR to CodecProfileLevel.AV1ProfileMain8,
                 DynamicRange.HLG_10_BIT to CodecProfileLevel.AV1ProfileMain10,
                 DynamicRange.HDR10_10_BIT to CodecProfileLevel.AV1ProfileMain10HDR10,
-                DynamicRange.HDR10_PLUS_10_BIT to CodecProfileLevel.AV1ProfileMain10HDR10Plus
+                DynamicRange.HDR10_PLUS_10_BIT to CodecProfileLevel.AV1ProfileMain10HDR10Plus,
             )
 
         for (entry in dynamicRangeToExpectedProfiles) {
             testMimeAndDynamicRangeResolveToProfile(
                 MediaFormat.MIMETYPE_VIDEO_HEVC,
                 entry.key,
-                entry.value
+                entry.value,
             )
         }
     }
@@ -319,21 +317,21 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val dynamicRangeToExpectedProfiles =
             mapOf(
                 DynamicRange.SDR to CodecProfileLevel.VP9Profile0,
                 DynamicRange.HLG_10_BIT to CodecProfileLevel.VP9Profile2,
                 DynamicRange.HDR10_10_BIT to CodecProfileLevel.VP9Profile2HDR,
-                DynamicRange.HDR10_PLUS_10_BIT to CodecProfileLevel.VP9Profile2HDR10Plus
+                DynamicRange.HDR10_PLUS_10_BIT to CodecProfileLevel.VP9Profile2HDR10Plus,
             )
 
         for (entry in dynamicRangeToExpectedProfiles) {
             testMimeAndDynamicRangeResolveToProfile(
                 MediaFormat.MIMETYPE_VIDEO_VP9,
                 entry.key,
-                entry.value
+                entry.value,
             )
         }
     }
@@ -343,7 +341,7 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val dynamicRangeToExpectedProfiles =
             mapOf(
@@ -355,7 +353,7 @@ class VideoEncoderConfigDefaultResolverTest {
             testMimeAndDynamicRangeResolveToProfile(
                 MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION,
                 entry.key,
-                entry.value
+                entry.value,
             )
         }
     }
@@ -365,12 +363,12 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         testMimeAndDynamicRangeResolvesToDataSpace(
             UNSUPPORTED_MIME_TYPE,
             DynamicRange.HLG_10_BIT,
-            VideoEncoderDataSpace.ENCODER_DATA_SPACE_UNSPECIFIED
+            VideoEncoderDataSpace.ENCODER_DATA_SPACE_UNSPECIFIED,
         )
     }
 
@@ -379,7 +377,7 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val dynamicRangeToExpectedDataSpaces =
             mapOf(
@@ -387,15 +385,14 @@ class VideoEncoderConfigDefaultResolverTest {
                 DynamicRange.SDR to VideoEncoderDataSpace.ENCODER_DATA_SPACE_UNSPECIFIED,
                 DynamicRange.HLG_10_BIT to VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_HLG,
                 DynamicRange.HDR10_10_BIT to VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ,
-                DynamicRange.HDR10_PLUS_10_BIT to
-                    VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ,
+                DynamicRange.HDR10_PLUS_10_BIT to VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ,
             )
 
         for (entry in dynamicRangeToExpectedDataSpaces) {
             testMimeAndDynamicRangeResolvesToDataSpace(
                 MediaFormat.MIMETYPE_VIDEO_HEVC,
                 entry.key,
-                entry.value
+                entry.value,
             )
         }
     }
@@ -405,7 +402,7 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val dynamicRangeToExpectedDataSpaces =
             mapOf(
@@ -413,15 +410,14 @@ class VideoEncoderConfigDefaultResolverTest {
                 DynamicRange.SDR to VideoEncoderDataSpace.ENCODER_DATA_SPACE_UNSPECIFIED,
                 DynamicRange.HLG_10_BIT to VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_HLG,
                 DynamicRange.HDR10_10_BIT to VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ,
-                DynamicRange.HDR10_PLUS_10_BIT to
-                    VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ,
+                DynamicRange.HDR10_PLUS_10_BIT to VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ,
             )
 
         for (entry in dynamicRangeToExpectedDataSpaces) {
             testMimeAndDynamicRangeResolvesToDataSpace(
                 MediaFormat.MIMETYPE_VIDEO_AV1,
                 entry.key,
-                entry.value
+                entry.value,
             )
         }
     }
@@ -431,7 +427,7 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val dynamicRangeToExpectedDataSpaces =
             mapOf(
@@ -439,15 +435,14 @@ class VideoEncoderConfigDefaultResolverTest {
                 DynamicRange.SDR to VideoEncoderDataSpace.ENCODER_DATA_SPACE_UNSPECIFIED,
                 DynamicRange.HLG_10_BIT to VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_HLG,
                 DynamicRange.HDR10_10_BIT to VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ,
-                DynamicRange.HDR10_PLUS_10_BIT to
-                    VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ,
+                DynamicRange.HDR10_PLUS_10_BIT to VideoEncoderDataSpace.ENCODER_DATA_SPACE_BT2020_PQ,
             )
 
         for (entry in dynamicRangeToExpectedDataSpaces) {
             testMimeAndDynamicRangeResolvesToDataSpace(
                 MediaFormat.MIMETYPE_VIDEO_VP9,
                 entry.key,
-                entry.value
+                entry.value,
             )
         }
     }
@@ -457,7 +452,7 @@ class VideoEncoderConfigDefaultResolverTest {
         // Skip for b/264902324
         assumeFalse(
             "Emulator API 30 crashes running this test.",
-            Build.VERSION.SDK_INT == 30 && isEmulator()
+            Build.VERSION.SDK_INT == 30 && isEmulator(),
         )
         val dynamicRangeToExpectedDataSpaces =
             mapOf(
@@ -470,7 +465,7 @@ class VideoEncoderConfigDefaultResolverTest {
             testMimeAndDynamicRangeResolvesToDataSpace(
                 MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION,
                 entry.key,
-                entry.value
+                entry.value,
             )
         }
     }
@@ -478,7 +473,7 @@ class VideoEncoderConfigDefaultResolverTest {
     private fun testMimeAndDynamicRangeResolveToProfile(
         mime: String,
         dynamicRange: DynamicRange,
-        expectedProfile: Int
+        expectedProfile: Int,
     ) {
         // Expected frame rate range takes precedence over VideoSpec
         assertThat(
@@ -488,7 +483,7 @@ class VideoEncoderConfigDefaultResolverTest {
                         DEFAULT_VIDEO_SPEC,
                         EncoderProfilesUtil.RESOLUTION_1080P,
                         dynamicRange,
-                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                     )
                     .get()
                     .profile
@@ -508,7 +503,7 @@ class VideoEncoderConfigDefaultResolverTest {
                         DEFAULT_VIDEO_SPEC,
                         EncoderProfilesUtil.RESOLUTION_1080P,
                         dynamicRange,
-                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
                     )
                     .get()
                     .dataSpace

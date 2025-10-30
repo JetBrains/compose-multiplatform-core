@@ -215,7 +215,7 @@ private fun AnimatedTextToggleButtonsDemo(
     enabled: Boolean,
     initialChecked: Boolean,
     size: Dp = TextToggleButtonDefaults.Size,
-    textStyle: TextStyle = TextToggleButtonDefaults.textStyle
+    textStyle: TextStyle = TextToggleButtonDefaults.textStyle,
 ) {
     val checked = remember { mutableStateOf(initialChecked) }
     TextToggleButton(
@@ -234,7 +234,7 @@ private fun VariantAnimatedTextToggleButtonsDemo(
     enabled: Boolean,
     initialChecked: Boolean,
     size: Dp = TextToggleButtonDefaults.Size,
-    textStyle: TextStyle = TextToggleButtonDefaults.textStyle
+    textStyle: TextStyle = TextToggleButtonDefaults.textStyle,
 ) {
     val checked = remember { mutableStateOf(initialChecked) }
     val interactionSource = remember { MutableInteractionSource() }

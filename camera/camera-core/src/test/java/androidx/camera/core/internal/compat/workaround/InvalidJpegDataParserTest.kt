@@ -21,7 +21,6 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
@@ -55,7 +54,7 @@ private val correctJpegByteArray1 =
             0x00,
             0xe6,
             0x01,
-            0x00
+            0x00,
         )
         .map { it.toByte() }
         .toByteArray()
@@ -80,7 +79,7 @@ private val correctJpegByteArray2 =
             0x99,
             0x99,
             0xff,
-            0xd9
+            0xd9,
         )
         .map { it.toByte() }
         .toByteArray()
@@ -129,7 +128,7 @@ private val problematicJpegByteArray =
             0x00,
             0xe6,
             0x01,
-            0x00
+            0x00,
         )
         .map { it.toByte() }
         .toByteArray()
@@ -200,7 +199,7 @@ private val problematicJpegByteArray2 =
             0x00,
             0x00,
             0x00,
-            0x00
+            0x00,
         )
         .map { it.toByte() }
         .toByteArray()
@@ -238,7 +237,7 @@ private val invalidNoSosData =
             0x00,
             0xe6,
             0x01,
-            0x00
+            0x00,
         )
         .map { it.toByte() }
         .toByteArray()
@@ -273,14 +272,13 @@ private val invalidNoEoiData =
             0x00,
             0xe6,
             0x01,
-            0x00
+            0x00,
         )
         .map { it.toByte() }
         .toByteArray()
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class InvalidJpegDataParserTest(
     private val brand: String,
     private val model: String,

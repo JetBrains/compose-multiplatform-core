@@ -28,11 +28,12 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.lifecycle.testing"
+    }
     desktop()
     mac()
     linux()
@@ -48,7 +49,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(project(":lifecycle:lifecycle-runtime"))
             }
         }
@@ -73,11 +73,11 @@ androidXMultiplatform {
             dependsOn(jvmMain)
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(libs.truth)
@@ -116,36 +116,6 @@ androidXMultiplatform {
             }
         }
 
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
@@ -167,8 +137,4 @@ androidx {
     type = SoftwareType.PUBLISHED_TEST_LIBRARY
     inceptionYear = "2019"
     description = "Testing utilities for 'lifecycle' artifact"
-}
-
-android {
-    namespace "androidx.lifecycle.testing"
 }

@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.AbsoluteCutCornerShape
@@ -24,14 +23,11 @@ import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -45,7 +41,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.S)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class AnimatedCornerShapeScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -64,9 +60,9 @@ class AnimatedCornerShapeScreenshotTest {
                         topStart = 2.dp,
                         topEnd = 4.dp,
                         bottomEnd = 6.dp,
-                        bottomStart = 8.dp
+                        bottomStart = 8.dp,
                     )
-                )
+                ),
         ) {}
     }
 
@@ -81,9 +77,9 @@ class AnimatedCornerShapeScreenshotTest {
                             topStart = 2.dp,
                             topEnd = 4.dp,
                             bottomEnd = 6.dp,
-                            bottomStart = 8.dp
+                            bottomStart = 8.dp,
                         )
-                    )
+                    ),
             ) {}
         }
 
@@ -97,9 +93,9 @@ class AnimatedCornerShapeScreenshotTest {
                         topLeft = 2.dp,
                         topRight = 4.dp,
                         bottomRight = 6.dp,
-                        bottomLeft = 8.dp
+                        bottomLeft = 8.dp,
                     )
-                )
+                ),
         ) {}
     }
 
@@ -114,9 +110,9 @@ class AnimatedCornerShapeScreenshotTest {
                             topLeft = 2.dp,
                             topRight = 4.dp,
                             bottomRight = 6.dp,
-                            bottomLeft = 8.dp
+                            bottomLeft = 8.dp,
                         )
-                    )
+                    ),
             ) {}
         }
 
@@ -130,9 +126,9 @@ class AnimatedCornerShapeScreenshotTest {
                         topLeft = 2.dp,
                         topRight = 4.dp,
                         bottomRight = 6.dp,
-                        bottomLeft = 8.dp
+                        bottomLeft = 8.dp,
                     )
-                )
+                ),
         ) {}
     }
 
@@ -147,15 +143,15 @@ class AnimatedCornerShapeScreenshotTest {
                             topLeft = 2.dp,
                             topRight = 4.dp,
                             bottomRight = 6.dp,
-                            bottomLeft = 8.dp
+                            bottomLeft = 8.dp,
                         )
-                    )
+                    ),
             ) {}
         }
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
@@ -163,9 +159,6 @@ class AnimatedCornerShapeScreenshotTest {
             }
         }
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.methodName)
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 }

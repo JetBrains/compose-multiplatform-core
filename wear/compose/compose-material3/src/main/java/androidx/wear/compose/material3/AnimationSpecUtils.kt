@@ -17,7 +17,9 @@
 package androidx.wear.compose.material3
 
 import androidx.annotation.FloatRange
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.AnimationVector2D
@@ -29,6 +31,7 @@ import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.VectorizedFiniteAnimationSpec
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,6 +91,26 @@ internal fun <T> FiniteAnimationSpec<T>.slower(
 }
 
 /**
+ * Returns the animated color based on enabled state.
+ *
+ * @param enabled Boolean flag checking if the component is enabled.
+ * @param enabledColor Color when [enabled] = true.
+ * @param disabledColor Color when [enabled] = false.
+ * @param animationSpec AnimationSpec for the color transition animations.
+ */
+@Composable
+internal fun animateEnabledStateColor(
+    enabled: Boolean,
+    enabledColor: Color,
+    disabledColor: Color,
+    animationSpec: AnimationSpec<Color>,
+): State<Color> =
+    animateColorAsState(
+        targetValue = if (enabled) enabledColor else disabledColor,
+        animationSpec = animationSpec,
+    )
+
+/**
  * Returns a modified [FiniteAnimationSpec] with a delay of [startDelayMillis].
  *
  * @param startDelayMillis how long to delay before starting the animation, in ms.
@@ -102,7 +125,7 @@ internal fun <T> FiniteAnimationSpec<T>.delayMillis(
 private class WrappedAnimationSpec<T>(
     val wrapped: FiniteAnimationSpec<T>,
     val speedupFactor: Float,
-    val startDelayNanos: Long = 0
+    val startDelayNanos: Long = 0,
 ) : FiniteAnimationSpec<T> {
     override fun <V : AnimationVector> vectorize(
         converter: TwoWayConverter<T, V>
@@ -113,14 +136,14 @@ private class WrappedAnimationSpec<T>(
 private class WrappedVectorizedAnimationSpec<V : AnimationVector>(
     val wrapped: VectorizedFiniteAnimationSpec<V>,
     val speedupFactor: Float,
-    val startDelayNanos: Long = 0
+    val startDelayNanos: Long = 0,
 ) : VectorizedFiniteAnimationSpec<V> {
 
     override fun getValueFromNanos(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V =
         if (playTimeNanos < startDelayNanos) {
             initialValue
@@ -129,7 +152,7 @@ private class WrappedVectorizedAnimationSpec<V : AnimationVector>(
                 ((playTimeNanos - startDelayNanos) * speedupFactor).toLong(),
                 initialValue,
                 targetValue,
-                initialVelocity
+                initialVelocity,
             )
         }
 
@@ -137,7 +160,7 @@ private class WrappedVectorizedAnimationSpec<V : AnimationVector>(
         playTimeNanos: Long,
         initialValue: V,
         targetValue: V,
-        initialVelocity: V
+        initialVelocity: V,
     ): V =
         if (playTimeNanos < startDelayNanos) {
             initialVelocity
@@ -146,7 +169,7 @@ private class WrappedVectorizedAnimationSpec<V : AnimationVector>(
                 ((playTimeNanos - startDelayNanos) * speedupFactor).toLong(),
                 initialValue,
                 targetValue,
-                initialVelocity
+                initialVelocity,
             ) * speedupFactor
         }
 
@@ -235,7 +258,7 @@ internal fun FadeLabel(
         color = color,
         style = style,
         maxLines = maxLines,
-        textAlign = textAlign
+        textAlign = textAlign,
     )
 }
 

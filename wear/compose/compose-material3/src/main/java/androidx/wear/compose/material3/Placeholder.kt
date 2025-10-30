@@ -91,7 +91,7 @@ import kotlin.math.pow
 public fun Modifier.placeholder(
     placeholderState: PlaceholderState,
     shape: Shape = PlaceholderDefaults.shape,
-    color: Color = PlaceholderDefaults.color
+    color: Color = PlaceholderDefaults.color,
 ): Modifier {
     DisposableEffect(Unit) {
         placeholderState.register()
@@ -160,7 +160,7 @@ public fun Modifier.placeholder(
 public fun Modifier.placeholderShimmer(
     placeholderState: PlaceholderState,
     shape: Shape = PlaceholderDefaults.shape,
-    color: Color = PlaceholderDefaults.shimmerColor
+    color: Color = PlaceholderDefaults.shimmerColor,
 ): Modifier =
     this.then(
         if (LocalReduceMotion.current) {
@@ -176,7 +176,7 @@ public fun Modifier.placeholderShimmer(
                         properties["placeholderState"] = placeholderState
                         properties["shape"] = shape
                         properties["color"] = color
-                    }
+                    },
             )
         }
     )
@@ -267,6 +267,7 @@ public object PlaceholderDefaults {
  */
 @Stable
 public class PlaceholderState(isVisible: Boolean) {
+
     /**
      * Whether the placeholder should be visible. Note that if there is an animation running, this
      * is the target state for the animation.
@@ -367,7 +368,7 @@ private class PlaceholderShimmerElement(
     private val placeholderState: PlaceholderState,
     private val color: Color,
     private val shape: Shape,
-    private val inspectorInfo: InspectorInfo.() -> Unit
+    private val inspectorInfo: InspectorInfo.() -> Unit,
 ) : ModifierNodeElement<PlaceholderShimmerModifierNode>() {
 
     override fun create(): PlaceholderShimmerModifierNode {
@@ -375,7 +376,7 @@ private class PlaceholderShimmerElement(
     }
 
     override fun update(node: PlaceholderShimmerModifierNode) {
-        node.placeholderState = placeholderState
+        node.updatePlaceholderState(placeholderState)
         node.color = color
         node.shape = shape
     }
@@ -409,7 +410,7 @@ private class PlaceholderShimmerElement(
 private class PlaceholderShimmerModifierNode(
     var placeholderState: PlaceholderState,
     var color: Color,
-    var shape: Shape
+    var shape: Shape,
 ) :
     DrawModifierNode,
     Modifier.Node(),
@@ -424,6 +425,12 @@ private class PlaceholderShimmerModifierNode(
     private var lastLayoutDirection: LayoutDirection? = null
     private var lastOutline: Outline? = null
     private var lastShape: Shape? = null
+
+    fun updatePlaceholderState(placeholderState: PlaceholderState) {
+        onDetach()
+        this.placeholderState = placeholderState
+        onAttach()
+    }
 
     override fun onAttach() {
         placeholderState.register()
@@ -473,7 +480,7 @@ private class PlaceholderShimmerModifierNode(
                 lerp(
                     -maxScreenDimension * 0.5f,
                     maxScreenDimension * 1.5f,
-                    placeholderShimmerProgression
+                    placeholderShimmerProgression,
                 )
             val shimmerOffset = Offset(screenShimmerProgression, screenShimmerProgression) - offset
             val xOffset = Offset(halfGradientWidth, halfGradientWidth)
@@ -486,7 +493,7 @@ private class PlaceholderShimmerModifierNode(
                             0.65f to color.copy(alpha = placeholderShimmerAlpha),
                             0.9f to color.copy(alpha = 0f),
                         )
-                        .toTypedArray()
+                        .toTypedArray(),
             )
         } else {
             null
@@ -579,6 +586,9 @@ internal class PlaceholderAnimationHelper() {
 
     /** Unregister as a user. Animations will not run if there are no users. */
     fun unregister() {
+        require(registeredUsers >= 1) {
+            "Calls to unregister() can't be more than calls to register()"
+        }
         AnimationCoordinator.unregister()
         registeredUsers--
     }

@@ -179,7 +179,7 @@ class WindowMetricsCalculatorRuleTest {
                 overrideLeft,
                 overrideTop,
                 overrideWidth,
-                overrideHeight
+                overrideHeight,
             )
 
             val overrideActual = calculator.computeCurrentWindowMetrics(activity)
@@ -230,7 +230,7 @@ class WindowMetricsCalculatorRuleTest {
                 overrideLeft,
                 overrideTop,
                 overrideWidth,
-                overrideHeight
+                overrideHeight,
             )
 
             val overrideActual = calculator.computeCurrentWindowMetrics(activity)
@@ -259,7 +259,7 @@ class WindowMetricsCalculatorRuleTest {
                                 throw TestException
                             }
                         },
-                        Description.EMPTY
+                        Description.EMPTY,
                     )
                     .evaluate()
             } catch (e: TestException) {

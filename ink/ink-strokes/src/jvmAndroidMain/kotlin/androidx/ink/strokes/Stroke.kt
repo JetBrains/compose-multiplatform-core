@@ -89,7 +89,7 @@ private constructor(
                 .nativePointer,
         ),
         brush,
-        inputs.asImmutable(),
+        inputs.toImmutable(),
         shape,
     )
 
@@ -100,53 +100,60 @@ private constructor(
     ) : this(
         StrokeNative.createWithBrushAndInputs(brush.nativePointer, inputs.nativePointer),
         brush,
-        inputs.asImmutable(),
+        inputs.toImmutable(),
     )
 
     /**
      * Returns a [Stroke] with the brush replaced. This may or may not affect the [shape], but will
      * not change the [inputs].
      */
-    public fun copy(brush: Brush): Stroke {
-        // For a pure copy, return the same object because it is immutable.
-        if (brush == this.brush) return this
-
-        // TODO: b/308980197 - Detect when the mesh format cannot support the intended brush and
-        // regenerate the shape in that case.
-        return if (brushWouldHaveDifferentShape(brush)) {
-            Stroke(brush, this.inputs)
-        } else {
+    public fun copy(brush: Brush): Stroke =
+        when {
+            // For a pure copy, return the same object because it is immutable.
+            brush == this.brush -> this
+            otherBrushRequiresDifferentMesh(brush) -> Stroke(brush, this.inputs)
             // Rendering caches use instance comparisons to identify re-usable shapes in the cache.
             // If a
             // new stroke has an unchanged shape, use the same instance of [PartitionedMesh] in the
             // new
             // [Stroke].
-            Stroke(brush, this.inputs, this.shape)
+            else -> Stroke(brush, this.inputs, this.shape)
         }
-    }
 
     /**
      * Returns true if using the given [brush] instead of the current one would result in a
      * different [PartitionedMesh].
      */
-    private fun brushWouldHaveDifferentShape(brush: Brush): Boolean {
+    private fun otherBrushRequiresDifferentMesh(otherBrush: Brush): Boolean {
         if (
-            this.brush.size != brush.size ||
-                this.brush.epsilon != brush.epsilon ||
-                this.brush.family.coats.size != brush.family.coats.size
+            brush.size != otherBrush.size ||
+                brush.epsilon != otherBrush.epsilon ||
+                brush.family.coats.size != otherBrush.family.coats.size ||
+                brush.family.inputModel != otherBrush.family.inputModel
         ) {
             return true
         }
-        for (i in 0 until this.brush.family.coats.size) {
-            if (this.brush.family.coats[i].tip != brush.family.coats[i].tip) {
+        for (i in 0 until brush.family.coats.size) {
+            if (brush.family.coats[i].tip != otherBrush.family.coats[i].tip) {
+                return true
+            }
+            if (
+                !otherBrush.family.coats[i].isCompatibleWithMeshFormat(shape.renderGroupFormat(i))
+            ) {
                 return true
             }
         }
         return false
     }
 
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS--Not tested post garbage collection.
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
         StrokeNative.free(nativePointer)
     }
 

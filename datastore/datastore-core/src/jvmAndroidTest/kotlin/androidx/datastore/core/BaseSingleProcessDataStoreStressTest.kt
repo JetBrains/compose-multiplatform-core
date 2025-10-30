@@ -54,7 +54,7 @@ abstract class BaseSingleProcessDataStoreStressTest {
         corruptionHandler: ReplaceFileCorruptionHandler<T>? = null,
         migrations: List<DataMigration<T>> = listOf(),
         scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-        produceFile: () -> File
+        produceFile: () -> File,
     ): DataStore<T>
 
     @get:Rule val tempFolder = TemporaryFolder()
@@ -79,7 +79,7 @@ abstract class BaseSingleProcessDataStoreStressTest {
             val dataStore =
                 createDataStore(
                     serializer = LongSerializer(failWrites = false, failReads = false),
-                    scope = testScope
+                    scope = testScope,
                 ) {
                     file
                 }
@@ -240,7 +240,7 @@ abstract class BaseSingleProcessDataStoreStressTest {
 
     private class LongSerializer(
         @Volatile var failWrites: Boolean,
-        @Volatile var failReads: Boolean
+        @Volatile var failReads: Boolean,
     ) : Serializer<Long> {
         override val defaultValue = 0L
 

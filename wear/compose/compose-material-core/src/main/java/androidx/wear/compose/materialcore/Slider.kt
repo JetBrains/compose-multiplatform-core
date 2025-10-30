@@ -42,7 +42,7 @@ public fun InlineSliderButton(
     contentAlignment: Alignment,
     buttonControlSize: Dp,
     modifier: Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(
         modifier =
@@ -53,10 +53,10 @@ public fun InlineSliderButton(
                     enabled = enabled,
                     onClick = onClick,
                     interactionSource = null,
-                    indication = LocalIndication.current
+                    indication = LocalIndication.current,
                 )
                 .then(modifier),
-        contentAlignment = contentAlignment
+        contentAlignment = contentAlignment,
     ) {
         content()
     }

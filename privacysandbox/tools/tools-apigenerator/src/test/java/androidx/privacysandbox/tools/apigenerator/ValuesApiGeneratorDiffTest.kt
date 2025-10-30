@@ -39,6 +39,6 @@ class ValuesApiGeneratorDiffTest : AbstractApiGeneratorDiffTest() {
             "com/sdkwithvalues/ParcelableStackFrame.java",
             "com/sdkwithvalues/PrivacySandboxThrowableParcel.java",
             "com/sdkwithvalues/IMySharedUiInterfaceCoreLibInfoAndBinderWrapper.java",
-            "com/sdkwithvalues/IMyUiInterfaceCoreLibInfoAndBinderWrapper.java"
+            "com/sdkwithvalues/IMyUiInterfaceCoreLibInfoAndBinderWrapper.java",
         )
 }

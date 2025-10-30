@@ -77,6 +77,10 @@ public class TrustedWebActivityIntentBuilder {
     /** Extra for the {@link TrustedWebActivityDisplayMode}, see {@link #setDisplayMode}. */
     public static final String EXTRA_DISPLAY_MODE = "androidx.browser.trusted.extra.DISPLAY_MODE";
 
+    /** Extra for the display override list, see {@link #setDisplayOverrideList} */
+    public static final String EXTRA_DISPLAY_OVERRIDE =
+            "androidx.browser.trusted.extra.DISPLAY_OVERRIDE";
+
     /** Extra for the screenOrientation, see {@link #setScreenOrientation}. */
     public static final String EXTRA_SCREEN_ORIENTATION =
             "androidx.browser.trusted.extra.SCREEN_ORIENTATION";
@@ -115,6 +119,7 @@ public class TrustedWebActivityIntentBuilder {
 
     private @NonNull TrustedWebActivityDisplayMode mDisplayMode =
             new TrustedWebActivityDisplayMode.DefaultMode();
+    private @Nullable List<TrustedWebActivityDisplayMode> mDisplayOverrideList;
 
     @ScreenOrientation.LockType
     private int mScreenOrientation = ScreenOrientation.DEFAULT;
@@ -268,12 +273,16 @@ public class TrustedWebActivityIntentBuilder {
      *
      * A web application can declare "file_handlers" in its web manifest, enabling it to handle
      * file opening requests from users. The opened files are then made available by the browser
-     * to the web app through the launch queue interface of the Launch Handler API.
+     * to the web app through the LaunchQueue interface of the Launch Handler API. LaunchQueue
+     * implementation depends on a browser receiving a TrustedWebActivityIntent.
      *
      * This method provides the support for file handling in Trusted Web Activities.
-     * {@link FileHandlingData} should contain the URI of a file opened by a user and captured
-     * by an intent filter declared in the app manifest. The app will pass read/write permissions
-     * for the file to the browser.
+     * {@link FileHandlingData} should contain the URIs list of files opened by a user and captured
+     * by an intent filter declared in the app manifest. API doesn't perform URI validation and it
+     * entirely dependents on a browser receiving a TrustedWebActivityIntent.
+     *
+     * The API passes read/write permissions for the files to the browser to allow the web
+     * application to read and write a file as it required by LaunchQueue interface specification.
      *
      * @param fileHandlingData A {@link FileHandlingData} object containing the data to be sent
      * to browser launch queue.
@@ -292,6 +301,28 @@ public class TrustedWebActivityIntentBuilder {
     public @NonNull TrustedWebActivityIntentBuilder setDisplayMode(
             @NonNull TrustedWebActivityDisplayMode displayMode) {
         mDisplayMode = displayMode;
+        return this;
+    }
+
+    /**
+     * Sets the display override fallback list for a Trusted Web Activity.
+     *
+     * Web applications can declare a "display_override" list to specify the preferred order of
+     * display modes. This is useful for more advanced display modes that may have limited browser
+     * support ({@see https://wicg.github.io/manifest-incubations/#display_override-member}). The
+     * browser will use the first display mode in the list that it supports, and fall back to the
+     * `display` manifest field if none are supported.
+     *
+     * @param displayOverrideList A list of {@link TrustedWebActivityDisplayMode} that represents
+     * the fallback order of display modes.
+     */
+    public @NonNull TrustedWebActivityIntentBuilder setDisplayOverrideList(
+            @Nullable List<TrustedWebActivityDisplayMode> displayOverrideList) {
+        if (displayOverrideList == null) {
+            mDisplayOverrideList = new ArrayList<>();
+        } else {
+            mDisplayOverrideList = displayOverrideList;
+        }
         return this;
     }
 
@@ -374,6 +405,13 @@ public class TrustedWebActivityIntentBuilder {
             }
         }
         intent.putExtra(EXTRA_DISPLAY_MODE, mDisplayMode.toBundle());
+        if (mDisplayOverrideList != null) {
+            ArrayList<Bundle> bundles = new ArrayList<>();
+            for (TrustedWebActivityDisplayMode displayMode : mDisplayOverrideList) {
+                bundles.add(displayMode.toBundle());
+            }
+            intent.putExtra(EXTRA_DISPLAY_OVERRIDE, bundles);
+        }
         intent.putExtra(EXTRA_SCREEN_ORIENTATION, mScreenOrientation);
         if (mOriginalLaunchUrl != null) {
             intent.putExtra(EXTRA_ORIGINAL_LAUNCH_URL, mOriginalLaunchUrl);

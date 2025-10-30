@@ -38,11 +38,9 @@ import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 @DoNotInstrument
 class CaptureResultAdapterTest {
 
@@ -470,7 +468,7 @@ class CaptureResultAdapterTest {
                             if (Build.VERSION.SDK_INT >= 24) {
                                 put(
                                     CaptureResult.CONTROL_POST_RAW_SENSITIVITY_BOOST,
-                                    postRawSensitivityBoost
+                                    postRawSensitivityBoost,
                                 )
                             }
                         }
@@ -513,37 +511,28 @@ class CaptureResultAdapterTest {
     private fun createCaptureResultAdapter(
         requestParams: Map<CaptureRequest.Key<*>, Any?> = emptyMap(),
         resultMetadata: Map<CaptureResult.Key<*>, Any?> = emptyMap(),
-        frameNumber: FrameNumber = FrameNumber(101L)
+        frameNumber: FrameNumber = FrameNumber(101L),
     ): CameraCaptureResult {
         val requestMetadata =
             FakeRequestMetadata(requestParameters = requestParams, requestNumber = RequestNumber(1))
         val frameMetadata =
-            FakeFrameMetadata(
-                resultMetadata = resultMetadata,
-                frameNumber = frameNumber,
-            )
+            FakeFrameMetadata(resultMetadata = resultMetadata, frameNumber = frameNumber)
         return CaptureResultAdapter(
             requestMetadata = requestMetadata,
             frameNumber,
-            FakeFrameInfo(
-                metadata = frameMetadata,
-                requestMetadata = requestMetadata,
-            )
+            FakeFrameInfo(metadata = frameMetadata, requestMetadata = requestMetadata),
         )
     }
 
     private fun createPartialCaptureResultAdapter(
         requestParams: Map<CaptureRequest.Key<*>, Any?> = emptyMap(),
         resultMetadata: Map<CaptureResult.Key<*>, Any?> = emptyMap(),
-        frameNumber: FrameNumber = FrameNumber(101L)
+        frameNumber: FrameNumber = FrameNumber(101L),
     ): CameraCaptureResult {
         val requestMetadata =
             FakeRequestMetadata(requestParameters = requestParams, requestNumber = RequestNumber(1))
         val frameMetadata =
-            FakeFrameMetadata(
-                resultMetadata = resultMetadata,
-                frameNumber = frameNumber,
-            )
+            FakeFrameMetadata(resultMetadata = resultMetadata, frameNumber = frameNumber)
         return PartialCaptureResultAdapter(
             requestMetadata = requestMetadata,
             frameNumber,

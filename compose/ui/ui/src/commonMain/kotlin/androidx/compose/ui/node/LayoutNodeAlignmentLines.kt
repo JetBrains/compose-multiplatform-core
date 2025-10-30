@@ -107,7 +107,7 @@ internal sealed class AlignmentLines(val alignmentLinesOwner: AlignmentLinesOwne
     private fun addAlignmentLine(
         alignmentLine: AlignmentLine,
         initialPosition: Int,
-        initialCoordinator: NodeCoordinator
+        initialCoordinator: NodeCoordinator,
     ) {
         var position = Offset(initialPosition.toFloat(), initialPosition.toFloat())
         var coordinator = initialCoordinator
@@ -141,7 +141,8 @@ internal sealed class AlignmentLines(val alignmentLinesOwner: AlignmentLinesOwne
     fun recalculate() {
         alignmentLineMap.clear()
         alignmentLinesOwner.forEachChildAlignmentLinesOwner { childOwner ->
-            if (!childOwner.isPlaced) return@forEachChildAlignmentLinesOwner
+            if (childOwner.placeOrder == LayoutNode.NotPlacedPlaceOrder)
+                return@forEachChildAlignmentLinesOwner
             if (childOwner.alignmentLines.dirty) {
                 // It did not need relayout, but we still call layout to recalculate
                 // alignment lines.

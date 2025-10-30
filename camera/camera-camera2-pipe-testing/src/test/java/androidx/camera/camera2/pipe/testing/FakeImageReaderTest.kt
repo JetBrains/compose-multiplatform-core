@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.testing
 
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.OutputId
 import androidx.camera.camera2.pipe.StreamFormat
@@ -25,10 +24,8 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class FakeImageReaderTest {
     private val imageReader =
         FakeImageReader.create(StreamFormat.PRIVATE, StreamId(32), OutputId(42), Size(640, 480), 10)

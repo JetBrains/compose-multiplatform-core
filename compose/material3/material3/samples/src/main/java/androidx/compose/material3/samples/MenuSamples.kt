@@ -28,10 +28,16 @@ import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -50,31 +57,41 @@ fun MenuSample() {
     var expanded by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.TopStart)) {
-        IconButton(onClick = { expanded = true }) {
-            Icon(Icons.Default.MoreVert, contentDescription = "Localized description")
+        val description = "Localized description"
+        // Icon button should have a tooltip associated with it for a11y.
+        TooltipBox(
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(description) } },
+            state = rememberTooltipState(),
+        ) {
+            IconButton(onClick = { expanded = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = description)
+            }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
                 text = { Text("Edit") },
                 onClick = { /* Handle edit! */ },
-                leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) }
+                leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
             )
             DropdownMenuItem(
                 text = { Text("Settings") },
                 onClick = { /* Handle settings! */ },
-                leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) }
+                leadingIcon = { Icon(Icons.Outlined.Settings, contentDescription = null) },
             )
             HorizontalDivider()
             DropdownMenuItem(
                 text = { Text("Send Feedback") },
                 onClick = { /* Handle send feedback! */ },
                 leadingIcon = { Icon(Icons.Outlined.Email, contentDescription = null) },
-                trailingIcon = { Text("F11", textAlign = TextAlign.Center) }
+                trailingIcon = { Text("F11", textAlign = TextAlign.Center) },
             )
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -82,19 +99,28 @@ fun MenuWithScrollStateSample() {
     var expanded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     Box(modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.TopStart)) {
-        IconButton(onClick = { expanded = true }) {
-            Icon(Icons.Default.MoreVert, contentDescription = "Localized description")
+        val description = "Localized description"
+        // Icon button should have a tooltip associated with it for a11y.
+        TooltipBox(
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(description) } },
+            state = rememberTooltipState(),
+        ) {
+            IconButton(onClick = { expanded = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = description)
+            }
         }
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            scrollState = scrollState
+            scrollState = scrollState,
         ) {
             repeat(30) {
                 DropdownMenuItem(
                     text = { Text("Item ${it + 1}") },
                     onClick = { /* TODO */ },
-                    leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) }
+                    leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
                 )
             }
         }

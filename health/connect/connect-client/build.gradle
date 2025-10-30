@@ -28,12 +28,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     api(libs.jspecify)
-    api(libs.kotlinStdlib)
     // Add dependencies here
     api("androidx.activity:activity:1.2.0")
     api("androidx.annotation:annotation:1.8.1")
@@ -50,7 +49,6 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.mockitoCore4)
-    testImplementation(libs.robolectric)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.kotlinTest)
     testImplementation(libs.espressoCore)
@@ -70,16 +68,14 @@ dependencies {
 android {
     defaultConfig {
         minSdk = 26
+        consumerProguardFiles("proguard-rules.pro")
     }
     buildFeatures {
         aidl = true
     }
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-    testOptions.unitTests.includeAndroidResources = true
     namespace = "androidx.health.connect.client"
     compileSdk = 36
+    compileSdkExtension = 19
 }
 
 androidx {
@@ -89,6 +85,7 @@ androidx {
     description = "read or write user's health and fitness records."
     legacyDisableKotlinStrictApiMode = true
     samples(project(":health:connect:connect-client-samples"))
+    enableRobolectric()
 }
 
 //TODO(b/407717306): Remove this block when RecordConvertersTest passes on API Level 21 and 34 devices

@@ -23,8 +23,8 @@ import androidx.appsearch.platformstorage.PlatformStorage
 import androidx.concurrent.futures.await
 
 internal object AppSearchMetadataHelper {
-    /** Returns function IDs that belong to the given context's package. */
-    suspend fun collectSelfFunctionIds(context: Context): Set<String> {
+    /** Returns function IDs that belong to the given [targetPackage]. */
+    suspend fun collectFunctionIds(context: Context, targetPackage: String): Set<String> {
         val functionIds = mutableSetOf<String>()
         createSearchSession(context).use { session ->
             val searchResults =
@@ -40,7 +40,7 @@ internal object AppSearchMetadataHelper {
             while (nextPage.isNotEmpty()) {
                 for (result in nextPage) {
                     val packageName = result.genericDocument.getPropertyString("packageName")
-                    if (packageName != context.packageName) {
+                    if (packageName != targetPackage) {
                         continue
                     }
                     val functionId = result.genericDocument.getPropertyString("functionId")
@@ -51,6 +51,31 @@ internal object AppSearchMetadataHelper {
         }
         return functionIds
     }
+
+    suspend fun isDynamicIndexerAvailable(context: Context): Boolean =
+        createSearchSession(context).use { session ->
+            val searchResults =
+                session.search(
+                    "",
+                    SearchSpec.Builder()
+                        .addFilterNamespaces("app_functions")
+                        .addFilterPackageNames("android")
+                        .addFilterSchemas("AppFunctionStaticMetadata")
+                        .build(),
+                )
+            var nextPage = searchResults.nextPageAsync.await()
+            while (nextPage.isNotEmpty()) {
+                for (result in nextPage) {
+                    val packageName = result.genericDocument.getPropertyString("packageName")
+                    if (packageName != context.packageName) {
+                        continue
+                    }
+                    return result.genericDocument.getPropertyDocument("response") != null
+                }
+                nextPage = searchResults.nextPageAsync.await()
+            }
+            throw IllegalStateException("No functions found for package ${context.packageName}")
+        }
 
     private suspend fun createSearchSession(context: Context): GlobalSearchSession {
         return PlatformStorage.createGlobalSearchSessionAsync(

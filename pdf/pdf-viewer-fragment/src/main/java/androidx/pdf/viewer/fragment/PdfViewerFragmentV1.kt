@@ -318,13 +318,13 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
         val typedArray =
             context.obtainStyledAttributes(
                 attrs,
-                androidx.pdf.viewer.fragment.R.styleable.PdfViewerFragment
+                androidx.pdf.viewer.fragment.R.styleable.PdfViewerFragment,
             )
         try {
             val pdfViewStyleFromAttrs =
                 typedArray.getResourceId(
                     androidx.pdf.viewer.fragment.R.styleable.PdfViewerFragment_containerStyle,
-                    ID_NULL
+                    ID_NULL,
                 )
 
             if (pdfViewStyleFromAttrs != ID_NULL) {
@@ -347,7 +347,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View? {
         super.onCreateView(inflater, container, savedInstanceState)
         this.container = container
@@ -427,7 +427,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
                     documentLoaded = false
                     handleError(exception, showErrorView)
                 },
-                eventCallback = mEventCallback
+                eventCallback = mEventCallback,
             )
 
         setUpEditFab()
@@ -462,7 +462,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
 
             ViewCompat.setWindowInsetsAnimationCallback(
                 it,
-                TranslateInsetsAnimationCallback(it, windowManager, container)
+                TranslateInsetsAnimationCallback(it, windowManager, container),
             )
         }
 
@@ -477,7 +477,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
                     /* set = */ null,
                     /* attrs = */ R.styleable.PdfView,
                     /* defStyleAttr = */ NO_DEFAULT_ATTR,
-                    /* defStyleRes = */ pdfViewStyle
+                    /* defStyleRes = */ pdfViewStyle,
                 )
 
         for (i in 0 until pdfViewStyledAttrs.indexCount) {
@@ -605,7 +605,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
             delayedContentsAvailable = Runnable {
                 Preconditions.checkState(
                     !hasContents,
-                    "Received contents while restoring another copy"
+                    "Received contents while restoring another copy",
                 )
                 onContentsAvailable(contents)
                 delayedContentsAvailable = null
@@ -621,7 +621,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
         viewModel.updatePdfLoader(
             requireActivity().applicationContext,
             contents,
-            pdfLoaderCallbacks!!
+            pdfLoaderCallbacks!!,
         ) {
             zoomView?.setDocumentLoaded(/* documentLoaded= */ false)
         }
@@ -689,14 +689,14 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
                 requireActivity(),
                 paginatedView!!,
                 zoomView!!,
-                updatedSelectionModel
+                updatedSelectionModel,
             )
         selectionHandles =
             PdfSelectionHandles(
                 updatedSelectionModel,
                 zoomView!!,
                 paginatedView!!,
-                selectionActionMode!!
+                selectionActionMode!!,
             )
         paginatedView?.selectionHandles = selectionHandles!!
     }
@@ -732,7 +732,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
                 selectionModel,
                 paginationModel!!,
                 layoutHandler!!,
-                mImmersiveModeRequester
+                mImmersiveModeRequester,
             )
         singleTapHandler!!.setAnnotationIntentResolvable(isAnnotationIntentResolvable)
 
@@ -744,7 +744,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
                 zoomView!!,
                 singleTapHandler!!,
                 findInFileView!!,
-                mEventCallback
+                mEventCallback,
             )
         updatePageViewFactory(pageViewFactory!!)
     }
@@ -775,7 +775,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
                 isAnnotationIntentResolvable,
                 selectionActionMode!!,
                 viewState,
-                mImmersiveModeRequester
+                mImmersiveModeRequester,
             )
         zoomView?.zoomScroll()?.addObserver(zoomScrollObserver)
 
@@ -785,7 +785,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
                 pageViewFactory!!,
                 zoomView!!,
                 layoutHandler!!,
-                requireContext()
+                requireContext(),
             )
         findInFileView!!.searchModel.selectedMatch().addObserver(selectedMatchObserver)
 
@@ -926,7 +926,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
             }
             putBoolean(
                 KEY_ANNOTATION_BUTTON_VISIBILITY,
-                (annotationButton?.visibility == View.VISIBLE)
+                (annotationButton?.visibility == View.VISIBLE),
             )
             putBoolean(KEY_PENDING_DOCUMENT_LOAD, pendingDocumentLoad)
             putBoolean(KEY_DOCUMENT_LOADED, documentLoaded)
@@ -1114,7 +1114,7 @@ public open class PdfViewerFragmentV1 constructor() : Fragment() {
         Toast.makeText(
                 context,
                 context?.resources?.getString(R.string.cannot_edit_pdf),
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_SHORT,
             )
             .show()
     }

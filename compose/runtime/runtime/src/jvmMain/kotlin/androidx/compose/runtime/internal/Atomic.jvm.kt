@@ -34,7 +34,7 @@ internal actual class AtomicInt actual constructor(value: Int) : AtomicInteger(v
             "it's recommended to gradually deprecate the overriding function and then " +
             "remove it.\nSee https://youtrack.jetbrains.com/issue/KT-46465 for details about " +
             "the migration",
-        replaceWith = ReplaceWith("this.toInt().toChar()")
+        replaceWith = ReplaceWith("this.toInt().toChar()"),
     )
     override fun toChar(): Char = toInt().toChar()
 }

@@ -17,20 +17,21 @@
 package androidx.wear.compose.material3
 
 import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.TargetedFlingBehavior
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -39,11 +40,13 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.lerp
 import androidx.wear.compose.foundation.LocalReduceMotion
+import androidx.wear.compose.foundation.LocalScreenIsActive
 import androidx.wear.compose.foundation.ScrollInfoProvider
-import androidx.wear.compose.foundation.hierarchicalFocus
 import androidx.wear.compose.foundation.pager.PagerDefaults
 import androidx.wear.compose.foundation.pager.PagerState
 import androidx.wear.compose.material3.PagerScaffoldDefaults.snapWithSpringFlingBehavior
+import androidx.wear.compose.materialcore.screenHeightDp
+import androidx.wear.compose.materialcore.screenWidthDp
 import kotlin.math.absoluteValue
 
 /**
@@ -85,6 +88,7 @@ public fun HorizontalPagerScaffold(
         modifier = modifier,
         pagerState = pagerState,
         pageIndicator = pageIndicator,
+        pageIndicatorAlignment = Alignment.BottomCenter,
         pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
     )
 
@@ -131,6 +135,7 @@ public fun VerticalPagerScaffold(
         modifier = modifier,
         pagerState = pagerState,
         pageIndicator = pageIndicator,
+        pageIndicatorAlignment = Alignment.CenterEnd,
         pageIndicatorAnimationSpec = pageIndicatorAnimationSpec,
     )
 
@@ -153,18 +158,30 @@ public fun AnimatedPage(
     pageIndex: Int,
     pagerState: PagerState,
     contentScrimColor: Color = MaterialTheme.colorScheme.background,
-    content: @Composable (() -> Unit)
+    content: @Composable (() -> Unit),
 ) {
     val isReduceMotionEnabled = LocalReduceMotion.current
     val isRtlEnabled = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val orientation = remember(pagerState) { pagerState.layoutInfo.orientation }
+    val numberOfIntervals =
+        (if (orientation == Orientation.Horizontal) screenWidthDp() else screenHeightDp()) / 2
+
+    val currentPageOffsetFraction by
+        remember(pagerState) {
+            derivedStateOf {
+                (pagerState.currentPageOffsetFraction * numberOfIntervals).toInt() /
+                    numberOfIntervals.toFloat()
+            }
+        }
+
     val graphicsLayerModifier =
         if (isReduceMotionEnabled) Modifier
         else
             Modifier.graphicsLayer {
                 val direction = if (isRtlEnabled) -1 else 1
-                val currentPageOffsetFraction = pagerState.currentPageOffsetFraction
-                val isSwipingRightToLeft = direction * currentPageOffsetFraction > 0
-                val isSwipingLeftToRight = direction * currentPageOffsetFraction < 0
+                val offsetFraction = currentPageOffsetFraction
+                val isSwipingRightToLeft = direction * offsetFraction > 0
+                val isSwipingLeftToRight = direction * offsetFraction < 0
                 val isCurrentPage: Boolean = pageIndex == pagerState.currentPage
                 val shouldAnchorRight =
                     (isSwipingRightToLeft && isCurrentPage) ||
@@ -178,27 +195,33 @@ public fun AnimatedPage(
                         TransformOrigin(0.5f, pivotFractionX)
                     }
                 val pageTransitionFraction =
-                    getPageTransitionFraction(isCurrentPage, currentPageOffsetFraction)
+                    getPageTransitionFraction(isCurrentPage, offsetFraction)
                 val scale = lerp(start = 1f, stop = 0.55f, fraction = pageTransitionFraction)
                 scaleX = scale
                 scaleY = scale
             }
-    Box(modifier = graphicsLayerModifier.clip(CircleShape)) {
+    Box(
+        modifier =
+            graphicsLayerModifier
+                .drawWithContent {
+                    drawContent()
+                    if (contentScrimColor.isSpecified) {
+                        val isCurrentPage: Boolean = pageIndex == pagerState.currentPage
+
+                        val pageTransitionFraction =
+                            getPageTransitionFraction(isCurrentPage, currentPageOffsetFraction)
+                        val color =
+                            contentScrimColor.copy(
+                                alpha =
+                                    lerp(start = 0f, stop = 0.5f, fraction = pageTransitionFraction)
+                            )
+
+                        drawCircle(color = color)
+                    }
+                }
+                .clip(CircleShape)
+    ) {
         content()
-
-        if (contentScrimColor.isSpecified) {
-            Canvas(Modifier.fillMaxSize()) {
-                val isCurrentPage: Boolean = pageIndex == pagerState.currentPage
-                val pageTransitionFraction =
-                    getPageTransitionFraction(isCurrentPage, pagerState.currentPageOffsetFraction)
-                val color =
-                    contentScrimColor.copy(
-                        alpha = lerp(start = 0f, stop = 0.5f, fraction = pageTransitionFraction)
-                    )
-
-                drawRect(color = color)
-            }
-        }
     }
 }
 
@@ -220,9 +243,7 @@ public object PagerScaffoldDefaults {
      *   applied to.
      */
     @Composable
-    public fun snapWithSpringFlingBehavior(
-        state: PagerState,
-    ): TargetedFlingBehavior {
+    public fun snapWithSpringFlingBehavior(state: PagerState): TargetedFlingBehavior {
         return PagerDefaults.snapFlingBehavior(
             state = state,
             maxFlingPages = 1,
@@ -235,8 +256,7 @@ public object PagerScaffoldDefaults {
      * The default value for the indicator fade out animation spec. Use this to fade out the page
      * indicator when paging has stopped.
      */
-    public val FadeOutAnimationSpec: AnimationSpec<Float> =
-        spring(stiffness = Spring.StiffnessMediumLow)
+    public val FadeOutAnimationSpec: AnimationSpec<Float> = INDICATOR_FADE_OUT_ANIMATION
 }
 
 @Composable
@@ -247,6 +267,7 @@ private fun PagerScaffoldImpl(
     pagerState: PagerState,
     modifier: Modifier,
     pageIndicator: (@Composable BoxScope.() -> Unit)?,
+    pageIndicatorAlignment: Alignment,
     pageIndicatorAnimationSpec: AnimationSpec<Float>?,
 ) {
     val scaffoldState = LocalScaffoldState.current
@@ -260,16 +281,16 @@ private fun PagerScaffoldImpl(
 
     scaffoldState.screenContent.UpdateIdlingDetectorIfNeeded()
 
-    Box(
-        modifier =
-            modifier.fillMaxSize().hierarchicalFocus(true) { focused ->
-                if (focused) {
-                    scaffoldState.screenContent.addScreen(key, timeText = null, scrollInfoProvider)
-                } else {
-                    scaffoldState.screenContent.removeScreen(key)
-                }
-            }
-    ) {
+    val screenIsActive = LocalScreenIsActive.current
+    LaunchedEffect(screenIsActive) {
+        if (screenIsActive) {
+            scaffoldState.screenContent.addScreen(key, timeText = null, scrollInfoProvider)
+        } else {
+            scaffoldState.screenContent.removeScreen(key)
+        }
+    }
+
+    Box(modifier) {
         pager()
 
         AnimatedIndicator(
@@ -278,6 +299,7 @@ private fun PagerScaffoldImpl(
                     pagerState.isScrollInProgress
             },
             animationSpec = pageIndicatorAnimationSpec,
+            modifier = Modifier.align(pageIndicatorAlignment),
             content = pageIndicator,
         )
     }
@@ -285,7 +307,7 @@ private fun PagerScaffoldImpl(
 
 private fun getPageTransitionFraction(
     isCurrentPage: Boolean,
-    currentPageOffsetFraction: Float
+    currentPageOffsetFraction: Float,
 ): Float {
     return if (isCurrentPage) {
         currentPageOffsetFraction.absoluteValue

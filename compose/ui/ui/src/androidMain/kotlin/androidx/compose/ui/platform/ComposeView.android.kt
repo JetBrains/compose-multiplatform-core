@@ -169,6 +169,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         }
 
     /**
+     * Controls behavior for how focus should be automatically cleared for this [ComposeView] when
+     * responding to input. The default value is [AutoClearFocusBehavior.Default].
+     *
+     * This property should be set prior to first composition.
+     */
+    var autoClearFocusBehavior: AutoClearFocusBehavior = AutoClearFocusBehavior.Default
+
+    /**
      * The Jetpack Compose UI content for this view. Subclasses must implement this method to
      * provide content. Initial composition will occur when the view becomes attached to a window or
      * when [createComposition] is called, whichever comes first.
@@ -302,7 +310,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         )
         setMeasuredDimension(
             child.measuredWidth + paddingLeft + paddingRight,
-            child.measuredHeight + paddingTop + paddingBottom
+            child.measuredHeight + paddingTop + paddingBottom,
         )
     }
 
@@ -314,14 +322,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         left: Int,
         top: Int,
         right: Int,
-        bottom: Int
+        bottom: Int,
     ) {
         getChildAt(0)
             ?.layout(
                 paddingLeft,
                 paddingTop,
                 right - left - paddingRight,
-                bottom - top - paddingBottom
+                bottom - top - paddingBottom,
             )
     }
 
@@ -391,7 +399,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         child: View?,
         index: Int,
         params: LayoutParams?,
-        preventRequestLayout: Boolean
+        preventRequestLayout: Boolean,
     ): Boolean {
         checkAddView()
         return super.addViewInLayout(child, index, params, preventRequestLayout)

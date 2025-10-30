@@ -42,9 +42,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.foundation.hierarchicalFocus
-import androidx.wear.compose.foundation.hierarchicalFocusRequester
+import androidx.wear.compose.foundation.hierarchicalFocusGroup
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
 
 @Sampled
 @Composable
@@ -54,7 +54,7 @@ fun HierarchicalFocusSample() {
     Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
         repeat(5) { colIx ->
             Box(
-                Modifier.hierarchicalFocus(focusEnabled = selected == colIx)
+                Modifier.hierarchicalFocusGroup(active = selected == colIx)
                     .weight(1f)
                     .clickable { selected = colIx }
                     .then(
@@ -75,11 +75,11 @@ fun HierarchicalFocusSample() {
                         TextStyle(
                             color = Color.White,
                             fontSize = 20.sp,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         ),
                     modifier =
                         Modifier.fillMaxWidth()
-                            .hierarchicalFocusRequester()
+                            .requestFocusOnHierarchyActive()
                             .onFocusChanged { focused = it.isFocused }
                             .focusable()
                             .then(
@@ -88,7 +88,7 @@ fun HierarchicalFocusSample() {
                                 } else {
                                     Modifier
                                 }
-                            )
+                            ),
                 )
             }
         }
@@ -104,14 +104,14 @@ fun HierarchicalFocus2Levels() {
             Row(
                 Modifier.weight(1f)
                     .fillMaxWidth()
-                    .hierarchicalFocus(focusEnabled = selectedRow == rowIx)
+                    .hierarchicalFocusGroup(active = selectedRow == rowIx)
             ) {
                 var selectedItem by remember { mutableIntStateOf(0) }
                 repeat(2) { itemIx ->
                     Box(
-                        Modifier.weight(1f).hierarchicalFocus(focusEnabled = selectedItem == itemIx)
+                        Modifier.weight(1f).hierarchicalFocusGroup(active = selectedItem == itemIx)
                     ) {
-                        // ScalingLazyColumn uses requestFocusOnActive internally
+                        // ScalingLazyColumn uses requestFocusOnHierarchyActive internally
                         ScalingLazyColumn(
                             Modifier.fillMaxWidth().clickable {
                                 selectedRow = rowIx
@@ -126,7 +126,7 @@ fun HierarchicalFocus2Levels() {
                                         TextStyle(
                                             color = Color.White,
                                             fontSize = 20.sp,
-                                            textAlign = TextAlign.Center
+                                            textAlign = TextAlign.Center,
                                         ),
                                 )
                             }

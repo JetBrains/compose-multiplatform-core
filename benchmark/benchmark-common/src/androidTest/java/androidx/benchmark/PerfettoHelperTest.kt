@@ -57,7 +57,7 @@ class PerfettoHelperTest {
         capture.start(
             PerfettoConfig.Benchmark(
                 appTagPackages = listOf(Packages.TEST),
-                useStackSamplingConfig = false
+                useStackSamplingConfig = false,
             )
         )
         // should be at least one perfetto process

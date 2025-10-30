@@ -62,7 +62,7 @@ class ReturnFromAwaitPointerEventScopeDetector : Detector(), SourceCodeScanner {
                 ExitAwaitPointerEventScope,
                 node,
                 context.getNameLocation(node),
-                ErrorMessage
+                ErrorMessage,
             )
         }
     }
@@ -140,8 +140,8 @@ class ReturnFromAwaitPointerEventScopeDetector : Detector(), SourceCodeScanner {
                 Severity.WARNING,
                 Implementation(
                     ReturnFromAwaitPointerEventScopeDetector::class.java,
-                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)
-                )
+                    EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
+                ),
             )
     }
 }

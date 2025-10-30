@@ -36,7 +36,7 @@
     <string name="use_biometric_label" msgid="6524145989441579428">"Користите биометрију"</string>
     <string name="use_screen_lock_label" msgid="5459869335976243512">"Користи откључавање екрана"</string>
     <string name="use_fingerprint_or_screen_lock_label" msgid="7577690399303139443">"Користите отисак прста или откључавање екрана"</string>
-    <string name="use_face_or_screen_lock_label" msgid="2116180187159450292">"Користите закључавање лицем или откључавање екрана"</string>
+    <string name="use_face_or_screen_lock_label" msgid="2116180187159450292">"Користите откључавање лицем или откључавање екрана"</string>
     <string name="use_biometric_or_screen_lock_label" msgid="5385448280139639016">"Користите биометрију или откључавање екрана"</string>
     <string name="fingerprint_prompt_message" msgid="7449360011861769080">"Наставите помоћу отиска прста"</string>
     <string name="face_prompt_message" msgid="2282389249605674226">"Потврдите идентитет лицем да бисте наставили"</string>

@@ -38,7 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.ui.requestedFrameRate
+import androidx.compose.ui.preferredFrameRate
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
@@ -60,7 +60,7 @@ fun MovingContentDemo() {
         animateIntAsState(
             targetValue = if (moved) 100 else 0,
             animationSpec = tween(durationMillis = 5000),
-            label = "offset"
+            label = "offset",
         )
 
     Column(
@@ -68,11 +68,11 @@ fun MovingContentDemo() {
     ) {
         Button(
             onClick = { moved = !moved },
-            modifier = Modifier.width(500.dp).testTag("frameRateTag")
+            modifier = Modifier.width(500.dp).testTag("frameRateTag"),
         ) {
             Text(
                 shortText,
-                modifier = Modifier.requestedFrameRate(30f).offset { IntOffset(x = offset, y = 0) }
+                modifier = Modifier.preferredFrameRate(30f).offset { IntOffset(x = offset, y = 0) },
             )
         }
     }

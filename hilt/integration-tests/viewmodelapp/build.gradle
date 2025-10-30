@@ -17,6 +17,7 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
+    // Remove when b/442128557 is fixed
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("dagger.hilt.android.plugin")
@@ -39,7 +40,6 @@ android {
 dependencies {
     implementation("androidx.activity:activity:1.10.1")
     implementation(project(":fragment:fragment-ktx"))
-    implementation(libs.kotlinStdlib)
     implementation(libs.hiltAndroid)
     ksp(libs.hiltCompiler)
 

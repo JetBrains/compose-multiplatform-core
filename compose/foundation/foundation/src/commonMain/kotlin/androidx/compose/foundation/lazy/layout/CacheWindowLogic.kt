@@ -32,6 +32,7 @@ import kotlin.math.sign
 @OptIn(ExperimentalFoundationApi::class)
 internal abstract class CacheWindowLogic(
     private val cacheWindow: LazyLayoutCacheWindow,
+    private val enableInitialPrefetch: Boolean = true,
 ) {
 
     /** Handles for prefetched items in the current forward window. */
@@ -44,6 +45,7 @@ internal abstract class CacheWindowLogic(
      */
     private val windowCache = mutableIntIntMapOf()
     private var previousPassDelta = 0f
+    private var previousPassItemCount = UnsetItemCount
     private var hasUpdatedVisibleItemsOnce = false
 
     /**
@@ -68,18 +70,32 @@ internal abstract class CacheWindowLogic(
     private var prefetchWindowStartExtraSpace = 0
     private var prefetchWindowEndExtraSpace = 0
 
-    /** Signals that we should run the window refilling loop from start. */
+    /**
+     * Signals that we should run the window refilling loop from start. This might re-trigger a
+     * prefetch in case the window is not filled with item information. There are 3 conditions in
+     * which window refilling will happen:
+     * 1) After the first layout pass
+     * 2) If any of the visible items were resized since the last measure pass.
+     * 3) If the total number of items changed since the last measure pass.
+     */
     private var shouldRefillWindow = false
 
     /** Keep the latest item count where it can be used more easily. */
     private var itemsCount = 0
 
     fun CacheWindowScope.onScroll(delta: Float) {
+        debugLog { "delta=$delta" }
         traceWindowInfo()
         fillCacheWindowBackward(delta)
         fillCacheWindowForward(delta)
         previousPassDelta = delta
         traceWindowInfo()
+        debugLog {
+            "prefetchWindowStartExtraSpace=$prefetchWindowStartExtraSpace\n" +
+                "prefetchWindowEndExtraSpace=$prefetchWindowEndExtraSpace\n" +
+                "prefetchWindowStartIndex=$prefetchWindowStartLine\n" +
+                "prefetchWindowEndIndex=$prefetchWindowEndLine"
+        }
     }
 
     private fun traceWindowInfo() {
@@ -90,12 +106,29 @@ internal abstract class CacheWindowLogic(
     }
 
     fun CacheWindowScope.onVisibleItemsUpdated() {
-        if (!hasUpdatedVisibleItemsOnce) {
+        debugLog { "hasUpdatedVisibleItemsOnce=$hasUpdatedVisibleItemsOnce" }
+        if (!hasUpdatedVisibleItemsOnce && enableInitialPrefetch) {
             val prefetchForwardWindow =
                 with(cacheWindow) { density?.calculateAheadWindow(mainAxisViewportSize) ?: 0 }
             // we won't fill the window if we don't have a prefetch window
             if (prefetchForwardWindow != 0) shouldRefillWindow = true
             hasUpdatedVisibleItemsOnce = true
+        }
+
+        /**
+         * We already have information about the number of items from before and it actually
+         * changed.
+         */
+        if (previousPassItemCount != UnsetItemCount && previousPassItemCount != totalItemsCount) {
+            debugLog { "Total Items Changed" }
+            shouldRefillWindow = true
+            prefetchWindowStartLine = prefetchWindowStartLine.coerceAtLeast(0)
+            val lastLineIndex = getLastLineIndex()
+            if (lastLineIndex != InvalidIndex) {
+                prefetchWindowEndLine = prefetchWindowEndLine.coerceAtMost(lastLineIndex)
+            }
+            /** Free up the space so the fill will happen and not re-use old data. */
+            removeOutOfBoundsItems(prefetchWindowEndLine, itemsCount - 1)
         }
 
         itemsCount = totalItemsCount
@@ -104,9 +137,13 @@ internal abstract class CacheWindowLogic(
         // by [cancelOutOfBounds]. If any items changed sizes we re-trigger the window filling
         // update.
         if (hasVisibleItems) {
-            forEachVisibleItem { index, mainAxisSize -> cacheVisibleItemsInfo(index, mainAxisSize) }
+            forEachVisibleItem { index, mainAxisSize ->
+                if (index != InvalidIndex) cacheVisibleItemsInfo(index, mainAxisSize)
+            }
             if (shouldRefillWindow) {
-                fillCacheWindowForward(0.0f)
+                // refill window in accordance with last pass delta
+                debugLog { "Refill Window Forward=${previousPassDelta <= 0.0f}" }
+                refillWindow(previousPassDelta <= 0.0f)
                 shouldRefillWindow = false
             }
         } else {
@@ -114,6 +151,8 @@ internal abstract class CacheWindowLogic(
             // Next time visible items update we we re-start the window strategy.
             resetStrategy()
         }
+
+        previousPassItemCount = totalItemsCount
     }
 
     fun hasValidBounds() =
@@ -128,6 +167,14 @@ internal abstract class CacheWindowLogic(
 
             // save latest item count
             itemsCount = totalItemsCount
+
+            debugLog {
+                "fillCacheWindowBackward visibleWindowStart=$firstVisibleLineIndex \n" +
+                    "visibleWindowEnd=$lastVisibleLineIndex \n" +
+                    "keepAroundWindow=$keepAroundWindow \n" +
+                    "mainAxisExtraSpaceStart=$mainAxisExtraSpaceStart \n" +
+                    "mainAxisExtraSpaceEnd=$mainAxisExtraSpaceEnd \n"
+            }
 
             onKeepAround(
                 visibleWindowStart = firstVisibleLineIndex,
@@ -148,13 +195,41 @@ internal abstract class CacheWindowLogic(
             val prefetchForwardWindow =
                 with(cacheWindow) { density?.calculateAheadWindow(viewport) ?: 0 }
 
+            debugLog {
+                "fillCacheWindowForward visibleWindowStart=$firstVisibleLineIndex \n" +
+                    "visibleWindowEnd=$lastVisibleLineIndex \n" +
+                    "prefetchForwardWindow=$prefetchForwardWindow \n" +
+                    "mainAxisExtraSpaceStart=$mainAxisExtraSpaceStart \n" +
+                    "mainAxisExtraSpaceEnd=$mainAxisExtraSpaceEnd \n"
+            }
+
             onPrefetchForward(
                 visibleWindowStart = firstVisibleLineIndex,
                 visibleWindowEnd = lastVisibleLineIndex,
                 prefetchForwardWindow = prefetchForwardWindow,
                 scrollDelta = delta,
                 mainAxisExtraSpaceStart = mainAxisExtraSpaceStart,
-                mainAxisExtraSpaceEnd = mainAxisExtraSpaceEnd
+                mainAxisExtraSpaceEnd = mainAxisExtraSpaceEnd,
+                applyForwardPrefetch = delta <= 0.0f,
+            )
+        }
+    }
+
+    private fun CacheWindowScope.refillWindow(refillForward: Boolean) {
+        if (hasVisibleItems) {
+            val viewport = mainAxisViewportSize
+
+            val prefetchForwardWindow =
+                with(cacheWindow) { density?.calculateAheadWindow(viewport) ?: 0 }
+
+            onPrefetchForward(
+                visibleWindowStart = firstVisibleLineIndex,
+                visibleWindowEnd = lastVisibleLineIndex,
+                prefetchForwardWindow = prefetchForwardWindow,
+                scrollDelta = 0.0f,
+                mainAxisExtraSpaceStart = mainAxisExtraSpaceStart,
+                mainAxisExtraSpaceEnd = mainAxisExtraSpaceEnd,
+                applyForwardPrefetch = refillForward,
             )
         }
     }
@@ -164,6 +239,7 @@ internal abstract class CacheWindowLogic(
         prefetchWindowEndLine = Int.MIN_VALUE
         prefetchWindowStartExtraSpace = 0
         prefetchWindowEndExtraSpace = 0
+        shouldRefillWindow = false
 
         windowCache.clear()
         prefetchWindowHandles.removeIf { _, value ->
@@ -184,19 +260,26 @@ internal abstract class CacheWindowLogic(
         prefetchForwardWindow: Int,
         mainAxisExtraSpaceEnd: Int,
         mainAxisExtraSpaceStart: Int,
-        scrollDelta: Float
+        scrollDelta: Float,
+        applyForwardPrefetch: Boolean,
     ) {
         val changedScrollDirection = scrollDelta.sign != previousPassDelta.sign
 
-        if (scrollDelta <= 0.0f) { // scrolling forward, starting on last visible
+        if (applyForwardPrefetch) { // scrolling forward, starting on last visible
             if (changedScrollDirection || shouldRefillWindow) {
                 prefetchWindowEndExtraSpace = (prefetchForwardWindow - mainAxisExtraSpaceEnd)
                 prefetchWindowEndLine = visibleWindowEnd
             } else {
-                prefetchWindowEndExtraSpace += scrollDelta.absoluteValue.roundToInt()
+                prefetchWindowEndExtraSpace =
+                    (prefetchWindowEndExtraSpace + scrollDelta.absoluteValue.roundToInt())
+                        .coerceAtMost(prefetchForwardWindow - mainAxisExtraSpaceEnd)
             }
 
-            while (prefetchWindowEndExtraSpace > 0 && prefetchWindowEndLine < itemsCount) {
+            while (
+                prefetchWindowEndExtraSpace > 0 &&
+                    getLastIndexInLine(prefetchWindowEndLine) != InvalidIndex &&
+                    getLastIndexInLine(prefetchWindowEndLine) < itemsCount - 1
+            ) {
                 // If we get the same delta in the next frame, would we cover the extra space needed
                 // to actually need this item? If so, mark it as urgent
                 val isUrgent: Boolean =
@@ -206,6 +289,9 @@ internal abstract class CacheWindowLogic(
                         false
                     }
 
+                debugLog {
+                    "getItemSizeOrPrefetch item=${prefetchWindowEndLine + 1} isUrgent=$isUrgent"
+                }
                 // no more items available to fill prefetch window if this is null, break
                 val itemSize =
                     getItemSizeOrPrefetch(index = prefetchWindowEndLine + 1, isUrgent = isUrgent)
@@ -216,12 +302,13 @@ internal abstract class CacheWindowLogic(
                 prefetchWindowEndExtraSpace -= itemSize
             }
         } else { // scrolling backwards, starting on first visible
-
             if (changedScrollDirection || shouldRefillWindow) {
                 prefetchWindowStartExtraSpace = (prefetchForwardWindow - mainAxisExtraSpaceStart)
                 prefetchWindowStartLine = visibleWindowStart
             } else {
-                prefetchWindowStartExtraSpace += scrollDelta.absoluteValue.roundToInt()
+                prefetchWindowStartExtraSpace =
+                    (prefetchWindowStartExtraSpace + scrollDelta.absoluteValue.roundToInt())
+                        .coerceAtMost(prefetchForwardWindow - mainAxisExtraSpaceStart)
             }
 
             while (prefetchWindowStartExtraSpace > 0 && prefetchWindowStartLine > 0) {
@@ -233,6 +320,11 @@ internal abstract class CacheWindowLogic(
                     } else {
                         false
                     }
+
+                debugLog {
+                    "getItemSizeOrPrefetch item=${prefetchWindowEndLine + 1} isUrgent=$isUrgent"
+                }
+
                 // no more items available to fill prefetch window if this is null, break
                 val itemSize =
                     getItemSizeOrPrefetch(index = prefetchWindowStartLine - 1, isUrgent = isUrgent)
@@ -257,7 +349,7 @@ internal abstract class CacheWindowLogic(
         mainAxisExtraSpaceStart: Int,
         keepAroundWindow: Int,
         scrollDelta: Float,
-        itemsCount: Int
+        itemsCount: Int,
     ) {
 
         if (scrollDelta <= 0.0f) { // scrolling forward, keep around from firstVisible
@@ -278,7 +370,7 @@ internal abstract class CacheWindowLogic(
         } else { // scrolling backwards, keep around from last visible
             prefetchWindowEndExtraSpace = (keepAroundWindow - mainAxisExtraSpaceEnd)
             prefetchWindowEndLine = visibleWindowEnd
-            while (prefetchWindowEndExtraSpace > 0 && prefetchWindowEndLine < itemsCount) {
+            while (prefetchWindowEndExtraSpace > 0 && prefetchWindowEndLine < itemsCount - 1) {
                 val item =
                     if (windowCache.containsKey(prefetchWindowEndLine + 1)) {
                         windowCache[prefetchWindowEndLine + 1]
@@ -328,6 +420,7 @@ internal abstract class CacheWindowLogic(
      * of bounds requests.
      */
     private fun cacheVisibleItemsInfo(index: Int, size: Int) {
+        debugLog { "cacheVisibleItemsInfo item=$index size=$size" }
         if (windowCache.containsKey(index) && windowCache[index] != size) {
             shouldRefillWindow = true
         }
@@ -357,24 +450,32 @@ internal abstract class CacheWindowLogic(
      * needed.
      */
     private fun CacheWindowScope.onItemPrefetched(index: Int, itemSize: Int) {
+        debugLog { "onItemPrefetched item=$index size=$itemSize" }
         cachePrefetchedItem(index, itemSize)
         scheduleNextItemIfNeeded()
         traceWindowInfo()
     }
 
     private fun CacheWindowScope.scheduleNextItemIfNeeded() {
-        var nextPrefetchableIndex: Int = -1
+        var nextPrefetchableLineIndex: Int = -1
         // if was scrolling forward
         if (previousPassDelta.sign <= 0) {
-            if (prefetchWindowEndExtraSpace > 0) nextPrefetchableIndex = prefetchWindowEndLine + 1
+            if (prefetchWindowEndExtraSpace > 0)
+                nextPrefetchableLineIndex = prefetchWindowEndLine + 1
         } else if (previousPassDelta.sign > 0) {
             if (prefetchWindowStartExtraSpace > 0)
-                nextPrefetchableIndex = prefetchWindowStartLine - 1
+                nextPrefetchableLineIndex = prefetchWindowStartLine - 1
         }
 
-        if (nextPrefetchableIndex in 0..itemsCount) {
-            prefetchWindowHandles[nextPrefetchableIndex] =
-                schedulePrefetch(nextPrefetchableIndex) { index, mainAxisSize ->
+        debugLog { "nextPrefetchableLineIndex=$nextPrefetchableLineIndex" }
+
+        if (
+            nextPrefetchableLineIndex > 0 &&
+                getLastIndexInLine(nextPrefetchableLineIndex) != InvalidIndex &&
+                getLastIndexInLine(nextPrefetchableLineIndex) < itemsCount
+        ) {
+            prefetchWindowHandles[nextPrefetchableLineIndex] =
+                schedulePrefetch(nextPrefetchableLineIndex) { index, mainAxisSize ->
                     onItemPrefetched(index, mainAxisSize)
                 }
         }
@@ -399,6 +500,10 @@ internal interface CacheWindowScope {
     fun getVisibleItemSize(indexInVisibleLines: Int): Int
 
     fun getVisibleItemLine(indexInVisibleLines: Int): Int
+
+    fun getLastIndexInLine(lineIndex: Int): Int
+
+    fun getLastLineIndex(): Int
 }
 
 internal inline fun CacheWindowScope.forEachVisibleItem(
@@ -408,3 +513,13 @@ internal inline fun CacheWindowScope.forEachVisibleItem(
 }
 
 private const val InvalidItemSize = -1
+internal const val InvalidIndex = -1
+private const val UnsetItemCount = -1
+
+private const val DebugEnabled = false
+
+private inline fun debugLog(generateMsg: () -> String) {
+    if (DebugEnabled) {
+        println("CacheWindowLogic: ${generateMsg()}")
+    }
+}

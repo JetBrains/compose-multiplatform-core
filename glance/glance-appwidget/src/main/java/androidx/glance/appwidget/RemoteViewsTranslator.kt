@@ -100,7 +100,7 @@ private object Api31Impl {
 internal fun translateComposition(
     translationContext: TranslationContext,
     children: List<Emittable>,
-    rootViewIndex: Int
+    rootViewIndex: Int,
 ): RemoteViews {
     if (children.all { it is EmittableSizeBox }) {
         // If the children of root are all EmittableSizeBoxes, then we must translate each
@@ -117,7 +117,7 @@ internal fun translateComposition(
                     remoteViewsInfo.remoteViews.apply {
                         translateChild(
                             translationContext.forRootAndSize(root = remoteViewsInfo, size),
-                            child
+                            child,
                         )
                     }
                 size.toSizeF() to rv
@@ -133,7 +133,6 @@ internal fun translateComposition(
                     combineLandscapeAndPortrait(views.map { it.second })
                 }
             }
-            else -> error("Unknown sizeMode: $sizeMode")
         }
     } else {
         return children.single().let { child ->
@@ -193,7 +192,7 @@ internal data class TranslationContext(
             .copy(
                 isBackgroundSpecified = AtomicBoolean(false),
                 lastViewId = AtomicInteger(LAST_INVALID_VIEW_ID),
-                layoutSize = layoutSize
+                layoutSize = layoutSize,
             )
 
     fun resetViewId(newViewId: Int = 0) = copy(lastViewId = AtomicInteger(newViewId))
@@ -219,7 +218,7 @@ internal fun DpSize.toSizeString(): String {
 
 internal fun RemoteViews.translateChild(
     translationContext: TranslationContext,
-    element: Emittable
+    element: Emittable,
 ) {
     when (element) {
         is EmittableBox -> translateEmittableBox(translationContext, element)
@@ -260,7 +259,7 @@ internal fun RemoteViews.translateChild(
 
 internal fun RemoteViews.translateEmittableSizeBox(
     translationContext: TranslationContext,
-    element: EmittableSizeBox
+    element: EmittableSizeBox,
 ) {
     require(element.children.size <= 1) {
         "Size boxes can only have at most one child ${element.children.size}. " +
@@ -298,7 +297,7 @@ internal fun Alignment.toGravity() = horizontal.toGravity() or vertical.toGravit
 
 private fun RemoteViews.translateEmittableBox(
     translationContext: TranslationContext,
-    element: EmittableBox
+    element: EmittableBox,
 ) {
     val viewDef =
         insertContainerView(
@@ -318,7 +317,7 @@ private fun RemoteViews.translateEmittableBox(
 
 private fun RemoteViews.translateEmittableRow(
     translationContext: TranslationContext,
-    element: EmittableRow
+    element: EmittableRow,
 ) {
     val layoutType =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && element.modifier.isSelectableGroup) {
@@ -337,7 +336,7 @@ private fun RemoteViews.translateEmittableRow(
         )
     setLinearLayoutGravity(
         viewDef.mainViewId,
-        Alignment(element.horizontalAlignment, element.verticalAlignment).toGravity()
+        Alignment(element.horizontalAlignment, element.verticalAlignment).toGravity(),
     )
     applyModifiers(translationContext.canUseSelectableGroup(), this, element.modifier, viewDef)
     setChildren(translationContext, viewDef, element.children)
@@ -346,7 +345,7 @@ private fun RemoteViews.translateEmittableRow(
 
 private fun RemoteViews.translateEmittableColumn(
     translationContext: TranslationContext,
-    element: EmittableColumn
+    element: EmittableColumn,
 ) {
     val layoutType =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && element.modifier.isSelectableGroup) {
@@ -365,7 +364,7 @@ private fun RemoteViews.translateEmittableColumn(
         )
     setLinearLayoutGravity(
         viewDef.mainViewId,
-        Alignment(element.horizontalAlignment, element.verticalAlignment).toGravity()
+        Alignment(element.horizontalAlignment, element.verticalAlignment).toGravity(),
     )
     applyModifiers(translationContext.canUseSelectableGroup(), this, element.modifier, viewDef)
     setChildren(translationContext, viewDef, element.children)
@@ -381,7 +380,7 @@ private fun checkSelectableGroupChildren(children: List<Emittable>) {
 
 private fun RemoteViews.translateEmittableAndroidRemoteViews(
     translationContext: TranslationContext,
-    element: EmittableAndroidRemoteViews
+    element: EmittableAndroidRemoteViews,
 ) {
     val rv =
         if (element.children.isEmpty()) {
@@ -408,7 +407,7 @@ private fun RemoteViews.translateEmittableAndroidRemoteViews(
 
 private fun RemoteViews.translateEmittableButton(
     translationContext: TranslationContext,
-    element: EmittableButton
+    element: EmittableButton,
 ) {
     check(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         "Buttons in Android R and below are emulated using a EmittableBox containing the text."
@@ -433,7 +432,7 @@ private fun RemoteViews.translateEmittableButton(
 
 private fun RemoteViews.translateEmittableSpacer(
     translationContext: TranslationContext,
-    element: EmittableSpacer
+    element: EmittableSpacer,
 ) {
     val viewDef = insertView(translationContext, LayoutType.Frame, element.modifier)
     applyModifiers(translationContext, this, element.modifier, viewDef)
@@ -445,13 +444,10 @@ private fun RemoteViews.translateEmittableSpacer(
 internal fun RemoteViews.setChildren(
     translationContext: TranslationContext,
     parentDef: InsertedViewInfo,
-    children: List<Emittable>
+    children: List<Emittable>,
 ) {
     children.take(10).forEachIndexed { index, child ->
-        translateChild(
-            translationContext.forChild(parent = parentDef, pos = index),
-            child,
-        )
+        translateChild(translationContext.forChild(parent = parentDef, pos = index), child)
     }
 }
 
