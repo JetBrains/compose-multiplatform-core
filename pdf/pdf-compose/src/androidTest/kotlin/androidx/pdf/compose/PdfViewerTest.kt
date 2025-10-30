@@ -495,7 +495,7 @@ class PdfViewerTest {
     }
 
     @Test
-    fun pdfViewerState_clearSelection() {
+    fun pdfViewerState_clearCurrentSelection() {
         val pdfDocument =
             FakePdfDocument(List(10) { Point(425, 225) }, pageSelector = SIMPLE_SELECTOR)
         val selections = mutableListOf<Selection?>()
@@ -525,7 +525,7 @@ class PdfViewerTest {
         rule.waitUntil { selections.size > 1 }
 
         // Step 2: Clear the selection
-        pdfViewerState.clearSelection()
+        pdfViewerState.clearCurrentSelection()
         rule.waitUntil { selections.size > 2 }
 
         assertThat(selections.size).isEqualTo(3)
@@ -580,7 +580,7 @@ class PdfViewerTest {
                 pdfDocument = pdfDocument,
                 appendContextMenuComponents = {
                     item(key = "Comment", label = "Comment", contentDescription = "Comment") {
-                        pdfViewerState.clearSelection()
+                        pdfViewerState.clearCurrentSelection()
                         close()
                     }
                 },

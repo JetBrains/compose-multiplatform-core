@@ -36,8 +36,8 @@ import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
 import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature
 import androidx.camera.core.featuregroup.impl.feature.ImageFormatFeature
 import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature
-import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature.StabilizationMode
 import androidx.camera.core.impl.CameraInfoInternal
+import androidx.camera.core.impl.stabilization.VideoStabilization
 
 /**
  * Represents distinct, groupable camera functionalities that can be requested for a camera session.
@@ -137,7 +137,7 @@ public constructor() {
          */
         @JvmField
         public val PREVIEW_STABILIZATION: GroupableFeature =
-            VideoStabilizationFeature(StabilizationMode.PREVIEW)
+            VideoStabilizationFeature(VideoStabilization.PREVIEW)
 
         /**
          * A feature object of type [FEATURE_TYPE_IMAGE_FORMAT] that makes the [ImageCapture] use

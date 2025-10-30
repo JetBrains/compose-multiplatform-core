@@ -9,8 +9,6 @@ package androidx.activity {
 
   public final class ActivityViewModelLazyKt {
     method @KotlinOnly @MainThread public static inline <reified VM extends androidx.lifecycle.ViewModel> kotlin.Lazy<VM> viewModels(androidx.activity.ComponentActivity, optional kotlin.jvm.functions.Function0<androidx.lifecycle.viewmodel.CreationExtras>? extrasProducer, optional kotlin.jvm.functions.Function0<androidx.lifecycle.ViewModelProvider.Factory>? factoryProducer);
-    method @BytecodeOnly public static kotlin.Lazy! viewModels$default(androidx.activity.ComponentActivity!, kotlin.jvm.functions.Function0!, int, Object!);
-    method @BytecodeOnly public static kotlin.Lazy! viewModels$default(androidx.activity.ComponentActivity!, kotlin.jvm.functions.Function0!, kotlin.jvm.functions.Function0!, int, Object!);
   }
 
   public final class BackEventCompat {

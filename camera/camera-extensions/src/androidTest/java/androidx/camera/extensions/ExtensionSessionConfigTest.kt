@@ -128,9 +128,7 @@ class ExtensionSessionConfigTest(
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
         ExtensionsTestlibControl.getInstance().setImplementationType(implType)
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         assumeTrue(
             ExtensionsTestUtil.isExtensionAvailable(extensionsManager, lensFacing, extensionMode)
@@ -169,18 +167,14 @@ class ExtensionSessionConfigTest(
 
     @Test
     fun canBindToLifeCycleAndTakeJpegPicture(): Unit = runBlocking {
-        val camera =
-            withContext(Dispatchers.Main) {
-                    cameraProvider.bindToLifecycle(
-                        fakeLifecycleOwner,
-                        baseCameraSelector,
-                        ExtensionSessionConfig.Builder(extensionMode, extensionsManager).build(),
-                    )
-                }
-                .also { withContext(Dispatchers.Main) { cameraProvider.unbindAll() } }
+        val cameraInfo =
+            cameraProvider.getCameraInfo(
+                baseCameraSelector,
+                ExtensionSessionConfig(extensionMode, extensionsManager),
+            )
 
         val isPostviewSupported =
-            ImageCapture.getImageCaptureCapabilities(camera.cameraInfo).isPostviewSupported
+            ImageCapture.getImageCaptureCapabilities(cameraInfo).isPostviewSupported
 
         val imageCaptureBuilder = ImageCapture.Builder()
         if (isPostviewSupported) {
@@ -234,7 +228,9 @@ class ExtensionSessionConfigTest(
         val preview = Preview.Builder().build()
         // Uses Builder to create the ExtensionSessionConfig
         val sessionConfig =
-            ExtensionSessionConfig.Builder(extensionMode, extensionsManager, preview, videoCapture)
+            ExtensionSessionConfig.Builder(extensionMode, extensionsManager)
+                .addUseCase(preview)
+                .addUseCase(videoCapture)
                 .build()
         val previewReady = CountDownLatch(1)
 

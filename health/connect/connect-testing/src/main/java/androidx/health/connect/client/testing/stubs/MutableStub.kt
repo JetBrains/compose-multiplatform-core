@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:Suppress("FacadeClassJvmName") // TODO(b/444197377): add a jvmname
+@file:JvmName("MutableStubs")
 
 package androidx.health.connect.client.testing.stubs
 

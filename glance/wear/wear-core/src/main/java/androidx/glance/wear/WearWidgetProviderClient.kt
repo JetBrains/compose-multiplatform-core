@@ -27,6 +27,7 @@ import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY
 import androidx.glance.wear.ContainerInfo.ContainerType
+import androidx.glance.wear.WearWidgetProviderInfo.Companion.ACTION_BIND_WIDGET_PROVIDER
 import androidx.glance.wear.parcel.IExecutionCallback
 import androidx.glance.wear.parcel.IWearWidgetProvider
 import com.google.common.util.concurrent.ListenableFuture
@@ -52,7 +53,7 @@ public class WearWidgetProviderClient(
     private val userHandle: UserHandle? = null,
 ) {
     private val serviceIntent =
-        Intent(ACTION_BIND_WEAR_WIDGET_PROVIDER).apply { component = componentName }
+        Intent(ACTION_BIND_WIDGET_PROVIDER).apply { component = componentName }
 
     /** Call [IWearWidgetProvider.onActivated] on the provider and wait for completion. */
     public suspend fun sendActivationNotice(instanceId: Int, @ContainerType containerType: Int) {
@@ -168,7 +169,5 @@ public class WearWidgetProviderClient(
 
     private companion object {
         private const val TAG = "WearWidgetProviderClient"
-        private const val ACTION_BIND_WEAR_WIDGET_PROVIDER =
-            "androidx.glance.wear.action.BIND_WEAR_WIDGET_PROVIDER"
     }
 }

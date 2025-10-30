@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import androidx.xr.projected.ProjectedContext
 import androidx.xr.projected.testapp.audio.AudioActivity
 import androidx.xr.projected.testapp.componentpermissions.PermissionsComponentActivity
+import androidx.xr.projected.testapp.input.ProjectedInputActivity
 import androidx.xr.projected.testapp.permissions.PermissionsActivity
 import androidx.xr.projected.testapp.projectedcontext.ProjectedContextActivity
 
@@ -133,6 +134,7 @@ class MainActivity : ComponentActivity() {
             mapOf(
                 "Permission" to PermissionsActivity::class.java,
                 "Component Permission" to PermissionsComponentActivity::class.java,
+                "Input" to ProjectedInputActivity::class.java,
             )
     }
 }

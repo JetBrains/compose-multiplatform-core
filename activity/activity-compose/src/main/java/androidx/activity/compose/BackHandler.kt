@@ -21,6 +21,8 @@ import androidx.activity.ExperimentalActivityApi
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.activity.compose.internal.BackHandlerCompat
+import androidx.activity.compose.internal.BackHandlerDispatcherCompat
 import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -35,8 +37,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LifecycleStartEffect
-import androidx.navigationevent.NavigationEventDispatcherOwner
-import androidx.navigationevent.NavigationEventHandler
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 
@@ -105,18 +105,29 @@ public object LocalOnBackPressedDispatcherOwner {
 @OptIn(ExperimentalActivityApi::class)
 @Composable
 public fun BackHandler(enabled: Boolean = true, onBack: () -> Unit) {
-    // Use NavigationEventDispatcher local composition if available,
-    // otherwise use the legacy dispatcher to maintain compatibility.
-    val mainOwner = LocalNavigationEventDispatcherOwner.current
-    val fallbackOwner = LocalOnBackPressedDispatcherOwner.current
-    val owner = mainOwner ?: fallbackOwner as? NavigationEventDispatcherOwner
-    checkNotNull(owner) {
-        "No NavigationEventDispatcher was provided via LocalNavigationEventDispatcherOwner"
+    val navigationEventDispatcherOwner = LocalNavigationEventDispatcherOwner.current
+    val onBackPressedDispatcherOwner = LocalOnBackPressedDispatcherOwner.current
+    val owner =
+        requireNotNull(navigationEventDispatcherOwner ?: onBackPressedDispatcherOwner) {
+            "No NavigationEventDispatcherOwner was provided via " +
+                "LocalNavigationEventDispatcherOwner and no OnBackPressedDispatcherOwner was " +
+                "provided via LocalOnBackPressedDispatcherOwner. Please provide one of the two."
+        }
+
+    val dispatcher = remember {
+        // Create a dispatcher compatibility layer that decides whether to use the new
+        // 'NavigationEventDispatcher' or the legacy 'OnBackPressedDispatcher'.
+        BackHandlerDispatcherCompat(
+            navigationEventDispatcher = navigationEventDispatcherOwner?.navigationEventDispatcher,
+            onBackPressedDispatcher = onBackPressedDispatcherOwner?.onBackPressedDispatcher,
+        )
     }
 
     val compositeKey = currentCompositeKeyHashCode
     val handler =
-        remember(owner, compositeKey) { ComposeBackHandler(BackHandlerInfo(owner, compositeKey)) }
+        remember(dispatcher, compositeKey) {
+            ComposeBackHandler(BackHandlerInfo(owner, compositeKey))
+        }
 
     if (ActivityFlags.isOnBackPressedLifecycleOrderMaintained) {
         // Keep the handler instance stable across recompositions, but update the active parameters.
@@ -129,9 +140,9 @@ public fun BackHandler(enabled: Boolean = true, onBack: () -> Unit) {
             onStopOrDispose { handler.isBackEnabled = false }
         }
 
-        DisposableEffect(owner, handler) {
-            owner.navigationEventDispatcher.addHandler(handler)
-            onDispose { handler.remove() }
+        DisposableEffect(dispatcher, handler) {
+            dispatcher.addHandler(handler)
+            onDispose { dispatcher.removeHandler(handler) }
         }
     } else {
         // Keep the handler instance stable across recompositions, but update the active parameters.
@@ -142,15 +153,14 @@ public fun BackHandler(enabled: Boolean = true, onBack: () -> Unit) {
 
         // Use LifecycleStartEffect to add the handler in sync with the lifecycle,
         // avoiding the frame delay that happens with state-based APIs like collectAsState().
-        LifecycleStartEffect(owner, handler) {
-            owner.navigationEventDispatcher.addHandler(handler)
-            onStopOrDispose { handler.remove() }
+        LifecycleStartEffect(dispatcher, handler) {
+            dispatcher.addHandler(handler)
+            onStopOrDispose { dispatcher.removeHandler(handler) }
         }
     }
 }
 
-private class ComposeBackHandler(info: BackHandlerInfo) :
-    NavigationEventHandler<NavigationEventInfo>(initialInfo = info, isBackEnabled = false) {
+private class ComposeBackHandler(info: BackHandlerInfo) : BackHandlerCompat(info) {
 
     var currentOnBackCompleted: () -> Unit = {}
 
@@ -159,7 +169,4 @@ private class ComposeBackHandler(info: BackHandlerInfo) :
     }
 }
 
-private data class BackHandlerInfo(
-    val owner: NavigationEventDispatcherOwner,
-    val compositeKey: Long,
-) : NavigationEventInfo()
+private data class BackHandlerInfo(val owner: Any, val compositeKey: Long) : NavigationEventInfo()

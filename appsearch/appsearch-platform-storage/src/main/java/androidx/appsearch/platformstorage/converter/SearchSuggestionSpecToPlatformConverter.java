@@ -26,6 +26,7 @@ import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.Features;
 import androidx.appsearch.app.SearchSuggestionSpec;
 import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
@@ -50,7 +51,7 @@ public final class SearchSuggestionSpecToPlatformConverter {
     // Most jetpackSearchSuggestionSpec.get calls cause WrongConstant lint errors because the
     // methods are not defined as returning the same constants as the corresponding setter
     // expects, but they do
-    @SuppressLint({"WrongConstant", "ObsoleteSdkInt"})
+    @SuppressLint("WrongConstant")
     public static android.app.appsearch.@NonNull SearchSuggestionSpec
             toPlatformSearchSuggestionSpec(
                     @NonNull SearchSuggestionSpec jetpackSearchSuggestionSpec) {
@@ -73,12 +74,12 @@ public final class SearchSuggestionSpecToPlatformConverter {
         Map<String, List<String>> jetpackFilterProperties =
                 jetpackSearchSuggestionSpec.getFilterProperties();
         if (!jetpackFilterProperties.isEmpty()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (BuildCompat.T_EXTENSION_INT < AppSearchVersionUtil.TExtensionVersions.V_BASE) {
                 throw new UnsupportedOperationException(Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES
                         + " is not available on this AppSearch implementation.");
             }
             for (Map.Entry<String, List<String>> entry : jetpackFilterProperties.entrySet()) {
-                ApiHelperForV.addFilterProperties(
+                ApiHelperForSdkExtensionVBase.addFilterProperties(
                         platformBuilder, entry.getKey(), entry.getValue());
             }
         }
@@ -91,10 +92,12 @@ public final class SearchSuggestionSpecToPlatformConverter {
         return platformBuilder.build();
     }
 
-    @SuppressLint("ObsoleteSdkInt")
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    private static class ApiHelperForV {
-        private ApiHelperForV() {}
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.V_BASE)
+    private static class ApiHelperForSdkExtensionVBase {
+        private ApiHelperForSdkExtensionVBase() {
+            // This class is not instantiable.
+        }
 
         @DoNotInline
         static void addFilterProperties(

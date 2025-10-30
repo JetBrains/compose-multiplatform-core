@@ -215,7 +215,7 @@ internal class SelectionStateManager(
     }
 
     /** Synchronously resets all state of this manager */
-    fun clearSelection() {
+    fun clearCurrentSelection() {
         draggingState = null
         setSelectionJob?.cancel()
         setSelectionJob = null
@@ -305,7 +305,7 @@ internal class SelectionStateManager(
             return maybeHandleActionDown(location, currentZoom)
         }
         // A new drag starts, clear previous selection and hide action mode.
-        clearSelection()
+        clearCurrentSelection()
         val boundary = UiSelectionBoundary(location, isRtl = false)
         draggingState =
             DraggingState(

@@ -173,7 +173,7 @@ class SelectionStateManagerTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun clearSelection() = runTest {
+    fun clearCurrentSelection() = runTest {
         val selectionPoint = PdfPoint(pageNum = 10, PointF(150F, 265F))
         val uiSignals = mutableListOf<SelectionUiSignal>()
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -183,7 +183,7 @@ class SelectionStateManagerTest {
         selectionStateManager.maybeSelectContentAtPoint(selectionPoint)
         testDispatcher.scheduler.runCurrent()
         assertThat(selectionStateManager.selectionModel).isNotNull()
-        selectionStateManager.clearSelection()
+        selectionStateManager.clearCurrentSelection()
 
         assertThat(selectionStateManager.selectionModel.value).isNull()
         // We only care about the final 2 signals that should occur as a result of cancellation
@@ -197,7 +197,7 @@ class SelectionStateManagerTest {
     }
 
     @Test
-    fun clearSelection_cancelsWork() {
+    fun clearCurrentSelection_cancelsWork() {
         val selectionPoint = PdfPoint(pageNum = 10, PointF(150F, 265F))
 
         // Start a selection and don't finish it (i.e. no runCurrent)
@@ -206,7 +206,7 @@ class SelectionStateManagerTest {
 
         // Clear selection, flush the scheduler, and make sure selection remains null (i.e. the work
         // enqueued by our initial selection doesn't finish and supersede the cleared state)
-        selectionStateManager.clearSelection()
+        selectionStateManager.clearCurrentSelection()
         testDispatcher.scheduler.runCurrent()
         assertThat(selectionStateManager.selectionModel.value).isNull()
     }

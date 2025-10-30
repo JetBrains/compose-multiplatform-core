@@ -21,7 +21,7 @@ import androidx.xr.scenecore.runtime.ExrImageResource;
 import org.jspecify.annotations.NonNull;
 
 /** Wrapper class for the native EXR image. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public final class ExrImage extends BindingsResource implements ExrImageResource {
     private final ImpressApi mImpressApi;
 

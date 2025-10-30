@@ -20,9 +20,9 @@ import android.annotation.SuppressLint
 import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
 import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
 import androidx.xr.arcore.runtime.DepthMap as RuntimeDepthMap
-import androidx.xr.arcore.runtime.Earth as RuntimeEarth
 import androidx.xr.arcore.runtime.Eye as RuntimeEye
 import androidx.xr.arcore.runtime.Face as RuntimeFace
+import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.runtime.Hand as RuntimeHand
 import androidx.xr.arcore.runtime.Plane as RuntimePlane
 import androidx.xr.arcore.runtime.RenderViewpoint as RuntimeRenderViewpoint
@@ -82,9 +82,9 @@ internal class XrResourcesManager {
     val userFace: Face? by lazy { _userFace?.let { Face(it, this) } }
 
     /** Geospatial data */
-    private var _earth: Earth? = null
-    val earth: Earth
-        get() = checkNotNull(_earth)
+    private var _geospatial: Geospatial? = null
+    val geospatial: Geospatial
+        get() = checkNotNull(_geospatial)
 
     /** The depth map data */
     var leftDepthMap: DepthMap? = null
@@ -96,8 +96,8 @@ internal class XrResourcesManager {
     var monoDepthMap: DepthMap? = null
         private set
 
-    internal fun initiateEarth(runtimeEarth: RuntimeEarth) {
-        _earth = Earth(runtimeEarth, this)
+    internal fun initiateGeospatial(runtimeGeospatial: RuntimeGeospatial) {
+        _geospatial = Geospatial(runtimeGeospatial, this)
     }
 
     internal fun initiateEyes(leftRuntimeEye: RuntimeEye?, rightRuntimeEye: RuntimeEye?) {
@@ -163,11 +163,11 @@ internal class XrResourcesManager {
             updatable.update()
         }
 
-        // Earth should always be initialized if a runtime is present. This check should only fail
-        // in
-        // unit tests.
-        if (_earth != null) {
-            earth.update()
+        // Geospatial should always be initialized if a runtime is present. This check should only
+        // fail
+        // in unit tests.
+        if (_geospatial != null) {
+            geospatial.update()
         }
     }
 

@@ -18,8 +18,6 @@
 package androidx.room3.migration
 
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.driver.SupportSQLiteConnection
 
 /**
  * Base class for a database migration.
@@ -44,46 +42,13 @@ actual constructor(
     /**
      * Should run the necessary migrations.
      *
-     * The Migration class cannot access any generated Dao in this method.
-     *
-     * This method is already called inside a transaction and that transaction might actually be a
-     * composite transaction of all necessary `Migration`s.
-     *
-     * This function is only called when Room is configured without a driver. If a driver is set
-     * using [androidx.room3.RoomDatabase.Builder.setDriver], then only the version that receives a
-     * [SQLiteConnection] is called.
-     *
-     * @param db The database instance
-     * @throws NotImplementedError if migrate(SQLiteConnection) is not overridden.
-     */
-    public open fun migrate(db: SupportSQLiteDatabase) {
-        throw NotImplementedError(
-            "Migration functionality with a SupportSQLiteDatabase " +
-                "(without a provided SQLiteDriver) requires overriding the " +
-                "migrate(SupportSQLiteDatabase) function."
-        )
-    }
-
-    /**
-     * Should run the necessary migrations.
-     *
      * This function is already called inside a transaction and that transaction might actually be a
      * composite transaction of all necessary `Migration`s.
      *
      * @param connection The database connection
      * @throws NotImplementedError if a driver is provided, but this function is not overridden.
      */
-    public actual open fun migrate(connection: SQLiteConnection) {
-        if (connection is SupportSQLiteConnection) {
-            // Compatibility mode
-            migrate(connection.db)
-        } else {
-            throw NotImplementedError(
-                "Migration functionality with a provided SQLiteDriver requires overriding the " +
-                    "migrate(SQLiteConnection) function."
-            )
-        }
-    }
+    public actual abstract fun migrate(connection: SQLiteConnection)
 }
 
 /**
@@ -107,13 +72,13 @@ actual constructor(
 public fun Migration(
     startVersion: Int,
     endVersion: Int,
-    migrate: (SupportSQLiteDatabase) -> Unit,
+    migrate: (SQLiteConnection) -> Unit,
 ): Migration = MigrationImpl(startVersion, endVersion, migrate)
 
 private class MigrationImpl(
     startVersion: Int,
     endVersion: Int,
-    val migrateCallback: (SupportSQLiteDatabase) -> Unit,
+    val migrateCallback: (SQLiteConnection) -> Unit,
 ) : Migration(startVersion, endVersion) {
-    override fun migrate(db: SupportSQLiteDatabase) = migrateCallback(db)
+    override fun migrate(connection: SQLiteConnection) = migrateCallback(connection)
 }

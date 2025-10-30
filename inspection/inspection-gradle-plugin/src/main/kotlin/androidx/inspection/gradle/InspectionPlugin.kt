@@ -28,6 +28,7 @@ import org.gradle.api.artifacts.MinimalExternalModuleDependency
 import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.StopExecutionException
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
@@ -77,7 +78,7 @@ class InspectionPlugin : Plugin<Project> {
                     foundReleaseVariant = true
                     val unzip = project.registerUnzipTask(variant)
                     val shadowJar =
-                        project.registerShadowDependenciesTask(variant, extension.name, unzip)
+                        project.registerShadowDependenciesTask(variant, extension, unzip)
                     val bundleTask =
                         project.registerBundleInspectorTask(
                             variant,
@@ -228,4 +229,17 @@ const val IMPORT_INSPECTOR_DEPENDENCIES = "importInspectorImplementation"
 open class InspectionExtension(@Suppress("UNUSED_PARAMETER") project: Project) {
     /** Name of built inspector artifact, if not provided it is equal to project's name. */
     var name: String? = null
+
+    /**
+     * Modules to exclude, e.g.
+     * - "org.jetbrains.kotlin:*"
+     * - "org.jetbrains:annotations"
+     */
+    val excludedModules: SetProperty<String> = project.objects.setProperty(String::class.java)
+
+    /**
+     * Modules to force-keep, even if excludedModules matches them, e.g.
+     * - "org.jetbrains.kotlin:kotlin-reflect"
+     */
+    val allowedModules: SetProperty<String> = project.objects.setProperty(String::class.java)
 }

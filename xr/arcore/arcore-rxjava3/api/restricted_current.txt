@@ -11,9 +11,9 @@ package androidx.xr.arcore.rxjava3 {
     property public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.ArDevice.State> androidx.xr.arcore.ArDevice.stateAsFlowable;
   }
 
-  public final class RxJava3Earth {
-    method @InaccessibleFromKotlin public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.Earth.State> getStateAsFlowable(androidx.xr.arcore.Earth);
-    property public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.Earth.State> androidx.xr.arcore.Earth.stateAsFlowable;
+  public final class RxJava3Geospatial {
+    method @InaccessibleFromKotlin public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.Geospatial.State> getStateAsFlowable(androidx.xr.arcore.Geospatial);
+    property public static io.reactivex.rxjava3.core.Flowable<androidx.xr.arcore.Geospatial.State> androidx.xr.arcore.Geospatial.stateAsFlowable;
   }
 
   public final class RxJava3Hand {

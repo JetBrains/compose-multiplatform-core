@@ -21,6 +21,8 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.params.SessionConfiguration.SESSION_HIGH_SPEED
 import android.hardware.camera2.params.SessionConfiguration.SESSION_REGULAR
+import androidx.camera.camera2.adapter.CameraStateAdapter
+import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
@@ -42,7 +44,6 @@ import androidx.camera.camera2.impl.UseCaseCameraRequestControlImpl
 import androidx.camera.camera2.impl.UseCaseCameraState
 import androidx.camera.camera2.impl.UseCaseSurfaceManager
 import androidx.camera.camera2.impl.UseCaseThreads
-import androidx.camera.camera2.impl.toMap
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.OperatingMode
 import androidx.camera.camera2.pipe.CameraId
@@ -120,14 +121,16 @@ class TestUseCaseCamera(
                 surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
                 surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
             )
-        val cameraGraph = cameraPipe.createCameraGraph(creationResult.config)
+        val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(CameraStateAdapter())
 
         useCaseCameraGraphConfig =
             UseCaseCameraConfig(
-                    useCases,
-                    sessionConfigAdapter,
-                    cameraGraph,
-                    creationResult.streamConfigMap,
+                    useCases = useCases,
+                    sessionConfigAdapter = sessionConfigAdapter,
+                    cameraGraphConfig = creationResult.config,
+                    streamConfigMap = creationResult.streamConfigMap,
+                    graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+                    cameraGraphFactory = { config -> cameraPipe.createCameraGraph(config) },
                 )
                 .provideUseCaseGraphConfig(
                     useCaseSurfaceManager = useCaseSurfaceManager,
@@ -168,26 +171,8 @@ class TestUseCaseCamera(
                 threads = threads,
             )
             .apply {
-                SessionConfigAdapter(useCases).getValidSessionConfigOrNull()?.let { sessionConfig ->
-                    setConfigAsync(
-                        type = UseCaseCameraRequestControl.Type.SESSION_CONFIG,
-                        config = sessionConfig.implementationOptions,
-                        tags = sessionConfig.repeatingCaptureConfig.tagBundle.toMap(),
-                        listeners =
-                            setOf(
-                                CameraCallbackMap.createFor(
-                                    sessionConfig.repeatingCameraCaptureCallbacks,
-                                    threads.backgroundExecutor,
-                                )
-                            ),
-                        template =
-                            RequestTemplate(sessionConfig.repeatingCaptureConfig.templateType),
-                        streams =
-                            useCaseCameraGraphConfig.getStreamIdsFromSurfaces(
-                                sessionConfig.repeatingCaptureConfig.surfaces
-                            ),
-                        sessionConfig = sessionConfig,
-                    )
+                if (SessionConfigAdapter(useCases).isSessionConfigValid()) {
+                    updateRepeatingRequestAsync(isPrimary = true, runningUseCases = useCases)
                 }
             }
 
@@ -219,6 +204,13 @@ class TestUseCaseCamera(
         flashMode: Int,
         flashType: Int,
     ): CameraCapturePipeline = FakeCameraCapturePipeline()
+
+    override fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
+    ): Job {
+        throw UnsupportedOperationException("Not yet implemented.")
+    }
 
     override fun close(): Job {
         return threads.scope.launch {

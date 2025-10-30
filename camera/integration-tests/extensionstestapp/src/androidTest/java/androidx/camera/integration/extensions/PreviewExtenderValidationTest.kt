@@ -79,9 +79,7 @@ class PreviewExtenderValidationTest(private val config: CameraXExtensionTestPara
         val (_, cameraXConfig, cameraId, extensionMode) = config
         ProcessCameraProvider.configureInstance(cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         baseCameraSelector = CameraSelectorUtil.createCameraSelectorById(cameraId)
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))

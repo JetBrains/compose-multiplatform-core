@@ -25,6 +25,7 @@ import androidx.customview.view.AbsSavedState
 import androidx.pdf.formfilling.FormFillingEditTextState
 import androidx.pdf.models.FormEditRecord
 import androidx.pdf.selection.SelectionModel
+import androidx.pdf.view.layout.LayoutStrategy
 import androidx.pdf.view.layout.PaginationModel
 
 /** [AbsSavedState] implementation for [PdfView] */
@@ -36,6 +37,7 @@ internal class PdfViewSavedState : AbsSavedState {
     var isFormFillingTooltipEnabled: Boolean = false
     var documentUri: Uri? = null
     var paginationModel: PaginationModel? = null
+    var layoutStrategy: LayoutStrategy? = null
     var pdfFormFillingState: PdfFormFillingState? = null
     var pdfFormEditRecords: List<FormEditRecord>? = null
     var pdfFormFillingEditTextState: FormFillingEditTextState? = null
@@ -54,7 +56,7 @@ internal class PdfViewSavedState : AbsSavedState {
      */
     val hasEnoughStateToRestore: Boolean
         get() {
-            return documentUri != null && paginationModel != null
+            return documentUri != null && paginationModel != null && layoutStrategy != null
         }
 
     /**
@@ -73,6 +75,7 @@ internal class PdfViewSavedState : AbsSavedState {
         isFormFillingTooltipEnabled = parcel.readBoolean()
         documentUri = ParcelCompat.readParcelable(parcel, loader, Uri::class.java)
         paginationModel = ParcelCompat.readParcelable(parcel, loader, PaginationModel::class.java)
+        layoutStrategy = ParcelCompat.readParcelable(parcel, loader, LayoutStrategy::class.java)
         pdfFormFillingState =
             ParcelCompat.readParcelable(parcel, loader, PdfFormFillingState::class.java)
         selectionModel = ParcelCompat.readParcelable(parcel, loader, SelectionModel::class.java)
@@ -91,6 +94,7 @@ internal class PdfViewSavedState : AbsSavedState {
         dest.writeBoolean(isFormFillingTooltipEnabled)
         dest.writeParcelable(documentUri, flags)
         dest.writeParcelable(paginationModel, flags)
+        dest.writeParcelable(layoutStrategy, flags)
         dest.writeParcelable(pdfFormFillingState, flags)
         dest.writeParcelable(selectionModel, flags)
         dest.writeTypedList(pdfFormEditRecords)

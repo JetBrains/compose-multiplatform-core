@@ -18,20 +18,25 @@ package androidx.xr.glimmer.stack
 
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
+import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import androidx.test.screenshot.matchers.MSSIMMatcher
 import androidx.xr.glimmer.Card
+import androidx.xr.glimmer.CardDefaults
 import androidx.xr.glimmer.GOLDEN_DIRECTORY
 import androidx.xr.glimmer.Text
-import androidx.xr.glimmer.assertRootAgainstGolden
 import androidx.xr.glimmer.samples.VerticalStackSample
 import androidx.xr.glimmer.setGlimmerThemeContent
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -65,30 +70,21 @@ class VerticalStackScreenshotTest {
     }
 
     @Test
+    fun verticalStack_fixedSizeItems_scrollToNextItem() {
+        rule.setGlimmerThemeContent { VerticalStackSample() }
+        rule.onRoot().performTouchInput { swipeUp() }
+        assertRootAgainstGolden("verticalStack_fixedSizeItems_scrollToNextItem")
+    }
+
+    @Test
     fun verticalStack_varyingSizeItems_initialState() {
-        rule.setGlimmerThemeContent {
-            VerticalStack(modifier = Modifier.height(300.dp)) {
-                items(10) { index ->
-                    Card(modifier = Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)) {
-                        Text("Item-$index")
-                    }
-                }
-            }
-        }
+        rule.setGlimmerThemeContent { VerticalStackWithVaryingSizeItems() }
         assertRootAgainstGolden("verticalStack_varyingSizeItems_initialState")
     }
 
     @Test
     fun verticalStack_varyingSizeItems_scrollHalfWay() {
-        rule.setGlimmerThemeContent {
-            VerticalStack(modifier = Modifier.height(300.dp)) {
-                items(10) { index ->
-                    Card(modifier = Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)) {
-                        Text("Item-$index")
-                    }
-                }
-            }
-        }
+        rule.setGlimmerThemeContent { VerticalStackWithVaryingSizeItems() }
         rule.onRoot().performTouchInput {
             down(Offset(x = centerX, y = centerY))
             moveTo(Offset(x = centerX, y = 0f))
@@ -96,7 +92,34 @@ class VerticalStackScreenshotTest {
         assertRootAgainstGolden("verticalStack_varyingSizeItems_scrollHalfWay")
     }
 
+    @Test
+    fun verticalStack_varyingSizeItems_scrollToNextItem() {
+        rule.setGlimmerThemeContent { VerticalStackWithVaryingSizeItems() }
+        rule.onRoot().performTouchInput { swipeUp() }
+        assertRootAgainstGolden("verticalStack_varyingSizeItems_scrollToNextItem")
+    }
+
+    @Composable
+    private fun VerticalStackWithVaryingSizeItems() {
+        VerticalStack(modifier = Modifier.height(300.dp)) {
+            items(10) { index ->
+                Card(
+                    modifier =
+                        Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)
+                            .itemDecoration(CardDefaults.shape)
+                ) {
+                    Text("Item-$index")
+                }
+            }
+        }
+    }
+
     private fun assertRootAgainstGolden(goldenName: String) {
-        rule.assertRootAgainstGolden(goldenName, screenshotRule)
+        // Increase the matcher threshold to ensure that diffs in shadows are captured.
+        val matcherThreshold = 0.998
+        rule
+            .onRoot()
+            .captureToImage()
+            .assertAgainstGolden(screenshotRule, goldenName, MSSIMMatcher(matcherThreshold))
     }
 }

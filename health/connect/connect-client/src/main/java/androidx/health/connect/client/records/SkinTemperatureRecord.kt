@@ -50,7 +50,7 @@ import java.time.ZoneOffset
  *   user experienced time filters will assume system current zone offset if the information is
  *   absent.
  * @param deltas a list of skin temperature [Delta]. If [baseline] is set, these values are expected
- *   to be relative to it.
+ *   to be relative to it. Otherwise, they are deltas against an unspecified starting baseline.
  * @param baseline Temperature in [Temperature] unit. Optional field, null by default. Valid range:
  *   0-100 Celsius degrees.
  * @param measurementLocation indicates the location on the body from which the temperature reading

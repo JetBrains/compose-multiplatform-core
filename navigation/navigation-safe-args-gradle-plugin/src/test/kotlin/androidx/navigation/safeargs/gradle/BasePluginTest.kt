@@ -25,6 +25,8 @@ import org.hamcrest.CoreMatchers
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Rule
 
+internal const val GENERATED_PATH = "generated/java/$TASK_NAME_PREFIX"
+
 internal const val MAIN_DIR = "androidx/navigation/testapp"
 
 internal const val NEXT_DIRECTIONS = "$MAIN_DIR/NextFragmentDirections"
@@ -61,7 +63,7 @@ abstract class BasePluginTest {
     }
 
     internal fun assertExists(name: String, ex: Boolean, prefix: String = ""): File {
-        val generatedFile = File(projectRoot(), "${prefix}build/$GENERATED_PATH/$name")
+        val generatedFile = File(projectRoot(), "${prefix}build/$GENERATED_PATH$name")
         assertThat(generatedFile.exists(), CoreMatchers.`is`(ex))
         return generatedFile
     }

@@ -16,6 +16,7 @@
 
 package androidx.xr.glimmer.stack
 
+import androidx.collection.MutableScatterMap
 import androidx.compose.foundation.lazy.layout.MutableIntervalList
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -119,8 +120,20 @@ internal class StackItemHolder(content: StackScope.() -> Unit) : StackScope {
      */
     fun getKey(globalIndex: Int): Any =
         withInterval(globalIndex) { localIntervalIndex, itemInterval ->
-            // Fallback to the global index if no key is provided, which is the default behavior.
-            itemInterval.key?.invoke(localIntervalIndex) ?: globalIndex
+            itemInterval.getKeyOrDefault(
+                globalIndex = globalIndex,
+                localIntervalIndex = localIntervalIndex,
+            )
+        }
+
+    internal fun getItemScope(globalIndex: Int): StackItemScopeImpl? =
+        withInterval(globalIndex) { localIntervalIndex, itemInterval ->
+            val key =
+                itemInterval.getKeyOrDefault(
+                    globalIndex = globalIndex,
+                    localIntervalIndex = localIntervalIndex,
+                )
+            itemInterval.getItemScope(key)
         }
 }
 
@@ -128,4 +141,15 @@ internal class StackItemHolder(content: StackScope.() -> Unit) : StackScope {
 internal class StackItemInterval(
     val key: ((index: Int) -> Any)?,
     val item: @Composable StackItemScope.(index: Int) -> Unit,
-)
+) {
+    private val itemScopes = MutableScatterMap<Any, StackItemScopeImpl>()
+
+    internal fun getItemScope(key: Any): StackItemScopeImpl? = itemScopes.get(key)
+
+    internal fun getOrCreateItemScope(key: Any): StackItemScopeImpl =
+        itemScopes.getOrPut(key, defaultValue = { StackItemScopeImpl() })
+
+    internal fun getKeyOrDefault(globalIndex: Int, localIntervalIndex: Int) =
+        // Fallback to the global index if no key is provided, which is the default behavior.
+        key?.invoke(localIntervalIndex) ?: globalIndex
+}

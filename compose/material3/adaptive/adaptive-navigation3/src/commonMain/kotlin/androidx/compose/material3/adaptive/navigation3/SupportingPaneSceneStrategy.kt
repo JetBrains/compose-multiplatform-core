@@ -160,8 +160,8 @@ public class SupportingPaneSceneStrategy<T : Any>(
     }
 
     public companion object {
-        internal val SupportingPaneRoleKey: String =
-            SupportingPaneScaffoldRole::class.qualifiedName!!
+        internal const val SupportingPaneRoleKey: String =
+            "androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole"
 
         /**
          * Constructs metadata to mark a [NavEntry] as belonging to a

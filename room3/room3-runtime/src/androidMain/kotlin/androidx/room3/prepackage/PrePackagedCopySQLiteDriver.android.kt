@@ -24,12 +24,22 @@ import androidx.room3.util.readVersion
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
 import java.nio.channels.Channels
 import java.nio.channels.ReadableByteChannel
 
+/**
+ * A driver that will copy a database file based on the [PrePackagedCopyConfig] in Room's
+ * [DatabaseConfiguration] into the intended `fileName` of [open] such that the
+ * [androidx.room3.RoomDatabase] is then initializing from an existing database file (a pre-packaged
+ * database).
+ *
+ * This driver is only used if any of [androidx.room3.RoomDatabase.Builder.copyFromAssetPath],
+ * [androidx.room3.RoomDatabase.Builder.copyFromFile] or
+ * [androidx.room3.RoomDatabase.Builder.copyFromInputStream] are invoked in the builder.
+ */
+// TODO(b/339934813): Try to move this feature out of Room and into a set of utility drivers.
 internal class PrePackagedCopySQLiteDriver(
     private val delegate: SQLiteDriver,
     private val configuration: DatabaseConfiguration,
@@ -97,25 +107,8 @@ internal class PrePackagedCopySQLiteDriver(
     }
 
     private fun copyDatabase(destinationFile: File) {
-        val input: ReadableByteChannel
-        if (configuration.copyFromAssetPath != null) {
-            input =
-                Channels.newChannel(
-                    configuration.context.assets.open(configuration.copyFromAssetPath)
-                )
-        } else if (configuration.copyFromFile != null) {
-            input = FileInputStream(configuration.copyFromFile).channel
-        } else if (configuration.copyFromInputStream != null) {
-            val inputStream =
-                try {
-                    configuration.copyFromInputStream.call()
-                } catch (e: Exception) {
-                    throw IOException("inputStreamCallable exception on call", e)
-                }
-            input = Channels.newChannel(inputStream)
-        } else {
-            error("copyFromAssetPath, copyFromFile and copyFromInputStream are all null!")
-        }
+        val copyConfig = checkNotNull(configuration.copyFromConfig)
+        val input: ReadableByteChannel = Channels.newChannel(copyConfig.getInputStream())
         // An intermediate file is used so that we never end up with a half-copied database file
         // in the internal directory.
         val intermediateFile =

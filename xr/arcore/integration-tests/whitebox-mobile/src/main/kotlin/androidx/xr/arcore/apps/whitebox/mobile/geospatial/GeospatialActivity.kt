@@ -55,10 +55,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateSuccess
-import androidx.xr.arcore.CreateGeospatialPoseFromPoseIllegalState
+import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseNotTracking
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
-import androidx.xr.arcore.Earth
+import androidx.xr.arcore.Geospatial
 import androidx.xr.arcore.HitResult
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.apps.whitebox.mobile.common.SessionLifecycleHelper
@@ -97,7 +97,8 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                 config =
                     Config(
                         planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL,
-                        geospatial = Config.GeospatialMode.EARTH,
+                        deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+                        geospatial = Config.GeospatialMode.VPS_AND_GPS,
                     ),
                 onSessionAvailable = { session ->
                     this.session = session
@@ -144,17 +145,17 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
     }
 
     private fun createAnchorAtPose(pose: Pose) {
-        val earth = Earth.getInstance(session)
-        if (earth.state.value != Earth.State.RUNNING) {
-            Log.e(ACTIVITY_NAME, "Failed to create anchor: Earth is not running.")
+        val geospatial = Geospatial.getInstance(session)
+        if (geospatial.state.value != Geospatial.State.RUNNING) {
+            Log.e(ACTIVITY_NAME, "Failed to create anchor: Geospatial is not running.")
             return
         }
 
-        val geospatialPoseResult = earth.createGeospatialPoseFromPose(pose)
+        val geospatialPoseResult = geospatial.createGeospatialPoseFromPose(pose)
         when (geospatialPoseResult) {
             is CreateGeospatialPoseFromPoseSuccess -> {
                 val geospatialPose = geospatialPoseResult.pose
-                earth
+                geospatial
                     .createAnchor(
                         geospatialPose.latitude,
                         geospatialPose.longitude,
@@ -168,10 +169,7 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                     }
             }
             is CreateGeospatialPoseFromPoseNotTracking -> {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: Earth is not tracking.")
-            }
-            is CreateGeospatialPoseFromPoseIllegalState -> {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: Geospatial mode is not enabled.")
+                Log.e(ACTIVITY_NAME, "Failed to create anchor: Geospatial is not tracking.")
             }
         }
     }
@@ -247,7 +245,8 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
 
         LaunchedEffect(Unit) {
             while (true) {
-                localizationStatusText = localizationTextForEarth(Earth.getInstance(session))
+                localizationStatusText =
+                    localizationTextForGeospatial(Geospatial.getInstance(session))
                 delay(1.seconds)
             }
         }
@@ -258,16 +257,21 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
         anchors.clear()
     }
 
-    private fun localizationTextForEarth(earth: Earth): String {
-        return when (earth.state.value) {
-            Earth.State.STOPPED -> "Enable Config.GeospatialMode to use the Geospatial API"
-            Earth.State.ERROR_INTERNAL -> "Error: Internal"
-            Earth.State.ERROR_APK_VERSION_TOO_OLD -> "Error: ARCore Apk version is too old"
-            Earth.State.ERROR_NOT_AUTHORIZED ->
+    private fun localizationTextForGeospatial(geospatial: Geospatial): String {
+        return when (geospatial.state.value) {
+            Geospatial.State.NOT_RUNNING -> "Enable Config.GeospatialMode to use the Geospatial API"
+            Geospatial.State.ERROR_INTERNAL -> "Error: Internal"
+            Geospatial.State.PAUSED -> "Paused"
+            Geospatial.State.ERROR_NOT_AUTHORIZED ->
                 "Error: Not authorized. Check your API key or keyless authorization configuration"
-            Earth.State.ERROR_RESOURCES_EXHAUSTED -> "Error: ARCore API limit reached."
-            Earth.State.RUNNING ->
-                when (val result = earth.createGeospatialPoseFromDevicePose()) {
+            Geospatial.State.ERROR_RESOURCE_EXHAUSTED -> "Error: ARCore API limit reached."
+            Geospatial.State.RUNNING ->
+                when (
+                    val result =
+                        geospatial.createGeospatialPoseFromPose(
+                            ArDevice.getInstance(session).state.value.devicePose
+                        )
+                ) {
                     is CreateGeospatialPoseFromPoseSuccess ->
                         """
             Localization Status:
@@ -281,8 +285,6 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                             .trimIndent()
                     is CreateGeospatialPoseFromPoseNotTracking ->
                         "Localization Status: Not tracking"
-                    is CreateGeospatialPoseFromPoseIllegalState ->
-                        "Error getting localization. Is Geospatial mode enabled?."
                 }
             else -> "Localization Status: Unknown"
         }

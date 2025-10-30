@@ -1395,6 +1395,26 @@ public class WorkerWrapperTest extends DatabaseTest {
         assertThat(work.getWorkSpec().getTraceTag().length(), is(127));
     }
 
+    @Test
+    @SmallTest
+    public void testPeriodicWork_reschedulesOnUncaughtException() {
+        PeriodicWorkRequest periodicWork = new PeriodicWorkRequest.Builder(
+                ExceptionWorker.class, 15, TimeUnit.MINUTES)
+                .build();
+        insertWork(periodicWork);
+
+        WorkerWrapper workerWrapper = createBuilder(periodicWork.getStringId()).build();
+        FutureListener listener = createAndAddFutureListener(workerWrapper);
+
+        // The listener result should be false because the wrapper itself doesn't need a reschedule.
+        assertThat(listener.mResult, is(false));
+
+        // The crucial assertion: The work should be ENQUEUED for its next run, not FAILED.
+        WorkSpec workSpec = mWorkSpecDao.getWorkSpec(periodicWork.getStringId());
+        assertThat(workSpec.state, is(ENQUEUED));
+    }
+
+
     private WorkerWrapper.Builder createBuilder(String workSpecId) {
         return new WorkerWrapper.Builder(
                 mContext,

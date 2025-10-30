@@ -31,9 +31,9 @@ import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory
-import androidx.camera.core.impl.stabilization.StabilizationMode
 import androidx.camera.core.impl.utils.TransformUtils
 import androidx.camera.core.impl.utils.UseCaseUtil.containsVideoCapture
+import androidx.camera.core.impl.utils.UseCaseUtil.getVideoStabilization
 import androidx.camera.core.streamsharing.StreamSharing
 
 /**
@@ -259,7 +259,6 @@ public class StreamSpecsCalculatorImpl(
                     cameraInfoInternal,
                     if (sensorRect != null) TransformUtils.rectToSize(sensorRect) else null,
                 )
-            var isPreviewStabilizationOn = false
             for (useCase in newUseCases) {
                 val configPair: CameraUseCaseAdapter.ConfigPair =
                     requireNotNull(configPairMap[useCase])
@@ -271,21 +270,21 @@ public class StreamSpecsCalculatorImpl(
                         configPair.mExtendedConfig,
                         configPair.mCameraConfig,
                     )
-                configToUseCaseMap.put(combinedUseCaseConfig, useCase)
-                configToSupportedSizesMap.put(
-                    combinedUseCaseConfig,
-                    supportedOutputSizesSorter.getSortedSupportedOutputSizes(combinedUseCaseConfig),
-                )
-
-                // Let isPreviewStabilizationOn be true only if stabilization mode of combined use
-                // case config is on for any use case. Preview stabilization can be enabled through
-                // either the Preview use case (which can propagate to StreamSharing) or through
-                // groupable feature in session config (which can be used with VideoCapture as
-                // well).
-                if (combinedUseCaseConfig.previewStabilizationMode == StabilizationMode.ON) {
-                    isPreviewStabilizationOn = true
-                }
+                configToUseCaseMap[combinedUseCaseConfig] = useCase
+                configToSupportedSizesMap[combinedUseCaseConfig] =
+                    supportedOutputSizesSorter.getSortedSupportedOutputSizes(combinedUseCaseConfig)
             }
+
+            val videoStabilization =
+                newUseCases.getVideoStabilization {
+                    val configPair = requireNotNull(configPairMap[it])
+
+                    it.mergeConfigs(
+                        cameraInfoInternal,
+                        configPair.mExtendedConfig,
+                        configPair.mCameraConfig,
+                    )
+                }
 
             // Get suggested stream specifications and update the use case session configuration
             val (streamSpecMapForNewUseCases, streamSpecMapForAttachedSurfaces, maxSupportedFps) =
@@ -295,7 +294,7 @@ public class StreamSpecsCalculatorImpl(
                         cameraId,
                         ArrayList<AttachedSurfaceInfo?>(attachedSurfaceInfoToUseCaseMap.keys),
                         configToSupportedSizesMap,
-                        isPreviewStabilizationOn,
+                        videoStabilization,
                         newUseCases.containsVideoCapture(),
                         isFeatureComboInvocation,
                         findMaxSupportedFrameRate,
@@ -319,5 +318,9 @@ public class StreamSpecsCalculatorImpl(
             maxSupportedFrameRate = maxSupportedFps
         }
         return StreamSpecQueryResult(suggestedStreamSpecs, maxSupportedFrameRate)
+    }
+
+    private companion object {
+        private const val TAG = "StreamSpecsCalculatorImpl"
     }
 }

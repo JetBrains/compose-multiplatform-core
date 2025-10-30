@@ -351,5 +351,4 @@ public final class SurfaceFeatureImplTest {
                 .setStereoSurfaceEntitySurfaceSize(
                         mSurfaceFeature.getEntityImpressNode(), kTestWidth, kTestHeight);
     }
-
 }

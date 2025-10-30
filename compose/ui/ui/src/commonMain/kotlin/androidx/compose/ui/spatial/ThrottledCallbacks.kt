@@ -437,8 +437,9 @@ internal class ThrottledCallbacks {
     private inline fun MutableIntObjectMap<Entry>.runFor(id: Int, block: (Entry) -> Unit) {
         var entry: Entry? = get(id)
         while (entry != null) {
+            val next = entry.next
             block(entry)
-            entry = entry.next
+            entry = next
         }
     }
 
@@ -461,6 +462,11 @@ internal class ThrottledCallbacks {
                 value.next = null
                 if (next != null) {
                     put(key, next)
+                } else {
+                    val layoutNode = value.node.node.requireLayoutNode()
+                    if (layoutNode.addedToRectList) {
+                        layoutNode.requireOwner().rectManager.unsetHasCallbacksFor(layoutNode)
+                    }
                 }
                 true
             }

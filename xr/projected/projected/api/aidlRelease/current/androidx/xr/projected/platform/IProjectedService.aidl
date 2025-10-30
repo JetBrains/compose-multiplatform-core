@@ -38,4 +38,5 @@ interface IProjectedService {
   void unregisterProjectedInputEventListener(in androidx.xr.projected.platform.IProjectedInputEventListener listener);
   void addWindowFlags(in int flags);
   void clearWindowFlags(in int flags);
+  boolean isDisplayCapable();
 }

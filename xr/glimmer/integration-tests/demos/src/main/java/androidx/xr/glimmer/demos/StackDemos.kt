@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.Card
+import androidx.xr.glimmer.CardDefaults
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.samples.VerticalStackSample
 import androidx.xr.glimmer.stack.VerticalStack
@@ -46,9 +47,14 @@ internal fun VerticalStackFixedItemSizeDemo() {
 @Composable
 internal fun VerticalStackVaryingItemSizeDemo() {
     Box(modifier = Modifier.fillMaxSize().padding(20.dp), contentAlignment = Alignment.Center) {
+        // Vertical stack with items of different sizes.
         VerticalStack(modifier = Modifier.height(300.dp)) {
             items(10) { index ->
-                Card(modifier = Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)) {
+                Card(
+                    modifier =
+                        Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)
+                            .itemDecoration(CardDefaults.shape)
+                ) {
                     Text("Item-$index")
                 }
             }

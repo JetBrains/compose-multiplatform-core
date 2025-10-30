@@ -614,7 +614,6 @@ class PrepackageTest(private val useDriver: UseDriver) {
         return when (useDriver) {
             UseDriver.ANDROID -> AndroidSQLiteDriver()
             UseDriver.BUNDLED -> BundledSQLiteDriver()
-            UseDriver.NONE -> error("No driver")
         }
     }
 

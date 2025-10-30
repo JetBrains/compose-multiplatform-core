@@ -54,6 +54,11 @@ public interface UseCaseCamera {
 
     public fun setActiveResumeMode(enabled: Boolean) {}
 
+    public fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
+    ): Job
+
     // Lifecycle
     public fun close(): Job
 }
@@ -120,6 +125,13 @@ constructor(
 
     override fun setActiveResumeMode(enabled: Boolean) {
         useCaseGraphConfig.graph.isForeground = enabled
+    }
+
+    override fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
+    ): Job {
+        return requestControl.updateRepeatingRequestAsync(isPrimary, runningUseCases)
     }
 
     override fun toString(): String = "UseCaseCamera-$debugId"

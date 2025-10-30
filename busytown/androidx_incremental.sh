@@ -69,16 +69,11 @@ function deleteOldOutDir() {
 }
 deleteOldOutDir
 
-# b/430983364: Remove cache to avoid privacySandbox flakiness
-function deletePrivacySandbox() {
-    rm -rf "$OUT_DIR/androidx/privacysandbox/tools/integration-tests/testsdk"
-    rm -rf "$OUT_DIR/androidx/privacysandbox/ui/integration-tests/testsdkprovider"
-    rm -rf "$OUT_DIR/androidx/privacysandbox/ui/integration-tests/mediateesdkprovider"
-    rm -rf "$OUT_DIR/androidx/privacysandbox/ui/macrobenchmark/testapp/mediateesdkprovider"
-    rm -rf "$OUT_DIR/androidx/privacysandbox/ui/macrobenchmark/testapp/testsdkprovider"
+function deleteStaleCache() {
+   rm -rf "$OUT_DIR/androidx/room3/integration-tests/room-testapp-kotlin/build/generated/ksp/"
 }
 
-deletePrivacySandbox
+deleteStaleCache
 
 export DIST_DIR="$DIST_DIR/incremental"
 mkdir -p "$DIST_DIR"

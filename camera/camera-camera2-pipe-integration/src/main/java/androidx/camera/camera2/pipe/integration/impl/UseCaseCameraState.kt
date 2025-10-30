@@ -83,9 +83,12 @@ constructor(
 
     @GuardedBy("lock") private var currentTemplate: RequestTemplate? = null
 
-    @GuardedBy("lock") private var currentSessionConfig: SessionConfig? = null
+    @GuardedBy("lock") private var lastAeMode: AeMode? = null
+    @GuardedBy("lock") private var lastAfMode: AfMode? = null
+    @GuardedBy("lock") private var lastAwbMode: AwbMode? = null
 
     private val requestListener = RequestListener()
+    private val pendingSignalCount = atomic(0)
 
     /**
      * Updates the camera state by applying the provided parameters to a repeating request and
@@ -108,7 +111,6 @@ constructor(
         streams: Set<StreamId>? = null,
         template: RequestTemplate? = null,
         listeners: Set<Request.Listener>? = null,
-        sessionConfig: SessionConfig? = null,
     ): Deferred<Unit> {
         val result: Deferred<Unit>
         synchronized(lock) {
@@ -134,7 +136,6 @@ constructor(
                 streams,
                 template,
                 listeners,
-                sessionConfig,
             )
 
             if (updateSignal == null) {
@@ -193,9 +194,6 @@ constructor(
         if (listeners != null) {
             currentListeners.clear()
             currentListeners.addAll(listeners)
-        }
-        if (sessionConfig != null) {
-            currentSessionConfig = sessionConfig
         }
     }
 
@@ -257,11 +255,11 @@ constructor(
                                 updateSignals.add(
                                     RequestSignal(submittedRequestCounter.value, result)
                                 )
+                                pendingSignalCount.incrementAndGet()
                             }
                         }
                         Camera2Logger.debug { "Update RepeatingRequest: $request" }
                         it.startRepeating(request)
-                        // TODO: Invoke update3A only if required e.g. a 3A value has changed
                         it.update3A(request.parameters)
                     }
                 }
@@ -290,8 +288,25 @@ constructor(
                 AwbMode.fromIntOrNull(it)
             }
 
-        if (aeMode != null || afMode != null || awbMode != null) {
+        val aeChanged = aeMode != null && aeMode != lastAeMode
+        val afChanged = afMode != null && afMode != lastAfMode
+        val awbChanged = awbMode != null && awbMode != lastAwbMode
+
+        if (aeChanged || afChanged || awbChanged) {
+            Camera2Logger.debug {
+                "UseCaseCameraState: Updating 3A modes: " +
+                    "AE($aeMode, changed=$aeChanged), " +
+                    "AF($afMode, changed=$afChanged), " +
+                    "AWB($awbMode, changed=$awbChanged)"
+            }
+
+            // Dispatch the update. The underlying implementation handles nulls.
             update3A(aeMode = aeMode, afMode = afMode, awbMode = awbMode)
+
+            // Update the cache *only* for the values that were non-null.
+            if (aeMode != null) lastAeMode = aeMode
+            if (afMode != null) lastAfMode = afMode
+            if (awbMode != null) lastAwbMode = awbMode
         }
     }
 
@@ -304,7 +319,9 @@ constructor(
             frameNumber: FrameNumber,
             totalCaptureResult: FrameInfo,
         ) {
-            super.onTotalCaptureResult(requestMetadata, frameNumber, totalCaptureResult)
+            if (pendingSignalCount.value == 0) {
+                return
+            }
             requestMetadata[USE_CASE_CAMERA_STATE_CUSTOM_TAG]?.let { requestNo ->
                 synchronized(lock) { updateSignals.complete(requestNo) }
             }
@@ -315,7 +332,9 @@ constructor(
             frameNumber: FrameNumber,
             requestFailure: RequestFailure,
         ) {
-            @Suppress("DEPRECATION") super.onFailed(requestMetadata, frameNumber, requestFailure)
+            if (pendingSignalCount.value == 0) {
+                return
+            }
             completeExceptionally(requestMetadata, requestFailure)
         }
 
@@ -341,6 +360,7 @@ constructor(
             while (isNotEmpty() && first().requestNo <= requestNo) {
                 first().signal.complete(Unit)
                 removeFirstKt()
+                pendingSignalCount.decrementAndGet()
             }
         }
 
@@ -351,6 +371,7 @@ constructor(
             while (isNotEmpty() && first().requestNo <= requestNo) {
                 first().signal.completeExceptionally(throwable)
                 removeFirstKt()
+                pendingSignalCount.decrementAndGet()
             }
         }
     }

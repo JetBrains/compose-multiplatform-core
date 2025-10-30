@@ -199,8 +199,7 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
                         unscaledGravityAlignedActivitySpace,
                         executor);
         mEntityManager.addSystemSpaceActivityPose(mActivitySpace);
-        mHeadScenePose =
-                new HeadScenePoseImpl(mActivitySpace, mActivitySpace, perceptionLibrary);
+        mHeadScenePose = new HeadScenePoseImpl(mActivitySpace, mActivitySpace, perceptionLibrary);
         mEntityManager.addSystemSpaceActivityPose(mHeadScenePose);
         mPerceptionSpaceScenePose =
                 new PerceptionSpaceScenePoseImpl(mActivitySpace, mActivitySpace);
@@ -399,7 +398,8 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     @Override
     public @NonNull ScenePose getScenePoseFromPerceptionPose(@NonNull Pose perceptionPose) {
         return new OpenXrScenePose(
-                (ActivitySpaceImpl) getActivitySpace(), (AndroidXrEntity) getActivitySpace(),
+                (ActivitySpaceImpl) getActivitySpace(),
+                (AndroidXrEntity) getActivitySpace(),
                 perceptionPose);
     }
 

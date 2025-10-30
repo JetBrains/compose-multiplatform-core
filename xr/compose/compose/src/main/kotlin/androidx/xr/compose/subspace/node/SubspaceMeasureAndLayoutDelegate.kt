@@ -17,7 +17,6 @@
 package androidx.xr.compose.subspace.node
 
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
-import androidx.xr.compose.platform.Logger
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 
@@ -26,7 +25,7 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
         set(value) {
             if (field != value) {
                 field = value
-                if (root.isAttached) {
+                if (root.isAttached && root.isPlaced) {
                     requestMeasure(root)
                 }
             }
@@ -93,9 +92,6 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
         snapshotStateObserver.observeReads(root, onCommitAffectingLayout) {
             root.measurableLayout.placeAt(Pose.Identity)
         }
-
-        Logger.log("AndroidComposeSpatialElement") { root.debugTreeToString() }
-        Logger.log("AndroidComposeSpatialElement") { root.debugEntityTreeToString() }
 
         isLayoutInProgress = false
         if (isLayoutRequested) {

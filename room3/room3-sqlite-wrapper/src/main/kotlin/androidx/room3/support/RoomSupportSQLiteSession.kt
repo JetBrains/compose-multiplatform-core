@@ -31,12 +31,12 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.getOrSet
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.InternalForInheritanceCoroutinesApi
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -313,7 +313,7 @@ private constructor(
                             val threadTransaction =
                                 ThreadTransaction(
                                     type = type,
-                                    connectionContext = coroutineContext,
+                                    connectionContext = currentCoroutineContext(),
                                     completable =
                                         TransactionCompletable(successSignal, completionLatch),
                                 )

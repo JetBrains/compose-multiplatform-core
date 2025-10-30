@@ -522,7 +522,7 @@ internal class RotaryScrollLogic(
             val scrollAvailableAfterPreScroll = delta - consumedByPreScroll
 
             val singleAxisDeltaForSelfScroll =
-                scrollAvailableAfterPreScroll.toFloat().reverseIfNeeded().toFloat()
+                scrollAvailableAfterPreScroll.toFloat().reverseIfNeeded()
 
             val consumedBySelfScroll =
                 scrollBy(singleAxisDeltaForSelfScroll).reverseIfNeeded().toOffset()

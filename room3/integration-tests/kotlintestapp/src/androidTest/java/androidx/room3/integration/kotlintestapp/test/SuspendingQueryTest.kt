@@ -146,13 +146,12 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         context.deleteDatabase("closed.db")
         val db =
             Room.databaseBuilder<TestDatabase>(context = context, name = "closed.db")
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .build()
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             val currentPolicy = StrictMode.getThreadPolicy()
@@ -456,14 +455,13 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val executorService = Executors.newSingleThreadExecutor()
         val localDatabase =
             Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
-                .setTransactionExecutor(executorService)
+                )
+                .setQueryCoroutineContext(executorService.asCoroutineDispatcher())
                 .build()
 
         // Simulate a busy executor, no thread to acquire for transaction.
@@ -590,13 +588,12 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     fun withWriteTransaction_databaseOpenError() = runTest {
         val localDatabase =
             Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .addCallback(
                     object : RoomDatabase.Callback() {
                         override fun onOpen(connection: SQLiteConnection) {
@@ -704,14 +701,13 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
                     ApplicationProvider.getApplicationContext(),
                     TestDatabase::class.java,
                 )
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
-                .setTransactionExecutor(executor)
+                )
+                .setQueryCoroutineContext(executor.asCoroutineDispatcher())
                 .build()
 
         withContext(executor.asCoroutineDispatcher()) {
@@ -735,14 +731,13 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val executor = Executors.newSingleThreadExecutor()
         val localDatabase =
             Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
-                .setTransactionExecutor(executor)
+                )
+                .setQueryCoroutineContext(executor.asCoroutineDispatcher())
                 .build()
 
         withContext(executor.asCoroutineDispatcher()) {
@@ -770,14 +765,13 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val executor = Executors.newSingleThreadExecutor()
         val localDatabase =
             Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
-                .setTransactionExecutor(executor)
+                )
+                .setQueryCoroutineContext(executor.asCoroutineDispatcher())
                 .build()
         withContext(executor.asCoroutineDispatcher()) {
             localDatabase.withWriteTransaction {
@@ -806,14 +800,13 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val executor = Executors.newSingleThreadExecutor()
         val localDatabase =
             Room.inMemoryDatabaseBuilder<TestDatabase>(ApplicationProvider.getApplicationContext())
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
-                .setTransactionExecutor(executor)
+                )
+                .setQueryCoroutineContext(executor.asCoroutineDispatcher())
                 .build()
 
         withContext(executor.asCoroutineDispatcher()) {

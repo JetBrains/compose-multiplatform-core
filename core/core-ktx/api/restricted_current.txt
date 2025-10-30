@@ -424,7 +424,6 @@ package androidx.core.text {
 
   public final class SpannedStringKt {
     method @KotlinOnly public static inline <reified T> T[] getSpans(android.text.Spanned, optional int start, optional int end);
-    method @BytecodeOnly public static Object![]! getSpans$default(android.text.Spanned!, int, int, int, Object!);
     method public static inline android.text.Spanned toSpanned(CharSequence);
   }
 

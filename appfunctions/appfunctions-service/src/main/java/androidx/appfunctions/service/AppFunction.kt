@@ -28,6 +28,8 @@ package androidx.appfunctions.service
  * add a custom factory in [AppFunctionConfiguration.Builder.addEnclosingClassFactory]. This allows
  * you to inject dependencies or handle more complex object creation scenarios.
  *
+ * ### AppFunction Compiler
+ *
  * When a function is annotated with `@AppFunction`, the compiler will automatically:
  * * Generate an XML file within the APK. This file describes the signatures of all
  *   `@AppFunction`-annotated functions within the application.
@@ -56,9 +58,13 @@ package androidx.appfunctions.service
  * package. This generated class will contain constants like `CREATE_NOTE_ID` and `UPDATE_NOTE_ID`,
  * which correspond to the `createNote` and `updateNote` functions, respectively.
  *
+ * ### Thread Management
+ *
  * **IMPORTANT:** By default, functions annotated with `@AppFunction` are executed on the main
  * thread. For operations that may take a significant amount of time, it is crucial to use a
  * coroutine dispatcher that runs on a background thread.
+ *
+ * ### Error Handling
  *
  * In exceptional cases, implementations should throw an appropriate
  * [androidx.appfunctions.AppFunctionException]. This allows the agent to better understand the
@@ -66,8 +72,32 @@ package androidx.appfunctions.service
  * [androidx.appfunctions.AppFunctionInvalidArgumentException] with a detailed message explaining
  * why it is invalid.
  *
+ * ### Supported Types
+ *
  * For a detailed list of supported types and the rules governing their serialization, see
  * [androidx.appfunctions.AppFunctionSerializable].
+ *
+ * ### Deprecate AppFunction
+ *
+ * If an existing `AppFunction` needs to be deprecated (e.g., a replacement is available, but the
+ * old version must remain for backward compatibility), mark the function with the
+ * [kotlin.Deprecated] annotation.
+ *
+ * This deprecation status will be exposed in the
+ * [androidx.appfunctions.metadata.AppFunctionMetadata.deprecation] field, allowing clients to
+ * identify and migrate away from the deprecated function.
+ *
+ * Example:
+ * ```
+ * @AppFunction
+ * @Deprecated(
+ *   message = "Use newSearchFunction(query) instead. " +
+ *     "This function will be removed in a future version.",
+ * )
+ * fun oldSearchFunction(...) {
+ * // ...
+ * }
+ * ```
  *
  * @see AppFunctionConfiguration.Builder.addEnclosingClassFactory
  * @see androidx.appfunctions.AppFunctionException

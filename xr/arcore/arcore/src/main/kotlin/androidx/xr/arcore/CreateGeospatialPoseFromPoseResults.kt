@@ -16,19 +16,16 @@
 
 package androidx.xr.arcore
 
-import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.GeospatialPose
 
 /**
- * Result of a [Earth.createGeospatialPoseFromPose] or [Earth.createGeospatialPoseFromDevicePose]
- * call.
+ * Result of a [Geospatial.createGeospatialPoseFromPose] or
+ * [Geospatial.createGeospatialPoseFromDevicePose] call.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public sealed class CreateGeospatialPoseFromPoseResult
 
 /**
- * Result of a successful [Earth.createGeospatialPoseFromPose] or
- * [Earth.createGeospatialPoseFromDevicePose] call.
+ * Result of a successful [Geospatial.createGeospatialPoseFromPose] call.
  *
  * We define horizontal accuracy as the radius of the 68th percentile confidence level around the
  * estimated horizontal location. In other words, if you draw a circle centered at this
@@ -49,12 +46,12 @@ public sealed class CreateGeospatialPoseFromPoseResult
  * there is a 68% chance that the true altitude is within 20 meters of 100 meters.
  *
  * Yaw rotation is the angle between the pose's compass direction and north, and can be determined
- * from [eastUpSouthQuaternion].
+ * from [GeospatialPose.eastUpSouthQuaternion].
  *
  * We define yaw accuracy as the estimated radius of the 68th percentile confidence level around yaw
- * angles from [eastUpSouthQuaternion]. In other words, there is a 68% probability that the true yaw
- * angle is within [orientationYawAccuracy] of this GeospatialPose's orientation. Larger values
- * indicate lower accuracy.
+ * angles from [GeospatialPose.eastUpSouthQuaternion]. In other words, there is a 68% probability
+ * that the true yaw angle is within [orientationYawAccuracy] of this GeospatialPose's orientation.
+ * Larger values indicate lower accuracy.
  *
  * For example, if the estimated yaw angle is 60°, and the orientation yaw accuracy is 10°, then
  * there is an estimated 68% probability of the true yaw angle being between 50° and 70°.
@@ -65,7 +62,6 @@ public sealed class CreateGeospatialPoseFromPoseResult
  * @property verticalAccuracy the estimated altitude accuracy in meters.
  * @property orientationYawAccuracy the estimated orientation yaw angle accuracy.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class CreateGeospatialPoseFromPoseSuccess
 internal constructor(
     public val pose: GeospatialPose,
@@ -75,16 +71,8 @@ internal constructor(
 ) : CreateGeospatialPoseFromPoseResult()
 
 /**
- * Result of an unsuccessful [Earth.createGeospatialPoseFromPose] or
- * [Earth.createGeospatialPoseFromDevicePose] call. Required tracking is not available.
+ * Result of an unsuccessful [Geospatial.createGeospatialPoseFromPose] call. Geospatial is not yet
+ * tracking. Geospatial may need additional time to start tracking, or the device itself may not be
+ * tracking.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class CreateGeospatialPoseFromPoseNotTracking() : CreateGeospatialPoseFromPoseResult()
-
-/**
- * Result of an unsuccessful [Earth.createGeospatialPoseFromPose] or
- * [Earth.createGeospatialPoseFromDevicePose] call. The [Earth] encountered an error, such as if
- * Geospatial was not enabled.
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class CreateGeospatialPoseFromPoseIllegalState() : CreateGeospatialPoseFromPoseResult()

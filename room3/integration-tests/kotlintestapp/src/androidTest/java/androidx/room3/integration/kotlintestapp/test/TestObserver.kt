@@ -15,7 +15,7 @@
  */
 package androidx.room3.integration.kotlintestapp.test
 
-import androidx.kruth.assertThat
+import androidx.kruth.assertWithMessage
 import androidx.lifecycle.Observer
 import java.util.concurrent.TimeoutException
 
@@ -42,7 +42,9 @@ abstract class TestObserver<T> : Observer<T> {
     @Throws(InterruptedException::class, TimeoutException::class)
     fun get(): T? {
         drain()
-        assertThat(hasValue()).isTrue()
+        assertWithMessage("Cannot get value from TestObserver since it has none.")
+            .that(hasValue())
+            .isTrue()
         return mLastData
     }
 

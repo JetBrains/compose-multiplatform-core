@@ -1637,7 +1637,7 @@ class SurfaceTest {
         rule.runOnIdle { otherFocusRequester.requestFocus() }
 
         // Advance past the exit animation
-        rule.mainClock.advanceTimeBy(500)
+        rule.mainClock.advanceTimeBy(1_000)
 
         // Focused highlight should disappear, so the border should be red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
@@ -1685,7 +1685,7 @@ class SurfaceTest {
         rule.runOnIdle { otherFocusRequester.requestFocus() }
 
         // Advance past the exit animation
-        rule.mainClock.advanceTimeBy(500)
+        rule.mainClock.advanceTimeBy(1_000)
 
         // Focused highlight should disappear, so the border should be red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
@@ -2047,7 +2047,7 @@ class SurfaceTest {
         rule.runOnIdle { interactionSource = MutableInteractionSource() }
 
         // Advance past the exit animation
-        rule.mainClock.advanceTimeBy(500)
+        rule.mainClock.advanceTimeBy(1_000)
 
         // Focused highlight should disappear, so the border should be red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {
@@ -2113,7 +2113,7 @@ class SurfaceTest {
         rule.runOnIdle { interactionSource = MutableInteractionSource() }
 
         // Advance past the exit animation
-        rule.mainClock.advanceTimeBy(500)
+        rule.mainClock.advanceTimeBy(1_000)
 
         // Focused highlight should disappear, so the border should be red
         rule.onNodeWithTag("surface").captureToImage().toPixelMap().run {

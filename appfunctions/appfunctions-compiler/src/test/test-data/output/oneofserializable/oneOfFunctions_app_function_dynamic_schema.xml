@@ -103,29 +103,88 @@
             <dataTypeMetadata>
                 <id>unused</id>
                 <isNullable>true</isNullable>
+                <objectQualifiedName>androidx.appfunctions.AppFunctionTextResource</objectQualifiedName>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>8</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>mimeType</name>
+                </properties>
+                <properties>
+                    <dataTypeMetadata>
+                        <id>unused</id>
+                        <isNullable>false</isNullable>
+                        <type>8</type>
+                    </dataTypeMetadata>
+                    <id>unused</id>
+                    <name>content</name>
+                </properties>
+                <required>mimeType</required>
+                <required>content</required>
+                <type>3</type>
+            </dataTypeMetadata>
+            <id>unused</id>
+            <name>androidx.appfunctions.AppFunctionTextResource</name>
+        </dataTypes>
+        <dataTypes>
+            <dataTypeMetadata>
+                <allOf>
+                    <id>unused</id>
+                    <isNullable>true</isNullable>
+                    <objectQualifiedName>androidx.appfunctions.AppFunctionResourceContainer</objectQualifiedName>
+                    <description>I am a KDoc for OneOfSealedClass.ASubclass </description>
+                    <properties>
+                        <dataTypeMetadata>
+                            <id>unused</id>
+                            <isNullable>false</isNullable>
+                            <itemType>
+                                <dataTypeReference>androidx.appfunctions.AppFunctionTextResource</dataTypeReference>
+                                <id>unused</id>
+                                <isNullable>false</isNullable>
+                                <type>11</type>
+                            </itemType>
+                            <type>10</type>
+                        </dataTypeMetadata>
+                        <id>unused</id>
+                        <name>resources</name>
+                    </properties>
+                    <type>3</type>
+                </allOf>
+                <allOf>
+                    <id>unused</id>
+                    <isNullable>true</isNullable>
+                    <objectQualifiedName>com.testdata.oneofserializable.OneOfSealedClass$ASubclass</objectQualifiedName>
+                    <description>I am a KDoc for OneOfSealedClass.ASubclass </description>
+                    <properties>
+                        <dataTypeMetadata>
+                            <id>unused</id>
+                            <isNullable>false</isNullable>
+                            <type>8</type>
+                        </dataTypeMetadata>
+                        <id>unused</id>
+                        <name>interfaceProperty</name>
+                    </properties>
+                    <properties>
+                        <dataTypeMetadata>
+                            <id>unused</id>
+                            <isNullable>false</isNullable>
+                            <type>8</type>
+                        </dataTypeMetadata>
+                        <id>unused</id>
+                        <name>str</name>
+                    </properties>
+                    <required>interfaceProperty</required>
+                    <required>str</required>
+                    <type>3</type>
+                </allOf>
+                <id>unused</id>
+                <isNullable>true</isNullable>
                 <objectQualifiedName>com.testdata.oneofserializable.OneOfSealedClass$ASubclass</objectQualifiedName>
                 <description>I am a KDoc for OneOfSealedClass.ASubclass </description>
-                <properties>
-                    <dataTypeMetadata>
-                        <id>unused</id>
-                        <isNullable>false</isNullable>
-                        <type>8</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>interfaceProperty</name>
-                </properties>
-                <properties>
-                    <dataTypeMetadata>
-                        <id>unused</id>
-                        <isNullable>false</isNullable>
-                        <type>8</type>
-                    </dataTypeMetadata>
-                    <id>unused</id>
-                    <name>str</name>
-                </properties>
-                <required>interfaceProperty</required>
-                <required>str</required>
-                <type>3</type>
+                <type>12</type>
             </dataTypeMetadata>
             <id>unused</id>
             <name>com.testdata.oneofserializable.OneOfSealedClass$ASubclass</name>

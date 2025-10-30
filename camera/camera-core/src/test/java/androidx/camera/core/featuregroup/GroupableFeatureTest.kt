@@ -30,6 +30,7 @@ import androidx.camera.core.featuregroup.impl.feature.DynamicRangeFeature
 import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature
 import androidx.camera.core.featuregroup.impl.feature.ImageFormatFeature
 import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -73,8 +74,8 @@ class GroupableFeatureTest {
 
     @Test
     fun objectPreviewStabilization_stabilizationModeIsPreview() {
-        assertThat((PREVIEW_STABILIZATION as VideoStabilizationFeature).mode)
-            .isEqualTo(VideoStabilizationFeature.StabilizationMode.PREVIEW)
+        assertThat((PREVIEW_STABILIZATION as VideoStabilizationFeature).videoStabilization)
+            .isEqualTo(VideoStabilization.PREVIEW)
     }
 
     @Test

@@ -19,8 +19,10 @@
 // -Dkotlin.compiler.execution.strategy="in-process"
 
 
+
 import androidx.build.KotlinTarget
-import com.google.devtools.ksp.gradle.KspTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
     id("AndroidXPlugin")
@@ -32,7 +34,13 @@ plugins {
 }
 android {
     buildFeatures {
+        aidl = true
         buildConfig = true
+    }
+    compileOptions {
+        // For testing Java records
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     flavorDimensions "processorConfiguration"
@@ -46,6 +54,13 @@ android {
     namespace = "androidx.room3.integration.kotlintestapp"
 }
 
+tasks.withType(KotlinCompilationTask).configureEach {
+    it.compilerOptions {
+        // For testing Java records
+        jvmTarget = JvmTarget.JVM_17
+    }
+}
+
 dependencies {
     implementation(project(":room3:room3-common"))
     implementation(project(":room3:room3-runtime"))
@@ -56,19 +71,14 @@ dependencies {
     implementation("androidx.arch.core:core-runtime:2.2.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
     implementation(libs.kotlinCoroutinesAndroid)
+    kspWithKspGenKotlin(project(":room3:room3-compiler"))
     kspAndroidTestWithKspGenKotlin(project(":room3:room3-compiler"))
     androidTestImplementation("androidx.arch.core:core-runtime:2.2.0")
     androidTestImplementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner) {
-        exclude module: "support-annotations"
-        exclude module: "hamcrest-core"
-    }
-    androidTestImplementation(libs.espressoCore, {
-        exclude group: "com.android.support", module: "support-annotations"
-        exclude module: "hamcrest-core"
-    })
+    androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.testRules)
     androidTestImplementation(project(":kruth:kruth"))
     androidTestImplementation(libs.kotlinTest)
     androidTestImplementation(project(":room3:room3-guava"))
@@ -94,31 +104,6 @@ room3 {
     schemaDirectory(
         "withKspGenKotlin",
         layout.projectDirectory.dir("schemas-ksp")
-    )
-}
-
-class RoomGenKotlinArgProvider implements CommandLineArgumentProvider {
-
-    @Input
-    Provider<Boolean> generateKotlin;
-
-    RoomGenKotlinArgProvider(Provider<Boolean> generateKotlin) {
-        this.generateKotlin = generateKotlin
-    }
-
-    @Override
-    Iterable<String> asArguments() {
-        return ["room.generateKotlin=" + generateKotlin.get()]
-    }
-}
-
-// KSP does not support argument per flavor so for per flavor options we use flavor named tasks.
-// See https://github.com/google/ksp/issues/861.
-tasks.withType(KspTask).configureEach { kspTask ->
-    kspTask.commandLineArgumentProviders.add(
-        new RoomGenKotlinArgProvider(
-            provider { kspTask.name.contains("GenKotlin") }
-        )
     )
 }
 

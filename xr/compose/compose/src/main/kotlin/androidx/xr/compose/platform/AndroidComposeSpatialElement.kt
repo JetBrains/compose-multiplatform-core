@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
+import androidx.xr.compose.subspace.node.Logger
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceMeasureAndLayoutDelegate
 import androidx.xr.compose.subspace.node.SubspaceOwner
@@ -46,6 +47,12 @@ internal class AndroidComposeSpatialElement :
     SpatialElement(), SubspaceOwner, DefaultLifecycleObserver {
     override val root: SubspaceLayoutNode = SubspaceLayoutNode()
 
+    // For debug output set this to androidx.xr.compose.subspace.node.DebugLogger().
+    override var logger: Logger? = null
+
+    // This coroutine scope will launch tasks to the Choreographer on the main thread.
+    private val uiCoroutineScope = CoroutineScope(AndroidUiDispatcher.Main)
+
     internal var wrappedComposition: WrappedComposition? = null
 
     /**
@@ -57,6 +64,8 @@ internal class AndroidComposeSpatialElement :
     private var windowLeashLayoutNode: SubspaceLayoutNode? = null
 
     private val measureAndLayoutDelegate = SubspaceMeasureAndLayoutDelegate(root)
+
+    private var isMeasureAndLayoutScheduled: Boolean = false
 
     internal var rootVolumeConstraints: VolumeConstraints
         get() = measureAndLayoutDelegate.rootVolumeConstraints
@@ -116,6 +125,13 @@ internal class AndroidComposeSpatialElement :
         }
     }
 
+    override fun onRecompositionComplete() {
+        if (!root.isPlaced) {
+            measureAndLayoutDelegate.requestMeasure(root, true)
+        }
+        scheduleMeasureAndLayout()
+    }
+
     override fun onResume(owner: LifecycleOwner) {
         super.onResume(owner)
         // TODO: "Refresh the layout hierarchy." <- Can we just call scheduleMeasureAndLayout()?
@@ -127,25 +143,34 @@ internal class AndroidComposeSpatialElement :
     }
 
     override fun requestMeasure(node: SubspaceLayoutNode, forceRequest: Boolean) {
+        logger?.measureRequested(node)
+
+        if (!root.isPlaced) return
+
         if (measureAndLayoutDelegate.requestMeasure(node, forceRequest)) {
-            scheduleMeasureAndLayout(node)
+            scheduleMeasureAndLayout()
         }
     }
 
     override fun requestLayout(node: SubspaceLayoutNode, forceRequest: Boolean) {
+        logger?.layoutRequested(node)
+
+        if (!root.isPlaced) return
+
         if (measureAndLayoutDelegate.requestLayout(node, forceRequest)) {
-            scheduleMeasureAndLayout(node)
+            scheduleMeasureAndLayout()
         }
     }
 
     // TODO: Consider adding stricter control over how this is called here, or at call sites, if it
     // becomes too easy to generate superfluous layouts.
-    private fun scheduleMeasureAndLayout(node: SubspaceLayoutNode) {
-        uiCoroutineScope.launch { measureAndLayoutDelegate.measureAndLayout() }
-    }
+    private fun scheduleMeasureAndLayout() {
+        if (isMeasureAndLayoutScheduled) return
 
-    companion object {
-        // This coroutine scope will launch tasks to the Choreographer on the main thread.
-        private val uiCoroutineScope = CoroutineScope(AndroidUiDispatcher.Main)
+        isMeasureAndLayoutScheduled = true
+        uiCoroutineScope.launch {
+            isMeasureAndLayoutScheduled = false
+            measureAndLayoutDelegate.measureAndLayout()
+        }
     }
 }

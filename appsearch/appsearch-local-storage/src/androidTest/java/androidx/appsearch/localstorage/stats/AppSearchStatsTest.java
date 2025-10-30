@@ -43,6 +43,14 @@ public class AppSearchStatsTest {
         final int getVmLatency1 = 7;
         final int getVmLatency2 = 8;
         final int unblockedAppSearchLatencyMillis = 9;
+        final int callReceivedTimestampMillis = 10;
+        final int lastCallTypeHoldExecutor = 11;
+        final int executorAcquisitionLatencyMillis = 12;
+        final int onExecutorLatencyMillis = 13;
+        final int getUserInstanceLatencyMillis = 14;
+        final int pvmBinderLatencyMillis = 15;
+        final int requestPayloadSize = 16;
+        final int responsePayloadSize = 17;
 
         final @CallStats.CallType int callType =
                 BaseStats.CALL_TYPE_PUT_DOCUMENTS;
@@ -63,6 +71,14 @@ public class AppSearchStatsTest {
                 .addGetVmLatencyMillis(getVmLatency1)
                 .addGetVmLatencyMillis(getVmLatency2)
                 .setUnblockedAppSearchLatencyMillis(unblockedAppSearchLatencyMillis)
+                .setCallReceivedTimestampMillis(callReceivedTimestampMillis)
+                .setLastCallTypeHoldExecutor(lastCallTypeHoldExecutor)
+                .setExecutorAcquisitionLatencyMillis(executorAcquisitionLatencyMillis)
+                .setOnExecutorLatencyMillis(onExecutorLatencyMillis)
+                .setGetUserInstanceLatency(getUserInstanceLatencyMillis)
+                .setPvmBinderLatency(pvmBinderLatencyMillis)
+                .setRequestPayloadSize(requestPayloadSize)
+                .setResponsePayloadSize(responsePayloadSize)
                 .build();
 
         assertThat(cStats.getPackageName()).isEqualTo(TEST_PACKAGE_NAME);
@@ -87,6 +103,22 @@ public class AppSearchStatsTest {
                 .isEqualTo(unblockedAppSearchLatencyMillis);
         assertThat(cStats.getNumIcingCalls())
                 .isEqualTo(2);
+        assertThat(cStats.getCallReceivedTimestampMillis())
+                .isEqualTo(callReceivedTimestampMillis);
+        assertThat(cStats.getLastCallTypeHoldExecutor())
+                .isEqualTo(lastCallTypeHoldExecutor);
+        assertThat(cStats.getExecutorAcquisitionLatencyMillis())
+                .isEqualTo(executorAcquisitionLatencyMillis);
+        assertThat(cStats.getOnExecutorLatencyMillis())
+                .isEqualTo(onExecutorLatencyMillis);
+        assertThat(cStats.getGetUserInstanceLatencyMillis())
+                .isEqualTo(getUserInstanceLatencyMillis);
+        assertThat(cStats.getPvmBinderLatencyMillis())
+                .isEqualTo(pvmBinderLatencyMillis);
+        assertThat(cStats.getRequestPayloadSize())
+                .isEqualTo(requestPayloadSize);
+        assertThat(cStats.getResponsePayloadSize())
+                .isEqualTo(responsePayloadSize);
         String expectedString = "CallStats {\n"
                 + "  packageName=com.google.test,\n"
                 + "  database=testDataBase,\n"
@@ -96,10 +128,14 @@ public class AppSearchStatsTest {
                 + "  estimatedBinderLatencyMillis=1,\n"
                 + "  numOperationsSucceeded=2,\n"
                 + "  numOperationsFailed=3,\n"
-                + "  callReceivedTimestampMillis=0,\n"
-                + "  lastCallTypeHoldExecutor=0,\n"
-                + "  executorAcquisitionLatencyMillis=0,\n"
-                + "  onExecutorLatencyMillis=0\n"
+                + "  callReceivedTimestampMillis=10,\n"
+                + "  lastCallTypeHoldExecutor=11,\n"
+                + "  executorAcquisitionLatencyMillis=12,\n"
+                + "  onExecutorLatencyMillis=13,\n"
+                + "  getUserInstanceLatencyMillis=14,\n"
+                + "  pvmBinderLatencyMillis=15,\n"
+                + "  requestPayloadSize=16,\n"
+                + "  responsePayloadSize=17,\n"
                 + "  enabledFeatures=1,\n"
                 + "  javaLockAcquisitionLatencyMillis=4,\n"
                 + "  lastBlockingOperation=36,\n"

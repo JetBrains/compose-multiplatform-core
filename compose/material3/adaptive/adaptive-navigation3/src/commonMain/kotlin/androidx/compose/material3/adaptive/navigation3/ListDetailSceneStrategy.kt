@@ -173,7 +173,8 @@ public class ListDetailSceneStrategy<T : Any>(
     }
 
     public companion object {
-        internal val ListDetailRoleKey: String = ListDetailPaneScaffoldRole::class.qualifiedName!!
+        internal const val ListDetailRoleKey: String =
+            "androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole"
 
         /**
          * Constructs metadata to mark a [NavEntry] as belonging to a

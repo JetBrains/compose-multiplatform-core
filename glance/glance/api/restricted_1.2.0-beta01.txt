@@ -205,8 +205,6 @@ package androidx.glance.action {
     method @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public static <T extends android.app.Activity> androidx.glance.action.Action actionStartActivity(Class<T> activity, optional androidx.glance.action.ActionParameters parameters, optional android.os.Bundle? activityOptions);
     method @BytecodeOnly @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public static androidx.glance.action.Action! actionStartActivity$default(android.content.ComponentName!, androidx.glance.action.ActionParameters!, android.os.Bundle!, int, Object!);
     method @BytecodeOnly public static androidx.glance.action.Action! actionStartActivity$default(android.content.ComponentName!, androidx.glance.action.ActionParameters!, int, Object!);
-    method @BytecodeOnly public static androidx.glance.action.Action! actionStartActivity$default(androidx.glance.action.ActionParameters!, android.os.Bundle!, int, Object!);
-    method @BytecodeOnly public static androidx.glance.action.Action! actionStartActivity$default(androidx.glance.action.ActionParameters!, int, Object!);
     method @BytecodeOnly @SuppressCompatibility @androidx.glance.ExperimentalGlanceApi public static androidx.glance.action.Action! actionStartActivity$default(Class!, androidx.glance.action.ActionParameters!, android.os.Bundle!, int, Object!);
     method @BytecodeOnly public static androidx.glance.action.Action! actionStartActivity$default(Class!, androidx.glance.action.ActionParameters!, int, Object!);
   }

@@ -66,6 +66,7 @@ import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.stabilization.StabilizationMode;
+import androidx.camera.core.impl.stabilization.VideoStabilization;
 import androidx.camera.core.impl.utils.UseCaseUtil;
 import androidx.camera.core.internal.TargetConfig;
 import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk;
@@ -1219,8 +1220,7 @@ public abstract class UseCase {
         // supported
         Range<Integer> fpsRange = FRAME_RATE_RANGE_UNSPECIFIED;
 
-        VideoStabilizationFeature.StabilizationMode stabilizationMode =
-                VideoStabilizationFeature.DEFAULT_STABILIZATION_MODE;
+        VideoStabilization stabilization = VideoStabilizationFeature.DEFAULT_STABILIZATION;
 
         // TODO: Use UNSPECIFIED default values for all features by default and switch to
         //  FCQ-specific default values only when the Camera2 FCQ API is required. However,
@@ -1236,7 +1236,7 @@ public abstract class UseCase {
                 FpsRangeFeature fpsFeature = ((FpsRangeFeature) feature);
                 fpsRange = new Range<>(fpsFeature.getMinFps(), fpsFeature.getMaxFps());
             } else if (feature instanceof VideoStabilizationFeature) {
-                stabilizationMode = ((VideoStabilizationFeature) feature).getMode();
+                stabilization = ((VideoStabilizationFeature) feature).getVideoStabilization();
             }
         }
 
@@ -1251,7 +1251,13 @@ public abstract class UseCase {
         // error-prone (e.g. if the UseCases are specified and the stabilization mode is changed for
         // some other UseCases in future, it may lead to those use cases not being handled properly
         // and it might be hard to notice such an issue).
-        switch (stabilizationMode) {
+        switch (stabilization) {
+            case UNSPECIFIED:
+                config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE,
+                        StabilizationMode.UNSPECIFIED);
+                config.insertOption(OPTION_VIDEO_STABILIZATION_MODE,
+                        StabilizationMode.UNSPECIFIED);
+                break;
             case OFF:
                 config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE, StabilizationMode.OFF);
                 config.insertOption(OPTION_VIDEO_STABILIZATION_MODE, StabilizationMode.OFF);

@@ -42,16 +42,26 @@ import java.util.concurrent.ExecutionException;
 @RunWith(AndroidJUnit4.class)
 public class ImpressApiMarshallingTest {
     private ImpressApi mImpressApi;
+    private long mTestViewHandle;
 
     @Before
     public void setUp() {
         loadLibraryAsync("test_impress_api_jni");
         ImpressApiTestHelper.nativeResetTestState();
+
+        mTestViewHandle = ImpressApiTestHelper.nativeCreateTestView();
+        assertThat(mTestViewHandle).isNotEqualTo(0);
+        assertThat(mTestViewHandle).isNotEqualTo(-1);
+
         mImpressApi = new ImpressApiImpl();
+        mImpressApi.setup(mTestViewHandle);
     }
 
     @After
     public void tearDown() {
+        if (mTestViewHandle != 0) {
+            ImpressApiTestHelper.nativeDestroyTestView(mTestViewHandle);
+        }
         ImpressApiTestHelper.nativeResetTestState();
     }
 
@@ -61,11 +71,10 @@ public class ImpressApiMarshallingTest {
         long expectedToken = 12345L;
         ImpressApiTestHelper.nativeSetExpectedLoadGltfPath(expectedPath);
         ImpressApiTestHelper.nativeSetLoadGltfAssetSuccess(expectedToken);
-        // TODO(b/446592272): Re-enable this assertion when the JNI marshaling refactor is complete.
-        // ListenableFuture<GltfModel> future = mImpressApi.loadGltfAsset(expectedPath);
-        // GltfModel actualModel = future.get(5, SECONDS);
-        // Long actualToken = actualModel.getNativeHandle();
-        // assertThat(actualToken).isEqualTo(expectedToken);
+        ListenableFuture<GltfModel> future = mImpressApi.loadGltfAsset(expectedPath);
+        GltfModel actualModel = future.get(5, SECONDS);
+        Long actualToken = actualModel.getNativeHandle();
+        assertThat(actualToken).isEqualTo(expectedToken);
     }
 
     @Test

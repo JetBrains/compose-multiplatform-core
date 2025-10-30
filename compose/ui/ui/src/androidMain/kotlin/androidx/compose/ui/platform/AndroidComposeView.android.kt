@@ -1407,7 +1407,6 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         layoutNodes.remove(node.semanticsId)
         measureAndLayoutDelegate.onNodeDetached(node)
         requestClearInvalidObservations()
-        rectManager.remove(node)
         @OptIn(ExperimentalComposeUiApi::class)
         if (autofillSupported() && ComposeUiFlags.isSemanticAutofillEnabled) {
             _autofillManager?.onDetach(node)
@@ -2301,6 +2300,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             semanticsOwner.listeners -= it
             focusOwner.listeners -= it
         }
+
+        rectManager.removeScheduledCallback()
     }
 
     override fun onProvideAutofillVirtualStructure(structure: ViewStructure?, flags: Int) {

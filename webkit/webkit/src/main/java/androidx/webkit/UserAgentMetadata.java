@@ -676,6 +676,8 @@ public final class UserAgentMetadata {
          * @param formFactors The form factors is used to generate user-agent client hint
          *                    {@code sec-ch-ua-form-factors}.
          * @throws IllegalArgumentException if the list contains an invalid form factor string.
+         * @throws UnsupportedOperationException if this feature is not supported by the current
+         *         WebView.
          *
          */
         @RequiresFeature(name = WebViewFeature.USER_AGENT_METADATA_FORM_FACTORS,

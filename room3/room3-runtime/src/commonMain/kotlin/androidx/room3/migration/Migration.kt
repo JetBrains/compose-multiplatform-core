@@ -45,6 +45,5 @@ public expect abstract class Migration(startVersion: Int, endVersion: Int) {
      *
      * @param connection The database connection
      */
-    // TODO(b/316943027): Try and make abstract without breaking API
-    public open fun migrate(connection: SQLiteConnection)
+    public abstract fun migrate(connection: SQLiteConnection)
 }

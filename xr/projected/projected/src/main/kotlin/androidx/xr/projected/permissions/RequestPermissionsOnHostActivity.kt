@@ -318,11 +318,11 @@ public class RequestPermissionsOnHostActivity : AppCompatActivity() {
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Button(onClick = onContinueClick, modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.continue_button))
+                    Text(text = stringResource(R.string.projected_continue_button))
                 }
 
                 Button(onClick = onCancelClick, modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.cancel_button))
+                    Text(text = stringResource(R.string.projected_cancel_button))
                 }
             }
 

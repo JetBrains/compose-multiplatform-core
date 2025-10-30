@@ -22,7 +22,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
-import androidx.xr.runtime.XrDisplay.BlendMode
+import androidx.xr.runtime.XrDevice.DisplayBlendMode
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,7 +51,7 @@ class OpenXrRuntimeTest {
     fun getPreferredBlendMode_returnsBlendMode() = initOpenXrRuntimeAndRunTest {
         // Result comes from `kBlendModes` defined in
         // //third_party/jetpack_xr_natives/openxr/openxr_stub.cc.
-        assertThat(underTest.getPreferredBlendMode()).isEqualTo(BlendMode.ADDITIVE)
+        assertThat(underTest.getPreferredDisplayBlendMode()).isEqualTo(DisplayBlendMode.ADDITIVE)
     }
 
     private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {

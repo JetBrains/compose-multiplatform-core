@@ -25,7 +25,7 @@ import org.jspecify.annotations.NonNull;
  * Texture class for the native Impress texture wrapper struct which is an implementation a
  * SceneCore TextureResource.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public final class Texture extends BindingsResource implements TextureResource {
     private final ImpressApi mImpressApi;
 

@@ -24,4 +24,5 @@ interface IProjectedService {
   void unregisterProjectedInputEventListener(in IProjectedInputEventListener listener);
   void addWindowFlags(in int flags);
   void clearWindowFlags(in int flags);
+  boolean isDisplayCapable();
 }

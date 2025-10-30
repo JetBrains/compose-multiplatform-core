@@ -182,8 +182,8 @@ public class PdfViewerState {
     }
 
     /** Clears the current selection, if one exists. No-op if there is no current [Selection] */
-    public fun clearSelection() {
-        pdfView?.clearSelection()
+    public fun clearCurrentSelection() {
+        pdfView?.clearCurrentSelection()
     }
 
     /**

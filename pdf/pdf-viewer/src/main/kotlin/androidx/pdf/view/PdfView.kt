@@ -452,7 +452,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         selectionMenuItemPreparers.remove(selectionMenuItemPreparer)
     }
 
-    /** The currently selected PDF content, as [Selection] */
+    /**
+     * The currently selected PDF content, as [Selection], or 'null' if no content is currently
+     * selected.
+     */
     public val currentSelection: Selection?
         get() {
             return selectionStateManager?.selectionModel?.value?.documentSelection?.selection
@@ -922,8 +925,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     /** Clears the current selection, if one exists. No-op if there is no current [Selection] */
-    public fun clearSelection() {
-        selectionStateManager?.clearSelection()
+    public fun clearCurrentSelection() {
+        selectionStateManager?.clearCurrentSelection()
     }
 
     override fun dispatchHoverEvent(event: MotionEvent?): Boolean {
@@ -980,7 +983,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         // Fast scroller is non-content and shouldn't be affected by zoom. It's drawn after
         // restoring the Canvas to its unscaled state
-        if (!enableDefaultFastScrollerRendering) {
+        if (enableDefaultFastScrollerRendering) {
             canvas.save()
             // Adjust the canvas based on current scroll position to draw fast scroller in view
             // coordinates.
@@ -1056,7 +1059,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private fun isContentAtHorizontalEdges(): Boolean {
         val leftContentEdgePx = -scrollX
         val rightContentEdgePx =
-            toViewCoord(contentWidth.toFloat(), zoom, scrollX).toInt() - paddingRight - paddingLeft
+            toViewCoord(contentWidth, zoom, scrollX).toInt() - paddingRight - paddingLeft
 
         return leftContentEdgePx == 0 || rightContentEdgePx == viewportWidth
     }
@@ -1302,6 +1305,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         state.isFormFillingTooltipEnabled = isFormFillingTooltipEnabled
         state.documentUri = pdfDocument?.uri
         state.paginationModel = pageLayoutManager?.paginationModel
+        state.layoutStrategy = pageLayoutManager?.layoutStrategy
         state.pdfFormFillingState = pageLayoutManager?.pdfFormFillingState
         state.pdfFormEditRecords = pdfDocument?.formEditRecords
         state.selectionModel = selectionStateManager?.selectionModel?.value
@@ -1352,7 +1356,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     override fun computeHorizontalScrollRange(): Int {
         // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
         // to compute the maximum scroll position. Scroll position is absolute, not relative
-        val contentWidthPx = toViewCoord(contentWidth.toFloat(), zoom, scroll = 0)
+        val contentWidthPx = toViewCoord(contentWidth, zoom, scroll = 0)
         return if (contentWidthPx < width) 0 else (contentWidthPx - width).roundToInt()
     }
 
@@ -1360,7 +1364,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         get() {
             // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
             // to compute the maximum scroll position. Scroll position is absolute, not relative
-            val contentHeightPx = toViewCoord(contentHeight.toFloat(), zoom, scroll = 0)
+            val contentHeightPx = toViewCoord(contentHeight, zoom, scroll = 0)
             return if (verticalAlignment == VERTICAL_ALIGNMENT_TOP || contentHeightPx > height) {
                 0
             } else {
@@ -1372,7 +1376,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     override fun computeVerticalScrollRange(): Int {
         // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
         // to compute the maximum scroll position. Scroll position is absolute, not relative
-        val contentHeightPx = toViewCoord(contentHeight.toFloat(), zoom, scroll = 0)
+        val contentHeightPx = toViewCoord(contentHeight, zoom, scroll = 0)
         return if (contentHeightPx < height && verticalAlignment == VERTICAL_ALIGNMENT_TOP) {
             0
         } else if (contentHeightPx < height) {
@@ -1413,8 +1417,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     localPdfDocument,
                     backgroundScope,
                     topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                    pageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
+                    verticalPageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
                     paginationModel = requireNotNull(localStateToRestore.paginationModel),
+                    layoutStrategy = requireNotNull(localStateToRestore.layoutStrategy),
                     pdfFormFillingState = requireNotNull(localStateToRestore.pdfFormFillingState),
                     errorFlow = errorFlow,
                     isFormFillingEnabled = isFormFillingEnabled,
@@ -1729,7 +1734,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         localPdfDocument,
                         backgroundScope,
                         topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                        pageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
+                        verticalPageSpacingPx =
+                            context.getDimensions(R.dimen.vertical_page_spacing),
                         errorFlow = errorFlow,
                         isFormFillingEnabled = isFormFillingEnabled,
                     )
@@ -2109,10 +2115,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     internal val contentWidth: Float
-        get() = pageLayoutManager?.paginationModel?.maxWidth ?: 0f
+        get() = pageLayoutManager?.maxContentWidth ?: 0f
 
     internal val contentHeight: Float
-        get() = pageLayoutManager?.paginationModel?.totalEstimatedHeight ?: 0f
+        get() = pageLayoutManager?.contentHeight ?: 0f
 
     /** Returns a new [Rect] representing [contentRect] in View coordinates */
     internal fun toViewRect(contentRect: RectF): Rect =
@@ -2365,7 +2371,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
             commitFormFillingEditText()
-            selectionStateManager?.clearSelection()
+            selectionStateManager?.clearCurrentSelection()
             val localPageLayoutManager = pageLayoutManager ?: return super.onSingleTapConfirmed(e)
             val touchPoint =
                 localPageLayoutManager.getPdfPointAt(

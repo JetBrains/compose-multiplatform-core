@@ -19,16 +19,6 @@ package androidx.appfunctions.compiler.core.metadata
 internal const val APP_FUNCTION_NAMESPACE = "appfunctions"
 internal const val APP_FUNCTION_ID_EMPTY = "unused"
 
-data class AppFunctionMetadata(
-    val id: String,
-    val packageName: String,
-    val isEnabled: Boolean,
-    val schema: AppFunctionSchemaMetadata?,
-    val parameters: List<AppFunctionParameterMetadata>,
-    val response: AppFunctionResponseMetadata,
-    val components: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(),
-)
-
 data class CompileTimeAppFunctionMetadata(
     val id: String,
     val isEnabledByDefault: Boolean,
@@ -37,6 +27,7 @@ data class CompileTimeAppFunctionMetadata(
     val response: AppFunctionResponseMetadata,
     val components: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(),
     val description: String = "",
+    val deprecation: AppFunctionDeprecationMetadata? = null,
 ) {
     fun toAppFunctionMetadataDocument(): AppFunctionMetadataDocument {
         return AppFunctionMetadataDocument(
@@ -48,6 +39,7 @@ data class CompileTimeAppFunctionMetadata(
             parameters = parameters.map { it.toAppFunctionParameterMetadataDocument() },
             response = response.toAppFunctionResponseMetadataDocument(),
             description = description,
+            deprecation = deprecation?.toAppFunctionDeprecationMetadataDocument(),
         )
     }
 }
@@ -62,4 +54,5 @@ data class AppFunctionMetadataDocument(
     val parameters: List<AppFunctionParameterMetadataDocument>?,
     val response: AppFunctionResponseMetadataDocument?,
     val description: String = "",
+    val deprecation: AppFunctionDeprecationMetadataDocument? = null,
 )

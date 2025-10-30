@@ -36,17 +36,17 @@ package androidx.xr.arcore.playservices {
     property public androidx.xr.runtime.math.Pose devicePose;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCoreEarth implements androidx.xr.arcore.runtime.Earth {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCoreEarth implements androidx.xr.arcore.runtime.Geospatial {
+    method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public androidx.xr.arcore.runtime.Anchor createAnchor(double latitude, double longitude, double altitude, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
-    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.runtime.Earth.Surface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.runtime.Anchor>);
-    method public androidx.xr.arcore.runtime.Earth.GeospatialPoseResult createGeospatialPoseFromDevicePose();
-    method public androidx.xr.arcore.runtime.Earth.GeospatialPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
+    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.runtime.Geospatial.Surface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.runtime.Anchor>);
+    method public androidx.xr.arcore.runtime.Geospatial.GeospatialPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
     method public androidx.xr.runtime.math.Pose createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
     method @InaccessibleFromKotlin public com.google.ar.core.Earth? getArCoreEarth();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Earth.State getState();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Geospatial.State getState();
     method public void update(com.google.ar.core.Session session);
     property public com.google.ar.core.Earth? arCoreEarth;
-    property public androidx.xr.arcore.runtime.Earth.State state;
+    property public androidx.xr.arcore.runtime.Geospatial.State state;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCoreFace implements androidx.xr.arcore.runtime.Face {
@@ -85,11 +85,10 @@ package androidx.xr.arcore.playservices {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ArCorePerceptionManager implements androidx.xr.arcore.runtime.PerceptionManager {
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public androidx.xr.arcore.runtime.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public void dispose();
     method @InaccessibleFromKotlin public androidx.xr.arcore.playservices.ArCoreDevice getArDevice();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.playservices.ArCoreEarth getEarth();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.playservices.ArCoreEarth getGeospatial();
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.DepthMap? getLeftDepthMap();
     method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Eye? getLeftEye();
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Hand? getLeftHand();
@@ -110,7 +109,7 @@ package androidx.xr.arcore.playservices {
     method public void setDisplayRotation(int rotation, int width, int height);
     method public void unpersistAnchor(java.util.UUID uuid);
     property public androidx.xr.arcore.playservices.ArCoreDevice arDevice;
-    property public androidx.xr.arcore.playservices.ArCoreEarth earth;
+    property public androidx.xr.arcore.playservices.ArCoreEarth geospatial;
     property public androidx.xr.arcore.runtime.DepthMap? leftDepthMap;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Eye? leftEye;
     property public androidx.xr.arcore.runtime.Hand? leftHand;
