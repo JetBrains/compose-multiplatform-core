@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.graph
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.params.MeteringRectangle
-import android.os.Build
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
@@ -41,11 +40,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 internal class Controller3AUpdate3ATest {
     private val graphState3A = GraphState3A()
     private val graphProcessor = FakeGraphProcessor()
@@ -63,7 +60,7 @@ internal class Controller3AUpdate3ATest {
             Controller3A(graphProcessor2, FakeCameraMetadata(), graphState3A2, listener3A)
         val result = controller3A.update3A(afMode = AfMode.OFF)
         assertThat(result.await().status).isEqualTo(Result3A.Status.SUBMIT_FAILED)
-        assertThat(graphState3A2.afMode).isEqualTo(AfMode.OFF)
+        assertThat(graphState3A2.current.afMode).isEqualTo(AfMode.OFF)
     }
 
     @Test
@@ -71,7 +68,8 @@ internal class Controller3AUpdate3ATest {
         initGraphProcessor()
 
         val result = controller3A.update3A(afMode = AfMode.OFF)
-        assertThat(graphState3A.afMode!!.value).isEqualTo(CaptureRequest.CONTROL_AF_MODE_OFF)
+        assertThat(graphState3A.current.afMode!!.value)
+            .isEqualTo(CaptureRequest.CONTROL_AF_MODE_OFF)
         assertThat(result.isCompleted).isFalse()
     }
 
@@ -103,8 +101,8 @@ internal class Controller3AUpdate3ATest {
                 FakeFrameMetadata(
                     frameNumber = FrameNumber(101L),
                     resultMetadata =
-                        mapOf(CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_OFF)
-                )
+                        mapOf(CaptureResult.CONTROL_AF_MODE to CaptureResult.CONTROL_AF_MODE_OFF),
+                ),
             )
         }
         val result3A = result.await()
@@ -130,8 +128,8 @@ internal class Controller3AUpdate3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AE_MODE to
                                 CaptureResult.CONTROL_AE_MODE_ON_ALWAYS_FLASH
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()
@@ -157,8 +155,8 @@ internal class Controller3AUpdate3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AWB_MODE to
                                 CaptureResult.CONTROL_AWB_MODE_CLOUDY_DAYLIGHT
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()
@@ -184,8 +182,8 @@ internal class Controller3AUpdate3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AF_REGIONS to
                                 Array(1) { MeteringRectangle(1, 1, 99, 99, 2) }
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()
@@ -211,8 +209,8 @@ internal class Controller3AUpdate3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AE_REGIONS to
                                 Array(1) { MeteringRectangle(1, 1, 99, 99, 2) }
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()
@@ -239,8 +237,8 @@ internal class Controller3AUpdate3ATest {
                         mapOf(
                             CaptureResult.CONTROL_AWB_REGIONS to
                                 Array(1) { MeteringRectangle(1, 1, 99, 99, 2) }
-                        )
-                )
+                        ),
+                ),
             )
         }
         val result3A = result.await()

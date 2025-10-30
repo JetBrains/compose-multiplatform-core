@@ -84,7 +84,7 @@ enum class PlatformIdentifier(val id: String, val group: PlatformGroup) {
     DESKTOP("desktop", PlatformGroup.JVM);
 
     companion object {
-        private val byId = values().associateBy { it.id }
+        private val byId = PlatformIdentifier.entries.associateBy { it.id }
 
         fun fromId(id: String): PlatformIdentifier? = byId[id]
     }

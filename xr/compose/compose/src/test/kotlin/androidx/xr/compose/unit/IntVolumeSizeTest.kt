@@ -18,7 +18,7 @@ package androidx.xr.compose.unit
 
 import androidx.compose.ui.unit.Density
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.scenecore.Dimensions
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
 import com.android.extensions.xr.ShadowConfig
 import com.google.common.truth.Truth.assertThat
@@ -78,7 +78,7 @@ class IntVolumeSizeTest {
 
     @Test
     fun intVolumeSize_fromMeters_returnsCorrectIntVolumeSize() {
-        val dimensions = Dimensions(9.0f, 9.0f, 9.0f)
+        val dimensions = FloatSize3d(9.0f, 9.0f, 9.0f)
 
         val intVolumeSize = dimensions.toIntVolumeSize(UNIT_DENSITY)
 

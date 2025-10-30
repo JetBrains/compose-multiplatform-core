@@ -18,8 +18,10 @@ package androidx.compose.material3.samples
 
 import androidx.activity.compose.BackHandler
 import androidx.annotation.Sampled
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -49,7 +51,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
@@ -67,11 +77,17 @@ import androidx.compose.ui.unit.dp
 fun FloatingActionButtonMenuSample() {
     val listState = rememberLazyListState()
     val fabVisible by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
+    val focusRequester = FocusRequester()
 
     Box {
         LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
             for (index in 0 until 100) {
-                item { Text(text = "List item - $index", modifier = Modifier.padding(24.dp)) }
+                item {
+                    Text(
+                        text = "List item - $index",
+                        modifier = Modifier.clickable {}.fillMaxWidth().padding(24.dp),
+                    )
+                }
             }
         }
 
@@ -102,10 +118,11 @@ fun FloatingActionButtonMenuSample() {
                             }
                             .animateFloatingActionButton(
                                 visible = fabVisible || fabMenuExpanded,
-                                alignment = Alignment.BottomEnd
-                            ),
+                                alignment = Alignment.BottomEnd,
+                            )
+                            .focusRequester(focusRequester),
                     checked = fabMenuExpanded,
-                    onCheckedChange = { fabMenuExpanded = !fabMenuExpanded }
+                    onCheckedChange = { fabMenuExpanded = !fabMenuExpanded },
                 ) {
                     val imageVector by remember {
                         derivedStateOf {
@@ -115,32 +132,51 @@ fun FloatingActionButtonMenuSample() {
                     Icon(
                         painter = rememberVectorPainter(imageVector),
                         contentDescription = null,
-                        modifier = Modifier.animateIcon({ checkedProgress })
+                        modifier = Modifier.animateIcon({ checkedProgress }),
                     )
                 }
-            }
+            },
         ) {
             items.forEachIndexed { i, item ->
                 FloatingActionButtonMenuItem(
                     modifier =
                         Modifier.semantics {
-                            isTraversalGroup = true
-                            // Add a custom a11y action to allow closing the menu when focusing
-                            // the last menu item, since the close button comes before the first
-                            // menu item in the traversal order.
-                            if (i == items.size - 1) {
-                                customActions =
-                                    listOf(
-                                        CustomAccessibilityAction(
-                                            label = "Close menu",
-                                            action = {
-                                                fabMenuExpanded = false
-                                                true
-                                            }
+                                isTraversalGroup = true
+                                // Add a custom a11y action to allow closing the menu when focusing
+                                // the last menu item, since the close button comes before the first
+                                // menu item in the traversal order.
+                                if (i == items.size - 1) {
+                                    customActions =
+                                        listOf(
+                                            CustomAccessibilityAction(
+                                                label = "Close menu",
+                                                action = {
+                                                    fabMenuExpanded = false
+                                                    true
+                                                },
+                                            )
                                         )
-                                    )
+                                }
                             }
-                        },
+                            .then(
+                                if (i == 0) {
+                                    Modifier.onKeyEvent {
+                                        // Navigating back from the first item should go back to the
+                                        // FAB menu button.
+                                        if (
+                                            it.type == KeyEventType.KeyDown &&
+                                                (it.key == Key.DirectionUp ||
+                                                    (it.isShiftPressed && it.key == Key.Tab))
+                                        ) {
+                                            focusRequester.requestFocus()
+                                            return@onKeyEvent true
+                                        }
+                                        return@onKeyEvent false
+                                    }
+                                } else {
+                                    Modifier
+                                }
+                            ),
                     onClick = { fabMenuExpanded = false },
                     icon = { Icon(item.first, contentDescription = null) },
                     text = { Text(text = item.second) },

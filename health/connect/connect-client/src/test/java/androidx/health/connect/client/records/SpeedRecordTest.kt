@@ -37,7 +37,7 @@ class SpeedRecordTest {
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
             .isEqualTo(
@@ -47,7 +47,7 @@ class SpeedRecordTest {
                     endTime = Instant.ofEpochMilli(1236L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
     }
@@ -61,7 +61,7 @@ class SpeedRecordTest {
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
             .isEqualTo(
@@ -71,7 +71,7 @@ class SpeedRecordTest {
                     endTime = Instant.ofEpochMilli(1234L),
                     endZoneOffset = null,
                     metadata = Metadata.manualEntry(),
-                    samples = listOf()
+                    samples = listOf(),
                 )
             )
     }
@@ -85,7 +85,7 @@ class SpeedRecordTest {
                 endTime = Instant.ofEpochMilli(1234L),
                 endZoneOffset = null,
                 metadata = Metadata.manualEntry(),
-                samples = listOf()
+                samples = listOf(),
             )
         }
     }
@@ -100,7 +100,7 @@ class SpeedRecordTest {
                         endZoneOffset = null,
                         metadata = Metadata.unknownRecordingMethod(),
                         samples =
-                            listOf(SpeedRecord.Sample(Instant.ofEpochMilli(1234L), 24.milesPerHour))
+                            listOf(SpeedRecord.Sample(Instant.ofEpochMilli(1234L), 24.milesPerHour)),
                     )
                     .toString()
             )

@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.internal
 
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraTimestamp
 import androidx.camera.camera2.pipe.Frame.Companion.isFrameInfoAvailable
@@ -38,11 +37,9 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 
 /** Tests for [FrameImpl] */
 @RunWith(RobolectricTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class FrameImplTest {
     private val stream1Id = StreamId(1)
     private val stream2Id = StreamId(2)
@@ -70,7 +67,7 @@ class FrameImplTest {
             requestMetadata = fakeRequestMetadata,
             frameNumber = frameNumber,
             frameTimestamp = frameTimestamp,
-            imageStreams
+            imageStreams,
         )
 
     private val frameInfoResult = frameState.frameInfoOutput
@@ -306,7 +303,7 @@ class FrameImplTest {
             frameTimestamp,
             42,
             frameTimestamp.value,
-            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED)
+            OutputResult.failure(OutputStatus.ERROR_OUTPUT_DROPPED),
         )
 
         assertThat(sharedOutputFrame.imageStatus(stream1Id))
@@ -331,7 +328,7 @@ class FrameImplTest {
             frameTimestamp,
             42,
             frameTimestamp.value,
-            OutputResult.from(stream1OutputImage)
+            OutputResult.from(stream1OutputImage),
         )
 
         // Complete streamResult2 with stream2Output3Image
@@ -340,7 +337,7 @@ class FrameImplTest {
             frameTimestamp,
             42,
             frameTimestamp.value,
-            OutputResult.from(stream2OutputImage)
+            OutputResult.from(stream2OutputImage),
         )
 
         // Complete frameInfoResult
@@ -349,7 +346,7 @@ class FrameImplTest {
             frameTimestamp,
             42,
             frameNumber.value,
-            OutputResult.from(fakeFrameInfo)
+            OutputResult.from(fakeFrameInfo),
         )
     }
 }

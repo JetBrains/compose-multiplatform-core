@@ -26,7 +26,7 @@ import com.android.build.api.artifact.SingleArtifact
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 android {
     compileSdk = 35
@@ -60,7 +60,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(project(":profileinstaller:profileinstaller"))
 
     // These projects are not used directly but added to baseline-prof.txt to increase number of

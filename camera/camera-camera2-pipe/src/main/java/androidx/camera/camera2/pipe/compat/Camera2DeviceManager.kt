@@ -100,15 +100,18 @@ internal interface Camera2DeviceManager {
     /** Submits a request to close the underlying camera. */
     fun close(cameraId: CameraId): Deferred<Unit>
 
-    /** Instructs Camera2DeviceManager to close all cameras. */
-    fun closeAll(): Deferred<Unit>
+    /**
+     * Instructs Camera2DeviceManager to close all cameras. If [forceCancelOpen] is true, we force
+     * cancel any pending camera opens after a timeout.
+     */
+    fun closeAll(forceCancelOpen: Boolean = false): Deferred<Unit>
 }
 
 internal class ActiveCamera(
     private val androidCameraState: AndroidCameraState,
     internal val allCameraIds: Set<CameraId>,
     scope: CoroutineScope,
-    closeCallback: (ActiveCamera) -> Unit
+    closeCallback: (ActiveCamera) -> Unit,
 ) {
     val cameraId: CameraId
         get() = androidCameraState.cameraId
@@ -126,7 +129,7 @@ internal class ActiveCamera(
             // A notable bug is b/264396089 where, because camera opens took too long, we didn't
             // acquire a WakeLockToken, and thereby not issuing the request to close camera
             // eventually.
-            startTimeoutOnCreation = true
+            startTimeoutOnCreation = true,
         )
 
     init {
@@ -179,9 +182,9 @@ constructor(
     private val retryingCameraStateOpener: RetryingCameraStateOpener,
     private val camera2DeviceCloser: Camera2DeviceCloser,
     private val camera2ErrorProcessor: Camera2ErrorProcessor,
-    val threads: Threads
+    val threads: Threads,
 ) : Camera2DeviceManager {
-    private val scope = threads.globalScope
+    private val scope = threads.cameraPipeScope
 
     private val queue =
         PruningProcessingQueue<CameraRequest>(prune = ::prune) { process(it) }.processIn(scope)
@@ -204,7 +207,7 @@ constructor(
         sharedCameraIds: List<CameraId>,
         graphListener: GraphListener,
         isPrewarm: Boolean,
-        isForegroundObserver: (Unit) -> Boolean
+        isForegroundObserver: (Unit) -> Boolean,
     ): VirtualCamera? {
         val result = VirtualCameraState(cameraId, graphListener, scope)
         if (
@@ -219,7 +222,7 @@ constructor(
             graphListener.onGraphError(
                 GraphState.GraphStateError(
                     CameraError.ERROR_CAMERA_OPENER,
-                    willAttemptRetry = false
+                    willAttemptRetry = false,
                 )
             )
             return null
@@ -247,7 +250,10 @@ constructor(
         return request.deferred
     }
 
-    override fun closeAll(): Deferred<Unit> {
+    override fun closeAll(forceCancelOpen: Boolean): Deferred<Unit> {
+        if (forceCancelOpen) {
+            retryingCameraStateOpener.cancelOpen()
+        }
         val request = RequestCloseAll()
         if (!queue.tryEmit(request)) {
             Log.error { "Camera close all request failed!" }
@@ -396,10 +402,21 @@ constructor(
         // Step 2: Open the camera if not opened already.
         camera2ErrorProcessor.setActiveVirtualCamera(cameraIdToOpen, request.virtualCamera)
         val result = retrieveActiveCamera(cameraIdToOpen, request)
-        if (result == null) {
-            Log.error { "Failed to retrieve active camera for $cameraIdToOpen" }
+        if (result is RetrieveActiveCameraResult.Error) {
+            if (result.lastCameraError != null) {
+                Log.error {
+                    "Failed to retrieve active camera for $cameraIdToOpen. " +
+                        "Last camera error was ${result.lastCameraError}"
+                }
+            } else {
+                Log.warn {
+                    "Failed to retrieve active camera for $cameraIdToOpen. " +
+                        "Camera might have been closed during opening."
+                }
+            }
             return
         }
+        check(result is RetrieveActiveCameraResult.Success)
         val realCamera = result.activeCamera
         val realCameraToken = result.token
 
@@ -454,7 +471,9 @@ constructor(
 
     private suspend fun processRequestCloseById(request: RequestCloseById) {
         val cameraId = request.activeCameraId
-        Log.info { "PruningCamera2DeviceManager#processRequestCloseById(${request.activeCameraId}" }
+        Log.info {
+            "PruningCamera2DeviceManager#processRequestCloseById(${request.activeCameraId})"
+        }
 
         disconnectPendingRequestOpens(
             pendingRequestOpens.filter { it.request.virtualCamera.cameraId == cameraId }
@@ -485,7 +504,7 @@ constructor(
     private suspend fun retrieveActiveCamera(
         cameraId: CameraId,
         requestOpen: RequestOpen,
-    ): RetrieveActiveCameraResult? {
+    ): RetrieveActiveCameraResult {
         var realCamera: ActiveCamera? = null
         var realCameraToken: Token? = null
         for (activeCamera in activeCameras) {
@@ -519,38 +538,45 @@ constructor(
                 )
             when (openResult) {
                 is OpenVirtualCameraResult.Success -> {
-                    Log.info { "PruningCameraDeviceManager: $cameraId opened successfully" }
                     realCamera = openResult.activeCamera
-                    // Acquire a token to mark this active camera as used.
-                    realCameraToken = checkNotNull(realCamera.acquire())
-                    activeCameras.add(realCamera)
+                    // Acquire a token to confirm that this active camera is available and mark it
+                    // as used.
+                    realCameraToken = realCamera.acquire()
+                    if (realCameraToken != null) {
+                        Log.info { "PruningCameraDeviceManager: $cameraId opened successfully" }
+                        activeCameras.add(realCamera)
+                    } else {
+                        Log.info {
+                            "PruningCameraDeviceManager: Failed to open $cameraId: " +
+                                "Camera may have been closed (possibly due to an error) " +
+                                "immediately after opening"
+                        }
+                        requestOpen.virtualCamera.disconnect(null)
+                        return RetrieveActiveCameraResult.Error(null)
+                    }
                 }
                 is OpenVirtualCameraResult.Error -> {
                     Log.info { "PruningCameraDeviceManager: Failed to open $cameraId" }
                     requestOpen.virtualCamera.disconnect(openResult.lastCameraError)
-                    return null
+                    return RetrieveActiveCameraResult.Error(openResult.lastCameraError)
                 }
             }
         }
-        return RetrieveActiveCameraResult(realCamera, checkNotNull(realCameraToken))
+        return RetrieveActiveCameraResult.Success(realCamera, checkNotNull(realCameraToken))
     }
 
     private suspend fun openCameraWithRetry(
         cameraId: CameraId,
         sharedCameraIds: List<CameraId>,
         isForegroundObserver: (Unit) -> Boolean,
-        scope: CoroutineScope
+        scope: CoroutineScope,
     ): OpenVirtualCameraResult {
-        // TODO: Figure out how 1-time permissions work, and see if they can be reset without
-        //   causing the application process to restart.
-        check(permissions.hasCameraPermission) { "Missing camera permissions!" }
-
         Log.debug { "Opening $cameraId with retries..." }
         val result =
             retryingCameraStateOpener.openCameraWithRetry(
                 cameraId,
                 camera2DeviceCloser,
-                isForegroundObserver
+                isForegroundObserver,
             )
         if (result.cameraState == null) {
             return OpenVirtualCameraResult.Error(result.errorCode)
@@ -579,14 +605,14 @@ constructor(
 
             pendingRequestOpen.activeCamera.connectTo(
                 request.virtualCamera,
-                pendingRequestOpen.token
+                pendingRequestOpen.token,
             )
             pendingRequestOpens.remove(pendingRequestOpen)
         }
     }
 
     private suspend fun disconnectPendingRequestOpens(
-        pendingRequestOpensToDisconnect: List<PendingRequestOpen>,
+        pendingRequestOpensToDisconnect: List<PendingRequestOpen>
     ) {
         for (pendingRequestOpen in pendingRequestOpensToDisconnect) {
             pendingRequestOpen.token.release()
@@ -596,7 +622,7 @@ constructor(
 
     private inline fun <T> List<T>.firstFromIndexOrNull(
         index: Int,
-        predicate: (T) -> Boolean
+        predicate: (T) -> Boolean,
     ): Int? {
         for (i in index..size - 1) {
             if (predicate(get(i))) {
@@ -614,7 +640,12 @@ constructor(
         return removedElements
     }
 
-    private class RetrieveActiveCameraResult(val activeCamera: ActiveCamera, val token: Token)
+    private sealed interface RetrieveActiveCameraResult {
+        data class Success(val activeCamera: ActiveCamera, val token: Token) :
+            RetrieveActiveCameraResult
+
+        data class Error(val lastCameraError: CameraError?) : RetrieveActiveCameraResult
+    }
 
     private sealed interface OpenVirtualCameraResult {
         data class Success(val activeCamera: ActiveCamera) : OpenVirtualCameraResult

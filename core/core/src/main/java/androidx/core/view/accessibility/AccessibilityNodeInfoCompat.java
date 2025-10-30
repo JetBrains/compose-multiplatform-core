@@ -464,8 +464,8 @@ public class AccessibilityNodeInfoCompat {
          * @see View#requestRectangleOnScreen(Rect)
          */
         public static final AccessibilityActionCompat ACTION_SHOW_ON_SCREEN =
-                new AccessibilityActionCompat(Build.VERSION.SDK_INT >= 23
-                        ? AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN : null,
+                new AccessibilityActionCompat(
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SHOW_ON_SCREEN,
                         android.R.id.accessibilityActionShowOnScreen, null, null, null);
 
         /**
@@ -481,40 +481,40 @@ public class AccessibilityNodeInfoCompat {
          * @see AccessibilityNodeInfoCompat#getCollectionInfo()
          */
         public static final AccessibilityActionCompat ACTION_SCROLL_TO_POSITION =
-                new AccessibilityActionCompat(Build.VERSION.SDK_INT >= 23
-                        ? AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_TO_POSITION
-                        : null, android.R.id.accessibilityActionScrollToPosition, null, null,
+                new AccessibilityActionCompat(
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_TO_POSITION,
+                        android.R.id.accessibilityActionScrollToPosition, null, null,
                         ScrollToPositionArguments.class);
 
         /**
          * Action to scroll the node content up.
          */
         public static final AccessibilityActionCompat ACTION_SCROLL_UP =
-                new AccessibilityActionCompat(Build.VERSION.SDK_INT >= 23
-                        ? AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP : null,
+                new AccessibilityActionCompat(
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_UP,
                         android.R.id.accessibilityActionScrollUp, null, null, null);
         /**
          * Action to scroll the node content left.
          */
         public static final AccessibilityActionCompat ACTION_SCROLL_LEFT =
-                new AccessibilityActionCompat(Build.VERSION.SDK_INT >= 23
-                        ? AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT : null,
+                new AccessibilityActionCompat(
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_LEFT,
                         android.R.id.accessibilityActionScrollLeft, null, null, null);
 
         /**
          * Action to scroll the node content down.
          */
         public static final AccessibilityActionCompat ACTION_SCROLL_DOWN =
-                new AccessibilityActionCompat(Build.VERSION.SDK_INT >= 23
-                        ? AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN : null,
+                new AccessibilityActionCompat(
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_DOWN,
                         android.R.id.accessibilityActionScrollDown, null, null, null);
 
         /**
          * Action to scroll the node content right.
          */
         public static final AccessibilityActionCompat ACTION_SCROLL_RIGHT =
-                new AccessibilityActionCompat(Build.VERSION.SDK_INT >= 23
-                        ? AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT : null,
+                new AccessibilityActionCompat(
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_RIGHT,
                         android.R.id.accessibilityActionScrollRight, null, null, null);
 
         /**
@@ -565,8 +565,8 @@ public class AccessibilityNodeInfoCompat {
          * <p>{@link #isContextClickable()} should return true if this action is available.
          */
         public static final AccessibilityActionCompat ACTION_CONTEXT_CLICK =
-                new AccessibilityActionCompat(Build.VERSION.SDK_INT >= 23
-                        ? AccessibilityNodeInfo.AccessibilityAction.ACTION_CONTEXT_CLICK : null,
+                new AccessibilityActionCompat(
+                        AccessibilityNodeInfo.AccessibilityAction.ACTION_CONTEXT_CLICK,
                         android.R.id.accessibilityActionContextClick, null, null, null);
 
         /**
@@ -4208,11 +4208,7 @@ public class AccessibilityNodeInfoCompat {
      * @return True if the node is context clickable.
      */
     public boolean isContextClickable() {
-        if (Build.VERSION.SDK_INT >= 23) {
-            return mInfo.isContextClickable();
-        } else {
-            return false;
-        }
+        return mInfo.isContextClickable();
     }
 
     /**
@@ -4227,9 +4223,7 @@ public class AccessibilityNodeInfoCompat {
      * @throws IllegalStateException If called from an AccessibilityService.
      */
     public void setContextClickable(boolean contextClickable) {
-        if (Build.VERSION.SDK_INT >= 23) {
-            mInfo.setContextClickable(contextClickable);
-        }
+        mInfo.setContextClickable(contextClickable);
     }
 
     /**
@@ -4331,11 +4325,126 @@ public class AccessibilityNodeInfoCompat {
     }
 
     /**
+     * Adds the view which serves as the label of the view represented by this info for
+     * accessibility purposes. When multiple labels are added, the content from each label is
+     * combined in the order that they are added.
+     * <p>
+     * If visible text can be used to describe or give meaning to this UI, this method is
+     * preferred. For example, a TextView before an EditText in the UI usually specifies what
+     * information is contained in the EditText. Hence, the EditText is labeled by the TextView.
+     *
+     * @param label A view that labels this node's source.
+     */
+    public void addLabeledBy(@NonNull View label) {
+        addLabeledBy(label, NO_ID);
+    }
+
+    /**
+     * Adds the view which serves as the label of the view represented by this info for
+     * accessibility purposes. If <code>virtualDescendantId</code> is {@link View#NO_ID} the root
+     * is set as the label.
+     * <p>
+     * A virtual descendant is an imaginary View that is reported as a part of the view hierarchy
+     * for accessibility purposes. This enables custom views that draw complex content to report
+     * themselves as a tree of virtual views, thus conveying their logical structure.
+     * <p>
+     * If visible text can be used to describe or give meaning to this UI, this method is
+     * preferred. For example, a TextView before an EditText in the UI usually specifies what
+     * information is contained in the EditText. Hence, the EditText is labeled by the TextView.
+     * <p>
+     *   <strong>Note:</strong> Cannot be called from an
+     *   {@link android.accessibilityservice.AccessibilityService}.
+     *   This class is made immutable before being delivered to an AccessibilityService.
+     * </p>
+     * <p>
+     *   <strong>Note:</strong>  Starting with Android 36, when multiple labels are added, the
+     *   content from each label is combined in the order that they are added. Before Android 36,
+     *   the most recently added label is set as the only label.
+     * </p>
+     *
+     * @param root A root whose virtual descendant labels this node's source.
+     * @param virtualDescendantId The id of the virtual descendant.
+     */
+    public void addLabeledBy(@NonNull View root, int virtualDescendantId) {
+        if (Build.VERSION.SDK_INT >= 36) {
+            Api36Impl.addLabeledBy(mInfo, root, virtualDescendantId);
+        } else {
+            setLabeledBy(root, virtualDescendantId);
+        }
+    }
+
+    /**
+     * Gets the list of node infos which serve as the labels of the view represented by this info
+     * for accessibility purposes.
+     *
+     * @return The list of labels in the order that they were added.
+     */
+    public @NonNull List<AccessibilityNodeInfoCompat> getLabeledByList() {
+        if (Build.VERSION.SDK_INT >= 36) {
+            return Api36Impl.getLabeledByList(mInfo);
+        } else {
+            List<AccessibilityNodeInfoCompat> labels = new ArrayList<>(1);
+            AccessibilityNodeInfoCompat label = getLabeledBy();
+            if (label != null) {
+                labels.add(label);
+            }
+            return labels;
+        }
+    }
+
+    /**
+     * Removes a label. If the label was not previously added to the node, calling this method
+     * has no effect.
+     * <p>
+     *   <strong>Note:</strong> Cannot be called from an
+     *   {@link android.accessibilityservice.AccessibilityService}.
+     *   This class is made immutable before being delivered to an AccessibilityService.
+     * </p>
+     * <p>
+     *   <strong>Note:</strong> If the Android version is less than 36, this method has no effect;
+     *   call {@link #setLabeledBy(View)} with <code>null</code> to remove the current label.
+     * </p>
+     *
+     * @param label The node which serves as this node's label.
+     * @return true if the label was present
+     * @see #addLabeledBy(View)
+     */
+    public boolean removeLabeledBy(@NonNull View label) {
+        return removeLabeledBy(label, NO_ID);
+    }
+
+    /**
+     * Removes a label which is a virtual descendant of the given <code>root</code>. If
+     * <code>virtualDescendantId</code> is {@link View#NO_ID} the root is set as the label. If
+     * the label was not previously added to the node, calling this method has no effect.
+     * <p>
+     *   <strong>Note:</strong> If the Android version is less than 36, this method has no effect;
+     *   call {@link #setLabeledBy(View)} with <code>null</code> to remove the current label.
+     * </p>
+     *
+     * @param root The root of the virtual subtree.
+     * @param virtualDescendantId The id of the virtual node which serves as this node's label.
+     * @return true if the label was present
+     * @see #addLabeledBy(View, int)
+     */
+    public boolean removeLabeledBy(@NonNull View root, int virtualDescendantId) {
+        if (Build.VERSION.SDK_INT >= 36) {
+            return Api36Impl.removeLabeledBy(mInfo, root, virtualDescendantId);
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
      * Sets the view which serves as the label of the view represented by
      * this info for accessibility purposes.
      *
      * @param label The view that labels this node's source.
+     * @deprecated Use {@link AccessibilityNodeInfoCompat#addLabeledBy(View)} or
+     * {@link AccessibilityNodeInfoCompat#removeLabeledBy(View)} instead.
      */
+    @Deprecated
     public void setLabeledBy(View label) {
         mInfo.setLabeledBy(label);
     }
@@ -4358,7 +4467,10 @@ public class AccessibilityNodeInfoCompat {
      *
      * @param root The root whose virtual descendant labels this node's source.
      * @param virtualDescendantId The id of the virtual descendant.
+     * @deprecated Use {@link AccessibilityNodeInfoCompat#addLabeledBy(View, int)} or
+     * {@link AccessibilityNodeInfoCompat#removeLabeledBy(View, int)} instead.
      */
+    @Deprecated
     public void setLabeledBy(View root, int virtualDescendantId) {
         mInfo.setLabeledBy(root, virtualDescendantId);
     }
@@ -4368,7 +4480,9 @@ public class AccessibilityNodeInfoCompat {
      * this info for accessibility purposes.
      *
      * @return The label.
+     * @deprecated Use {@link AccessibilityNodeInfoCompat#getLabeledByList()} instead.
      */
+    @Deprecated
     public AccessibilityNodeInfoCompat getLabeledBy() {
         return AccessibilityNodeInfoCompat.wrapNonNullInstance(mInfo.getLabeledBy());
     }
@@ -4581,11 +4695,7 @@ public class AccessibilityNodeInfoCompat {
      * @see #setTraversalBefore(android.view.View, int)
      */
     public AccessibilityNodeInfoCompat getTraversalBefore() {
-        if (Build.VERSION.SDK_INT >= 22) {
-            return AccessibilityNodeInfoCompat.wrapNonNullInstance(mInfo.getTraversalBefore());
-        } else {
-            return null;
-        }
+        return AccessibilityNodeInfoCompat.wrapNonNullInstance(mInfo.getTraversalBefore());
     }
 
     /**
@@ -4603,9 +4713,7 @@ public class AccessibilityNodeInfoCompat {
      * @see #getTraversalBefore()
      */
     public void setTraversalBefore(View view) {
-        if (Build.VERSION.SDK_INT >= 22) {
-            mInfo.setTraversalBefore(view);
-        }
+        mInfo.setTraversalBefore(view);
     }
 
     /**
@@ -4630,9 +4738,7 @@ public class AccessibilityNodeInfoCompat {
      * @param virtualDescendantId The id of the virtual descendant.
      */
     public void setTraversalBefore(View root, int virtualDescendantId) {
-        if (Build.VERSION.SDK_INT >= 22) {
-            mInfo.setTraversalBefore(root, virtualDescendantId);
-        }
+        mInfo.setTraversalBefore(root, virtualDescendantId);
     }
 
     /**
@@ -4646,11 +4752,7 @@ public class AccessibilityNodeInfoCompat {
      * @see #setTraversalAfter(android.view.View, int)
      */
     public AccessibilityNodeInfoCompat getTraversalAfter() {
-        if (Build.VERSION.SDK_INT >= 22) {
-            return AccessibilityNodeInfoCompat.wrapNonNullInstance(mInfo.getTraversalAfter());
-        } else {
-            return null;
-        }
+        return AccessibilityNodeInfoCompat.wrapNonNullInstance(mInfo.getTraversalAfter());
     }
 
     /**
@@ -4668,9 +4770,7 @@ public class AccessibilityNodeInfoCompat {
      * @see #getTraversalAfter()
      */
     public void setTraversalAfter(View view) {
-        if (Build.VERSION.SDK_INT >= 22) {
-            mInfo.setTraversalAfter(view);
-        }
+        mInfo.setTraversalAfter(view);
     }
 
     /**
@@ -4694,9 +4794,7 @@ public class AccessibilityNodeInfoCompat {
      * @param virtualDescendantId The id of the virtual descendant.
      */
     public void setTraversalAfter(View root, int virtualDescendantId) {
-        if (Build.VERSION.SDK_INT >= 22) {
-            mInfo.setTraversalAfter(root, virtualDescendantId);
-        }
+        mInfo.setTraversalAfter(root, virtualDescendantId);
     }
 
     /**
@@ -5685,6 +5783,26 @@ public class AccessibilityNodeInfoCompat {
 
         private static void setChecked(AccessibilityNodeInfo info, @CheckedState int checked) {
             info.setChecked(checked);
+        }
+
+        private static void addLabeledBy(AccessibilityNodeInfo info, @NonNull View root,
+                int virtualDescendantId) {
+            info.addLabeledBy(root, virtualDescendantId);
+        }
+
+        private static @NonNull List<AccessibilityNodeInfoCompat> getLabeledByList(
+                AccessibilityNodeInfo info) {
+            List<AccessibilityNodeInfo> labels = info.getLabeledByList();
+            List<AccessibilityNodeInfoCompat> compatLabels = new ArrayList<>(labels.size());
+            for (AccessibilityNodeInfo labeledByInfo : labels) {
+                compatLabels.add(AccessibilityNodeInfoCompat.wrap(labeledByInfo));
+            }
+            return compatLabels;
+        }
+
+        private static boolean removeLabeledBy(AccessibilityNodeInfo info, @NonNull View root,
+                int virtualDescendantId) {
+            return info.removeLabeledBy(root, virtualDescendantId);
         }
     }
 }

@@ -35,7 +35,7 @@ internal fun buildPageIndicatorLabel(
     range: Range<Int>,
     pageCount: Int,
     @StringRes singlePageResId: Int,
-    @StringRes rangePageResId: Int
+    @StringRes rangePageResId: Int,
 ): String {
     return when {
         range.upper < range.lower || range.lower == range.upper -> {

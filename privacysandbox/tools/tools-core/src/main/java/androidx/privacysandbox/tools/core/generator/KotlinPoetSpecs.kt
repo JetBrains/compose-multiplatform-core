@@ -135,7 +135,7 @@ fun FunSpec.Builder.addStatement(block: CodeBlock.Builder.() -> Unit) {
 fun CodeBlock.Builder.addControlFlow(
     controlFlow: String,
     vararg args: Any?,
-    block: CodeBlock.Builder.() -> Unit
+    block: CodeBlock.Builder.() -> Unit,
 ) {
     beginControlFlow(controlFlow, *args)
     block()
@@ -208,22 +208,22 @@ interface UiAdapterSpecs {
                                 ParameterSpec(contextPropertyName, contextClass),
                                 ParameterSpec(
                                     "sessionData",
-                                    ClassName("androidx.privacysandbox.ui.core", "SessionData")
+                                    ClassName("androidx.privacysandbox.ui.core", "SessionData"),
                                 ),
                                 ParameterSpec("initialWidth", Types.int.poetClassName()),
                                 ParameterSpec("initialHeight", Types.int.poetClassName()),
                                 ParameterSpec("isZOrderOnTop", Types.boolean.poetClassName()),
                                 ParameterSpec(
                                     "clientExecutor",
-                                    ClassName("java.util.concurrent", "Executor")
+                                    ClassName("java.util.concurrent", "Executor"),
                                 ),
                                 ParameterSpec(
                                     "client",
                                     ClassName(
                                             "androidx.privacysandbox.ui.core",
-                                            "SandboxedUiAdapter"
+                                            "SandboxedUiAdapter",
                                         )
-                                        .nestedClass("SessionClient")
+                                        .nestedClass("SessionClient"),
                                 ),
                             )
                         )
@@ -248,18 +248,16 @@ interface UiAdapterSpecs {
                             listOf(
                                 ParameterSpec(
                                     "clientExecutor",
-                                    ClassName("java.util.concurrent", "Executor")
+                                    ClassName("java.util.concurrent", "Executor"),
                                 ),
                                 ParameterSpec(
                                     "client",
                                     ClassName("androidx.privacysandbox.ui.core", "SharedUiAdapter")
-                                        .nestedClass("SessionClient")
+                                        .nestedClass("SessionClient"),
                                 ),
                             )
                         )
-                        addStatement(
-                            "${adapterPropertyName}.openSession(clientExecutor, client)",
-                        )
+                        addStatement("${adapterPropertyName}.openSession(clientExecutor, client)")
                     }
                 override val toCoreLibInfoExpression: String = "%toCoreLibInfo:M()"
             }

@@ -59,7 +59,7 @@ fun MaterialTheme(
     colors: Colors = MaterialTheme.colors,
     typography: Typography = MaterialTheme.typography,
     shapes: Shapes = MaterialTheme.shapes,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val rememberedColors =
         remember {
@@ -76,7 +76,7 @@ fun MaterialTheme(
         LocalIndication provides rippleIndication,
         LocalShapes provides shapes,
         LocalTextSelectionColors provides selectionColors,
-        LocalTypography provides typography
+        LocalTypography provides typography,
     ) {
         ProvideTextStyle(value = typography.body1) { PlatformMaterialTheme(content) }
     }

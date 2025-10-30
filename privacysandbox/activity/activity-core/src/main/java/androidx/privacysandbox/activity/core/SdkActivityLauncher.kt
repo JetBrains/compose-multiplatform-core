@@ -34,7 +34,7 @@ import android.os.IBinder
  * SDKs can create launchers from an app-provided bundle by calling
  * [fromLauncherInfo][androidx.privacysandbox.activity.provider.SdkActivityLauncherFactory.fromLauncherInfo].
  */
-interface SdkActivityLauncher {
+public interface SdkActivityLauncher {
 
     /**
      * Tries to launch a new SDK activity using the given [sdkActivityHandlerToken].
@@ -45,5 +45,5 @@ interface SdkActivityLauncher {
      * A valid [sdkActivityHandlerToken] can be obtained by registering an SDK activity with
      * [registerSdkSandboxActivityHandler][androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat.registerSdkSandboxActivityHandler].
      */
-    suspend fun launchSdkActivity(sdkActivityHandlerToken: IBinder): Boolean
+    public suspend fun launchSdkActivity(sdkActivityHandlerToken: IBinder): Boolean
 }

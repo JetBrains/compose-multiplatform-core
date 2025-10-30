@@ -43,7 +43,7 @@ class HorizontalPageIndicatorTest {
             HorizontalPageIndicator(
                 modifier = Modifier.testTag(TEST_TAG),
                 pageIndicatorState = pageIndicatorState(),
-                indicatorStyle = PageIndicatorStyle.Curved
+                indicatorStyle = PageIndicatorStyle.Curved,
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -55,7 +55,7 @@ class HorizontalPageIndicatorTest {
             HorizontalPageIndicator(
                 modifier = Modifier.testTag(TEST_TAG),
                 pageIndicatorState = pageIndicatorState(),
-                indicatorStyle = PageIndicatorStyle.Linear
+                indicatorStyle = PageIndicatorStyle.Linear,
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -104,7 +104,7 @@ class HorizontalPageIndicatorTest {
                     pageIndicatorState =
                         pageIndicatorState(pageOffset = 0f, selectedPage = 1, pageCount = 9),
                     indicatorSize = indicatorSize,
-                    spacing = spacing
+                    spacing = spacing,
                 )
             }
         }
@@ -128,10 +128,10 @@ class HorizontalPageIndicatorTest {
                         pageIndicatorState(
                             pageOffset = 0f,
                             selectedPage = 1,
-                            pageCount = pagesCount
+                            pageCount = pagesCount,
                         ),
                     indicatorSize = indicatorSize,
-                    spacing = spacing
+                    spacing = spacing,
                 )
             }
         }
@@ -148,7 +148,7 @@ class HorizontalPageIndicatorTest {
                     pageIndicatorState = pageIndicatorState(),
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    indicatorSize = 20.dp
+                    indicatorSize = 20.dp,
                 )
             }
         }
@@ -176,7 +176,7 @@ class HorizontalPageIndicatorTest {
                     indicatorStyle = indicatorStyle,
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
-                    indicatorSize = 20.dp
+                    indicatorSize = 20.dp,
                 )
             }
         }
@@ -202,7 +202,7 @@ class HorizontalPageIndicatorTest {
                     selectedColor = selectedColor,
                     unselectedColor = unselectedColor,
                     indicatorShape = AbsoluteCutCornerShape(0f),
-                    indicatorSize = 20.dp
+                    indicatorSize = 20.dp,
                 )
             }
         }

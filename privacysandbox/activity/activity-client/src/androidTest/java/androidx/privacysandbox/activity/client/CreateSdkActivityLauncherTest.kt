@@ -57,11 +57,7 @@ class CreateSdkActivityLauncherTest(private val useManagedSdkActivityLauncher: B
     companion object {
         @JvmStatic
         @Parameterized.Parameters(name = "useManagedSdkActivityLauncher={0}")
-        fun data(): Array<Any> =
-            arrayOf(
-                arrayOf(true),
-                arrayOf(false),
-            )
+        fun data(): Array<Any> = arrayOf(arrayOf(true), arrayOf(false))
     }
 
     private val sdkSandboxActivityMatcher =

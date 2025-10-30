@@ -75,12 +75,12 @@ internal class GeometryMeasurer(val clock: Clock = Clock { SystemClock.uptimeMil
         val heightPx: Int,
         val onScreenGeometry: Rect,
         val opacityHint: Float,
-        val obstructions: List<Rect>
+        val obstructions: List<Rect>,
     )
 
     private inner class ViewGeometryCalculator(
         val view: View,
-        val isMeasuringObstructions: Boolean
+        val isMeasuringObstructions: Boolean,
     ) {
         var flow = MutableSharedFlow<GeometryData>()
         private val parentViews: MutableList<View> = mutableListOf()
@@ -124,7 +124,7 @@ internal class GeometryMeasurer(val clock: Clock = Clock { SystemClock.uptimeMil
 
         fun collectPossibleOcclusion(
             possibleOcclusion: View,
-            possibleOcclusionRect: Rect
+            possibleOcclusionRect: Rect,
         ): Boolean {
             if (!shouldTreeWalkBePerformed) {
                 return false
@@ -154,6 +154,7 @@ internal class GeometryMeasurer(val clock: Clock = Clock { SystemClock.uptimeMil
                 } else {
                     view.getLocationOnScreen(windowLocation)
                     onScreenGeometry.offset(-windowLocation[0], -windowLocation[1])
+                    @Suppress("CheckResult") // b/435240390
                     onScreenGeometry.intersect(0, 0, view.width, view.height)
                 }
             } else {
@@ -168,7 +169,7 @@ internal class GeometryMeasurer(val clock: Clock = Clock { SystemClock.uptimeMil
                     containerHeightPx,
                     onScreenGeometry,
                     opacityHint,
-                    occlusions
+                    occlusions,
                 )
             )
         }

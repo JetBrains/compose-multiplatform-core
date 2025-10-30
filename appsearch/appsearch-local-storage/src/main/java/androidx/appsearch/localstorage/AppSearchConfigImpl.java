@@ -111,6 +111,11 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     }
 
     @Override
+    public int getMaxPageBytesLimitForVm() {
+        return mIcingOptionsConfig.getMaxPageBytesLimitForVm();
+    }
+
+    @Override
     public int getIntegerIndexBucketSplitThreshold() {
         return mIcingOptionsConfig.getIntegerIndexBucketSplitThreshold();
     }
@@ -194,5 +199,10 @@ public class AppSearchConfigImpl implements AppSearchConfig {
     @Override
     public int getCompressionThresholdBytes() {
         return mIcingOptionsConfig.getCompressionThresholdBytes();
+    }
+
+    @Override
+    public int getEmbeddingIndexNumShards() {
+        return mIcingOptionsConfig.getEmbeddingIndexNumShards();
     }
 }

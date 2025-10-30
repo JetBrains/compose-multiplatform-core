@@ -8,7 +8,6 @@
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -31,7 +30,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
             }
         }
 
@@ -39,32 +37,10 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        wasmJsMain {
-            dependsOn(nonJvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        jsMain {
-            dependsOn(nonJvmMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType !in [KotlinPlatformType.jvm, KotlinPlatformType.common]) {
-                target.compilations["main"].defaultSourceSet {
-                    dependsOn(nonJvmMain)
-                }
+                target.compilations["main"].defaultSourceSet.dependsOn(nonJvmMain)
             }
-        }
-
-        // Workaround for https://youtrack.jetbrains.com/issue/KT-51763
-        // Make sure commonization runs before any compilation task.
-        tasks.withType(KotlinNativeCompile).configureEach {
-            it.dependsOn(tasks.named("commonize"))
         }
     }
 }
@@ -89,6 +65,17 @@ task annotationsZip(type: Zip) {
 artifacts {
     archives jvmJar
     archives annotationsZip
+}
+
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with Compose Multiplatform 1.8.0, "annotation-internal" published as empty
+        // artifact with dependency to this androidx module.
+        commonMainImplementation("org.jetbrains.compose.annotation-internal:annotation:1.8.0") {
+            because "prevents symbols duplication"
+        }
+    }
 }
 
 androidx {

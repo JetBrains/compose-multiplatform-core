@@ -46,6 +46,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -110,7 +112,7 @@ fun ButtonDemo() {
                 onClick = { /* Do something */ },
                 label = { Text("Filled Button") },
                 enabled = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
@@ -118,7 +120,7 @@ fun ButtonDemo() {
                 onClick = { /* Do something */ },
                 label = { Text("Filled Button") },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("Centered Button") } }
@@ -129,10 +131,10 @@ fun ButtonDemo() {
                     Text(
                         "Filled Button",
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
@@ -142,11 +144,11 @@ fun ButtonDemo() {
                     Text(
                         "Filled Button",
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("2 Slot Button") } }
@@ -156,7 +158,7 @@ fun ButtonDemo() {
                 label = { Text("Button") },
                 secondaryLabel = { Text("Secondary label") },
                 enabled = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
@@ -165,7 +167,7 @@ fun ButtonDemo() {
                 label = { Text("Button") },
                 secondaryLabel = { Text("Secondary label") },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("Icon and Label") } }
@@ -175,7 +177,7 @@ fun ButtonDemo() {
                 label = { Text("Button") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                 enabled = true,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
@@ -184,7 +186,7 @@ fun ButtonDemo() {
                 label = { Text("Button") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("3 Slot Button") } }
@@ -196,7 +198,7 @@ fun ButtonDemo() {
                 secondaryLabel = { Text("Secondary label") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("Long Click") } }
@@ -207,7 +209,12 @@ fun ButtonDemo() {
                 onLongClickLabel = "Long click",
                 label = { Text("Button") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }
@@ -260,7 +267,7 @@ fun FilledTonalButtonDemo() {
                 label = { Text("Filled Tonal Button") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = false
+                enabled = false,
             )
         }
         item { ListHeader { Text("3 Slot Button") } }
@@ -283,7 +290,12 @@ fun FilledTonalButtonDemo() {
                 onLongClickLabel = "Long click",
                 label = { Text("Filled Tonal Button") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }
@@ -301,7 +313,7 @@ fun FilledVariantButtonDemo() {
                 colors = ButtonDefaults.filledVariantButtonColors(),
                 label = { Text("Filled Variant Button") },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("2 Slot Button") } }
@@ -366,7 +378,12 @@ fun FilledVariantButtonDemo() {
                 colors = ButtonDefaults.filledVariantButtonColors(),
                 label = { Text("Filled VariantButton") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }
@@ -410,7 +427,7 @@ fun OutlinedButtonDemo() {
                 onClick = { /* Do something */ },
                 label = { Text("Outlined Button") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
@@ -419,7 +436,7 @@ fun OutlinedButtonDemo() {
                 label = { Text("Outlined Button") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("3 Slot Button") } }
@@ -431,7 +448,7 @@ fun OutlinedButtonDemo() {
                 secondaryLabel = { Text("Secondary label") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("Long Click") } }
@@ -442,7 +459,12 @@ fun OutlinedButtonDemo() {
                 onLongClickLabel = "Long click",
                 label = { Text("Outlined Button") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }
@@ -461,7 +483,7 @@ fun ChildButtonDemo() {
                     Text(
                         "Child Button",
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 },
                 enabled = false,
@@ -474,7 +496,7 @@ fun ChildButtonDemo() {
                 onClick = { /* Do something */ },
                 label = { Text("Child Button") },
                 secondaryLabel = { Text("Secondary label") },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
@@ -483,7 +505,7 @@ fun ChildButtonDemo() {
                 label = { Text("Child Button") },
                 secondaryLabel = { Text("Secondary label") },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("Icon and Label") } }
@@ -492,7 +514,7 @@ fun ChildButtonDemo() {
                 onClick = { /* Do something */ },
                 label = { Text("Child Button") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
@@ -501,7 +523,7 @@ fun ChildButtonDemo() {
                 label = { Text("Child Button") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("3 Slot Button") } }
@@ -513,7 +535,7 @@ fun ChildButtonDemo() {
                 secondaryLabel = { Text("Secondary label") },
                 icon = { FavoriteIcon(ButtonDefaults.IconSize) },
                 enabled = false,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         item { ListHeader { Text("Long Click") } }
@@ -524,7 +546,12 @@ fun ChildButtonDemo() {
                 onLongClickLabel = "Long click",
                 label = { Text("Child Button") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }
@@ -647,7 +674,7 @@ fun CompactButtonDemo() {
         item {
             CompactButtonWithOnLongClickSample(
                 onClickHandler = { showOnClickToast(context) },
-                onLongClickHandler = { showOnLongClickToast(context) }
+                onLongClickHandler = { showOnLongClickToast(context) },
             )
         }
         item { ListHeader { Text("Expandable") } }
@@ -734,7 +761,7 @@ fun ImageButtonBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 selected = alignment == alignmentValue,
                 onSelect = { alignment = alignmentValue },
-                label = { Text(label) }
+                label = { Text(label) },
             )
         }
 
@@ -756,7 +783,7 @@ fun ImageButtonBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 selected = contentScale == contentScaleValue,
                 onSelect = { contentScale = contentScaleValue },
-                label = { Text(label) }
+                label = { Text(label) },
             )
         }
 
@@ -767,7 +794,7 @@ fun ImageButtonBuilder() {
                 onValueChange = { alpha = it },
                 valueRange = 0f..1f,
                 steps = 99,
-                segmented = false
+                segmented = false,
             )
         }
 
@@ -777,7 +804,7 @@ fun ImageButtonBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 checked = enabled,
                 onCheckedChange = { enabled = it },
-                label = { Text("Enabled") }
+                label = { Text("Enabled") },
             )
         }
 
@@ -787,7 +814,7 @@ fun ImageButtonBuilder() {
                 modifier = Modifier.fillMaxWidth(),
                 checked = sizeToIntrinsics,
                 onCheckedChange = { sizeToIntrinsics = it },
-                label = { Text("Used") }
+                label = { Text("Used") },
             )
         }
 
@@ -850,7 +877,7 @@ fun ButtonUpdateAnimationDemo() {
                 Text(
                     text = targetText,
                     modifier = Modifier.animateContentSize().fillMaxWidth(),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -909,7 +936,7 @@ private fun Multiline3SlotButton(
         secondaryLabel = secondaryLabel,
         enabled = enabled,
         colors = colors,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     )
 }
 
@@ -931,7 +958,7 @@ private fun ButtonLargeIcon(enabled: Boolean = true) {
         icon = { FavoriteIcon(ButtonDefaults.LargeIconSize) },
         enabled = enabled,
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = ButtonDefaults.ButtonWithLargeIconContentPadding
+        contentPadding = ButtonDefaults.ButtonWithLargeIconContentPadding,
     )
 }
 
@@ -943,7 +970,7 @@ private fun ButtonExtraLargeIcon(enabled: Boolean = true) {
         icon = { FavoriteIcon(ButtonDefaults.ExtraLargeIconSize) },
         enabled = enabled,
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = ButtonDefaults.ButtonWithExtraLargeIconContentPadding
+        contentPadding = ButtonDefaults.ButtonWithExtraLargeIconContentPadding,
     )
 }
 
@@ -954,41 +981,36 @@ fun ButtonStackDemo() {
         ScalingLazyDemo {
             item { ListHeader { Text(text = "Button Stack") } }
 
-            buttonStack(cornerExtraSmall)
+            item { ButtonStack(cornerExtraSmall) }
 
             // Additional spacing between button stacks to emphasise the groupings
             item { Spacer(Modifier.height(8.dp)) }
 
-            buttonStack(cornerExtraSmall)
+            item { ButtonStack(cornerExtraSmall) }
         }
     }
 }
 
-private fun ScalingLazyListScope.buttonStack(cornerSize: CornerSize) {
-    item {
+@Composable
+private fun ButtonStack(cornerSize: CornerSize) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Button(
-            onClick = {},
+            onClick = { /* Do something */ },
             modifier = Modifier.fillMaxWidth(),
             shape = ButtonDefaults.shape.bottom(cornerSize),
-            label = { Text("Top", Modifier.fillMaxWidth()) }
+            label = { Text("Top", Modifier.fillMaxWidth()) },
         )
-    }
-
-    item {
         Button(
-            onClick = {},
+            onClick = { /* Do something */ },
             modifier = Modifier.fillMaxWidth(),
             shape = ButtonDefaults.shape.copy(cornerSize),
-            label = { Text("Middle", Modifier.fillMaxWidth()) }
+            label = { Text("Middle", Modifier.fillMaxWidth()) },
         )
-    }
-
-    item {
         Button(
-            onClick = {},
+            onClick = { /* Do something */ },
             modifier = Modifier.fillMaxWidth(),
             shape = ButtonDefaults.shape.top(cornerSize),
-            label = { Text("Bottom", Modifier.fillMaxWidth()) }
+            label = { Text("Bottom", Modifier.fillMaxWidth()) },
         )
     }
 }
@@ -1023,7 +1045,7 @@ private fun ScalingLazyListScope.buttonMerge() {
             ButtonDivider(
                 1.dp,
                 MaterialTheme.colorScheme.outlineVariant,
-                MaterialTheme.colorScheme.surfaceContainer
+                MaterialTheme.colorScheme.surfaceContainer,
             )
             Button(
                 onClick = {},
@@ -1035,7 +1057,7 @@ private fun ScalingLazyListScope.buttonMerge() {
             ButtonDivider(
                 1.dp,
                 MaterialTheme.colorScheme.outlineVariant,
-                MaterialTheme.colorScheme.surfaceContainer
+                MaterialTheme.colorScheme.surfaceContainer,
             )
             Button(
                 onClick = {},
@@ -1052,7 +1074,7 @@ private fun ScalingLazyListScope.buttonMerge() {
 private fun ButtonDivider(height: Dp, contentColor: Color, containerColor: Color) {
     Row(
         modifier = Modifier.fillMaxWidth().background(containerColor),
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Center,
     ) {
         Spacer(Modifier.height(height).fillMaxWidth(0.8f).background(contentColor))
     }

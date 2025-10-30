@@ -54,7 +54,7 @@ public actual object PreferenceDataStoreFactory {
         corruptionHandler: ReplaceFileCorruptionHandler<Preferences>? = null,
         migrations: List<DataMigration<Preferences>> = listOf(),
         scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
-        produceFile: () -> File
+        produceFile: () -> File,
     ): DataStore<Preferences> {
         val delegate =
             create(
@@ -69,7 +69,7 @@ public actual object PreferenceDataStoreFactory {
                     },
                 corruptionHandler = corruptionHandler,
                 migrations = migrations,
-                scope = scope
+                scope = scope,
             )
         return PreferenceDataStore(delegate)
     }
@@ -101,7 +101,7 @@ public actual object PreferenceDataStoreFactory {
                 storage = storage,
                 corruptionHandler = corruptionHandler,
                 migrations = migrations,
-                scope = scope
+                scope = scope,
             )
         )
     }
@@ -129,13 +129,13 @@ public actual object PreferenceDataStoreFactory {
         corruptionHandler: ReplaceFileCorruptionHandler<Preferences>?,
         migrations: List<DataMigration<Preferences>>,
         scope: CoroutineScope,
-        produceFile: () -> Path
+        produceFile: () -> Path,
     ): DataStore<Preferences> {
         return create(
             corruptionHandler,
             migrations,
             scope,
-            produceFile = { produceFile().toFile() }
+            produceFile = { produceFile().toFile() },
         )
     }
 }

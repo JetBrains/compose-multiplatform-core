@@ -20,7 +20,7 @@ val driver = TraceDriver(
     // The trace sink. Determines where traces are stored.
     // The library provides an implementation to a tracing sink out of the box.
     // You can also write your own implementation of a TraceSink.
-    sink = JvmTraceSink(sequenceId = 1, baseDir = File("/path/to/trace/directory")),
+    sink = TraceSink(sequenceId = 1, baseDir = File("/path/to/trace/directory")),
     // If injecting an instance of Driver, setting this to `false` means that no traces will be
     // emitted to the sink. You don't have to change all the call sites where traces are captured.
     isEnabled = true
@@ -81,36 +81,25 @@ track.trace("traceSectionName") {
 #### Context Propagation
 
 The library also provides an implementation for tracing APIs that make use of Kotlin Coroutines
-to propagate the tracing context across multiple coroutines.
+to propagate the tracing context. This is supported both from one `traceCoroutine` to any child
+`traceCoroutine`s within it, and across suspend/resume boundaries from thread to thread for the
+same `traceCoroutine` section.
 
 ```kotlin
-track.traceFlow("traceSectionName") {
+track.traceCoroutine("traceSectionName") {
     // suspend block
     // propagates flowId to inner coroutines automatically to do context propagation.
-}
-```
-
-For e.g.
-
-```kotlin
-suspend fun ProcessTrack.forkJoin(input: List<Int>) {
     coroutineScope {
-        val batches = input.chunked(CHUNK_SIZE)
-        val jobs = mutableListOf<Deferred<List<Int>>()
-        batches.forEachIndexed { index, batch ->
-            jobs += async {
-                traceFlow("batch-$index") { fork(batch) }
+        async {
+            track.traceCoroutine("child") {
+                // ...
             }
-        }
-        val results = jobs.awaitAll()
-        return traceFlow("merge") {
-            merge(results)
         }
     }
 }
 ```
 
-![Flows](images/flows.jpg "Context propagation with flows.")
+![Context Propagation](images/coroutines.png "Context propagation with Kotlin Coroutines.")
 
 #### Counters
 
@@ -129,7 +118,7 @@ counter.setCounter(longValue)
 counter.setCounter(doubleValue)
 ```
 
-![Counters](images/counters.jpg "Count based metrics")
+![Counters](images/counters.png "Counters based metrics")
 
 For an end to end tracing example app, look at
 [`TracingDemoTest.kt`](src/jvmTest/kotlin/androidx/tracing/driver/TracingDemoTest.kt).
@@ -139,4 +128,4 @@ For an end to end tracing example app, look at
 Traces are flushed to the sink asynchronously. To force a flush, you can always call `context.flush()`.
 
 Prior to termination of the program, call `traceContext.close()` to finalize all traces to the sink.
-(A [TraceContext](src/commonMain/kotlin/androidx/tracing/driver/TraceContext.kt) is a `Closeable`).
+(A [TraceContext](src/commonMain/kotlin/androidx/tracing/driver/TraceContext.kt) is a `AutoCloseable`).

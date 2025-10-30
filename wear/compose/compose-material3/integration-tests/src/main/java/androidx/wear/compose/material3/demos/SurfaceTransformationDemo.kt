@@ -65,12 +65,12 @@ fun SurfaceTransformationDemo() {
     val transformationSpec = rememberTransformationSpec()
     TransformingLazyColumn(
         modifier = Modifier.background(Color.Black),
-        contentPadding = PaddingValues(vertical = 50.dp, horizontal = 10.dp)
+        contentPadding = PaddingValues(vertical = 50.dp, horizontal = 10.dp),
     ) {
         item {
             ListHeader(
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Buttons")
             }
@@ -79,7 +79,7 @@ fun SurfaceTransformationDemo() {
             Button(
                 onClick = {},
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Button")
             }
@@ -88,7 +88,7 @@ fun SurfaceTransformationDemo() {
             FilledTonalButton(
                 onClick = {},
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Filled Tonal Button")
             }
@@ -97,7 +97,7 @@ fun SurfaceTransformationDemo() {
             OutlinedButton(
                 onClick = {},
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Filled Tonal Button")
             }
@@ -109,11 +109,11 @@ fun SurfaceTransformationDemo() {
                     Text(
                         "Child Button",
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
         item {
@@ -123,11 +123,11 @@ fun SurfaceTransformationDemo() {
                     Text(
                         "Compact Button",
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
         item {
@@ -142,7 +142,7 @@ fun SurfaceTransformationDemo() {
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorite icon") },
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -161,7 +161,7 @@ fun SurfaceTransformationDemo() {
                 containerClickLabel = "click",
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -178,7 +178,7 @@ fun SurfaceTransformationDemo() {
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorite icon") },
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -196,7 +196,7 @@ fun SurfaceTransformationDemo() {
                 containerClickLabel = "click",
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -212,7 +212,7 @@ fun SurfaceTransformationDemo() {
                 icon = { Icon(Icons.Filled.Favorite, contentDescription = "Favorite icon") },
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
@@ -230,14 +230,14 @@ fun SurfaceTransformationDemo() {
                 },
                 enabled = true,
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
 
         item {
             ListHeader(
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Cards")
             }
@@ -247,7 +247,7 @@ fun SurfaceTransformationDemo() {
             Card(
                 onClick = { /* Do something */ },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Card")
             }
@@ -264,13 +264,13 @@ fun SurfaceTransformationDemo() {
                         modifier =
                             Modifier.size(CardDefaults.AppImageSize)
                                 .wrapContentSize(align = Alignment.Center),
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 },
                 title = { Text("Card title") },
                 time = { Text("Now") },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             ) {
                 Text("Card content")
             }
@@ -283,7 +283,7 @@ fun SurfaceTransformationDemo() {
                 title = { Text("Title card") },
                 subtitle = { Text("Subtitle") },
                 transformation = SurfaceTransformation(transformationSpec),
-                modifier = Modifier.transformedHeight(this, transformationSpec)
+                modifier = Modifier.transformedHeight(this, transformationSpec),
             )
         }
     }

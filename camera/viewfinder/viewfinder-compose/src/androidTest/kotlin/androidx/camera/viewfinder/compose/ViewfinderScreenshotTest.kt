@@ -24,18 +24,19 @@ import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Tests for [Viewfinder] with various source transforms via [TransformationInfo] */
-@SdkSuppress(minSdkVersion = 33) // Required for screenshot tests
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 class ViewfinderScreenshotTest {
 
-    @get:Rule val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_CAMERA_VIEWFINDER_COMPOSE)
 
@@ -44,7 +45,7 @@ class ViewfinderScreenshotTest {
         val testParams =
             ViewfinderTestParams(
                 sourceRotation = 0,
-                implementationMode = ImplementationMode.EMBEDDED
+                implementationMode = ImplementationMode.EMBEDDED,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -55,7 +56,7 @@ class ViewfinderScreenshotTest {
         val testParams =
             ViewfinderTestParams(
                 sourceRotation = 180,
-                implementationMode = ImplementationMode.EMBEDDED
+                implementationMode = ImplementationMode.EMBEDDED,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -66,7 +67,7 @@ class ViewfinderScreenshotTest {
         val testParams =
             ViewfinderTestParams(
                 sourceRotation = 90,
-                implementationMode = ImplementationMode.EMBEDDED
+                implementationMode = ImplementationMode.EMBEDDED,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -77,7 +78,7 @@ class ViewfinderScreenshotTest {
         val testParams =
             ViewfinderTestParams(
                 sourceRotation = 270,
-                implementationMode = ImplementationMode.EMBEDDED
+                implementationMode = ImplementationMode.EMBEDDED,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -89,7 +90,7 @@ class ViewfinderScreenshotTest {
             ViewfinderTestParams(
                 sourceRotation = 0,
                 implementationMode = ImplementationMode.EMBEDDED,
-                isMirroredHorizontally = true
+                isMirroredHorizontally = true,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -101,7 +102,7 @@ class ViewfinderScreenshotTest {
             ViewfinderTestParams(
                 sourceRotation = 90,
                 implementationMode = ImplementationMode.EMBEDDED,
-                isMirroredHorizontally = true
+                isMirroredHorizontally = true,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -114,7 +115,7 @@ class ViewfinderScreenshotTest {
                 ViewfinderTestParams(
                     sourceRotation = 180,
                     implementationMode = ImplementationMode.EMBEDDED,
-                    isMirroredHorizontally = true
+                    isMirroredHorizontally = true,
                 )
 
             drawUprightFaceAndAssert(testParams)
@@ -127,7 +128,7 @@ class ViewfinderScreenshotTest {
                 ViewfinderTestParams(
                     sourceRotation = 270,
                     implementationMode = ImplementationMode.EMBEDDED,
-                    isMirroredHorizontally = true
+                    isMirroredHorizontally = true,
                 )
 
             drawUprightFaceAndAssert(testParams)
@@ -139,7 +140,7 @@ class ViewfinderScreenshotTest {
             ViewfinderTestParams(
                 sourceRotation = 0,
                 implementationMode = ImplementationMode.EMBEDDED,
-                isMirroredVertically = true
+                isMirroredVertically = true,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -151,7 +152,7 @@ class ViewfinderScreenshotTest {
             ViewfinderTestParams(
                 sourceRotation = 90,
                 implementationMode = ImplementationMode.EMBEDDED,
-                isMirroredVertically = true
+                isMirroredVertically = true,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -163,7 +164,7 @@ class ViewfinderScreenshotTest {
             ViewfinderTestParams(
                 sourceRotation = 180,
                 implementationMode = ImplementationMode.EMBEDDED,
-                isMirroredVertically = true
+                isMirroredVertically = true,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -175,7 +176,7 @@ class ViewfinderScreenshotTest {
             ViewfinderTestParams(
                 sourceRotation = 270,
                 implementationMode = ImplementationMode.EMBEDDED,
-                isMirroredVertically = true
+                isMirroredVertically = true,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -189,7 +190,7 @@ class ViewfinderScreenshotTest {
                     sourceRotation = 0,
                     implementationMode = ImplementationMode.EMBEDDED,
                     isMirroredHorizontally = true,
-                    isMirroredVertically = true
+                    isMirroredVertically = true,
                 )
 
             drawUprightFaceAndAssert(testParams)
@@ -203,7 +204,7 @@ class ViewfinderScreenshotTest {
                     sourceRotation = 90,
                     implementationMode = ImplementationMode.EMBEDDED,
                     isMirroredHorizontally = true,
-                    isMirroredVertically = true
+                    isMirroredVertically = true,
                 )
 
             drawUprightFaceAndAssert(testParams)
@@ -217,7 +218,7 @@ class ViewfinderScreenshotTest {
                     sourceRotation = 180,
                     implementationMode = ImplementationMode.EMBEDDED,
                     isMirroredHorizontally = true,
-                    isMirroredVertically = true
+                    isMirroredVertically = true,
                 )
 
             drawUprightFaceAndAssert(testParams)
@@ -231,7 +232,7 @@ class ViewfinderScreenshotTest {
                     sourceRotation = 270,
                     implementationMode = ImplementationMode.EMBEDDED,
                     isMirroredHorizontally = true,
-                    isMirroredVertically = true
+                    isMirroredVertically = true,
                 )
 
             drawUprightFaceAndAssert(testParams)
@@ -243,7 +244,7 @@ class ViewfinderScreenshotTest {
         val testParams =
             ViewfinderTestParams(
                 sourceRotation = 0,
-                implementationMode = ImplementationMode.EXTERNAL
+                implementationMode = ImplementationMode.EXTERNAL,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -255,7 +256,7 @@ class ViewfinderScreenshotTest {
         val testParams =
             ViewfinderTestParams(
                 sourceRotation = 180,
-                implementationMode = ImplementationMode.EXTERNAL
+                implementationMode = ImplementationMode.EXTERNAL,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -267,7 +268,7 @@ class ViewfinderScreenshotTest {
         val testParams =
             ViewfinderTestParams(
                 sourceRotation = 90,
-                implementationMode = ImplementationMode.EXTERNAL
+                implementationMode = ImplementationMode.EXTERNAL,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -279,7 +280,7 @@ class ViewfinderScreenshotTest {
         val testParams =
             ViewfinderTestParams(
                 sourceRotation = 270,
-                implementationMode = ImplementationMode.EXTERNAL
+                implementationMode = ImplementationMode.EXTERNAL,
             )
 
         drawUprightFaceAndAssert(testParams)
@@ -290,7 +291,7 @@ class ViewfinderScreenshotTest {
             composeTestRule = composeTestRule,
             screenshotRule = screenshotRule,
             testParams = testParams,
-            goldenIdentifier = "upright_face_with_mapped_touch_point"
+            goldenIdentifier = "upright_face_with_mapped_touch_point",
         )
     }
 }

@@ -54,7 +54,7 @@ public interface RxSharedPreferencesMigration<T> {
      */
     public fun migrate(
         sharedPreferencesView: SharedPreferencesView,
-        currentData: T
+        currentData: T,
     ): Single<T & Any>
 }
 
@@ -71,7 +71,7 @@ public class RxSharedPreferencesMigrationBuilder<T>
 constructor(
     private val context: Context,
     private val sharedPreferencesName: String,
-    private val rxSharedPreferencesMigration: RxSharedPreferencesMigration<T>
+    private val rxSharedPreferencesMigration: RxSharedPreferencesMigration<T>,
 ) {
 
     private var keysToMigrate: Set<String>? = null
@@ -108,7 +108,7 @@ constructor(
                 },
                 shouldRunMigration = { curData ->
                     rxSharedPreferencesMigration.shouldMigrate(curData).await()
-                }
+                },
             )
         } else {
             SharedPreferencesMigration(
@@ -120,7 +120,7 @@ constructor(
                 keysToMigrate = keysToMigrate!!,
                 shouldRunMigration = { curData ->
                     rxSharedPreferencesMigration.shouldMigrate(curData).await()
-                }
+                },
             )
         }
     }

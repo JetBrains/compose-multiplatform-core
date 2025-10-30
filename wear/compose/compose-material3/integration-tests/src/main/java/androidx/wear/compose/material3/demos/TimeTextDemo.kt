@@ -59,7 +59,7 @@ val TimeTextDemos =
         ComposableDemo("Clock with custom font size") { TimeTextCustomSize() },
         ComposableDemo("Clock on list") { TimeTextOnScreen() },
         ComposableDemo("Clock on white background") { TimeTextOnScreenWhiteBackground() },
-        ComposableDemo("Background override") { TimeTextBackgroundOverride() }
+        ComposableDemo("Background override") { TimeTextBackgroundOverride() },
     )
 
 @Composable
@@ -108,7 +108,7 @@ fun TimeTextWithIcon() {
             Icon(
                 imageVector = Icons.Filled.Favorite,
                 contentDescription = "Favorite",
-                modifier = Modifier.size(13.dp)
+                modifier = Modifier.size(13.dp),
             )
         }
     }
@@ -133,9 +133,7 @@ fun TimeTextOnScreen() {
                 }
             }
             item {
-                Button(
-                    onClick = {},
-                ) {
+                Button(onClick = {}) {
                     Text("Filled Button", Modifier.align(Alignment.CenterVertically))
                 }
             }
@@ -143,7 +141,7 @@ fun TimeTextOnScreen() {
                 Button(onClick = {}, colors = colors[it]) {
                     Text(
                         "Item with long content so test overlap.",
-                        Modifier.align(Alignment.CenterVertically)
+                        Modifier.align(Alignment.CenterVertically),
                     )
                 }
             }

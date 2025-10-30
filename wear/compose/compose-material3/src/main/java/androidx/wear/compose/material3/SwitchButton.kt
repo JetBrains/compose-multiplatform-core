@@ -20,8 +20,6 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -42,21 +40,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -74,7 +73,6 @@ import androidx.wear.compose.material3.tokens.SplitSwitchButtonTokens
 import androidx.wear.compose.material3.tokens.SwitchButtonTokens
 import androidx.wear.compose.materialcore.SelectionStage
 import androidx.wear.compose.materialcore.animateSelectionColor
-import androidx.wear.compose.materialcore.animateTick
 import androidx.wear.compose.materialcore.isLayoutDirectionRtl
 
 /**
@@ -133,7 +131,7 @@ public fun SwitchButton(
     transformation: SurfaceTransformation? = null,
     icon: @Composable (BoxScope.() -> Unit)? = null,
     secondaryLabel: @Composable (RowScope.() -> Unit)? = null,
-    label: @Composable RowScope.() -> Unit
+    label: @Composable RowScope.() -> Unit,
 ) {
     val hapticFeedback = LocalHapticFeedback.current
 
@@ -155,7 +153,7 @@ public fun SwitchButton(
                         maxLines = 3,
                         textAlign = TextAlign.Start,
                     ),
-                content = label
+                content = label,
             ),
         toggleControl = {
             Switch(
@@ -172,7 +170,7 @@ public fun SwitchButton(
                 },
                 trackBorderColor = { enabled, checked ->
                     colors.trackBorderColor(enabled = enabled, checked = checked)
-                }
+                },
             )
         },
         selectionControl = null,
@@ -180,7 +178,7 @@ public fun SwitchButton(
         icon =
             provideNullableScopeContent(
                 contentColor = colors.iconColor(enabled = enabled, checked),
-                content = icon
+                content = icon,
             ),
         secondaryLabel =
             provideNullableScopeContent(
@@ -192,17 +190,25 @@ public fun SwitchButton(
                         maxLines = 2,
                         textAlign = TextAlign.Start,
                     ),
-                content = secondaryLabel
+                content = secondaryLabel,
             ),
         background = { isEnabled, isChecked ->
-            val backgroundColor =
-                colors.containerColor(enabled = isEnabled, checked = isChecked).value
+            val backgroundColorState =
+                colors.containerColor(enabled = isEnabled, checked = isChecked)
 
-            Modifier.surface(
-                transformation = transformation,
-                shape = shape,
-                painter = ColorPainter(backgroundColor)
-            )
+            val colorPainter =
+                remember(backgroundColorState) {
+                    object : Painter() {
+                        override val intrinsicSize: Size
+                            get() = Size.Unspecified
+
+                        override fun DrawScope.onDraw() {
+                            drawRect(color = backgroundColorState.value)
+                        }
+                    }
+                }
+
+            Modifier.surface(transformation = transformation, shape = shape, painter = colorPainter)
         },
         enabled = enabled,
         interactionSource = interactionSource,
@@ -213,7 +219,7 @@ public fun SwitchButton(
         labelSpacerSize = SwitchButtonDefaults.LabelSpacerSize,
         toggleControlSpacing = TOGGLE_CONTROL_SPACING,
         iconSpacing = ICON_SPACING,
-        ripple = ripple()
+        ripple = ripple(),
     )
 }
 
@@ -291,10 +297,9 @@ public fun SplitSwitchButton(
     containerClickLabel: String? = null,
     contentPadding: PaddingValues = SwitchButtonDefaults.ContentPadding,
     secondaryLabel: @Composable (RowScope.() -> Unit)? = null,
-    label: @Composable RowScope.() -> Unit
+    label: @Composable RowScope.() -> Unit,
 ) {
-    val containerColor = colors.containerColor(enabled, checked).value
-
+    val containerColorState = colors.containerColor(enabled, checked)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier =
@@ -307,7 +312,7 @@ public fun SplitSwitchButton(
                     this.shape = shape
                     val transformation = transformation ?: return@graphicsLayer
                     with(transformation) { applyContainerTransformation() }
-                }
+                },
     ) {
         Row(
             modifier =
@@ -321,7 +326,7 @@ public fun SplitSwitchButton(
                     .semantics { role = Role.Button }
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(containerColor)
+                    .drawBehind { drawRect(containerColorState.value) }
                     .padding(contentPadding)
                     .weight(1.0f),
             verticalAlignment = Alignment.CenterVertically,
@@ -337,7 +342,7 @@ public fun SplitSwitchButton(
                                 maxLines = 3,
                                 textAlign = TextAlign.Start,
                             ),
-                        content = label
+                        content = label,
                     ),
                 secondaryLabel =
                     provideNullableScopeContent(
@@ -350,16 +355,15 @@ public fun SplitSwitchButton(
                                 maxLines = 2,
                                 textAlign = TextAlign.Start,
                             ),
-                        content = secondaryLabel
+                        content = secondaryLabel,
                     ),
-                spacerSize = SwitchButtonDefaults.LabelSpacerSize
+                spacerSize = SwitchButtonDefaults.LabelSpacerSize,
             )
         }
 
         Spacer(modifier = Modifier.size(2.dp))
 
-        val splitBackground = if (enabled) containerColor else Color.Black
-        val splitBackgroundOverlay = colors.splitContainerColor(enabled, checked).value
+        val splitBackgroundOverlayState = colors.splitContainerColor(enabled, checked)
         val hapticFeedback = LocalHapticFeedback.current
         Box(
             contentAlignment = Alignment.Center,
@@ -375,20 +379,18 @@ public fun SplitSwitchButton(
                             onCheckedChange(it)
                         },
                         indication = ripple(),
-                        interactionSource = toggleInteractionSource
+                        interactionSource = toggleInteractionSource,
                     )
                     .fillMaxHeight()
                     .clip(SPLIT_SECTIONS_SHAPE)
-                    .background(splitBackground)
-                    .drawWithCache {
-                        onDrawWithContent {
-                            drawRect(color = splitBackgroundOverlay)
-                            drawContent()
-                        }
+                    .drawBehind {
+                        val color = if (enabled) containerColorState.value else Color.Black
+                        drawRect(color)
+                        drawRect(splitBackgroundOverlayState.value)
                     }
                     .defaultMinSize(minWidth = SPLIT_MIN_WIDTH)
                     .wrapContentHeight(align = Alignment.CenterVertically)
-                    .padding(contentPadding)
+                    .padding(contentPadding),
         ) {
             Switch(
                 checked = checked,
@@ -410,7 +412,7 @@ public fun SplitSwitchButton(
                 },
                 trackBorderColor = { enabled, checked ->
                     colors.trackBorderColor(enabled = enabled, checked = checked)
-                }
+                },
             )
         }
     }
@@ -689,7 +691,7 @@ public object SwitchButtonDefaults {
             start = HorizontalPadding,
             top = VerticalPadding,
             end = HorizontalPadding,
-            bottom = VerticalPadding
+            bottom = VerticalPadding,
         )
 
     private val ColorScheme.defaultSwitchButtonColors: SwitchButtonColors
@@ -791,7 +793,7 @@ public object SwitchButtonDefaults {
                                 .toDisabledColor(
                                     disabledAlpha =
                                         SwitchButtonTokens.DisabledUncheckedTrackBorderOpacity
-                                )
+                                ),
                     )
                     .also { defaultSwitchButtonColorsCached = it }
         }
@@ -990,7 +992,7 @@ public class SwitchButtonColors(
     public val disabledUncheckedSecondaryContentColor: Color,
     public val disabledUncheckedIconColor: Color,
     public val disabledUncheckedThumbColor: Color,
-    public val disabledUncheckedTrackBorderColor: Color
+    public val disabledUncheckedTrackBorderColor: Color,
 ) {
     /**
      * Returns a copy of this SwitchButtonColors optionally overriding some of the values.
@@ -1145,7 +1147,7 @@ public class SwitchButtonColors(
             uncheckedColor = uncheckedContainerColor,
             disabledCheckedColor = disabledCheckedContainerColor,
             disabledUncheckedColor = disabledUncheckedContainerColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1163,7 +1165,7 @@ public class SwitchButtonColors(
             uncheckedColor = uncheckedContentColor,
             disabledCheckedColor = disabledCheckedContentColor,
             disabledUncheckedColor = disabledUncheckedContentColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1181,7 +1183,7 @@ public class SwitchButtonColors(
             uncheckedColor = uncheckedSecondaryContentColor,
             disabledCheckedColor = disabledCheckedSecondaryContentColor,
             disabledUncheckedColor = disabledUncheckedSecondaryContentColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1200,7 +1202,7 @@ public class SwitchButtonColors(
             uncheckedColor = uncheckedIconColor,
             disabledCheckedColor = disabledCheckedIconColor,
             disabledUncheckedColor = disabledUncheckedIconColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1219,7 +1221,7 @@ public class SwitchButtonColors(
             uncheckedColor = uncheckedThumbColor,
             disabledCheckedColor = disabledCheckedThumbColor,
             disabledUncheckedColor = disabledUncheckedThumbColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1238,7 +1240,7 @@ public class SwitchButtonColors(
             uncheckedColor = Color.Transparent,
             disabledCheckedColor = disabledCheckedThumbIconColor,
             disabledUncheckedColor = Color.Transparent,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1257,7 +1259,7 @@ public class SwitchButtonColors(
             uncheckedColor = uncheckedTrackColor,
             disabledCheckedColor = disabledCheckedTrackColor,
             disabledUncheckedColor = Color.Transparent,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1276,7 +1278,7 @@ public class SwitchButtonColors(
             uncheckedColor = uncheckedTrackBorderColor,
             disabledCheckedColor = disabledCheckedTrackBorderColor,
             disabledUncheckedColor = disabledUncheckedTrackBorderColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     override fun equals(other: Any?): Boolean {
@@ -1609,7 +1611,7 @@ public class SplitSwitchButtonColors(
             uncheckedColor = uncheckedContainerColor,
             disabledCheckedColor = disabledCheckedContainerColor,
             disabledUncheckedColor = disabledUncheckedContainerColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1628,7 +1630,7 @@ public class SplitSwitchButtonColors(
             uncheckedColor = uncheckedContentColor,
             disabledCheckedColor = disabledCheckedContentColor,
             disabledUncheckedColor = disabledUncheckedContentColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1647,7 +1649,7 @@ public class SplitSwitchButtonColors(
             uncheckedColor = uncheckedSecondaryContentColor,
             disabledCheckedColor = disabledCheckedSecondaryContentColor,
             disabledUncheckedColor = disabledUncheckedSecondaryContentColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1666,7 +1668,7 @@ public class SplitSwitchButtonColors(
             uncheckedColor = uncheckedSplitContainerColor,
             disabledCheckedColor = disabledCheckedSplitContainerColor,
             disabledUncheckedColor = disabledUncheckedSplitContainerColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1685,7 +1687,7 @@ public class SplitSwitchButtonColors(
             uncheckedColor = uncheckedThumbColor,
             disabledCheckedColor = disabledCheckedThumbColor,
             disabledUncheckedColor = disabledUncheckedThumbColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1704,7 +1706,7 @@ public class SplitSwitchButtonColors(
             uncheckedColor = Color.Transparent,
             disabledCheckedColor = disabledCheckedThumbIconColor,
             disabledUncheckedColor = Color.Transparent,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1723,7 +1725,7 @@ public class SplitSwitchButtonColors(
             uncheckedColor = uncheckedTrackColor,
             disabledCheckedColor = disabledCheckedTrackColor,
             disabledUncheckedColor = Color.Transparent,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     /**
@@ -1742,7 +1744,7 @@ public class SplitSwitchButtonColors(
             uncheckedColor = uncheckedTrackBorderColor,
             disabledCheckedColor = disabledCheckedTrackBorderColor,
             disabledUncheckedColor = disabledUncheckedTrackBorderColor,
-            animationSpec = COLOR_ANIMATION_SPEC
+            animationSpec = COLOR_ANIMATION_SPEC,
         )
 
     override fun equals(other: Any?): Boolean {
@@ -1842,42 +1844,64 @@ private fun Switch(
     val thumbProgress =
         transition.animateFloat(
             transitionSpec = { SWITCH_PROGRESS_ANIMATION_SPEC },
-            label = "switchTransition"
+            label = "switchTransition",
         ) {
             when (it) {
                 SelectionStage.Unchecked -> 0f
                 SelectionStage.Checked -> 1f
             }
         }
-    val actualThumbColor = thumbColor(enabled, checked).value
-    val actualThumbIconColor = thumbIconColor(enabled, checked).value
-    val actualTrackColor = trackColor(enabled, checked).value
-    val actualTrackBorderColor = trackBorderColor(enabled, checked).value
+    val actualThumbColor = thumbColor(enabled, checked)
+    val actualThumbIconColor = thumbIconColor(enabled, checked)
+    val actualTrackColor = trackColor(enabled, checked)
+    val actualTrackBorderColor = trackBorderColor(enabled, checked)
     Box(
         modifier =
             modifier
                 .semantics { this.role = Role.Switch }
                 .height(SWITCH_INNER_HEIGHT)
                 .width(SWITCH_WIDTH)
-                .border(
-                    width = SWITCH_TRACK_WIDTH,
-                    shape = CircleShape,
-                    color =
-                        if (actualTrackColor == actualTrackBorderColor) {
+                .drawBehind {
+                    val currentThumbColor = actualThumbColor.value
+                    val currentThumbIconColor = actualThumbIconColor.value
+                    val currentTrackColor = actualTrackColor.value
+                    val currentTrackBorderColor = actualTrackBorderColor.value
+
+                    // Draw track background
+                    drawRoundRect(
+                        color = currentTrackColor,
+                        size = size,
+                        cornerRadius = CornerRadius(size.height / 2),
+                    )
+
+                    // Draw track border
+                    val borderColor =
+                        if (currentTrackColor == currentTrackBorderColor) {
                             Color.Transparent
                         } else {
-                            actualTrackBorderColor
+                            currentTrackBorderColor
                         }
-                )
-                .background(color = actualTrackColor, shape = CircleShape)
-                .drawBehind {
+
+                    val strokeWidthPx = SWITCH_TRACK_WIDTH.toPx()
+                    // Inset the drawing area for the border by half the stroke width to replicate
+                    // Modifier.border's inset behavior.
+                    val inset = strokeWidthPx / 2
+                    drawRoundRect(
+                        color = borderColor,
+                        topLeft = Offset(inset, inset),
+                        size = Size(size.width - strokeWidthPx, size.height - strokeWidthPx),
+                        cornerRadius = CornerRadius((size.height - strokeWidthPx) / 2f),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidthPx),
+                    )
+
+                    // Draw thumb and tick on top
                     drawThumbAndTick(
                         enabled,
                         checked,
-                        actualThumbColor,
+                        currentThumbColor,
                         thumbProgress.value,
-                        actualThumbIconColor,
-                        isRtl
+                        currentThumbIconColor,
+                        isRtl,
                     )
                 }
                 .wrapContentSize(Alignment.CenterEnd)
@@ -1890,7 +1914,7 @@ private fun DrawScope.drawThumbAndTick(
     thumbColor: Color,
     progress: Float,
     thumbIconColor: Color,
-    isRtl: Boolean
+    isRtl: Boolean,
 ) {
 
     val thumbPaddingUnchecked = SWITCH_INNER_HEIGHT / 2 - THUMB_RADIUS_UNCHECKED
@@ -1900,7 +1924,7 @@ private fun DrawScope.drawThumbAndTick(
         lerp(
             start = THUMB_RADIUS_UNCHECKED.toPx(),
             stop = THUMB_RADIUS_CHECKED.toPx(),
-            fraction = progress
+            fraction = progress,
         )
 
     val switchTrackLengthPx = SWITCH_WIDTH.toPx()
@@ -1911,19 +1935,19 @@ private fun DrawScope.drawThumbAndTick(
             lerp(
                 start = switchTrackLengthPx - switchThumbRadiusPx - thumbPaddingUnchecked.toPx(),
                 stop = switchThumbRadiusPx + thumbPaddingChecked.toPx(),
-                fraction = progress
+                fraction = progress,
             )
         else
             lerp(
                 start = switchThumbRadiusPx + thumbPaddingUnchecked.toPx(),
                 stop = switchTrackLengthPx - switchThumbRadiusPx - thumbPaddingChecked.toPx(),
-                fraction = progress
+                fraction = progress,
             )
 
     drawCircle(
         color = thumbColor,
         radius = switchThumbRadiusPx,
-        center = Offset(thumbProgressPx, center.y)
+        center = Offset(thumbProgressPx, center.y),
     )
 
     val ltrAdditionalOffset = 5.dp.toPx()
@@ -1943,7 +1967,7 @@ private fun DrawScope.drawThumbAndTick(
         checked = checked,
         tickColor = thumbIconColor,
         tickProgress = progress,
-        startXOffset = distMoved.toDp()
+        startXOffset = distMoved.toDp(),
     )
 }
 
@@ -1951,7 +1975,7 @@ private fun DrawScope.drawThumbAndTick(
 private fun RowScope.Labels(
     label: @Composable RowScope.() -> Unit,
     secondaryLabel: @Composable (RowScope.() -> Unit)?,
-    spacerSize: Dp
+    spacerSize: Dp,
 ) {
     Column(modifier = Modifier.weight(1.0f)) {
         Row(content = label)

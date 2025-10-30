@@ -16,8 +16,8 @@
 
 package androidx.core.backported.fixes
 
-import androidx.core.backported.fixes.KnownIssue.Companion.KI_350037023
-import androidx.core.backported.fixes.KnownIssue.Companion.KI_372917199
+import androidx.core.backported.fixes.KnownIssues.Companion.KI_350037023
+import androidx.core.backported.fixes.KnownIssues.Companion.KI_372917199
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,6 +72,16 @@ class BackportedFixManagerTest {
         ShadowBuild.setBrand("notRobo")
         val fixManager = BackportedFixManager()
         assertThat(fixManager.getStatus(KI_372917199)).isEqualTo(Status.NotApplicable)
+        assertThat(fixManager.isFixed(KI_372917199)).isTrue()
+    }
+
+    @Test
+    fun ki372917199_manual() {
+        ShadowSystemProperties.override(ALIAS_BITSET_PROP_NAME, "")
+        ShadowBuild.reset()
+        ShadowBuild.setFingerprint("foo/bar/manually_tested")
+        val fixManager = BackportedFixManager()
+        assertThat(fixManager.getStatus(KI_372917199)).isEqualTo(Status.Fixed)
         assertThat(fixManager.isFixed(KI_372917199)).isTrue()
     }
 }

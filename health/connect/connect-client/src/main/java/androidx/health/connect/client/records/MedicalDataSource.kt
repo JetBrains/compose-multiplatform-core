@@ -56,7 +56,7 @@ class MedicalDataSource(
     val fhirBaseUri: Uri,
     val displayName: String,
     val fhirVersion: FhirVersion,
-    val lastDataUpdateTime: Instant?
+    val lastDataUpdateTime: Instant?,
 ) {
     @SuppressLint("NewApi") // already checked with a feature availability check
     internal val platformMedicalDataSource: PlatformMedicalDataSource =
@@ -66,7 +66,7 @@ class MedicalDataSource(
                     packageName,
                     fhirBaseUri,
                     displayName,
-                    fhirVersion.platformFhirVersion
+                    fhirVersion.platformFhirVersion,
                 )
                 .setLastDataUpdateTime(lastDataUpdateTime)
                 .build()
@@ -82,7 +82,7 @@ class MedicalDataSource(
                 "displayName" to displayName,
                 "fhirVersion" to fhirVersion,
                 "lastDataUpdateTime" to lastDataUpdateTime,
-            )
+            ),
         )
 
     override fun equals(other: Any?): Boolean {

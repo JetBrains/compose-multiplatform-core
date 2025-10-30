@@ -21,7 +21,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.testutils.assertContainsColor
+import androidx.compose.testutils.assertDoesNotContainColor
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -114,7 +116,7 @@ class LevelIndicatorTest {
             // Show level = 100 so that the indicator color is shown
             StepperLevelIndicator(
                 value = 100f,
-                colors = LevelIndicatorDefaults.colors(indicatorColor = customColor)
+                colors = LevelIndicatorDefaults.colors(indicatorColor = customColor),
             )
         }
 
@@ -130,7 +132,7 @@ class LevelIndicatorTest {
             LevelIndicator(
                 value = { 1f },
                 colors = LevelIndicatorDefaults.colors(indicatorColor = customColor),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
@@ -145,7 +147,7 @@ class LevelIndicatorTest {
             // Show level = 0 so that the track color is shown
             StepperLevelIndicator(
                 value = 0f,
-                colors = LevelIndicatorDefaults.colors(trackColor = customColor)
+                colors = LevelIndicatorDefaults.colors(trackColor = customColor),
             )
         }
 
@@ -161,11 +163,124 @@ class LevelIndicatorTest {
             LevelIndicator(
                 value = { 0f },
                 colors = LevelIndicatorDefaults.colors(trackColor = customColor),
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(customColor)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun stepperlevelindicator_with_intprogression_full_shows_indicator_color() {
+        val expectedIndicatorColor: Color = Color.Red
+        val valueProgression = 0..10
+        rule.setContentWithTheme {
+            // Set value to the end of the progression to show a full indicator.
+            StepperLevelIndicator(
+                value = { valueProgression.last },
+                valueProgression = valueProgression,
+                colors =
+                    LevelIndicatorDefaults.colors().copy(indicatorColor = expectedIndicatorColor),
+                modifier = Modifier.testTag(TEST_TAG),
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(expectedIndicatorColor)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun stepperlevelindicator_with_intprogression_empty_shows_track_color() {
+        val expectedTrackColor: Color = Color.Red
+        val valueProgression = 0..10
+        rule.setContentWithTheme {
+            // Set value to the start of the progression to show an empty track.
+            StepperLevelIndicator(
+                value = { valueProgression.first },
+                valueProgression = valueProgression,
+                colors = LevelIndicatorDefaults.colors().copy(trackColor = expectedTrackColor),
+                modifier = Modifier.testTag(TEST_TAG),
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(expectedTrackColor)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun stepperlevelindicator_with_intprogression_middle_shows_both_colors() {
+        val expectedIndicatorColor: Color = Color.Red
+        val expectedTrackColor: Color = Color.Yellow
+        val valueProgression = 0..10
+        rule.setContentWithTheme {
+            // Set value to the middle of the progression.
+            StepperLevelIndicator(
+                value = { 5 },
+                valueProgression = valueProgression,
+                colors =
+                    LevelIndicatorDefaults.colors()
+                        .copy(
+                            indicatorColor = expectedIndicatorColor,
+                            trackColor = expectedTrackColor,
+                        ),
+                modifier = Modifier.testTag(TEST_TAG),
+            )
+        }
+
+        val image = rule.onNodeWithTag(TEST_TAG).captureToImage()
+        image.assertContainsColor(expectedIndicatorColor)
+        image.assertContainsColor(expectedTrackColor)
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun stepperlevelindicator_with_value_below_intprogression_is_coerced_to_start() {
+        val expectedTrackColor: Color = Color.Green
+        val testIndicatorColor: Color = Color.Red
+        val valueProgression = 10..20
+        rule.setContentWithTheme {
+            // Set value to be below the progression start. Expected to be coerced to 10.
+            StepperLevelIndicator(
+                value = { 5 },
+                valueProgression = valueProgression,
+                colors =
+                    LevelIndicatorDefaults.colors()
+                        .copy(trackColor = expectedTrackColor, indicatorColor = testIndicatorColor),
+                modifier = Modifier.testTag(TEST_TAG),
+            )
+        }
+
+        // Assert that track color is shown, while indicator color is not.
+        rule.onNodeWithTag(TEST_TAG).captureToImage().run {
+            assertContainsColor(expectedTrackColor)
+            assertDoesNotContainColor(testIndicatorColor)
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun stepperlevelindicator_with_value_above_intprogression_is_coerced_to_end() {
+        val expectedIndicatorColor: Color = Color.Blue
+        val testTrackColor: Color = Color.Red
+        val valueProgression = 10..20
+        rule.setContentWithTheme {
+            // Set value to be above the progression end. Expected to be coerced to 20.
+            StepperLevelIndicator(
+                value = { 25 },
+                valueProgression = valueProgression,
+                colors =
+                    LevelIndicatorDefaults.colors()
+                        .copy(indicatorColor = expectedIndicatorColor, trackColor = testTrackColor),
+                modifier = Modifier.testTag(TEST_TAG),
+            )
+        }
+
+        // Assert that indicator color is shown while track color is not.
+        rule.onNodeWithTag(TEST_TAG).captureToImage().run {
+            assertContainsColor(expectedIndicatorColor)
+            assertDoesNotContainColor(testTrackColor)
+        }
     }
 
     @Composable
@@ -174,7 +289,7 @@ class LevelIndicatorTest {
         colors: LevelIndicatorColors = LevelIndicatorDefaults.colors(),
         enabled: Boolean = true,
     ) {
-        val valueRange = 0f..100f
+        val valueRange = remember { 0f..100f }
 
         Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             StepperLevelIndicator(
@@ -182,7 +297,7 @@ class LevelIndicatorTest {
                 valueRange = valueRange,
                 modifier = Modifier.testTag(TEST_TAG).align(Alignment.CenterStart),
                 colors = colors,
-                enabled = enabled
+                enabled = enabled,
             )
         }
     }

@@ -15,7 +15,6 @@
  */
 package androidx.wear.compose.material
 
-import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.testutils.assertAgainstGolden
@@ -37,7 +36,7 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ButtonScreenshotTest {
 
     @get:Rule val rule = createComposeRule()
@@ -61,23 +60,13 @@ class ButtonScreenshotTest {
     @Test
     fun button_outlined_ltr() =
         verifyScreenshot(LayoutDirection.Ltr) {
-            OutlinedButton(
-                onClick = {},
-                modifier = Modifier.testTag(TEST_TAG),
-            ) {
-                Text("abc")
-            }
+            OutlinedButton(onClick = {}, modifier = Modifier.testTag(TEST_TAG)) { Text("abc") }
         }
 
     @Test
     fun button_outlined_rtl() =
         verifyScreenshot(LayoutDirection.Rtl) {
-            OutlinedButton(
-                onClick = {},
-                modifier = Modifier.testTag(TEST_TAG),
-            ) {
-                Text("abc")
-            }
+            OutlinedButton(onClick = {}, modifier = Modifier.testTag(TEST_TAG)) { Text("abc") }
         }
 
     @Test
@@ -106,7 +95,7 @@ class ButtonScreenshotTest {
 
     private fun verifyScreenshot(
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         rule.setContentWithTheme {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) { content() }

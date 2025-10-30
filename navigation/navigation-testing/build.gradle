@@ -34,21 +34,13 @@ androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.navigation.testing"
         experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
-
-        withAndroidTestOnDeviceBuilder {
-            it.compilationName = "instrumentedTest"
-            it.defaultSourceSetName = "androidInstrumentedTest"
-            it.sourceSetTreeName = "test"
-        }
-        withAndroidTestOnJvmBuilder {
-            it.compilationName = "unitTest"
-            it.defaultSourceSetName = "androidUnitTest"
-        }
     }
-    desktop()
-    linux()
-    mac()
-    ios()
+    jvmStubs()
+    linuxX64Stubs()
+//    desktop()
+//    linux()
+//    mac()
+//    ios()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -96,19 +88,27 @@ androidXMultiplatform {
                 implementation(libs.junit)
             }
         }
-
-        desktopMain {
+        jvmStubsMain {
             dependsOn(jvmCommonMain)
             dependsOn(nonAndroidMain)
         }
-
-        desktopTest {
+        jvmStubsTest {
             dependsOn(jvmCommonTest)
             dependsOn(nonAndroidTest)
         }
 
+//        desktopMain {
+//            dependsOn(jvmCommonMain)
+//            dependsOn(nonAndroidMain)
+//        }
+//
+//        desktopTest {
+//            dependsOn(jvmCommonTest)
+//            dependsOn(nonAndroidTest)
+//        }
+
         androidMain {
-            dependsOn(commonMain)
+            dependsOn(jvmCommonMain)
             dependencies {
                 api(project(":lifecycle:lifecycle-runtime"))
                 api(project(":lifecycle:lifecycle-viewmodel"))
@@ -118,11 +118,9 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
-                implementation(libs.robolectric)
-
                 runtimeOnly(libs.testCore)
                 runtimeOnly(libs.kotlinTestJunit)
                 implementation(libs.junit)
@@ -130,8 +128,8 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
-            dependsOn(commonTest)
+        androidDeviceTest {
+            dependsOn(jvmCommonTest)
             dependencies {
                 implementation(project(":internal-testutils-navigation"))
                 implementation("androidx.lifecycle:lifecycle-runtime:2.6.2")
@@ -146,25 +144,30 @@ androidXMultiplatform {
             }
         }
 
-        nativeMain { dependsOn(commonMain) }
+        nonJvmCommonMain { dependsOn(nonAndroidMain) }
+        nonJvmCommonTest { dependsOn(nonAndroidTest) }
+        nativeMain { dependsOn(nonJvmCommonMain) }
         linuxMain { dependsOn(nativeMain) }
-        darwinMain { dependsOn(nativeMain) }
-
-        nativeTest { dependsOn(commonTest) }
+//        darwinMain { dependsOn(nativeMain) }
+//
+        nativeTest { dependsOn(nonJvmCommonTest) }
         linuxTest { dependsOn(nativeTest) }
-        darwinTest { dependsOn(nativeTest) }
-
+//        darwinTest { dependsOn(nativeTest) }
+//
         targets.configureEach { target ->
             if (target.platformType == org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType.native) {
-                if (target.konanTarget.family.appleFamily) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
-                } else if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.LINUX) {
+//                if (target.konanTarget.family.appleFamily) {
+//                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
+//                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
+//                } else
+                if (target.konanTarget.family == org.jetbrains.kotlin.konan.target.Family.LINUX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(linuxMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(linuxTest)
                 }
             }
         }
+        linuxx64StubsMain.dependsOn(linuxMain)
+        linuxx64StubsTest.dependsOn(linuxTest)
     }
 }
 
@@ -173,4 +176,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2017"
     description = "Android Navigation-Testing"
+    enableRobolectric()
 }

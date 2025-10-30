@@ -30,7 +30,7 @@ import kotlinx.atomicfu.loop
  */
 class RefCounted<T : Any>(
     private val debugRefCounts: Boolean = false,
-    private val onRelease: (T) -> Unit
+    private val onRelease: (T) -> Unit,
 ) {
     private val refCounted = atomic(uninitialized<T>())
 
@@ -53,7 +53,7 @@ class RefCounted<T : Any>(
                 TAG,
                 "RefCounted@${"%x".format(hashCode())}<${newValue::class.simpleName}> " +
                     "initialized: [refCount: 1, value: $newValue]",
-                Throwable()
+                Throwable(),
             )
         }
     }
@@ -78,7 +78,7 @@ class RefCounted<T : Any>(
                         TAG,
                         "RefCounted@${"%x".format(hashCode())}.acquire() failure: " +
                             "[refCount: 0]",
-                        Throwable()
+                        Throwable(),
                     )
                 }
                 return null
@@ -92,7 +92,7 @@ class RefCounted<T : Any>(
                         TAG,
                         "RefCounted@${"%x".format(hashCode())}<${value::class.simpleName}>" +
                             ".acquire() success: [refCount: ${oldCount + 1}, value: $value]",
-                        Throwable()
+                        Throwable(),
                     )
                 }
                 return value
@@ -123,7 +123,7 @@ class RefCounted<T : Any>(
                             TAG,
                             "RefCounted@${"%x".format(hashCode())}<${value::class.simpleName}>" +
                                 ".release() (last ref): [refCount: 0, value: $value]",
-                            Throwable()
+                            Throwable(),
                         )
                     }
                     onRelease(value)
@@ -133,7 +133,7 @@ class RefCounted<T : Any>(
                             TAG,
                             "RefCounted@${"%x".format(hashCode())}<${value::class.simpleName}>" +
                                 ".release(): [refCount: ${oldCount - 1}, value: $value]",
-                            Throwable()
+                            Throwable(),
                         )
                     }
                 }

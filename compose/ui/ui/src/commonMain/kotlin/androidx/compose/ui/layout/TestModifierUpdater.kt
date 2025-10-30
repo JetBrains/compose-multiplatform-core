@@ -29,7 +29,7 @@ import androidx.compose.ui.node.LayoutNode
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Deprecated(
     "It is a test API, do not use it in the real applications",
-    level = DeprecationLevel.ERROR
+    level = DeprecationLevel.ERROR,
 )
 /*@VisibleForTesting*/
 class TestModifierUpdater internal constructor(private val node: LayoutNode) {
@@ -41,7 +41,7 @@ class TestModifierUpdater internal constructor(private val node: LayoutNode) {
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @Deprecated(
     "It is a test API, do not use it in the real applications",
-    level = DeprecationLevel.ERROR
+    level = DeprecationLevel.ERROR,
 )
 /*@VisibleForTesting*/
 @Composable
@@ -55,8 +55,8 @@ fun TestModifierUpdaterLayout(onAttached: (TestModifierUpdater) -> Unit) {
         factory = LayoutNode.Constructor,
         update = {
             set(measurePolicy, SetMeasurePolicy)
-            set(compositeKeyHash, SetCompositeKeyHash)
+            init(compositeKeyHash, SetCompositeKeyHash)
             init { onAttached(TestModifierUpdater(this)) }
-        }
+        },
     )
 }

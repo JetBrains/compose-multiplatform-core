@@ -49,7 +49,7 @@ class LocalesSetUsingFrameworkApiTestCase {
         // setting the app to follow system.
         AppCompatDelegate.Api33Impl.localeManagerSetApplicationLocales(
             AppCompatDelegate.getLocaleManagerForApplication(),
-            LocaleList.getEmptyLocaleList()
+            LocaleList.getEmptyLocaleList(),
         )
         // Since no locales are applied as of now, current configuration will have system
         // locales.
@@ -58,7 +58,7 @@ class LocalesSetUsingFrameworkApiTestCase {
         expectedLocales =
             LocalesUpdateActivity.overlayCustomAndSystemLocales(
                 LocalesUtils.CUSTOM_LOCALE_LIST,
-                systemLocales
+                systemLocales,
             )
     }
 
@@ -73,7 +73,7 @@ class LocalesSetUsingFrameworkApiTestCase {
 
         assertEquals(
             LocaleListCompat.getEmptyLocaleList(),
-            AppCompatDelegate.getApplicationLocales()
+            AppCompatDelegate.getApplicationLocales(),
         )
         assertNull(AppCompatDelegate.getRequestedAppLocales())
 
@@ -88,7 +88,7 @@ class LocalesSetUsingFrameworkApiTestCase {
             AppCompatDelegate.Api33Impl.localeManagerGetApplicationLocales(
                     AppCompatDelegate.getLocaleManagerForApplication()
                 )
-                .toLanguageTags()
+                .toLanguageTags(),
         )
         // check locales are applied successfully
         assertConfigurationLocalesEquals(expectedLocales, recreatedFirst)
@@ -101,7 +101,7 @@ class LocalesSetUsingFrameworkApiTestCase {
         // clearing locales from framework. setting the app to follow system.
         AppCompatDelegate.Api33Impl.localeManagerSetApplicationLocales(
             AppCompatDelegate.getLocaleManagerForApplication(),
-            LocaleList.getEmptyLocaleList()
+            LocaleList.getEmptyLocaleList(),
         )
     }
 }

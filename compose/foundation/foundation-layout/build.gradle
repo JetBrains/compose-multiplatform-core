@@ -27,12 +27,18 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.foundation.layout"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+    }
     jvmStubs()
     linuxX64Stubs()
 
@@ -41,11 +47,10 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":compose:ui:ui"))
                 implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-util"))
-                implementation(project(":collection:collection"))
+                implementation("androidx.collection:collection:1.5.0")
                 implementation(project(":compose:ui:ui-unit"))
             }
         }
@@ -66,7 +71,7 @@ androidXMultiplatform {
             dependencies {
                 api("androidx.annotation:annotation:1.8.1")
                 api("androidx.annotation:annotation-experimental:1.4.1")
-                implementation("androidx.core:core:1.7.0")
+                implementation("androidx.core:core:1.16.0")
                 implementation("androidx.compose.animation:animation-core:1.2.1")
             }
         }
@@ -83,7 +88,7 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:foundation:foundation"))
@@ -99,7 +104,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
@@ -117,14 +122,6 @@ androidx {
     inceptionYear = "2019"
     description = "Compose layout implementations"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
     samples(project(":compose:foundation:foundation-layout:foundation-layout-samples"))
-}
-
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.foundation.layout"
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
+    deviceTests.minSdkForFtlOverride = 24 // b/437944630
 }

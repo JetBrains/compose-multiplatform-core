@@ -16,29 +16,27 @@
 
 package androidx.xr.scenecore
 
+import androidx.annotation.FloatRange
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Vector3
 
 /**
- * Defines an intersection between a ray and the scene.
+ * Specifies an intersection between a ray and the Scene.
  *
- * This can be obtained by running [hitTest] or [hitTestAsync] on an [ActivityPose].
+ * This can be obtained by running [ScenePose.hitTest] and related methods.
  *
  * @property hitPosition the [Vector3] position of the intersection between a ray and the Scene.
- *   This will be null if nothing was hit
- * @property surfaceNormal The normal of the surface of the entity that was hit. This will be null
- *   if nothing was hit
- * @property surfaceType the [HitTestSurfaceType] that was hit.
- * @property distance the distance from the origin to the hit location. If nothing was hit the
- *   distance will be POSITIVE_INFINITY.
+ * @property surfaceNormal The normal of the surface of the Entity or surface that was hit, or null
+ *   if the normal could not be computed.
+ * @property surfaceType the [HitTestResult.SurfaceType] that was hit.
+ * @property distance the distance from the origin to the hit location.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class HitTestResult(
-    public val hitPosition: Vector3?,
+    public val hitPosition: Vector3,
     public val surfaceNormal: Vector3?,
     @SurfaceTypeValue public val surfaceType: Int,
-    public val distance: Float,
+    @get:FloatRange(from = 0.0) public val distance: Float,
 ) {
 
     override fun equals(other: Any?): Boolean {
@@ -70,7 +68,8 @@ public class HitTestResult(
     }
 
     /** The type of the source of this event. */
-    @IntDef(SurfaceType.UNKNOWN, SurfaceType.PLANE, SurfaceType.OBJECT)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Retention(AnnotationRetention.SOURCE)
-    internal annotation class SurfaceTypeValue
+    @IntDef(SurfaceType.UNKNOWN, SurfaceType.PLANE, SurfaceType.OBJECT)
+    public annotation class SurfaceTypeValue
 }

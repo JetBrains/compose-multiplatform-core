@@ -24,16 +24,14 @@ import androidx.compose.ui.util.fastJoinToString
  *
  * @param components the list of components to be rendered in the context menu.
  */
-// TODO(grantapher-cm-api-publicize) Make class public
-internal class TextContextMenuData
-internal constructor(val components: List<TextContextMenuComponent>) {
+class TextContextMenuData(val components: List<TextContextMenuComponent>) {
     override fun toString(): String {
         val componentsStr =
             components.fastJoinToString(prefix = "[\n\t", separator = "\n\t", postfix = "\n]")
         return "TextContextMenuData(components=$componentsStr)"
     }
 
-    internal companion object {
+    companion object {
         val Empty = TextContextMenuData(emptyList())
     }
 }
@@ -45,65 +43,32 @@ internal constructor(val components: List<TextContextMenuComponent>) {
  *   in [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents]. It is advisable
  *   to use a `data object` as a key here.
  */
-// TODO(grantapher-cm-api-publicize) Make class public
-internal abstract class TextContextMenuComponent internal constructor(val key: Any)
+abstract class TextContextMenuComponent internal constructor(val key: Any)
 
 /** A [TextContextMenuComponent] separator in a text context menu. */
-// TODO(grantapher-cm-api-publicize) Make object public
-internal data object TextContextMenuSeparator : TextContextMenuComponent(TextContextMenuSeparator)
-
-/**
- * A [TextContextMenuComponent] that represents a clickable item with a label in a context menu.
- *
- * @param key A unique key that identifies this component, mainly for use in filtering a component
- *   in [Modifier.filterTextContextMenuComponents][filterTextContextMenuComponents]. It is advisable
- *   to use a `data object` as a key here.
- * @param label The label text to be shown in the context menu.
- * @param leadingIcon Icon that precedes the label in the context menu. Setting this to null means
- *   that it will not be displayed.
- * @param onClick The action to be performed when this item is clicked. Call
- *   [TextContextMenuSession.close] on the [TextContextMenuSession] receiver to close the context
- *   menu item as a result of the click.
- */
-// TODO(grantapher-cm-api-publicize) Make class public
-internal class TextContextMenuItem
-internal constructor(
-    key: Any,
-    val label: String,
-    val leadingIcon: PlatformIcon? = null,
-    val onClick: TextContextMenuSession.() -> Unit,
-) : TextContextMenuComponent(key) {
-    override fun toString(): String =
-        "TextContextMenuItem(key=$key, label=\"$label\", leadingIcon=$leadingIcon)"
-}
-
-/** A platform-specific icon type used in a [TextContextMenuItem]. */
-// TODO(grantapher-cm-api-publicize) Make public
-internal expect class PlatformIcon
+object TextContextMenuSeparator : TextContextMenuComponent(Any())
 
 /** A session for an open text context menu that can be used to close the context menu. */
 @Suppress("NotCloseable") // AutoCloseable not available in common.
-// TODO(grantapher-cm-api-publicize) Make interface public
-internal interface TextContextMenuSession {
+interface TextContextMenuSession {
     /** Closes the text context menu. */
     fun close()
 }
 
 /** Contains the `object`s used as keys for the compose provided context menu items. */
-// TODO(grantapher-cm-api-publicize) Make object public
-internal object TextContextMenuKeys {
+object TextContextMenuKeys {
     /** Key for the context menu "Cut" item. */
-    data object CutKey
+    val CutKey = Any()
 
     /** Key for the context menu "Copy" item. */
-    data object CopyKey
+    val CopyKey = Any()
 
     /** Key for the context menu "Paste" item. */
-    data object PasteKey
+    val PasteKey = Any()
 
     /** Key for the context menu "Select All" item. */
-    data object SelectAllKey
+    val SelectAllKey = Any()
 
     /** Key for the context menu "Autofill" item. */
-    data object AutofillKey
+    val AutofillKey = Any()
 }

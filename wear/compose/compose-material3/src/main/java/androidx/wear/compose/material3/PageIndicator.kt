@@ -16,53 +16,40 @@
 
 package androidx.wear.compose.material3
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
-import androidx.wear.compose.foundation.CurvedAlignment
-import androidx.wear.compose.foundation.CurvedDirection
-import androidx.wear.compose.foundation.CurvedLayout
-import androidx.wear.compose.foundation.CurvedModifier
-import androidx.wear.compose.foundation.CurvedScope
-import androidx.wear.compose.foundation.angularSizeDp
-import androidx.wear.compose.foundation.background
-import androidx.wear.compose.foundation.curvedBox
-import androidx.wear.compose.foundation.curvedRow
 import androidx.wear.compose.foundation.lazy.inverseLerp
-import androidx.wear.compose.foundation.padding
 import androidx.wear.compose.foundation.pager.HorizontalPager
 import androidx.wear.compose.foundation.pager.PagerState
 import androidx.wear.compose.foundation.pager.VerticalPager
-import androidx.wear.compose.foundation.radialSize
-import androidx.wear.compose.foundation.size
-import androidx.wear.compose.foundation.weight
 import androidx.wear.compose.material3.tokens.ColorSchemeKeyTokens
-import androidx.wear.compose.materialcore.BoundsLimiter
-import kotlin.math.roundToInt
+import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * Horizontal page indicator for use with [HorizontalPager], representing the currently active page
  * and the approximate number of pages. Pages are indicated as a Circle shape. The indicator shows
  * up to six pages individually - if there are more than six pages, [HorizontalPageIndicator] shows
  * a smaller indicator to the left and/or right to indicate that more pages are available.
- *
- * This is a full screen component and will occupy the whole screen. However it's not actionable, so
- * it's not expected to interfere with anything on the screen.
  *
  * Here's how different positions 0..10 might be visually represented: "X" is selected item, "O" and
  * "o" full and half size items respectively.
@@ -74,8 +61,10 @@ import kotlin.math.roundToInt
  *
  * o O O O X O - current page is 9 out of 10, as there no more items on the right
  *
- * [HorizontalPageIndicator] can be linear or curved, depending on the screen shape of the device -
- * for circular screens it will be curved, whilst for square screens it will be linear.
+ * To comply with Wear Material Design guidelines, this composable should be aligned to the bottom
+ * center of the screen using `Alignment.BottomCenter`, such as by setting `modifier =
+ * Modifier.align(Alignment.BottomCenter)`. If [HorizontalPageIndicator] is used through
+ * [HorizontalPagerScaffold], then alignment is implicitly set by [HorizontalPagerScaffold].
  *
  * Example usage with [HorizontalPager]:
  *
@@ -112,11 +101,11 @@ public fun HorizontalPageIndicator(
  * six pages individually - if there are more than six pages, [VerticalPageIndicator] shows a
  * smaller indicator to the top and/or bottom to indicate that more pages are available.
  *
- * This is a full screen component and will occupy the whole screen. However it's not actionable, so
- * it's not expected to interfere with anything on the screen.
- *
- * [VerticalPageIndicator] can be linear or curved, depending on the screen shape of the device -
- * for circular screens it will be curved, whilst for square screens it will be linear.
+ * To comply with Wear Material Design guidelines, this composable should be aligned to the center
+ * end of the screen using `Alignment.CenterEnd`, such as by setting `modifier =
+ * Modifier.align(Alignment.CenterEnd)`. This way, the [VerticalPageIndicator] will appear on the
+ * right in Ltr orientation and on the left in Rtl orientation. If [VerticalPageIndicator] is used
+ * through [VerticalPagerScaffold], then alignment is implicitly set by [VerticalPagerScaffold].
  *
  * Example usage with [VerticalPager]:
  *
@@ -196,7 +185,7 @@ internal fun PageIndicatorImpl(
     val isLastPage =
         currentPageOffsetWithFraction.equalsWithTolerance(
             number = state.pageCount - 1f,
-            tolerance = 0.001f
+            tolerance = 0.001f,
         )
 
     // If it's the last page, then we decrease its index by 1 and put a 1f to the offset
@@ -213,7 +202,7 @@ internal fun PageIndicatorImpl(
                 pagesOnScreen = pagesOnScreen,
                 smallIndicatorSizeFraction = smallIndicatorSizeFraction,
                 shrinkThresholdStart = calculateShrinkThresholdStart(spacing, indicatorSize),
-                shrinkThresholdEnd = calculateShrinkThresholdEnd(spacing, indicatorSize)
+                shrinkThresholdEnd = calculateShrinkThresholdEnd(spacing, indicatorSize),
             )
         }
 
@@ -223,236 +212,253 @@ internal fun PageIndicatorImpl(
 
     val spacerSize = indicatorSize + spacing
 
-    var containerSize by remember { mutableStateOf(IntSize.Zero) }
+    val horizontalWidth = spacerSize * pagesOnScreen
+    val horizontalHeight = indicatorSize * 2
+    val boundsSize =
+        DpSize(
+            width = if (isHorizontal) horizontalWidth else horizontalHeight,
+            height = if (isHorizontal) horizontalHeight else horizontalWidth,
+        )
 
-    val boundsSize: Density.() -> IntSize = {
-        val width = (spacerSize.toPx() * pagesOnScreen).roundToInt()
-        val height = (indicatorSize * 2).roundToPx().coerceAtLeast(0)
-        val size =
-            IntSize(
-                width = if (isHorizontal) width else height,
-                height = if (isHorizontal) height else width
-            )
-        size
-    }
+    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
 
-    val boundsOffset: Density.() -> IntOffset = {
-        val measuredSize = boundsSize()
-        if (isHorizontal) {
-            // Offset here is the distance between top left corner of the outer container to
-            // the top left corner of the indicator. Its placement should look similar to
-            // Alignment.BottomCenter.
-            IntOffset(
-                x = (containerSize.width - measuredSize.width) / 2 - edgePadding.roundToPx(),
-                y = containerSize.height - measuredSize.height - edgePadding.roundToPx() * 2,
-            )
-        } else {
-            // Offset here is the distance between top left corner of the outer container to
-            // the top left corner of the indicator. Its placement should look similar to
-            // Alignment.CenterEnd.
-            IntOffset(
-                x =
-                    if (layoutDirection == LayoutDirection.Ltr) {
-                        containerSize.width - measuredSize.width - edgePadding.roundToPx() * 2
-                    } else edgePadding.roundToPx(),
-                y = (containerSize.height - measuredSize.height) / 2 - edgePadding.roundToPx(),
-            )
-        }
-    }
-    // As we use an extra spacers to the start and end of horizontal indicator ( and higher and
-    // lower for vertical), we have to set their size in angular padding to compensate for that.
-    val angularPadding = -(spacing + indicatorSize)
-    BoundsLimiter(
-        offset = boundsOffset,
-        size = boundsSize,
-        modifier = modifier.padding(edgePadding),
-        onSizeChanged = { containerSize = it }
-    ) {
-        if (pagesState.totalPages == 1) {
-            SingleDotCurvedPageIndicator(
-                isHorizontal = isHorizontal,
-                indicatorSize = indicatorSize,
-                layoutDirection = layoutDirection,
-                selectedColor = selectedColor,
-                backgroundColor = backgroundColor,
-            )
-        } else {
-            CurvedPageIndicator(
-                visibleDotIndex = pagesState.visibleDotIndex,
-                pagesOnScreen = pagesOnScreen,
-                indicator = { page ->
-                    curvedIndicator(
-                        page = page,
-                        size = indicatorSize,
-                        unselectedColor = unselectedColor,
-                        pagesState = pagesState
-                    )
-                },
-                spacer = { spacerIndex ->
-                    curvedSpacer(spacerSize * pagesState.spacersSizeRatio[spacerIndex])
-                },
-                selectedIndicator = {
-                    curvedSelectedIndicator(
-                        indicatorSize = indicatorSize,
-                        spacing = spacing,
-                        selectedColor = selectedColor,
-                        progress = offset
-                    )
-                },
-                angularPadding = angularPadding,
-                isHorizontal = isHorizontal,
-                layoutDirection = layoutDirection,
-                backgroundColor = backgroundColor
-            )
-        }
-    }
-}
+    Canvas(modifier = modifier.padding(edgePadding).size(boundsSize)) {
+        val screenWidthPx = screenWidth.toPx()
+        val indicatorSizePx = indicatorSize.roundToPx().toFloat()
+        val spacerSizePx = if (pagesOnScreen > 1) spacerSize.toPx() else 0f
+        val backgroundStrokeWidthPx = BackgroundRadius.toPx() * 2 + indicatorSizePx
+        val arcRadius = (screenWidthPx - backgroundStrokeWidthPx) / 2 - edgePadding.toPx()
 
-@Composable
-private fun CurvedPageIndicator(
-    visibleDotIndex: Int,
-    pagesOnScreen: Int,
-    indicator: CurvedScope.(Int) -> Unit,
-    spacer: CurvedScope.(Int) -> Unit,
-    selectedIndicator: CurvedScope.() -> Unit,
-    isHorizontal: Boolean,
-    layoutDirection: LayoutDirection,
-    angularPadding: Dp,
-    backgroundColor: Color,
-) {
-    val anchor =
-        if (isHorizontal) HorizontalPagerAnchor
-        else {
-            if (layoutDirection == LayoutDirection.Ltr) VerticalPagerAnchor
-            else VerticalPagerRtlAnchor
-        }
-    val angularDirection =
-        if (isHorizontal) CurvedDirection.Angular.Reversed else CurvedDirection.Angular.Normal
-
-    CurvedLayout(modifier = Modifier, anchor = anchor, angularDirection = angularDirection) {
-        curvedRow(
-            modifier =
-                CurvedModifier.background(backgroundColor, cap = StrokeCap.Round)
-                    .padding(radial = BackgroundRadius, angular = angularPadding)
-        ) {
-            curvedRow(radialAlignment = CurvedAlignment.Radial.Center) {
-                for (page in 0 until visibleDotIndex) {
-                    spacer(page)
-                    indicator(page)
-                }
-                curvedBox(
-                    radialAlignment = CurvedAlignment.Radial.Center,
-                    angularAlignment = CurvedAlignment.Angular.Center,
-                ) {
-                    curvedRow(radialAlignment = CurvedAlignment.Radial.Center) {
-                        spacer(visibleDotIndex)
-                        indicator(visibleDotIndex)
-                        spacer(visibleDotIndex + 1)
-                        indicator(visibleDotIndex + 1)
-                        spacer(visibleDotIndex + 2)
+        // The indicators are arranged along a circular arc, with `arcRadius` defining its
+        // curvature.
+        // To render this arc correctly within the Canvas's coordinate space, its conceptual center
+        // must be translated (offset) along the X and Y axes. This offset varies depending on
+        // the current layout configuration, accommodating both LTR/RTL directions and
+        // vertical/horizontal display modes.
+        val center =
+            if (isHorizontal) {
+                Offset(center.x, center.y - arcRadius)
+            } else {
+                val topLeftX =
+                    if (layoutDirection == LayoutDirection.Rtl) {
+                        backgroundStrokeWidthPx / 2 + arcRadius
+                    } else {
+                        center.x - arcRadius
                     }
-                    selectedIndicator()
+                Offset(topLeftX, center.y)
+            }
+
+        // The length of the page indicator with, for example, 6 indicators is:
+        // +--------------+
+        // o  o  o  o  o  o
+        // +--------------+
+        // where o is an indicator of width indicatorSizePx and space between indicators is
+        // spacing
+        // That gives us:
+        // indicatorSizePx / 2 + indicatorSizePx * 4 + indicatorSizePx / 2 + spacing.toPx() * 5
+        // or:
+        // indicatorSizePx * 5 + spacing.toPx * 5
+        // spacerSizePx = indicatorSize + spacing, which gives us final formula:
+        // spacerSizePx * 5, where 5 = pagesOnScreen - 1
+        val indicatorLength = spacerSizePx * (pagesOnScreen - 1)
+        val indicatorLengthAngle = distanceToAngle(indicatorLength, arcRadius)
+
+        // Center indicator around Anchor
+        val anchor =
+            if (isHorizontal) {
+                HorizontalPagerAnchor
+            } else if (layoutDirection == LayoutDirection.Ltr) {
+                VerticalPagerAnchor
+            } else {
+                VerticalPagerRtlAnchor
+            }
+
+        // lambda function to rotate angle either clockwise or anti clock-wise
+        val rotateBy: Float.(Float) -> Float =
+            if (isHorizontal) {
+                // Horizontal mode: move selected dot anti clock-wise in LTR and clock wise in
+                // LTR
+                if (layoutDirection == LayoutDirection.Ltr) {
+                    { angle -> this - angle }
+                } else {
+                    { angle -> this + angle }
                 }
-                for (page in visibleDotIndex + 2..pagesOnScreen) {
-                    indicator(page)
-                    spacer(page + 1)
+            } else {
+                // Vertical mode: move selected dot clock-wise in LTR and anti clock wise in
+                // RTL
+                if (layoutDirection == LayoutDirection.Ltr) {
+                    { angle -> this + angle }
+                } else {
+                    { angle -> this - angle }
                 }
             }
+
+        // negation since we need to rotate start angle by half of the indicator width to the
+        // opposite direction from anchor in order for indicator to be center around anchor
+        val startAngle = anchor.rotateBy(-indicatorLengthAngle / 2)
+        val endAngle = anchor.rotateBy(indicatorLengthAngle / 2)
+
+        if (pagesOnScreen == 1) {
+            drawCircleAtAngle(
+                startAngle,
+                arcRadius,
+                backgroundStrokeWidthPx / 2,
+                backgroundColor,
+                center,
+            )
+            drawCircleAtAngle(startAngle, arcRadius, indicatorSizePx / 2, selectedColor, center)
+        } else {
+            drawIndicatorArcBackground(
+                arcRadius,
+                startAngle,
+                endAngle,
+                center,
+                backgroundColor,
+                Stroke(width = backgroundStrokeWidthPx, cap = StrokeCap.Round),
+            )
+
+            drawIndicators(
+                arcRadius,
+                rotateBy,
+                startAngle,
+                indicatorSizePx,
+                spacerSizePx,
+                selectedColor,
+                unselectedColor,
+                pagesState,
+                offset,
+                center,
+            )
         }
     }
 }
 
-@Composable
-private fun SingleDotCurvedPageIndicator(
-    isHorizontal: Boolean,
-    indicatorSize: Dp,
-    layoutDirection: LayoutDirection,
-    selectedColor: Color,
-    backgroundColor: Color,
+private fun DrawScope.drawSelectedIndicatorArc(
+    arcRadius: Float,
+    rotateBy: Float.(Float) -> Float,
+    angle: Float,
+    spacerAngle: Float,
+    offset: Float,
+    color: Color,
+    center: Offset,
+    indicatorSizePx: Float,
 ) {
-    val anchor =
-        if (isHorizontal) HorizontalPagerAnchor
-        else {
-            if (layoutDirection == LayoutDirection.Ltr) VerticalPagerAnchor
-            else VerticalPagerRtlAnchor
-        }
-    val angularDirection =
-        if (isHorizontal) CurvedDirection.Angular.Reversed else CurvedDirection.Angular.Normal
+    val startWeight = (1 - offset * 2).coerceAtLeast(0f)
+    val endWeight = (offset * 2 - 1).coerceAtLeast(0f)
+    val blurbWeight = (1 - startWeight - endWeight).coerceAtLeast(0.01f)
 
-    CurvedLayout(modifier = Modifier, anchor = anchor, angularDirection = angularDirection) {
-        curvedRow(
-            modifier =
-                CurvedModifier.background(backgroundColor, cap = StrokeCap.Round)
-                    .padding(radial = BackgroundRadius)
-        ) {
-            curvedBox(
-                modifier =
-                    CurvedModifier
-                        // Ideally we want sweepDegrees to be = 0f, because the circular shape is
-                        // drawn
-                        // by the Round StrokeCap.
-                        // But it can't have 0f value due to limitations of underlying Canvas.
-                        // Values below 0.2f also give some artifacts b/291753164
-                        .size(0.2f, indicatorSize)
-                        .background(color = selectedColor, cap = StrokeCap.Round)
-            ) {}
-        }
-    }
+    val startAngle = angle.rotateBy(spacerAngle).rotateBy(spacerAngle * endWeight)
+    val sweepAngle = rotateBy(0f, spacerAngle * blurbWeight)
+
+    drawArc(
+        color,
+        startAngle.toDegrees(),
+        sweepAngle.toDegrees(),
+        false,
+        topLeft = Offset(center.x - arcRadius, center.y - arcRadius),
+        size = Size(arcRadius * 2, arcRadius * 2),
+        style = Stroke(width = indicatorSizePx, cap = StrokeCap.Round),
+    )
 }
 
-private fun CurvedScope.curvedSelectedIndicator(
-    indicatorSize: Dp,
-    spacing: Dp,
+private fun DrawScope.drawIndicators(
+    arcRadius: Float,
+    rotateBy: Float.(Float) -> Float,
+    startAngle: Float,
+    indicatorSizePx: Float,
+    spacerSizePx: Float,
     selectedColor: Color,
-    progress: Float
-) {
-
-    val startSpacerWeight = (1 - progress * 2).coerceAtLeast(0f)
-    val endSpacerWeight = (progress * 2 - 1).coerceAtLeast(0f)
-    val blurbWeight = (1 - startSpacerWeight - endSpacerWeight).coerceAtLeast(0.01f)
-
-    // Add 0.5dp to cover the sweepDegrees of unselected indicators
-    curvedRow(CurvedModifier.angularSizeDp(spacing + indicatorSize + 0.5.dp)) {
-        if (endSpacerWeight > 0f) {
-            curvedRow(CurvedModifier.weight(endSpacerWeight)) {}
-        }
-        curvedRow(
-            CurvedModifier.background(selectedColor, cap = StrokeCap.Round)
-                .weight(blurbWeight)
-                // Adding 0.3dp to fully cover edges of non-selected indicators
-                .radialSize(indicatorSize + 0.3.dp)
-        ) {}
-        if (startSpacerWeight > 0f) {
-            curvedRow(CurvedModifier.weight(startSpacerWeight)) {}
-        }
-    }
-}
-
-private fun CurvedScope.curvedIndicator(
-    page: Int,
     unselectedColor: Color,
     pagesState: PagesState,
-    size: Dp
+    offset: Float,
+    center: Offset,
 ) {
-    curvedBox(
-        CurvedModifier
-            // Ideally we want sweepDegrees to be = 0f, because the circular shape is drawn
-            // by the Round StrokeCap.
-            // But it can't have 0f value due to limitations of underlying Canvas.
-            // Values below 0.2f also give some artifacts b/291753164
-            .size(0.2f, size * pagesState.indicatorsSizeRatio[page])
-            .background(
-                color =
-                    unselectedColor.copy(
-                        alpha = unselectedColor.alpha * pagesState.indicatorsAlpha[page]
-                    ),
-                cap = StrokeCap.Round
+    val spacerAngle = distanceToAngle(spacerSizePx, arcRadius)
+    var angle = startAngle.rotateBy(-spacerAngle)
+    for (page in 0 until pagesState.pagesOnScreen + 1) {
+        if (page == pagesState.visibleDotIndex) {
+            drawSelectedIndicatorArc(
+                arcRadius,
+                rotateBy,
+                angle,
+                spacerAngle,
+                offset,
+                selectedColor,
+                center,
+                indicatorSizePx,
             )
-    ) {}
+        }
+
+        // Adjust angle by spacerAngle. Angle translates to the actual indicator (x, y) position
+        angle = angle.rotateBy(spacerAngle * pagesState.spacersSizeRatio[page])
+        drawIndicator(angle, page, arcRadius, unselectedColor, pagesState, indicatorSizePx, center)
+    }
 }
 
-private fun CurvedScope.curvedSpacer(size: Dp) {
-    curvedBox(CurvedModifier.angularSizeDp(size).radialSize(0.dp)) {}
+private fun DrawScope.drawIndicatorArcBackground(
+    radius: Float,
+    startAngle: Float,
+    endAngle: Float,
+    centerOffset: Offset,
+    color: Color,
+    stroke: Stroke,
+) {
+    val sweepAngle = endAngle - startAngle
+    val signValue = if (sweepAngle < 0f) -1 else 1
+    // Values below 0.2f also give some artifacts b/291753164. Do coerceAtLeast() with keeping sign
+    // When bug is fixed, it will be possible to remove special logic for one page and always use
+    // this function to draw the background
+    val sweepAngleDeg = signValue * abs(sweepAngle.toDegrees()).coerceAtLeast(0.2f)
+
+    drawArc(
+        color,
+        startAngle.toDegrees(),
+        sweepAngleDeg,
+        false,
+        topLeft = Offset(centerOffset.x - radius, centerOffset.y - radius),
+        size = Size(radius * 2, radius * 2),
+        style = stroke,
+    )
+}
+
+/**
+ * Draws a circle of circleRadius along the circumference of an arc with an arcRadius at a given
+ * angle
+ */
+private fun DrawScope.drawCircleAtAngle(
+    angle: Float,
+    arcRadius: Float,
+    circleRadius: Float,
+    color: Color,
+    center: Offset,
+) {
+    val x = center.x + arcRadius * cos(angle)
+    val y = center.y + arcRadius * sin(angle)
+    drawCircle(color, circleRadius, Offset(x, y))
+}
+
+/**
+ * Translates the distance in pixels along the circumference of a circle to an angle. Formula:
+ * angle(in radians) = distance / radius
+ */
+private fun distanceToAngle(distance: Float, radius: Float): Float = distance / radius
+
+private fun DrawScope.drawIndicator(
+    angle: Float,
+    page: Int,
+    arcRadius: Float,
+    color: Color,
+    pagesState: PagesState,
+    indicatorSizePx: Float,
+    center: Offset,
+) {
+    drawCircleAtAngle(
+        angle,
+        arcRadius,
+        indicatorSizePx / 2f * pagesState.indicatorsSizeRatio[page],
+        color.copy(alpha = color.alpha * pagesState.indicatorsAlpha[page]),
+        center,
+    )
 }
 
 /**
@@ -465,12 +471,13 @@ private class PagesState(
     val pagesOnScreen: Int,
     val smallIndicatorSizeFraction: Float,
     val shrinkThresholdStart: Float,
-    val shrinkThresholdEnd: Float
+    val shrinkThresholdEnd: Float,
 ) {
     private val dotsCount = pagesOnScreen + 1
     private val spacersCount = pagesOnScreen + 2
 
     private var smoothProgress = 0f
+
     // An offset in pages, basically meaning how many pages are hidden to the left.
     private var hiddenPagesToTheLeft = 0
 
@@ -592,7 +599,7 @@ private class PagesState(
             shrinkThresholdStart,
             shrinkThresholdEnd,
             visibleDotIndex,
-            offset
+            offset,
         )
     }
 
@@ -604,7 +611,7 @@ private class PagesState(
         shrinkThresholdStart: Float,
         shrinkThresholdEnd: Float,
         visibleDotIndex: Int,
-        offset: Float
+        offset: Float,
     ) {
         val shrinkFractionPrev =
             inverseLerp(1 - shrinkThresholdStart, 1 - shrinkThresholdEnd, offset)
@@ -637,11 +644,11 @@ private const val smallIndicatorSizeFraction = 0.66f
 private const val MaxNumberOfIndicators = 6
 
 // 0 degrees equals to 3 o'clock position, at the right of the screen
-private val VerticalPagerAnchor = 0f
+private val VerticalPagerAnchor = 0f.toRadians()
 // 180 degrees equals to 9 o'clock position, at the left of the screen
-private val VerticalPagerRtlAnchor = 180f
+private val VerticalPagerRtlAnchor = 180f.toRadians()
 // 90 degrees equals to 6 o'clock position, at the bottom of the screen
-private val HorizontalPagerAnchor = 90f
+private val HorizontalPagerAnchor = 90f.toRadians()
 /** The default size of the indicator */
 internal val PageIndicatorItemSize = 6.dp
 /** The default spacing between the indicators */

@@ -36,16 +36,18 @@ androidXMultiplatform {
     jvm()
     mac()
     linux()
+    mingwX64()
     ios()
     watchos()
     tvos()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
             }
         }
     }

@@ -39,7 +39,7 @@ public class CameraPipeConfig private constructor() {
         public fun from(
             sharedCameraPipe: CameraPipe? = null,
             sharedAppContext: Context? = null,
-            sharedThreadConfig: CameraThreadConfig? = null
+            sharedThreadConfig: CameraThreadConfig? = null,
         ): CameraXConfig {
             val cameraFactoryProvider =
                 CameraFactoryProvider(sharedCameraPipe, sharedAppContext, sharedThreadConfig)
@@ -48,6 +48,7 @@ public class CameraPipeConfig private constructor() {
                 .setDeviceSurfaceManagerProvider(::CameraSurfaceAdapter)
                 .setUseCaseConfigFactoryProvider(::CameraUseCaseAdapter)
                 .setConfigImplType(CameraXConfig.CAMERAX_CONFIG_IMPL_TYPE_PIPE)
+                .setRepeatingStreamForced(true)
                 .build()
         }
     }

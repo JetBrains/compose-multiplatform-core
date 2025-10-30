@@ -20,7 +20,6 @@ import android.os.Build
 import android.os.Process
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -34,7 +33,6 @@ import org.junit.runner.RunWith
  * implementations, please add to [ShellTest].
  */
 @MediumTest
-@SdkSuppress(minSdkVersion = 21)
 @RunWith(AndroidJUnit4::class)
 class ShellBehaviorTest {
 
@@ -62,7 +60,7 @@ class ShellBehaviorTest {
             assertTrue(
                 // For some reason, `stdout.contains(regex)` doesn't work :shrug:
                 pgrepOutput.stdout.lines().any { it.matches(regex) },
-                "expected $regex to be contained in output:\n${pgrepOutput.stdout}"
+                "expected $regex to be contained in output:\n${pgrepOutput.stdout}",
             )
         } else {
             // command doesn't exist
@@ -82,7 +80,7 @@ class ShellBehaviorTest {
                 // command doesn't exist
                 assertTrue(
                     output.stdout.isBlank() && output.stderr.isNotBlank(),
-                    "saw output $output"
+                    "saw output $output",
                 )
             }
             Build.VERSION.SDK_INT == 23 -> {

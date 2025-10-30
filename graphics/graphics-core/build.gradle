@@ -28,11 +28,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.core:core:1.8.0")

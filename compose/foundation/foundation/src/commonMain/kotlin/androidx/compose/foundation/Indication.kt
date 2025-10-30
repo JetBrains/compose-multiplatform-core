@@ -183,7 +183,7 @@ fun Modifier.indication(interactionSource: InteractionSource, indication: Indica
                 name = "indication"
                 properties["interactionSource"] = interactionSource
                 properties["indication"] = indication
-            }
+            },
     )
 }
 
@@ -274,7 +274,7 @@ private object DefaultDebugIndication : IndicationNodeFactory {
  */
 private class IndicationModifierElement(
     private val interactionSource: InteractionSource,
-    private val indication: IndicationNodeFactory
+    private val indication: IndicationNodeFactory,
 ) : ModifierNodeElement<IndicationModifierNode>() {
     override fun create(): IndicationModifierNode {
         return IndicationModifierNode(indication.create(interactionSource))

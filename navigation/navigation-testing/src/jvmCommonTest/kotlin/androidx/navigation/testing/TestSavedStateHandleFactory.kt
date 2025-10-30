@@ -91,7 +91,7 @@ class TestSavedStateHandleBuilder {
         assertThat(arg).isNull()
     }
 
-    @Test(expected = NotImplementedError::class)
+    @Test
     fun nullLiteralArgument() {
         @Serializable class TestClass(val arg: String)
 
@@ -101,7 +101,7 @@ class TestSavedStateHandleBuilder {
         assertThat(arg).isEqualTo("null")
     }
 
-    @Test(expected = NotImplementedError::class)
+    @Test
     fun emptyStringArgument() {
         @Serializable class TestClass(val arg: String)
 

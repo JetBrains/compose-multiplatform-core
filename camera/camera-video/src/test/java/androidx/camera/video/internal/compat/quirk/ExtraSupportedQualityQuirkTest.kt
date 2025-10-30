@@ -21,7 +21,6 @@ import android.media.CamcorderProfile.QUALITY_CIF
 import android.media.CamcorderProfile.QUALITY_HIGH
 import android.media.CamcorderProfile.QUALITY_LOW
 import android.media.CamcorderProfile.QUALITY_QCIF
-import android.os.Build
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.impl.EncoderProfilesProxy
 import androidx.camera.testing.fakes.FakeCameraInfoInternal
@@ -39,13 +38,11 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.ShadowBuild
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 class ExtraSupportedQualityQuirkTest {
     companion object {
         private const val MOTO_C_BRAND = "motorola"
@@ -63,14 +60,14 @@ class ExtraSupportedQualityQuirkTest {
                 DEFAULT_DURATION,
                 DEFAULT_OUTPUT_FORMAT,
                 listOf(createFakeAudioProfileProxy()),
-                listOf(createFakeVideoProfileProxy(RESOLUTION_CIF))
+                listOf(createFakeVideoProfileProxy(RESOLUTION_CIF)),
             )
         val profilesQcif =
             EncoderProfilesProxy.ImmutableEncoderProfilesProxy.create(
                 DEFAULT_DURATION,
                 DEFAULT_OUTPUT_FORMAT,
                 listOf(createFakeAudioProfileProxy()),
-                listOf(createFakeVideoProfileProxy(RESOLUTION_QCIF))
+                listOf(createFakeVideoProfileProxy(RESOLUTION_QCIF)),
             )
         val encoderProfileProvider =
             FakeEncoderProfilesProvider.Builder()
@@ -84,7 +81,7 @@ class ExtraSupportedQualityQuirkTest {
         val qualityEncoderProfilesMap =
             ExtraSupportedQualityQuirk().getExtraEncoderProfiles(
                 cameraInfo,
-                encoderProfileProvider
+                encoderProfileProvider,
             ) {
                 FakeVideoEncoderInfo()
             }

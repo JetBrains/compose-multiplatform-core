@@ -36,7 +36,7 @@ import com.squareup.kotlinpoet.joinToCode
 
 class ClientProxyTypeGenerator(
     private val basePackageName: String,
-    private val binderCodeConverter: BinderCodeConverter
+    private val binderCodeConverter: BinderCodeConverter,
 ) {
     private val cancellationSignalClassName = ClassName(basePackageName, "ICancellationSignal")
 
@@ -74,7 +74,7 @@ class ClientProxyTypeGenerator(
                             add(
                                 PropertySpec.builder(
                                         uiCoreLibInfoPropertyName,
-                                        SpecNames.bundleClass
+                                        SpecNames.bundleClass,
                                     )
                                     .addModifiers(KModifier.PUBLIC)
                                     .build()
@@ -90,13 +90,13 @@ class ClientProxyTypeGenerator(
                     addProperty(
                         PropertySpec.builder(
                                 uiAdapterSpec.adapterPropertyName,
-                                uiAdapterSpec.type.poetTypeName()
+                                uiAdapterSpec.type.poetTypeName(),
                             )
                             .addModifiers(KModifier.PUBLIC)
                             .initializer(
                                 "%T.createFromCoreLibInfo(%L)",
                                 uiAdapterSpec.adapterFactoryClass,
-                                uiCoreLibInfoPropertyName
+                                uiCoreLibInfoPropertyName,
                             )
                             .build()
                     )
@@ -151,13 +151,13 @@ class ClientProxyTypeGenerator(
                 ClassName(
                     basePackageName,
                     wrapWithListIfNeeded(method.returnType).transactionCallbackName(),
-                    "Stub"
+                    "Stub",
                 )
 
             addControlFlow("val transactionCallback = object: %T()", transactionCallbackClassName) {
                 addControlFlow(
                     "override fun onCancellable(cancellationSignal: %T)",
-                    cancellationSignalClassName
+                    cancellationSignalClassName,
                 ) {
                     addControlFlow("if (it.isCancelled)") {
                         addStatement("cancellationSignal.cancel()")
@@ -169,14 +169,14 @@ class ClientProxyTypeGenerator(
 
                 addControlFlow(
                     "override fun onFailure(throwableParcel: %T)",
-                    ClassName(basePackageName, throwableParcelName)
+                    ClassName(basePackageName, throwableParcelName),
                 ) {
                     addStatement(
                         "it.%M(%M(throwableParcel))",
                         resumeWithExceptionMethod,
                         ThrowableParcelConverterFileGenerator.fromThrowableParcelNameSpec(
                             basePackageName
-                        )
+                        ),
                     )
                 }
             }
@@ -194,20 +194,17 @@ class ClientProxyTypeGenerator(
         return CodeBlock.builder().build {
             addControlFlow(
                 "override fun onSuccess(result: %T)",
-                binderCodeConverter.convertToBinderType(method.returnType)
+                binderCodeConverter.convertToBinderType(method.returnType),
             ) {
                 addStatement(
                     "it.resumeWith(Result.success(%L))",
-                    binderCodeConverter.convertToModelCode(method.returnType, "result")
+                    binderCodeConverter.convertToModelCode(method.returnType, "result"),
                 )
             }
         }
     }
 
-    private fun generateRemoteCall(
-        method: Method,
-        extraParameters: List<CodeBlock> = emptyList(),
-    ) =
+    private fun generateRemoteCall(method: Method, extraParameters: List<CodeBlock> = emptyList()) =
         CodeBlock.builder().build {
             val parameters =
                 method.parameters.map {

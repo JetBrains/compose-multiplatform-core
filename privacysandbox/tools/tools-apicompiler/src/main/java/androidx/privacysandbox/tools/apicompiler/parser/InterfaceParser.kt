@@ -32,10 +32,7 @@ import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
 
-internal class InterfaceParser(
-    private val logger: KSPLogger,
-    private val typeParser: TypeParser,
-) {
+internal class InterfaceParser(private val logger: KSPLogger, private val typeParser: TypeParser) {
     private val validInterfaceModifiers = setOf(Modifier.PUBLIC)
     private val validMethodModifiers = setOf(Modifier.PUBLIC, Modifier.SUSPEND)
     private val validInterfaceSuperTypes = uiAdapters.toSet()
@@ -61,7 +58,7 @@ internal class InterfaceParser(
                             ClassKind.OBJECT,
                             ClassKind.INTERFACE,
                             ClassKind.ENUM_CLASS,
-                            ClassKind.CLASS
+                            ClassKind.CLASS,
                         )
                         .contains(it.classKind)
                 }
@@ -154,13 +151,13 @@ internal class InterfaceParser(
             name = method.simpleName.getFullName(),
             parameters = parameters,
             returnType = returnType,
-            isSuspend = method.modifiers.contains(Modifier.SUSPEND)
+            isSuspend = method.modifiers.contains(Modifier.SUSPEND),
         )
     }
 
     private fun parseParameter(
         method: KSFunctionDeclaration,
-        parameter: KSValueParameter
+        parameter: KSValueParameter,
     ): Parameter {
         val name = method.qualifiedName?.getFullName() ?: method.simpleName.getFullName()
         if (parameter.hasDefault) {

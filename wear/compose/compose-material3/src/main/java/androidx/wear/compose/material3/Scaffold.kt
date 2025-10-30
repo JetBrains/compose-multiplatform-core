@@ -87,7 +87,7 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
     fun addScreen(
         key: Any,
         timeText: @Composable (() -> Unit)?,
-        scrollInfoProvider: ScrollInfoProvider? = null
+        scrollInfoProvider: ScrollInfoProvider? = null,
     ) {
         contentItems.add(ScreenContent(key, mutableStateOf(scrollInfoProvider), timeText))
     }
@@ -95,7 +95,7 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
     fun updateIfNeeded(
         key: Any,
         timeText: @Composable (() -> Unit)?,
-        scrollInfoProvider: ScrollInfoProvider? = null
+        scrollInfoProvider: ScrollInfoProvider? = null,
     ) {
         contentItems
             .find { it.key == key }
@@ -149,14 +149,15 @@ internal class ScreenContent(private val appTimeText: @Composable (() -> Unit)?)
 @Composable
 internal fun AnimatedIndicator(
     isVisible: () -> Boolean,
-    animationSpec: AnimationSpec<Float>? = spring(stiffness = Spring.StiffnessMediumLow),
-    content: @Composable (BoxScope.() -> Unit)? = null
+    modifier: Modifier = Modifier,
+    animationSpec: AnimationSpec<Float>? = INDICATOR_FADE_OUT_ANIMATION,
+    content: @Composable (BoxScope.() -> Unit)? = null,
 ) {
     // Skip if no indicator provided
     content?.let { pageIndicator ->
         if (animationSpec == null) {
             // if no animationSpec is provided then indicator will always be visible
-            Box(modifier = Modifier.fillMaxSize(), content = pageIndicator)
+            Box(modifier = modifier, content = pageIndicator)
         } else {
             // if animationSpec is provided this will be used to fade out indicator
             val alphaValue = remember { mutableFloatStateOf(0f) }
@@ -168,7 +169,7 @@ internal fun AnimatedIndicator(
                             animate(
                                 alphaValue.floatValue,
                                 targetValue,
-                                animationSpec = animationSpec
+                                animationSpec = animationSpec,
                             ) { value, _ ->
                                 alphaValue.floatValue = value
                             }
@@ -176,8 +177,8 @@ internal fun AnimatedIndicator(
                 }
             }
             Box(
-                modifier = Modifier.fillMaxSize().graphicsLayer { alpha = alphaValue.floatValue },
-                content = pageIndicator
+                modifier = modifier.graphicsLayer { alpha = alphaValue.floatValue },
+                content = pageIndicator,
             )
         }
     }
@@ -207,7 +208,10 @@ internal object AnimationCoordinator {
     fun Looper() {
         LaunchedEffect(running) {
             if (running) {
-                while (isActive && running) {
+                // DO NOT check running in the while, since this may see changes that the
+                // LaunchedEffect misses. When running becomes false, this function will recompose
+                // and the LaunchedEffect will cancel the running coroutine anyway.
+                while (isActive) {
                     withInfiniteAnimationFrameMillis { frameMillis.longValue = it }
                 }
             } else {
@@ -220,3 +224,6 @@ internal object AnimationCoordinator {
     private val registeredCount = AtomicInteger(0)
     private var running by mutableStateOf(false)
 }
+
+internal val INDICATOR_FADE_OUT_ANIMATION: AnimationSpec<Float> =
+    spring(stiffness = Spring.StiffnessMediumLow)

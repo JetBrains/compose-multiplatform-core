@@ -18,6 +18,9 @@ package androidx.wear.compose.material
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -49,7 +52,7 @@ class ListHeaderTest {
             ListHeader(modifier = Modifier.testTag(TEST_TAG)) { Text("Title") }
         }
 
-        rule.onNode(isHeading())
+        rule.onNode(isHeading()).assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
     }
 
     @Test

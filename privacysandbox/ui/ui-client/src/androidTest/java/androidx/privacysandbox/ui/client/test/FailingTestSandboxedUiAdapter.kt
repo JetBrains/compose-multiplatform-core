@@ -30,7 +30,7 @@ class FailingTestSandboxedUiAdapter : AbstractSandboxedUiAdapter() {
         initialHeight: Int,
         isZOrderOnTop: Boolean,
         clientExecutor: Executor,
-        client: SandboxedUiAdapter.SessionClient
+        client: SandboxedUiAdapter.SessionClient,
     ) {
         clientExecutor.execute { client.onSessionError(Exception("Error in openSession()")) }
     }

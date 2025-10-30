@@ -82,7 +82,7 @@ public interface CallExtensionScope {
      */
     public fun addParticipantExtension(
         onActiveParticipantChanged: suspend (Participant?) -> Unit,
-        onParticipantsUpdated: suspend (Set<Participant>) -> Unit
+        onParticipantsUpdated: suspend (Set<Participant>) -> Unit,
     ): ParticipantExtensionRemote
 
     /**
@@ -126,7 +126,7 @@ public interface CallExtensionScope {
      */
     public fun addMeetingSummaryExtension(
         onCurrentSpeakerChanged: suspend (CharSequence?) -> Unit,
-        onParticipantCountChanged: suspend (Int) -> Unit
+        onParticipantCountChanged: suspend (Int) -> Unit,
     ): MeetingSummaryRemote
 
     /**

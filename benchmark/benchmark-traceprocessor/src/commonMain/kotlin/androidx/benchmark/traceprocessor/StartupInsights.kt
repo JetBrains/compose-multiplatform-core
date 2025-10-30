@@ -67,7 +67,7 @@ private fun SlowStartReason.toInsight(
         Insight.Category(
             titleUrl = helpUrlBase?.plus(reason_id!!.name),
             title = reason!!,
-            postTitleLabel = thresholdString
+            postTitleLabel = thresholdString,
         )
 
     val observedValue = requireNotNull(actual_value?.value_)
@@ -86,7 +86,7 @@ private fun SlowStartReason.toInsight(
                 urlParamMap =
                     mapOf(
                         "dev.perfetto.AndroidStartup:packageName" to packageName,
-                        "dev.perfetto.AndroidStartup:slowStartReason" to reason_id!!.name
+                        "dev.perfetto.AndroidStartup:slowStartReason" to reason_id!!.name,
                     ),
             ),
         category = category,
@@ -117,7 +117,7 @@ constructor(private val helpUrlBase: String?) : Insight.Provider {
                     packageName = packageName,
                     helpUrlBase = helpUrlBase,
                     traceLinkTitle = traceLinkTitle,
-                    traceLinkPath = traceLinkPath
+                    traceLinkPath = traceLinkPath,
                 )
             } ?: emptyList()
     }

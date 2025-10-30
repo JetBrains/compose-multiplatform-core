@@ -8,17 +8,30 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 androidXMultiplatform {
-    androidTarget()
-    jvmStubs()
-    linuxX64Stubs()
+    androidLibrary {
+        namespace = "androidx.savedstate.compose"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+    }
+    desktop()
+    mingwX64()
+    linux()
+    mac()
+    ios()
+    tvos()
+    watchos()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -26,7 +39,7 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(project(":savedstate:savedstate"))
-                api("androidx.compose.runtime:runtime:1.7.5")
+                api("androidx.compose.runtime:runtime:1.9.0")
             }
         }
 
@@ -34,8 +47,6 @@ androidXMultiplatform {
             dependencies {
                 implementation(project(":kruth:kruth"))
                 implementation(libs.kotlinTest)
-                implementation(libs.kotlinTestCommon)
-                implementation(libs.kotlinTestAnnotationsCommon)
                 implementation(libs.kotlinCoroutinesTest)
             }
         }
@@ -48,14 +59,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
-            dependsOn(commonTest)
-            dependencies {
-                implementation(libs.robolectric)
-            }
-        }
-
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testExtJunit)
@@ -69,22 +73,55 @@ androidXMultiplatform {
             dependsOn(commonMain)
         }
 
-        jvmStubsMain {
+        nonAndroidTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
             dependsOn(nonAndroidMain)
         }
 
-        linuxx64StubsMain {
+        desktopTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        nativeMain {
             dependsOn(nonAndroidMain)
+        }
+
+        nativeTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        webMain {
+            dependsOn(nonAndroidMain)
+        }
+
+        webTest {
+            dependsOn(nonAndroidTest)
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
+            }
         }
     }
 }
 
-android {
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 1.3.5, this module is published as empty artifact with dependency
+        // to this androidx module.
+        commonMainImplementation("org.jetbrains.androidx.savedstate:savedstate-compose:1.3.5") {
+            because "prevents symbols duplication"
+        }
     }
-    namespace = "androidx.savedstate.compose"
-    experimentalProperties["android.lint.useK2Uast"] = false // TODO(b/345531033)
 }
 
 androidx {
@@ -93,5 +130,4 @@ androidx {
     samples(project(":savedstate:savedstate-compose"))
     inceptionYear = "2024"
     description = "Compose integration with Saved State"
-    metalavaK2UastEnabled = false
 }

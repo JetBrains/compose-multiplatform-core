@@ -61,7 +61,7 @@ public actual class NavOptionsBuilder {
 
     public actual fun <T : Any> popUpTo(
         route: KClass<T>,
-        popUpToBuilder: PopUpToBuilder.() -> Unit
+        popUpToBuilder: PopUpToBuilder.() -> Unit,
     ) {
         implementedInJetBrainsFork()
     }

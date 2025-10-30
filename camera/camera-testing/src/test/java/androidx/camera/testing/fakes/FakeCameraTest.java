@@ -23,7 +23,6 @@ import static java.util.Collections.singletonList;
 
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraDevice;
-import android.os.Build;
 import android.view.Surface;
 
 import androidx.camera.core.UseCase;
@@ -45,13 +44,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 import org.robolectric.shadows.ShadowLooper;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public final class FakeCameraTest {
 
     private FakeCamera mCamera;

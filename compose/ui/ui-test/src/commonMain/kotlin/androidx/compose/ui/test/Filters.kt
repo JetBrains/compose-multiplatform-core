@@ -165,7 +165,7 @@ fun hasNoScrollAction(): SemanticsMatcher =
 fun hasContentDescription(
     value: String,
     substring: Boolean = false,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): SemanticsMatcher {
     return if (substring) {
         SemanticsMatcher(
@@ -229,7 +229,7 @@ fun hasContentDescriptionExactly(vararg values: String): SemanticsMatcher {
 fun hasText(
     text: String,
     substring: Boolean = false,
-    ignoreCase: Boolean = false
+    ignoreCase: Boolean = false,
 ): SemanticsMatcher {
     val propertyName = "${Text.name} + ${InputText.name} + ${EditableText.name}"
     return if (substring) {
@@ -273,7 +273,7 @@ fun hasText(
  */
 fun hasTextExactly(
     vararg textValues: String,
-    includeEditableText: Boolean = true
+    includeEditableText: Boolean = true,
 ): SemanticsMatcher {
     val expected = textValues.toList()
     val propertyName =
@@ -345,6 +345,17 @@ fun isDialog(): SemanticsMatcher = hasKey(SemanticsProperties.IsDialog)
  * @see SemanticsProperties.IsPopup
  */
 fun isPopup(): SemanticsMatcher = hasKey(SemanticsProperties.IsPopup)
+
+/**
+ * Returns whether the node is hidden from accessibility.
+ *
+ * This only checks if the node itself is hidden from accessibility. To check if it is in a hidden
+ * subtree, use `hasAnyAncestor(isHiddenFromAccessibility())`.
+ *
+ * @see SemanticsProperties.HideFromAccessibility
+ */
+fun isHiddenFromAccessibility(): SemanticsMatcher =
+    SemanticsMatcher.keyIsDefined(SemanticsProperties.HideFromAccessibility)
 
 /**
  * Returns whether the node defines the given IME action.

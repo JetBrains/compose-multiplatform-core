@@ -91,7 +91,7 @@ class FastScrollCalculatorTest {
                 scrollY = 100,
                 viewHeight = 500,
                 thumbHeightPx = 50,
-                estimatedFullHeight = 1000F
+                estimatedFullHeight = 1000F,
             )
 
         // scrollbarLength = viewHeight - thumbHeight = 450
@@ -118,7 +118,7 @@ class FastScrollCalculatorTest {
                 fastScrollY = 90,
                 viewHeight = 500,
                 thumbHeightPx = 50,
-                estimatedFullHeight = 1000F
+                estimatedFullHeight = 1000F,
             )
 
         // scrollbarLength = viewHeight - thumbHeight = 450

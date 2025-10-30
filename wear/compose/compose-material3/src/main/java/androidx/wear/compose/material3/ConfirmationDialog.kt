@@ -47,9 +47,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.takeOrElse
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -66,8 +69,6 @@ import androidx.wear.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.wear.compose.material3.tokens.MotionTokens.DurationShort2
 import androidx.wear.compose.material3.tokens.MotionTokens.DurationShort3
 import androidx.wear.compose.material3.tokens.ShapeTokens
-import androidx.wear.compose.materialcore.screenHeightDp
-import androidx.wear.compose.materialcore.screenWidthDp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -112,7 +113,7 @@ public fun ConfirmationDialog(
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.colors(),
     properties: DialogProperties = DialogProperties(),
     durationMillis: Long = ConfirmationDialogDefaults.DurationMillis,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Unit {
     AnimateConfirmationDialog(
         visible = visible,
@@ -124,7 +125,7 @@ public fun ConfirmationDialog(
         durationMillis = durationMillis,
         content = {
             ConfirmationDialogContent(curvedText = curvedText, colors = colors, content = content)
-        }
+        },
     )
 }
 
@@ -155,7 +156,7 @@ public fun ConfirmationDialogContent(
     curvedText: (CurvedScope.() -> Unit)?,
     modifier: Modifier = Modifier,
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.colors(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ): Unit {
     ConfirmationDialogContentWrapper(
         curvedText = curvedText,
@@ -165,7 +166,7 @@ public fun ConfirmationDialogContent(
             IconContainer(
                 iconColor = colors.iconColor,
                 iconBackground = iconContainer(true, colors.iconContainerColor),
-                content = content
+                content = content,
             )
         },
     )
@@ -209,7 +210,7 @@ public fun ConfirmationDialog(
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.colors(),
     properties: DialogProperties = DialogProperties(),
     durationMillis: Long = ConfirmationDialogDefaults.DurationMillis,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     AnimateConfirmationDialog(
         visible = visible,
@@ -219,7 +220,7 @@ public fun ConfirmationDialog(
         properties = properties,
         containsText = text != null,
         durationMillis = durationMillis,
-        content = { ConfirmationDialogContent(text = text, colors = colors, content = content) }
+        content = { ConfirmationDialogContent(text = text, colors = colors, content = content) },
     )
 }
 
@@ -248,7 +249,7 @@ public fun ConfirmationDialogContent(
     text: @Composable (ColumnScope.() -> Unit)?,
     modifier: Modifier = Modifier,
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.colors(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val reduceMotionEnabled = LocalReduceMotion.current
 
@@ -260,14 +261,14 @@ public fun ConfirmationDialogContent(
     }
 
     Box(modifier.fillMaxSize()) {
-        val horizontalPadding = screenWidthDp().dp * HorizontalLinearContentPaddingFraction
+        val horizontalPadding = screenWidthFraction(HorizontalLinearContentPaddingFraction)
         Column(
             modifier = Modifier.align(Alignment.Center).padding(horizontal = horizontalPadding),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Box(
                 modifier = Modifier.align(Alignment.CenterHorizontally),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 iconContainer(false, colors.iconContainerColor)()
                 CompositionLocalProvider(LocalContentColor provides colors.iconColor, content)
@@ -279,7 +280,7 @@ public fun ConfirmationDialogContent(
                     TextConfiguration(
                         textAlign = TextAlign.Center,
                         maxLines = LinearContentMaxLines,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     ),
             ) {
                 if (text != null) {
@@ -288,7 +289,7 @@ public fun ConfirmationDialogContent(
                         modifier =
                             Modifier.fillMaxWidth().graphicsLayer { alpha = alphaAnimatable.value },
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        content = text
+                        content = text,
                     )
                     Spacer(Modifier.height(LinearContentSpacing))
                 }
@@ -354,7 +355,7 @@ public fun SuccessConfirmationDialog(
         SuccessConfirmationDialogContent(
             curvedText = curvedText,
             colors = colors,
-            content = content
+            content = content,
         )
     }
 }
@@ -400,7 +401,7 @@ public fun SuccessConfirmationDialogContent(
             IconContainer(
                 iconColor = colors.iconColor,
                 iconBackground = successIconContainer(colors.iconContainerColor),
-                content = content
+                content = content,
             )
         },
     )
@@ -417,9 +418,13 @@ public fun SuccessConfirmationDialogContent(
  * Where user input is required, such as choosing to ok or cancel an action, use [AlertDialog]
  * instead of [FailureConfirmationDialog].
  *
- * Example of [FailureConfirmationDialog] usage:
+ * Example of [FailureConfirmationDialog] usage with default icon:
  *
  * @sample androidx.wear.compose.material3.samples.FailureConfirmationDialogSample
+ *
+ * Example of [FailureConfirmationDialog] with the variant failure icon for a generic error.
+ *
+ * @sample androidx.wear.compose.material3.samples.FailureConfirmationDialogWithGenericFailureIconSample
  * @param visible A boolean indicating whether the confirmation dialog should be displayed.
  * @param onDismissRequest A lambda function to be called when the dialog is dismissed - either by
  *   swiping right or when the [durationMillis] has passed. Implementation of this lambda must
@@ -434,7 +439,9 @@ public fun SuccessConfirmationDialogContent(
  * @param durationMillis The duration in milliseconds for which the dialog is displayed. This value
  *   will be adjusted by the accessibility manager according to the content displayed.
  * @param content A slot for displaying an icon inside the confirmation dialog, which can be
- *   animated. Defaults to [ConfirmationDialogDefaults.FailureIcon].
+ *   animated. The default value is [ConfirmationDialogDefaults.ConnectionFailureIcon], which shows
+ *   a broken connection to the phone icon. Alternatively, provide
+ *   [ConfirmationDialogDefaults.GenericFailureIcon] for a generic error icon.
  */
 @Composable
 public fun FailureConfirmationDialog(
@@ -445,7 +452,7 @@ public fun FailureConfirmationDialog(
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.failureColors(),
     properties: DialogProperties = DialogProperties(),
     durationMillis: Long = ConfirmationDialogDefaults.DurationMillis,
-    content: @Composable () -> Unit = { ConfirmationDialogDefaults.FailureIcon() },
+    content: @Composable () -> Unit = { ConfirmationDialogDefaults.ConnectionFailureIcon() },
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     AnimateConfirmationDialog(
@@ -460,7 +467,7 @@ public fun FailureConfirmationDialog(
         FailureConfirmationDialogContent(
             curvedText = curvedText,
             colors = colors,
-            content = content
+            content = content,
         )
     }
 }
@@ -477,9 +484,6 @@ public fun FailureConfirmationDialog(
  * Where user input is required, such as choosing to ok or cancel an action, use [AlertDialog]
  * instead of [FailureConfirmationDialog].
  *
- * Example of [FailureConfirmationDialog] usage:
- *
- * @sample androidx.wear.compose.material3.samples.FailureConfirmationDialogSample
  * @param curvedText A slot for displaying curved text content which will be shown along the bottom
  *   edge of the dialog. We recommend using [confirmationDialogCurvedText] for this parameter, which
  *   will give the default sweep angle and padding.
@@ -488,14 +492,16 @@ public fun FailureConfirmationDialog(
  *   [FailureConfirmationDialog]. will be adjusted by the accessibility manager according to the
  *   content displayed.
  * @param content A slot for displaying an icon inside the confirmation dialog, which can be
- *   animated. Defaults to [ConfirmationDialogDefaults.FailureIcon].
+ *   animated. The default value is [ConfirmationDialogDefaults.ConnectionFailureIcon], which shows
+ *   a broken connection to the phone icon. Alternatively, provide
+ *   [ConfirmationDialogDefaults.GenericFailureIcon] for a generic error icon.
  */
 @Composable
 public fun FailureConfirmationDialogContent(
     curvedText: (CurvedScope.() -> Unit)?,
     modifier: Modifier = Modifier,
     colors: ConfirmationDialogColors = ConfirmationDialogDefaults.failureColors(),
-    content: @Composable () -> Unit = { ConfirmationDialogDefaults.FailureIcon() },
+    content: @Composable () -> Unit = { ConfirmationDialogDefaults.ConnectionFailureIcon() },
 ) {
     ConfirmationDialogContentWrapper(
         curvedText = curvedText,
@@ -508,11 +514,11 @@ public fun FailureConfirmationDialogContent(
                 animatedDelay(DurationShort3.toLong(), reduceMotionEnabled)
                 translationXAnimatable.animateTo(
                     FailureContentTransition[1],
-                    FailureContentAnimationSpecs[0]
+                    FailureContentAnimationSpecs[0],
                 )
                 translationXAnimatable.animateTo(
                     FailureContentTransition[2],
-                    FailureContentAnimationSpecs[1]
+                    FailureContentAnimationSpecs[1],
                 )
             }
 
@@ -520,9 +526,9 @@ public fun FailureConfirmationDialogContent(
                 modifier = Modifier.graphicsLayer { translationX = translationXAnimatable.value },
                 iconColor = colors.iconColor,
                 iconBackground = failureIconContainer(colors.iconContainerColor),
-                content = content
+                content = content,
             )
-        }
+        },
     )
 }
 
@@ -535,10 +541,7 @@ public fun FailureConfirmationDialogContent(
  * @param style It is recommended to use [ConfirmationDialogDefaults.curvedTextStyle] for curved
  *   text in Confirmation Dialogs.
  */
-public fun CurvedScope.confirmationDialogCurvedText(
-    text: String,
-    style: CurvedTextStyle,
-): Unit =
+public fun CurvedScope.confirmationDialogCurvedText(text: String, style: CurvedTextStyle): Unit =
     curvedText(
         text = text,
         style = style,
@@ -556,9 +559,11 @@ public object ConfirmationDialogDefaults {
     /**
      * A default composable used in [SuccessConfirmationDialog] that displays a success icon with an
      * animation.
+     *
+     * @param modifier Modifier to be applied to the success icon.
      */
     @Composable
-    public fun SuccessIcon() {
+    public fun SuccessIcon(modifier: Modifier = Modifier) {
         val animation =
             AnimatedImageVector.animatedVectorResource(R.drawable.wear_m3c_check_animation)
         var atEnd by remember { mutableStateOf(false) }
@@ -571,16 +576,18 @@ public object ConfirmationDialogDefaults {
         Icon(
             painter = rememberAnimatedVectorPainter(animation, atEnd),
             contentDescription = null,
-            modifier = Modifier.size(IconSize)
+            modifier = modifier.size(IconSize),
         )
     }
 
     /**
-     * A default composable used in [FailureConfirmationDialog] that displays a failure icon with an
-     * animation.
+     * A default composable used in [FailureConfirmationDialog] that displays a broken connection to
+     * the phone icon with an animation.
+     *
+     * @param modifier Modifier to be applied to the failure icon.
      */
     @Composable
-    public fun FailureIcon() {
+    public fun ConnectionFailureIcon(modifier: Modifier = Modifier) {
         val animation =
             AnimatedImageVector.animatedVectorResource(R.drawable.wear_m3c_failure_animation)
         var atEnd by remember { mutableStateOf(false) }
@@ -593,7 +600,37 @@ public object ConfirmationDialogDefaults {
         Icon(
             painter = rememberAnimatedVectorPainter(animation, atEnd),
             contentDescription = null,
-            modifier = Modifier.size(IconSize)
+            modifier = modifier.size(IconSize),
+        )
+    }
+
+    /**
+     * A default composable used in [FailureConfirmationDialog] that displays a broken connection to
+     * the phone icon with an animation.
+     *
+     * @param modifier Modifier to be applied to the failure icon.
+     */
+    @Deprecated(
+        "This composable is provided for backwards compatibility with Compose for Wear OS 1.5. " +
+            "It has been renamed to clarify the meaning of the icon. Use ConnectionFailureIcon instead.",
+        replaceWith = ReplaceWith("ConnectionFailureIcon"),
+        level = DeprecationLevel.WARNING,
+    )
+    @Composable
+    public fun FailureIcon(modifier: Modifier = Modifier): Unit = ConnectionFailureIcon(modifier)
+
+    /**
+     * A default composable used in [FailureConfirmationDialog] that displays a generic error icon.
+     *
+     * @param modifier Modifier to be applied to the failure icon.
+     */
+    @Composable
+    public fun GenericFailureIcon(modifier: Modifier = Modifier) {
+        val image = ImageVector.vectorResource(R.drawable.wear_m3c_error)
+        Icon(
+            painter = rememberVectorPainter(image),
+            contentDescription = null,
+            modifier = modifier.size(IconSize),
         )
     }
 
@@ -698,7 +735,7 @@ public object ConfirmationDialogDefaults {
                 ?: ConfirmationDialogColors(
                         iconColor = fromToken(ColorSchemeKeyTokens.Primary),
                         iconContainerColor = fromToken(ColorSchemeKeyTokens.OnPrimary),
-                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground)
+                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground),
                     )
                     .also { defaultConfirmationColorsCached = it }
         }
@@ -709,7 +746,7 @@ public object ConfirmationDialogDefaults {
                 ?: ConfirmationDialogColors(
                         iconColor = fromToken(ColorSchemeKeyTokens.Primary),
                         iconContainerColor = fromToken(ColorSchemeKeyTokens.OnPrimary),
-                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground)
+                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground),
                     )
                     .also { defaultSuccessConfirmationColorsCached = it }
         }
@@ -720,7 +757,7 @@ public object ConfirmationDialogDefaults {
                 ?: ConfirmationDialogColors(
                         iconColor = fromToken(ColorSchemeKeyTokens.ErrorDim),
                         iconContainerColor = fromToken(ColorSchemeKeyTokens.OnError).copy(.8f),
-                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground)
+                        textColor = fromToken(ColorSchemeKeyTokens.OnBackground),
                     )
                     .also { defaultFailureConfirmationColorsCached = it }
         }
@@ -751,7 +788,7 @@ public class ConfirmationDialogColors(
     public fun copy(
         iconColor: Color = this.iconColor,
         iconContainerColor: Color = this.iconContainerColor,
-        textColor: Color = this.textColor
+        textColor: Color = this.textColor,
     ): ConfirmationDialogColors =
         ConfirmationDialogColors(
             iconColor = iconColor.takeOrElse { this.iconColor },
@@ -789,6 +826,12 @@ private fun AnimateConfirmationDialog(
     durationMillis: Long,
     content: @Composable () -> Unit,
 ) {
+    if (visible) {
+        // This will activate the screen-on flag for the duration of this screen, so that the
+        // animations run to completion and then the dialog self-dismisses.
+        KeepScreenOn()
+    }
+
     val a11yDurationMillis =
         LocalAccessibilityManager.current?.calculateRecommendedTimeoutMillis(
             originalTimeoutMillis = durationMillis,
@@ -810,7 +853,7 @@ private fun AnimateConfirmationDialog(
         modifier = modifier,
         onDismissRequest = onDismissRequest,
         properties = properties,
-        content = content
+        content = content,
     )
 }
 
@@ -850,7 +893,7 @@ private fun BoxScope.IconContainer(
     modifier: Modifier = Modifier,
     iconColor: Color,
     iconBackground: @Composable BoxScope.() -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(modifier.align(Alignment.Center), contentAlignment = Alignment.Center) {
         iconBackground()
@@ -861,7 +904,7 @@ private fun BoxScope.IconContainer(
 private fun iconContainer(curvedContent: Boolean, color: Color): @Composable BoxScope.() -> Unit = {
     val width =
         if (curvedContent) {
-            (screenWidthDp() * ConfirmationSizeFraction).dp
+            screenWidthFraction(ConfirmationSizeFraction)
         } else ConfirmationLinearIconContainerSize
 
     val startShape = ShapeTokens.CornerFull
@@ -900,18 +943,18 @@ private fun iconContainer(curvedContent: Boolean, color: Color): @Composable Box
 }
 
 private fun successIconContainer(color: Color): @Composable BoxScope.() -> Unit = {
-    val width = screenWidthDp() * SuccessWidthFraction
+    val width = screenWidthFraction(SuccessWidthFraction)
+    val targetHeight = screenHeightFraction(SuccessHeightFraction)
 
-    val targetHeight = screenHeightDp() * SuccessHeightFraction.toFloat()
-    val heightAnimatable = remember { Animatable(width) }
+    val heightAnimatable = remember { Animatable(width.value) }
     val reduceMotionEnabled = LocalReduceMotion.current
 
     LaunchedEffect(Unit) {
         animatedDelay(DurationShort2.toLong(), reduceMotionEnabled)
-        heightAnimatable.animateTo(targetHeight, SuccessContainerAnimationSpec)
+        heightAnimatable.animateTo(targetHeight.value, SuccessContainerAnimationSpec)
     }
     Box(
-        Modifier.size(width.dp, heightAnimatable.value.dp)
+        Modifier.size(width, heightAnimatable.value.dp)
             .graphicsLayer {
                 rotationZ = 45f
                 shape = CircleShape
@@ -922,7 +965,7 @@ private fun successIconContainer(color: Color): @Composable BoxScope.() -> Unit 
 }
 
 private fun failureIconContainer(color: Color): @Composable BoxScope.() -> Unit = {
-    val size = screenWidthDp() * FailureSizeFraction
+    val size = screenWidthFraction(FailureSizeFraction)
 
     val startShape = ShapeTokens.CornerFull
     val targetShape = MaterialTheme.shapes.extraLarge as RoundedCornerShape
@@ -941,7 +984,7 @@ private fun failureIconContainer(color: Color): @Composable BoxScope.() -> Unit 
     }
 
     Box(
-        Modifier.size(size.dp)
+        Modifier.size(size)
             .graphicsLayer {
                 this.shape = shape
                 clip = true
@@ -950,22 +993,19 @@ private fun failureIconContainer(color: Color): @Composable BoxScope.() -> Unit 
     )
 }
 
+private const val DialogWidthPaddingFraction = 0.2315f
+private const val DialogHeightPaddingFraction = 0.176f
+private const val HorizontalLinearContentPaddingFraction = 0.12f
+
 internal val ConfirmationLinearIconContainerSize = 80.dp
 internal val LinearContentSpacing = 8.dp
 
-private const val SuccessWidthPaddingFraction = 0.2315f
-private const val SuccessHeightPaddingFraction = 0.176
-private const val SuccessWidthFraction = 1 - SuccessWidthPaddingFraction * 2
-private const val SuccessHeightFraction = 1 - SuccessHeightPaddingFraction * 2
-
-private const val FailureSizePaddingFraction = 0.213f
-private const val FailureSizeFraction = 1 - FailureSizePaddingFraction * 2
-
-private const val ConfirmationSizePaddingFraction = 0.213f
-private const val ConfirmationSizeFraction = 1 - ConfirmationSizePaddingFraction * 2
+private const val SuccessHeightFraction = (1 - DialogHeightPaddingFraction * 2)
+private const val SuccessWidthFraction = (1 - DialogWidthPaddingFraction * 2)
+private const val FailureSizeFraction = (1 - DialogWidthPaddingFraction * 2)
+private const val ConfirmationSizeFraction = (1 - DialogWidthPaddingFraction * 2)
 
 private const val LinearContentMaxLines = 3
-private const val HorizontalLinearContentPaddingFraction = 0.12f
 
 private const val ConfirmationIconInitialAngle = -45f
 
@@ -975,12 +1015,9 @@ private val FailureContentAnimationSpecs =
         spring(
             dampingRatio = ExpressiveDefaultDamping,
             stiffness = ExpressiveDefaultStiffness,
-            visibilityThreshold = 0f
+            visibilityThreshold = 0f,
         ),
-        spring(
-            dampingRatio = 0.5f,
-            stiffness = ExpressiveDefaultStiffness,
-        )
+        spring(dampingRatio = 0.5f, stiffness = ExpressiveDefaultStiffness),
     )
 private val TextOpacityAnimationSpec: AnimationSpec<Float>
     @Composable get() = MaterialTheme.motionScheme.fastEffectsSpec()

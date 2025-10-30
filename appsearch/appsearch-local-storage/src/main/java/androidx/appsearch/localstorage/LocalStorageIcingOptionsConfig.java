@@ -82,6 +82,10 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     }
 
     @Override
+    public int getMaxPageBytesLimitForVm() {
+        return DEFAULT_MAX_PAGE_BYTES_LIMIT;
+    }
+    @Override
     public int getIntegerIndexBucketSplitThreshold() {
         return DEFAULT_INTEGER_INDEX_BUCKET_SPLIT_THRESHOLD;
     }
@@ -119,5 +123,10 @@ public class LocalStorageIcingOptionsConfig implements IcingOptionsConfig {
     @Override
     public int getCompressionThresholdBytes() {
         return DEFAULT_COMPRESSION_THRESHOLD_BYTES;
+    }
+
+    @Override
+    public int getEmbeddingIndexNumShards() {
+        return DEFAULT_EMBEDDING_INDEX_NUM_SHARDS;
     }
 }

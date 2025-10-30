@@ -26,6 +26,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.ComposeFoundationFlags
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -55,11 +57,15 @@ class DemoActivity : ComponentActivity() {
     lateinit var hostView: View
     lateinit var focusManager: FocusManager
 
+    @OptIn(ExperimentalFoundationApi::class)
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val recents = RecentsHandler()
+
+        // TODO(http://b/443031050): Remove when fixed.
+        ComposeFoundationFlags.isNonSuspendingPointerInputInDraggableEnabled = false
 
         ComposeView(this)
             .also { setContentView(it) }
@@ -95,7 +101,7 @@ class DemoActivity : ComponentActivity() {
                                 if (!navigator.navigateBack()) {
                                     ActivityCompat.finishAffinity(this)
                                 }
-                            }
+                            },
                         )
                     }
                 }
@@ -162,12 +168,12 @@ private constructor(
     private val backDispatcher: OnBackPressedDispatcher,
     private val launchActivityDemo: (ActivityDemo<*>) -> Unit,
     initialDemo: Demo,
-    private val backStack: MutableList<Demo>
+    private val backStack: MutableList<Demo>,
 ) {
     constructor(
         rootDemo: Demo,
         backDispatcher: OnBackPressedDispatcher,
-        launchActivityDemo: (ActivityDemo<*>) -> Unit
+        launchActivityDemo: (ActivityDemo<*>) -> Unit,
     ) : this(backDispatcher, launchActivityDemo, rootDemo, mutableListOf<Demo>())
 
     private val onBackPressed =
@@ -217,7 +223,7 @@ private constructor(
         fun Saver(
             rootDemo: DemoCategory,
             backDispatcher: OnBackPressedDispatcher,
-            launchActivityDemo: (ActivityDemo<*>) -> Unit
+            launchActivityDemo: (ActivityDemo<*>) -> Unit,
         ): Saver<Navigator, *> =
             listSaver<Navigator, String>(
                 save = { navigator ->
@@ -231,7 +237,7 @@ private constructor(
                         }
                     val initial = backStack.removeAt(backStack.lastIndex)
                     Navigator(backDispatcher, launchActivityDemo, initial, backStack)
-                }
+                },
             )
     }
 }

@@ -37,7 +37,7 @@ import androidx.wear.protolayout.types.argb
  */
 public fun dynamicColorScheme(
     context: Context,
-    defaultColorScheme: ColorScheme = ColorScheme()
+    defaultColorScheme: ColorScheme = ColorScheme(),
 ): ColorScheme {
     if (
         !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&

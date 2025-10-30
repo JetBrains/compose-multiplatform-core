@@ -18,17 +18,15 @@ package androidx.camera.integration.core.stresstest
 
 import androidx.camera.core.CameraXConfig
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class VideoCaptureLifecycleStatusChangeStressTest(
     implName: String,
     cameraConfig: CameraXConfig,
-    cameraId: String
+    cameraId: String,
 ) : VideoCaptureLifecycleStatusChangeStressTestBase(implName, cameraConfig, cameraId) {
 
     override val enableStreamSharing: Boolean = false

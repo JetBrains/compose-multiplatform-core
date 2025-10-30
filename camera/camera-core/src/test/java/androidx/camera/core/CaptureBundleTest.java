@@ -18,8 +18,6 @@ package androidx.camera.core;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.os.Build;
-
 import androidx.camera.core.impl.CaptureBundle;
 import androidx.camera.core.impl.CaptureStage;
 import androidx.camera.testing.impl.fakes.FakeCaptureStage;
@@ -27,7 +25,6 @@ import androidx.camera.testing.impl.fakes.FakeCaptureStage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import java.util.ArrayList;
@@ -36,7 +33,6 @@ import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
 public class CaptureBundleTest {
     @Test
     public void bundleRetainsOrder() {

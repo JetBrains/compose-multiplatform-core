@@ -19,11 +19,14 @@ package androidx.compose.lint
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
+import com.intellij.psi.PsiType
 import com.intellij.psi.impl.compiled.ClsParameterImpl
 import com.intellij.psi.impl.light.LightParameter
 import kotlin.metadata.jvm.annotations
 import org.jetbrains.kotlin.psi.KtAnnotated
+import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtFunction
+import org.jetbrains.kotlin.psi.KtLambdaExpression
 import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtTypeReference
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
@@ -42,6 +45,7 @@ import org.jetbrains.uast.getContainingDeclaration
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getParameterForArgument
 import org.jetbrains.uast.toUElement
+import org.jetbrains.uast.toUElementOfType
 import org.jetbrains.uast.withContainingElements
 
 /**
@@ -94,12 +98,9 @@ fun UExpression.isInvokedWithinComposable(): Boolean {
     return ComposableBodyVisitor(this).isComposable()
 }
 
-// TODO: https://youtrack.jetbrains.com/issue/KT-45406
-// KotlinUMethodWithFakeLightDelegate.hasAnnotation() (for reified functions for example)
-// doesn't find annotations, so just look at the annotations directly.
 /** Returns whether this method is @Composable or not */
 val PsiMethod.isComposable
-    get() = annotations.any { it.qualifiedName == Names.Runtime.Composable.javaFqn }
+    get() = hasAnnotation(Names.Runtime.Composable.javaFqn)
 
 /** Returns whether this variable's type is @Composable or not */
 val UVariable.isComposable: Boolean
@@ -151,8 +152,13 @@ private val PsiParameter.isComposable: Boolean
                     it.className == Names.Runtime.Composable.kmClassName
                 } != null
             }
-            // The parameter is in a source declaration
-            else -> (toUElement() as? UParameter)?.typeReference?.isComposable == true
+            else -> {
+                // In case of reified inline function from binary, UAST creates a fake PSI
+                // where the associated [PsiType] has annotations if any.
+                type.hasComposableAnnotation ||
+                    // The parameter might be in a source declaration
+                    (toUElement() as? UParameter)?.typeReference?.isComposable == true
+            }
         }
 
 /** Returns whether this lambda expression is @Composable or not */
@@ -244,10 +250,13 @@ private class ComposableBodyVisitor(private val expression: UExpression) {
     }
 }
 
+val PsiType.hasComposableAnnotation: Boolean
+    get() = hasAnnotation(Names.Runtime.Composable.javaFqn)
+
 /** Returns whether this type reference is @Composable or not */
 val UTypeReferenceExpression.isComposable: Boolean
     get() {
-        if (type.hasAnnotation(Names.Runtime.Composable.javaFqn)) return true
+        if (type.hasComposableAnnotation) return true
 
         // Annotations on the types of local properties (val foo: @Composable () -> Unit = {})
         // are currently not present on the PsiType, we so need to manually check the underlying
@@ -261,3 +270,36 @@ private val KtAnnotated.hasComposableAnnotation: Boolean
         annotationEntries.any {
             (it.toUElement() as UAnnotation).qualifiedName == Names.Runtime.Composable.javaFqn
         }
+
+/**
+ * For a function invocation of the shape `fun <T> foo(..., () -> T): T`, this function returns
+ * whether an invocation returns Unit. Specifically, this function returns true if `T is Unit` or if
+ * the return type of the lambda in the final parameter returns `Unit`.
+ */
+fun isReallyRememberingUnit(node: UCallExpression, method: PsiMethod): Boolean =
+    when {
+        node.typeArguments.singleOrNull()?.isVoidOrUnit == true -> {
+            // Call with an explicit type argument, e.g., retain<Unit> { 42 }
+            true
+        }
+        node.sourcePsi is KtCallExpression -> {
+            // Even though the return type is Unit, we should double check if the type of
+            // the lambda expression matches
+            @Suppress("UnstableApiUsage")
+            val calculationParameterIndex = method.parameters.lastIndex
+            val argument = node.getArgumentForParameter(calculationParameterIndex)?.sourcePsi
+            // If the argument is a lambda, check the expression inside
+            if (argument is KtLambdaExpression) {
+                val lastExp = argument.bodyExpression?.statements?.lastOrNull()
+                val lastExpType = lastExp?.toUElementOfType<UExpression>()?.getExpressionType()
+                // If unresolved (i.e., type error), the expression type will be actually
+                // `null`
+                node.getExpressionType() == lastExpType
+            } else {
+                // Otherwise return true, since it is a reference to something else that is
+                // unit (such as a variable)
+                true
+            }
+        }
+        else -> true
+    }

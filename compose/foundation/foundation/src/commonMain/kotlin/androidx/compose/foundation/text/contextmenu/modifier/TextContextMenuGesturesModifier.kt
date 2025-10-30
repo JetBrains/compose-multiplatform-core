@@ -41,18 +41,18 @@ import androidx.compose.ui.platform.InspectorInfo
 import kotlinx.coroutines.launch
 
 /**
- * Shows the dropdown context menu (via [LocalTextContextMenuDropdownProvider]) when a right click
- * is received.
+ * Shows the dropdown context menu (via [LocalTextContextMenuDropdownProvider]) when the secondary
+ * (right) mouse button is clicked.
  *
  * @param onPreShowContextMenu A lambda that will be invoked right before
  *   [TextContextMenuProvider.showTextContextMenu].
  */
-internal fun Modifier.textContextMenuGestures(
-    onPreShowContextMenu: (suspend () -> Unit)? = null,
+internal fun Modifier.showTextContextMenuOnSecondaryClick(
+    onPreShowContextMenu: (suspend (clickLocation: Offset) -> Unit)? = null
 ): Modifier = this then TextContextMenuGestureElement(onPreShowContextMenu)
 
 private class TextContextMenuGestureElement(
-    private val onPreShowContextMenu: (suspend () -> Unit)?,
+    private val onPreShowContextMenu: (suspend (clickLocation: Offset) -> Unit)?
 ) : ModifierNodeElement<TextContextMenuGestureNode>() {
     override fun create(): TextContextMenuGestureNode =
         TextContextMenuGestureNode(onPreShowContextMenu)
@@ -79,7 +79,7 @@ private class TextContextMenuGestureElement(
 }
 
 private class TextContextMenuGestureNode(
-    private var onPreShowContextMenu: (suspend () -> Unit)?,
+    private var onPreShowContextMenu: (suspend (clickLocation: Offset) -> Unit)?
 ) : DelegatingNode(), CompositionLocalConsumerModifierNode, GlobalPositionAwareModifierNode {
 
     private companion object {
@@ -92,9 +92,7 @@ private class TextContextMenuGestureNode(
         delegate(SuspendingPointerInputModifierNode { onRightClickDown(::tryShowContextMenu) })
     }
 
-    fun update(
-        onPreShowContextMenu: (suspend () -> Unit)?,
-    ) {
+    fun update(onPreShowContextMenu: (suspend (clickLocation: Offset) -> Unit)?) {
         this.onPreShowContextMenu = onPreShowContextMenu
     }
 
@@ -106,14 +104,13 @@ private class TextContextMenuGestureNode(
         val provider = currentValueOf(LocalTextContextMenuDropdownProvider) ?: return
         val dataProvider = ClickTextContextMenuDataProvider(localClickOffset)
         coroutineScope.launch {
-            onPreShowContextMenu?.invoke()
+            onPreShowContextMenu?.invoke(localClickOffset)
             provider.showTextContextMenu(dataProvider)
         }
     }
 
-    private inner class ClickTextContextMenuDataProvider(
-        private val localClickOffset: Offset,
-    ) : TextContextMenuDataProvider {
+    private inner class ClickTextContextMenuDataProvider(private val localClickOffset: Offset) :
+        TextContextMenuDataProvider {
         override fun position(destinationCoordinates: LayoutCoordinates): Offset {
             val localCoordinates = checkPreconditionNotNull(localCoordinates) { MESSAGE }
             return destinationCoordinates.localPositionOf(localCoordinates, localClickOffset)

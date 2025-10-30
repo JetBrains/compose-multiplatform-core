@@ -36,6 +36,8 @@
     <string description="Lets the user know that this picker is to change the value of the month date unit. Appears on the DatePicker component, on top of the month picker. [CHAR_LIMIT=8]" name="wear_m3c_date_picker_month">Month</string>
     <string description="Lets the user know that this picker is to change the value of the year date unit. Appears on the DatePicker component, on top of the year picker. [CHAR_LIMIT=8]" name="wear_m3c_date_picker_year">Year</string>
     <string description="Heading at the top of the DatePicker to instruct the user to set the date by scrolling. [CHAR_LIMIT=NONE]" name="wear_m3c_date_picker_heading">Scroll to set date</string>
+    <string description="Hint of the click to adjust the value action for the Picker" name="wear_m3c_picker_click_to_adjust_hint">Adjust the value</string>
+    <string description="Hint of the click to select the value action for the Picker" name="wear_m3c_picker_click_to_select_hint">Select the value</string>
     <string description="Content description of the confirm button of DatePicker and TimePicker components. It lets the user confirm the date or time selected. [CHAR_LIMIT=NONE]" name="wear_m3c_picker_confirm_button_content_description">Confirm</string>
     <string description="Content description of the next button of DatePicker and TimePicker components. It lets the user to move to the next picker. [CHAR_LIMIT=NONE]" name="wear_m3c_picker_next_button_content_description">Next</string>
     <string description="Content description of the decrease button of Slider components. It lets the user decrease value of the slider. [CHAR_LIMIT=NONE]" name="wear_m3c_slider_decrease_content_description">Decrease</string>

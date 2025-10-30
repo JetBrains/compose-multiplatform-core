@@ -20,8 +20,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -90,12 +93,7 @@ class DialogBehaviourTest {
     @Test
     fun supports_testtag_on_alert_with_chips() {
         rule.setContentWithTheme {
-            Alert(
-                title = {},
-                message = {},
-                content = {},
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Alert(title = {}, message = {}, content = {}, modifier = Modifier.testTag(TEST_TAG))
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -132,12 +130,7 @@ class DialogBehaviourTest {
     @Test
     fun displays_icon_on_alert_with_chips() {
         rule.setContentWithTheme {
-            Alert(
-                icon = { TestImage(TEST_TAG) },
-                title = {},
-                message = {},
-                content = {},
-            )
+            Alert(icon = { TestImage(TEST_TAG) }, title = {}, message = {}, content = {})
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -146,11 +139,7 @@ class DialogBehaviourTest {
     @Test
     fun displays_icon_on_confirmation() {
         rule.setContentWithTheme {
-            Confirmation(
-                onTimeout = {},
-                icon = { TestImage(TEST_TAG) },
-                content = {},
-            )
+            Confirmation(onTimeout = {}, icon = { TestImage(TEST_TAG) }, content = {})
         }
 
         rule.onNodeWithTag(TEST_TAG).assertExists()
@@ -255,7 +244,7 @@ class DialogBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("Start Screen")
                 }
@@ -293,7 +282,7 @@ class DialogBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("Label")
                 }
@@ -331,7 +320,7 @@ class DialogBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("Label")
                 }
@@ -367,14 +356,11 @@ class DialogBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Chip(onClick = { showDialog = true }, label = { Text("Show") })
                 }
-                Dialog(
-                    showDialog = showDialog,
-                    onDismissRequest = { showDialog = false },
-                ) {
+                Dialog(showDialog = showDialog, onDismissRequest = { showDialog = false }) {
                     Text("Text", modifier = Modifier.testTag(TEST_TAG))
                 }
             }
@@ -393,14 +379,11 @@ class DialogBehaviourTest {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(if (dismissed) dismissedText else "Label")
                 }
-                Dialog(
-                    showDialog = !dismissed,
-                    onDismissRequest = { dismissed = true },
-                ) {
+                Dialog(showDialog = !dismissed, onDismissRequest = { dismissed = true }) {
                     Alert(
                         icon = {},
                         title = {},
@@ -432,7 +415,7 @@ class DialogBehaviourTest {
                         dismissCounter++
                         show.value = false
                     },
-                    durationMillis = 100
+                    durationMillis = 100,
                 )
             }
         }
@@ -450,14 +433,9 @@ class DialogBehaviourTest {
                 Dialog(
                     modifier = Modifier.testTag(TEST_TAG),
                     showDialog = show.value,
-                    onDismissRequest = { dismissCounter++ }
+                    onDismissRequest = { dismissCounter++ },
                 ) {
-                    Alert(
-                        icon = {},
-                        title = {},
-                        message = { Text("Text") },
-                        content = {},
-                    )
+                    Alert(icon = {}, title = {}, message = { Text("Text") }, content = {})
                 }
             }
         }
@@ -525,7 +503,7 @@ class DialogContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG)
+                            modifier = Modifier.testTag(CHIP_TAG),
                         )
                     }
                 },
@@ -553,7 +531,7 @@ class DialogContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG)
+                            modifier = Modifier.testTag(CHIP_TAG),
                         )
                     }
                 },
@@ -622,7 +600,7 @@ class DialogContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG)
+                            modifier = Modifier.testTag(CHIP_TAG),
                         )
                     }
                 },
@@ -675,7 +653,7 @@ class DialogContentSizeAndPositionTest {
                         Chip(
                             label = { Text("Chip") },
                             onClick = {},
-                            modifier = Modifier.testTag(CHIP_TAG)
+                            modifier = Modifier.testTag(CHIP_TAG),
                         )
                     }
                 },
@@ -826,11 +804,7 @@ class DialogContentColorTest {
 
         rule.setContentWithTheme {
             expectedColor = MaterialTheme.colors.onBackground
-            Alert(
-                title = { actualColor = LocalContentColor.current },
-                message = {},
-                content = {},
-            )
+            Alert(title = { actualColor = LocalContentColor.current }, message = {}, content = {})
         }
 
         assertEquals(expectedColor, actualColor)
@@ -843,10 +817,7 @@ class DialogContentColorTest {
 
         rule.setContentWithTheme {
             expectedColor = MaterialTheme.colors.onBackground
-            Confirmation(
-                onTimeout = {},
-                content = { actualColor = LocalContentColor.current },
-            )
+            Confirmation(onTimeout = {}, content = { actualColor = LocalContentColor.current })
         }
 
         assertEquals(expectedColor, actualColor)
@@ -982,7 +953,7 @@ class DialogContentColorTest {
                 negativeButton = {},
                 positiveButton = {},
                 content = {},
-                modifier = Modifier.testTag(TEST_TAG)
+                modifier = Modifier.testTag(TEST_TAG),
             )
         }
     }
@@ -999,11 +970,7 @@ class DialogContentColorTest {
     @Test
     fun gives_correct_background_color_on_confirmation() {
         verifyBackgroundColor(expected = { MaterialTheme.colors.background }) {
-            Confirmation(
-                onTimeout = {},
-                content = {},
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Confirmation(onTimeout = {}, content = {}, modifier = Modifier.testTag(TEST_TAG))
         }
     }
 
@@ -1013,14 +980,16 @@ class DialogContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            Alert(
-                title = {},
-                negativeButton = {},
-                positiveButton = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                Alert(
+                    title = {},
+                    negativeButton = {},
+                    positiveButton = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -1032,13 +1001,15 @@ class DialogContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            Alert(
-                title = {},
-                message = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                Alert(
+                    title = {},
+                    message = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -1050,12 +1021,14 @@ class DialogContentColorTest {
         val overrideColor = Color.Yellow
 
         rule.setContentWithTheme {
-            Confirmation(
-                onTimeout = {},
-                content = {},
-                backgroundColor = overrideColor,
-                modifier = Modifier.testTag(TEST_TAG),
-            )
+            Box(Modifier.windowInsetsPadding(WindowInsets.Companion.navigationBars)) {
+                Confirmation(
+                    onTimeout = {},
+                    content = {},
+                    backgroundColor = overrideColor,
+                    modifier = Modifier.testTag(TEST_TAG),
+                )
+            }
         }
 
         rule.onNodeWithTag(TEST_TAG).captureToImage().assertContainsColor(overrideColor, 100.0f)
@@ -1064,13 +1037,18 @@ class DialogContentColorTest {
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     private fun verifyBackgroundColor(
         expected: @Composable () -> Color,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         val testBackground = Color.White
         var expectedBackground = Color.Transparent
 
         rule.setContentWithTheme {
-            Box(modifier = Modifier.fillMaxSize().background(testBackground)) {
+            Box(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.Companion.navigationBars)
+                        .background(testBackground)
+            ) {
                 expectedBackground = expected()
                 content()
             }
@@ -1110,11 +1088,7 @@ class DialogTextStyleTest {
 
         rule.setContentWithTheme {
             expectedTextStyle = MaterialTheme.typography.title3
-            Alert(
-                title = { actualTextStyle = LocalTextStyle.current },
-                message = {},
-                content = {},
-            )
+            Alert(title = { actualTextStyle = LocalTextStyle.current }, message = {}, content = {})
         }
 
         assertEquals(expectedTextStyle, actualTextStyle)
@@ -1131,7 +1105,7 @@ class DialogTextStyleTest {
                 title = { Text("Title") },
                 negativeButton = {},
                 positiveButton = {},
-                content = { actualTextStyle = LocalTextStyle.current }
+                content = { actualTextStyle = LocalTextStyle.current },
             )
         }
 
@@ -1162,10 +1136,7 @@ class DialogTextStyleTest {
 
         rule.setContentWithTheme {
             expectedTextStyle = MaterialTheme.typography.title3
-            Confirmation(
-                onTimeout = {},
-                content = { actualTextStyle = LocalTextStyle.current },
-            )
+            Confirmation(onTimeout = {}, content = { actualTextStyle = LocalTextStyle.current })
         }
 
         assertEquals(expectedTextStyle, actualTextStyle)

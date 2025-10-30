@@ -27,7 +27,7 @@ actual fun runComposeUiTest(
     effectContext: CoroutineContext,
     runTestContext: CoroutineContext,
     testTimeout: Duration,
-    block: suspend ComposeUiTest.() -> Unit
+    block: suspend ComposeUiTest.() -> Unit,
 ): TestResult = implementedInJetBrainsFork()
 
 @ExperimentalTestApi
@@ -46,7 +46,7 @@ actual sealed interface ComposeUiTest : SemanticsNodeInteractionsProvider {
     actual fun waitUntil(
         conditionDescription: String?,
         timeoutMillis: Long,
-        condition: () -> Boolean
+        condition: () -> Boolean,
     )
 
     actual fun setContent(composable: @Composable () -> Unit)
