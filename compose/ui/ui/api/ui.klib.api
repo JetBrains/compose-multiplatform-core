@@ -4691,6 +4691,10 @@ final val androidx.compose.ui.interop/LocalUIViewController // androidx.compose.
 final val androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegate$stableprop // androidx.compose.ui.main/androidx_compose_ui_main_DefaultIOSAppDelegate$stableprop|#static{}androidx_compose_ui_main_DefaultIOSAppDelegate$stableprop[0]
 
 // Targets: [ios]
+final val androidx.compose.ui.platform.accessibility/isSpeakingNode // androidx.compose.ui.platform.accessibility/isSpeakingNode|@androidx.compose.ui.semantics.SemanticsNode{}isSpeakingNode[0]
+    final fun (androidx.compose.ui.semantics/SemanticsNode).<get-isSpeakingNode>(): kotlin/Boolean // androidx.compose.ui.platform.accessibility/isSpeakingNode.<get-isSpeakingNode>|<get-isSpeakingNode>@androidx.compose.ui.semantics.SemanticsNode(){}[0]
+
+// Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_Focus$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_AccessibilityElementFocusMode_Focus$stableprop|#static{}androidx_compose_ui_platform_AccessibilityElementFocusMode_Focus$stableprop[0]
 
 // Targets: [ios]
