@@ -218,7 +218,7 @@ interface PlatformContext {
     }
 
     companion object {
-        val Empty = object : PlatformContext {
+        val Empty get() = object : PlatformContext {
             override val windowInfo: WindowInfo = WindowInfoImpl().apply {
                 // true is a better default if platform doesn't provide WindowInfo.
                 // otherwise UI will be rendered always in unfocused mode

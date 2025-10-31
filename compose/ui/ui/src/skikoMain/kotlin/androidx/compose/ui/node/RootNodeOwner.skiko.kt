@@ -300,7 +300,11 @@ internal class RootNodeOwner(
     @OptIn(InternalCoreApi::class)
     fun onPointerInput(event: PointerInputEvent): PointerEventResult {
         if (event.button != null) {
-            platformContext.inputModeManager.requestInputMode(InputMode.Touch)
+            if (event.pointers.any { it.type != PointerType.Touch }) {
+                platformContext.inputModeManager.requestInputMode(InputMode.Keyboard)
+            } else {
+                platformContext.inputModeManager.requestInputMode(InputMode.Touch)
+            }
         }
         val isInBounds = event.eventType != PointerEventType.Exit &&
             event.pointers.fastAll { isInBounds(it.position) }
