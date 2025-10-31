@@ -247,7 +247,7 @@ private val SemanticsNode.isUnmergedNode get() =
         it.semanticsConfiguration?.isMergingSemanticsOfDescendants == true
     } == null
 
-val SemanticsNode.isSpeakingNode: Boolean get() {
+private val SemanticsNode.isSpeakingNode: Boolean get() {
     return unmergedConfig.contains(SemanticsProperties.ContentDescription) ||
         unmergedConfig.contains(SemanticsProperties.EditableText) ||
         unmergedConfig.contains(SemanticsProperties.Text) ||
