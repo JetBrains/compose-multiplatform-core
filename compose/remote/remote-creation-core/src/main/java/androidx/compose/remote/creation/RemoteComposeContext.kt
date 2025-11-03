@@ -546,9 +546,36 @@ public open class RemoteComposeContext {
         return mRemoteWriter.addPathString(path)
     }
 
-    //    public fun parsePath(pathData: String): Path {
-    //        return RemoteComposeWriter.parsePath(pathData)
-    //    }
+    /**
+     * Add a path expression.
+     *
+     * @param expressionX The x component of the expression.
+     * @param expressionY The y component of the expression.
+     * @param start The start value of the expression.
+     * @param end The end value of the expression.
+     * @param count The number of values in the expression.
+     * @param flags The flags for the expression.
+     */
+    public fun addPathExpression(
+        expressionX: RFloat,
+        expressionY: RFloat,
+        start: Number,
+        end: Number,
+        count: Number,
+        flags: Int = 0,
+    ): Int {
+        val vStart = start as? Float ?: start.toFloat()
+        val vEnd = end as? Float ?: end.toFloat()
+        val vCount = count as? Float ?: count.toFloat()
+        return mRemoteWriter.addPathExpression(
+            expressionX.array,
+            expressionY.array,
+            vStart,
+            vEnd,
+            vCount,
+            flags,
+        )
+    }
 
     public fun skew(skewX: Float, skewY: Float) {
         mRemoteWriter.skew(skewX, skewY)

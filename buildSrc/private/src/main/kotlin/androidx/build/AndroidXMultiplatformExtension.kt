@@ -797,7 +797,7 @@ private fun Project.configureDefaultIncrementalSyncTask() {
     }
 }
 
-private fun Project.configureNode() {
+internal fun Project.configureNode() {
     val nodeJsPrebuilt =
         File(project.getPrebuiltsRoot(), "androidx/external/org/nodejs/node").toURI().toString()
 

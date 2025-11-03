@@ -39,7 +39,6 @@ import androidx.camera.camera2.config.UseCaseGraphConfig
 import androidx.camera.camera2.internal.DynamicRangeResolver
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
-import androidx.camera.camera2.pipe.CameraDevices
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.OperatingMode
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLowLightBoost
@@ -107,7 +106,6 @@ public class UseCaseManager
 @Inject
 constructor(
     private val cameraPipe: CameraPipe,
-    private val cameraDevices: CameraDevices,
     @GuardedBy("lock") private val cameraCoordinator: CameraCoordinator,
     private val builder: UseCaseCameraComponent.Builder,
     private val zslControl: ZslControl,

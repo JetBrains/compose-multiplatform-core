@@ -133,6 +133,12 @@ class VideoEncoderTest(private val implName: String, private val cameraConfig: C
                 " resolutions cannot be used when the provided surface is an encoder surface.",
             DeviceQuirks.get(ExtraSupportedResolutionQuirk::class.java) != null,
         )
+
+        // Skip for b/454351511
+        assumeFalse(
+            "Emulator API 23 fails running this test.",
+            Build.VERSION.SDK_INT == 23 && isEmulator(),
+        )
         // Skip for b/331618729
         assumeFalse(
             "Emulator API 28 crashes running this test.",

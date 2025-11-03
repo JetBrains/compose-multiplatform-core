@@ -375,7 +375,10 @@ private fun Project.addAppApksToPrivacySandboxTestConfigsGeneration(
     }
 }
 
-fun Project.configureTestConfigGeneration(projectIsolationEnabled: Boolean) {
+fun Project.configureTestConfigGeneration(
+    projectIsolationEnabled: Boolean,
+    androidXExtension: AndroidXExtension,
+) {
     extensions.getByType(AndroidComponentsExtension::class.java).apply {
         onVariants { variant ->
             when {
@@ -384,8 +387,8 @@ fun Project.configureTestConfigGeneration(projectIsolationEnabled: Boolean) {
                         createTestConfigurationGenerationTask(
                             deviceTest.name,
                             deviceTest.artifacts,
-                            @Suppress("UnstableApiUsage") // b/409617582
-                            deviceTest.minSdk.apiLevel,
+                            androidXExtension.deviceTests.minSdkForFtlOverride
+                                ?: deviceTest.minSdk.apiLevel,
                             deviceTest.instrumentationRunner,
                             deviceTest.instrumentationRunnerArguments,
                             variant,

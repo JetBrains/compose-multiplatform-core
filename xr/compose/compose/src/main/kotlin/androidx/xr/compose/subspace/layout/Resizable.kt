@@ -209,8 +209,10 @@ internal class ResizableNode(
     /** Enables the ResizableComponent for this CoreEntity and updates its values. */
     private fun enableAndUpdateComponent() {
         if (!isComponentAttached) {
-            check(coreEntity.addComponent(component)) {
-                "Could not add ResizableComponent to Core Entity"
+            coreEntity.onEntityAttached {
+                check(coreEntity.addComponent(component) == true) {
+                    "Could not add ResizableComponent to Core Entity"
+                }
             }
             isComponentAttached = true
         }

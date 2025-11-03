@@ -290,6 +290,46 @@ class CameraInfoDeviceTest(private val implName: String, private val cameraXConf
     }
 
     @Test
+    fun isSessionConfigSupported_returnsTrue_forSupportedConfiguration() {
+        // Arrange.
+        val videoCapabilities = Recorder.getHighSpeedVideoCapabilities(cameraInfo)
+        assumeTrue(videoCapabilities != null)
+
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val sessionConfig = HighSpeedVideoSessionConfig(videoCapture = videoCapture)
+
+        // Act & Assert: Query supported frame rates and verify that isSessionConfigSupported
+        // returns true for each of them.
+        cameraInfo.getSupportedFrameRateRanges(sessionConfig).forEach { frameRateRange ->
+            val highSpeedVideoConfig =
+                HighSpeedVideoSessionConfig(
+                    frameRateRange = frameRateRange,
+                    videoCapture = videoCapture,
+                )
+
+            assertThat(cameraInfo.isSessionConfigSupported(highSpeedVideoConfig)).isTrue()
+        }
+    }
+
+    @Test
+    fun isSessionConfigSupported_returnsFalse_forUnsupportedFrameRate() {
+        // Arrange.
+        // High-speed frame rates are not guaranteed to support arbitrary values. [200, 200] is
+        // an unlikely value and is used to test the unsupported case.
+        val unsupportedFrameRate = Range(200, 200)
+
+        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val unsupportedConfig =
+            HighSpeedVideoSessionConfig(
+                frameRateRange = unsupportedFrameRate,
+                videoCapture = videoCapture,
+            )
+
+        // Act & Assert.
+        assertThat(cameraInfo.isSessionConfigSupported(unsupportedConfig)).isFalse()
+    }
+
+    @Test
     fun canReturnSupportedOutputFormats() {
         val formats = cameraInfo.supportedOutputFormats
         val cameraCharacteristics =

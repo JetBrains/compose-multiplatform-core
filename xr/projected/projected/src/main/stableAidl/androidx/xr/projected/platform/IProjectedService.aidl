@@ -16,8 +16,12 @@
 
 package androidx.xr.projected.platform;
 
+import androidx.xr.projected.platform.IProjectedInputEventListener;
+
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 interface IProjectedService {
+  void registerProjectedInputEventListener(in IProjectedInputEventListener listener);
+  void unregisterProjectedInputEventListener(in IProjectedInputEventListener listener);
   void addWindowFlags(in int flags);
   void clearWindowFlags(in int flags);
 }

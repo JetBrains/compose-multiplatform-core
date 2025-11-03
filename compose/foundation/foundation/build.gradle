@@ -296,6 +296,7 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:foundation:foundation:foundation-samples"))
     addGoldenImageAssets()
+    deviceTests.minSdkForFtlOverride = 24 // b/437944630
 }
 
 // This task updates the translations of the localizable strings for the desktopMain target.

@@ -275,6 +275,36 @@ class ExtensionSessionConfigTest(
         assertThat(sessionConfig.useCases).isEmpty()
     }
 
+    @Test
+    fun isSessionConfigSupported_returnsTrue_forSupportedExtension() = runBlocking {
+        val cameraInfo = cameraProvider.getCameraInfo(baseCameraSelector)
+        val sessionConfig = ExtensionSessionConfig.Builder(extensionMode, extensionsManager).build()
+
+        assertThat(cameraInfo.isSessionConfigSupported(sessionConfig)).isTrue()
+    }
+
+    @Test
+    fun isSessionConfigSupported_returnsFalse_forUnsupportedExtension() = runBlocking {
+        val allModes =
+            setOf(
+                ExtensionMode.BOKEH,
+                ExtensionMode.HDR,
+                ExtensionMode.NIGHT,
+                ExtensionMode.FACE_RETOUCH,
+                ExtensionMode.AUTO,
+            )
+        // Finds an unsupported extension type for the test
+        val unsupportedMode =
+            allModes.firstOrNull { !extensionsManager.isExtensionAvailable(baseCameraSelector, it) }
+
+        assumeTrue("No unsupported extension mode found on this device.", unsupportedMode != null)
+
+        val cameraInfo = cameraProvider.getCameraInfo(baseCameraSelector)
+        val sessionConfig = ExtensionSessionConfig(unsupportedMode!!, extensionsManager)
+
+        assertThat(cameraInfo.isSessionConfigSupported(sessionConfig)).isFalse()
+    }
+
     private fun recordVideo(recorder: Recorder, file: File) {
         latchForVideoSaved = CountDownLatch(1)
         latchForVideoRecording = CountDownLatch(5)
