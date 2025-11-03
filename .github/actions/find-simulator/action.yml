@@ -3,6 +3,7 @@ runs:
   using: "composite"
   steps:
     - name: Get iOS Simulator UDID
+      id: get-simulator-udid
       shell: bash
       run: |
         DEVICE_NAME="iPhone 14"

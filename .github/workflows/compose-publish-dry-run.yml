@@ -1,10 +1,10 @@
 name: Compose Publish Dry Run
 on:
   workflow_dispatch:
-  pull_request:
-  push:
-    branches:
-      - jb-main
+#  pull_request:
+#  push:
+#    branches:
+#      - jb-main
 
 jobs:
   compose-native-publish:
