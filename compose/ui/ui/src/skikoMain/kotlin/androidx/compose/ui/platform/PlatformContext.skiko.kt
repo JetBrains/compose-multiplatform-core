@@ -228,7 +228,7 @@ interface PlatformContext {
         override val inputModeManager: InputModeManager = DefaultInputModeManager()
     }
 
-    // This object must be stateless because it is used as a delegate in other ViewConfiguration
+    // This object must be immutable because it is used as a delegate in other ViewConfiguration
     // implementations
     object DefaultViewConfiguration : ViewConfiguration {
         override val longPressTimeoutMillis: Long = 500
@@ -237,7 +237,7 @@ interface PlatformContext {
         override val touchSlop: Float = 18f
     }
 
-    // This object must be stateless because it is used as a delegate in other ViewConfiguration
+    // This object must be immutable because it is used directly in several PlatformContext
     // implementations
     object EmptyFocusManager : FocusManager {
         override fun clearFocus(force: Boolean) = Unit
