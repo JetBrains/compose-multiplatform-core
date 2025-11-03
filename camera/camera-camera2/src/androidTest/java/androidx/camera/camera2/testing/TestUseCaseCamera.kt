@@ -21,6 +21,8 @@ import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.params.SessionConfiguration.SESSION_HIGH_SPEED
 import android.hardware.camera2.params.SessionConfiguration.SESSION_REGULAR
+import androidx.camera.camera2.adapter.CameraStateAdapter
+import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.compat.StreamConfigurationMapCompat
@@ -120,14 +122,16 @@ class TestUseCaseCamera(
                 surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
                 surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
             )
-        val cameraGraph = cameraPipe.createCameraGraph(creationResult.config)
+        val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(CameraStateAdapter())
 
         useCaseCameraGraphConfig =
             UseCaseCameraConfig(
-                    useCases,
-                    sessionConfigAdapter,
-                    cameraGraph,
-                    creationResult.streamConfigMap,
+                    useCases = useCases,
+                    sessionConfigAdapter = sessionConfigAdapter,
+                    cameraGraphConfig = creationResult.config,
+                    streamConfigMap = creationResult.streamConfigMap,
+                    graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+                    cameraGraphFactory = { config -> cameraPipe.createCameraGraph(config) },
                 )
                 .provideUseCaseGraphConfig(
                     useCaseSurfaceManager = useCaseSurfaceManager,

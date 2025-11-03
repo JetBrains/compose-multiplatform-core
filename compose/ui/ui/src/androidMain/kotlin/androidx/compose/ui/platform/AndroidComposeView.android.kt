@@ -2300,6 +2300,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             semanticsOwner.listeners -= it
             focusOwner.listeners -= it
         }
+
+        rectManager.removeScheduledCallback()
     }
 
     override fun onProvideAutofillVirtualStructure(structure: ViewStructure?, flags: Int) {

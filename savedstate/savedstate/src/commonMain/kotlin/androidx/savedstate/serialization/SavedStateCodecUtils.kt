@@ -30,6 +30,7 @@ import kotlinx.serialization.serializer
 
 internal val intListDescriptor = ListSerializer(Int.serializer()).descriptor
 internal val stringListDescriptor = ListSerializer(String.serializer()).descriptor
+internal val booleanListDescriptor = ListSerializer(Boolean.serializer()).descriptor
 internal val booleanArrayDescriptor = BooleanArraySerializer().descriptor
 internal val charArrayDescriptor = CharArraySerializer().descriptor
 internal val doubleArrayDescriptor = DoubleArraySerializer().descriptor

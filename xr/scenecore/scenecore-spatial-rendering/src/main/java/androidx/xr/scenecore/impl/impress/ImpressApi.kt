@@ -19,6 +19,7 @@ package androidx.xr.scenecore.impl.impress
 import android.view.Surface
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Vector3
@@ -28,7 +29,7 @@ import com.google.ar.imp.view.View
 import com.google.common.util.concurrent.ListenableFuture
 
 /** Interface for the JNI API for communicating with the Impress Split Engine instance. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public interface ImpressApi {
 
     /**
@@ -159,6 +160,9 @@ public interface ImpressApi {
 
     /** This method initializes the Impress Split Engine instance. */
     public fun setup(view: View)
+
+    /** This method initializes the Impress Split Engine instance for test purposes. */
+    @VisibleForTesting public fun setup(nativeTestViewHandle: Long)
 
     /** Called when the activity or fragment is resumed. */
     public fun onResume()

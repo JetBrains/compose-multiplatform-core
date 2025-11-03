@@ -267,8 +267,9 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
         val previousAnchorItem =
             if (lastMeasuredAnchorItemHeight > 0) {
                 val offset =
-                    anchorItemScrollOffset - lastMeasuredAnchorItemHeight / 2 +
-                        containerConstraints.maxHeight / 2
+                    containerConstraints.maxHeight / 2 -
+                        lastMeasuredAnchorItemHeight / 2 -
+                        anchorItemScrollOffset
 
                 measuredItemProvider.downwardMeasuredItem(
                     anchorItemIndex,
@@ -278,14 +279,14 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                     // could also place the new anchor off-screen.
                     // To prevent this, we coerce the new anchor's top offset to be at least 0,
                     // ensuring it remains visible on screen.
-                    if (previousAnchorPresent) offset else offset.coerceAtLeast(0),
+                    offset = if (previousAnchorPresent) offset else offset.coerceAtLeast(0),
                     maxHeight = containerConstraints.maxHeight,
                 )
             } else {
                 measuredItemProvider
                     .upwardMeasuredItem(
                         anchorItemIndex,
-                        anchorItemScrollOffset + containerConstraints.maxHeight / 2,
+                        offset = containerConstraints.maxHeight / 2 - anchorItemScrollOffset,
                         maxHeight = containerConstraints.maxHeight,
                     )
                     .also { it.offset += it.transformedHeight / 2 }
@@ -433,7 +434,7 @@ internal class TransformingLazyColumnContentPaddingMeasurementStrategy(
                 anchorItemIndex = anchorItem.index,
                 anchorItemScrollOffset =
                     anchorItem.let {
-                        it.offset + it.transformedHeight / 2 - containerConstraints.maxHeight / 2
+                        containerConstraints.maxHeight / 2 - it.transformedHeight / 2 - it.offset
                     },
                 visibleItems = actuallyVisibleItems,
                 totalItemsCount = itemsCount,

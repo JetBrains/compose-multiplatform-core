@@ -23,14 +23,12 @@ import androidx.annotation.RestrictTo
 import androidx.xr.projected.platform.IProjectedService
 
 /**
- * Class providing window functionality on the Projected device.
- *
- * This class provides a way to connect to and communicate with the ProjectedWindow.
+ * Controller for the Projected device.
  *
  * Use [create] to create an instance of this class. Use [close] to clear the instance.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ProjectedWindow
+public class ProjectedController
 private constructor(private val connection: ProjectedServiceConnection) : AutoCloseable {
 
     private lateinit var projectedService: IProjectedService
@@ -45,7 +43,7 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
      *
      * If an unsupported flag is passed, this method does nothing.
      */
-    public fun addFlags(flags: Int) {
+    public fun addLayoutParamsFlags(flags: Int) {
         projectedService.addWindowFlags(flags)
     }
 
@@ -58,7 +56,7 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
      *
      * If an unsupported flag is passed, this method does nothing.
      */
-    public fun clearFlags(flags: Int) {
+    public fun clearLayoutParamsFlags(flags: Int) {
         projectedService.clearWindowFlags(flags)
     }
 
@@ -72,7 +70,7 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
 
     /**
      * Disconnects from the service providing features for Projected devices. Methods from the
-     * [ProjectedWindow] shouldn't be called after this.
+     * [ProjectedController] shouldn't be called after this.
      *
      * This method should be called in [android.app.Activity.onDestroy].
      */
@@ -87,7 +85,7 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
     public companion object {
         /**
          * Connects to the service providing features for Projected devices and returns the
-         * [ProjectedWindow] when the connection is established.
+         * [ProjectedController] when the connection is established.
          *
          * @param activity The [Activity] running on a Projected device.
          * @throws IllegalStateException if the projected service is not found or binding is not
@@ -97,13 +95,13 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
          */
         @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         @JvmStatic
-        public suspend fun create(activity: Activity): ProjectedWindow {
+        public suspend fun create(activity: Activity): ProjectedController {
             require(
                 ProjectedContext.isProjectedDeviceContext(activity),
                 { "Provided Activity is not running on a Projected device." },
             )
 
-            return ProjectedWindow(ProjectedServiceConnection(activity)).apply { initialize() }
+            return ProjectedController(ProjectedServiceConnection(activity)).apply { initialize() }
         }
     }
 }

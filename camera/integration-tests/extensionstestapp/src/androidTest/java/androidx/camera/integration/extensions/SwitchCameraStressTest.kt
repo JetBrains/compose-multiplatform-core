@@ -45,6 +45,7 @@ import androidx.test.rule.GrantPermissionRule
 import androidx.test.uiautomator.UiDevice
 import androidx.testutils.withActivity
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -111,7 +112,7 @@ class SwitchCameraStressTest(
     private var isTestStarted = false
 
     @Before
-    fun setup() {
+    fun setup(): Unit = runBlocking {
         assumeTrue(CameraUtil.deviceHasCamera())
         assumeTrue(CameraXExtensionsTestUtil.isTargetDeviceAvailableForExtensions())
         assumePcsSupportedForImageCapture(context)
@@ -119,9 +120,7 @@ class SwitchCameraStressTest(
         val cameraProvider =
             ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
 
-        val extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        val extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         val isBackCameraSupported =
             extensionsManager.isExtensionAvailable(
@@ -159,14 +158,12 @@ class SwitchCameraStressTest(
     }
 
     @After
-    fun tearDown() {
+    fun tearDown(): Unit = runBlocking {
         val cameraProvider =
             ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         cameraProvider.shutdownAsync()
 
-        val extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        val extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
         extensionsManager.shutdown()
 
         if (isTestStarted) {

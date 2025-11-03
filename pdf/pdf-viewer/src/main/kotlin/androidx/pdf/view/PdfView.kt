@@ -1302,6 +1302,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         state.isFormFillingTooltipEnabled = isFormFillingTooltipEnabled
         state.documentUri = pdfDocument?.uri
         state.paginationModel = pageLayoutManager?.paginationModel
+        state.layoutStrategy = pageLayoutManager?.layoutStrategy
         state.pdfFormFillingState = pageLayoutManager?.pdfFormFillingState
         state.pdfFormEditRecords = pdfDocument?.formEditRecords
         state.selectionModel = selectionStateManager?.selectionModel?.value
@@ -1413,8 +1414,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     localPdfDocument,
                     backgroundScope,
                     topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                    pageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
+                    verticalPageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
                     paginationModel = requireNotNull(localStateToRestore.paginationModel),
+                    layoutStrategy = requireNotNull(localStateToRestore.layoutStrategy),
                     pdfFormFillingState = requireNotNull(localStateToRestore.pdfFormFillingState),
                     errorFlow = errorFlow,
                     isFormFillingEnabled = isFormFillingEnabled,
@@ -1729,7 +1731,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         localPdfDocument,
                         backgroundScope,
                         topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                        pageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
+                        verticalPageSpacingPx =
+                            context.getDimensions(R.dimen.vertical_page_spacing),
                         errorFlow = errorFlow,
                         isFormFillingEnabled = isFormFillingEnabled,
                     )
@@ -2109,10 +2112,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     internal val contentWidth: Float
-        get() = pageLayoutManager?.paginationModel?.maxWidth ?: 0f
+        get() = pageLayoutManager?.maxContentWidth ?: 0f
 
     internal val contentHeight: Float
-        get() = pageLayoutManager?.paginationModel?.totalEstimatedHeight ?: 0f
+        get() = pageLayoutManager?.contentHeight ?: 0f
 
     /** Returns a new [Rect] representing [contentRect] in View coordinates */
     internal fun toViewRect(contentRect: RectF): Rect =

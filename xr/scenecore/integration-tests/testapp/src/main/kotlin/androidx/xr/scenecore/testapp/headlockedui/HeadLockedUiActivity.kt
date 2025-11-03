@@ -338,10 +338,10 @@ class HeadLockedUiActivity : AppCompatActivity() {
 
     private fun Pose.toFormattedString(): String {
         val position =
-            "Vector3 [%f, %f, %f]"
+            "Vector3 [%.2f, %.2f, %.2f]"
                 .format(this.translation.x, this.translation.y, this.translation.z)
         val rotation =
-            "Rotation [%f, %f, %f, %f]"
+            "Rotation [%.2f, %.2f, %.2f, %.2f]"
                 .format(this.rotation.x, this.rotation.y, this.rotation.z, this.rotation.w)
         return "$position, $rotation"
     }

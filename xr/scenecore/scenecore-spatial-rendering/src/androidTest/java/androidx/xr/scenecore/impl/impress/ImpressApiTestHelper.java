@@ -18,9 +18,14 @@ package androidx.xr.scenecore.impl.impress;
 
 /** Helper class that provides JNI hooks for testing the Impress API bindings. */
 final class ImpressApiTestHelper {
+    // Hooks for test state management.
+    static native long nativeCreateTestView();
+
+    static native void nativeDestroyTestView(long viewHandle);
+
     static native void nativeResetTestState();
 
-    // Hooks for loadGltfAsset.
+    // Hooks for glTF operations.
     static native void nativeSetExpectedLoadGltfPath(String path);
 
     static native void nativeSetLoadGltfAssetSuccess(long token);

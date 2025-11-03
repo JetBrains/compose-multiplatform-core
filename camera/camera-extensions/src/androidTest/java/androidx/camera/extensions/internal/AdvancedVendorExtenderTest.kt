@@ -17,7 +17,6 @@
 package androidx.camera.extensions.internal
 
 import android.content.Context
-import androidx.annotation.OptIn
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.impl.CameraInfoInternal
@@ -27,7 +26,6 @@ import androidx.camera.extensions.ExtensionsManager
 import androidx.camera.extensions.impl.ExtensionsTestlibControl
 import androidx.camera.extensions.util.ExtensionsTestUtil
 import androidx.camera.extensions.util.ExtensionsTestUtil.CAMERA_PIPE_IMPLEMENTATION_OPTION
-import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
@@ -69,7 +67,6 @@ class AdvancedVendorExtenderTest(
     private lateinit var extensionCameraSelector: CameraSelector
     private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
 
-    @OptIn(ExperimentalCameraProviderConfiguration::class)
     @Before
     @Throws(Exception::class)
     fun setUp(): Unit = runBlocking {
@@ -86,9 +83,7 @@ class AdvancedVendorExtenderTest(
 
         assumeTrue(CameraUtil.hasCameraWithLensFacing(lensFacing))
 
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(Companion.context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(Companion.context, cameraProvider)
 
         extensionCameraSelector =
             extensionsManager.getExtensionEnabledCameraSelector(

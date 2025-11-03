@@ -20,6 +20,7 @@ import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Request
@@ -27,6 +28,7 @@ import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
+import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraComponent
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraConfig
@@ -55,9 +57,18 @@ class FakeUseCaseCameraComponentBuilder : UseCaseCameraComponent.Builder {
     private var sessionConfigAdapter = SessionConfigAdapter(emptyList())
     private var cameraGraph = FakeCameraGraph()
     private var streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
+    private val cameraStateAdapter = CameraStateAdapter()
+    private val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter)
 
     private var config: UseCaseCameraConfig =
-        UseCaseCameraConfig(emptyList(), sessionConfigAdapter, cameraGraph, streamConfigMap)
+        UseCaseCameraConfig(
+            useCases = emptyList(),
+            streamConfigMap = streamConfigMap,
+            sessionConfigAdapter = sessionConfigAdapter,
+            cameraGraphFactory = { _ -> cameraGraph },
+            graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+            cameraGraphConfig = CameraGraph.Config(camera = CameraId("0"), streams = emptyList()),
+        )
 
     override fun config(config: UseCaseCameraConfig): UseCaseCameraComponent.Builder {
         this.config = config

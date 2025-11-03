@@ -25,7 +25,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Parent class for common bindings resource operations. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public abstract class BindingsResource {
     private final String mTAG = getClass().getSimpleName();
     private final long mNativeHandle;

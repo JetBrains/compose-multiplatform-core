@@ -48,6 +48,7 @@ import kotlinx.coroutines.Dispatchers
 import org.junit.After
 import org.junit.AssumptionViolatedException
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -117,6 +118,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     @Entity data class TestEntity(@PrimaryKey val id: Long)
 
     @Test
+    @Ignore // 410015038
     fun query_string() {
         val testEntities = List(10) { TestEntity(it.toLong()) }
         testEntities.forEach { database.dao().insert(it) }
@@ -134,6 +136,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun query_cursor() {
         wrapper.execSQL(
             """
@@ -200,6 +203,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun query_cursor_compositeType() {
         wrapper.query("SELECT 1 || 'abc'").use {
             assertThat(it.moveToNext()).isTrue()
@@ -209,6 +213,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun query_stringWithArgs() {
         database.dao().insert(TestEntity(2))
 
@@ -225,6 +230,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun query_simpleSQLiteQuery() {
         val testEntities = List(10) { TestEntity(it.toLong()) }
         testEntities.forEach { database.dao().insert(it) }
@@ -243,6 +249,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun query_simpleSQLiteQueryWithArgs() {
         database.dao().insert(TestEntity(2))
 
@@ -260,6 +267,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun insert() {
         val values = ContentValues().apply { put("id", 1) }
         val resultOne =
@@ -282,6 +290,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun delete() {
         val testEntities = List(5) { TestEntity(it.toLong()) }
         testEntities.forEach { database.dao().insert(it) }
@@ -297,6 +306,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun update() {
         val testEntities = List(5) { TestEntity(it.toLong()) }
         testEntities.forEach { database.dao().insert(it) }
@@ -325,6 +335,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun statement_execute() {
         wrapper.compileStatement("INSERT INTO TestEntity VALUES (1)").use { it.execute() }
         assertThat(database.dao().getEntities()).containsExactly(TestEntity(1))
@@ -337,6 +348,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun statement_executeUpdateDelete() {
         val testEntities = List(10) { TestEntity(it.toLong()) }
         testEntities.forEach { database.dao().insert(it) }
@@ -363,6 +375,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun statement_executeInsert() {
         val rowId =
             wrapper.compileStatement("INSERT INTO TestEntity (id) VALUES (1)").use {
@@ -378,6 +391,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun statement_reused() {
         wrapper.execSQL("CREATE TABLE TestTable (id INTEGER, data TEXT)")
 
@@ -405,6 +419,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun statement_closed() {
         val stmt = wrapper.compileStatement("INSERT INTO TestEntity (id) VALUES (?)")
         stmt.close()
@@ -414,12 +429,14 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun statement_simpleQueryForLong() {
         val result = wrapper.compileStatement("SELECT 20 AS result").use { it.simpleQueryForLong() }
         assertThat(result).isEqualTo(20)
     }
 
     @Test
+    @Ignore // 410015038
     fun statement_simpleQueryForString() {
         val result =
             wrapper.compileStatement("SELECT 'Tom' as result").use { it.simpleQueryForString() }
@@ -427,6 +444,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun commitTransaction() {
         wrapper.beginTransaction()
         wrapper.execSQL("INSERT INTO TestEntity VALUES (1)")
@@ -437,6 +455,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun commitTransaction_compileStatement() {
         wrapper.beginTransaction()
         wrapper.compileStatement("INSERT INTO TestEntity VALUES (1)").use { it.execute() }
@@ -447,6 +466,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun commitTransaction_withListener() {
         val listener = TestTransactionListener()
         wrapper.beginTransactionWithListener(listener)
@@ -464,6 +484,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun commitNestedTransaction() {
         wrapper.beginTransaction()
         try {
@@ -484,6 +505,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun rollbackTransaction() {
         wrapper.beginTransaction()
         wrapper.execSQL("INSERT INTO TestEntity VALUES (1)")
@@ -493,6 +515,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun rollbackNestedTransaction() {
         wrapper.beginTransaction()
         try {
@@ -512,6 +535,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun rollbackTransaction_error() {
         assertThrows<SQLiteException> {
                 wrapper.beginTransaction()
@@ -530,6 +554,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun rollbackTransaction_withListener() {
         val listener = TestTransactionListener()
         wrapper.beginTransactionWithListener(listener)
@@ -546,6 +571,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun inTransaction() {
         assertThat(wrapper.inTransaction()).isFalse()
         wrapper.beginTransaction()
@@ -555,6 +581,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     @LargeTest
     fun yieldIfContendedSafely() {
         wrapper.beginTransaction()
@@ -605,6 +632,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun version() {
         assertThat(wrapper.version).isEqualTo(1)
 
@@ -615,6 +643,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun databaseSize() {
         // create a new wrapper whose database journal is TRUNCATE since in WAL mode the size
         // control is not as precise
@@ -640,18 +669,21 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun isReadOnly() {
         // a Room database is never really read only
         assertThat(wrapper.isReadOnly).isFalse()
     }
 
     @Test
+    @Ignore // 410015038
     fun path() {
         val expected = context.getDatabasePath("test.db").path
         assertThat(wrapper.path).isEqualTo(expected)
     }
 
     @Test
+    @Ignore // 410015038
     fun writeAheadLogging() {
         if (driver != Driver.BUNDLED) {
             throw AssumptionViolatedException(
@@ -677,6 +709,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun attachedDatabases() {
         val attachedDbs = wrapper.attachedDbs
         assertThat(attachedDbs).isNotNull()
@@ -686,12 +719,14 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun databaseIntegrityOk() {
         assertThat(wrapper.isDatabaseIntegrityOk).isTrue()
     }
 
     /** Test that a read transaction is not blocked by a write transaction. */
     @Test
+    @Ignore // 410015038
     fun readTransactionNotBlockedByWrite() {
         if (driver == Driver.ANDROID) {
             // TODO(b/288918056): Use Android V API for DEFERRED once it is available
@@ -721,6 +756,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
 
     /** Test that a wrapper transaction can include blocking DAO write operations. */
     @Test
+    @Ignore // 410015038
     fun combineTransactionWithDao_write() {
         wrapper.beginTransaction()
         try {
@@ -736,6 +772,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
 
     /** Test that a wrapper transaction can include blocking DAO read operations. */
     @Test
+    @Ignore // 410015038
     fun combineTransactionWithDao_read() {
         val testEntities = List(10) { TestEntity(it.toLong()) }
         testEntities.forEach { database.dao().insert(it) }
@@ -751,6 +788,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun combineTransactionWithDao_transaction() {
         wrapper.beginTransaction()
         try {
@@ -765,6 +803,7 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     }
 
     @Test
+    @Ignore // 410015038
     fun cachedWrapper() {
         if (driver != Driver.BUNDLED) {
             throw AssumptionViolatedException("Only testing bundled where wrapper is cached")

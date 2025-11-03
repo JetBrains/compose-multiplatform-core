@@ -83,7 +83,7 @@ val SwipeDismissableNavHostBenchmark =
         override val exercise: MacrobenchmarkScope.() -> Unit
             get() = {
                 val startX = 0
-                val endX = device.displayWidth / 2
+                val endX = device.displayWidth * 3 / 4
                 val y = device.displayHeight / 2
                 val navHost =
                     device.wait(

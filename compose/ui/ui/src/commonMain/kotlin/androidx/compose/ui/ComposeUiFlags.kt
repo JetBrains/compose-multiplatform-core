@@ -48,7 +48,7 @@ import kotlin.jvm.JvmName
  * paths being completely removed from the artifact, which can often have nontrivial positive
  * performance impact.
  *
- *      -assumevalues class androidx.compose.runtime.ComposeUiFlags {
+ *      -assumevalues class androidx.compose.ui.ComposeUiFlags {
  *          public static int isRectTrackingEnabled return false
  *      }
  */

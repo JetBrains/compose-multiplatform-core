@@ -196,9 +196,9 @@ class TransformingLazyColumnContentPaddingMeasurementStrategyTest {
         assertThat(result.visibleItems.map { it.offset })
             .isEqualTo(
                 listOf(
-                    -screenHeight / 4 + tinyOffset,
-                    screenHeight / 4 + tinyOffset,
-                    screenHeight * 3 / 4 + tinyOffset,
+                    -screenHeight / 4 - tinyOffset,
+                    screenHeight / 4 - tinyOffset,
+                    screenHeight * 3 / 4 - tinyOffset,
                 )
             )
     }

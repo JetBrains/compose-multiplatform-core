@@ -19,6 +19,7 @@ package androidx.camera.camera2.testing
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.MeteringRectangle
 import androidx.camera.camera2.adapter.CameraStateAdapter
+import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.config.UseCaseCameraComponent
 import androidx.camera.camera2.config.UseCaseCameraConfig
@@ -27,6 +28,7 @@ import androidx.camera.camera2.impl.UseCaseCamera
 import androidx.camera.camera2.impl.UseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraGraph
+import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Request
@@ -55,9 +57,18 @@ class FakeUseCaseCameraComponentBuilder : UseCaseCameraComponent.Builder {
     private var sessionConfigAdapter = SessionConfigAdapter(emptyList())
     private var cameraGraph = FakeCameraGraph()
     private var streamConfigMap = mutableMapOf<CameraStream.Config, DeferrableSurface>()
+    private val cameraStateAdapter = CameraStateAdapter()
+    private val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter)
 
     private var config: UseCaseCameraConfig =
-        UseCaseCameraConfig(emptyList(), sessionConfigAdapter, cameraGraph, streamConfigMap)
+        UseCaseCameraConfig(
+            useCases = emptyList(),
+            streamConfigMap = streamConfigMap,
+            sessionConfigAdapter = sessionConfigAdapter,
+            cameraGraphFactory = { _ -> cameraGraph },
+            graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+            cameraGraphConfig = CameraGraph.Config(camera = CameraId("0"), streams = emptyList()),
+        )
 
     override fun config(config: UseCaseCameraConfig): UseCaseCameraComponent.Builder {
         this.config = config

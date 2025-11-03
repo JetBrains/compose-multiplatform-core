@@ -142,9 +142,7 @@ class VideoCaptureTest(
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         ExtensionsTestlibControl.getInstance().setImplementationType(implType)
         baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, extensionMode))
 

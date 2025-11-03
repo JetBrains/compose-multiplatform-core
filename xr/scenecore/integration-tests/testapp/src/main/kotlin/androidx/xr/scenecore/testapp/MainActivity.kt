@@ -146,7 +146,6 @@ class MainActivity : AppCompatActivity() {
         customAdapter.setOnClickListener(
             object : TestCasesRecyclerViewAdapter.OnClickListener {
                 override fun onClick(position: Int) {
-                    Log.e("RICKNELS", "onClick: $position")
                     runTest(position)
                 }
             }

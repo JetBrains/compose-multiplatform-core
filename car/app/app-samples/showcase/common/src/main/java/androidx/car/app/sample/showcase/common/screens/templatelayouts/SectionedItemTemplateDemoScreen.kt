@@ -50,6 +50,10 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
             )
     }
 
+    private var alphabeticalIndexingStrategy: Int =
+        SectionedItemTemplate.ALPHABETICAL_INDEXING_TITLE_AS_IS
+    private var alphabeticalIndexingSectionActiveRow: Int = 1
+
     override fun onGetTemplate(): Template {
         val builder =
             SectionedItemTemplate.Builder()
@@ -59,7 +63,51 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
                         .setStartHeaderAction(Action.BACK)
                         .build()
                 )
+                .setAlphabeticalIndexingStrategy(alphabeticalIndexingStrategy)
 
+        builder.addSection(
+            RowSection.Builder()
+                .setTitle("Alphabetical Indexing Strategy")
+                .addItem(
+                    Row.Builder()
+                        .setTitle("Alphabetical Indexing Disabled")
+                        .addText("This will make the button in the scrollbar disappear.")
+                        .setOnClickListener {
+                            alphabeticalIndexingStrategy =
+                                SectionedItemTemplate.ALPHABETICAL_INDEXING_DISABLED
+                            alphabeticalIndexingSectionActiveRow = 0
+                            invalidate()
+                        }
+                        .build()
+                )
+                .addItem(
+                    Row.Builder()
+                        .setTitle("Alphabetical Indexing As-Is")
+                        .addText("Useful for directories, place names, etc.")
+                        .setOnClickListener {
+                            alphabeticalIndexingStrategy =
+                                SectionedItemTemplate.ALPHABETICAL_INDEXING_TITLE_AS_IS
+                            alphabeticalIndexingSectionActiveRow = 1
+                            invalidate()
+                        }
+                        .build()
+                )
+                .addItem(
+                    Row.Builder()
+                        .setTitle("Alphabetical Indexing Ignore Articles and Symbols")
+                        .addText("Useful for song libraries, albums, etc.")
+                        .setOnClickListener {
+                            alphabeticalIndexingStrategy =
+                                SectionedItemTemplate
+                                    .ALPHABETICAL_INDEXING_TITLE_IGNORE_ARTICLES_AND_SYMBOLS
+                            alphabeticalIndexingSectionActiveRow = 2
+                            invalidate()
+                        }
+                        .build()
+                )
+                .setAsSelectionGroup(alphabeticalIndexingSectionActiveRow)
+                .build()
+        )
         builder.addSection(
             createRowSectionBuilder(
                     sectionTitle =
@@ -97,17 +145,47 @@ class SectionedItemTemplateDemoScreen(carContext: CarContext) : Screen(carContex
                 }
                 .build()
         )
+
+        // Build a section that contains various example row titles to test alphabetical indexing
+        val rowTitles =
+            mutableListOf(
+                "An example that starts with an",
+                "A row that start with a",
+                "The demonstration of the",
+                "? is an example of a symbol",
+                "3 is my favorite single digit number",
+            )
+        for (letter in 'A'..'Z') {
+            rowTitles.add("$letter Row")
+        }
         builder.addSection(
-            createRowSectionBuilder(
-                    sectionTitle =
-                        carContext.getString(
-                            R.string.sectioned_item_template_lots_of_rows_section_title
-                        ),
-                    numberOfRows = 150,
+            rowTitles.toRowSection(
+                sectionTitle =
+                    carContext.getString(
+                        R.string.sectioned_item_template_lots_of_rows_section_title
+                    )
+            )
+        )
+
+        builder.addAction(
+            Action.Builder()
+                .setIcon(
+                    CarIcon.Builder(IconCompat.createWithResource(carContext, R.drawable.ic_mic))
+                        .build()
                 )
+                .setOnClickListener {}
+                .setBackgroundColor(CarColor.GREEN)
                 .build()
         )
 
+        return builder.build()
+    }
+
+    private fun List<String>.toRowSection(sectionTitle: String): RowSection {
+        val builder = RowSection.Builder().setTitle(sectionTitle)
+        for (item in this) {
+            builder.addItem(Row.Builder().setTitle(item).build())
+        }
         return builder.build()
     }
 

@@ -670,19 +670,10 @@ public class MutableRemoteInt(
         id: Long? = null,
     ) : this(content, { creationState -> id ?: content.value.toLong() })
 
-    public override var value: Int
+    public override val value: Int
         get() {
             return content.intValue
         }
-        set(newValue) {
-            content.intValue = newValue
-        }
-
-    public override operator fun component1(): Int = value
-
-    public override operator fun component2(): (Int) -> Unit = { newValue ->
-        content.intValue = newValue
-    }
 
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         Utils.idFromLong(idProvider(creationState)).toInt()

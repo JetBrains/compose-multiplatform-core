@@ -461,7 +461,7 @@ class OnGlobalRectChangedTest {
     }
 
     @Test
-    fun callbackCalledForChildWhenParentMoved_1000children() {
+    fun callbackCalledForChildWhenParentMoved_1500children() {
         var position by mutableStateOf(0)
         var childGlobalPosition = IntOffset(0, 0)
         rule.setContent {
@@ -471,12 +471,12 @@ class OnGlobalRectChangedTest {
                 },
                 content = {
                     Wrap(minWidth = 10, minHeight = 10) {
-                        repeat(1000) {
+                        repeat(1500) {
                             Wrap(
                                 minWidth = 10,
                                 minHeight = 10,
                                 modifier =
-                                    if (it == 999)
+                                    if (it == 1499)
                                         Modifier.onLayoutRectChanged(0, 0) { rect ->
                                             childGlobalPosition = rect.positionInRoot
                                         }

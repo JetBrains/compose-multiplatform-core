@@ -246,6 +246,7 @@ internal class SavedStateDecoder(
         return when (deserializer.descriptor) {
             intListDescriptor -> savedState.read { getIntList(key) }
             stringListDescriptor -> savedState.read { getStringList(key) }
+            booleanListDescriptor -> savedState.read { getBooleanArray(key).toList() }
             booleanArrayDescriptor -> savedState.read { getBooleanArray(key) }
             charArrayDescriptor -> savedState.read { getCharArray(key) }
             doubleArrayDescriptor -> savedState.read { getDoubleArray(key) }

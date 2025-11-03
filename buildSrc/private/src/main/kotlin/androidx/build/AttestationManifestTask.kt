@@ -61,6 +61,7 @@ internal fun Project.addSbomToAttestation(relativeSbomPath: Provider<String>) {
 }
 
 internal fun Project.addZipToAttestation(relativeZipPath: Provider<String>) {
+    if (ProjectLayoutType.isPlayground(this)) return
     rootProject.tasks.named<AttestationManifestTask>(ATTESTATION_TASK_NAME).configure { manifestTask
         ->
         manifestTask.zipMap.put(path, relativeZipPath)

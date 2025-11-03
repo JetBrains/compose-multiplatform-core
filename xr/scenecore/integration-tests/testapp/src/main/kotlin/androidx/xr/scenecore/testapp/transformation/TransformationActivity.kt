@@ -50,6 +50,7 @@ import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextLinearView
 import androidx.xr.scenecore.testapp.common.DebugTextPanel
 import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.format
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.nio.file.Paths
 import kotlin.math.cos
@@ -215,8 +216,8 @@ class TransformationActivity : AppCompatActivity() {
                 "getScale is not allowed with Space.PARENT on this Entity ${e.message}"
             }
         view.setLine("local scale", localScale.toString())
-        view.setLine("activitySpaceScale", trackedEntity.getScale(Space.ACTIVITY).toString())
-        view.setLine("worldSpaceScale", trackedEntity.getScale(Space.REAL_WORLD).toString())
+        view.setLine("activitySpaceScale", trackedEntity.getScale(Space.ACTIVITY).format(2))
+        view.setLine("worldSpaceScale", trackedEntity.getScale(Space.REAL_WORLD).format(2))
 
         val activitySpacePose =
             trackedEntity.transformPoseTo(Pose.Identity, session!!.scene.activitySpace)
@@ -235,11 +236,11 @@ class TransformationActivity : AppCompatActivity() {
             if (trackedEntity != anchor) {
                 view.setLine(
                     "Distance to Anchor (dest units)",
-                    length(anchorSpacePose.translation).toString(),
+                    length(anchorSpacePose.translation).format(2),
                 )
                 view.setLine(
                     "Distance to Anchor (meters)",
-                    distance(trackedEntityWorldPos, anchorWorldPos).toString(),
+                    distance(trackedEntityWorldPos, anchorWorldPos).format(2),
                 )
             }
         } else {
@@ -255,11 +256,11 @@ class TransformationActivity : AppCompatActivity() {
         if (trackedEntity != session!!.scene.activitySpace) {
             view.setLine(
                 "Distance to ActivitySpace (dest units)",
-                length(activitySpacePose.translation).toString(),
+                length(activitySpacePose.translation).format(2),
             )
             view.setLine(
                 "Distance to ActivitySpace (meters)",
-                distance(trackedEntityWorldPos, activitySpacePos).toString(),
+                distance(trackedEntityWorldPos, activitySpacePos).format(2),
             )
         }
 
@@ -269,17 +270,21 @@ class TransformationActivity : AppCompatActivity() {
         if (trackedEntity != session!!.scene.mainPanelEntity) {
             view.setLine(
                 "Distance to Main Panel (dest units)",
-                length(mainPanelSpacePose.translation).toString(),
+                length(mainPanelSpacePose.translation).format(2),
             )
             view.setLine(
                 "Distance to Main Panel (meters)",
-                distance(trackedEntityWorldPos, mainPanelWorldPos).toString(),
+                distance(trackedEntityWorldPos, mainPanelWorldPos).format(2),
             )
         }
         when (trackedEntity) {
             is PanelEntity -> {
-                view.setLine("Panel size", trackedEntity.size.toString())
-                view.setLine("Panel scale", trackedEntity.getScale().toString())
+                view.setLine(
+                    "Panel size",
+                    ": w ${trackedEntity.size.width.format(2)} " +
+                        "x h ${trackedEntity.size.height.format(2)}",
+                )
+                view.setLine("Panel scale", trackedEntity.getScale().format(2))
             }
         }
     }
@@ -405,10 +410,10 @@ class TransformationActivity : AppCompatActivity() {
 
     private fun Pose.toFormattedString(): String {
         val position =
-            "Vector3 [%f, %f, %f]"
+            "Vector3 [%.2f, %.2f, %.2f]"
                 .format(this.translation.x, this.translation.y, this.translation.z)
         val rotation =
-            "Rotation [%f, %f, %f, %f]"
+            "Rotation [%.2f, %.2f, %.2f, %.2f]"
                 .format(this.rotation.x, this.rotation.y, this.rotation.z, this.rotation.w)
         return "$position, $rotation"
     }

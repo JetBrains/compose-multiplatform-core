@@ -213,7 +213,7 @@ package androidx.xr.runtime {
     property public kotlin.time.ComparableTimeMark timeMark;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FieldOfView {
+  public final class FieldOfView {
     ctor public FieldOfView(float angleLeft, float angleRight, float angleUp, float angleDown);
     method public androidx.xr.runtime.FieldOfView copy();
     method public androidx.xr.runtime.FieldOfView copy(optional float angleLeft);
@@ -399,27 +399,27 @@ package androidx.xr.runtime {
     ctor public VpsAvailabilityUnavailable();
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class XrDisplay {
-    ctor public XrDisplay();
-    method public static androidx.xr.runtime.XrDisplay.BlendMode getPreferredBlendMode(androidx.xr.runtime.Session session);
-    field public static final androidx.xr.runtime.XrDisplay.Companion Companion;
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class XrDevice {
+    ctor public XrDevice();
+    method public static androidx.xr.runtime.XrDevice.DisplayBlendMode getPreferredBlendMode(androidx.xr.runtime.Session session);
+    field public static final androidx.xr.runtime.XrDevice.Companion Companion;
   }
 
-  public static final class XrDisplay.BlendMode {
-    field public static final androidx.xr.runtime.XrDisplay.BlendMode.Companion Companion;
+  public static final class XrDevice.Companion {
+    method public androidx.xr.runtime.XrDevice.DisplayBlendMode getPreferredBlendMode(androidx.xr.runtime.Session session);
   }
 
-  public static final class XrDisplay.BlendMode.Companion {
-    method @InaccessibleFromKotlin public androidx.xr.runtime.XrDisplay.BlendMode getADDITIVE();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.XrDisplay.BlendMode getALPHA_BLEND();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.XrDisplay.BlendMode getNOT_APPLICABLE();
-    property public androidx.xr.runtime.XrDisplay.BlendMode ADDITIVE;
-    property public androidx.xr.runtime.XrDisplay.BlendMode ALPHA_BLEND;
-    property public androidx.xr.runtime.XrDisplay.BlendMode NOT_APPLICABLE;
+  public static final class XrDevice.DisplayBlendMode {
+    field public static final androidx.xr.runtime.XrDevice.DisplayBlendMode.Companion Companion;
   }
 
-  public static final class XrDisplay.Companion {
-    method public androidx.xr.runtime.XrDisplay.BlendMode getPreferredBlendMode(androidx.xr.runtime.Session session);
+  public static final class XrDevice.DisplayBlendMode.Companion {
+    method @InaccessibleFromKotlin public androidx.xr.runtime.XrDevice.DisplayBlendMode getADDITIVE();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.XrDevice.DisplayBlendMode getALPHA_BLEND();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.XrDevice.DisplayBlendMode getNO_DISPLAY();
+    property public androidx.xr.runtime.XrDevice.DisplayBlendMode ADDITIVE;
+    property public androidx.xr.runtime.XrDevice.DisplayBlendMode ALPHA_BLEND;
+    property public androidx.xr.runtime.XrDevice.DisplayBlendMode NO_DISPLAY;
   }
 
 }
@@ -472,7 +472,7 @@ package androidx.xr.runtime.internal {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface JxrRuntime {
     method public default void configure(androidx.xr.runtime.Config config);
     method public default void destroy();
-    method public default androidx.xr.runtime.XrDisplay.BlendMode getPreferredBlendMode();
+    method public default androidx.xr.runtime.XrDevice.DisplayBlendMode getPreferredDisplayBlendMode();
     method public default void initialize();
     method public default boolean isSupported(androidx.xr.runtime.Config.ConfigMode configMode);
     method public default void pause();

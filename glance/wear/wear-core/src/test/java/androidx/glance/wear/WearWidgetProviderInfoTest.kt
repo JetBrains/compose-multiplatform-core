@@ -18,7 +18,9 @@ package androidx.glance.wear
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.content.res.XmlResourceParser
 import androidx.glance.wear.WearWidgetProviderInfoXmlParser.parseWearWidgetProviderInfo
 import androidx.glance.wear.core.test.R
@@ -36,11 +38,14 @@ class WearWidgetProviderInfoTest {
 
     @Test
     fun parseFromResource_parseProviderInfo() {
+        val serviceInfo = createServiceInfo(service)
         val info =
             getXml(R.xml.wear_widget_provider_info_test)
                 .parseWearWidgetProviderInfo(
                     context.resources,
+                    context.packageManager,
                     service,
+                    serviceInfo,
                     defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_FULLSCREEN,
                     defaultGroup = "default.group",
                 )
@@ -140,19 +145,25 @@ class WearWidgetProviderInfoTest {
     fun parseFromResource_minimalProviderInfo() {
         val defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL
         val defaultGroup = "some_group"
+        val serviceInfo = createServiceInfo(service)
+        serviceInfo.labelRes = R.string.test_label
+        serviceInfo.descriptionRes = R.string.test_description
+        serviceInfo.icon = android.R.drawable.ic_delete
         val info =
             getXml(R.xml.wear_widget_provider_info_minimal)
                 .parseWearWidgetProviderInfo(
                     context.resources,
+                    context.packageManager,
                     service,
+                    serviceInfo,
                     defaultPreferredContainerType,
                     defaultGroup,
                 )
 
         assertThat(info.providerService).isEqualTo(service)
-        assertThat(info.label).isEqualTo("")
-        assertThat(info.description).isEqualTo("")
-        assertThat(info.icon).isEqualTo(0)
+        assertThat(info.label).isEqualTo(context.getString(R.string.test_label))
+        assertThat(info.description).isEqualTo(context.getString(R.string.test_description))
+        assertThat(info.icon).isEqualTo(android.R.drawable.ic_delete)
         assertThat(info.preferredContainerType).isEqualTo(defaultPreferredContainerType)
         assertThat(info.group).isEqualTo(defaultGroup)
         assertThat(info.configIntentAction).isNull()
@@ -163,11 +174,14 @@ class WearWidgetProviderInfoTest {
 
     @Test
     fun parseWearWidgetProviderInfo_unrecognizedAttributes() {
+        val serviceInfo = createServiceInfo(service)
         val info =
             getXml(R.xml.wear_widget_provider_info_unrecognized)
                 .parseWearWidgetProviderInfo(
                     context.resources,
+                    context.packageManager,
                     service,
+                    serviceInfo,
                     defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
                     defaultGroup = "default.group",
                 )
@@ -180,11 +194,14 @@ class WearWidgetProviderInfoTest {
 
     @Test
     fun parseFromResource_parseProviderInfoWithResources() {
+        val serviceInfo = createServiceInfo(service)
         val info =
             getXml(R.xml.wear_widget_provider_info_resources_test)
                 .parseWearWidgetProviderInfo(
                     context.resources,
+                    context.packageManager,
                     service,
+                    serviceInfo,
                     defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_FULLSCREEN,
                     defaultGroup = "default.group",
                 )
@@ -219,14 +236,25 @@ class WearWidgetProviderInfoTest {
 
     @Test(expected = XmlPullParserException::class)
     fun parseWearWidgetProviderInfo_missingType() {
+        val serviceInfo = createServiceInfo(service)
         getXml(R.xml.wear_widget_provider_info_missing_type)
             .parseWearWidgetProviderInfo(
                 context.resources,
+                context.packageManager,
                 service,
+                serviceInfo,
                 defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
                 defaultGroup = "default.group",
             )
     }
 
     private fun getXml(resourceId: Int): XmlResourceParser = context.resources.getXml(resourceId)
+
+    private fun createServiceInfo(componentName: ComponentName): ServiceInfo {
+        return ServiceInfo().apply {
+            packageName = componentName.packageName
+            name = componentName.className
+            applicationInfo = ApplicationInfo().apply { packageName = componentName.packageName }
+        }
+    }
 }

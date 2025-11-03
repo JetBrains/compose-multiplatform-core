@@ -19,11 +19,14 @@ package androidx.xr.glimmer.list
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusTargetModifierNode
 import androidx.compose.ui.focus.Focusability
-import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.node.DelegatingNode
-import androidx.compose.ui.node.GlobalPositionAwareModifierNode
+import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.unit.Constraints
 
 /** Read the auto focus value from [behaviour] and apply it to children after the layout pass. */
 internal fun Modifier.autoFocus(behaviour: GlimmerListAutoFocusBehaviour): Modifier =
@@ -59,7 +62,7 @@ private class GlimmerListAutoFocusNodeElement(
 }
 
 private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFocusBehaviour) :
-    DelegatingNode(), GlobalPositionAwareModifierNode {
+    DelegatingNode(), LayoutModifierNode {
 
     private val focusTargetModifierNode =
         delegate(FocusTargetModifierNode(focusability = Focusability.Never))
@@ -68,7 +71,18 @@ private class GlimmerListAutoFocusNode(private var behaviour: GlimmerListAutoFoc
         this.behaviour = behaviour
     }
 
-    override fun onGloballyPositioned(coordinates: LayoutCoordinates) {
+    override fun MeasureScope.measure(
+        measurable: Measurable,
+        constraints: Constraints,
+    ): MeasureResult {
+        val placeable = measurable.measure(constraints)
+        return layout(placeable.width, placeable.height) {
+            placeable.place(0, 0)
+            notifyAutoFocus()
+        }
+    }
+
+    private fun notifyAutoFocus() {
         // A list should only request the focus for its child if the focus already belongs to the
         // list. Otherwise, the list will "steal" the focus from other elements.
         if (focusTargetModifierNode.focusState.hasFocus) {

@@ -25,7 +25,7 @@ import org.jspecify.annotations.NonNull;
  * A Material with Physically Based Rendering parameters (https://www.khronos.org/gltf/pbr) that can
  * be used to override internal meshes.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class KhronosPbrMaterial extends Material {
     private final ImpressApi mImpressApi;
 

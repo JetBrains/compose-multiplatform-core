@@ -1787,11 +1787,15 @@ package androidx.car.app.model {
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public final class SectionedItemTemplate implements androidx.car.app.model.Template {
     method public java.util.List<androidx.car.app.model.Action!> getActions();
+    method public int getAlphabeticalIndexingStrategy();
     method public androidx.car.app.model.Header? getHeader();
     method public int getScrollStatePersistenceStrategy();
     method public java.util.List<androidx.car.app.model.Section<? extends java.lang.Object!>!> getSections();
-    method public boolean isAlphabeticalIndexingAllowed();
+    method @Deprecated public boolean isAlphabeticalIndexingAllowed();
     method public boolean isLoading();
+    field public static final int ALPHABETICAL_INDEXING_DISABLED = 0; // 0x0
+    field public static final int ALPHABETICAL_INDEXING_TITLE_AS_IS = 1; // 0x1
+    field public static final int ALPHABETICAL_INDEXING_TITLE_IGNORE_ARTICLES_AND_SYMBOLS = 2; // 0x2
     field public static final int SCROLL_STATE_PRESERVE_INDEX = 1; // 0x1
     field public static final int SCROLL_STATE_RESET_TO_TOP = 0; // 0x0
   }
@@ -1805,7 +1809,8 @@ package androidx.car.app.model {
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder clearActions();
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder clearSections();
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setActions(java.util.List<androidx.car.app.model.Action!>);
-    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setAlphabeticalIndexingAllowed(boolean);
+    method @Deprecated @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setAlphabeticalIndexingAllowed(boolean);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setAlphabeticalIndexingStrategy(int);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setHeader(androidx.car.app.model.Header?);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setLoading(boolean);
     method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.model.SectionedItemTemplate.Builder setScrollStatePersistenceStrategy(int);

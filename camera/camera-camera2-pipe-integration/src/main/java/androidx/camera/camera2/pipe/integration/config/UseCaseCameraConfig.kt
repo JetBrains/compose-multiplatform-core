@@ -19,6 +19,7 @@ package androidx.camera.camera2.pipe.integration.config
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.compat.workaround.CapturePipelineTorchCorrection
 import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
@@ -63,12 +64,16 @@ public abstract class UseCaseCameraModule {
 
 /** Dagger module for binding the [UseCase]'s to the [UseCaseCamera]. */
 @Module
-public class UseCaseCameraConfig(
+public data class UseCaseCameraConfig(
     private val useCases: List<UseCase>,
-    private val sessionConfigAdapter: SessionConfigAdapter,
-    private val cameraGraph: CameraGraph,
     private val streamConfigMap: Map<CameraStream.Config, DeferrableSurface>,
+    private val cameraGraphFactory: (CameraGraph.Config) -> CameraGraph,
+    public val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
+    public val sessionConfigAdapter: SessionConfigAdapter,
+    public val cameraGraphConfig: CameraGraph.Config,
 ) {
+    public val cameraGraph: CameraGraph by lazy { cameraGraphFactory(cameraGraphConfig) }
+
     @UseCaseCameraScope
     @Provides
     public fun provideUseCaseList(): java.util.ArrayList<UseCase> {

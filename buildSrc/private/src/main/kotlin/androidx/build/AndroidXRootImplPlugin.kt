@@ -210,7 +210,6 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             }
 
         configureNode()
-        configureRootProjectForYarn()
 
         tasks.withType<KotlinNpmInstallTask>().configureEach {
             when (it.name) {

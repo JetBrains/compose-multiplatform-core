@@ -35,6 +35,7 @@ import androidx.xr.scenecore.testapp.common.EventType
 import androidx.xr.scenecore.testapp.common.SpatialEventLog
 import androidx.xr.scenecore.testapp.common.SpatialMode
 import androidx.xr.scenecore.testapp.common.currentTimestamp
+import androidx.xr.scenecore.testapp.common.format
 import androidx.xr.scenecore.testapp.common.logCapabilities
 import androidx.xr.scenecore.testapp.ui.EventLogRecyclerViewAdapter
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -114,7 +115,9 @@ class SpatialCapabilitiesActivity : AppCompatActivity() {
                 SpatialEventLog(
                     currentTimestamp(),
                     EventType.BOUNDS_CHANGED.text,
-                    "w=${bounds.width}, h=${bounds.height}, d=${bounds.depth}",
+                    "w=${bounds.width.format(2)}, " +
+                        "h=${bounds.height.format(2)}, " +
+                        "d=${bounds.depth.format(2)}",
                 )
             )
         }

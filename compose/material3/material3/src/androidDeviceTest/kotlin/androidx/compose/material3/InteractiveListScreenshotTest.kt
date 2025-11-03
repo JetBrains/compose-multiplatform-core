@@ -220,7 +220,7 @@ class InteractiveListScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Column(
                 modifier =
                     Modifier.testTag(ListTestTag)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
                 verticalArrangement = Arrangement.spacedBy(InteractiveListItemDefaults.SegmentedGap),
             ) {
                 repeat(count) { idx ->
@@ -244,7 +244,7 @@ class InteractiveListScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Column(
                 modifier =
                     Modifier.testTag(ListTestTag)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
                 verticalArrangement = Arrangement.spacedBy(InteractiveListItemDefaults.SegmentedGap),
             ) {
                 repeat(count) { idx ->
@@ -269,7 +269,7 @@ class InteractiveListScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Column(
                 modifier =
                     Modifier.testTag(ListTestTag)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
                 verticalArrangement = Arrangement.spacedBy(InteractiveListItemDefaults.SegmentedGap),
             ) {
                 repeat(count) { idx ->
@@ -294,7 +294,7 @@ class InteractiveListScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Column(
                 modifier =
                     Modifier.testTag(ListTestTag)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
                 verticalArrangement = Arrangement.spacedBy(InteractiveListItemDefaults.SegmentedGap),
             ) {
                 repeat(count) { idx ->
@@ -320,7 +320,7 @@ class InteractiveListScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Column(
                 modifier =
                     Modifier.testTag(ListTestTag)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
                 verticalArrangement = Arrangement.spacedBy(InteractiveListItemDefaults.SegmentedGap),
             ) {
                 repeat(count) { idx ->
@@ -346,7 +346,7 @@ class InteractiveListScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Column(
                 modifier =
                     Modifier.testTag(ListTestTag)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
                 verticalArrangement = Arrangement.spacedBy(InteractiveListItemDefaults.SegmentedGap),
             ) {
                 repeat(count) { idx ->
@@ -372,7 +372,7 @@ class InteractiveListScreenshotTest(private val scheme: ColorSchemeWrapper) {
             Column(
                 modifier =
                     Modifier.testTag(ListTestTag)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
                 verticalArrangement = Arrangement.spacedBy(InteractiveListItemDefaults.SegmentedGap),
             ) {
                 repeat(count) { idx ->

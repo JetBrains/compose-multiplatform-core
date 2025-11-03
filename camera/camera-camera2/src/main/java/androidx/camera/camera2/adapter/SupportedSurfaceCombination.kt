@@ -70,6 +70,7 @@ import androidx.camera.core.impl.SurfaceSizeDefinition
 import androidx.camera.core.impl.SurfaceStreamSpecQueryResult
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.stabilization.StabilizationMode
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import androidx.camera.core.impl.utils.AspectRatioUtil
 import androidx.camera.core.impl.utils.CompareSizesByArea
 import androidx.camera.core.internal.utils.SizeUtil
@@ -233,7 +234,7 @@ public class SupportedSurfaceCombination(
                             } ?: FpsRangeFeature.DEFAULT_FPS_RANGE
                         )
 
-                        if (featureSettings.isPreviewStabilizationOn) {
+                        if (featureSettings.videoStabilization == VideoStabilization.PREVIEW) {
                             setPreviewStabilization(StabilizationMode.ON)
                         }
                     }
@@ -296,10 +297,7 @@ public class SupportedSurfaceCombination(
         var supportedSurfaceCombinations: MutableList<SurfaceCombination> = mutableListOf()
         if (featureSettings.requiresFeatureComboQuery) {
             supportedSurfaceCombinations.addAll(
-                getQueryableFcqCombinations(
-                    cameraMetadata,
-                    featureSettings.isPreviewStabilizationOn,
-                )
+                getQueryableFcqCombinations(cameraMetadata, featureSettings.videoStabilization)
             )
         } else if (featureSettings.isUltraHdrOn) {
             if (surfaceCombinationsUltraHdr.isEmpty()) {
@@ -324,7 +322,7 @@ public class SupportedSurfaceCombination(
                 }
                 else -> {
                     supportedSurfaceCombinations.addAll(
-                        if (featureSettings.isPreviewStabilizationOn)
+                        if (featureSettings.videoStabilization == VideoStabilization.PREVIEW)
                             previewStabilizationSurfaceCombinations
                         else surfaceCombinations
                     )
@@ -372,7 +370,7 @@ public class SupportedSurfaceCombination(
      * @param attachedSurfaces the existing surfaces.
      * @param newUseCaseConfigsSupportedSizeMap newly added UseCaseConfig to supported output sizes
      *   map.
-     * @param isPreviewStabilizationOn whether the preview stabilization is enabled.
+     * @param videoStabilization the video stabilization mode.
      * @param hasVideoCapture whether the use cases has video capture.
      * @param isFeatureComboInvocation whether the code flow involves CameraX feature combo API
      *   (e.g. [androidx.camera.core.SessionConfig.requiredFeatureGroup]).
@@ -387,7 +385,7 @@ public class SupportedSurfaceCombination(
         cameraMode: Int,
         attachedSurfaces: List<AttachedSurfaceInfo>,
         newUseCaseConfigsSupportedSizeMap: Map<UseCaseConfig<*>, List<Size>>,
-        isPreviewStabilizationOn: Boolean = false,
+        videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
         hasVideoCapture: Boolean = false,
         isFeatureComboInvocation: Boolean,
         findMaxSupportedFrameRate: Boolean,
@@ -442,9 +440,10 @@ public class SupportedSurfaceCombination(
                 isStrictFpsRequired to targetFpsRange
             }
 
+        val isPreviewStabilizationOn = videoStabilization == VideoStabilization.PREVIEW
+
         Camera2Logger.debug {
             "getSuggestedStreamSpecifications: " +
-                "isPreviewStabilizationOn = $isPreviewStabilizationOn, " +
                 "isPreviewStabilizationSupported = $isPreviewStabilizationSupported, " +
                 "isFeatureComboInvocation = $isFeatureComboInvocation"
         }
@@ -463,7 +462,7 @@ public class SupportedSurfaceCombination(
                 cameraMode = cameraMode,
                 hasVideoCapture = hasVideoCapture,
                 resolvedDynamicRanges = resolvedDynamicRanges,
-                isPreviewStabilizationOn = isPreviewStabilizationOn,
+                videoStabilization = videoStabilization,
                 isUltraHdrOn = isUltraHdrOn,
                 isHighSpeedOn = isHighSpeedOn,
                 isFeatureComboInvocation = isFeatureComboInvocation,
@@ -476,7 +475,7 @@ public class SupportedSurfaceCombination(
             getCheckingMethod(
                 resolvedDynamicRanges.values,
                 targetFpsRange,
-                isPreviewStabilizationOn,
+                videoStabilization,
                 isUltraHdrOn,
                 isFeatureComboInvocation,
             )
@@ -734,7 +733,7 @@ public class SupportedSurfaceCombination(
     private fun getCheckingMethod(
         dynamicRanges: Collection<DynamicRange>,
         fps: Range<Int>?,
-        isPreviewStabilizationOn: Boolean,
+        videoStabilization: VideoStabilization,
         isUltraHdrOn: Boolean,
         isFeatureComboInvocation: Boolean,
     ): CheckingMethod {
@@ -752,7 +751,10 @@ public class SupportedSurfaceCombination(
         if (fps?.getUpper() == 60) {
             count++
         }
-        if (isPreviewStabilizationOn) {
+        if (
+            videoStabilization == VideoStabilization.ON ||
+                videoStabilization == VideoStabilization.PREVIEW
+        ) {
             count++
         }
         if (isUltraHdrOn) {
@@ -773,14 +775,14 @@ public class SupportedSurfaceCombination(
      *
      * @param cameraMode the working camera mode.
      * @param resolvedDynamicRanges the resolved dynamic range list of the newly added UseCases
-     * @param isPreviewStabilizationOn whether the preview stabilization is enabled.
+     * @param videoStabilization the video stabilization mode.
      * @param isUltraHdrOn whether the Ultra HDR image capture is enabled.
      */
     private fun createFeatureSettings(
         @CameraMode.Mode cameraMode: Int,
         hasVideoCapture: Boolean,
         resolvedDynamicRanges: Map<UseCaseConfig<*>, DynamicRange>,
-        isPreviewStabilizationOn: Boolean,
+        videoStabilization: VideoStabilization,
         isUltraHdrOn: Boolean,
         isHighSpeedOn: Boolean,
         isFeatureComboInvocation: Boolean,
@@ -794,7 +796,7 @@ public class SupportedSurfaceCombination(
                 cameraMode,
                 requiredMaxBitDepth,
                 hasVideoCapture,
-                isPreviewStabilizationOn,
+                videoStabilization,
                 isUltraHdrOn,
                 isHighSpeedOn,
                 isFeatureComboInvocation = isFeatureComboInvocation,
@@ -2360,13 +2362,13 @@ public class SupportedSurfaceCombination(
      * @param requiredMaxBitDepth The required maximum bit depth for any non-RAW stream attached to
      *   the camera. A value of [DynamicRange.BIT_DEPTH_10_BIT] corresponds to the camera capability
      *   [CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES_DYNAMIC_RANGE_TEN_BIT].
-     * @param isPreviewStabilizationOn Whether the preview stabilization is enabled.
+     * @param videoStabilization The video stabilization mode.
      */
     public data class FeatureSettings(
         @CameraMode.Mode val cameraMode: Int,
         val requiredMaxBitDepth: Int,
         val hasVideoCapture: Boolean = false,
-        val isPreviewStabilizationOn: Boolean = false,
+        val videoStabilization: VideoStabilization = VideoStabilization.UNSPECIFIED,
         val isUltraHdrOn: Boolean = false,
         val isHighSpeedOn: Boolean = false,
         val isFeatureComboInvocation: Boolean = false,

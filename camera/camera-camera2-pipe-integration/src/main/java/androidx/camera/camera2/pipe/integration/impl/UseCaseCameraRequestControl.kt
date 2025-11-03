@@ -333,9 +333,7 @@ constructor(
                         listeners.toMutableSet(),
                         template,
                     )
-                infoBundleMap
-                    .merge()
-                    .updateCameraStateAsync(streams = streams, sessionConfig = sessionConfig)
+                infoBundleMap.merge().updateCameraStateAsync(streams = streams)
             }
         } ?: canceledResult
 
@@ -515,8 +513,7 @@ constructor(
         }
 
     private suspend fun InfoBundle.updateCameraStateAsync(
-        streams: Set<StreamId>? = null,
-        sessionConfig: SessionConfig? = null,
+        streams: Set<StreamId>? = null
     ): Deferred<Unit> =
         runIfNotClosed {
             cameraXConfig
@@ -538,7 +535,6 @@ constructor(
                 streams = streams,
                 template = template,
                 listeners = listeners,
-                sessionConfig = sessionConfig,
             )
         } ?: canceledResult
 

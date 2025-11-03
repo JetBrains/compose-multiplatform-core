@@ -128,9 +128,7 @@ class ExtensionSessionConfigTest(
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
         ExtensionsTestlibControl.getInstance().setImplementationType(implType)
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         assumeTrue(
             ExtensionsTestUtil.isExtensionAvailable(extensionsManager, lensFacing, extensionMode)

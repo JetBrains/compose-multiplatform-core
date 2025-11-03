@@ -21,6 +21,7 @@ import android.os.Looper;
 import android.view.Surface;
 
 import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import androidx.concurrent.futures.CallbackToFutureAdapter;
 import androidx.xr.runtime.math.BoundingBox;
 import androidx.xr.runtime.math.FloatSize3d;
@@ -35,9 +36,10 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /** Implementation of the JNI API for communicating with the Impress Split Engine instance. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public final class ImpressApiImpl implements ImpressApi {
     private View mView;
+    private long mTestViewHandle = 0;
     private BindingsResourceManager mResourceManager;
 
     /*
@@ -144,6 +146,14 @@ public final class ImpressApiImpl implements ImpressApi {
         if (mView != null) {
             nSetup(getViewNativeHandle(view));
         }
+        mResourceManager = new BindingsResourceManager(new Handler(Looper.getMainLooper()));
+    }
+
+    @VisibleForTesting
+    @Override
+    public void setup(long nativeTestViewHandle) {
+        mTestViewHandle = nativeTestViewHandle;
+        nSetup(getViewNativeHandle(mView));
         mResourceManager = new BindingsResourceManager(new Handler(Looper.getMainLooper()));
     }
 
@@ -1398,6 +1408,8 @@ public final class ImpressApiImpl implements ImpressApi {
     private long getViewNativeHandle(View view) {
         if (view != null) {
             return view.getNativeHandle();
+        } else if (mTestViewHandle != 0) {
+            return mTestViewHandle;
         }
         return -1;
     }

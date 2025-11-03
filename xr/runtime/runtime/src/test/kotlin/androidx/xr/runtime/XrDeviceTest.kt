@@ -19,7 +19,7 @@ import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.testing.FakeLifecycleManager
 import androidx.xr.arcore.testing.FakePerceptionRuntime
-import androidx.xr.runtime.XrDisplay.BlendMode
+import androidx.xr.runtime.XrDevice.DisplayBlendMode
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -32,7 +32,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
-class XrDisplayTest {
+class XrDeviceTest {
 
     private lateinit var session: Session
     private lateinit var activityController: ActivityController<ComponentActivity>
@@ -52,15 +52,15 @@ class XrDisplayTest {
     }
 
     @Test
-    fun getPreferredBlendMode_returnsGivenBlendMode() {
+    fun getPreferredDisplayBlendMode_returnsGivenDisplayBlendMode() {
         activityController.create()
         session = createSession()
         session.runtimes
             .filterIsInstance<FakePerceptionRuntime>()
             .single()
-            .xrDisplayPreferredBlendMode = BlendMode.ADDITIVE
+            .xrDevicePreferredDisplayBlendMode = DisplayBlendMode.ADDITIVE
 
-        assertThat(XrDisplay.getPreferredBlendMode(session)).isEqualTo(BlendMode.ADDITIVE)
+        assertThat(XrDevice.getPreferredBlendMode(session)).isEqualTo(DisplayBlendMode.ADDITIVE)
     }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {

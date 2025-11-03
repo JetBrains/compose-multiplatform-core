@@ -21,7 +21,7 @@ import androidx.annotation.VisibleForTesting
 import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.ConfigMode
-import androidx.xr.runtime.XrDisplay
+import androidx.xr.runtime.XrDevice
 import kotlin.time.ComparableTimeMark
 
 /**
@@ -61,7 +61,7 @@ internal constructor(
         return SUPPORTED_CONFIG_MODES.contains(configMode)
     }
 
-    override fun getPreferredBlendMode(): XrDisplay.BlendMode {
+    override fun getPreferredDisplayBlendMode(): XrDevice.DisplayBlendMode {
         // TODO(b/448458070) : Implement this function for projected once we have access to the
         // relevant services.
         throw NotImplementedError(

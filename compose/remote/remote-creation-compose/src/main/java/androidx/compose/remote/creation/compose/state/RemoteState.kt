@@ -26,7 +26,6 @@ import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationSta
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 
@@ -96,8 +95,6 @@ public interface BaseRemoteState {
  * externally.
  *
  * In Remote Compose recording mode, the type specific id should be used.
- *
- * In preview mode, this type must honour the [Stable] contract.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Stable
@@ -115,12 +112,10 @@ public interface RemoteState<T> : State<T>, BaseRemoteState {
  * It represents a direct value (var).
  *
  * In Remote Compose recording mode, the type specific id should be used.
- *
- * In preview mode, this type must honour the [Stable] contract.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @Stable
-public interface MutableRemoteState<T> : RemoteState<T>, MutableState<T>
+public interface MutableRemoteState<T> : RemoteState<T>
 
 /**
  * Remembers a named state value.

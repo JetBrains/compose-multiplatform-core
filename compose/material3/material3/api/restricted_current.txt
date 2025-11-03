@@ -4000,19 +4000,25 @@ package androidx.compose.material3 {
     method @KotlinOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static void TimePicker(androidx.compose.material3.TimePickerState state, optional androidx.compose.ui.Modifier modifier, optional androidx.compose.material3.TimePickerColors colors, optional androidx.compose.material3.TimePickerLayoutType layoutType);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void TimePicker-mT9BvqQ(androidx.compose.material3.TimePickerState, androidx.compose.ui.Modifier?, androidx.compose.material3.TimePickerColors?, int, androidx.compose.runtime.Composer?, int, int);
     method @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.material3.TimePickerState TimePickerState(int initialHour, int initialMinute, boolean is24Hour);
+    method @InaccessibleFromKotlin public static boolean isHourInputValid(androidx.compose.material3.TimePickerState);
+    method @InaccessibleFromKotlin public static boolean isInputValid(androidx.compose.material3.TimePickerState);
+    method @InaccessibleFromKotlin public static boolean isMinuteInputValid(androidx.compose.material3.TimePickerState);
     method @InaccessibleFromKotlin public static boolean isPm(androidx.compose.material3.TimePickerState);
     method @KotlinOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static androidx.compose.material3.TimePickerState rememberTimePickerState(optional int initialHour, optional int initialMinute, optional boolean is24Hour);
     method @BytecodeOnly @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Composable public static androidx.compose.material3.TimePickerState rememberTimePickerState(int, int, boolean, androidx.compose.runtime.Composer?, int, int);
+    property public static boolean androidx.compose.material3.TimePickerState.isHourInputValid;
+    property public static boolean androidx.compose.material3.TimePickerState.isInputValid;
+    property public static boolean androidx.compose.material3.TimePickerState.isMinuteInputValid;
     property public static boolean androidx.compose.material3.TimePickerState.isPm;
   }
 
-  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class TimePickerLayoutType {
+  @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class TimePickerLayoutType {
     method @BytecodeOnly public static androidx.compose.material3.TimePickerLayoutType! box-impl(int);
     method @BytecodeOnly public int unbox-impl();
     field public static final androidx.compose.material3.TimePickerLayoutType.Companion Companion;
   }
 
-  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static final class TimePickerLayoutType.Companion {
+  public static final class TimePickerLayoutType.Companion {
     method @BytecodeOnly public int getHorizontal-QJTpgSE();
     method @BytecodeOnly public int getVertical-QJTpgSE();
     property public androidx.compose.material3.TimePickerLayoutType Horizontal;
@@ -4034,18 +4040,24 @@ package androidx.compose.material3 {
     property public androidx.compose.material3.TimePickerSelectionMode Minute;
   }
 
-  @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public interface TimePickerState {
+  public interface TimePickerState {
     method @InaccessibleFromKotlin @IntRange(from=0L, to=23L) public int getHour();
+    method @InaccessibleFromKotlin @IntRange(from=0L) public default int getHourInput();
     method @InaccessibleFromKotlin @IntRange(from=0L, to=59L) public int getMinute();
+    method @InaccessibleFromKotlin @IntRange(from=0L) public default int getMinuteInput();
     method @BytecodeOnly public int getSelection-yecRtBI();
     method @InaccessibleFromKotlin public boolean is24hour();
     method @InaccessibleFromKotlin public void set24hour(boolean);
     method @InaccessibleFromKotlin public void setHour(@IntRange(from=0L, to=23L) int);
+    method @InaccessibleFromKotlin public default void setHourInput(int);
     method @InaccessibleFromKotlin public void setMinute(@IntRange(from=0L, to=59L) int);
+    method @InaccessibleFromKotlin public default void setMinuteInput(int);
     method @BytecodeOnly public void setSelection-6_8s6DQ(int);
     property @IntRange(from=0L, to=23L) public abstract int hour;
+    property @IntRange(from=0L) public default int hourInput;
     property public abstract boolean is24hour;
     property @IntRange(from=0L, to=59L) public abstract int minute;
+    property @IntRange(from=0L) public default int minuteInput;
     property public abstract androidx.compose.material3.TimePickerSelectionMode selection;
   }
 

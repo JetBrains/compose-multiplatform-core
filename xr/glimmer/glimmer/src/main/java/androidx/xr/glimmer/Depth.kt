@@ -22,8 +22,14 @@ import androidx.compose.ui.draw.ShadowScope
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.shadow.DropShadowPainter
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.shadow.lerp
+import androidx.compose.ui.node.DrawModifierNode
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.requireGraphicsContext
+import androidx.compose.ui.platform.InspectorInfo
 
 /**
  * Depth establishes a sense of hierarchy by using shadows to occlude content underneath. Depth
@@ -78,13 +84,7 @@ public class Depth(internal val layer1: Shadow, internal val layer2: Shadow) {
  */
 public fun Modifier.depth(depth: Depth?, shape: Shape): Modifier {
     if (depth == null) return this
-    return this
-        // dropShadow draws the shadow, and then the content on top. So in order to get layer2 to
-        // render on top of layer1, we draw layer1 first - this means that layer1's dropShadow will
-        // draw its shadow, and then its content on top (since the 'content' includes children
-        // modifiers, this includes layer2's shadow).
-        .dropShadow(shape, depth.layer1)
-        .dropShadow(shape, depth.layer2)
+    return this then DepthElement(depth, shape)
 }
 
 /**
@@ -130,4 +130,81 @@ private fun ShadowScope.updateFrom(shadow: Shadow) {
     this.brush = shadow.brush
     this.alpha = shadow.alpha
     this.blendMode = shadow.blendMode
+}
+
+private class DepthElement(private val depth: Depth, private val shape: Shape) :
+    ModifierNodeElement<DepthNode>() {
+
+    override fun create(): DepthNode = DepthNode(depth, shape)
+
+    override fun update(node: DepthNode) {
+        node.update(depth, shape)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DepthElement) return false
+
+        if (depth != other.depth) return false
+        if (shape != other.shape) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = depth.hashCode()
+        result = 31 * result + shape.hashCode()
+        return result
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "depth"
+        properties["depth"] = depth
+        properties["shape"] = shape
+    }
+}
+
+/**
+ * Renders shadows for the provided [shape] and [depth].
+ *
+ * @param depth Depth to render shadows for.
+ * @param shape [Shape] of the shadows.
+ */
+internal class DepthNode(private var depth: Depth, private var shape: Shape) :
+    Modifier.Node(), DrawModifierNode {
+
+    private var layer1ShadowPainter: DropShadowPainter? = null
+    private var layer2ShadowPainter: DropShadowPainter? = null
+
+    fun update(depth: Depth, shape: Shape) {
+        if (this.depth.layer1 != depth.layer1) layer1ShadowPainter = null
+        if (this.depth.layer2 != depth.layer2) layer2ShadowPainter = null
+        if (this.shape != shape) {
+            layer1ShadowPainter = null
+            layer2ShadowPainter = null
+        }
+        this.shape = shape
+        this.depth = depth
+    }
+
+    override fun ContentDrawScope.draw() {
+        // In order to get layer2 to render on top of layer1, we draw layer1 first.
+        with(obtainLayer1ShadowPainter()) { draw(size) }
+        with(obtainLayer2ShadowPainter()) { draw(size) }
+        drawContent()
+    }
+
+    private fun obtainLayer1ShadowPainter(): DropShadowPainter =
+        layer1ShadowPainter
+            ?: requireGraphicsContext()
+                .shadowContext
+                .createDropShadowPainter(shape, depth.layer1)
+                .also { layer1ShadowPainter = it }
+
+    private fun obtainLayer2ShadowPainter(): DropShadowPainter =
+        layer2ShadowPainter
+            ?: requireGraphicsContext()
+                .shadowContext
+                .createDropShadowPainter(shape, depth.layer2)
+                .also { layer2ShadowPainter = it }
 }

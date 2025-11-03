@@ -44,10 +44,9 @@ import androidx.compose.material3.internal.heightOrZero
 import androidx.compose.material3.internal.rememberAnimatedShape
 import androidx.compose.material3.internal.subtractConstraintSafely
 import androidx.compose.material3.internal.widthOrZero
-import androidx.compose.material3.tokens.ColorSchemeKeyTokens
-import androidx.compose.material3.tokens.ElevationTokens
+import androidx.compose.material3.tokens.ListTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
-import androidx.compose.material3.tokens.ShapeKeyTokens
+import androidx.compose.material3.tokens.ReorderListTokens
 import androidx.compose.material3.tokens.TypographyKeyTokens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -76,7 +75,9 @@ import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.toggleableState
@@ -123,7 +124,7 @@ import androidx.compose.ui.unit.takeOrElse
  *   emitting [Interaction]s for this list item. You can use this to change the list item's
  *   appearance or preview the list item in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
- * @param content the main content of this list item. Also known as the headline content.
+ * @param content the main content of this list item. Also known as the headline or label.
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
@@ -202,7 +203,7 @@ internal fun ListItem(
  *   emitting [Interaction]s for this list item. You can use this to change the list item's
  *   appearance or preview the list item in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
- * @param content the main content of this list item. Also known as the headline content.
+ * @param content the main content of this list item. Also known as the headline or label.
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
@@ -235,7 +236,10 @@ internal fun ListItem(
         verticalAlignment = verticalAlignment,
         enabled = enabled,
         selected = selected,
-        applySemantics = { this.selected = selected },
+        applySemantics = {
+            this.selected = selected
+            role = Role.RadioButton
+        },
         onClick = onClick,
         onLongClick = onLongClick,
         onLongClickLabel = onLongClickLabel,
@@ -283,7 +287,7 @@ internal fun ListItem(
  *   emitting [Interaction]s for this list item. You can use this to change the list item's
  *   appearance or preview the list item in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
- * @param content the main content of this list item. Also known as the headline content.
+ * @param content the main content of this list item. Also known as the headline or label.
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
@@ -316,7 +320,10 @@ internal fun ListItem(
         verticalAlignment = verticalAlignment,
         enabled = enabled,
         selected = checked,
-        applySemantics = { toggleableState = ToggleableState(checked) },
+        applySemantics = {
+            toggleableState = ToggleableState(checked)
+            role = Role.Checkbox
+        },
         onClick = { onCheckedChange(!checked) },
         onLongClick = onLongClick,
         onLongClickLabel = onLongClickLabel,
@@ -355,7 +362,7 @@ internal fun ListItem(
  * @param onLongClick called when this list item is long clicked (long-pressed).
  * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action.
  * @param colors the [InteractiveListItemColors] that will be used to resolve the colors used for
- *   this list item in different states. See [InteractiveListItemDefaults.colors].
+ *   this list item in different states. See [InteractiveListItemDefaults.segmentedColors].
  * @param elevation the [InteractiveListItemElevation] used to resolve the elevation for this list
  *   item in different states. See [InteractiveListItemDefaults.elevation].
  * @param contentPadding the padding to be applied to the content of this list item.
@@ -363,7 +370,7 @@ internal fun ListItem(
  *   emitting [Interaction]s for this list item. You can use this to change the list item's
  *   appearance or preview the list item in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
- * @param content the main content of this list item. Also known as the headline content.
+ * @param content the main content of this list item. Also known as the headline or label.
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
@@ -435,7 +442,7 @@ internal fun SegmentedListItem(
  * @param onLongClick called when this list item is long clicked (long-pressed).
  * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action.
  * @param colors the [InteractiveListItemColors] that will be used to resolve the colors used for
- *   this list item in different states. See [InteractiveListItemDefaults.colors].
+ *   this list item in different states. See [InteractiveListItemDefaults.segmentedColors].
  * @param elevation the [InteractiveListItemElevation] used to resolve the elevation for this list
  *   item in different states. See [InteractiveListItemDefaults.elevation].
  * @param contentPadding the padding to be applied to the content of this list item.
@@ -443,7 +450,7 @@ internal fun SegmentedListItem(
  *   emitting [Interaction]s for this list item. You can use this to change the list item's
  *   appearance or preview the list item in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
- * @param content the main content of this list item. Also known as the headline content.
+ * @param content the main content of this list item. Also known as the headline or label.
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
@@ -476,7 +483,10 @@ internal fun SegmentedListItem(
         verticalAlignment = verticalAlignment,
         enabled = enabled,
         selected = selected,
-        applySemantics = { this.selected = selected },
+        applySemantics = {
+            this.selected = selected
+            role = Role.RadioButton
+        },
         onClick = onClick,
         onLongClick = onLongClick,
         onLongClickLabel = onLongClickLabel,
@@ -516,7 +526,7 @@ internal fun SegmentedListItem(
  * @param onLongClick called when this list item is long clicked (long-pressed).
  * @param onLongClickLabel semantic / accessibility label for the [onLongClick] action.
  * @param colors the [InteractiveListItemColors] that will be used to resolve the colors used for
- *   this list item in different states. See [InteractiveListItemDefaults.colors].
+ *   this list item in different states. See [InteractiveListItemDefaults.segmentedColors].
  * @param elevation the [InteractiveListItemElevation] used to resolve the elevation for this list
  *   item in different states. See [InteractiveListItemDefaults.elevation].
  * @param contentPadding the padding to be applied to the content of this list item.
@@ -524,7 +534,7 @@ internal fun SegmentedListItem(
  *   emitting [Interaction]s for this list item. You can use this to change the list item's
  *   appearance or preview the list item in different states. Note that if `null` is provided,
  *   interactions will still happen internally.
- * @param content the main content of this list item. Also known as the headline content.
+ * @param content the main content of this list item. Also known as the headline or label.
  */
 @ExperimentalMaterial3ExpressiveApi
 @Composable
@@ -557,7 +567,10 @@ internal fun SegmentedListItem(
         verticalAlignment = verticalAlignment,
         enabled = enabled,
         selected = checked,
-        applySemantics = { toggleableState = ToggleableState(checked) },
+        applySemantics = {
+            toggleableState = ToggleableState(checked)
+            role = Role.Checkbox
+        },
         onClick = { onCheckedChange(!checked) },
         onLongClick = onLongClick,
         onLongClickLabel = onLongClickLabel,
@@ -1115,53 +1128,56 @@ internal object InteractiveListItemDefaults {
         )
     }
 
-    // TODO: load tokens from component file
     internal val ColorScheme.defaultInteractiveListItemColors: InteractiveListItemColors
         get() {
             return defaultInteractiveListItemColorsCached
                 ?: InteractiveListItemColors(
                         // default
-                        containerColor = fromToken(ColorSchemeKeyTokens.SurfaceBright),
-                        contentColor = fromToken(ColorSchemeKeyTokens.OnSurface),
-                        leadingContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
-                        trailingContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
-                        overlineContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
-                        supportingContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
+                        containerColor = fromToken(ListTokens.ItemContainerColor),
+                        contentColor = fromToken(ListTokens.ItemLabelTextColor),
+                        leadingContentColor = fromToken(ListTokens.ItemLeadingIconColor),
+                        trailingContentColor = fromToken(ListTokens.ItemTrailingIconColor),
+                        overlineContentColor = fromToken(ListTokens.ItemOverlineColor),
+                        supportingContentColor = fromToken(ListTokens.ItemSupportingTextColor),
                         // selected
-                        selectedContainerColor = fromToken(ColorSchemeKeyTokens.SecondaryContainer),
-                        selectedContentColor = fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                        selectedContainerColor = fromToken(ListTokens.ItemSelectedContainerColor),
+                        selectedContentColor = fromToken(ListTokens.ItemSelectedLabelTextColor),
                         selectedLeadingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                            fromToken(ListTokens.ItemSelectedLeadingIconColor),
                         selectedTrailingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                            fromToken(ListTokens.ItemSelectedTrailingSupportingTextColor),
                         selectedOverlineContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                            fromToken(ListTokens.ItemSelectedOverlineColor),
                         selectedSupportingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                            fromToken(ListTokens.ItemSelectedSupportingTextColor),
                         // disabled
-                        disabledContainerColor = fromToken(ColorSchemeKeyTokens.SurfaceBright),
+                        disabledContainerColor = fromToken(ListTokens.ItemContainerColor),
                         disabledContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledLabelTextColor)
+                                .copy(alpha = ListTokens.ItemDisabledLabelTextOpacity),
                         disabledLeadingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledLeadingIconColor)
+                                .copy(alpha = ListTokens.ItemDisabledLeadingIconOpacity),
                         disabledTrailingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledTrailingIconColor)
+                                .copy(alpha = ListTokens.ItemDisabledTrailingIconOpacity),
                         disabledOverlineContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledOverlineColor)
+                                .copy(alpha = ListTokens.ItemDisabledOverlineOpacity),
                         disabledSupportingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledSupportingTextColor)
+                                .copy(alpha = ListTokens.ItemDisabledSupportingTextOpacity),
                         // dragged
-                        draggedContainerColor = fromToken(ColorSchemeKeyTokens.TertiaryContainer),
-                        draggedContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedLeadingContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedTrailingContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedOverlineContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedSupportingContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
+                        draggedContainerColor = fromToken(ReorderListTokens.ItemContainerColor),
+                        draggedContentColor = fromToken(ReorderListTokens.ItemLabelTextColor),
+                        draggedLeadingContentColor =
+                            fromToken(ReorderListTokens.ItemLeadingIconColor),
+                        draggedTrailingContentColor =
+                            fromToken(ReorderListTokens.ItemTrailingIconColor),
+                        draggedOverlineContentColor =
+                            fromToken(ReorderListTokens.ItemLabelTextColor),
+                        draggedSupportingContentColor =
+                            fromToken(ReorderListTokens.ItemSupportingTextColor),
                     )
                     .also { defaultInteractiveListItemColorsCached = it }
         }
@@ -1269,53 +1285,56 @@ internal object InteractiveListItemDefaults {
         )
     }
 
-    // TODO: load tokens from component file
     internal val ColorScheme.defaultSegmentedInteractiveListItemColors: InteractiveListItemColors
         get() {
             return defaultSegmentedInteractiveListItemColorsCached
                 ?: InteractiveListItemColors(
                         // default
-                        containerColor = fromToken(ColorSchemeKeyTokens.Surface),
-                        contentColor = fromToken(ColorSchemeKeyTokens.OnSurface),
-                        leadingContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
-                        trailingContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
-                        overlineContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
-                        supportingContentColor = fromToken(ColorSchemeKeyTokens.OnSurfaceVariant),
+                        containerColor = fromToken(ListTokens.ItemSegmentedContainerColor),
+                        contentColor = fromToken(ListTokens.ItemLabelTextColor),
+                        leadingContentColor = fromToken(ListTokens.ItemLeadingIconColor),
+                        trailingContentColor = fromToken(ListTokens.ItemTrailingIconColor),
+                        overlineContentColor = fromToken(ListTokens.ItemOverlineColor),
+                        supportingContentColor = fromToken(ListTokens.ItemSupportingTextColor),
                         // selected
-                        selectedContainerColor = fromToken(ColorSchemeKeyTokens.SecondaryContainer),
-                        selectedContentColor = fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                        selectedContainerColor = fromToken(ListTokens.ItemSelectedContainerColor),
+                        selectedContentColor = fromToken(ListTokens.ItemSelectedLabelTextColor),
                         selectedLeadingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                            fromToken(ListTokens.ItemSelectedLeadingIconColor),
                         selectedTrailingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                            fromToken(ListTokens.ItemSelectedTrailingSupportingTextColor),
                         selectedOverlineContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                            fromToken(ListTokens.ItemSelectedOverlineColor),
                         selectedSupportingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSecondaryContainer),
+                            fromToken(ListTokens.ItemSelectedSupportingTextColor),
                         // disabled
-                        disabledContainerColor = fromToken(ColorSchemeKeyTokens.Surface),
+                        disabledContainerColor = fromToken(ListTokens.ItemSegmentedContainerColor),
                         disabledContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledLabelTextColor)
+                                .copy(alpha = ListTokens.ItemDisabledLabelTextOpacity),
                         disabledLeadingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledLeadingIconColor)
+                                .copy(alpha = ListTokens.ItemDisabledLeadingIconOpacity),
                         disabledTrailingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledTrailingIconColor)
+                                .copy(alpha = ListTokens.ItemDisabledTrailingIconOpacity),
                         disabledOverlineContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledOverlineColor)
+                                .copy(alpha = ListTokens.ItemDisabledOverlineOpacity),
                         disabledSupportingContentColor =
-                            fromToken(ColorSchemeKeyTokens.OnSurface)
-                                .copy(alpha = InteractiveListDisabledOpacity),
+                            fromToken(ListTokens.ItemDisabledSupportingTextColor)
+                                .copy(alpha = ListTokens.ItemDisabledSupportingTextOpacity),
                         // dragged
-                        draggedContainerColor = fromToken(ColorSchemeKeyTokens.TertiaryContainer),
-                        draggedContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedLeadingContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedTrailingContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedOverlineContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
-                        draggedSupportingContentColor = fromToken(ColorSchemeKeyTokens.Tertiary),
+                        draggedContainerColor = fromToken(ReorderListTokens.ItemContainerColor),
+                        draggedContentColor = fromToken(ReorderListTokens.ItemLabelTextColor),
+                        draggedLeadingContentColor =
+                            fromToken(ReorderListTokens.ItemLeadingIconColor),
+                        draggedTrailingContentColor =
+                            fromToken(ReorderListTokens.ItemTrailingIconColor),
+                        draggedOverlineContentColor =
+                            fromToken(ReorderListTokens.ItemLabelTextColor),
+                        draggedSupportingContentColor =
+                            fromToken(ReorderListTokens.ItemSupportingTextColor),
                     )
                     .also { defaultSegmentedInteractiveListItemColorsCached = it }
         }
@@ -1371,15 +1390,20 @@ internal object InteractiveListItemDefaults {
         count: Int,
         defaultShapes: InteractiveListItemShapes = shapes(),
     ): InteractiveListItemShapes {
-        return remember(index, count, defaultShapes) {
+        val overrideShape = ListTokens.ContainerShape.value
+        return remember(index, count, defaultShapes, overrideShape) {
             when {
                 count == 1 -> defaultShapes
 
                 index == 0 -> {
                     val defaultBaseShape = defaultShapes.shape
-                    if (defaultBaseShape is CornerBasedShape) {
+                    if (defaultBaseShape is CornerBasedShape && overrideShape is CornerBasedShape) {
                         defaultShapes.copy(
-                            shape = defaultBaseShape.bottom(topSize = ShapeDefaults.CornerLarge)
+                            shape =
+                                defaultBaseShape.copy(
+                                    topStart = overrideShape.topStart,
+                                    topEnd = overrideShape.topEnd,
+                                )
                         )
                     } else {
                         defaultShapes
@@ -1388,9 +1412,13 @@ internal object InteractiveListItemDefaults {
 
                 index == count - 1 -> {
                     val defaultBaseShape = defaultShapes.shape
-                    if (defaultBaseShape is CornerBasedShape) {
+                    if (defaultBaseShape is CornerBasedShape && overrideShape is CornerBasedShape) {
                         defaultShapes.copy(
-                            shape = defaultBaseShape.top(bottomSize = ShapeDefaults.CornerLarge)
+                            shape =
+                                defaultBaseShape.copy(
+                                    bottomStart = overrideShape.bottomStart,
+                                    bottomEnd = overrideShape.bottomEnd,
+                                )
                         )
                     } else {
                         defaultShapes
@@ -1402,17 +1430,16 @@ internal object InteractiveListItemDefaults {
         }
     }
 
-    // TODO: load tokens from component file
     internal val Shapes.defaultInteractiveListItemShapes: InteractiveListItemShapes
         get() {
             return defaultInteractiveListItemShapesCached
                 ?: InteractiveListItemShapes(
-                        shape = fromToken(ShapeKeyTokens.CornerExtraSmall),
-                        selectedShape = fromToken(ShapeKeyTokens.CornerLarge),
-                        pressedShape = fromToken(ShapeKeyTokens.CornerLarge),
-                        focusedShape = fromToken(ShapeKeyTokens.CornerLarge),
-                        hoveredShape = fromToken(ShapeKeyTokens.CornerLarge),
-                        draggedShape = fromToken(ShapeKeyTokens.CornerLarge),
+                        shape = fromToken(ListTokens.ItemContainerExpressiveShape),
+                        selectedShape = fromToken(ListTokens.ItemSelectedContainerShape),
+                        pressedShape = fromToken(ListTokens.ItemSelectedContainerShape),
+                        focusedShape = fromToken(ListTokens.ItemSelectedContainerShape),
+                        hoveredShape = fromToken(ListTokens.ItemSelectedContainerShape),
+                        draggedShape = fromToken(ReorderListTokens.ItemShape),
                     )
                     .also { defaultInteractiveListItemShapesCached = it }
         }
@@ -1424,16 +1451,14 @@ internal object InteractiveListItemDefaults {
      * @param elevation the default elevation of the list item.
      * @param draggedElevation the elevation of the list item when dragged.
      */
-    // TODO: load tokens from component file
     fun elevation(
-        elevation: Dp = ElevationTokens.Level0,
-        draggedElevation: Dp = ElevationTokens.Level4,
+        elevation: Dp = ListTokens.ItemContainerElevation,
+        draggedElevation: Dp = ListTokens.ItemDraggedContainerElevation,
     ): InteractiveListItemElevation =
         InteractiveListItemElevation(elevation = elevation, draggedElevation = draggedElevation)
 
-    // TODO: replace with token
     /** The vertical space between different [SegmentedListItem]s. */
-    val SegmentedGap: Dp = 2.dp
+    val SegmentedGap: Dp = ListTokens.SegmentedGap
 
     /**
      * Returns the default vertical alignment of children content within a [ListItem]. This is
@@ -1721,12 +1746,11 @@ private fun InteractiveListItem(
             )
         }
 
-    // TODO: load tokens from component tokens file
-    val leadingTextStyle = TypographyKeyTokens.TitleMedium
-    val trailingTextStyle = TypographyKeyTokens.LabelSmall
-    val overlineTextStyle = TypographyKeyTokens.LabelMedium
-    val supportingTextStyle = TypographyKeyTokens.BodyMedium
-    val contentTextStyle = TypographyKeyTokens.BodyLarge
+    val leadingTextStyle = ListTokens.ItemLeadingAvatarLabelFont
+    val trailingTextStyle = ListTokens.ItemTrailingSupportingTextFont
+    val overlineTextStyle = ListTokens.ItemOverlineFont
+    val supportingTextStyle = ListTokens.ItemSupportingTextFont
+    val contentTextStyle = ListTokens.ItemLabelTextFont
 
     val targetElevation = if (dragged.value) elevation.draggedElevation else elevation.elevation
     val shadowElevation = animateDpAsState(targetElevation, elevationAnimationSpec)
@@ -2068,16 +2092,17 @@ private fun Modifier.zIndexLambda(zIndex: FloatProducer): Modifier =
         layout(placeable.width, placeable.height) { placeable.place(0, 0, zIndex = zIndex()) }
     }
 
-// TODO: replace with tokens
-internal val InteractiveListStartPadding = 16.dp
-internal val InteractiveListEndPadding = 16.dp
-internal val InteractiveListTopPadding = 12.dp
-internal val InteractiveListBottomPadding = 12.dp
-internal val InteractiveListInternalSpacing = 12.dp
-internal val InteractiveListDisabledOpacity = 0.38f
+internal val InteractiveListStartPadding = ListTokens.ItemLeadingSpace
+internal val InteractiveListEndPadding = ListTokens.ItemTrailingSpace
+internal val InteractiveListTopPadding = ListTokens.ItemTopSpace
+internal val InteractiveListBottomPadding = ListTokens.ItemBottomSpace
+internal val InteractiveListInternalSpacing = ListTokens.ItemBetweenSpace
+
 /**
  * How tall a list item needs to be before internal content is top-aligned instead of
  * center-aligned.
  */
 internal val InteractiveListVerticalAlignmentBreakpoint =
-    80.dp - InteractiveListTopPadding - InteractiveListBottomPadding
+    (ListTokens.ItemThreeLineContainerHeight + ListTokens.ItemTwoLineContainerHeight) / 2 -
+        InteractiveListTopPadding -
+        InteractiveListBottomPadding

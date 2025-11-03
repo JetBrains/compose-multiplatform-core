@@ -340,6 +340,15 @@ public final class Flags {
     public static final String FLAG_ENABLE_SCHEMA_TYPE_ID_OPTIMIZATION =
             FLAG_PREFIX + "enable_schema_type_id_optimization";
 
+    /**
+     * Controls whether a few minor improvements to Optimize and Index Merge are enabled:
+     *   * Whether there is an unnecessary PersistToDisk call in Optimize
+     *   * Whether there is an unnecessary PersistToDisk call in Index Merge
+     *   * Whether DocumentStore Optimize will create unnecessary status messages.
+     */
+    public static final String FLAG_ENABLE_OPTIMIZE_IMPROVEMENTS =
+            FLAG_PREFIX + "enable_optimize_improvements";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -749,6 +758,17 @@ public final class Flags {
      */
     public static boolean enableSchemaTypeIdOptimization() {
         // TODO(b/434218554): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Controls whether a few minor improvements to Optimize and Index Merge are enabled:
+     *   * Whether there is an unnecessary PersistToDisk call in Optimize
+     *   * Whether there is an unnecessary PersistToDisk call in Index Merge
+     *   * Whether DocumentStore Optimize will create unnecessary status messages.
+     */
+    public static boolean enableOptimizeImprovements() {
+        // TODO(b/455903084): Enable this once the feature is rolled out to Nextfood in platform.
         return false;
     }
 }

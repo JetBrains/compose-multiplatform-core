@@ -110,6 +110,7 @@
             <trusting group="com.android.tools.layoutlib"/>
             <trusting group="com.android.tools.lint"/>
             <trusting group="com.android.tools.utp"/>
+            <trusting group="com.google.ads.interactivemedia.v3"/>
             <trusting group="com.google.android.gms"/>
             <trusting group="^androidx\..*" regex="true"/>
          </trusted-key>
@@ -627,6 +628,7 @@
          <trusted-key id="F3184BCD55F4D016E30D4C9BF42E87F9665015C9" group="org.jsoup"/>
          <trusted-key id="F3D15B8FF9902805DE4BE6B18DC6F3D0ABDBD017" group="org.codehaus.plexus" name="plexus-sec-dispatcher"/>
          <trusted-key id="F42B96B8648B5C4A1C43A62FBB2914C1FA0811C3" group="net.bytebuddy"/>
+         <trusted-key id="F896D062E17EDEFE618537949F459EF7BE09392D" group="com.airbnb.android"/>
          <trusted-key id="FA1703B1D287CAEA3A60F931E0130A3ED5A2079E" group="org.webjars"/>
          <trusted-key id="FA77DCFEF2EE6EB2DEBEDD2C012579464D01C06A">
             <trusting group="org.apache"/>

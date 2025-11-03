@@ -204,6 +204,19 @@ constructor(
 
     private fun createCameraIdListFlow() =
         callbackFlow<List<CameraId>> {
+            val callback =
+                object : CameraManager.AvailabilityCallback() {
+                    override fun onCameraAvailable(cameraId: String) {
+                        onCameraAvailabilityChanged(cameraId, isAvailable = true)
+                    }
+
+                    override fun onCameraUnavailable(cameraId: String) {
+                        onCameraAvailabilityChanged(cameraId, isAvailable = false)
+                    }
+                }
+            val cameraManager = cameraManager.get()
+            cameraManager.registerAvailabilityCallback(callback, threads.camera2Handler)
+
             // Send the initial camera ID list first.
             val cachedCameras = synchronized(lock) { openableCameras }
             if (cachedCameras != null) {
@@ -218,19 +231,6 @@ constructor(
                     sendCameraIdList(cameraIds)
                 }
             }
-
-            val callback =
-                object : CameraManager.AvailabilityCallback() {
-                    override fun onCameraAvailable(cameraId: String) {
-                        onCameraAvailabilityChanged(cameraId, isAvailable = true)
-                    }
-
-                    override fun onCameraUnavailable(cameraId: String) {
-                        onCameraAvailabilityChanged(cameraId, isAvailable = false)
-                    }
-                }
-            val cameraManager = cameraManager.get()
-            cameraManager.registerAvailabilityCallback(callback, threads.camera2Handler)
 
             awaitClose { cameraManager.unregisterAvailabilityCallback(callback) }
         }

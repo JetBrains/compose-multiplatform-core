@@ -28,6 +28,8 @@ import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.core.Log
 import androidx.camera.camera2.pipe.core.Log.debug
+import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
+import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
@@ -120,14 +122,16 @@ class TestUseCaseCamera(
                 surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
                 surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
             )
-        val cameraGraph = cameraPipe.createCameraGraph(creationResult.config)
+        val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(CameraStateAdapter())
 
         useCaseCameraGraphConfig =
             UseCaseCameraConfig(
-                    useCases,
-                    sessionConfigAdapter,
-                    cameraGraph,
-                    creationResult.streamConfigMap,
+                    useCases = useCases,
+                    sessionConfigAdapter = sessionConfigAdapter,
+                    cameraGraphConfig = creationResult.config,
+                    streamConfigMap = creationResult.streamConfigMap,
+                    graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+                    cameraGraphFactory = { config -> cameraPipe.createCameraGraph(config) },
                 )
                 .provideUseCaseGraphConfig(
                     useCaseSurfaceManager = useCaseSurfaceManager,

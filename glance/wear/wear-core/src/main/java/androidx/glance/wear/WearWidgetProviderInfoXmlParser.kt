@@ -17,6 +17,8 @@
 package androidx.glance.wear
 
 import android.content.ComponentName
+import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
 import android.content.res.Resources
 import android.content.res.XmlResourceParser
 import android.os.Build
@@ -43,11 +45,12 @@ internal object WearWidgetProviderInfoXmlParser {
     private const val MAX_SAFE_LABEL_LENGTH = 1000
     private const val DEFAULT_MAX_LABEL_SIZE_PX = 1000f
 
-    // TODO: b/454618837 - Resources resolution should use resources from the provider package.
     @Throws(XmlPullParserException::class)
     internal fun XmlResourceParser.parseWearWidgetProviderInfo(
         resources: Resources,
+        packageManager: PackageManager,
         providerService: ComponentName,
+        serviceInfo: ServiceInfo,
         @ContainerInfo.ContainerType defaultPreferredContainerType: Int,
         defaultGroup: String,
     ): WearWidgetProviderInfo {
@@ -55,7 +58,9 @@ internal object WearWidgetProviderInfoXmlParser {
             if (this.eventType == XmlPullParser.START_TAG && this.name == TAG_PROVIDER) {
                 return this.parseWearWidgetProviderTag(
                     resources,
+                    packageManager,
                     providerService,
+                    serviceInfo,
                     defaultPreferredContainerType,
                     defaultGroup,
                 )
@@ -67,14 +72,26 @@ internal object WearWidgetProviderInfoXmlParser {
     @Throws(XmlPullParserException::class)
     internal fun XmlResourceParser.parseWearWidgetProviderTag(
         resources: Resources,
+        packageManager: PackageManager,
         providerService: ComponentName,
+        serviceInfo: ServiceInfo,
         @ContainerInfo.ContainerType defaultPreferredContainerType: Int,
         defaultGroup: String,
     ): WearWidgetProviderInfo {
-        // TODO(b/429979908): If not present, take label, description and icon from service tag.
-        val label = loadSafeLabel(resources, ATTR_LABEL)?.toString() ?: ""
-        val description = loadSafeLabel(resources, ATTR_DESCRIPTION)?.toString() ?: ""
-        val icon = getAttributeResourceValue(NAMESPACE_DISABLED, ATTR_ICON, Resources.ID_NULL)
+        val label =
+            loadSafeText(resources, ATTR_LABEL)?.toString()
+                ?: serviceInfo.loadLabel(packageManager)?.toString()
+                ?: ""
+        val description =
+            loadSafeText(resources, ATTR_DESCRIPTION)?.toString()
+                ?: loadTextResource(resources, serviceInfo.descriptionRes)?.toString()
+                ?: ""
+        val icon =
+            getAttributeResourceValue(NAMESPACE_DISABLED, ATTR_ICON, Resources.ID_NULL).takeIf {
+                it != Resources.ID_NULL
+            }
+                ?: serviceInfo.icon.takeIf { it != Resources.ID_NULL }
+                ?: serviceInfo.applicationInfo.icon
         val preferredContainerType =
             parseContainerTypeAttr(resources, ATTR_PREFERRED_TYPE, defaultPreferredContainerType)
         val group = getAttributeValue(NAMESPACE_DISABLED, ATTR_GROUP) ?: defaultGroup
@@ -137,8 +154,8 @@ internal object WearWidgetProviderInfoXmlParser {
         val type = parseContainerTypeAttr(resources, ATTR_TYPE)
         val previewImage =
             getAttributeResourceValue(NAMESPACE_DISABLED, ATTR_PREVIEW_IMAGE, Resources.ID_NULL)
-        val label = loadSafeLabel(resources, ATTR_LABEL)?.toString()
-        val description = loadSafeLabel(resources, ATTR_DESCRIPTION)?.toString()
+        val label = loadSafeText(resources, ATTR_LABEL)?.toString()
+        val description = loadSafeText(resources, ATTR_DESCRIPTION)?.toString()
         return ContainerInfo(
             type = type,
             previewImage = previewImage,
@@ -183,11 +200,11 @@ internal object WearWidgetProviderInfoXmlParser {
      * Load attribute as string or string resource and clean string from bad characters. See
      * [android.content.pm.PackageItemInfo.loadSafeLabel].
      */
-    private fun XmlResourceParser.loadSafeLabel(
+    private fun XmlResourceParser.loadSafeText(
         resources: Resources,
         attrName: String,
     ): CharSequence? {
-        val label = loadUnsafeLabel(resources, attrName) ?: return null
+        val label = loadTextAttr(resources, attrName) ?: return null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return TextUtils.makeSafeForPresentation(
                 label.toString(),
@@ -199,18 +216,27 @@ internal object WearWidgetProviderInfoXmlParser {
         return label
     }
 
-    private fun XmlResourceParser.loadUnsafeLabel(
+    private fun XmlResourceParser.loadTextAttr(
         resources: Resources,
         attrName: String,
     ): CharSequence? {
         val resourceId = getAttributeResourceValue(NAMESPACE_DISABLED, attrName, Resources.ID_NULL)
-        if (resourceId != Resources.ID_NULL) {
-            try {
-                return resources.getText(resourceId)
-            } catch (e: Resources.NotFoundException) {
-                throw XmlPullParserException("Invalid resource for " + attrName, this, e)
-            }
+        return loadTextResource(resources, resourceId, attrName = attrName)
+            ?: getAttributeValue(NAMESPACE_DISABLED, attrName)
+    }
+
+    private fun loadTextResource(
+        resources: Resources,
+        resId: Int,
+        attrName: String? = null,
+    ): CharSequence? {
+        if (resId == Resources.ID_NULL) {
+            return null
         }
-        return getAttributeValue(NAMESPACE_DISABLED, attrName)
+        try {
+            return resources.getText(resId)
+        } catch (e: Resources.NotFoundException) {
+            throw IllegalArgumentException("Invalid resource for attr $attrName", e)
+        }
     }
 }

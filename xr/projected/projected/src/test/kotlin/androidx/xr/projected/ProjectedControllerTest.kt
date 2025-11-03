@@ -57,7 +57,7 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter
 @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-class ProjectedWindowTest {
+class ProjectedControllerTest {
 
     private val mockProjectedService = mock<IProjectedService>()
     private val mockProjectedServiceStub =
@@ -66,7 +66,7 @@ class ProjectedWindowTest {
         }
     private val context: Application = ApplicationProvider.getApplicationContext()
 
-    private lateinit var projectedWindow: ProjectedWindow
+    private lateinit var projectedController: ProjectedController
 
     @Before
     fun setUp() {
@@ -84,11 +84,13 @@ class ProjectedWindowTest {
     }
 
     @Test
-    fun create_returnsProjectedWindowInstance() =
+    fun create_returnsProjectedControllerInstance() =
         launchTestProjectedDeviceActivity { projectedDeviceActivity ->
-            runBlocking { projectedWindow = ProjectedWindow.create(projectedDeviceActivity) }
+            runBlocking {
+                projectedController = ProjectedController.create(projectedDeviceActivity)
+            }
 
-            assertThat(projectedWindow).isNotNull()
+            assertThat(projectedController).isNotNull()
         }
 
     @Test
@@ -97,7 +99,9 @@ class ProjectedWindowTest {
             shadowOf(context).declareComponentUnbindable(COMPONENT_NAME)
 
             assertFailsWith<IllegalStateException> {
-                runBlocking { projectedWindow = ProjectedWindow.create(projectedDeviceActivity) }
+                runBlocking {
+                    projectedController = ProjectedController.create(projectedDeviceActivity)
+                }
             }
         }
 
@@ -105,54 +109,60 @@ class ProjectedWindowTest {
     fun create_nonProjectedDeviceActivity_throwsException() =
         launchTestActivity { nonProjectedDeviceActivity ->
             assertThrows(IllegalArgumentException::class.java) {
-                runBlocking { ProjectedWindow.create(nonProjectedDeviceActivity) }
+                runBlocking { ProjectedController.create(nonProjectedDeviceActivity) }
             }
         }
 
     @Test
     fun addFlags_callsService() = launchTestProjectedDeviceActivity { projectedDeviceActivity ->
-        runBlocking { projectedWindow = ProjectedWindow.create(projectedDeviceActivity) }
+        runBlocking { projectedController = ProjectedController.create(projectedDeviceActivity) }
         val flags = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 
-        projectedWindow.addFlags(flags)
+        projectedController.addLayoutParamsFlags(flags)
 
         verify(mockProjectedService).addWindowFlags(flags)
     }
 
     @Test
     fun clearFlags_callsService() = launchTestProjectedDeviceActivity { projectedDeviceActivity ->
-        runBlocking { projectedWindow = ProjectedWindow.create(projectedDeviceActivity) }
+        runBlocking { projectedController = ProjectedController.create(projectedDeviceActivity) }
         val flags = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 
-        projectedWindow.clearFlags(flags)
+        projectedController.clearLayoutParamsFlags(flags)
         verify(mockProjectedService).clearWindowFlags(flags)
     }
 
     @Test
     fun isDisplayCapable_serviceReturnsTrue_returnsTrue() =
         launchTestProjectedDeviceActivity { projectedDeviceActivity ->
-            runBlocking { projectedWindow = ProjectedWindow.create(projectedDeviceActivity) }
+            runBlocking {
+                projectedController = ProjectedController.create(projectedDeviceActivity)
+            }
             whenever(mockProjectedService.isDisplayCapable()).thenReturn(true)
 
-            assertThat(projectedWindow.isDisplayCapable()).isTrue()
+            assertThat(projectedController.isDisplayCapable()).isTrue()
         }
 
     @Test
     fun isDisplayCapable_serviceReturnsFalse_returnsFalse() =
         launchTestProjectedDeviceActivity { projectedDeviceActivity ->
-            runBlocking { projectedWindow = ProjectedWindow.create(projectedDeviceActivity) }
+            runBlocking {
+                projectedController = ProjectedController.create(projectedDeviceActivity)
+            }
             whenever(mockProjectedService.isDisplayCapable()).thenReturn(false)
 
-            assertThat(projectedWindow.isDisplayCapable()).isFalse()
+            assertThat(projectedController.isDisplayCapable()).isFalse()
         }
 
     @Test
     fun close_disconnectsConnection() =
         launchTestProjectedDeviceActivity { projectedDeviceActivity ->
-            runBlocking { projectedWindow = ProjectedWindow.create(projectedDeviceActivity) }
+            runBlocking {
+                projectedController = ProjectedController.create(projectedDeviceActivity)
+            }
             check(shadowOf(context).boundServiceConnections.size == 1)
 
-            projectedWindow.close()
+            projectedController.close()
 
             assertThat(shadowOf(context).boundServiceConnections).isEmpty()
         }

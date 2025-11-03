@@ -116,11 +116,15 @@ public constructor(
          * The metadata with name `androidx.glance.wear.widget.provider` should reference an XML
          * resource with the provider info.
          *
+         * If not present, the values for label, description and icon are taken from the <service>
+         * attributes.
+         *
          * @param context The [Context] to use for resolving resources and package manager.
          * @param providerService The [ComponentName] of the widget provider service.
          * @throws [PackageManager.NameNotFoundException] if the metadata is not found or the
          *   resource is invalid.
          * @throws [XmlPullParserException] if there is an error parsing the XML resource.
+         * @throws [IllegalArgumentException] if the contents of the XML are invalid.
          */
         @Throws(XmlPullParserException::class)
         @JvmStatic
@@ -128,16 +132,19 @@ public constructor(
             context: Context,
             providerService: ComponentName,
         ): WearWidgetProviderInfo {
-            val serviceInfo =
-                context.packageManager.getServiceInfo(providerService, PackageManager.GET_META_DATA)
+            val pm = context.packageManager
+            val serviceInfo = pm.getServiceInfo(providerService, PackageManager.GET_META_DATA)
+            val providerResources = pm.getResourcesForApplication(serviceInfo.applicationInfo)
             val xmlParser =
-                serviceInfo.loadXmlMetaData(context.packageManager, META_DATA_WEAR_WIDGET_PROVIDER)
+                serviceInfo.loadXmlMetaData(pm, META_DATA_WEAR_WIDGET_PROVIDER)
                     ?: throw PackageManager.NameNotFoundException(
                         "Invalid meta-data name $META_DATA_WEAR_WIDGET_PROVIDER for service $providerService"
                     )
             return xmlParser.parseWearWidgetProviderInfo(
-                context.resources,
+                providerResources,
+                pm,
                 providerService,
+                serviceInfo,
                 defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
                 defaultGroup = providerService.className,
             )

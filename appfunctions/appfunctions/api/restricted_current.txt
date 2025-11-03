@@ -61,25 +61,25 @@ package androidx.appfunctions {
     ctor public AppFunctionData.Builder(androidx.appfunctions.metadata.AppFunctionResponseMetadata responseMetadata, androidx.appfunctions.metadata.AppFunctionComponentsMetadata componentMetadata);
     ctor public AppFunctionData.Builder(java.util.List<androidx.appfunctions.metadata.AppFunctionParameterMetadata> parameterMetadataList, androidx.appfunctions.metadata.AppFunctionComponentsMetadata componentMetadata);
     method public androidx.appfunctions.AppFunctionData build();
-    method public androidx.appfunctions.AppFunctionData.Builder setAppFunctionData(String key, androidx.appfunctions.AppFunctionData value);
-    method public androidx.appfunctions.AppFunctionData.Builder setAppFunctionDataList(String key, java.util.List<androidx.appfunctions.AppFunctionData> value);
-    method public androidx.appfunctions.AppFunctionData.Builder setBoolean(String key, boolean value);
-    method public androidx.appfunctions.AppFunctionData.Builder setBooleanArray(String key, boolean[] value);
-    method public androidx.appfunctions.AppFunctionData.Builder setByteArray(String key, byte[] value);
-    method public androidx.appfunctions.AppFunctionData.Builder setDouble(String key, double value);
-    method public androidx.appfunctions.AppFunctionData.Builder setDoubleArray(String key, double[] value);
-    method public androidx.appfunctions.AppFunctionData.Builder setFloat(String key, float value);
-    method public androidx.appfunctions.AppFunctionData.Builder setFloatArray(String key, float[] value);
-    method public androidx.appfunctions.AppFunctionData.Builder setInt(String key, int value);
-    method public androidx.appfunctions.AppFunctionData.Builder setIntArray(String key, int[] value);
-    method public androidx.appfunctions.AppFunctionData.Builder setLong(String key, long value);
-    method public androidx.appfunctions.AppFunctionData.Builder setLongArray(String key, long[] value);
-    method public <T extends android.os.Parcelable> androidx.appfunctions.AppFunctionData.Builder setParcelable(String key, T value);
-    method public <T extends android.os.Parcelable> androidx.appfunctions.AppFunctionData.Builder setParcelableList(String key, java.util.List<? extends T> value);
-    method public androidx.appfunctions.AppFunctionData.Builder setPendingIntent(String key, android.app.PendingIntent value);
-    method public androidx.appfunctions.AppFunctionData.Builder setPendingIntentList(String key, java.util.List<android.app.PendingIntent> value);
-    method public androidx.appfunctions.AppFunctionData.Builder setString(String key, String value);
-    method public androidx.appfunctions.AppFunctionData.Builder setStringList(String key, java.util.List<java.lang.String> value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setAppFunctionData(String key, androidx.appfunctions.AppFunctionData value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setAppFunctionDataList(String key, java.util.List<androidx.appfunctions.AppFunctionData> value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setBoolean(String key, boolean value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setBooleanArray(String key, boolean[] value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setByteArray(String key, byte[] value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setDouble(String key, double value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setDoubleArray(String key, double[] value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setFloat(String key, float value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setFloatArray(String key, float[] value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setInt(String key, int value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setIntArray(String key, int[] value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setLong(String key, long value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setLongArray(String key, long[] value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public <T extends android.os.Parcelable> androidx.appfunctions.AppFunctionData.Builder setParcelable(String key, T value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public <T extends android.os.Parcelable> androidx.appfunctions.AppFunctionData.Builder setParcelableList(String key, java.util.List<? extends T> value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setPendingIntent(String key, android.app.PendingIntent value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setPendingIntentList(String key, java.util.List<android.app.PendingIntent> value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setString(String key, String value);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.appfunctions.AppFunctionData.Builder setStringList(String key, java.util.List<java.lang.String> value);
   }
 
   public static final class AppFunctionData.Companion {

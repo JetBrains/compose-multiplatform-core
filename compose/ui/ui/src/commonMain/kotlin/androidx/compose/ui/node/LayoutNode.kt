@@ -517,6 +517,9 @@ internal class LayoutNode(
         val parent = this.parent
         if (parent == null) {
             measurePassDelegate.isPlaced = true
+            // regular nodes go through markNodeAndSubtreeAsPlaced(), from where we call this
+            // function on rectManager. as root marked as placed here, we need to call it.
+            owner.rectManager.onLayoutPositionChanged(this)
             lookaheadPassDelegate?.onAttachedToNullParent()
         }
 
@@ -1493,7 +1496,6 @@ internal class LayoutNode(
             }
         }
         owner?.onLayoutNodeDeactivated(this)
-        owner?.rectManager?.remove(this)
     }
 
     override fun onRelease() {

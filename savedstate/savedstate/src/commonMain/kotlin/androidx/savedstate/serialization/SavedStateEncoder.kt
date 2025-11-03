@@ -286,6 +286,8 @@ internal class SavedStateEncoder(
         when (serializer.descriptor) {
             intListDescriptor -> savedState.write { putIntList(key, value as List<Int>) }
             stringListDescriptor -> savedState.write { putStringList(key, value as List<String>) }
+            booleanListDescriptor ->
+                savedState.write { putBooleanArray(key, (value as List<Boolean>).toBooleanArray()) }
             booleanArrayDescriptor ->
                 savedState.write { putBooleanArray(key, value as BooleanArray) }
             charArrayDescriptor -> savedState.write { putCharArray(key, value as CharArray) }

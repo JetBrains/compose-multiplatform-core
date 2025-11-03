@@ -105,13 +105,14 @@ constructor(
         sessionConfig: SessionConfig?,
         graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter? = null,
         camera2ExtensionMode: Int? = null,
-        isExtensions: Boolean = false,
-        enableStreamUseCase: Boolean = true,
         setOutputType: Boolean = false,
         surfaceToStreamUseCaseMap: Map<DeferrableSurface, Long> = emptyMap(),
         surfaceToStreamUseHintMap: Map<DeferrableSurface, Long> = emptyMap(),
         cameraXConfig: CameraXConfig? = null,
     ): CameraGraphCreationResult {
+        val isExtensions = operatingMode == OperatingMode.EXTENSION
+        val enableStreamUseCase = !isExtensions // Enable StreamUseCase if not in Extension mode
+
         var containsVideo = false
         val streamGroupMap = mutableMapOf<Int, MutableList<CameraStream.Config>>()
         val inputStreams = mutableListOf<InputStream.Config>()

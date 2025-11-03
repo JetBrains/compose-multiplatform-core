@@ -22,7 +22,7 @@ import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
 
 /** Implementation of PhantomReference for managing the lifecycle of Impress objects. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class BindingsObjectPhantomReference extends PhantomReference<Object> {
     private final Runnable mCallback;
 

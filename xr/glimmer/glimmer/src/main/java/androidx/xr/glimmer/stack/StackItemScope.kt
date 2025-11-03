@@ -21,11 +21,16 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
+import androidx.compose.ui.node.DelegatingNode
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.currentValueOf
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
+import androidx.xr.glimmer.DepthNode
+import androidx.xr.glimmer.GlimmerTheme.Companion.LocalGlimmerTheme
 
 /** Receiver scope used by item content in [VerticalStack]. */
 @Stable
@@ -95,9 +100,14 @@ internal class StackItemScopeImpl : StackItemScope {
 internal class ItemDecorationNode(
     private var stackItemScope: StackItemScopeImpl,
     private var shape: Shape,
-) : Modifier.Node(), LayoutAwareModifierNode {
+) : DelegatingNode(), LayoutAwareModifierNode, CompositionLocalConsumerModifierNode {
 
+    private var depthNode: DepthNode? = null
     private var size = Size.Zero
+
+    override fun onAttach() {
+        depthNode = delegate(DepthNode(currentValueOfDepth(), shape))
+    }
 
     override fun onRemeasured(size: IntSize) {
         // TODO(b/413429531): add support for shape bounds.
@@ -105,7 +115,13 @@ internal class ItemDecorationNode(
         updateShapeInItemScope()
     }
 
+    override fun onDetach() {
+        stackItemScope.decorations.remove(this)
+        depthNode?.let { undelegate(it) }
+    }
+
     fun update(stackItemScope: StackItemScopeImpl, shape: Shape) {
+        depthNode?.update(currentValueOfDepth(), shape)
         if (this.stackItemScope != stackItemScope || this.shape != shape) {
             this.stackItemScope = stackItemScope
             this.shape = shape
@@ -124,7 +140,5 @@ internal class ItemDecorationNode(
         }
     }
 
-    override fun onDetach() {
-        stackItemScope.decorations.remove(this)
-    }
+    private fun currentValueOfDepth() = currentValueOf(LocalGlimmerTheme).depthLevels.level2
 }

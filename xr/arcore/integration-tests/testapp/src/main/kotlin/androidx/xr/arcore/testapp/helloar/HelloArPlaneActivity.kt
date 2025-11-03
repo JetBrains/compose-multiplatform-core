@@ -54,7 +54,7 @@ import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.XrDisplay
+import androidx.xr.runtime.XrDevice
 
 class HelloArPlaneActivity : ComponentActivity() {
 
@@ -106,7 +106,7 @@ class HelloArPlaneActivity : ComponentActivity() {
         val perceptionState = state.perceptionState
         var title = intent.getStringExtra("TITLE")
         if (title == null) title = "Hello AR Plane"
-        val blendMode = XrDisplay.getPreferredBlendMode(session)
+        val blendMode = XrDevice.getPreferredBlendMode(session)
         Scaffold(
             modifier = Modifier.fillMaxSize().padding(0.dp),
             topBar = {

@@ -882,19 +882,10 @@ public class MutableRemoteFloat(
     public override val arrayProvider: (creationState: RemoteComposeCreationState) -> FloatArray
         get() = { creationState -> floatArrayOf(idProvider(creationState)) }
 
-    public override var value: Float
+    public override val value: Float
         get() {
             return content.floatValue
         }
-        set(newValue) {
-            content.floatValue = newValue
-        }
-
-    public override operator fun component1(): Float = value
-
-    public override operator fun component2(): (Float) -> Unit = { newValue ->
-        content.floatValue = newValue
-    }
 
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         Utils.idFromNan(idProvider(creationState))

@@ -439,10 +439,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
             project.extensions.getByType<KotlinMultiplatformExtension>().apply {
                 targets.withType<KotlinMultiplatformAndroidLibraryTarget>().configureEach { t ->
                     t.compilations.configureEach { compilation ->
-                        // Replace with compilation.compileJavaTaskProvider?.configure {}
-                        // when b/438995010 is fixed
-                        @Suppress("DEPRECATION")
-                        compilation.compilerOptions.configure { jvmTarget.set(defaultJvmTarget) }
                         compilation.compileTaskProvider.configure {
                             it.compilerOptions.jvmTarget.set(defaultJvmTarget)
                         }
@@ -730,6 +726,13 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
         }
 
         kotlinMultiplatformAndroidComponentsExtension.onVariants { variant ->
+            @Suppress("UnstableApiUsage")
+            variant.configureJavaCompileTask { compile ->
+                val defaultTargetJavaVersion =
+                    getDefaultTargetJavaVersion(androidXExtension.type, project.name).toString()
+                compile.sourceCompatibility = defaultTargetJavaVersion
+                compile.targetCompatibility = defaultTargetJavaVersion
+            }
             project.configureProjectForApiTasks(
                 AndroidMultiplatformApiTaskConfig(variant),
                 androidXExtension,

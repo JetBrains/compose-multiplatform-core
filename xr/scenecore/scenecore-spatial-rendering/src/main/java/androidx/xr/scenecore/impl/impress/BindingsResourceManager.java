@@ -32,7 +32,7 @@ import java.util.Set;
  * Manages the lifecycle of Impress objects by hooking into the JVM Garbage Collector using
  * PhantomReference objects.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public class BindingsResourceManager {
     private final String mTAG = getClass().getSimpleName();
     private static final String RESOURCE_MANAGER_THREAD = "resource_manager_thread";

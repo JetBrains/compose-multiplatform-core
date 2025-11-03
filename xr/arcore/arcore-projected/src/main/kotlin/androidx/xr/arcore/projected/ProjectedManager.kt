@@ -39,6 +39,8 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Manages the lifecycle of a Projected session.
@@ -63,7 +65,10 @@ internal constructor(
         get() = perceptionManager.xrResources.config
 
     // TODO(b/411154789): Remove once Session runtime invocations are forced to run sequentially.
-    internal var running: Boolean = false
+    @Volatile internal var running: Boolean = false
+    // create and configure are called from a different thread then resume, stop, pause, and update.
+    // This lock ensures the service is started and stopped correctly.
+    private val lock = Mutex()
     private lateinit var serviceConnection: ServiceConnection
 
     /**
@@ -73,19 +78,46 @@ internal constructor(
      * [ProjectedPerceptionManager].
      */
     override fun create() {
-        checkProjectedSupportedAndUpToDate(activity)
-        if (testPerceptionService != null) {
-            perceptionManager.xrResources.service = testPerceptionService
-            return
-        }
-
         runBlocking {
-            val binder = bindPerceptionService(activity)
+            lock.withLock {
+                checkProjectedSupportedAndUpToDate(activity)
+                if (testPerceptionService != null) {
+                    perceptionManager.xrResources.service = testPerceptionService
+                } else {
+                    bindPerceptionService(activity)
+                }
+            }
         }
     }
 
+    private fun serviceRequired(config: Config): Boolean {
+        // The service is required if tracking or geospatial are enabled.
+        // I.E. if no features are needed from the service we don't require it.
+        return config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN ||
+            config.geospatial == Config.GeospatialMode.EARTH
+    }
+
     override fun configure(config: Config) {
-        perceptionManager.xrResources.config = config
+        if (
+            config.deviceTracking == Config.DeviceTrackingMode.DISABLED &&
+                config.geospatial == Config.GeospatialMode.EARTH
+        ) {
+            throw UnsupportedOperationException(
+                "Geospatial mode is not supported when device tracking is disabled."
+            )
+        }
+        runBlocking {
+            lock.withLock {
+                perceptionManager.xrResources.config = config
+                if (serviceRequired(config)) {
+                    // Re-configure the running service.
+                    startServiceInternal()
+                } else if (running) {
+                    // Stop the service as it's no longer needed.
+                    stopServiceInternal()
+                }
+            }
+        }
     }
 
     override fun resume() {}
@@ -112,22 +144,57 @@ internal constructor(
 
     override suspend fun update(): ComparableTimeMark {
         delay(30.milliseconds)
-        val result = perceptionManager.xrResources.service.update()
-        updateTrackingStates(result.deviceTrackingState.toInt(), result.earthTrackingState.toInt())
-        perceptionManager.xrResources.arDevice.update(
-            toTrackingState(result.deviceTrackingState.toInt()),
-            toPose(result.devicePose),
-        )
-        timeSource.update(result.currentTimeNanos)
-        return timeSource.markNow()
+        return lock.withLock {
+            if (!running) {
+                return@withLock timeSource.markNow()
+            }
+            val service = perceptionManager.xrResources.service
+            val result = service.update()
+            updateTrackingStates(
+                result.deviceTrackingState.toInt(),
+                result.earthTrackingState.toInt(),
+            )
+            perceptionManager.xrResources.arDevice.update(
+                toTrackingState(result.deviceTrackingState.toInt()),
+                toPose(result.devicePose),
+            )
+            timeSource.update(result.currentTimeNanos)
+            return@withLock timeSource.markNow()
+        }
     }
 
     override fun pause() {}
 
     override fun stop() {
-        if (testPerceptionService == null) {
-            activity.unbindService(serviceConnection)
+        runBlocking {
+            lock.withLock {
+                if (!running) {
+                    return@withLock
+                }
+                stopServiceInternal()
+            }
         }
+    }
+
+    private fun startServiceInternal() {
+        val service = perceptionManager.xrResources.service ?: return
+        val serviceConfig = ProjectedConfig()
+        // TODO: b/452091636 - Remove hardcoded config" so we remember to address this.
+        // TODO: b/455872882 - Currently, Geo is not compatible with 3DoF tracking stack.
+        if (config.geospatial == Config.GeospatialMode.EARTH) {
+            serviceConfig.geospatialMode = ProjectedGeospatialMode.ENABLED
+            serviceConfig.trackingMode = ProjectedTrackingMode.PROJECTED_TRACKING_6DOF
+        } else {
+            serviceConfig.geospatialMode = ProjectedGeospatialMode.DISABLED
+            serviceConfig.trackingMode = ProjectedTrackingMode.PROJECTED_TRACKING_3DOF
+        }
+        service.startWithConfiguration(serviceConfig)
+        running = true
+    }
+
+    private fun stopServiceInternal() {
+        perceptionManager.xrResources.service?.stop()
+        running = false
     }
 
     internal suspend fun bindPerceptionService(context: Context): IBinder {
@@ -135,15 +202,9 @@ internal constructor(
             serviceConnection =
                 object : ServiceConnection {
                     override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-                        println("ProjectedManager: onServiceConnected called")
                         val service = IProjectedPerceptionService.Stub.asInterface(binder)
                         perceptionManager.xrResources.service = service
-                        // TODO: b/452091636 - Remove hardcoded config
                         // TODO: b/445567556 - Pass the API key to the service.
-                        val config = ProjectedConfig()
-                        config.trackingMode = ProjectedTrackingMode.PROJECTED_TRACKING_3DOF
-                        config.geospatialMode = ProjectedGeospatialMode.ENABLED
-                        service.startWithConfiguration(config)
 
                         // When the service connects, we resume the coroutine with the binder.
                         if (continuation.isActive) {
@@ -152,11 +213,12 @@ internal constructor(
                     }
 
                     override fun onServiceDisconnected(name: ComponentName?) {
-                        println("onServiceDisconnected called")
+                        running = false
                         // TODO: b/444521361 - Handle glassescore service disconnect
                     }
 
                     override fun onBindingDied(name: ComponentName?) {
+                        running = false
                         if (continuation.isActive) {
                             continuation.resumeWithException(
                                 IllegalStateException("Binding died for $name")

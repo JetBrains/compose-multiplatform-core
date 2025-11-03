@@ -58,7 +58,6 @@ import androidx.camera.core.impl.AttachedSurfaceInfo
 import androidx.camera.core.impl.CameraInfoInternal
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraMode
-import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.EncoderProfilesProvider
 import androidx.camera.core.impl.MutableOptionsBundle
 import androidx.camera.core.impl.SessionConfig
@@ -67,6 +66,7 @@ import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.stabilization.StabilizationMode
 import androidx.camera.core.impl.utils.UseCaseUtil.containsVideoCapture
+import androidx.camera.core.impl.utils.UseCaseUtil.getVideoStabilization
 import androidx.camera.core.streamsharing.StreamSharing
 import androidx.camera.core.streamsharing.StreamSharingConfig
 import javax.inject.Inject
@@ -142,7 +142,7 @@ constructor(
 
     @GuardedBy("lock") private var shouldCreateCameraGraphImmediately = true
 
-    @GuardedBy("lock") private var deferredUseCaseManagerConfig: UseCaseManagerConfig? = null
+    @GuardedBy("lock") private var deferredUseCaseCameraConfig: UseCaseCameraConfig? = null
 
     @GuardedBy("lock") private var isPrimary = true
 
@@ -197,14 +197,14 @@ constructor(
         synchronized(lock) {
             shouldCreateCameraGraphImmediately = createImmediately
             if (shouldCreateCameraGraphImmediately) {
-                // Clear the UseCaseManager configuration that haven't been "resumed" when we return
+                // Clear the UseCaseCameraConfig that haven't been "resumed" when we return
                 // to single camera operating mode early.
-                deferredUseCaseManagerConfig = null
+                deferredUseCaseCameraConfig = null
             }
         }
 
     internal fun getDeferredCameraGraphConfig() =
-        synchronized(lock) { deferredUseCaseManagerConfig?.cameraGraphConfig }
+        synchronized(lock) { deferredUseCaseCameraConfig?.cameraGraphConfig }
 
     /**
      * This attaches the specified [useCases] to the current set of attached use cases. When any
@@ -444,45 +444,24 @@ constructor(
         // Enables extensions with the Camera2 Extensions approach if extension mode is requested.
         if (useCamera2Extension) {
             Camera2Logger.debug { "Setting up UseCaseManager with OperatingMode.EXTENSION" }
-            val creationResult =
-                cameraGraphConfigProvider.create(
-                    operatingMode = OperatingMode.EXTENSION,
-                    sessionConfig = sessionConfigAdapter.getValidSessionConfigOrNull(),
-                    graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
-                    camera2ExtensionMode = sessionProcessor?.implementationType?.second,
-                    isExtensions = true,
-                    enableStreamUseCase = false,
-                    surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
-                    surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
-                    cameraXConfig = cameraXConfig,
-                )
-
             sessionProcessor!!.initSession(cameraInfoInternal.get(), null)
-
-            val useCaseManagerConfig =
-                UseCaseManagerConfig(
-                    useCases,
-                    sessionConfigAdapter,
-                    creationResult.config,
-                    creationResult.streamConfigMap,
-                    graphStateToCameraStateAdapter,
-                )
-            tryResumeUseCaseManager(useCaseManagerConfig)
-            return
-        } else {
-            val creationResult =
-                createCameraGraphConfig(sessionConfigAdapter, graphStateToCameraStateAdapter)
-
-            val useCaseManagerConfig =
-                UseCaseManagerConfig(
-                    useCases,
-                    sessionConfigAdapter,
-                    creationResult.config,
-                    creationResult.streamConfigMap,
-                    graphStateToCameraStateAdapter,
-                )
-            tryResumeUseCaseManager(useCaseManagerConfig)
         }
+        val creationResult =
+            createCameraGraphConfig(
+                sessionConfigAdapter,
+                graphStateToCameraStateAdapter,
+                isExtensions = useCamera2Extension,
+            )
+        tryResumeUseCaseManager(
+            UseCaseCameraConfig(
+                useCases = useCases,
+                sessionConfigAdapter = sessionConfigAdapter,
+                streamConfigMap = creationResult.streamConfigMap,
+                cameraGraphConfig = creationResult.config,
+                graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+                cameraGraphFactory = { config -> cameraPipe.createCameraGraph(config) },
+            )
+        )
     }
 
     @GuardedBy("lock")
@@ -504,55 +483,47 @@ constructor(
         }
     }
 
-    @VisibleForTesting
     @GuardedBy("lock")
-    internal fun tryResumeUseCaseManager(useCaseManagerConfig: UseCaseManagerConfig) {
+    private fun tryResumeUseCaseManager(useCaseCameraConfig: UseCaseCameraConfig) {
         if (!shouldCreateCameraGraphImmediately) {
-            deferredUseCaseManagerConfig = useCaseManagerConfig
+            deferredUseCaseCameraConfig = useCaseCameraConfig
             cameraCoordinator.addPendingCameraInfo(cameraInfoInternal.get())
             return
         }
-        val cameraGraph = cameraPipe.createCameraGraph(useCaseManagerConfig.cameraGraphConfig)
-        beginComponentCreation(useCaseManagerConfig, cameraGraph)
+
+        beginComponentCreation(useCaseCameraConfig)
     }
 
     internal fun resumeDeferredComponentCreation(cameraGraph: CameraGraph) =
         synchronized(lock) {
-            beginComponentCreation(checkNotNull(deferredUseCaseManagerConfig), cameraGraph)
+            val originalConfig = checkNotNull(deferredUseCaseCameraConfig)
+
+            val resumedConfig = originalConfig.copy(cameraGraphFactory = { _ -> cameraGraph })
+
+            beginComponentCreation(resumedConfig)
         }
 
     @GuardedBy("lock")
-    private fun beginComponentCreation(
-        useCaseManagerConfig: UseCaseManagerConfig,
-        cameraGraph: CameraGraph,
-    ) {
-        with(useCaseManagerConfig) {
-            graphStateToCameraStateAdapter.cameraGraph = cameraGraph
-            cameraStateAdapter.onGraphUpdated(cameraGraph)
-            // Create and configure the new camera component.
-            _activeComponent =
-                builder
-                    .config(
-                        UseCaseCameraConfig(
-                            useCases,
-                            sessionConfigAdapter,
-                            cameraGraph,
-                            streamConfigMap,
-                        )
-                    )
-                    .build()
-                    .also { it.getUseCaseCamera().start() }
+    private fun beginComponentCreation(useCaseCameraConfig: UseCaseCameraConfig) {
+        // Create and configure the new camera component.
+        _activeComponent = builder.config(useCaseCameraConfig).build()
+        useCaseCameraConfig.configureCameraStateListener()
 
-            for (control in allControls) {
-                control.requestControl = camera?.requestControl
-            }
+        val newUseCaseCamera = checkNotNull(camera)
+        newUseCaseCamera.start()
 
-            setCaptureSessionRequestProcessor(sessionConfigAdapter, cameraGraph)
-
-            camera?.setActiveResumeMode(activeResumeEnabled)
-
-            refreshRunningUseCases()
+        for (control in allControls) {
+            control.requestControl = newUseCaseCamera.requestControl
         }
+
+        setCaptureSessionRequestProcessor(
+            useCaseCameraConfig.sessionConfigAdapter,
+            useCaseCameraConfig.cameraGraph,
+        )
+
+        newUseCaseCamera.setActiveResumeMode(activeResumeEnabled)
+
+        refreshRunningUseCases()
 
         Camera2Logger.debug {
             "Notifying $pendingUseCasesToNotifyCameraControlReady camera control ready"
@@ -561,6 +532,11 @@ constructor(
             useCase.onCameraControlReady()
         }
         pendingUseCasesToNotifyCameraControlReady.clear()
+    }
+
+    private fun UseCaseCameraConfig.configureCameraStateListener() {
+        graphStateToCameraStateAdapter.cameraGraph = cameraGraph
+        cameraStateAdapter.onGraphUpdated(cameraGraph)
     }
 
     private fun setCaptureSessionRequestProcessor(
@@ -710,6 +686,7 @@ constructor(
         meteringRepeating.unbindFromCamera(cameraInternal.get())
     }
 
+    @VisibleForTesting
     internal fun createCameraGraphConfig(
         sessionConfigAdapter: SessionConfigAdapter,
         graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
@@ -717,20 +694,27 @@ constructor(
     ): CameraGraphConfigProvider.CameraGraphCreationResult {
         val sessionConfig = sessionConfigAdapter.getValidSessionConfigOrNull()
         val operatingMode =
-            sessionConfig?.let {
-                when (it.sessionType) {
-                    SESSION_REGULAR -> OperatingMode.NORMAL
-                    SESSION_HIGH_SPEED -> OperatingMode.HIGH_SPEED
-                    else -> OperatingMode.custom(it.sessionType)
-                }
-            } ?: OperatingMode.NORMAL
+            if (isExtensions) OperatingMode.EXTENSION
+            else
+                sessionConfig?.let {
+                    when (it.sessionType) {
+                        SESSION_REGULAR -> OperatingMode.NORMAL
+                        SESSION_HIGH_SPEED -> OperatingMode.HIGH_SPEED
+                        else -> OperatingMode.custom(it.sessionType)
+                    }
+                } ?: OperatingMode.NORMAL
+        val camera2ExtensionMode =
+            if (isExtensions) {
+                sessionProcessor?.implementationType?.second
+            } else {
+                null
+            }
 
         return cameraGraphConfigProvider.create(
             operatingMode = operatingMode,
             sessionConfig = sessionConfig,
             graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
-            camera2ExtensionMode = null,
-            isExtensions = isExtensions,
+            camera2ExtensionMode = camera2ExtensionMode,
             surfaceToStreamUseCaseMap = sessionConfigAdapter.surfaceToStreamUseCaseMap,
             surfaceToStreamUseHintMap = sessionConfigAdapter.surfaceToStreamUseHintMap,
             cameraXConfig = cameraXConfig,
@@ -757,7 +741,7 @@ constructor(
                     getCameraMode(),
                     getRequiredMaxBitDepth(attachedSurfaceInfoList),
                     hasVideoCapture = containsVideoCapture(),
-                    isPreviewStabilizationOn = isPreviewStabilizationOn(),
+                    videoStabilization = getVideoStabilization(),
                     isUltraHdrOn = isUltraHdrOn(),
                 ),
                 mutableListOf<SurfaceConfig>().apply {
@@ -919,15 +903,5 @@ constructor(
          * @param runningUseCases The updated set of UseCases that are currently running.
          */
         public fun onRunningUseCasesChanged(runningUseCases: Set<UseCase>)
-    }
-
-    public companion object {
-        internal data class UseCaseManagerConfig(
-            val useCases: List<UseCase>,
-            val sessionConfigAdapter: SessionConfigAdapter,
-            val cameraGraphConfig: CameraGraph.Config,
-            val streamConfigMap: Map<CameraStream.Config, DeferrableSurface>,
-            val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
-        )
     }
 }
