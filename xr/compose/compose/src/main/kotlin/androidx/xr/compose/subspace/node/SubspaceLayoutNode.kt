@@ -87,6 +87,15 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
     internal val nodes: SubspaceModifierNodeChain = SubspaceModifierNodeChain(this)
 
+    /**
+     * The depth of this node in the [SubspaceLayoutNode] tree hierarchy. The root node has a depth
+     * of 0. Its direct children have a depth of 1, and so on.
+     *
+     * This value is calculated by traversing up the [parent] chain and is used to sort invalidated
+     * nodes, ensuring parents are processed before their children during measure and layout passes.
+     */
+    internal var depth: Int = 0
+
     override var measurePolicy: SubspaceMeasurePolicy = ErrorMeasurePolicy
 
     override var modifier: SubspaceModifier = SubspaceModifier
@@ -224,6 +233,13 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         }
 
         this.owner = subspaceOwner
+        var calculatedDepth = 0
+        var nodeParent = parent
+        while (nodeParent != null) {
+            calculatedDepth++
+            nodeParent = nodeParent.parent
+        }
+        this.depth = calculatedDepth
 
         subspaceOwner.onAttach(this)
         syncCoreEntityHierarchy()
@@ -247,6 +263,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             "Cannot detach node that is already detached!  Tree: " + parent?.debugTreeToString()
         }
 
+        this.depth = 0
         nodes.runOnDetach()
         ignoreMeasureRequests { children.forEach { child -> child.detach() } }
         nodes.markAsDetached()

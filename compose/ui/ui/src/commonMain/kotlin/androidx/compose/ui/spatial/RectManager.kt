@@ -194,8 +194,10 @@ internal class RectManager(
     }
 
     fun invalidateCallbacksFor(layoutNode: LayoutNode) {
-        isDirty = true
-        rects.markUpdated(layoutNode.semanticsId)
+        if (layoutNode.addedToRectList) {
+            isDirty = true
+            rects.markUpdated(layoutNode.semanticsId)
+        }
         scheduleDebounceCallback(ensureSomethingScheduled = true)
     }
 
@@ -246,20 +248,34 @@ internal class RectManager(
         val delegate = layoutNode.measurePassDelegate
         val width = delegate.measuredWidth
         val height = delegate.measuredHeight
+        val firstPlacement = !layoutNode.addedToRectList
 
-        val lastOffset = layoutNode.offsetFromRoot
+        val lastOffset =
+            if (firstPlacement || forceUpdate) {
+                // no need to get the current value as we or don't have it, or we need to update
+                // even
+                // if it didn't change.
+                IntOffset.Max
+            } else {
+                getOffsetFromRectListFor(layoutNode)
+            }
         val lastSize = layoutNode.lastSize
         val lastWidth = lastSize.width
         val lastHeight = lastSize.height
 
-        recalculateOffsetFromRoot(layoutNode)
-
-        val offset = layoutNode.offsetFromRoot
+        val offset = calculateOffsetFromRootBasedOnParentOffset(layoutNode)
 
         // If unset is returned then that means there is a rotation/skew/scale
         if (!offset.isSet) {
             insertOrUpdateTransformedNode(layoutNode)
             return
+        } else {
+            // this will recursively reset [hasPositionalLayerTransformationsInOffsetFromRoot] to
+            // false if this specific node was the only reason the whole subtree were having
+            // a layer transformation, and this transformation was removed.
+            // [insertOrUpdateTransformedNode] is from the other branch is doing opposite, it is
+            // setting [hasPositionalLayerTransformationsInOffsetFromRoot] to true for the subtree
+            layoutNode.resetHasPositionalLayerTransformationsForSubtreeIfNeeded()
         }
 
         layoutNode.lastSize = IntSize(width, height)
@@ -269,60 +285,72 @@ internal class RectManager(
         val r = l + width
         val b = t + height
 
-        val firstPlacement = !layoutNode.addedToRectList
         layoutNode.addedToRectList = true
-        if (
-            !(forceUpdate || firstPlacement) &&
-                offset == lastOffset &&
-                lastWidth == width &&
-                lastHeight == height
-        ) {
+        if (offset == lastOffset && lastWidth == width && lastHeight == height) {
             return
         }
 
         insertOrUpdate(layoutNode, firstPlacement, l, t, r, b)
     }
 
-    private fun recalculateOffsetFromRoot(layoutNode: LayoutNode) {
+    fun getOffsetFromRectListFor(layoutNode: LayoutNode): IntOffset {
+        val topLeft = rects.getTopLeft(layoutNode.semanticsId)
+        return if (topLeft == Long.MAX_VALUE) {
+            IntOffset.Max
+        } else {
+            IntOffset(unpackX(topLeft), unpackY(topLeft))
+        }
+    }
+
+    private fun LayoutNode.resetHasPositionalLayerTransformationsForSubtreeIfNeeded() {
+        if (
+            hasPositionalLayerTransformationsInOffsetFromRoot &&
+                !outerCoordinator.hasPositionalLayerTransformations()
+        ) {
+            hasPositionalLayerTransformationsInOffsetFromRoot = false
+            if (outerToInnerOffsetDirty) {
+                val it = outerToInnerOffset()
+                outerToInnerOffset = it
+                outerToInnerOffsetDirty = false
+            }
+            if (outerToInnerOffset != IntOffset.Max) {
+                forEachChild { it.resetHasPositionalLayerTransformationsForSubtreeIfNeeded() }
+            }
+        }
+    }
+
+    private fun calculateOffsetFromRootBasedOnParentOffset(layoutNode: LayoutNode): IntOffset {
         val outer = layoutNode.outerCoordinator
 
         if (outer.hasPositionalLayerTransformations()) {
-            layoutNode.offsetFromRoot = IntOffset.Max
-            return
+            return IntOffset.Max
         }
         val parent = layoutNode.parent
-        layoutNode.offsetFromRoot =
-            if (parent != null) {
-                if (!parent.offsetFromRoot.isSet) {
-                    recalculateOffsetFromRoot(parent)
-                }
+        return if (parent != null) {
+            if (parent.hasPositionalLayerTransformationsInOffsetFromRoot) {
+                IntOffset.Max
+            } else {
+                val parentOffset = getOffsetFromRectListFor(parent)
+                val parentOuterInnerOffset =
+                    if (parent.outerToInnerOffsetDirty) {
+                        val it = parent.outerToInnerOffset()
 
-                val parentOffset = parent.offsetFromRoot
-                if (!parentOffset.isSet) {
-                    // if after recalculateOffsetFromRoot() on parent we still have unset return
-                    // unset
+                        parent.outerToInnerOffset = it
+                        parent.outerToInnerOffsetDirty = false
+                        it
+                    } else {
+                        parent.outerToInnerOffset
+                    }
+                if (!parentOuterInnerOffset.isSet || !parentOffset.isSet) {
                     IntOffset.Max
                 } else {
-                    val parentOuterInnerOffset =
-                        if (parent.outerToInnerOffsetDirty) {
-                            val it = parent.outerToInnerOffset()
-
-                            parent.outerToInnerOffset = it
-                            parent.outerToInnerOffsetDirty = false
-                            it
-                        } else {
-                            parent.outerToInnerOffset
-                        }
-                    if (!parentOuterInnerOffset.isSet) {
-                        IntOffset.Max
-                    } else {
-                        parentOffset + parentOuterInnerOffset + outer.position
-                    }
+                    parentOffset + parentOuterInnerOffset + outer.position
                 }
-            } else {
-                // root
-                outer.position
             }
+        } else {
+            // root
+            outer.position
+        }
     }
 
     private fun insertOrUpdateTransformedNodeSubhierarchy(layoutNode: LayoutNode) {
@@ -335,6 +363,8 @@ internal class RectManager(
     private val cachedRect = MutableRect(0f, 0f, 0f, 0f)
 
     private fun insertOrUpdateTransformedNode(layoutNode: LayoutNode) {
+        layoutNode.hasPositionalLayerTransformationsInOffsetFromRoot = true
+
         val coord = layoutNode.outerCoordinator
         val delegate = layoutNode.measurePassDelegate
         val width = delegate.measuredWidth
@@ -415,9 +445,8 @@ internal class RectManager(
         layer?.underlyingMatrix?.isIdentity() == false
 
     /**
-     * @return combined offset for all coordinators not including the outer one, the outer offset is
-     *   added into [LayoutNode.offsetFromRoot] instead. it can also return [IntOffset.Max], if the
-     *   layer transformation is too complex.
+     * @return combined offset for all coordinators not including the outer one. it can also return
+     *   [IntOffset.Max], if there are layer transformations.
      */
     private fun LayoutNode.outerToInnerOffset(): IntOffset {
         val terminator = outerCoordinator

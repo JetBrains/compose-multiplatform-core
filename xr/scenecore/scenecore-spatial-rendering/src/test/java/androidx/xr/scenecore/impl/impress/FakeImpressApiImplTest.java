@@ -353,6 +353,46 @@ public final class FakeImpressApiImplTest {
     }
 
     @Test
+    public void setStereoSurfaceEntitySurfaceSize_whenSizeIsNegative_throwsException() {
+        int stereoMode = StereoMode.MONO;
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+        IllegalArgumentException thrown =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> mFakeImpressApi.setStereoSurfaceEntitySurfaceSize(
+                                stereoSurfaceNode, -1, -1));
+        assertThat(thrown).hasMessageThat().contains("Surface dimensions must be positive!");
+    }
+
+    @Test
+    public void setStereoSurfaceEntitySurfaceSize_whenNodeDoesNotExist_throwsException() {
+        ImpressNode stereoSurfaceNode = new ImpressNode(12345);
+        IllegalArgumentException thrown =
+                assertThrows(
+                        IllegalArgumentException.class,
+                        () -> mFakeImpressApi.setStereoSurfaceEntitySurfaceSize(
+                                stereoSurfaceNode, 640, 480));
+        assertThat(thrown).hasMessageThat().contains("Couldn't find stereo surface entity!");
+    }
+
+    @Test
+    public void setStereoSurfaceEntitySurfaceSize_updatesDimensions() {
+        int stereoMode = StereoMode.MONO;
+        int kWidth = 640;
+        int kHeight = 480;
+        ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);
+        mFakeImpressApi.setStereoSurfaceEntitySurfaceSize(stereoSurfaceNode, kWidth, kHeight);
+        Map<ImpressNode, StereoSurfaceEntityData> stereoSurface =
+                mFakeImpressApi.getStereoSurfaceEntities();
+        StereoSurfaceEntityData stereoSurfaceData = stereoSurface.get(stereoSurfaceNode);
+        assertNotNull(stereoSurfaceData);
+        int width = stereoSurfaceData.getSurfaceWidth();
+        int height = stereoSurfaceData.getSurfaceHeight();
+        assertThat(width).isEqualTo(kWidth);
+        assertThat(height).isEqualTo(kHeight);
+    }
+
+    @Test
     public void setFeatherRadiusForStereoSurface_setsFeatherRadius() {
         int stereoMode = StereoMode.MONO;
         ImpressNode stereoSurfaceNode = mFakeImpressApi.createStereoSurface(stereoMode);

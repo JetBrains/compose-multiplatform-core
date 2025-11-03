@@ -45,8 +45,13 @@ import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.bundling.ZipEntryCompression
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.kotlin.dsl.extra
+import org.gradle.kotlin.dsl.the
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootPlugin
 import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
+import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsRootPlugin
 
 abstract class AndroidXRootImplPlugin : Plugin<Project> {
     @get:Inject abstract val registry: BuildEventsListenerRegistry
@@ -198,6 +203,26 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
                 it.cacheStorage.set(layout.buildDirectory.dir("wasmYarnCache"))
                 it.yarnrcFile.set(layout.buildDirectory.file("wasm/.yarnrc"))
             }
+
+        val nodeJsPrebuilt =
+            File(getPrebuiltsRoot(), "androidx/external/org/nodejs/node").toURI().toString()
+        plugins.withType<WasmNodeJsRootPlugin>().configureEach {
+            the<WasmNodeJsEnvSpec>().let {
+                it.version.set(getVersionByName("node"))
+                if (!ProjectLayoutType.isPlayground(this)) {
+                    it.downloadBaseUrl.set(nodeJsPrebuilt)
+                }
+            }
+        }
+        plugins.withType<NodeJsRootPlugin>().configureEach {
+            the<NodeJsEnvSpec>().let {
+                it.version.set(getVersionByName("node"))
+                if (!ProjectLayoutType.isPlayground(this)) {
+                    it.downloadBaseUrl.set(nodeJsPrebuilt)
+                }
+            }
+        }
+
         tasks.withType<KotlinNpmInstallTask>().configureEach {
             when (it.name) {
                 "kotlinNpmInstall" -> it.dependsOn(createYarnRcFileTask)

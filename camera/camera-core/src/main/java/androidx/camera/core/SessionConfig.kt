@@ -25,8 +25,8 @@ import androidx.camera.core.featuregroup.impl.UseCaseType.Companion.getFeatureGr
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
+import androidx.camera.core.impl.utils.UseCaseUtil.isVideoCapture
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
-import androidx.camera.core.internal.CameraUseCaseAdapter.isVideoCapture
 import androidx.core.util.Consumer
 import java.util.concurrent.Executor
 
@@ -210,7 +210,7 @@ constructor(
                     FeatureTypeInternal.FPS_RANGE ->
                         "${useCaseName}.Builder.setTargetFrameRateRange"
                     FeatureTypeInternal.VIDEO_STABILIZATION ->
-                        if (isVideoCapture(this)) {
+                        if (isVideoCapture()) {
                             "${useCaseName}.Builder.setVideoStabilizationEnabled"
                         } else {
                             "${useCaseName}.Builder.setPreviewStabilizationEnabled"
@@ -247,7 +247,7 @@ constructor(
             "ImageCapture"
         } else if (this is ImageAnalysis) {
             "ImageAnalysis"
-        } else if (isVideoCapture(this)) {
+        } else if (this.isVideoCapture()) {
             "VideoCapture"
         } else {
             "UseCase"

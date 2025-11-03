@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package androidx.xr.projected;
+package androidx.xr.projected.platform;
 
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
-interface IProjectedService {}
+interface IProjectedService {
+  void addWindowFlags(in int flags);
+  void clearWindowFlags(in int flags);
+}

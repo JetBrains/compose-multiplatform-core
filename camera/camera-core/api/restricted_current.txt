@@ -88,6 +88,7 @@ package androidx.camera.core {
     method public default void addCameraPresenceListener(java.util.concurrent.Executor executor, androidx.camera.core.CameraPresenceListener listener);
     method @InaccessibleFromKotlin public java.util.List<androidx.camera.core.CameraInfo> getAvailableCameraInfos();
     method public default androidx.camera.core.CameraInfo getCameraInfo(androidx.camera.core.CameraSelector cameraSelector);
+    method public default androidx.camera.core.CameraInfo getCameraInfo(androidx.camera.core.CameraSelector cameraSelector, androidx.camera.core.SessionConfig sessionConfig);
     method @kotlin.jvm.Throws(exceptionClasses=CameraInfoUnavailableException::class) public boolean hasCamera(androidx.camera.core.CameraSelector cameraSelector) throws androidx.camera.core.CameraInfoUnavailableException;
     method public default void removeCameraPresenceListener(androidx.camera.core.CameraPresenceListener listener);
     property public abstract java.util.List<androidx.camera.core.CameraInfo> availableCameraInfos;

@@ -16,7 +16,6 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.IntDef
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
@@ -38,17 +37,16 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     // TODO: b/417750821 - Add an OnAnimationEvent() Listener interface
 
     /** Specifies the current animation state of the GltfModelEntity. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @Retention(AnnotationRetention.SOURCE)
-    @IntDef(AnimationState.PLAYING, AnimationState.STOPPED)
-    public annotation class AnimationStateValue
+    public class AnimationState private constructor(private val name: String) {
 
-    /** Specifies the current animation state of the GltfModelEntity. */
-    public object AnimationState {
-        /** The animation is currently playing. */
-        public const val PLAYING: Int = 0
-        /** The animation is currently stopped. */
-        public const val STOPPED: Int = 1
+        public companion object {
+            /** The animation is currently playing. */
+            @JvmField public val PLAYING: AnimationState = AnimationState("PLAYING")
+            /** The animation is currently stopped. */
+            @JvmField public val STOPPED: AnimationState = AnimationState("STOPPED")
+        }
+
+        public override fun toString(): String = name
     }
 
     /**
@@ -56,13 +54,12 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
      *
      * @return The current animation state.
      */
-    @AnimationStateValue
-    public val animationState: Int
+    public val animationState: AnimationState
         get() {
             checkNotDisposed()
             return when (rtEntity!!.animationState) {
-                RtGltfEntity.AnimationState.PLAYING -> return AnimationState.PLAYING
-                RtGltfEntity.AnimationState.STOPPED -> return AnimationState.STOPPED
+                RtGltfEntity.AnimationState.PLAYING -> AnimationState.PLAYING
+                RtGltfEntity.AnimationState.STOPPED -> AnimationState.STOPPED
                 else -> AnimationState.STOPPED
             }
         }

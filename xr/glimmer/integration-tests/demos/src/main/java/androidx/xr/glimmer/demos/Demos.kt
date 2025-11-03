@@ -44,7 +44,7 @@ val Demos =
             ComposableDemo("TitleChips") { TitleChipSampleUsage() },
             DemoCategory("Focus", FocusDemos),
             DemoCategory("List", ListDemos),
-            ComposableDemo("VerticalStack") { VerticalStackDemo() },
+            DemoCategory("Stack", StackDemos),
             ComposableDemo("Gesture") { OnIndirectPointerGestureSampleUsage() },
             ComposableDemo("Settings") { DemoSettings() },
         ),

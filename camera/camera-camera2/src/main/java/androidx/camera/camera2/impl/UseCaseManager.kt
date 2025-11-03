@@ -66,6 +66,7 @@ import androidx.camera.core.impl.SessionConfig.ValidatingBuilder
 import androidx.camera.core.impl.SessionProcessor
 import androidx.camera.core.impl.SurfaceConfig
 import androidx.camera.core.impl.stabilization.StabilizationMode
+import androidx.camera.core.impl.utils.UseCaseUtil.containsVideoCapture
 import androidx.camera.core.streamsharing.StreamSharing
 import androidx.camera.core.streamsharing.StreamSharingConfig
 import javax.inject.Inject
@@ -739,8 +740,9 @@ constructor(
                 SupportedSurfaceCombination.FeatureSettings(
                     getCameraMode(),
                     getRequiredMaxBitDepth(attachedSurfaceInfoList),
-                    isPreviewStabilizationOn(),
-                    isUltraHdrOn(),
+                    hasVideoCapture = containsVideoCapture(),
+                    isPreviewStabilizationOn = isPreviewStabilizationOn(),
+                    isUltraHdrOn = isUltraHdrOn(),
                 ),
                 mutableListOf<SurfaceConfig>().apply {
                     addAll(sessionSurfacesConfigs)

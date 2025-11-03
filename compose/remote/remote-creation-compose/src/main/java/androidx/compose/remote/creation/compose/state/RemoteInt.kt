@@ -486,9 +486,8 @@ internal fun combineToLongArray(
         // Inline the RemoteInt arrays.
         combinedArray = LongArray(totalSizeInline)
         for (array in arrays) {
-            for (v in array) {
-                combinedArray[idx++] = v
-            }
+            System.arraycopy(array, 0, combinedArray, idx, array.size)
+            idx += array.size
         }
     }
 

@@ -826,9 +826,7 @@ private fun Project.configureNode() {
             the<WasmYarnRootEnvSpec>().let {
                 it.version.set(getVersionByName("yarn"))
                 it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
-                if (!ProjectLayoutType.isPlayground(this)) {
-                    it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
-                }
+                it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
             }
         }
 

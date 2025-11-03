@@ -28,7 +28,6 @@ import static androidx.camera.core.impl.ImageCaptureConfig.OPTION_OUTPUT_FORMAT;
 import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED;
 import static androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR;
 import static androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED;
-import static androidx.camera.core.impl.UseCaseConfig.OPTION_CAPTURE_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_IS_STRICT_FRAME_RATE_REQUIRED;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_TYPE;
 import static androidx.camera.core.impl.UseCaseConfig.OPTION_TARGET_FRAME_RATE;
@@ -45,7 +44,6 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
-import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
@@ -82,7 +80,7 @@ import androidx.camera.core.impl.SessionProcessor;
 import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
-import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType;
+import androidx.camera.core.impl.utils.UseCaseUtil;
 import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.internal.compat.workaround.StreamSharingForceEnabler;
 import androidx.camera.core.streamsharing.StreamSharing;
@@ -733,7 +731,7 @@ public final class CameraUseCaseAdapter implements Camera {
     }
 
     private boolean shouldForceEnableStreamSharing(@NonNull Collection<UseCase> appUseCases) {
-        if (hasExtension() && hasVideoCapture(appUseCases)) {
+        if (hasExtension() && UseCaseUtil.containsVideoCapture(appUseCases)) {
             return true;
         }
 
@@ -838,7 +836,7 @@ public final class CameraUseCaseAdapter implements Camera {
             if (newChildren.size() < 2) {
                 // No need to share the stream for 1 or less children. Except the case that
                 // StreamSharing is enabled for Extensions to support VideoCapture.
-                if (!(hasExtension() && hasVideoCapture(newChildren))) {
+                if (!(hasExtension() && UseCaseUtil.containsVideoCapture(newChildren))) {
                     return null;
                 }
             }
@@ -1406,28 +1404,6 @@ public final class CameraUseCaseAdapter implements Camera {
         }
 
         return hasPreviewOrStreamSharing && !hasImageCapture;
-    }
-
-    static boolean hasVideoCapture(@NonNull Collection<UseCase> useCases) {
-        for (UseCase useCase : useCases) {
-            if (isVideoCapture(useCase)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /** Checks if a [UseCase] is a video capture use case instance. */
-    public static boolean isVideoCapture(@Nullable UseCase useCase) {
-        if (useCase != null) {
-            if (useCase.getCurrentConfig().containsOption(OPTION_CAPTURE_TYPE)) {
-                return useCase.getCurrentConfig().getCaptureType() == CaptureType.VIDEO_CAPTURE;
-            } else {
-                Log.e(TAG, useCase + " UseCase does not have capture type.");
-            }
-
-        }
-        return false;
     }
 
     private static boolean isPreview(@Nullable UseCase useCase) {

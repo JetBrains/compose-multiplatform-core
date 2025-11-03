@@ -724,9 +724,9 @@ package androidx.xr.scenecore.runtime {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SoundFieldAttributes {
-    ctor public SoundFieldAttributes(@androidx.xr.scenecore.runtime.SpatializerConstants.AmbisonicsOrder int ambisonicsOrder);
-    method @InaccessibleFromKotlin public int getAmbisonicsOrder();
-    property public int ambisonicsOrder;
+    ctor public SoundFieldAttributes(int ambisonicsOrder);
+    method @InaccessibleFromKotlin @androidx.xr.scenecore.runtime.SpatializerConstants.AmbisonicsOrder public int getAmbisonicsOrder();
+    property @androidx.xr.scenecore.runtime.SpatializerConstants.AmbisonicsOrder public int ambisonicsOrder;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SoundPoolExtensionsWrapper {
@@ -941,6 +941,7 @@ package androidx.xr.scenecore.runtime {
     method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
     method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin public void setStereoMode(int);
+    method public void setSurfacePixelDimensions(int width, int height);
     property public abstract int colorRange;
     property public abstract int colorSpace;
     property public abstract int colorTransfer;
@@ -1130,6 +1131,7 @@ package androidx.xr.scenecore.runtime {
     method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
     method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin public void setStereoMode(int);
+    method public void setSurfacePixelDimensions(int width, int height);
     property @androidx.xr.scenecore.runtime.SurfaceEntity.ColorRange public abstract int colorRange;
     property @androidx.xr.scenecore.runtime.SurfaceEntity.ColorSpace public abstract int colorSpace;
     property @androidx.xr.scenecore.runtime.SurfaceEntity.ColorTransfer public abstract int colorTransfer;

@@ -1399,6 +1399,16 @@ public open class RemoteComposeContext {
             maxLines,
         ) {}
     }
+
+    /** The width of the document on screen */
+    public fun windowWidth(): RFloat {
+        return mRemoteWriter.windowWidth()
+    }
+
+    /** The height of the document on screen */
+    public fun windowHeight(): RFloat {
+        return mRemoteWriter.windowHeight()
+    }
 }
 
 public fun RemoteComposeWriter.particlesLoops(

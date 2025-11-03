@@ -534,3 +534,13 @@ public fun RemoteComposeWriter.animationTime(): RFloat {
 public fun RemoteComposeWriter.deltaTime(): RFloat {
     return RFloat(this, FLOAT_ANIMATION_DELTA_TIME)
 }
+
+/** The width of the document on screen */
+public fun RemoteComposeWriter.windowWidth(): RFloat {
+    return RFloat(this, Rc.System.WINDOW_WIDTH)
+}
+
+/** The height of the document on screen */
+public fun RemoteComposeWriter.windowHeight(): RFloat {
+    return RFloat(this, Rc.System.WINDOW_WIDTH)
+}

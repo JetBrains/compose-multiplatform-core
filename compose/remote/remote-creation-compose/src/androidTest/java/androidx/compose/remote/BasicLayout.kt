@@ -1085,8 +1085,8 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
     CANVAS [-5:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
       MODIFIERS
       CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-        ComponentValue value 45 set to WIDTH of Component -7
-        ComponentValue value 46 set to HEIGHT of Component -7
+        ComponentValue value 44 set to WIDTH of Component -7
+        ComponentValue value 45 set to HEIGHT of Component -7
     TEXT_LAYOUT [-8:-1] = [305.0, 364.0, 215.0, 97.0] VISIBLE (43:"Green")
       MODIFIERS
 """

@@ -94,6 +94,7 @@ else
 fi
 
 export USE_ANDROIDX_REMOTE_BUILD_CACHE=gcp
+export ENABLE_PRESUBMIT_COMPATIBLE_CC_STORE=true
 
 # If we encounter a failure in postsubmit, we try a few things to determine if the failure is
 # reproducible

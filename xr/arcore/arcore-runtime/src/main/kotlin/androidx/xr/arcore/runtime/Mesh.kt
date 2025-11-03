@@ -14,19 +14,26 @@
  * limitations under the License.
  */
 
-package androidx.xr.arcore
+package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
+import java.nio.FloatBuffer
+import java.nio.ShortBuffer
 
-/** Enum indicating whether an eye is open (gazing) or shut. */
+/**
+ * Represents a polygon mesh describing a piece of geometry as perceived by the perception system.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class EyeStatus(private val value: Int) {
-    public companion object {
-        /** Value indicating information about the eye is unavailable, or invalid. */
-        @JvmField public val INVALID: EyeStatus = EyeStatus(0)
-        /** Value indicating the eye is open and looking at something. */
-        @JvmField public val GAZING: EyeStatus = EyeStatus(1)
-        /** Value indicating the eye is closed and not looking at something. */
-        @JvmField public val SHUT: EyeStatus = EyeStatus(2)
-    }
-}
+public class Mesh(
+    /** [ShortBuffer] of triangles' indices in consecutive triplets. */
+    public val triangleIndices: ShortBuffer?,
+
+    /** [FloatBuffer] of 3D vertices in (x, y, z) packing. */
+    public val vertices: FloatBuffer?,
+
+    /** [FloatBuffer] of 3D normals in (x, y, z) packing. */
+    public val normals: FloatBuffer?,
+
+    /** [FloatBuffer] of UV texture coordinates in (u, v) packing. */
+    public val textureCoordinates: FloatBuffer?,
+)

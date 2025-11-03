@@ -64,7 +64,7 @@ android {
     }
     buildTypes.all {
         stableAidl {
-            version 1
+            version = 1
         }
     }
 }

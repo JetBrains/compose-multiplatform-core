@@ -60,20 +60,13 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinTestCommon)
-            }
-        }
-
-        commonTest {
-            dependencies {
-                implementation(libs.kotlinTestAnnotationsCommon)
+                api(libs.kotlinTest)
             }
         }
 
         jvmMain {
             dependsOn(commonMain)
             dependencies {
-                api(libs.kotlinTest)
                 implementation(libs.guavaAndroid)
                 implementation(libs.junit)
             }
@@ -96,9 +89,6 @@ androidXMultiplatform {
 
         webMain {
             dependsOn(nonJvmMain)
-            dependencies {
-                implementation(libs.kotlinTest)
-            }
         }
         webTest {
             dependsOn(nonJvmTest)

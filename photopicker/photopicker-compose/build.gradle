@@ -54,9 +54,6 @@ android {
     defaultConfig {
         minSdk = 34
     }
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
 }
 
 androidx {

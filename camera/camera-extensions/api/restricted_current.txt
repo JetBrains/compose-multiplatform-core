@@ -21,6 +21,23 @@ package androidx.camera.extensions {
     field public static final int NONE = 0; // 0x0
   }
 
+  public final class ExtensionSessionConfig extends androidx.camera.core.SessionConfig {
+    ctor public ExtensionSessionConfig(int mode, androidx.camera.extensions.ExtensionsManager extensionsManager);
+    ctor public ExtensionSessionConfig(int mode, androidx.camera.extensions.ExtensionsManager extensionsManager, androidx.camera.core.UseCase... useCases);
+    ctor @BytecodeOnly public ExtensionSessionConfig(int, androidx.camera.extensions.ExtensionsManager!, java.util.List!, androidx.camera.core.ViewPort!, java.util.List!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public ExtensionSessionConfig(int mode, androidx.camera.extensions.ExtensionsManager extensionsManager, optional java.util.List<? extends androidx.camera.core.UseCase> useCases);
+    ctor public ExtensionSessionConfig(int mode, androidx.camera.extensions.ExtensionsManager extensionsManager, optional java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort);
+    ctor public ExtensionSessionConfig(int mode, androidx.camera.extensions.ExtensionsManager extensionsManager, optional java.util.List<? extends androidx.camera.core.UseCase> useCases, optional androidx.camera.core.ViewPort? viewPort, optional java.util.List<? extends androidx.camera.core.CameraEffect> effects);
+  }
+
+  public static final class ExtensionSessionConfig.Builder {
+    ctor public ExtensionSessionConfig.Builder(int mode, androidx.camera.extensions.ExtensionsManager extensionsManager, androidx.camera.core.UseCase... useCases);
+    ctor public ExtensionSessionConfig.Builder(int mode, androidx.camera.extensions.ExtensionsManager extensionsManager, java.util.List<? extends androidx.camera.core.UseCase> useCases);
+    method public androidx.camera.extensions.ExtensionSessionConfig build();
+    method public androidx.camera.extensions.ExtensionSessionConfig.Builder setEffects(java.util.List<? extends androidx.camera.core.CameraEffect> effects);
+    method public androidx.camera.extensions.ExtensionSessionConfig.Builder setViewPort(androidx.camera.core.ViewPort viewPort);
+  }
+
   public final class ExtensionsManager {
     method public androidx.camera.extensions.CameraExtensionsControl? getCameraExtensionsControl(androidx.camera.core.CameraControl);
     method public androidx.camera.extensions.CameraExtensionsInfo getCameraExtensionsInfo(androidx.camera.core.CameraInfo);

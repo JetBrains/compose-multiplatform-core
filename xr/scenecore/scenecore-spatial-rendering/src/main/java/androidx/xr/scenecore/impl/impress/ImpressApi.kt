@@ -326,6 +326,17 @@ public interface ImpressApi {
     ): ImpressNode
 
     /**
+     * This method sets the Surface pixel dimenesions for a StereoSurfaceEntity.
+     *
+     * @param impressNode The Impress node which hosts the StereoSurfaceEntity to be updated.
+     * @param width The width in pixels to set the buffer size for the Surface.
+     * @param height The height in pixels to set the buffer size for the Surface.
+     * @throws IllegalArgumentException if the width or height are not positive, or if the impress
+     *   node does not host a StereoSurfaceEntity.
+     */
+    public fun setStereoSurfaceEntitySurfaceSize(impressNode: ImpressNode, width: Int, height: Int)
+
+    /**
      * This method sets the canvas shape of a StereoSurfaceEntity using its Impress node object.
      *
      * @param impressNode The Impress node which hosts the StereoSurfaceEntity to be updated.

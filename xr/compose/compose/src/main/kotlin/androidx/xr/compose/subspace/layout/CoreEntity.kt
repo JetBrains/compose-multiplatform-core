@@ -344,7 +344,7 @@ internal class CoreSurfaceEntity(
 ) : CoreEntity(surfaceEntity), ResizableCoreEntity, MovableCoreEntity {
     private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
 
-    internal var stereoMode: Int
+    internal var stereoMode: SurfaceEntity.StereoMode
         get() = surfaceEntity.stereoMode
         set(value) {
             if (value != surfaceEntity.stereoMode) {
@@ -422,7 +422,8 @@ internal class CoreSphereSurfaceEntity(
     val initialDensity: Density,
 ) : CoreEntity(surfaceEntity) {
     private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
-    internal var stereoMode: Int
+
+    internal var stereoMode: SurfaceEntity.StereoMode
         get() = surfaceEntity.stereoMode
         set(value) {
             if (value != surfaceEntity.stereoMode) {

@@ -251,13 +251,13 @@ internal class ResizableNode(
      */
     fun handleResizeEvent(resizeEvent: ResizeEvent) {
         when (resizeEvent.resizeState) {
-            ResizeEvent.ResizeState.RESIZE_STATE_START -> {
+            ResizeEvent.ResizeState.START -> {
                 component.isFixedAspectRatioEnabled = maintainAspectRatio
                 onResizeStart?.invoke(resizeEvent.newSize.toIntVolumeSize(density))
             }
-            ResizeEvent.ResizeState.RESIZE_STATE_ONGOING ->
+            ResizeEvent.ResizeState.ONGOING ->
                 onResizeUpdate?.invoke(resizeEvent.newSize.toIntVolumeSize(density))
-            ResizeEvent.ResizeState.RESIZE_STATE_END -> {
+            ResizeEvent.ResizeState.END -> {
                 val nextSize = resizeEvent.newSize.toIntVolumeSize(density)
                 onResizeEnd?.invoke(nextSize)
                 if (onSizeChange?.invoke(nextSize) == true) {

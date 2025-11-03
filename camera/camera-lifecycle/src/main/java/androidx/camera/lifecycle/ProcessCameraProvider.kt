@@ -22,7 +22,6 @@ import android.content.pm.PackageManager
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn
 import androidx.annotation.RestrictTo
-import androidx.annotation.RestrictTo.Scope
 import androidx.annotation.VisibleForTesting
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -393,7 +392,6 @@ private constructor(private val lifecycleCameraProvider: LifecycleCameraProvider
         return lifecycleCameraProvider.getCameraInfo(cameraSelector)
     }
 
-    @RestrictTo(Scope.LIBRARY_GROUP)
     override fun getCameraInfo(
         cameraSelector: CameraSelector,
         sessionConfig: SessionConfig,

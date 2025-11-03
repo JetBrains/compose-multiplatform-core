@@ -21,9 +21,9 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Eye
-import androidx.xr.arcore.runtime.EyeStatus
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -81,7 +81,7 @@ class GazeRenderer(val session: Session, val lifecycleScope: CoroutineScope, var
         }
 
         fun update(config: Config, eye: Eye.State?) {
-            val gazePose = getEyeGazePose(config, eye)
+            val gazePose = getEyePose(config, eye)
 
             entity.setEnabled(gazePose != null)
             gazePose?.let {
@@ -93,14 +93,19 @@ class GazeRenderer(val session: Session, val lifecycleScope: CoroutineScope, var
                 entity.setPose(pose)
             }
 
-            getEyeState(config, eye)?.let { view.setBackgroundColor(getColor(it)) }
+            eye?.let {
+                val isOpen = getEyeIsOpen(config, it)
+                val trackingState = getEyeTrackingState(config, it)
+                view.setBackgroundColor(getColor(isOpen!!, trackingState!!))
+            }
         }
 
-        fun getColor(state: EyeStatus): Int {
-            return when (state) {
-                EyeStatus.GAZING -> if (left) GAZE_LEFT else GAZE_RIGHT
-                EyeStatus.SHUT -> if (left) SHUT_LEFT else SHUT_RIGHT
-                else -> INVALID
+        fun getColor(isOpen: Boolean, trackingState: TrackingState): Int {
+            if (trackingState == TrackingState.PAUSED) return INVALID
+
+            return when (isOpen) {
+                true -> if (left) GAZE_LEFT else GAZE_RIGHT
+                false -> if (left) SHUT_LEFT else SHUT_RIGHT
             }
         }
     }

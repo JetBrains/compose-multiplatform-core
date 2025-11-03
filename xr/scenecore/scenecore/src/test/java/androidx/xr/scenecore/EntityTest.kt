@@ -333,7 +333,7 @@ class EntityTest {
                 session,
                 Pose.Identity,
                 SurfaceEntity.Shape.Quad(FloatSize2d(1.0f, 1.0f)),
-                SurfaceEntity.StereoMode.STEREO_MODE_SIDE_BY_SIDE,
+                SurfaceEntity.StereoMode.SIDE_BY_SIDE,
             )
     }
 
@@ -1168,8 +1168,8 @@ class EntityTest {
 
     @Test
     fun surfaceEntity_redirectsCallsToRtEntity() {
-        surfaceEntity.stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
-        verify(mockSurfaceEntity).stereoMode = SurfaceEntity.StereoMode.STEREO_MODE_TOP_BOTTOM
+        surfaceEntity.stereoMode = SurfaceEntity.StereoMode.TOP_BOTTOM
+        verify(mockSurfaceEntity).stereoMode = RtSurfaceEntity.StereoMode.TOP_BOTTOM
 
         @Suppress("UNUSED_VARIABLE") val unusedMode = surfaceEntity.stereoMode
         verify(mockSurfaceEntity).stereoMode

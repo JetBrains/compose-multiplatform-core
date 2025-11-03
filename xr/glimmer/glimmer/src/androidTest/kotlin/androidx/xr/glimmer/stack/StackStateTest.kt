@@ -135,16 +135,16 @@ class StackStateTest {
         }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(0) }
 
-        state.dispatchRawDelta(itemHeight * 0.1f)
+        rule.runOnUiThread { state.dispatchRawDelta(itemHeight * 0.1f) }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(0) }
 
-        state.dispatchRawDelta(itemHeight * 0.4f)
+        rule.runOnUiThread { state.dispatchRawDelta(itemHeight * 0.4f) }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(0) }
 
-        state.dispatchRawDelta(itemHeight * 0.4f)
+        rule.runOnUiThread { state.dispatchRawDelta(itemHeight * 0.4f) }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(0) }
 
-        state.dispatchRawDelta(itemHeight * 0.1f)
+        rule.runOnUiThread { state.dispatchRawDelta(itemHeight * 0.1f) }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(1) }
     }
 
@@ -160,16 +160,16 @@ class StackStateTest {
         runOnUiThread { state.scrollToItem(1) }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(1) }
 
-        state.dispatchRawDelta(-itemHeight * 0.1f)
+        rule.runOnUiThread { state.dispatchRawDelta(-itemHeight * 0.1f) }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(0) }
 
-        state.dispatchRawDelta(-itemHeight * 0.4f)
+        rule.runOnUiThread { state.dispatchRawDelta(-itemHeight * 0.4f) }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(0) }
 
-        state.dispatchRawDelta(-itemHeight * 0.4f)
+        rule.runOnUiThread { state.dispatchRawDelta(-itemHeight * 0.4f) }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(0) }
 
-        state.dispatchRawDelta(-itemHeight * 0.1f)
+        rule.runOnUiThread { state.dispatchRawDelta(-itemHeight * 0.1f) }
         rule.runOnIdle { assertThat(state.topItem).isEqualTo(0) }
     }
 
@@ -630,6 +630,7 @@ class StackStateTest {
     }
 
     suspend fun runOnUiThread(action: suspend () -> Unit) {
+        rule.waitForIdle()
         withContext(Dispatchers.Main) { action() }
     }
 }

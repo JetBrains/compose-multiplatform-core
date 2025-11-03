@@ -84,7 +84,7 @@ internal class AnchorRenderer(
             if (planeModel.entity.getComponents().isEmpty()) {
                 planeModel.entity.addComponent(
                     InteractableComponent.create(session, activity.mainExecutor) { event ->
-                        if (event.action.equals(InputEvent.Action.ACTION_DOWN)) {
+                        if (event.action.equals(InputEvent.Action.DOWN)) {
                             val headScenePose =
                                 session.scene.perceptionSpace.getScenePoseFromPerceptionPose(
                                     arDevice.state.value.devicePose
