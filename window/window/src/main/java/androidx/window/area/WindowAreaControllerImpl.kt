@@ -19,6 +19,7 @@ package androidx.window.area
 import android.app.Activity
 import android.os.Binder
 import android.os.Build
+import android.util.DisplayMetrics
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.window.RequiresWindowSdkExtension
@@ -99,16 +100,13 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
         }
 
     private fun updateRearDisplayAvailability(status: @WindowAreaComponent.WindowAreaStatus Int) {
-        val windowMetrics =
-            WindowMetricsCalculator.fromDisplayMetrics(
-                displayMetrics = windowAreaComponent.rearDisplayMetrics
-            )
+        val rearDisplayWindowMetrics = getRearDisplayMetrics(windowAreaComponent)
 
         currentRearDisplayModeStatus = WindowAreaAdapter.translate(status, activeWindowAreaSession)
         updateRearDisplayWindowArea(
             WindowAreaCapability.Operation.OPERATION_TRANSFER_ACTIVITY_TO_AREA,
             currentRearDisplayModeStatus,
-            windowMetrics,
+            rearDisplayWindowMetrics,
         )
     }
 
@@ -120,10 +118,7 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
                 extensionWindowAreaStatus.windowAreaStatus,
                 presentationSessionActive,
             )
-        val windowMetrics =
-            WindowMetricsCalculator.fromDisplayMetrics(
-                displayMetrics = extensionWindowAreaStatus.windowAreaDisplayMetrics
-            )
+        val windowMetrics = getRearDisplayMetrics(windowAreaComponent)
 
         updateRearDisplayWindowArea(
             WindowAreaCapability.Operation.OPERATION_PRESENT_ON_AREA,
@@ -282,6 +277,17 @@ internal class WindowAreaControllerImpl(private val windowAreaComponent: WindowA
                 windowAreaComponent,
             ),
         )
+    }
+
+    private fun getRearDisplayMetrics(windowAreaComponent: WindowAreaComponent): WindowMetrics {
+        val rearDisplayMetrics =
+            try {
+                windowAreaComponent.rearDisplayMetrics
+            } catch (_: ClassCastException) {
+                DisplayMetrics()
+            }
+
+        return WindowMetricsCalculator.fromDisplayMetrics(displayMetrics = rearDisplayMetrics)
     }
 
     internal inner class RearDisplaySessionConsumer(
