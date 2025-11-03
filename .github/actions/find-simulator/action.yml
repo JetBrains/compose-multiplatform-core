@@ -5,8 +5,8 @@ runs:
     - name: Get iOS Simulator UDID
       shell: bash
       run: |
-        DEVICE_NAME="iPhone 13"
-        DEVICE_VERSION="15.2"
+        DEVICE_NAME="iPhone 14"
+        DEVICE_VERSION="16.1"
         
         DEVICE_DASH="${DEVICE_VERSION//./-}"   # 16.0 -> 16-0
       
