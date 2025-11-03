@@ -39,6 +39,7 @@ jobs:
           xcrun simctl list devices
 
       - name: Get iOS Simulator UDID
+        id: get-simulator-udid
         uses: ./.github/actions/find-simulator
 
       - name: Configure Simulator

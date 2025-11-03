@@ -24,7 +24,7 @@ runs:
         ' | head -n 1)
         
         if [ -z "$SIMULATOR_ID" ]; then
-        echo "❌ Simulator not found for $DEVICE_NAME ($DEVICE_VERSION)"
+        echo "Simulator not found for $DEVICE_NAME ($DEVICE_VERSION)"
         echo "Available runtimes and matching devices:"
         xcrun simctl list devices available -j | jq -r '
         .devices | to_entries[] | "\(.key):\n  " + ( [.value[] | "\(.name) \(.udid) \(.state)"] | join("\n  ") )
