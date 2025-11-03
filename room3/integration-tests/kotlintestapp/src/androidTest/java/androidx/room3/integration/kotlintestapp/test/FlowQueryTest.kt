@@ -429,12 +429,13 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         @OptIn(ExperimentalRoomApi::class)
         val database =
             Room.databaseBuilder<TestDatabase>(context, "auto-close-test.db")
-                .setDriver(
-                    when (useDriver) {
-                        UseDriver.ANDROID -> AndroidSQLiteDriver()
-                        UseDriver.BUNDLED -> BundledSQLiteDriver()
+                .apply {
+                    if (useDriver == UseDriver.ANDROID) {
+                        setDriver(AndroidSQLiteDriver())
+                    } else if (useDriver == UseDriver.BUNDLED) {
+                        setDriver(BundledSQLiteDriver())
                     }
-                )
+                }
                 .setAutoCloseTimeout(1, TimeUnit.SECONDS)
                 .build()
 
@@ -481,12 +482,13 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
             val db =
                 Room.databaseBuilder<TestDatabase>(context, "test_db")
                     .setQueryCoroutineContext(Dispatchers.IO)
-                    .setDriver(
-                        when (useDriver) {
-                            UseDriver.ANDROID -> AndroidSQLiteDriver()
-                            UseDriver.BUNDLED -> BundledSQLiteDriver()
+                    .apply {
+                        if (useDriver == UseDriver.ANDROID) {
+                            setDriver(AndroidSQLiteDriver())
+                        } else if (useDriver == UseDriver.BUNDLED) {
+                            setDriver(BundledSQLiteDriver())
                         }
-                    )
+                    }
                     .build()
             val dao = db.booksDao()
             dao.addAuthors(TestUtil.AUTHOR_1)
@@ -523,12 +525,13 @@ class FlowQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
             val db =
                 Room.databaseBuilder<TestDatabase>(context, "test_db")
                     .setQueryCoroutineContext(Dispatchers.IO)
-                    .setDriver(
-                        when (useDriver) {
-                            UseDriver.ANDROID -> AndroidSQLiteDriver()
-                            UseDriver.BUNDLED -> BundledSQLiteDriver()
+                    .apply {
+                        if (useDriver == UseDriver.ANDROID) {
+                            setDriver(AndroidSQLiteDriver())
+                        } else if (useDriver == UseDriver.BUNDLED) {
+                            setDriver(BundledSQLiteDriver())
                         }
-                    )
+                    }
                     .build()
             val dao = db.booksDao()
 

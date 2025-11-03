@@ -58,12 +58,13 @@ class NoBackupDirectoryTest(private val useDriver: UseDriver) {
             // IO and depending where the Room builder is created, it can be in the main thread.
             val database =
                 Room.databaseBuilder<TestDatabase>(context, databaseFile.path)
-                    .setDriver(
-                        when (useDriver) {
-                            UseDriver.ANDROID -> AndroidSQLiteDriver()
-                            UseDriver.BUNDLED -> BundledSQLiteDriver()
+                    .apply {
+                        if (useDriver == UseDriver.ANDROID) {
+                            setDriver(AndroidSQLiteDriver())
+                        } else if (useDriver == UseDriver.BUNDLED) {
+                            setDriver(BundledSQLiteDriver())
                         }
-                    )
+                    }
                     .build()
             database.booksDao().insertPublisherSuspend("p1", "pub1")
             database.close()
@@ -89,6 +90,7 @@ class NoBackupDirectoryTest(private val useDriver: UseDriver) {
             when (useDriver) {
                 UseDriver.ANDROID -> AndroidSQLiteDriver()
                 UseDriver.BUNDLED -> BundledSQLiteDriver()
+                else -> error("Unknown driver: $useDriver")
             }
         val noBackupDirDriver =
             object : SQLiteDriver by actualDriver {

@@ -508,7 +508,7 @@ package androidx.compose.ui.autofill {
 
 }
 
-package androidx.compose.ui.contentcapture {
+package @SuppressCompatibility androidx.compose.ui.contentcapture {
 
   @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public sealed interface ContentCaptureManager {
     field public static final androidx.compose.ui.contentcapture.ContentCaptureManager.Companion Companion;
@@ -3532,11 +3532,6 @@ package androidx.compose.ui.node {
     method public static androidx.compose.ui.graphics.GraphicsContext requireGraphicsContext(androidx.compose.ui.node.DelegatableNode);
     method public static androidx.compose.ui.layout.LayoutCoordinates requireLayoutCoordinates(androidx.compose.ui.node.DelegatableNode);
     method public static androidx.compose.ui.unit.LayoutDirection requireLayoutDirection(androidx.compose.ui.node.DelegatableNode);
-    method @BytecodeOnly public static void visitAncestors-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
-    method @BytecodeOnly public static void visitChildren-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
-    method @BytecodeOnly public static void visitSelfAndChildren-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
-    method @BytecodeOnly public static void visitSubtree-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
-    method @BytecodeOnly public static void visitSubtreeIf-Y-YKmho$default(androidx.compose.ui.node.DelegatableNode!, int, boolean, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
   public final class DelegatableNode_androidKt {
@@ -3814,7 +3809,7 @@ package androidx.compose.ui.platform {
     method public static androidx.compose.ui.platform.ClipMetadata toClipMetadata(android.content.ClipDescription);
   }
 
-  public final class AndroidComposeViewAccessibilityDelegateCompat_androidKt {
+  @SuppressCompatibility public final class AndroidComposeViewAccessibilityDelegateCompat_androidKt {
     method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static boolean getDisableContentCapture();
     method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static void setDisableContentCapture(boolean);
     property @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static boolean DisableContentCapture;
@@ -3919,7 +3914,7 @@ package androidx.compose.ui.platform {
     property public abstract android.content.ClipboardManager nativeClipboard;
   }
 
-  public final class ClipboardExtensions_androidKt {
+  @SuppressCompatibility public final class ClipboardExtensions_androidKt {
     method @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public static android.net.Uri? firstUriOrNull(androidx.compose.ui.platform.ClipEntry);
   }
 

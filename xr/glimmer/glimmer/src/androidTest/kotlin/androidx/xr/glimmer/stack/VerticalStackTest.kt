@@ -16,6 +16,8 @@
 
 package androidx.xr.glimmer.stack
 
+import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.layout.Box
@@ -23,6 +25,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.GenericShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,10 +38,15 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.StateRestorationTester
@@ -52,9 +61,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.size
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.performIndirectSwipe
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,6 +77,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
+// The expected min sdk is 35, but we test on 33 for wider device coverage (some APIs are not
+// available below 33)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
 class VerticalStackTest {
 
     @get:Rule val rule = createComposeRule(StandardTestDispatcher())
@@ -644,6 +658,291 @@ class VerticalStackTest {
         assertThat(nextItemBounds.bottom).isGreaterThan(topItemBounds.bottom)
     }
 
+    @Test
+    fun itemDecoration_setsSizeAndShapeOnItemScope() {
+        val state = StackState()
+        val triangleShape = GenericShape { size, _ ->
+            lineTo(size.width, 0f)
+            lineTo(size.width, size.height)
+            close()
+        }
+        var itemScope0: StackItemScopeImpl? = null
+        var itemScope1: StackItemScopeImpl? = null
+        var itemScope2: StackItemScopeImpl? = null
+        rule.setContent {
+            VerticalStack(state = state) {
+                item {
+                    itemScope0 = this as StackItemScopeImpl
+                    StackItem("Item 0", Modifier.height(10.dp).itemDecoration(RectangleShape))
+                }
+                item {
+                    itemScope1 = this as StackItemScopeImpl
+                    StackItem(
+                        "Item 1",
+                        Modifier.height(20.dp).itemDecoration(RoundedCornerShape(2.dp)),
+                    )
+                }
+                item {
+                    itemScope2 = this as StackItemScopeImpl
+                    StackItem("Item 2", Modifier.height(30.dp).itemDecoration(triangleShape))
+                }
+            }
+        }
+
+        rule.runOnIdle {
+            val itemDecoration0 = itemScope0?.firstDecoration()
+            val itemDecoration1 = itemScope1?.firstDecoration()
+            val itemDecoration2 = itemScope2?.firstDecoration()
+
+            with(rule.density) {
+                assertThat(itemDecoration0?.size?.height).isEqualTo(10.dp.roundToPx())
+                assertThat(itemDecoration1?.size?.height).isEqualTo(20.dp.roundToPx())
+                assertThat(itemDecoration2?.size?.height).isEqualTo(30.dp.roundToPx())
+            }
+
+            assertThat(itemDecoration0?.shape).isEqualTo(RectangleShape)
+            assertThat(itemDecoration1?.shape).isEqualTo(RoundedCornerShape(2.dp))
+            assertThat(itemDecoration2?.shape).isSameInstanceAs(triangleShape)
+        }
+    }
+
+    @Test
+    fun itemDecoration_shapeChange_updatesShapeOnItemScope() {
+        val state = StackState()
+        val triangleShape = GenericShape { size, _ ->
+            lineTo(size.width, 0f)
+            lineTo(size.width, size.height)
+            close()
+        }
+        var itemShape0: Shape by mutableStateOf(RectangleShape)
+        var itemShape1: Shape by mutableStateOf(RoundedCornerShape(2.dp))
+        var itemShape2: Shape by mutableStateOf(triangleShape)
+        var itemScope0: StackItemScopeImpl? = null
+        var itemScope1: StackItemScopeImpl? = null
+        var itemScope2: StackItemScopeImpl? = null
+        rule.setContent {
+            VerticalStack(state = state) {
+                item {
+                    itemScope0 = this as StackItemScopeImpl
+                    StackItem("Item 0", Modifier.itemDecoration(itemShape0))
+                }
+                item {
+                    itemScope1 = this as StackItemScopeImpl
+                    StackItem("Item 1", Modifier.itemDecoration(itemShape1))
+                }
+                item {
+                    itemScope2 = this as StackItemScopeImpl
+                    StackItem("Item 2", Modifier.itemDecoration(itemShape2))
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertThat(itemScope0?.firstDecoration()?.shape).isEqualTo(RectangleShape)
+            assertThat(itemScope1?.firstDecoration()?.shape).isEqualTo(RoundedCornerShape(2.dp))
+            assertThat(itemScope2?.firstDecoration()?.shape).isEqualTo(triangleShape)
+        }
+
+        rule.runOnIdle {
+            itemShape0 = RoundedCornerShape(2.dp)
+            itemShape1 = triangleShape
+            itemShape2 = RectangleShape
+        }
+
+        rule.runOnIdle {
+            assertThat(itemScope0?.firstDecoration()?.shape).isEqualTo(RoundedCornerShape(2.dp))
+            assertThat(itemScope1?.firstDecoration()?.shape).isEqualTo(triangleShape)
+            assertThat(itemScope2?.firstDecoration()?.shape).isEqualTo(RectangleShape)
+        }
+    }
+
+    @Test
+    fun itemDecoration_sizeChange_updatesSizeOnItemScope() {
+        val state = StackState()
+        var itemScope0: StackItemScopeImpl? = null
+        var itemScope1: StackItemScopeImpl? = null
+        var itemScope2: StackItemScopeImpl? = null
+        var itemHeight0 by mutableStateOf(10.dp)
+        var itemHeight1 by mutableStateOf(20.dp)
+        var itemHeight2 by mutableStateOf(30.dp)
+        rule.setContent {
+            VerticalStack(state = state) {
+                item {
+                    itemScope0 = this as StackItemScopeImpl
+                    StackItem("Item 0", Modifier.height(itemHeight0).itemDecoration(RectangleShape))
+                }
+                item {
+                    itemScope1 = this as StackItemScopeImpl
+                    StackItem("Item 1", Modifier.height(itemHeight1).itemDecoration(RectangleShape))
+                }
+                item {
+                    itemScope2 = this as StackItemScopeImpl
+                    StackItem("Item 2", Modifier.height(itemHeight2).itemDecoration(RectangleShape))
+                }
+            }
+        }
+        rule.runOnIdle {
+            with(rule.density) {
+                assertThat(itemScope0?.firstDecoration()?.size?.height).isEqualTo(10.dp.roundToPx())
+                assertThat(itemScope1?.firstDecoration()?.size?.height).isEqualTo(20.dp.roundToPx())
+                assertThat(itemScope2?.firstDecoration()?.size?.height).isEqualTo(30.dp.roundToPx())
+            }
+        }
+
+        rule.runOnIdle {
+            itemHeight0 = 20.dp
+            itemHeight1 = 30.dp
+            itemHeight2 = 40.dp
+        }
+
+        rule.runOnIdle {
+            with(rule.density) {
+                assertThat(itemScope0?.firstDecoration()?.size?.height).isEqualTo(20.dp.roundToPx())
+                assertThat(itemScope1?.firstDecoration()?.size?.height).isEqualTo(30.dp.roundToPx())
+                assertThat(itemScope2?.firstDecoration()?.size?.height).isEqualTo(40.dp.roundToPx())
+            }
+        }
+    }
+
+    @Test
+    fun masking_largerNextItem_clipsNextItemToTopItemShape() {
+        val stackSize = 100.dp
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state, modifier = Modifier.size(stackSize)) {
+                item {
+                    StackItem(
+                        "Item 0",
+                        Modifier.fillMaxWidth()
+                            .height(10.dp)
+                            .itemDecoration(RectangleShape)
+                            .background(Color.Red),
+                    )
+                }
+                item {
+                    StackItem(
+                        "Item 1",
+                        Modifier.fillMaxWidth()
+                            .height(50.dp)
+                            .itemDecoration(RectangleShape)
+                            .background(Color.Green),
+                    )
+                }
+            }
+        }
+
+        val topItemBounds = rule.onNodeWithTag("Item 0").getBoundsInRoot()
+        val nextItemBounds = rule.onNodeWithTag("Item 1").getBoundsInRoot()
+
+        rule.onRoot().captureToImage().run {
+            val pixels = toPixelMap()
+            val topItemTop = with(rule.density) { topItemBounds.top.roundToPx() }
+            // The top of the top item is between the top and bottom of the next item
+            assertThat(topItemTop).isGreaterThan(0)
+            assertThat(topItemTop).isLessThan(pixels.height - 1)
+
+            // The part of the next item above the top item is clipped
+            for (x in 0 until pixels.width) {
+                for (y in 0 until topItemTop) {
+                    assertWithMessage("Pixel at ($x, $y) should not have the next item's color")
+                        .that(pixels[x, y].toOpaque())
+                        .isNotEqualTo(Color.Green)
+                }
+            }
+
+            // The bottom of the next item is visible below the top item
+            val nextItemBottom = with(rule.density) { nextItemBounds.bottom.roundToPx() }
+            val x = (pixels.width / 2)
+            val y = nextItemBottom - 1
+            assertWithMessage("Pixel at ($x, $y) should have the next item's color")
+                .that(pixels[x, y].toOpaque())
+                .isEqualTo(Color.Green)
+        }
+    }
+
+    @Test
+    fun masking_largerNextNextItem_clipsNextNextItemToNextItemShape() = runTest {
+        var topItemHeight = 0
+        val stackSize = 100.dp
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state, modifier = Modifier.size(stackSize)) {
+                item {
+                    StackItem(
+                        "Item 0",
+                        Modifier.fillMaxWidth()
+                            .height(80.dp)
+                            .itemDecoration(RectangleShape)
+                            .background(Color.Red),
+                    ) {
+                        topItemHeight = it
+                    }
+                }
+                item {
+                    StackItem(
+                        "Item 1",
+                        Modifier.fillMaxWidth()
+                            .height(10.dp)
+                            .itemDecoration(RectangleShape)
+                            .background(Color.Green),
+                    )
+                }
+                item {
+                    StackItem(
+                        "Item 2",
+                        Modifier.fillMaxWidth()
+                            .height(80.dp)
+                            .itemDecoration(RectangleShape)
+                            .background(Color.Blue),
+                    )
+                }
+            }
+        }
+
+        // Scroll almost fully to the next item to reveal the next-next item.
+        rule.runOnIdle { state.dispatchRawDelta(topItemHeight * 0.99f) }
+        rule.waitForIdle()
+
+        val topItemBounds = rule.onNodeWithTag("Item 0").getBoundsInRoot()
+        val nextItemBounds = rule.onNodeWithTag("Item 1").getBoundsInRoot()
+        val nextNextItemBounds = rule.onNodeWithTag("Item 2").getBoundsInRoot()
+
+        rule.onRoot().captureToImage().run {
+            val pixels = toPixelMap()
+
+            val topItemBottom = with(rule.density) { topItemBounds.bottom.roundToPx() }
+            // The bottom of the top item is visible at the top of the next-next item bounds
+            assertThat(topItemBottom).isGreaterThan(0)
+
+            val nextItemTop = with(rule.density) { nextItemBounds.top.roundToPx() }
+            val nextItemBottom = with(rule.density) { nextItemBounds.bottom.roundToPx() }
+            // The top of the next item is between the top and bottom of the next-next item
+            assertThat(nextItemTop).isGreaterThan(0)
+            assertThat(nextItemTop).isLessThan(nextItemBottom)
+            // The top of the next item is below the bottom of the top item
+            assertThat(nextItemTop).isGreaterThan(topItemBottom)
+
+            // The part of the next-next item above the next item and below the top item is clipped
+            for (x in 0 until pixels.width) {
+                for (y in topItemBottom + 1 until nextItemTop) {
+                    assertWithMessage(
+                            "Pixel at ($x, $y) should not have the next-next item's color"
+                        )
+                        .that(pixels[x, y].toOpaque())
+                        .isNotEqualTo(Color.Blue)
+                }
+            }
+
+            // The bottom of the next-next item is visible below the next item
+            val nextNextItemBottom = with(rule.density) { nextNextItemBounds.bottom.roundToPx() }
+            assertThat(nextNextItemBottom).isGreaterThan(nextItemBottom)
+            val x = (pixels.width / 2)
+            val y = nextNextItemBottom - 1
+            assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
+                .that(pixels[x, y].toOpaque())
+                .isEqualTo(Color.Blue)
+        }
+    }
+
     @Composable
     private fun StackItem(
         text: String,
@@ -682,4 +981,6 @@ class VerticalStackTest {
         rule.waitForIdle()
         withContext(Dispatchers.Main) { action() }
     }
+
+    private fun Color.toOpaque(): Color = copy(alpha = 1.0f)
 }

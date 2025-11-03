@@ -123,6 +123,7 @@ public class WebViewFeature {
             PRERENDER_WITH_URL,
             SAVE_STATE,
             NAVIGATION_CALLBACK_BASIC,
+            NAVIGATION_LISTENER_V1,
             PAYMENT_REQUEST,
             WEBVIEW_BUILDER,
             WARM_UP_RENDERER_PROCESS,
@@ -729,6 +730,10 @@ public class WebViewFeature {
      * This feature covers the initial version of {@link Page}.
      */
     public static final String NAVIGATION_CALLBACK_BASIC = "WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE";
+
+    @WebNavigationClient.ExperimentalNavigationCallback
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String NAVIGATION_LISTENER_V1 = "NAVIGATION_LISTENER_V1";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.

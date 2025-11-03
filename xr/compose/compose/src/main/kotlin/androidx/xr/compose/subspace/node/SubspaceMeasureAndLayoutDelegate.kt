@@ -26,7 +26,7 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
         set(value) {
             if (field != value) {
                 field = value
-                if (root.isAttached) {
+                if (root.isAttached && root.isPlaced) {
                     requestMeasure(root)
                 }
             }

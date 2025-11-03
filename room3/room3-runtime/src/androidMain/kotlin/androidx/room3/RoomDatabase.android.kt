@@ -43,6 +43,7 @@ import androidx.room3.prepackage.CopyFromAssetPath
 import androidx.room3.prepackage.CopyFromFile
 import androidx.room3.prepackage.CopyFromInputStream
 import androidx.room3.prepackage.PrePackagedCopySQLiteDriver
+import androidx.room3.support.QueryInterceptorOpenHelperFactory
 import androidx.room3.util.contains as containsCommon
 import androidx.room3.util.findAndInstantiateDatabaseImpl
 import androidx.room3.util.findMigrationPath as findMigrationPathExt
@@ -328,6 +329,33 @@ actual constructor() {
     public actual abstract fun createAutoMigrations(
         autoMigrationSpecs: Map<KClass<out AutoMigrationSpec>, AutoMigrationSpec>
     ): List<Migration>
+
+    /**
+     * Unwraps (delegating) open helpers until it finds [T], otherwise returns null.
+     *
+     * @param openHelper the open helper to search through
+     * @param T the type of open helper type to search for
+     * @return the instance of [T], otherwise null
+     */
+    private inline fun <reified T : SupportSQLiteOpenHelper> unwrapOpenHelper(
+        openHelper: SupportSQLiteOpenHelper?
+    ): T? {
+        if (openHelper == null) {
+            return null
+        }
+        var current: SupportSQLiteOpenHelper = openHelper
+        while (true) {
+            if (current is T) {
+                return current
+            }
+            if (current is DelegatingOpenHelper) {
+                current = current.delegate
+            } else {
+                break
+            }
+        }
+        return null
+    }
 
     /**
      * Creates a delegate to configure and initialize the database when it is being opened. An
@@ -765,6 +793,7 @@ actual constructor() {
 
         private val callbacks: MutableList<Callback> = mutableListOf()
         private var prepackagedDatabaseCallback: PrepackagedDatabaseCallback? = null
+        private var queryCallback: QueryCallback? = null
         private var queryCallbackExecutor: Executor? = null
         private var queryCallbackCoroutineContext: CoroutineContext? = null
         private val typeConverters: MutableList<Any> = mutableListOf()
@@ -1266,6 +1295,59 @@ actual constructor() {
         }
 
         /**
+         * Sets a [QueryCallback] to be invoked when queries are executed.
+         *
+         * The callback is invoked whenever a query is executed, note that adding this callback has
+         * a small cost and should be avoided in production builds unless needed.
+         *
+         * A use case for providing a callback is to allow logging executed queries. When the
+         * callback implementation logs then it is recommended to use an immediate executor.
+         *
+         * If a previous callback was set with [setQueryCallback] then this call will override it,
+         * including removing the Coroutine context previously set, if any.
+         *
+         * @param queryCallback The query callback.
+         * @param executor The executor on which the query callback will be invoked.
+         * @return This builder instance.
+         */
+        @Suppress("MissingGetterMatchingBuilder")
+        public open fun setQueryCallback(
+            queryCallback: QueryCallback,
+            executor: Executor,
+        ): Builder<T> = apply {
+            this.queryCallback = queryCallback
+            this.queryCallbackExecutor = executor
+            this.queryCallbackCoroutineContext = null
+        }
+
+        /**
+         * Sets a [QueryCallback] to be invoked when queries are executed.
+         *
+         * The callback is invoked whenever a query is executed, note that adding this callback has
+         * a small cost and should be avoided in production builds unless needed.
+         *
+         * A use case for providing a callback is to allow logging executed queries. When the
+         * callback implementation simply logs then it is recommended to use
+         * [kotlinx.coroutines.Dispatchers.Unconfined].
+         *
+         * If a previous callback was set with [setQueryCallback] then this call will override it,
+         * including removing the executor previously set, if any.
+         *
+         * @param context The coroutine context on which the query callback will be invoked.
+         * @param queryCallback The query callback.
+         * @return This builder instance.
+         */
+        @Suppress("MissingGetterMatchingBuilder")
+        public fun setQueryCallback(
+            context: CoroutineContext,
+            queryCallback: QueryCallback,
+        ): Builder<T> = apply {
+            this.queryCallback = queryCallback
+            this.queryCallbackExecutor = null
+            this.queryCallbackCoroutineContext = context
+        }
+
+        /**
          * Adds a type converter instance to the builder.
          *
          * @param typeConverter The converter instance that is annotated with
@@ -1405,7 +1487,7 @@ actual constructor() {
 
             validateMigrationsNotRequired(migrationStartAndEndVersions, migrationsNotRequiredFrom)
 
-            val openHelperFactory: SupportSQLiteOpenHelper.Factory? =
+            val initialFactory: SupportSQLiteOpenHelper.Factory? =
                 if (driver == null && supportOpenHelperFactory == null) {
                     // No driver and no factory, compatibility mode, create the default factory
                     FrameworkSQLiteOpenHelperFactory()
@@ -1452,11 +1534,33 @@ actual constructor() {
                 } else {
                     null
                 }
+            val queryCallbackEnabled = queryCallback != null
+            val supportOpenHelperFactory =
+                initialFactory?.let {
+                    if (queryCallbackEnabled) {
+                        val queryCallbackContext =
+                            queryCallbackExecutor?.asCoroutineDispatcher()
+                                ?: requireNotNull(queryCallbackCoroutineContext)
+                        QueryInterceptorOpenHelperFactory(
+                            delegate = it,
+                            queryCallbackScope = CoroutineScope(queryCallbackContext),
+                            queryCallback = requireNotNull(queryCallback),
+                        )
+                    } else {
+                        it
+                    }
+                }
+            // No open helper means a driver is to be used.
+            if (supportOpenHelperFactory == null) {
+                require(!queryCallbackEnabled) {
+                    "Query Callback is not supported when an SQLiteDriver is configured."
+                }
+            }
             val configuration =
                 DatabaseConfiguration(
                         context = context,
                         name = name,
-                        sqliteOpenHelperFactory = openHelperFactory,
+                        sqliteOpenHelperFactory = supportOpenHelperFactory,
                         migrationContainer = migrationContainer,
                         callbacks = callbacks,
                         allowMainThreadQueries = allowMainThreadQueries,
@@ -1681,6 +1785,21 @@ actual constructor() {
                 onOpenPrepackagedDatabase(connection.db)
             }
         }
+    }
+
+    /**
+     * Callback interface for when SQLite queries are executed.
+     *
+     * Can be set using [RoomDatabase.Builder.setQueryCallback].
+     */
+    public fun interface QueryCallback {
+        /**
+         * Called when a SQL query is executed.
+         *
+         * @param sqlQuery The SQLite query statement.
+         * @param bindArgs Arguments of the query if available, empty list otherwise.
+         */
+        public fun onQuery(sqlQuery: String, bindArgs: List<Any?>)
     }
 
     public companion object {

@@ -96,6 +96,14 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
                 )
             } else null
 
+        val attestationManifest =
+            if (!buildFeatures.isIsolatedProjectsEnabled()) {
+                tasks.register(ATTESTATION_TASK_NAME, AttestationManifestTask::class.java) { task ->
+                    task.manifestFile.set(
+                        getDistributionDirectory().file("attestation_manifest.json")
+                    )
+                }
+            } else null
         tasks.register(BUILD_ON_SERVER_TASK, BuildOnServerTask::class.java) { task ->
             task.cacheEvenIfNoOutputs()
             task.aggregateBuildInfoFile.set(
@@ -103,6 +111,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             )
             verifyPlayground?.let { task.dependsOn(it) }
             aggregateBuildInfo?.let { task.dependsOn(it) }
+            attestationManifest?.let { task.dependsOn(it) }
         }
 
         extra.set("projects", ConcurrentHashMap<String, String>())
@@ -201,6 +210,7 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             }
 
         configureNode()
+        configureRootProjectForYarn()
 
         tasks.withType<KotlinNpmInstallTask>().configureEach {
             when (it.name) {

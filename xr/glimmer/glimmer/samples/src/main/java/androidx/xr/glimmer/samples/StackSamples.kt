@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.xr.glimmer.Card
+import androidx.xr.glimmer.CardDefaults
 import androidx.xr.glimmer.GlimmerTheme
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.stack.VerticalStack
@@ -32,8 +33,16 @@ import androidx.xr.glimmer.stack.VerticalStack
 @Composable
 fun VerticalStackSample() {
     VerticalStack(modifier = Modifier.height(300.dp)) {
-        item { Card(modifier = Modifier.fillMaxSize()) { Text("Item-0") } }
-        items(10) { index -> Card(modifier = Modifier.fillMaxSize()) { Text("Item-${index + 1}") } }
+        item(key = 0) {
+            Card(modifier = Modifier.fillMaxSize().itemDecoration(CardDefaults.shape)) {
+                Text("Item-0")
+            }
+        }
+        items(count = 10, key = { it + 1 }) { index ->
+            Card(modifier = Modifier.fillMaxSize().itemDecoration(CardDefaults.shape)) {
+                Text("Item-${index + 1}")
+            }
+        }
     }
 }
 

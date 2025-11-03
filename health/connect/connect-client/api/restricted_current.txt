@@ -188,7 +188,7 @@ package androidx.health.connect.client.contracts {
 
 }
 
-package androidx.health.connect.client.feature {
+package @SuppressCompatibility androidx.health.connect.client.feature {
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This is a part of the Personal Health Record experimental Health Connect APIs and could change in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalPersonalHealthRecordApi {
   }
@@ -2411,7 +2411,6 @@ package androidx.health.connect.client.request {
 
   public final class ReadRecordsRequestKt {
     method @KotlinOnly public static inline <reified T extends androidx.health.connect.client.records.Record> androidx.health.connect.client.request.ReadRecordsRequest<T> ReadRecordsRequest(androidx.health.connect.client.time.TimeRangeFilter timeRangeFilter, optional java.util.Set<androidx.health.connect.client.records.metadata.DataOrigin> dataOriginFilter, optional boolean ascendingOrder, optional int pageSize, optional String? pageToken);
-    method @BytecodeOnly public static androidx.health.connect.client.request.ReadRecordsRequest! ReadRecordsRequest$default(androidx.health.connect.client.time.TimeRangeFilter!, java.util.Set!, boolean, int, String!, int, Object!);
   }
 
   @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public final class UpsertMedicalResourceRequest {

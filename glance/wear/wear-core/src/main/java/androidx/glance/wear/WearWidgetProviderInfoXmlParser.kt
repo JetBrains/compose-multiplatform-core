@@ -19,6 +19,8 @@ package androidx.glance.wear
 import android.content.ComponentName
 import android.content.res.Resources
 import android.content.res.XmlResourceParser
+import android.os.Build
+import android.text.TextUtils
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 
@@ -38,6 +40,10 @@ internal object WearWidgetProviderInfoXmlParser {
 
     private val NAMESPACE_DISABLED: String? = null
 
+    private const val MAX_SAFE_LABEL_LENGTH = 1000
+    private const val DEFAULT_MAX_LABEL_SIZE_PX = 1000f
+
+    // TODO: b/454618837 - Resources resolution should use resources from the provider package.
     @Throws(XmlPullParserException::class)
     internal fun XmlResourceParser.parseWearWidgetProviderInfo(
         resources: Resources,
@@ -65,11 +71,9 @@ internal object WearWidgetProviderInfoXmlParser {
         @ContainerInfo.ContainerType defaultPreferredContainerType: Int,
         defaultGroup: String,
     ): WearWidgetProviderInfo {
-        // TODO(b/429979908): handle string resources for label and description. This should be done
-        // similar to PackageItemInfo.loadLabel().
         // TODO(b/429979908): If not present, take label, description and icon from service tag.
-        val label = getAttributeValue(NAMESPACE_DISABLED, ATTR_LABEL) ?: ""
-        val description = getAttributeValue(NAMESPACE_DISABLED, ATTR_DESCRIPTION) ?: ""
+        val label = loadSafeLabel(resources, ATTR_LABEL)?.toString() ?: ""
+        val description = loadSafeLabel(resources, ATTR_DESCRIPTION)?.toString() ?: ""
         val icon = getAttributeResourceValue(NAMESPACE_DISABLED, ATTR_ICON, Resources.ID_NULL)
         val preferredContainerType =
             parseContainerTypeAttr(resources, ATTR_PREFERRED_TYPE, defaultPreferredContainerType)
@@ -133,9 +137,8 @@ internal object WearWidgetProviderInfoXmlParser {
         val type = parseContainerTypeAttr(resources, ATTR_TYPE)
         val previewImage =
             getAttributeResourceValue(NAMESPACE_DISABLED, ATTR_PREVIEW_IMAGE, Resources.ID_NULL)
-        // TODO: handle string resources for label and description
-        val label = getAttributeValue(NAMESPACE_DISABLED, ATTR_LABEL)
-        val description = getAttributeValue(NAMESPACE_DISABLED, ATTR_DESCRIPTION)
+        val label = loadSafeLabel(resources, ATTR_LABEL)?.toString()
+        val description = loadSafeLabel(resources, ATTR_DESCRIPTION)?.toString()
         return ContainerInfo(
             type = type,
             previewImage = previewImage,
@@ -174,5 +177,40 @@ internal object WearWidgetProviderInfoXmlParser {
         return getAttributeValue(NAMESPACE_DISABLED, attrName)?.toIntOrNull()
             ?: defaultValue
             ?: throw XmlPullParserException("Failed to parse Container Type for $attrName")
+    }
+
+    /**
+     * Load attribute as string or string resource and clean string from bad characters. See
+     * [android.content.pm.PackageItemInfo.loadSafeLabel].
+     */
+    private fun XmlResourceParser.loadSafeLabel(
+        resources: Resources,
+        attrName: String,
+    ): CharSequence? {
+        val label = loadUnsafeLabel(resources, attrName) ?: return null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return TextUtils.makeSafeForPresentation(
+                label.toString(),
+                MAX_SAFE_LABEL_LENGTH,
+                DEFAULT_MAX_LABEL_SIZE_PX,
+                TextUtils.SAFE_STRING_FLAG_TRIM or TextUtils.SAFE_STRING_FLAG_FIRST_LINE,
+            )
+        }
+        return label
+    }
+
+    private fun XmlResourceParser.loadUnsafeLabel(
+        resources: Resources,
+        attrName: String,
+    ): CharSequence? {
+        val resourceId = getAttributeResourceValue(NAMESPACE_DISABLED, attrName, Resources.ID_NULL)
+        if (resourceId != Resources.ID_NULL) {
+            try {
+                return resources.getText(resourceId)
+            } catch (e: Resources.NotFoundException) {
+                throw XmlPullParserException("Invalid resource for " + attrName, this, e)
+            }
+        }
+        return getAttributeValue(NAMESPACE_DISABLED, attrName)
     }
 }

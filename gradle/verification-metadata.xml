@@ -11,6 +11,7 @@
       </key-servers>
       <trusted-artifacts>
          <trust file="apiLevels.json" reason="We do not sign this metadata"/>
+         <trust group="com.android.extensions.xr" name="extensions-xr" reason="b/440381584"/>
          <trust group="com.android.ndk.thirdparty" reason="b/215430394"/>
          <trust group="com.android.tools" name="desugar_jdk_libs" reason="b/215430394"/>
          <trust group="com.android.tools" name="desugar_jdk_libs_configuration" reason="b/215430394"/>
@@ -34,7 +35,6 @@
          <trust group="com.google.android.play" reason="b/255621183"/>
          <trust group="com.google.android.tv" reason="b/345483744"/>
          <trust group="com.google.ar" reason="b/378946732"/>
-         <trust group="com.android.extensions.xr" name="extensions-xr" reason="b/440381584"/>
          <trust group="com.google.devsite" reason="developed by our own team, not signed yet"/>
          <trust group="com.google.firebase" reason="b/223907608"/>
          <trust group="com.google.mlkit" reason="b/223907608"/>
@@ -142,6 +142,7 @@
             <trusting group="com.squareup.moshi"/>
             <trusting group="com.squareup.okhttp3"/>
             <trusting group="com.squareup.okio"/>
+            <trusting group="com.squareup.retrofit2" name="retrofit" version="2.12.0"/>
             <trusting group="com.squareup.wire"/>
          </trusted-key>
          <trusted-key id="1D9AA7F9E1E2824728B8CD1794B291AEF984A085">
@@ -219,7 +220,7 @@
             <trusting group="org.apache.groovy"/>
             <trusting group="org.codehaus.groovy"/>
          </trusted-key>
-         <trusted-key id="373D292D931CEAD14A4DBFDF3D52C2966A51F8F4" group="org.ow2" />
+         <trusted-key id="373D292D931CEAD14A4DBFDF3D52C2966A51F8F4" group="org.ow2"/>
          <trusted-key id="3872ED7D5904493D23D78FA2C4C8CB73B1435348" group="com.android.tools.build"/>
          <trusted-key id="3D11126EA77E4E07FBABB38614A84C976D265B25" group="com.google.protobuf"/>
          <trusted-key id="3DBC5D7DC2FB8DD68AA429BD353A436E043E3145" group="com.google.code.findbugs"/>

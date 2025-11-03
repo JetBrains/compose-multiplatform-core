@@ -178,6 +178,45 @@ class WearWidgetProviderInfoTest {
             .containsEntry("unrecognizedRef", "@${android.R.string.ok}")
     }
 
+    @Test
+    fun parseFromResource_parseProviderInfoWithResources() {
+        val info =
+            getXml(R.xml.wear_widget_provider_info_resources_test)
+                .parseWearWidgetProviderInfo(
+                    context.resources,
+                    service,
+                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_FULLSCREEN,
+                    defaultGroup = "default.group",
+                )
+
+        assertThat(info.providerService).isEqualTo(service)
+        assertThat(info.label).isEqualTo(context.getString(R.string.test_label))
+        assertThat(info.description).isEqualTo(context.getString(R.string.test_description))
+        assertThat(info.icon).isEqualTo(android.R.drawable.ic_delete)
+        assertThat(info.preferredContainerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_SMALL)
+        assertThat(info.group).isEqualTo("test.group")
+        assertThat(info.configIntentAction).isEqualTo("test.action")
+        assertThat(info.minSchemaVersion?.major).isEqualTo(1)
+        assertThat(info.minSchemaVersion?.minor).isEqualTo(200)
+        assertThat(info.maxSchemaVersion?.major).isEqualTo(2)
+        assertThat(info.maxSchemaVersion?.minor).isEqualTo(340)
+        assertThat(info.containers).hasSize(2)
+        assertThat(info.containers)
+            .containsExactlyElementsIn(
+                listOf(
+                    ContainerInfo(
+                        ContainerInfo.CONTAINER_TYPE_SMALL,
+                        android.R.drawable.ic_dialog_alert,
+                    ),
+                    ContainerInfo(
+                        ContainerInfo.CONTAINER_TYPE_LARGE,
+                        android.R.drawable.ic_dialog_dialer,
+                        label = context.getString(R.string.test_label_override),
+                    ),
+                )
+            )
+    }
+
     @Test(expected = XmlPullParserException::class)
     fun parseWearWidgetProviderInfo_missingType() {
         getXml(R.xml.wear_widget_provider_info_missing_type)

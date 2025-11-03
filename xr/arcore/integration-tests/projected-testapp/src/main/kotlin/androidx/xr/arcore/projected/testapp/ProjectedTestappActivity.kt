@@ -110,12 +110,19 @@ class ProjectedTestAppActivity : ComponentActivity() {
     }
 
     private fun update() {
-        val pose = ArDevice.getInstance(session).state.value.devicePose
-        var newText =
-            "\n\n\n\nDevicePose translation: ${pose.translation.x}, ${pose.translation.y}, ${pose.translation.z}"
-        newText +=
-            "\nDevicePose rotation: ${pose.rotation.x}, ${pose.rotation.y}, ${pose.rotation.z}, ${pose.rotation.w}"
+        var newText = "\n\n\n"
+        newText += getDevicePoseText()
+        newText += getGeospatialPoseText()
+        runOnUiThread { textView.text = newText }
+    }
 
+    private fun getDevicePoseText(): String {
+        val pose = ArDevice.getInstance(session).state.value.devicePose
+        return "\nDevicePose translation: ${pose.translation.x}, ${pose.translation.y}, ${pose.translation.z}" +
+            "\nDevicePose rotation: ${pose.rotation.x}, ${pose.rotation.y}, ${pose.rotation.z}, ${pose.rotation.w}"
+    }
+
+    private fun getGeospatialPoseText(): String {
         when (val geospatialPoseResult = earth.createGeospatialPoseFromDevicePose()) {
             is CreateGeospatialPoseFromPoseSuccess -> {
                 val currentGeospatialPose = geospatialPoseResult.pose
@@ -124,8 +131,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
 
                 if (!isCurrentPoseValid) {
                     Log.w(TAG, "Skipping frame due to invalid currentGeospatialPose.")
-                    newText += "\nWaiting for a valid Geospatial Pose..."
-                    return
+                    return "\nWaiting for a valid Geospatial Pose..."
                 }
 
                 if (initialGeospatialPose == null) {
@@ -140,26 +146,15 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 )
                 val comparisonMessage = testGeospatialConversions(currentGeospatialPose)
 
-                displayToScreen(currentGeospatialPose, vpsStatusMessage, comparisonMessage)
+                var text = "\nGeospatialPose: ${currentGeospatialPose}"
+                text += "\nVPS availability: $vpsStatusMessage"
+                text += "\nComparison:\n$comparisonMessage"
+                return text
             }
             else -> {
                 Log.e(TAG, "Failed to get GeospatialPose from device pose: $geospatialPoseResult")
-                newText += "\nError getting GeospatialPose: $geospatialPoseResult"
+                return "\nError getting GeospatialPose: $geospatialPoseResult"
             }
-        }
-        runOnUiThread { textView.text = newText }
-    }
-
-    private fun displayToScreen(
-        currentGeospatialPose: GeospatialPose,
-        vpsStatusMessage: String,
-        comparisonMessage: String,
-    ) {
-        runOnUiThread {
-            var text = "\n\n\n\nGeospatialPose: ${currentGeospatialPose}"
-            text += "\n\nVPS availability: $vpsStatusMessage"
-            text += "\n\nComparison:\n$comparisonMessage"
-            textView.text = text
         }
     }
 

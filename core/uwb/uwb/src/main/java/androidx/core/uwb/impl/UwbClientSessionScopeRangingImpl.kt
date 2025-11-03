@@ -35,10 +35,11 @@ import androidx.core.uwb.RangingParameters
 import androidx.core.uwb.RangingPosition
 import androidx.core.uwb.RangingResult
 import androidx.core.uwb.RangingResult.Companion.fromId
+import androidx.core.uwb.RangingResult.RangingResultFailure
 import androidx.core.uwb.UwbAddress
 import androidx.core.uwb.UwbClientSessionScope
 import androidx.core.uwb.UwbDevice
-import androidx.core.uwb.helper.handleApiException
+import androidx.core.uwb.helper.getFailureReasonFromApiException
 import com.google.android.gms.common.api.ApiException
 import java.util.Collections
 import java.util.concurrent.Executor
@@ -209,8 +210,10 @@ internal abstract class UwbClientSessionScopeRangingImpl(
                 mRangingManager.createRangingSession(mExecutor, rangingSessionCallback)
             mRangingSession?.start(rangingPreference)
             sessionStarted = true
-        } catch (e: Exception) {
-            throw IllegalStateException("Failed to start ranging session, with Exception: $e")
+        } catch (e: ApiException) {
+            trySend(
+                RangingResultFailure(UwbDevice(localAddress), getFailureReasonFromApiException(e))
+            )
         }
 
         awaitClose {
@@ -223,7 +226,12 @@ internal abstract class UwbClientSessionScopeRangingImpl(
                         Log.d(TAG, "Ranging session already stopped")
                     }
                 } catch (e: ApiException) {
-                    handleApiException(e)
+                    trySend(
+                        RangingResultFailure(
+                            UwbDevice(localAddress),
+                            getFailureReasonFromApiException(e),
+                        )
+                    )
                 }
             }
         }

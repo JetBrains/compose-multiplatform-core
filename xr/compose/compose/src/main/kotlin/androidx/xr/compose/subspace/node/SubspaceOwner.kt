@@ -44,6 +44,9 @@ internal interface SubspaceOwner {
      */
     public fun onDetach(node: SubspaceLayoutNode)
 
+    /** Called each time updates to the layout tree have completed. */
+    public fun onRecompositionComplete()
+
     /**
      * Called by [SubspaceLayoutNode] when it needs to be re-measured due to a change that doesn't
      * trigger a recomposition.

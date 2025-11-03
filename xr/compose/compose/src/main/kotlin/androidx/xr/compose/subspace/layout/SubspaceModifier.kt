@@ -109,6 +109,21 @@ public interface SubspaceModifier {
          * can be reattached again.
          */
         public open fun onDetach() {}
+
+        /**
+         * If this property returns `true`, then nodes will be automatically invalidated after the
+         * modifier update completes.
+         *
+         * This is enabled by default, and provides a convenient mechanism to schedule invalidation
+         * and apply changes made to the modifier. You may choose to set this to `false` if your
+         * modifier has auto-invalidatable properties that do not frequently require invalidation to
+         * improve performance by skipping unnecessary invalidation. If `shouldAutoInvalidate` is
+         * set to `false`, you must call the appropriate invalidate functions manually when the
+         * modifier is updated or else the updates may not be reflected in the UI appropriately.
+         */
+        @Suppress("GetterSetterNames")
+        @get:Suppress("GetterSetterNames")
+        public open val shouldAutoInvalidate: Boolean = true
     }
 
     /**

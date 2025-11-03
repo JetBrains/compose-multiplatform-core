@@ -166,12 +166,13 @@ class ForeignKeyTest(private val useDriver: UseDriver) {
     fun openDb() {
         db =
             Room.inMemoryDatabaseBuilder<ForeignKeyDb>(ApplicationProvider.getApplicationContext())
-                .setDriver(
-                    when (useDriver) {
-                        UseDriver.ANDROID -> AndroidSQLiteDriver()
-                        UseDriver.BUNDLED -> BundledSQLiteDriver()
+                .apply {
+                    if (useDriver == UseDriver.ANDROID) {
+                        setDriver(AndroidSQLiteDriver())
+                    } else if (useDriver == UseDriver.BUNDLED) {
+                        setDriver(BundledSQLiteDriver())
                     }
-                )
+                }
                 .build()
         dao = db.dao()
     }

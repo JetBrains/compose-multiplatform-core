@@ -20,18 +20,20 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
 import android.os.IBinder
-import androidx.annotation.RestrictTo
 import androidx.xr.projected.platform.IProjectedService
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withTimeout
 
 /** Establishes a connection to the projected service. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class ProjectedServiceConnection(private val context: Context) {
 
     private var serviceConnection: ServiceConnection? = null
     private var serviceBinder: IBinder? = null
     private val deathRecipient = IBinder.DeathRecipient { disconnect() }
+    private val _serviceConnected = MutableStateFlow(false)
+    internal val serviceConnected = _serviceConnected.asStateFlow()
 
     /**
      * Connects to the projected service and returns an [IProjectedService] instance.
@@ -54,9 +56,12 @@ internal class ProjectedServiceConnection(private val context: Context) {
                     serviceDeferred.complete(IProjectedService.Stub.asInterface(service))
                     serviceBinder = service
                     service?.linkToDeath(deathRecipient, /* flags= */ 0)
+                    _serviceConnected.tryEmit(true)
                 }
 
-                override fun onServiceDisconnected(name: ComponentName?) {}
+                override fun onServiceDisconnected(name: ComponentName?) {
+                    _serviceConnected.tryEmit(false)
+                }
             }
 
         val isBindingPermitted =
@@ -79,6 +84,7 @@ internal class ProjectedServiceConnection(private val context: Context) {
      * @throws IllegalStateException if the service connection is null.
      */
     internal fun disconnect() {
+        _serviceConnected.tryEmit(false)
         context.unbindService(checkNotNull(serviceConnection, { "Service connection is null" }))
         serviceBinder?.unlinkToDeath(deathRecipient, /* flags= */ 0)
         serviceBinder = null

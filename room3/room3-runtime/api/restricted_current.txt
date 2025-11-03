@@ -127,10 +127,8 @@ package androidx.room3 {
   public final class Room {
     method public static <T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> databaseBuilder(android.content.Context context, Class<T> klass, String? name);
     method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> databaseBuilder(android.content.Context context, String name, optional kotlin.jvm.functions.Function0<T> factory);
-    method @BytecodeOnly public static androidx.room3.RoomDatabase.Builder! databaseBuilder$default(androidx.room3.Room!, android.content.Context!, String!, kotlin.jvm.functions.Function0!, int, Object!);
     method public static <T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> inMemoryDatabaseBuilder(android.content.Context context, Class<T> klass);
     method @KotlinOnly public inline <reified T extends androidx.room3.RoomDatabase> androidx.room3.RoomDatabase.Builder<T> inMemoryDatabaseBuilder(android.content.Context context, optional kotlin.jvm.functions.Function0<T> factory);
-    method @BytecodeOnly public static androidx.room3.RoomDatabase.Builder! inMemoryDatabaseBuilder$default(androidx.room3.Room!, android.content.Context!, kotlin.jvm.functions.Function0!, int, Object!);
     property public static String MASTER_TABLE_NAME;
     field public static final androidx.room3.Room INSTANCE;
     field public static final String MASTER_TABLE_NAME = "room_master_table";
@@ -197,6 +195,8 @@ package androidx.room3 {
     method @SuppressCompatibility @androidx.room3.ExperimentalRoomApi public final androidx.room3.RoomDatabase.Builder<T> setInMemoryTrackingMode(boolean inMemory);
     method public androidx.room3.RoomDatabase.Builder<T> setJournalMode(androidx.room3.RoomDatabase.JournalMode journalMode);
     method @SuppressCompatibility @androidx.room3.ExperimentalRoomApi public androidx.room3.RoomDatabase.Builder<T> setMultiInstanceInvalidationServiceIntent(android.content.Intent invalidationServiceIntent);
+    method public androidx.room3.RoomDatabase.Builder<T> setQueryCallback(androidx.room3.RoomDatabase.QueryCallback queryCallback, java.util.concurrent.Executor executor);
+    method public final androidx.room3.RoomDatabase.Builder<T> setQueryCallback(kotlin.coroutines.CoroutineContext context, androidx.room3.RoomDatabase.QueryCallback queryCallback);
     method public final androidx.room3.RoomDatabase.Builder<T> setQueryCoroutineContext(kotlin.coroutines.CoroutineContext context);
     method public androidx.room3.RoomDatabase.Builder<T> setQueryExecutor(java.util.concurrent.Executor executor);
     method public androidx.room3.RoomDatabase.Builder<T> setTransactionExecutor(java.util.concurrent.Executor executor);
@@ -235,6 +235,10 @@ package androidx.room3 {
     ctor public RoomDatabase.PrepackagedDatabaseCallback();
     method public void onOpenPrepackagedDatabase(androidx.sqlite.db.SupportSQLiteDatabase db);
     method public void onOpenPrepackagedDatabase(androidx.sqlite.SQLiteConnection connection);
+  }
+
+  public static fun interface RoomDatabase.QueryCallback {
+    method public void onQuery(String sqlQuery, java.util.List<? extends java.lang.Object?> bindArgs);
   }
 
   public interface RoomDatabaseConstructor<T extends androidx.room3.RoomDatabase> {

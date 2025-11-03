@@ -160,7 +160,7 @@ public class SupportingPaneSceneStrategy<T : Any>(
     }
 
     public companion object {
-        internal const val SupportingPaneRoleKey =
+        internal const val SupportingPaneRoleKey: String =
             "androidx.compose.material3.adaptive.layout.SupportingPaneScaffoldRole"
 
         /**

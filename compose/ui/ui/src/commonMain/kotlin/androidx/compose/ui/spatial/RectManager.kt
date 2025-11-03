@@ -245,52 +245,102 @@ internal class RectManager(
         // minimize this, we store the "offsetFromRoot" of each layout node as we calculate it, and
         // attempt to utilize this value when calculating it for a node that is below it.
         // Additionally, we calculate and cache the parent's "outer to inner offset" which may
-        val delegate = layoutNode.measurePassDelegate
-        val width = delegate.measuredWidth
-        val height = delegate.measuredHeight
-        val firstPlacement = !layoutNode.addedToRectList
-
-        val lastOffset =
-            if (firstPlacement || forceUpdate) {
-                // no need to get the current value as we or don't have it, or we need to update
-                // even
-                // if it didn't change.
-                IntOffset.Max
+        val parent = layoutNode.parent
+        val parentOuterInnerOffset =
+            if (parent != null && !parent.hasPositionalLayerTransformationsInOffsetFromRoot) {
+                if (parent.outerToInnerOffsetDirty) {
+                    parent.outerToInnerOffsetDirty = false
+                    parent.outerToInnerOffset = parent.outerToInnerOffset()
+                }
+                parent.outerToInnerOffset
+            } else if (parent == null) {
+                IntOffset.Zero
             } else {
-                getOffsetFromRectListFor(layoutNode)
+                // parent has layer transformations
+                IntOffset.Max
             }
-        val lastSize = layoutNode.lastSize
-        val lastWidth = lastSize.width
-        val lastHeight = lastSize.height
+        val outer = layoutNode.outerCoordinator
+        if (parentOuterInnerOffset.isSet && !outer.hasPositionalLayerTransformations()) {
+            val offsetFromParent = parentOuterInnerOffset + outer.position
 
-        val offset = calculateOffsetFromRootBasedOnParentOffset(layoutNode)
-
-        // If unset is returned then that means there is a rotation/skew/scale
-        if (!offset.isSet) {
-            insertOrUpdateTransformedNode(layoutNode)
-            return
-        } else {
             // this will recursively reset [hasPositionalLayerTransformationsInOffsetFromRoot] to
             // false if this specific node was the only reason the whole subtree were having
             // a layer transformation, and this transformation was removed.
             // [insertOrUpdateTransformedNode] is from the other branch is doing opposite, it is
             // setting [hasPositionalLayerTransformationsInOffsetFromRoot] to true for the subtree
             layoutNode.resetHasPositionalLayerTransformationsForSubtreeIfNeeded()
+
+            val delegate = layoutNode.measurePassDelegate
+            val width = delegate.measuredWidth
+            val height = delegate.measuredHeight
+            val size = IntSize(width, height)
+            val semanticsId = layoutNode.semanticsId
+
+            if (layoutNode.addedToRectList) {
+                if (
+                    forceUpdate ||
+                        offsetFromParent != layoutNode.lastOffsetFromParent ||
+                        size != layoutNode.lastSize
+                ) {
+                    if (parent != null) {
+                        rects.moveBasedOnParentOffset(
+                            value = semanticsId,
+                            parentId = parent.semanticsId,
+                            offsetFromParentX = offsetFromParent.x,
+                            offsetFromParentY = offsetFromParent.y,
+                            width = width,
+                            height = height,
+                        )
+                    } else {
+                        // moving the root.
+                        // when parent is null offsetFromParent is just the outer coordinator
+                        // offset.
+                        rects.move(
+                            value = semanticsId,
+                            l = offsetFromParent.x,
+                            t = offsetFromParent.y,
+                            r = offsetFromParent.x + width,
+                            b = offsetFromParent.y + height,
+                        )
+                    }
+                    invalidate()
+                }
+            } else {
+                layoutNode.addedToRectList = true
+                val focusable = layoutNode.nodes.has(Nodes.FocusTarget)
+                val gesturable = layoutNode.nodes.has(Nodes.PointerInput)
+                if (parent != null) {
+                    rects.insertBasedOnParentOffset(
+                        value = semanticsId,
+                        parentId = parent.semanticsId,
+                        offsetFromParentX = offsetFromParent.x,
+                        offsetFromParentY = offsetFromParent.y,
+                        width = width,
+                        height = height,
+                        focusable = focusable,
+                        gesturable = gesturable,
+                    )
+                } else {
+                    // inserting the root, which has no parent.
+                    // when parent is null offsetFromParent is just the outer coordinator offset.
+                    rects.insert(
+                        value = semanticsId,
+                        l = offsetFromParent.x,
+                        t = offsetFromParent.y,
+                        r = offsetFromParent.x + width,
+                        b = offsetFromParent.y + height,
+                        focusable = focusable,
+                        gesturable = gesturable,
+                    )
+                }
+                invalidate()
+            }
+            layoutNode.lastSize = size
+            layoutNode.lastOffsetFromParent = offsetFromParent
+        } else {
+            // If unset is returned then that means there is a rotation/skew/scale
+            insertOrUpdateTransformedNode(layoutNode)
         }
-
-        layoutNode.lastSize = IntSize(width, height)
-
-        val l = offset.x
-        val t = offset.y
-        val r = l + width
-        val b = t + height
-
-        layoutNode.addedToRectList = true
-        if (offset == lastOffset && lastWidth == width && lastHeight == height) {
-            return
-        }
-
-        insertOrUpdate(layoutNode, firstPlacement, l, t, r, b)
     }
 
     fun getOffsetFromRectListFor(layoutNode: LayoutNode): IntOffset {
@@ -319,40 +369,6 @@ internal class RectManager(
         }
     }
 
-    private fun calculateOffsetFromRootBasedOnParentOffset(layoutNode: LayoutNode): IntOffset {
-        val outer = layoutNode.outerCoordinator
-
-        if (outer.hasPositionalLayerTransformations()) {
-            return IntOffset.Max
-        }
-        val parent = layoutNode.parent
-        return if (parent != null) {
-            if (parent.hasPositionalLayerTransformationsInOffsetFromRoot) {
-                IntOffset.Max
-            } else {
-                val parentOffset = getOffsetFromRectListFor(parent)
-                val parentOuterInnerOffset =
-                    if (parent.outerToInnerOffsetDirty) {
-                        val it = parent.outerToInnerOffset()
-
-                        parent.outerToInnerOffset = it
-                        parent.outerToInnerOffsetDirty = false
-                        it
-                    } else {
-                        parent.outerToInnerOffset
-                    }
-                if (!parentOuterInnerOffset.isSet || !parentOffset.isSet) {
-                    IntOffset.Max
-                } else {
-                    parentOffset + parentOuterInnerOffset + outer.position
-                }
-            }
-        } else {
-            // root
-            outer.position
-        }
-    }
-
     private fun insertOrUpdateTransformedNodeSubhierarchy(layoutNode: LayoutNode) {
         layoutNode.forEachChild {
             insertOrUpdateTransformedNode(it)
@@ -364,6 +380,7 @@ internal class RectManager(
 
     private fun insertOrUpdateTransformedNode(layoutNode: LayoutNode) {
         layoutNode.hasPositionalLayerTransformationsInOffsetFromRoot = true
+        layoutNode.lastOffsetFromParent = IntOffset.Max
 
         val coord = layoutNode.outerCoordinator
         val delegate = layoutNode.measurePassDelegate
@@ -385,31 +402,6 @@ internal class RectManager(
         // NOTE: we call update here instead of move since the subhierarchy will not be moved by a
         // simple delta since we are dealing with rotation/skew/scale/etc.
         if (firstPlacement || !rects.update(id, l, t, r, b)) {
-            val parentId = layoutNode.parent?.semanticsId ?: -1
-            rects.insert(
-                id,
-                l,
-                t,
-                r,
-                b,
-                parentId = parentId,
-                focusable = layoutNode.nodes.has(Nodes.FocusTarget),
-                gesturable = layoutNode.nodes.has(Nodes.PointerInput),
-            )
-        }
-        invalidate()
-    }
-
-    private fun insertOrUpdate(
-        layoutNode: LayoutNode,
-        firstPlacement: Boolean,
-        l: Int,
-        t: Int,
-        r: Int,
-        b: Int,
-    ) {
-        val id = layoutNode.semanticsId
-        if (firstPlacement || !rects.move(id, l, t, r, b)) {
             val parentId = layoutNode.parent?.semanticsId ?: -1
             rects.insert(
                 id,
@@ -464,10 +456,12 @@ internal class RectManager(
     }
 
     fun remove(layoutNode: LayoutNode) {
-        rects.remove(layoutNode.semanticsId)
-        layoutNode.addedToRectList = false
-        invalidate()
-        isFragmented = true
+        if (layoutNode.addedToRectList) {
+            rects.remove(layoutNode.semanticsId)
+            layoutNode.addedToRectList = false
+            invalidate()
+            isFragmented = true
+        }
     }
 
     /**

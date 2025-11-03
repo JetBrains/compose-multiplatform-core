@@ -784,6 +784,13 @@ public class WebViewFeatureInternal {
                     Features.WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE);
 
     /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link androidx.webkit.NavigationListener} and all methods within.
+     */
+    public static final ApiFeature.NoFramework NAVIGATION_LISTENER_V1 = new ApiFeature.NoFramework(
+            WebViewFeature.NAVIGATION_LISTENER_V1, Features.WEB_VIEW_NAVIGATION_LISTENER_V1);
+
+    /**
      * This is an internal only feature that indicate whether it is safe to cache WebView Provider
      * objects for the current WebView APK.
      */

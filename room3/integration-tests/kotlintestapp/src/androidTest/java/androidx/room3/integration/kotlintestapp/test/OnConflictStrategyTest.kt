@@ -77,12 +77,13 @@ class OnConflictStrategyTest(private val useDriver: UseDriver) {
         val context: Context = InstrumentationRegistry.getInstrumentation().targetContext
         db =
             Room.inMemoryDatabaseBuilder<OnConflictStrategyDatabase>(context)
-                .setDriver(
-                    when (useDriver) {
-                        UseDriver.ANDROID -> AndroidSQLiteDriver()
-                        UseDriver.BUNDLED -> BundledSQLiteDriver()
+                .apply {
+                    if (useDriver == UseDriver.ANDROID) {
+                        setDriver(AndroidSQLiteDriver())
+                    } else if (useDriver == UseDriver.BUNDLED) {
+                        setDriver(BundledSQLiteDriver())
                     }
-                )
+                }
                 .build()
     }
 

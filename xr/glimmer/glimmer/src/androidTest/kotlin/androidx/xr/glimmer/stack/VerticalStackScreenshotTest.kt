@@ -29,6 +29,7 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.xr.glimmer.Card
+import androidx.xr.glimmer.CardDefaults
 import androidx.xr.glimmer.GOLDEN_DIRECTORY
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.assertRootAgainstGolden
@@ -69,7 +70,11 @@ class VerticalStackScreenshotTest {
         rule.setGlimmerThemeContent {
             VerticalStack(modifier = Modifier.height(300.dp)) {
                 items(10) { index ->
-                    Card(modifier = Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)) {
+                    Card(
+                        modifier =
+                            Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)
+                                .itemDecoration(CardDefaults.shape)
+                    ) {
                         Text("Item-$index")
                     }
                 }
@@ -83,7 +88,11 @@ class VerticalStackScreenshotTest {
         rule.setGlimmerThemeContent {
             VerticalStack(modifier = Modifier.height(300.dp)) {
                 items(10) { index ->
-                    Card(modifier = Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)) {
+                    Card(
+                        modifier =
+                            Modifier.fillMaxHeight(if (index % 2 == 0) 0.5f else 1f)
+                                .itemDecoration(CardDefaults.shape)
+                    ) {
                         Text("Item-$index")
                     }
                 }

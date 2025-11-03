@@ -27,7 +27,9 @@ package androidx.xr.glimmer {
 
   public final class CardDefaults {
     method @InaccessibleFromKotlin public androidx.compose.foundation.layout.PaddingValues getContentPadding();
+    method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.compose.ui.graphics.Shape getShape(androidx.compose.runtime.Composer?, int);
     property public androidx.compose.foundation.layout.PaddingValues ContentPadding;
+    property public androidx.compose.ui.graphics.Shape shape;
     field public static final androidx.xr.glimmer.CardDefaults INSTANCE;
   }
 
@@ -357,6 +359,7 @@ package androidx.xr.glimmer.list {
 package androidx.xr.glimmer.stack {
 
   @androidx.compose.runtime.Stable public sealed interface StackItemScope {
+    method public default androidx.compose.ui.Modifier itemDecoration(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.Shape shape);
   }
 
   public final class StackKt {

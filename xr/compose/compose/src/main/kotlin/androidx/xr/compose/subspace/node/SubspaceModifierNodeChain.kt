@@ -17,6 +17,8 @@
 package androidx.xr.compose.subspace.node
 
 import androidx.xr.compose.subspace.layout.CombinedSubspaceModifier
+import androidx.xr.compose.subspace.layout.CoreEntityNode
+import androidx.xr.compose.subspace.layout.ParentLayoutParamsModifier
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.SubspacePlaceable
 import androidx.xr.compose.subspace.layout.findInstance
@@ -29,6 +31,11 @@ private val SentinelHead =
     object : SubspaceModifier.Node() {
         override fun toString() = "<Head>"
     }
+
+// Phase values passed to autoInvalidateNode.
+private const val Insert = 0
+private const val Update = 1
+private const val Remove = 2
 
 /** See [androidx.compose.ui.node.NodeChain] */
 internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: SubspaceLayoutNode) {
@@ -190,11 +197,13 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
             node.markAsAttached()
             node.onAttach()
         }
+        autoInvalidateNode(node, Insert)
         return node
     }
 
     private fun updateNode(node: SubspaceModifier.Node, modifier: SubspaceModifier) {
         (modifier as SubspaceModifierNodeElement<*>).updateUnsafe(node)
+        autoInvalidateNode(node, Update)
     }
 
     private fun removeNode(node: SubspaceModifier.Node): SubspaceModifier.Node {
@@ -208,11 +217,37 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
             parent.child = child
             node.parent = null
         }
+        autoInvalidateNode(node, Remove)
         if (node.isAttached) {
             node.onDetach()
             node.markAsDetached()
         }
         return parent!!
+    }
+
+    private fun autoInvalidateNode(node: SubspaceModifier.Node, phase: Int) {
+        if (!node.isAttached) return
+        if (phase == Update && !node.shouldAutoInvalidate) return
+
+        if (node is SubspaceLayoutModifierNode) {
+            subspaceLayoutNode.requestMeasure()
+        }
+
+        if (node is ParentLayoutParamsModifier) {
+            subspaceLayoutNode.parent?.requestMeasure()
+        }
+
+        if (node is CoreEntityNode) {
+            // TODO(mrw): Instead of a full relayout, we might be able to only update the entity.
+            subspaceLayoutNode.requestLayout()
+        }
+
+        if (node is LayoutCoordinatesAwareModifierNode) {
+            if (phase != Remove) {
+                // TODO(mrw): Don't do a full relayout, just dispatch the callbacks.
+                subspaceLayoutNode.requestLayout()
+            }
+        }
     }
 
     /**

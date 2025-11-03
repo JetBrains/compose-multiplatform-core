@@ -1079,11 +1079,13 @@ package androidx.xr.compose.subspace.layout {
   public abstract static class SubspaceModifier.Node implements androidx.xr.compose.subspace.layout.DelegatableSubspaceNode {
     ctor public SubspaceModifier.Node();
     method @InaccessibleFromKotlin public androidx.xr.compose.subspace.layout.SubspaceModifier.Node getNode();
+    method @InaccessibleFromKotlin public boolean getShouldAutoInvalidate();
     method @InaccessibleFromKotlin public final boolean isAttached();
     method public void onAttach();
     method public void onDetach();
     property public final boolean isAttached;
     property public androidx.xr.compose.subspace.layout.SubspaceModifier.Node node;
+    property public boolean shouldAutoInvalidate;
   }
 
   public abstract class SubspacePlaceable {

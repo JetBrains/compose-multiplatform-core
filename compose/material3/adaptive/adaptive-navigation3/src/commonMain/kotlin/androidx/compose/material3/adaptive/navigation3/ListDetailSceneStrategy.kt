@@ -173,7 +173,7 @@ public class ListDetailSceneStrategy<T : Any>(
     }
 
     public companion object {
-        internal const val ListDetailRoleKey =
+        internal const val ListDetailRoleKey: String =
             "androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole"
 
         /**

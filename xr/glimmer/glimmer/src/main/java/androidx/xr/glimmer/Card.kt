@@ -105,7 +105,7 @@ public fun Card(
     header: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = GlimmerTheme.shapes.medium,
+    shape: Shape = CardDefaults.shape,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
@@ -198,7 +198,7 @@ public fun Card(
     header: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = GlimmerTheme.shapes.medium,
+    shape: Shape = CardDefaults.shape,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
@@ -276,7 +276,7 @@ public fun Card(
     header: @Composable (() -> Unit)? = null,
     leadingIcon: @Composable (() -> Unit)? = null,
     trailingIcon: @Composable (() -> Unit)? = null,
-    shape: Shape = GlimmerTheme.shapes.medium,
+    shape: Shape = CardDefaults.shape,
     color: Color = GlimmerTheme.colors.surface,
     contentColor: Color = calculateContentColor(color),
     border: BorderStroke? = SurfaceDefaults.border(),
@@ -552,6 +552,10 @@ public object CardDefaults {
      * inside a card, this only represents the outer padding for the entire content.
      */
     public val ContentPadding: PaddingValues = PaddingValues(16.dp)
+
+    /** The default shape of [Card], which determines its corner radius. */
+    public val shape: Shape
+        @Composable get() = GlimmerTheme.shapes.medium
 }
 
 /** Default minimum height for a [Card] */

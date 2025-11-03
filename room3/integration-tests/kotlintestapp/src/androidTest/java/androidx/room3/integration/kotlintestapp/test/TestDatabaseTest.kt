@@ -32,7 +32,7 @@ import org.junit.Before
 import org.junit.Rule
 
 abstract class TestDatabaseTest(
-    protected val useDriver: UseDriver = UseDriver.ANDROID,
+    protected val useDriver: UseDriver = UseDriver.NONE,
     protected val useInMemoryDatabase: Boolean = true,
 ) {
     @get:Rule val countingTaskExecutorRule = CountingTaskExecutorRule()
@@ -53,12 +53,13 @@ abstract class TestDatabaseTest(
                 } else {
                     Room.databaseBuilder(context, "test.db")
                 }
-                .setDriver(
-                    when (useDriver) {
-                        UseDriver.ANDROID -> AndroidSQLiteDriver()
-                        UseDriver.BUNDLED -> BundledSQLiteDriver()
+                .apply {
+                    if (useDriver == UseDriver.ANDROID) {
+                        setDriver(AndroidSQLiteDriver())
+                    } else if (useDriver == UseDriver.BUNDLED) {
+                        setDriver(BundledSQLiteDriver())
                     }
-                )
+                }
                 .build()
 
         booksDao = database.booksDao()
@@ -83,5 +84,6 @@ abstract class TestDatabaseTest(
     enum class UseDriver {
         ANDROID,
         BUNDLED,
+        NONE,
     }
 }

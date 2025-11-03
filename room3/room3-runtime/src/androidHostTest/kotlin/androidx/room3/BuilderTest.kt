@@ -556,6 +556,19 @@ class BuilderTest {
         }
     }
 
+    @OptIn(ExperimentalRoomApi::class)
+    @Test
+    fun driverProvidedQueryCallback() {
+        assertThrows<IllegalArgumentException> {
+                inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
+                    .setQueryCallback(Dispatchers.IO) { _, _ -> }
+                    .setDriver(mock())
+                    .build()
+            }
+            .hasMessageThat()
+            .isEqualTo("Query Callback is not supported when an SQLiteDriver is configured.")
+    }
+
     internal abstract class TestDatabase : RoomDatabase() {
         lateinit var databaseConfiguration: DatabaseConfiguration
 

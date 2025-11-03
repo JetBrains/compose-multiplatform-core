@@ -1,0 +1,41 @@
+diff --git a/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt b/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt
+index abf6e304bcd..1cdc74bc684 100644
+--- a/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt
++++ b/buildSrc/private/src/main/kotlin/androidx/build/clang/KonanBuildService.kt
+@@ -146,7 +146,8 @@ abstract class KonanBuildService @Inject constructor(private val execOperations:
+                         TempFiles(),
+                         objectFiles = objectFiles,
+                         executable = outputFile.canonicalPath,
+-                        libraries = linkedObjectFiles,
++                        dynamicLibraries = linkedObjectFiles,
++                        staticLibraries = emptyList(),
+                         linkerArgs = linkerFlags,
+                         optimize = true,
+                         debug = false,
+diff --git a/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt b/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt
+index c666ca828d7..453135288ea 100644
+--- a/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt
++++ b/buildSrc/public/src/main/kotlin/androidx/build/AndroidXConfiguration.kt
+@@ -41,7 +41,7 @@ enum class KotlinTarget(val apiVersion: KotlinVersion, val catalogVersion: Strin
+     KOTLIN_2_0(KotlinVersion.KOTLIN_2_0, "kotlin20"),
+     KOTLIN_2_1(KotlinVersion.KOTLIN_2_1, "kotlin21"),
+     KOTLIN_2_2(KotlinVersion.KOTLIN_2_2, "kotlin22"),
+-    DEFAULT(KOTLIN_2_0),
++    DEFAULT(KOTLIN_2_1),
+     LATEST(KOTLIN_2_2);
+ 
+     constructor(
+diff --git a/buildSrc/shared.gradle b/buildSrc/shared.gradle
+index b27c1ab28af..add98e68e37 100644
+--- a/buildSrc/shared.gradle
++++ b/buildSrc/shared.gradle
+@@ -48,7 +48,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
+         if (task.path == ":imports:binary-compatibility-validator:compileKotlin") {
+             friendPaths.from(configurations.friends.incoming.artifactView {}.files)
+         }
+-        languageVersion.set(KotlinVersion.KOTLIN_2_0)
+-        apiVersion.set(KotlinVersion.KOTLIN_2_0)
++        languageVersion.set(KotlinVersion.KOTLIN_2_1)
++        apiVersion.set(KotlinVersion.KOTLIN_2_1)
+     }
+ }

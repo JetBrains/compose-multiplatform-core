@@ -980,7 +980,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         // Fast scroller is non-content and shouldn't be affected by zoom. It's drawn after
         // restoring the Canvas to its unscaled state
-        if (!enableDefaultFastScrollerRendering) {
+        if (enableDefaultFastScrollerRendering) {
             canvas.save()
             // Adjust the canvas based on current scroll position to draw fast scroller in view
             // coordinates.
