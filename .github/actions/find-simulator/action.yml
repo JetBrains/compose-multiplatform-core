@@ -1,0 +1,38 @@
+name: 'Get iOS Simulator UDID'
+runs:
+  using: "composite"
+  steps:
+    - name: Get iOS Simulator UDID
+      shell: bash
+      run: |
+        DEVICE_NAME="iPhone 13"
+        DEVICE_VERSION="15.2"
+        
+        DEVICE_DASH="${DEVICE_VERSION//./-}"   # 16.0 -> 16-0
+      
+        echo "Looking for device: '$DEVICE_NAME' ($DEVICE_VERSION)"
+        
+        SIMULATOR_ID=$(xcrun simctl list devices available -j \
+        | jq -r --arg device "$DEVICE_NAME" --arg vdot "$DEVICE_VERSION" --arg vdash "$DEVICE_DASH" '
+        .devices
+        | to_entries[]
+        | select(.key | (contains($vdot) or contains($vdash)))
+        | .value[]
+        | select(.name == $device)
+        | .udid
+        ' | head -n 1)
+        
+        if [ -z "$SIMULATOR_ID" ]; then
+        echo "❌ Simulator not found for $DEVICE_NAME ($DEVICE_VERSION)"
+        echo "Available runtimes and matching devices:"
+        xcrun simctl list devices available -j | jq -r '
+        .devices | to_entries[] | "\(.key):\n  " + ( [.value[] | "\(.name) \(.udid) \(.state)"] | join("\n  ") )
+        '
+        exit 1
+        fi
+      
+        echo "Found simulator ID: $SIMULATOR_ID"
+      
+        # make available to later steps and other jobs if needed
+        echo "SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
+        echo "simulator-id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"

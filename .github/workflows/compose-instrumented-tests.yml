@@ -1,0 +1,72 @@
+name: Compose Tests
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - jb-main
+
+jobs:
+  compose-ios-instrumented-tests:
+    runs-on: macos-13-xlarge
+    name: Compose iOS Instrumented Tests - MacOS 13
+    env:
+      GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Setup Prerequisites
+        uses: ./.github/actions/setup-prerequisites
+
+      - name: Setup Xcode version
+        shell: bash
+        run: |
+          sudo xcode-select -s /Applications/Xcode_14.1.app
+          /usr/bin/xcodebuild -version
+
+      - name: Cache Xcode DerivedData
+        uses: irgaly/xcode-cache@v1
+        with:
+          key: xcode-cache-deriveddata-${{ github.sha }}
+          restore-keys: xcode-cache-deriveddata-
+          # Only save DerivedData state for builds on the 'jb-main' branch.
+          # Builds on other branches will only read existing entries from the cache.
+          cache-read-only: ${{ github.ref != 'refs/heads/jb-main' }}
+
+      - name: Print Simulators
+        run: |
+          xcrun simctl list devices
+
+      - name: Get iOS Simulator UDID
+        uses: ./.github/actions/find-simulator
+
+      - name: Configure Simulator
+        run: |
+          # Boot a test simulator
+          xcrun simctl boot "$SIMULATOR_ID"
+
+          # Write the accessibility flags inside the Simulator:
+          xcrun simctl spawn booted defaults write com.apple.Accessibility AccessibilityEnabled -bool true
+          xcrun simctl spawn booted defaults write com.apple.Accessibility ApplicationAccessibilityEnabled -bool true
+          xcrun simctl spawn booted defaults write com.apple.Accessibility AutomationEnabled -bool true
+
+          # Restart SpringBoard (so system services pick up the change)
+          xcrun simctl spawn booted launchctl stop com.apple.SpringBoard
+          xcrun simctl shutdown all
+
+      - name: Run iOS Instrumented Tests
+        timeout-minutes: 30
+        shell: bash
+        working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
+        run: |
+          xcodebuild test \
+            -scheme Launcher \
+            -project Launcher.xcodeproj \
+            -destination 'platform=iOS Simulator,id=$SIMULATOR_ID'
+
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "**/reports/junit.xml"
+        if: always()
