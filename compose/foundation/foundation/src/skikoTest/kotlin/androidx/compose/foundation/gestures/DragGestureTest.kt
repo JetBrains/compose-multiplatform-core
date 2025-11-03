@@ -505,7 +505,7 @@ class DragGestureTest {
 }
 
 @OptIn(InternalComposeUiApi::class)
-private class DefaultViewConfiguration(private val density: Density) : ViewConfiguration by PlatformContext.EmptyViewConfiguration {
+private class DefaultViewConfiguration(private val density: Density) : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
     override val touchSlop: Float
-        get() = with(density) { PlatformContext.EmptyViewConfiguration.touchSlop.dp.toPx() }
+        get() = with(density) { PlatformContext.DefaultViewConfiguration.touchSlop.dp.toPx() }
 }

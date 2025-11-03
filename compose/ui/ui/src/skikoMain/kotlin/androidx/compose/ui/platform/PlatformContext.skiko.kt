@@ -132,7 +132,7 @@ interface PlatformContext {
      */
     val measureDrawLayerBounds: Boolean get() = false
 
-    val viewConfiguration: ViewConfiguration get() = EmptyViewConfiguration
+    val viewConfiguration: ViewConfiguration get() = DefaultViewConfiguration
     val inputModeManager: InputModeManager
     val textInputService: PlatformTextInputService get() = EmptyPlatformTextInputService
 
@@ -217,7 +217,7 @@ interface PlatformContext {
         fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int)
     }
 
-    open class Base : PlatformContext {
+    open class Default : PlatformContext {
         override val windowInfo: WindowInfo = WindowInfoImpl().apply {
             // true is a better default if the platform doesn't provide WindowInfo.
             // otherwise UI will always be rendered in unfocused mode
@@ -230,7 +230,7 @@ interface PlatformContext {
 
     // This object must be stateless because it is used as a delegate in other ViewConfiguration
     // implementations
-    object EmptyViewConfiguration : ViewConfiguration {
+    object DefaultViewConfiguration : ViewConfiguration {
         override val longPressTimeoutMillis: Long = 500
         override val doubleTapTimeoutMillis: Long = 300
         override val doubleTapMinTimeMillis: Long = 40

@@ -3698,11 +3698,20 @@ public final class androidx/compose/ui/platform/JvmActuals_jvmKt {
 	public static final synthetic fun synchronized (Landroidx/compose/ui/platform/SynchronizedObject;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 }
 
-public class androidx/compose/ui/platform/PlatformContext$Base : androidx/compose/ui/platform/PlatformContext {
+public class androidx/compose/ui/platform/PlatformContext$Default : androidx/compose/ui/platform/PlatformContext {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun getInputModeManager ()Landroidx/compose/ui/input/InputModeManager;
 	public fun getWindowInfo ()Landroidx/compose/ui/platform/WindowInfo;
+}
+
+public final class androidx/compose/ui/platform/PlatformContext$DefaultViewConfiguration : androidx/compose/ui/platform/ViewConfiguration {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/ui/platform/PlatformContext$DefaultViewConfiguration;
+	public fun getDoubleTapMinTimeMillis ()J
+	public fun getDoubleTapTimeoutMillis ()J
+	public fun getLongPressTimeoutMillis ()J
+	public fun getTouchSlop ()F
 }
 
 public final class androidx/compose/ui/platform/PlatformContext$EmptyFocusManager : androidx/compose/ui/focus/FocusManager {
@@ -3710,15 +3719,6 @@ public final class androidx/compose/ui/platform/PlatformContext$EmptyFocusManage
 	public static final field INSTANCE Landroidx/compose/ui/platform/PlatformContext$EmptyFocusManager;
 	public fun clearFocus (Z)V
 	public fun moveFocus-3ESFkO8 (I)Z
-}
-
-public final class androidx/compose/ui/platform/PlatformContext$EmptyViewConfiguration : androidx/compose/ui/platform/ViewConfiguration {
-	public static final field $stable I
-	public static final field INSTANCE Landroidx/compose/ui/platform/PlatformContext$EmptyViewConfiguration;
-	public fun getDoubleTapMinTimeMillis ()J
-	public fun getDoubleTapTimeoutMillis ()J
-	public fun getLongPressTimeoutMillis ()J
-	public fun getTouchSlop ()F
 }
 
 public abstract interface class androidx/compose/ui/platform/PlatformContext$RootForTestListener {

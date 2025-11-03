@@ -207,7 +207,7 @@ internal class ComposeSceneMediator(
     private var disposed = false
 
     private val viewConfiguration: ViewConfiguration =
-        object : ViewConfiguration by PlatformContext.EmptyViewConfiguration {
+        object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
             override val touchSlop: Float
                 get() = with(screenDensity) {
                     // this value is originating from iOS 16 drag behavior reverse engineering

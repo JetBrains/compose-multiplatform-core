@@ -332,7 +332,7 @@ class PointerIconTest {
     }
 
 
-    private class IconPlatformContext : PlatformContext by PlatformContext.Base() {
+    private class IconPlatformContext : PlatformContext by PlatformContext.Default() {
         @Suppress("PropertyName")
         var _pointerIcon: PointerIcon? = null
 

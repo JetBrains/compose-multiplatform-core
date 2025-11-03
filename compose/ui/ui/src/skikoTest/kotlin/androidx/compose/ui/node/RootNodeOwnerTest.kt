@@ -73,7 +73,7 @@ class RootNodeOwnerTest {
             override fun updateState(oldValue: TextFieldValue?, newValue: TextFieldValue) {}
         }
         val owner = RootNodeOwner(
-            platformContext = object : PlatformContext.Base() {
+            platformContext = object : PlatformContext.Default() {
                 override val textInputService: PlatformTextInputService = textInputService
                 override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
                     sessionStarted = true
@@ -124,7 +124,7 @@ class RootNodeOwnerTest {
             }
         }
         val owner = RootNodeOwner(
-            platformContext = object : PlatformContext.Base() {
+            platformContext = object : PlatformContext.Default() {
                 override val textInputService: PlatformTextInputService = textInputService
                 override suspend fun startInputMethod(request: PlatformTextInputMethodRequest): Nothing {
                     awaitCancellation()
@@ -158,7 +158,7 @@ class RootNodeOwnerTest {
 
 private fun RootNodeOwner(
     coroutineContext: CoroutineContext = EmptyCoroutineContext,
-    platformContext: PlatformContext = PlatformContext.Base(),
+    platformContext: PlatformContext = PlatformContext.Default(),
 ) = RootNodeOwner(
     density = Density(1f),
     layoutDirection = LayoutDirection.Ltr,

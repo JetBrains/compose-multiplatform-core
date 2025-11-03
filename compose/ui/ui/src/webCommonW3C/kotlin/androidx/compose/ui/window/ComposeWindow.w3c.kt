@@ -213,7 +213,7 @@ internal class ComposeWindow(
     // Used in WebTextInputService. Also see https://youtrack.jetbrains.com/issue/CMP-8611
     private var activeTouchOffset: Offset? = null
 
-    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Base() {
+    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Default() {
         override val windowInfo get() = _windowInfo
         override val architectureComponentsOwner get() = archComponentsOwner
         override val inputModeManager: InputModeManager = DefaultInputModeManager()
@@ -284,7 +284,7 @@ internal class ComposeWindow(
         }
 
         override val viewConfiguration =
-            object : ViewConfiguration by PlatformContext.EmptyViewConfiguration {
+            object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
                 override val touchSlop: Float get() = with(density) { 18.dp.toPx() }
             }
 

@@ -706,7 +706,7 @@ internal class ComposeSceneMediator(
         keyboardModifiersRequireUpdate = true
     }
 
-    private inner class DesktopViewConfiguration : ViewConfiguration by PlatformContext.EmptyViewConfiguration {
+    private inner class DesktopViewConfiguration : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
         override val touchSlop: Float get() = with(platformComponent.density) { 18.dp.toPx() }
     }
 

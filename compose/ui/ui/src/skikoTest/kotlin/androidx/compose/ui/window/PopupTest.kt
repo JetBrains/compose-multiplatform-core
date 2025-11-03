@@ -726,7 +726,7 @@ class PopupTest {
             scene.render(surface.canvas.asComposeCanvas(), 1)
         }
         scene = CanvasLayersComposeScene(
-            platformContext = PlatformContext.Base().also {
+            platformContext = PlatformContext.Default().also {
                 val windowInfo = it.windowInfo as WindowInfoImpl
                 windowInfo.containerSize = IntSize(50, 50)
             },
