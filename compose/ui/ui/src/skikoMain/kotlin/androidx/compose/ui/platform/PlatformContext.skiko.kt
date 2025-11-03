@@ -68,7 +68,7 @@ interface PlatformContext {
     val architectureComponentsOwner: PlatformArchitectureComponentsOwner get() = EmptyArchitectureComponentsOwner
 
     /**
-     * Indicates if the compose view is positioned in a transparent window.
+     * Indicates if the Compose view is positioned in a transparent window.
      * This is used when rendering the scrim of a dialog - if set to true, a special blending mode
      * will be used to take into account the existing alpha-channel values.
      *
@@ -127,7 +127,7 @@ interface PlatformContext {
     /**
      * Determines if [OwnedLayer] should measure bounds for all drawings.
      * It's required to determine bounds of any graphics even if it was drawn out of measured
-     * layout bounds (for example shadows). It might be used to resize platform views based on
+     * layout bounds (for example, shadows). It might be used to resize platform views based on
      * such bounds.
      */
     val measureDrawLayerBounds: Boolean get() = false
@@ -155,7 +155,7 @@ interface PlatformContext {
 
     var isKeepScreenOnEnabled: Boolean
         get() = false
-        set(value) {}
+        set(_) {}
 
     /**
      * Votes for a specific frame rate to be used for rendering.
@@ -217,17 +217,31 @@ interface PlatformContext {
         fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int)
     }
 
-    companion object {
-        val Empty = object : PlatformContext {
-            override val windowInfo: WindowInfo = WindowInfoImpl().apply {
-                // true is a better default if platform doesn't provide WindowInfo.
-                // otherwise UI will be rendered always in unfocused mode
-                // (hidden textfield cursor, gray titlebar, etc)
-                isWindowFocused = true
-            }
-
-            override val inputModeManager = DefaultInputModeManager()
+    open class Base : PlatformContext {
+        override val windowInfo: WindowInfo = WindowInfoImpl().apply {
+            // true is a better default if the platform doesn't provide WindowInfo.
+            // otherwise UI will always be rendered in unfocused mode
+            // (hidden text field cursor, gray title bar, etc.)
+            isWindowFocused = true
         }
+
+        override val inputModeManager: InputModeManager = DefaultInputModeManager()
+    }
+
+    // This object must be stateless because it is used as a delegate in other ViewConfiguration
+    // implementations
+    object EmptyViewConfiguration : ViewConfiguration {
+        override val longPressTimeoutMillis: Long = 500
+        override val doubleTapTimeoutMillis: Long = 300
+        override val doubleTapMinTimeMillis: Long = 40
+        override val touchSlop: Float = 18f
+    }
+
+    // This object must be stateless because it is used as a delegate in other ViewConfiguration
+    // implementations
+    object EmptyFocusManager : FocusManager {
+        override fun clearFocus(force: Boolean) = Unit
+        override fun moveFocus(focusDirection: FocusDirection) = false
     }
 }
 
@@ -258,13 +272,6 @@ internal class DefaultInputModeManager(
         }
 }
 
-internal object EmptyViewConfiguration : ViewConfiguration {
-    override val longPressTimeoutMillis: Long = 500
-    override val doubleTapTimeoutMillis: Long = 300
-    override val doubleTapMinTimeMillis: Long = 40
-    override val touchSlop: Float = 18f
-}
-
 private object EmptyPlatformTextInputService : PlatformTextInputService {
     override fun startInput(
         value: TextFieldValue,
@@ -289,11 +296,6 @@ private object EmptyTextToolbar : TextToolbar {
         onCutRequested: (() -> Unit)?,
         onSelectAllRequested: (() -> Unit)?
     ) = Unit
-}
-
-private object EmptyFocusManager : FocusManager {
-    override fun clearFocus(force: Boolean) = Unit
-    override fun moveFocus(focusDirection: FocusDirection) = false
 }
 
 private object EmptyDragAndDropManager : PlatformDragAndDropManager
