@@ -895,6 +895,14 @@ public class WebViewFeatureInternal {
                     Features.PRECONNECT);
 
     /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link Profile#addQuicHints(Set)}
+     */
+    public static final ApiFeature.NoFramework ADD_QUIC_HINTS_V1 =
+            new ApiFeature.NoFramework(WebViewFeature.ADD_QUIC_HINTS_V1,
+                    Features.ADD_QUIC_HINTS_V1);
+
+    /**
      * Feature for {@link WebSettingsFeature#isFeatureSupported(String)}.
      * This feature covers
      * {@link WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)},

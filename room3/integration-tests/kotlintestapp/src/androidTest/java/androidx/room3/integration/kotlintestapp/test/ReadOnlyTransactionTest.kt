@@ -31,7 +31,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.AssumptionViolatedException
 import org.junit.Before
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -59,13 +58,12 @@ class ReadOnlyTransactionTest(private val useDriver: UseDriver) {
                     context = ApplicationProvider.getApplicationContext(),
                     name = "test.db",
                 )
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .setQueryCoroutineContext(Dispatchers.IO)
                 .build()
     }
@@ -77,12 +75,6 @@ class ReadOnlyTransactionTest(private val useDriver: UseDriver) {
 
     @Test
     fun readTransactionDoesNotBlockWrite() = runTest {
-        if (useDriver == UseDriver.NONE) {
-            throw AssumptionViolatedException(
-                "SupportSQLite + Room does not support deferred read transactions"
-            )
-        }
-
         val writeLatch = CompletableDeferred<Unit>()
         val readLatch = CompletableDeferred<Unit>()
         launch(Dispatchers.IO) {

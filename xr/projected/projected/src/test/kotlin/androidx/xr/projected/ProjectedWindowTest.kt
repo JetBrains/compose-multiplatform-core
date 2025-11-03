@@ -48,6 +48,7 @@ import org.junit.runner.RunWith
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.util.ReflectionHelpers
@@ -126,6 +127,24 @@ class ProjectedWindowTest {
         projectedWindow.clearFlags(flags)
         verify(mockProjectedService).clearWindowFlags(flags)
     }
+
+    @Test
+    fun isDisplayCapable_serviceReturnsTrue_returnsTrue() =
+        launchTestProjectedDeviceActivity { projectedDeviceActivity ->
+            runBlocking { projectedWindow = ProjectedWindow.create(projectedDeviceActivity) }
+            whenever(mockProjectedService.isDisplayCapable()).thenReturn(true)
+
+            assertThat(projectedWindow.isDisplayCapable()).isTrue()
+        }
+
+    @Test
+    fun isDisplayCapable_serviceReturnsFalse_returnsFalse() =
+        launchTestProjectedDeviceActivity { projectedDeviceActivity ->
+            runBlocking { projectedWindow = ProjectedWindow.create(projectedDeviceActivity) }
+            whenever(mockProjectedService.isDisplayCapable()).thenReturn(false)
+
+            assertThat(projectedWindow.isDisplayCapable()).isFalse()
+        }
 
     @Test
     fun close_disconnectsConnection() =

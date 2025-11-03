@@ -627,9 +627,9 @@ public final class ImpressApiImpl implements ImpressApi {
 
     @Override
     public void setStereoSurfaceEntitySurfaceSize(
-            @NonNull ImpressNode impressNode, int width, int height)  {
+            @NonNull ImpressNode impressNode, int width, int height) {
         nSetStereoSurfaceEntitySurfaceSize(
-            getViewNativeHandle(mView), impressNode.getHandle(), width, height);
+                getViewNativeHandle(mView), impressNode.getHandle(), width, height);
     }
 
     @Override

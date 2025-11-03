@@ -21,10 +21,10 @@ import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
 import androidx.lifecycle.LiveData
 import androidx.room3.InvalidationTracker.Observer
+import androidx.room3.autoclose.AutoCloser
 import androidx.room3.concurrent.ReentrantLock
 import androidx.room3.concurrent.withLock
 import androidx.room3.coroutines.runBlockingUninterruptible
-import androidx.room3.support.AutoCloser
 import androidx.sqlite.SQLiteConnection
 import java.lang.ref.WeakReference
 import java.util.concurrent.Callable
@@ -70,14 +70,14 @@ actual constructor(
     private var autoCloser: AutoCloser? = null
 
     private val onRefreshScheduled: () -> Unit = {
-        // refreshVersionsAsync() is called with the ref count incremented from
-        // RoomDatabase, so the db can't be closed here, but we need to be sure that our
-        // db isn't closed until refresh is completed. This increment call must be
-        // matched with a corresponding call in refreshRunnable.
-        autoCloser?.incrementCountAndEnsureDbIsOpen()
+        // When a refresh async is scheduled the ref count is incremented from RoomDatabase, so the
+        // db can't be closed, but we need to be sure that our db isn't closed until refresh is
+        // completed. This increment call must be matched with a corresponding decrement at the
+        // end of a refresh.
+        autoCloser?.incrementCount()
     }
 
-    private val onRefreshCompleted: () -> Unit = { autoCloser?.decrementCountAndScheduleClose() }
+    private val onRefreshCompleted: () -> Unit = { autoCloser?.decrementCount() }
 
     private val invalidationLiveDataContainer: InvalidationLiveDataContainer =
         InvalidationLiveDataContainer(database)
@@ -104,12 +104,12 @@ actual constructor(
      * ensure that the database is not closed if there are pending invalidations that haven't yet
      * been flushed.
      *
-     * This also adds a callback to the autocloser to ensure that the InvalidationTracker is in an
+     * This also adds a callback to the auto closer to ensure that the InvalidationTracker is in an
      * ok state once the table is invalidated.
      *
      * This must be called before the database is used.
      *
-     * @param autoCloser the autocloser associated with the db
+     * @param autoCloser the auto closer associated with the db
      */
     internal fun setAutoCloser(autoCloser: AutoCloser) {
         this.autoCloser = autoCloser
@@ -340,24 +340,6 @@ actual constructor(
     }
 
     /**
-     * Notifies all the registered [Observer]s of table changes.
-     *
-     * This can be used for notifying invalidation that cannot be detected by this
-     * [InvalidationTracker], for example, invalidation from another process.
-     *
-     * @param tables The invalidated tables.
-     */
-    internal fun notifyObserversByTableNames(tables: Set<String>) {
-        observerMapLock
-            .withLock { observerMap.values.toList() }
-            .forEach {
-                if (!it.observer.isRemote) {
-                    it.notifyByTableNames(tables)
-                }
-            }
-    }
-
-    /**
      * Creates a LiveData that computes the given function once and for every other invalidation of
      * the database.
      *
@@ -456,13 +438,6 @@ actual constructor(
         internal open val isRemote: Boolean
             get() = false
     }
-
-    /** Stores needed info to restart the invalidation after it was auto-closed. */
-    private data class MultiInstanceClientInitState(
-        val context: Context,
-        val name: String,
-        val serviceIntent: Intent,
-    )
 
     // Kept for binary compatibility even if empty. :(
     public companion object

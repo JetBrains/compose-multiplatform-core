@@ -16,6 +16,7 @@
 
 package androidx.room3
 
+import androidx.room3.autoclose.AutoCloser
 import androidx.room3.coroutines.ConnectionPool
 import androidx.room3.coroutines.PassthroughConnectionPool
 import androidx.room3.coroutines.TransactionWrapper
@@ -41,6 +42,8 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
     internal val supportOpenHelper: SupportSQLiteOpenHelper?
 
     private var supportDatabase: SupportSQLiteDatabase? = null
+
+    private var autoCloser: AutoCloser? = null
 
     constructor(
         config: DatabaseConfiguration,
@@ -106,10 +109,22 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
         supportOpenHelper?.setWriteAheadLoggingEnabled(wal)
     }
 
+    internal fun setAutoCloser(autoCloser: AutoCloser) {
+        this.autoCloser = autoCloser
+        autoCloser.setAutoOpenCallback(::configurationConnection)
+    }
+
     override suspend fun <R> useConnection(
         isReadOnly: Boolean,
         block: suspend (Transactor) -> R,
-    ): R = connectionPool.useConnection(isReadOnly, block)
+    ): R {
+        autoCloser?.incrementCount()
+        try {
+            return connectionPool.useConnection(isReadOnly, block)
+        } finally {
+            autoCloser?.decrementCount()
+        }
+    }
 
     override fun resolveFileName(fileName: String): String =
         if (fileName != ":memory:") {
@@ -121,12 +136,10 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
         }
 
     fun close() {
+        autoCloser?.close()
         connectionPool.close()
         supportOpenHelper?.close()
     }
-
-    // TODO(b/316944352): Figure out auto-close with driver APIs
-    fun isSupportDatabaseOpen() = supportDatabase?.isOpen ?: false
 
     /** An implementation of [SupportSQLiteOpenHelper.Callback] used in compatibility mode. */
     inner class SupportOpenHelperCallback(version: Int) :

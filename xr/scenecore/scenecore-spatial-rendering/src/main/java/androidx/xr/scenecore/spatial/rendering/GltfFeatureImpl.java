@@ -18,9 +18,9 @@ package androidx.xr.scenecore.spatial.rendering;
 
 import android.util.Log;
 
-import androidx.xr.scenecore.impl.impress.GltfModel;
 import androidx.xr.runtime.math.BoundingBox;
 import androidx.xr.runtime.math.FloatSize3d;
+import androidx.xr.scenecore.impl.impress.GltfModel;
 import androidx.xr.scenecore.impl.impress.ImpressApi;
 import androidx.xr.scenecore.impl.impress.ImpressNode;
 import androidx.xr.scenecore.impl.impress.Material;

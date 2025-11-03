@@ -111,6 +111,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata("androidx.appfunctions.integration.tests.TestFunctions#add")
 
@@ -326,6 +327,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_voidReturnType_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#voidFunction"
@@ -346,6 +348,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_setFactory_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFactory#isCreatedByFactory"
@@ -370,6 +373,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_functionInLibraryModule_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.testapp.library.TestFunctions2#concat"
@@ -411,6 +415,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_appThrows_fail() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata("androidx.appfunctions.integration.tests.TestFunctions#doThrow")
 
@@ -432,6 +437,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_createNote() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val createNoteMetadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#createNote"
@@ -482,6 +488,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_createNote_withOpenableCapability_returnsNote() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#getOpenableNote"
@@ -529,6 +536,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_createNote_withOpenableCapability_returnsOpenableNote() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#getOpenableNote"
@@ -582,6 +590,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_serializableProxyParam_dateTime_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#logLocalDateTime"
@@ -611,6 +620,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_serializableProxyParam_androidUri_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.testapp.library.TestFunctions2#logUri"
@@ -638,6 +648,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_serializableProxyResponse_dateTime_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#getLocalDate"
@@ -667,6 +678,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_serializableProxyResponse_androidUri_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.testapp.library.TestFunctions2#getUri"
@@ -696,6 +708,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_updateNote_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#updateNote"
@@ -747,6 +760,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_updateNoteSetFieldNullContent_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#updateNote"
@@ -793,6 +807,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_updateNoteNullSetFields_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#updateNote"
@@ -1162,6 +1177,7 @@ class IntegrationTest {
 
     @Test
     fun echoClassWithOptionalValues_allValuesProvided_shouldNotReturnDefault() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#echoClassWithOptionalValues"
@@ -1230,6 +1246,7 @@ class IntegrationTest {
     @Test
     fun echoClassWithOptionalValues_noValueProvided_shouldReturnAppFunctionDefinedDefault() =
         doBlocking {
+            assumeTrue(isDynamicIndexerAvailable(context))
             val metadata =
                 findAppFunctionMetadata(
                     "androidx.appfunctions.integration.tests.TestFunctions#echoClassWithOptionalValues"
@@ -1295,6 +1312,7 @@ class IntegrationTest {
 
     @Test
     fun echoFunctionWithOptionalParameters_allValuesProvided_shouldNotReturnDefault() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val metadata =
             findAppFunctionMetadata(
                 "androidx.appfunctions.integration.tests.TestFunctions#echoFunctionWithOptionalParameters"
@@ -1433,6 +1451,7 @@ class IntegrationTest {
     @Test
     fun echoFunctionWithOptionalParameters_noValueProvided_shouldReturnAppFunctionDefinedDefault() =
         doBlocking {
+            assumeTrue(isDynamicIndexerAvailable(context))
             val metadata =
                 findAppFunctionMetadata(
                     "androidx.appfunctions.integration.tests.TestFunctions#echoFunctionWithOptionalParameters"
@@ -1586,6 +1605,7 @@ class IntegrationTest {
 
     @Test
     fun executeAppFunction_oneOfSerializableFunction_success() = doBlocking {
+        assumeTrue(isDynamicIndexerAvailable(context))
         val oneOfFunctionMetadata = findAppFunctionMetadata(OneOfFunctionsIds.ONE_OF_FUNCTION_ID)
         val oneOfList =
             listOf(

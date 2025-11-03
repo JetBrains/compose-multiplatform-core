@@ -359,8 +359,9 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setStereoSurfaceEntitySurfaceSize(
-                                stereoSurfaceNode, -1, -1));
+                        () ->
+                                mFakeImpressApi.setStereoSurfaceEntitySurfaceSize(
+                                        stereoSurfaceNode, -1, -1));
         assertThat(thrown).hasMessageThat().contains("Surface dimensions must be positive!");
     }
 
@@ -370,8 +371,9 @@ public final class FakeImpressApiImplTest {
         IllegalArgumentException thrown =
                 assertThrows(
                         IllegalArgumentException.class,
-                        () -> mFakeImpressApi.setStereoSurfaceEntitySurfaceSize(
-                                stereoSurfaceNode, 640, 480));
+                        () ->
+                                mFakeImpressApi.setStereoSurfaceEntitySurfaceSize(
+                                        stereoSurfaceNode, 640, 480));
         assertThat(thrown).hasMessageThat().contains("Couldn't find stereo surface entity!");
     }
 

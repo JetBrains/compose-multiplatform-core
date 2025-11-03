@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.AutoTestFrameClock
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.setGlimmerThemeContent
@@ -137,7 +136,6 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
         assertThat(state.canScrollBackward).isTrue()
     }
 
-    @SdkSuppress(minSdkVersion = 24) // b/454092688
     @Test
     fun accumulatedPart_isApplied() {
         val state = ListState()
@@ -164,7 +162,6 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
         rule.onNodeWithTag("item-3").assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 24) // b/454092688
     @Test
     fun scrolling_and_nonScrolling_measurePasses_workTogether_correctly() {
         val state = ListState()
@@ -210,7 +207,6 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
         Truth.assertThat(state.autoFocusBehaviour.properties?.contentScroll).isEqualTo(5042f)
     }
 
-    @SdkSuppress(minSdkVersion = 24) // b/454092688
     @Test
     fun scrollBy_reportsCorrectConsumedValue() {
         val state = ListState()

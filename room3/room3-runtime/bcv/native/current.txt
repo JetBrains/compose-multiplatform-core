@@ -97,6 +97,7 @@ abstract class androidx.room3/BaseRoomConnectionManager { // androidx.room3/Base
     abstract suspend fun <#A1: kotlin/Any?> useConnection(kotlin/Boolean, kotlin.coroutines/SuspendFunction1<androidx.room3/Transactor, #A1>): #A1 // androidx.room3/BaseRoomConnectionManager.useConnection|useConnection(kotlin.Boolean;kotlin.coroutines.SuspendFunction1<androidx.room3.Transactor,0:0>){0§<kotlin.Any?>}[0]
     final fun (androidx.room3/RoomDatabase.JournalMode).getMaxNumberOfReaders(): kotlin/Int // androidx.room3/BaseRoomConnectionManager.getMaxNumberOfReaders|getMaxNumberOfReaders@androidx.room3.RoomDatabase.JournalMode(){}[0]
     final fun (androidx.room3/RoomDatabase.JournalMode).getMaxNumberOfWriters(): kotlin/Int // androidx.room3/BaseRoomConnectionManager.getMaxNumberOfWriters|getMaxNumberOfWriters@androidx.room3.RoomDatabase.JournalMode(){}[0]
+    final fun configurationConnection(androidx.sqlite/SQLiteConnection) // androidx.room3/BaseRoomConnectionManager.configurationConnection|configurationConnection(androidx.sqlite.SQLiteConnection){}[0]
     final fun onCreate(androidx.sqlite/SQLiteConnection) // androidx.room3/BaseRoomConnectionManager.onCreate|onCreate(androidx.sqlite.SQLiteConnection){}[0]
     final fun onOpen(androidx.sqlite/SQLiteConnection) // androidx.room3/BaseRoomConnectionManager.onOpen|onOpen(androidx.sqlite.SQLiteConnection){}[0]
     open fun onMigrate(androidx.sqlite/SQLiteConnection, kotlin/Int, kotlin/Int) // androidx.room3/BaseRoomConnectionManager.onMigrate|onMigrate(androidx.sqlite.SQLiteConnection;kotlin.Int;kotlin.Int){}[0]

@@ -105,6 +105,11 @@ public constructor(
         /** Name for the `meta-data` tag for the provider info. */
         private const val META_DATA_WEAR_WIDGET_PROVIDER = "androidx.glance.wear.widget.provider"
 
+        /** Intent action for binding to a Widget Service. */
+        @RestrictTo(LIBRARY_GROUP)
+        public const val ACTION_BIND_WIDGET_PROVIDER: String =
+            "androidx.glance.wear.action.BIND_WIDGET_PROVIDER"
+
         /**
          * Parses a [WearWidgetProviderInfo] from the metadata of a service.
          *

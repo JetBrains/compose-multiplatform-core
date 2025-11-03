@@ -29,8 +29,8 @@ import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
+import androidx.compose.remote.creation.compose.modifier.clickable
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.creation.compose.modifier.onClick
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
@@ -75,11 +75,11 @@ class WearWidgetCaptureTest {
                 RemoteBox(modifier = RemoteModifier.size(100.dp))
                 RemoteText(
                     text = "text-0",
-                    modifier = RemoteModifier.onClick(pendingIntentAction(testPendingIntent0)),
+                    modifier = RemoteModifier.clickable(pendingIntentAction(testPendingIntent0)),
                 )
                 RemoteText(
                     text = "text-1",
-                    modifier = RemoteModifier.onClick(pendingIntentAction(testPendingIntent1)),
+                    modifier = RemoteModifier.clickable(pendingIntentAction(testPendingIntent1)),
                 )
             }
         }

@@ -63,6 +63,14 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
     }
 
     /**
+     * Returns `true` if the currently connected projected device is capable of displaying content
+     * to the user.
+     *
+     * This method does not provide any more details on what type of display it is.
+     */
+    public fun isDisplayCapable(): Boolean = projectedService.isDisplayCapable()
+
+    /**
      * Disconnects from the service providing features for Projected devices. Methods from the
      * [ProjectedWindow] shouldn't be called after this.
      *

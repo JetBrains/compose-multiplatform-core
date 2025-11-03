@@ -69,13 +69,12 @@ class InvalidationTrackerFlowTest(private val useDriver: UseDriver) {
                     ApplicationProvider.getApplicationContext(),
                     TestDatabase::class.java,
                 )
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .setQueryCoroutineContext(testCoroutineScope.coroutineContext)
                 .build()
         booksDao = database.booksDao()

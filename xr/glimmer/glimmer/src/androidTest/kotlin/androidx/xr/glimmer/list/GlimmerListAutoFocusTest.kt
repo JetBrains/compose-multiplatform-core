@@ -61,7 +61,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAny
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.performIndirectSwipe
 import com.google.common.truth.Truth
@@ -115,7 +114,6 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
         rule.onListItem(44).assertIsFocused()
     }
 
-    @SdkSuppress(minSdkVersion = 24) // b/454092688
     @Test
     fun scrollBy_movesAutoFocus_whenUserScrollIsDisabled() {
         val state = ListState()

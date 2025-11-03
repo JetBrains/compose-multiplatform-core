@@ -629,7 +629,7 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     private fun tearDown(db: LimitOffsetTestDb) {
-        if (db.isOpen) db.close()
+        db.close()
         countingTaskExecutorRule.drainTasks(500, TimeUnit.MILLISECONDS)
         assertThat(countingTaskExecutorRule.isIdle).isTrue()
     }

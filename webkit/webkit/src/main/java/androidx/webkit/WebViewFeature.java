@@ -131,6 +131,7 @@ public class WebViewFeature {
             HYPERLINK_CONTEXT_MENU_ITEMS,
             ORIGIN_MATCHED_HEADERS,
             CUSTOM_REQUEST_HEADERS,
+            ADD_QUIC_HINTS_V1,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -817,6 +818,12 @@ public class WebViewFeature {
      */
     @Profile.ExperimentalPreconnect
     public static final String PRECONNECT = "PRECONNECT";
+
+    /**
+     * Feature for {@link Profile#addQuicHints(Set)}.
+     */
+    @Profile.ExperimentalAddQuicHints
+    public static final String ADD_QUIC_HINTS_V1 = "ADD_QUIC_HINTS";
 
     /**
      * This feature covers

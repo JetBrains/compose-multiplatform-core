@@ -243,18 +243,18 @@ abstract class BaseEntity extends BaseScenePose implements Entity {
                 gravityAlignedWorldRotation = Quaternion.Identity; // Ultimate fallback
             } else {
                 gravityAlignedWorldRotation =
-                        Quaternion.fromLookTowards(
-                                projectedReference.toNormalized(), Vector3.Up);
+                        Quaternion.fromLookTowards(projectedReference.toNormalized(), Vector3.Up);
             }
         } else {
             gravityAlignedWorldRotation =
-                    Quaternion.fromLookTowards(
-                            gravityAlignedForward.toNormalized(), Vector3.Up);
+                    Quaternion.fromLookTowards(gravityAlignedForward.toNormalized(), Vector3.Up);
         }
 
         // 4. Convert the new, aligned world rotation back to the PARENT space.
         Quaternion finalLocalRotation =
-                referenceFrameWorldPose.getRotation().getInverse()
+                referenceFrameWorldPose
+                        .getRotation()
+                        .getInverse()
                         .times(gravityAlignedWorldRotation);
 
         // 5. Return a new pose using the original translation rotated by the NEWLY calculated local

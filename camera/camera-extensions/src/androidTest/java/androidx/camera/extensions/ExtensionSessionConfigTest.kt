@@ -169,18 +169,14 @@ class ExtensionSessionConfigTest(
 
     @Test
     fun canBindToLifeCycleAndTakeJpegPicture(): Unit = runBlocking {
-        val camera =
-            withContext(Dispatchers.Main) {
-                    cameraProvider.bindToLifecycle(
-                        fakeLifecycleOwner,
-                        baseCameraSelector,
-                        ExtensionSessionConfig.Builder(extensionMode, extensionsManager).build(),
-                    )
-                }
-                .also { withContext(Dispatchers.Main) { cameraProvider.unbindAll() } }
+        val cameraInfo =
+            cameraProvider.getCameraInfo(
+                baseCameraSelector,
+                ExtensionSessionConfig(extensionMode, extensionsManager),
+            )
 
         val isPostviewSupported =
-            ImageCapture.getImageCaptureCapabilities(camera.cameraInfo).isPostviewSupported
+            ImageCapture.getImageCaptureCapabilities(cameraInfo).isPostviewSupported
 
         val imageCaptureBuilder = ImageCapture.Builder()
         if (isPostviewSupported) {
@@ -234,7 +230,9 @@ class ExtensionSessionConfigTest(
         val preview = Preview.Builder().build()
         // Uses Builder to create the ExtensionSessionConfig
         val sessionConfig =
-            ExtensionSessionConfig.Builder(extensionMode, extensionsManager, preview, videoCapture)
+            ExtensionSessionConfig.Builder(extensionMode, extensionsManager)
+                .addUseCase(preview)
+                .addUseCase(videoCapture)
                 .build()
         val previewReady = CountDownLatch(1)
 

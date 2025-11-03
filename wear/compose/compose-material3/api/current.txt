@@ -521,12 +521,14 @@ package androidx.wear.compose.material3 {
   }
 
   public final class ConfirmationDialogDefaults {
-    method @KotlinOnly @androidx.compose.runtime.Composable public void FailureIcon(optional androidx.compose.ui.Modifier modifier);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void FailureIcon(androidx.compose.ui.Modifier?, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public void ConnectionFailureIcon(optional androidx.compose.ui.Modifier modifier);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void ConnectionFailureIcon(androidx.compose.ui.Modifier?, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @Deprecated @androidx.compose.runtime.Composable public void FailureIcon(optional androidx.compose.ui.Modifier modifier);
+    method @BytecodeOnly @Deprecated @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void FailureIcon(androidx.compose.ui.Modifier?, androidx.compose.runtime.Composer?, int, int);
+    method @KotlinOnly @androidx.compose.runtime.Composable public void GenericFailureIcon(optional androidx.compose.ui.Modifier modifier);
+    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void GenericFailureIcon(androidx.compose.ui.Modifier?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public void SuccessIcon(optional androidx.compose.ui.Modifier modifier);
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void SuccessIcon(androidx.compose.ui.Modifier?, androidx.compose.runtime.Composer?, int, int);
-    method @KotlinOnly @androidx.compose.runtime.Composable public void VariantFailureIcon(optional androidx.compose.ui.Modifier modifier);
-    method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public void VariantFailureIcon(androidx.compose.ui.Modifier?, androidx.compose.runtime.Composer?, int, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.wear.compose.material3.ConfirmationDialogColors colors();
     method @BytecodeOnly @androidx.compose.runtime.Composable public androidx.wear.compose.material3.ConfirmationDialogColors colors(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public androidx.wear.compose.material3.ConfirmationDialogColors colors(optional androidx.compose.ui.graphics.Color iconColor, optional androidx.compose.ui.graphics.Color iconContainerColor, optional androidx.compose.ui.graphics.Color textColor);

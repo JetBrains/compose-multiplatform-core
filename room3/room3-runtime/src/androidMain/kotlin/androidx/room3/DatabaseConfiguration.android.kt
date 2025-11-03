@@ -19,13 +19,12 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import androidx.annotation.RestrictTo
+import androidx.room3.autoclose.AutoCloserConfig
 import androidx.room3.migration.AutoMigrationSpec
+import androidx.room3.prepackage.PrePackagedCopyConfig
 import androidx.room3.util.isMigrationRequired as isMigrationRequiredExt
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.db.SupportSQLiteOpenHelper
-import java.io.File
-import java.io.InputStream
-import java.util.concurrent.Callable
 import java.util.concurrent.Executor
 import kotlin.coroutines.CoroutineContext
 
@@ -78,15 +77,6 @@ constructor(
     @JvmField public actual val allowDestructiveMigrationOnDowngrade: Boolean,
     internal actual val migrationNotRequiredFrom: Set<Int>?,
 
-    /* Asset path of pre-package database or null if not used. */
-    @JvmField public val copyFromAssetPath: String?,
-
-    /* File of pre-package database or null if not used. */
-    @JvmField public val copyFromFile: File?,
-
-    /* Input stream of pre-package database or null if not used. */
-    @JvmField public val copyFromInputStream: Callable<InputStream>?,
-
     /* Callback when Room uses a pre-packaged database. */
     @JvmField public val prepackagedDatabaseCallback: RoomDatabase.PrepackagedDatabaseCallback?,
 
@@ -112,7 +102,14 @@ constructor(
     @JvmField
     public val multiInstanceInvalidation: Boolean = multiInstanceInvalidationServiceIntent != null
 
+    /* Whether the invalidation tracker will use temp or real tables for invalidation tracking. */
     internal var useTempTrackingTable = true
+
+    /* Config for pre-package database or null if not used. */
+    internal var copyFromConfig: PrePackagedCopyConfig? = null
+
+    /* Config for auto-close or null if not used. */
+    internal var autoCloseConfig: AutoCloserConfig? = null
 
     /**
      * Returns whether a migration is required between two versions.
@@ -141,9 +138,6 @@ constructor(
         requireMigration: Boolean = this.requireMigration,
         allowDestructiveMigrationOnDowngrade: Boolean = this.allowDestructiveMigrationOnDowngrade,
         migrationNotRequiredFrom: Set<Int>? = this.migrationNotRequiredFrom,
-        copyFromAssetPath: String? = this.copyFromAssetPath,
-        copyFromFile: File? = this.copyFromFile,
-        copyFromInputStream: Callable<InputStream>? = this.copyFromInputStream,
         prepackagedDatabaseCallback: RoomDatabase.PrepackagedDatabaseCallback? =
             this.prepackagedDatabaseCallback,
         typeConverters: List<Any> = this.typeConverters,
@@ -166,9 +160,6 @@ constructor(
             requireMigration,
             allowDestructiveMigrationOnDowngrade,
             migrationNotRequiredFrom,
-            copyFromAssetPath,
-            copyFromFile,
-            copyFromInputStream,
             prepackagedDatabaseCallback,
             typeConverters,
             autoMigrationSpecs,
