@@ -72,6 +72,7 @@ interface ComposeSceneContext {
         throw IllegalStateException()
     }
 
+    @InternalComposeUiApi
     class Empty : ComposeSceneContext {
         override val platformContext: PlatformContext = PlatformContext.Empty()
     }

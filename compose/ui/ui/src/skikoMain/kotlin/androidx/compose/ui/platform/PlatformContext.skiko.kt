@@ -217,6 +217,7 @@ interface PlatformContext {
         fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int)
     }
 
+    @InternalComposeUiApi
     open class Empty : PlatformContext {
         override val windowInfo: WindowInfo = WindowInfoImpl().apply {
             // true is a better default if the platform doesn't provide WindowInfo.
@@ -230,6 +231,7 @@ interface PlatformContext {
 
     // This object must be immutable because it is used as a delegate in other ViewConfiguration
     // implementations
+    @InternalComposeUiApi
     object DefaultViewConfiguration : ViewConfiguration {
         override val longPressTimeoutMillis: Long = 500
         override val doubleTapTimeoutMillis: Long = 300
@@ -239,6 +241,7 @@ interface PlatformContext {
 
     // This object must be immutable because it is used directly in several PlatformContext
     // implementations
+    @InternalComposeUiApi
     object EmptyFocusManager : FocusManager {
         override fun clearFocus(force: Boolean) = Unit
         override fun moveFocus(focusDirection: FocusDirection) = false
