@@ -72,7 +72,7 @@ interface ComposeSceneContext {
         throw IllegalStateException()
     }
 
-    class Base : ComposeSceneContext {
+    class Empty : ComposeSceneContext {
         override val platformContext: PlatformContext = PlatformContext.Empty()
     }
 }
