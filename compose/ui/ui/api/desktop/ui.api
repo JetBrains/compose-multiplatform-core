@@ -3698,13 +3698,6 @@ public final class androidx/compose/ui/platform/JvmActuals_jvmKt {
 	public static final synthetic fun synchronized (Landroidx/compose/ui/platform/SynchronizedObject;Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 }
 
-public class androidx/compose/ui/platform/PlatformContext$Default : androidx/compose/ui/platform/PlatformContext {
-	public static final field $stable I
-	public fun <init> ()V
-	public fun getInputModeManager ()Landroidx/compose/ui/input/InputModeManager;
-	public fun getWindowInfo ()Landroidx/compose/ui/platform/WindowInfo;
-}
-
 public final class androidx/compose/ui/platform/PlatformContext$DefaultViewConfiguration : androidx/compose/ui/platform/ViewConfiguration {
 	public static final field $stable I
 	public static final field INSTANCE Landroidx/compose/ui/platform/PlatformContext$DefaultViewConfiguration;
@@ -3712,6 +3705,13 @@ public final class androidx/compose/ui/platform/PlatformContext$DefaultViewConfi
 	public fun getDoubleTapTimeoutMillis ()J
 	public fun getLongPressTimeoutMillis ()J
 	public fun getTouchSlop ()F
+}
+
+public class androidx/compose/ui/platform/PlatformContext$Empty : androidx/compose/ui/platform/PlatformContext {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun getInputModeManager ()Landroidx/compose/ui/input/InputModeManager;
+	public fun getWindowInfo ()Landroidx/compose/ui/platform/WindowInfo;
 }
 
 public final class androidx/compose/ui/platform/PlatformContext$EmptyFocusManager : androidx/compose/ui/focus/FocusManager {
@@ -3887,7 +3887,7 @@ public final class androidx/compose/ui/res/Resources_desktopKt {
 	public static final fun useResource (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Ljava/lang/Object;
 }
 
-public final class androidx/compose/ui/scene/ComposeSceneContext$Base : androidx/compose/ui/scene/ComposeSceneContext {
+public final class androidx/compose/ui/scene/ComposeSceneContext$Empty : androidx/compose/ui/scene/ComposeSceneContext {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun getPlatformContext ()Landroidx/compose/ui/platform/PlatformContext;
