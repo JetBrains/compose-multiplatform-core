@@ -96,7 +96,7 @@ private class ComposeWindow(
     }
     private val archComponentsOwner = DefaultArchitectureComponentsOwner()
     private val platformContext: PlatformContext =
-        object : PlatformContext by PlatformContext.Default() {
+        object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
             override val textInputService get() = macosTextInputService

@@ -73,6 +73,6 @@ interface ComposeSceneContext {
     }
 
     class Base : ComposeSceneContext {
-        override val platformContext: PlatformContext = PlatformContext.Default()
+        override val platformContext: PlatformContext = PlatformContext.Empty()
     }
 }

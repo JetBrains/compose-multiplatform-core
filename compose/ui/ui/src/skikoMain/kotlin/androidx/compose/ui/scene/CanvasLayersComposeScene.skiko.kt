@@ -87,7 +87,7 @@ fun CanvasLayersComposeScene(
     size: IntSize? = null,
     // TODO: Remove `Dispatchers.Unconfined` as a default
     coroutineContext: CoroutineContext = Dispatchers.Unconfined,
-    platformContext: PlatformContext = PlatformContext.Default(),
+    platformContext: PlatformContext = PlatformContext.Empty(),
     invalidate: () -> Unit = {},
 ): ComposeScene = CanvasLayersComposeSceneImpl(
     density = density,

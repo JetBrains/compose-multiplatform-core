@@ -217,7 +217,7 @@ interface PlatformContext {
         fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int)
     }
 
-    open class Default : PlatformContext {
+    open class Empty : PlatformContext {
         override val windowInfo: WindowInfo = WindowInfoImpl().apply {
             // true is a better default if the platform doesn't provide WindowInfo.
             // otherwise UI will always be rendered in unfocused mode

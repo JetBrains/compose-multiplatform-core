@@ -510,7 +510,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
         }
     }
 
-    private inner class TestContext : PlatformContext by PlatformContext.Default() {
+    private inner class TestContext : PlatformContext by PlatformContext.Empty() {
         override val windowInfo: WindowInfo = TestWindowInfo()
         override val architectureComponentsOwner get() = this@SkikoComposeUiTest.architectureComponentsOwner
         override val rootForTestListener: PlatformContext.RootForTestListener
