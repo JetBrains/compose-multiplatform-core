@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.DisposableSaveableStateRegistry
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
+import androidx.compose.ui.platform.defaultViewModelCreationExtras
 import androidx.compose.ui.scene.skia.SkiaLayerComponent
 import androidx.compose.ui.skiko.OverlayRenderDecorator
 import androidx.compose.ui.unit.Density
@@ -46,12 +47,18 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.layoutDirectionFor
+import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
+import androidx.lifecycle.SavedStateViewModelFactory
+import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.enableSavedStateHandles
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.savedstate.SavedState
@@ -107,7 +114,8 @@ internal class ComposeContainer(
     LifecycleOwner,
     NavigationEventDispatcherOwner,
     SavedStateRegistryOwner,
-    ViewModelStoreOwner {
+    ViewModelStoreOwner,
+    HasDefaultViewModelProviderFactory {
     val windowContext = PlatformWindowContext()
     var window: Window? = null
         private set
@@ -205,6 +213,8 @@ internal class ComposeContainer(
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateController.savedStateRegistry
     override val viewModelStore = ViewModelStore()
+    override val defaultViewModelProviderFactory = SavedStateViewModelFactory()
+    override val defaultViewModelCreationExtras = defaultViewModelCreationExtras(this, this)
 
     override val navigationEventDispatcher = NavigationEventDispatcher()
 

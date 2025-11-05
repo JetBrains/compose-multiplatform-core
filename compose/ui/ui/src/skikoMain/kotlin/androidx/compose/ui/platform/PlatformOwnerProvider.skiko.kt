@@ -17,10 +17,18 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
+import androidx.lifecycle.DEFAULT_ARGS_KEY
+import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
+import androidx.lifecycle.SavedStateViewModelFactory
+import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.CreationExtras
+import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.savedstate.SavedStateRegistry
@@ -47,6 +55,7 @@ open class DefaultArchitectureComponentsOwner(
 ) : PlatformArchitectureComponentsOwner,
     LifecycleOwner,
     ViewModelStoreOwner,
+    HasDefaultViewModelProviderFactory,
     NavigationEventDispatcherOwner,
     SavedStateRegistryOwner {
     override val lifecycleOwner get() = this
@@ -64,4 +73,15 @@ open class DefaultArchitectureComponentsOwner(
     protected val savedStateController = SavedStateRegistryController.create(this)
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateController.savedStateRegistry
+
+    override val defaultViewModelProviderFactory = SavedStateViewModelFactory()
+    override val defaultViewModelCreationExtras = defaultViewModelCreationExtras(this, this)
+}
+
+internal fun defaultViewModelCreationExtras(
+    savedStateRegistryOwner: SavedStateRegistryOwner,
+    viewModelStoreOwner: ViewModelStoreOwner
+): CreationExtras = MutableCreationExtras().also {
+    it[SAVED_STATE_REGISTRY_OWNER_KEY] = savedStateRegistryOwner
+    it[VIEW_MODEL_STORE_OWNER_KEY] = viewModelStoreOwner
 }
