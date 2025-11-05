@@ -448,7 +448,8 @@ class AccessibilityTest {
             assertNotNull(context)
 
             fun assertDescriptionAtIndexIs(index: Int, expectedDescription: String) {
-                context.getAccessibleChild(index).accessibleContext.accessibleDescription == expectedDescription
+                assertThat(context.getAccessibleChild(index).accessibleContext.accessibleDescription)
+                    .isEqualTo(expectedDescription)
             }
 
             assertThat(context.accessibleChildrenCount).isEqualTo(3)
@@ -458,7 +459,8 @@ class AccessibilityTest {
         }
 
         fun assertNodeWithTagIndexInParentIs(tag: String, expectedIndex: Int) {
-            assertThat(test.onNodeWithTag(tag).fetchAccessible().accessibleContext?.accessibleIndexInParent).isEqualTo(expectedIndex)
+            assertThat(test.onNodeWithTag(tag).fetchAccessible().accessibleContext?.accessibleIndexInParent)
+                .isEqualTo(expectedIndex)
         }
         assertNodeWithTagIndexInParentIs("item1", 0)
         assertNodeWithTagIndexInParentIs("item2", 2)
