@@ -16,408 +16,161 @@
 
 package androidx.camera.integration.featurecombo
 
-import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.SurfaceTexture
-import android.hardware.DataSpace
-import android.hardware.DataSpace.TRANSFER_HLG
-import android.hardware.camera2.CameraMetadata
-import android.hardware.camera2.CaptureRequest
-import android.os.Build
-import android.util.Range
-import android.util.Size
-import androidx.annotation.RequiresApi
+import android.util.Log
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
-import androidx.camera.camera2.pipe.integration.adapter.awaitUntil
-import androidx.camera.core.Camera
-import androidx.camera.core.CameraInfo
+import androidx.camera.core.AspectRatio
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
-import androidx.camera.core.DynamicRange
-import androidx.camera.core.ExperimentalSessionConfig
-import androidx.camera.core.ExtendableBuilder
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCapture.getImageCaptureCapabilities
-import androidx.camera.core.Preview
-import androidx.camera.core.Preview.getPreviewCapabilities
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.featuregroup.GroupableFeature
-import androidx.camera.core.featuregroup.GroupableFeature.Companion.FPS_60
-import androidx.camera.core.featuregroup.GroupableFeature.Companion.HDR_HLG10
-import androidx.camera.core.featuregroup.GroupableFeature.Companion.IMAGE_ULTRA_HDR
-import androidx.camera.core.featuregroup.GroupableFeature.Companion.PREVIEW_STABILIZATION
-import androidx.camera.core.impl.CameraInfoInternal
-import androidx.camera.core.takePicture
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.testing.impl.Camera2CaptureCallbackImpl
-import androidx.camera.testing.impl.CameraPipeConfigTestRule
+import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase.*
 import androidx.camera.testing.impl.CameraUtil
-import androidx.camera.testing.impl.GLUtil
-import androidx.camera.testing.impl.SurfaceTextureProvider
-import androidx.camera.testing.impl.SurfaceTextureProvider.createSurfaceTextureProvider
-import androidx.camera.testing.impl.UltraHdrImageVerification.assertJpegUltraHdr
-import androidx.camera.testing.impl.WakelockEmptyActivityRule
-import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
-import androidx.camera.testing.impl.util.Camera2InteropUtil
-import androidx.camera.video.Recorder
-import androidx.camera.video.VideoCapture
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.junit.After
 import org.junit.Assume.assumeTrue
-import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@OptIn(ExperimentalSessionConfig::class)
 @LargeTest
 @RunWith(Parameterized::class)
 class FeatureCombinationDeviceTest(
     private val testName: String,
     private val cameraSelector: CameraSelector,
-    private val implName: String,
-    private val cameraXConfig: CameraXConfig,
-) {
-    @get:Rule
-    val useCamera =
-        CameraUtil.grantCameraPermissionAndPreTestAndPostTest(
-            CameraUtil.PreTestCameraIdList(
-                if (implName == Camera2Config::class.simpleName) {
-                    Camera2Config.defaultConfig()
-                } else {
-                    CameraPipeConfig.defaultConfig()
-                }
-            )
-        )
+    implName: String,
+    cameraXConfig: CameraXConfig,
+    private val useCasesToTest: List<FeatureGroupTestBase.Companion.SupportedUseCase>,
+) : FeatureGroupTestBase(cameraSelector, implName, cameraXConfig) {
+    @Test
+    fun bindToLifecycle_allFeaturesPreferred_canBindSuccessfully(): Unit = runBlocking {
+        bindAndVerifyFeatures(useCasesToTest.toUseCases(), preferredFeatures = allFeatures.toList())
+    }
 
-    @get:Rule
-    val cameraPipeConfigTestRule =
-        CameraPipeConfigTestRule(active = implName == CameraPipeConfig::class.simpleName)
+    @Test
+    fun isSessionConfigSupported_queryReturnsFalseWithUnselectedPreferredFeatures(): Unit =
+        runBlocking {
+            // Arrange: Bind with all features as preferred and store the selected ones.
+            val useCases = useCasesToTest.toUseCases()
+            val features = allFeatures.toList()
+            val selectedFeatures = bindAndVerifyFeatures(useCases, preferredFeatures = features)
 
-    @get:Rule val wakelockEmptyActivityRule = WakelockEmptyActivityRule()
+            // Act & assert: Ensure query returns false for each of the unselected features added
+            //   to the selected ones.
+            features.forEach { feature ->
+                Log.d(TAG, "selectedFeatures: $selectedFeatures, testing feature: $feature")
 
-    private val context = ApplicationProvider.getApplicationContext<Context>()
-    private lateinit var cameraProvider: ProcessCameraProvider
-    private lateinit var fakeLifecycleOwner: FakeLifecycleOwner
+                if (selectedFeatures.map { it.featureType }.contains(feature.featureType))
+                    return@forEach
 
-    private val sessionCaptureCallback = Camera2CaptureCallbackImpl()
-
-    private val surfaceTextureDeferred = CompletableDeferred<SurfaceTexture>()
-
-    private val preview =
-        Preview.Builder()
-            .apply { applySessionCaptureCallback() }
-            .build()
-            .apply {
-                runBlocking {
-                    withContext(Dispatchers.Main) {
-                        surfaceProvider =
-                            createSurfaceTextureProvider(
-                                object : SurfaceTextureProvider.SurfaceTextureCallback {
-                                    override fun onSurfaceTextureReady(
-                                        surfaceTexture: SurfaceTexture,
-                                        resolution: Size,
-                                    ) {
-                                        surfaceTextureDeferred.complete(surfaceTexture)
-                                    }
-
-                                    override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
-                                        surfaceTexture.release()
-                                    }
-                                }
+                assertWithMessage(
+                        "selectedFeatures = $selectedFeatures, newly added feature = $feature"
+                    )
+                    .that(
+                        cameraProvider
+                            .getCameraInfo(cameraSelector)
+                            .isSessionConfigSupported(
+                                SessionConfig(
+                                    useCases = useCases,
+                                    requiredFeatureGroup = selectedFeatures + feature,
+                                )
                             )
-                    }
-                }
+                    )
+                    .isFalse()
             }
+        }
 
-    private val imageCapture =
-        ImageCapture.Builder().apply { applySessionCaptureCallback() }.build()
+    @Test
+    fun recordingFeatureBoundWithSpecificAspectRatioUseCases_aspectRatioMaintained(): Unit =
+        runBlocking {
+            assumeTrue(useCasesToTest.contains(VIDEO_CAPTURE))
 
-    private val videoCapture =
-        VideoCapture.Builder(Recorder.Builder().build())
-            .apply { applySessionCaptureCallback() }
-            .build()
+            allFeatures
+                .filter { it.featureType == GroupableFeature.FEATURE_TYPE_RECORDING_QUALITY }
+                .forEach { feature ->
+                    listOf(AspectRatio.RATIO_DEFAULT, AspectRatio.RATIO_4_3, AspectRatio.RATIO_16_9)
+                        .forEach { aspectRatio ->
+                            val useCases = useCasesToTest.toUseCases(aspectRatio)
 
-    @Before
-    fun setUp() = runBlocking {
-        assumeTrue(CameraUtil.hasCameraWithLensFacing(cameraSelector.lensFacing!!))
+                            bindAndVerifyFeatures(
+                                useCases,
+                                requiredFeatures = setOf(feature),
+                                aspectRatio = aspectRatio,
+                            )
+                        }
+                }
+        }
 
-        ProcessCameraProvider.configureInstance(cameraXConfig)
-        cameraProvider = ProcessCameraProvider.getInstance(context)[10, TimeUnit.SECONDS]
+    private suspend fun bindAndVerifyFeatures(
+        useCases: List<UseCase>,
+        requiredFeatures: Set<GroupableFeature> = emptySet(),
+        preferredFeatures: List<GroupableFeature> = emptyList(),
+        aspectRatio: Int = AspectRatio.RATIO_DEFAULT,
+    ): Set<GroupableFeature> {
+        val selectedFeatures = CompletableDeferred<Set<GroupableFeature>>()
+
+        val sessionConfig =
+            SessionConfig(
+                    useCases = useCases,
+                    requiredFeatureGroup = requiredFeatures,
+                    preferredFeatureGroup = preferredFeatures,
+                )
+                .apply {
+                    setFeatureSelectionListener { features -> selectedFeatures.complete(features) }
+                }
 
         withContext(Dispatchers.Main) {
-            fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }
-        }
-    }
-
-    @After
-    fun tearDown() {
-        if (::cameraProvider.isInitialized) {
-            cameraProvider.shutdownAsync()[10, TimeUnit.SECONDS]
-        }
-    }
-
-    @Test
-    fun bindToLifecycle_hlg10_bindResultMatchesQueryResult(): Unit = runBlocking {
-        testIfBindAndQueryApiResultsMatch(listOf(preview, videoCapture), setOf(HDR_HLG10))
-    }
-
-    @Test
-    fun bindToLifecycle_fps60_bindResultMatchesQueryResult(): Unit = runBlocking {
-        testIfBindAndQueryApiResultsMatch(listOf(preview, videoCapture), setOf(FPS_60))
-    }
-
-    @Test
-    fun bindToLifecycle_previewStabilization_bindResultMatchesQueryResult(): Unit = runBlocking {
-        testIfBindAndQueryApiResultsMatch(
-            listOf(preview, videoCapture),
-            setOf(PREVIEW_STABILIZATION),
-        )
-    }
-
-    @Test
-    fun bindToLifecycle_jpegUltraHdr_bindResultMatchesQueryResult(): Unit = runBlocking {
-        testIfBindAndQueryApiResultsMatch(listOf(preview, imageCapture), setOf(IMAGE_ULTRA_HDR))
-    }
-
-    @Test
-    fun bindToLifecycle_bothHdrAndFps60Required_bindResultMatchesQueryResult(): Unit = runBlocking {
-        testIfBindAndQueryApiResultsMatch(listOf(preview, videoCapture), setOf(HDR_HLG10, FPS_60))
-    }
-
-    @Test
-    fun bindToLifecycle_bothHdrAndPrvwStabilizationRequired_bindResultMatchesQueryResult(): Unit =
-        runBlocking {
-            testIfBindAndQueryApiResultsMatch(
-                listOf(preview, videoCapture),
-                setOf(HDR_HLG10, PREVIEW_STABILIZATION),
-            )
-        }
-
-    @Test
-    fun bindToLifecycle_moreThanTwoFeaturesRequired_bindResultMatchesQueryResult(): Unit =
-        runBlocking {
-            testIfBindAndQueryApiResultsMatch(
-                listOf(preview, videoCapture),
-                setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION),
-            )
-        }
-
-    @Test
-    fun bindToLifecycle_allPreferredFeatures_canBindSuccessfully(): Unit = runBlocking {
-        val useCases = listOf(preview, videoCapture, imageCapture)
-        val orderedFeatures = listOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION, IMAGE_ULTRA_HDR)
-        val selectedFeatures = mutableSetOf<GroupableFeature>()
-
-        val camera =
-            withContext(Dispatchers.Main) {
-                cameraProvider.bindToLifecycle(
-                    fakeLifecycleOwner,
-                    cameraSelector,
-                    SessionConfig(useCases = useCases, preferredFeatureGroup = orderedFeatures)
-                        .apply {
-                            setFeatureSelectionListener { features ->
-                                selectedFeatures.addAll(features)
-                            }
-                        },
+                assumeTrue(
+                    cameraProvider
+                        .getCameraInfo(cameraSelector)
+                        .isSessionConfigSupported(sessionConfig)
                 )
+
+                cameraProvider.bindToLifecycle(fakeLifecycleOwner, cameraSelector, sessionConfig)
             }
+            .apply { selectedFeatures.await().verifyFeatures(useCases, cameraInfo, aspectRatio) }
 
-        selectedFeatures.verifyFeatures(useCases, camera.cameraInfo)
-    }
-
-    // TODO: b/419766630 - Add tests where FCQ provides extra support compared to non-FCQ bind flow,
-    //  e.g. UHD recording + Preview Stabilization (which is probably not supported right now due to
-    //  Preview Stabilization guaranteed table not supporting UHD PRIV). But we first need to wait
-    //  for adding FCQ-queryable config combinations supported in Baklava, as Android 15 doesn't
-    //  support UHD PRIV for FCQ.
-
-    private suspend fun testIfBindAndQueryApiResultsMatch(
-        useCases: List<UseCase>,
-        features: Set<GroupableFeature>,
-    ) {
-        val sessionConfig = SessionConfig(useCases = useCases, requiredFeatureGroup = features)
-
-        val isSupported =
-            cameraProvider.getCameraInfo(cameraSelector).isFeatureGroupSupported(sessionConfig)
-
-        val camera = bindAndVerify(sessionConfig, isSupported)
-
-        if (isSupported) {
-            features.verifyFeatures(useCases, requireNotNull(camera?.cameraInfo))
-        }
-    }
-
-    private suspend fun bindAndVerify(
-        sessionConfig: SessionConfig,
-        isExpectedToBeSupported: Boolean,
-    ): Camera? {
-        var caughtException: Exception? = null
-        val camera =
-            try {
-                withContext(Dispatchers.Main) {
-                    cameraProvider.bindToLifecycle(
-                        fakeLifecycleOwner,
-                        cameraSelector,
-                        sessionConfig,
-                    )
-                }
-            } catch (e: IllegalArgumentException) {
-                caughtException = e
-                null
-            }
-
-        // If binding is expected to be supported, there should be no exception
-        assertThat(caughtException == null).isEqualTo(isExpectedToBeSupported)
-
-        return camera
-    }
-
-    @SuppressLint("NewApi")
-    private suspend fun Set<GroupableFeature>.verifyFeatures(
-        useCases: List<UseCase>,
-        cameraInfo: CameraInfo,
-    ) {
-        forEach {
-            when (it) {
-                HDR_HLG10 -> {
-                    // Reaching this stage before API 33 means query API didn't work correctly
-                    require(Build.VERSION.SDK_INT >= 33)
-                    verifyHlg10Hdr(useCases, cameraInfo)
-                }
-                FPS_60 -> verify60Fps(cameraInfo)
-                PREVIEW_STABILIZATION ->
-                    verifyPreviewStabilization(cameraInfo as CameraInfoInternal)
-                IMAGE_ULTRA_HDR -> {
-                    // Reaching this stage before API 34 means query API didn't work correctly
-                    require(Build.VERSION.SDK_INT >= 34)
-                    verifyUltraHdr(useCases, cameraInfo)
-                }
-            }
-        }
-    }
-
-    @RequiresApi(33)
-    private suspend fun verifyHlg10Hdr(useCases: List<UseCase>, cameraInfo: CameraInfo) {
-        assertThat(cameraInfo.querySupportedDynamicRanges(setOf(DynamicRange.HLG_10_BIT)))
-            .contains(DynamicRange.HLG_10_BIT)
-
-        useCases.forEach {
-            when (it) {
-                is Preview -> {
-                    assertThat(it.dynamicRange).isEqualTo(DynamicRange.HLG_10_BIT)
-
-                    surfaceTextureDeferred.await().verifyHlg10Hdr()
-                }
-                is VideoCapture<*> -> {
-                    assertThat(it.dynamicRange).isEqualTo(DynamicRange.HLG_10_BIT)
-
-                    // TODO: Check the actual recording
-                }
-            }
-        }
-    }
-
-    @RequiresApi(33)
-    private fun SurfaceTexture.verifyHlg10Hdr() {
-        // Wait for a few frames in order to ensure the surface texture is updated
-        val countDownLatch = CountDownLatch(5)
-        setOnFrameAvailableListener { countDownLatch.countDown() }
-        countDownLatch.await(1, TimeUnit.SECONDS)
-
-        // Ensure latest frame is updated to the texture image
-        attachToGLContext(GLUtil.getTexIdFromGLContext())
-        updateTexImage()
-
-        val dataspaceTransfer = DataSpace.getTransfer(dataSpace)
-
-        assertThat(dataspaceTransfer).isEqualTo(TRANSFER_HLG)
-    }
-
-    private suspend fun verify60Fps(cameraInfo: CameraInfo) {
-        assertThat(cameraInfo.supportedFrameRateRanges).contains(Range(60, 60))
-
-        verifyCaptureResult(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, Range(60, 60))
-    }
-
-    private suspend fun verifyPreviewStabilization(cameraInfo: CameraInfo) {
-        assertThat(getPreviewCapabilities(cameraInfo).isStabilizationSupported).isTrue()
-
-        verifyCaptureResult(
-            CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE,
-            CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION,
-        )
-    }
-
-    @RequiresApi(34)
-    private suspend fun verifyUltraHdr(useCases: List<UseCase>, cameraInfo: CameraInfo) {
-        assertThat(getImageCaptureCapabilities(cameraInfo).supportedOutputFormats)
-            .contains(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
-
-        val imageCapture = useCases.filterIsInstance<ImageCapture>().first()
-
-        imageCapture.takePicture().assertJpegUltraHdr()
-    }
-
-    private suspend fun <T> verifyCaptureResult(
-        captureKey: CaptureRequest.Key<T>,
-        expectedValue: T,
-    ) {
-        var lastSubmittedValue: T? = null
-        val result =
-            sessionCaptureCallback.verify { captureRequest, _ ->
-                captureRequest[captureKey]?.let { lastSubmittedValue = it }
-                captureRequest[captureKey] == expectedValue
-            }
-
-        val isCompleted = result.awaitUntil(timeoutMillis = 10000)
-        assertWithMessage(
-                "Test failed while verifying a value of $expectedValue for $captureKey" +
-                    ", lastSubmittedValue = $lastSubmittedValue"
-            )
-            .that(isCompleted)
-            .isTrue()
-    }
-
-    private fun ExtendableBuilder<*>.applySessionCaptureCallback() {
-        Camera2InteropUtil.setCameraCaptureSessionCallback(implName, this, sessionCaptureCallback)
+        return selectedFeatures.await()
     }
 
     companion object {
+        private const val TAG = "FeatureCombinationDeviceTest"
+
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =
             mutableListOf<Array<Any?>>().apply {
                 CameraUtil.getAvailableCameraSelectors().forEach { selector ->
                     val lens = selector.lensFacing
-                    add(
-                        arrayOf(
-                            "config=${Camera2Config::class.simpleName} lensFacing={$lens}",
-                            selector,
-                            Camera2Config::class.simpleName,
-                            Camera2Config.defaultConfig(),
+
+                    useCaseCombinationsToTest.forEach { useCases ->
+                        add(
+                            arrayOf(
+                                "config=${Camera2Config::class.simpleName} lensFacing={$lens}" +
+                                    " useCases = {$useCases}",
+                                selector,
+                                Camera2Config::class.simpleName,
+                                Camera2Config.defaultConfig(),
+                                useCases,
+                            )
                         )
-                    )
-                    add(
-                        arrayOf(
-                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
-                            selector,
-                            CameraPipeConfig::class.simpleName,
-                            CameraPipeConfig.defaultConfig(),
+
+                        add(
+                            arrayOf(
+                                "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}" +
+                                    " useCases = {$useCases}",
+                                selector,
+                                CameraPipeConfig::class.simpleName,
+                                CameraPipeConfig.defaultConfig(),
+                                useCases,
+                            )
                         )
-                    )
+                    }
                 }
             }
     }

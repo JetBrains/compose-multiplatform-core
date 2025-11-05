@@ -34,7 +34,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.SemanticsNodeCopy
-import androidx.compose.ui.platform.coreshims.ContentCaptureSessionCompat
 import androidx.compose.ui.platform.coreshims.ViewCompatShims
 import androidx.compose.ui.platform.coreshims.ViewStructureCompat
 import androidx.compose.ui.platform.getTextLayoutResult
@@ -45,6 +44,7 @@ import androidx.compose.ui.semantics.SemanticsNodeWithAdjustedBounds
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.isAccessibilityIgnoredLink
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
@@ -61,13 +61,12 @@ import kotlinx.coroutines.delay
 //  would be the AndroidImplementation. When we create a LocalContentCaptureManager in the future,
 //  we would expose the interface but not this implementation.
 @OptIn(ExperimentalComposeUiApi::class)
-@Suppress("NullAnnotationGroup")
 internal class AndroidContentCaptureManager(
     val view: AndroidComposeView,
-    var onContentCaptureSession: () -> ContentCaptureSessionCompat?,
-) : ContentCaptureManager, DefaultLifecycleObserver, View.OnAttachStateChangeListener {
+    var onContentCaptureSession: () -> ContentCaptureSessionWrapper?,
+) : DefaultLifecycleObserver, View.OnAttachStateChangeListener {
 
-    @VisibleForTesting internal var contentCaptureSession: ContentCaptureSessionCompat? = null
+    @VisibleForTesting internal var contentCaptureSession: ContentCaptureSessionWrapper? = null
 
     /** An ordered list of buffered content capture events. */
     private val bufferedEvents = mutableListOf<ContentCaptureEvent>()
@@ -109,7 +108,8 @@ internal class AndroidContentCaptureManager(
                 currentSemanticsNodesInvalidated = false
                 field =
                     view.semanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
-                        customRootNodeId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                        customRootNodeId = AccessibilityNodeProviderCompat.HOST_VIEW_ID,
+                        shouldIgnoreNode = { it.isAccessibilityIgnoredLink },
                     )
                 currentSemanticsNodesSnapshotTimestampMillis = System.currentTimeMillis()
             }
@@ -555,7 +555,6 @@ internal class AndroidContentCaptureManager(
             supportedFormats: IntArray,
             requestsCollector: Consumer<ViewTranslationRequest?>,
         ) {
-
             virtualIds.forEach {
                 val node =
                     contentCaptureManager.currentSemanticsNodes[it.toInt()]?.semanticsNode

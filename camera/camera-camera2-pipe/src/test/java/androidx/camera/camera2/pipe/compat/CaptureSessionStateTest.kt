@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.compat
 
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.Flags.FinalizeSessionOnCloseBehavior
@@ -49,7 +48,7 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CaptureSessionStateTest {
     private val fakeGraphListener: GraphListener = mock()
     private val fakeSurfaceListener: CameraSurfaceManager.SurfaceListener = mock()
@@ -102,6 +101,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -127,6 +127,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -157,6 +158,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -193,6 +195,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -219,6 +222,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -245,6 +249,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 cameraGraphFlags,
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )
@@ -271,6 +276,7 @@ class CaptureSessionStateTest {
                 cameraSurfaceManager,
                 timeSource,
                 CameraGraph.Flags(closeCaptureSessionOnDisconnect = true),
+                concurrentSessionSequencer = null,
                 fakeThreads,
                 this,
             )

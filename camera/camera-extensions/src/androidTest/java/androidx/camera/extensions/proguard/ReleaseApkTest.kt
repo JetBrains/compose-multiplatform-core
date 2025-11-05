@@ -222,8 +222,9 @@ class ReleaseApkTest(private val config: CameraXExtensionTestParams) {
             var cameraProvider: ProcessCameraProvider? = null
             try {
                 cameraProvider = ProcessCameraProvider.getInstance(context)[2, TimeUnit.SECONDS]
-                extensionsManager =
-                    ExtensionsManager.getInstanceAsync(context, cameraProvider)[2, TimeUnit.SECONDS]
+                extensionsManager = runBlocking {
+                    ExtensionsManager.getInstance(context, cameraProvider!!)
+                }
 
                 val result: MutableList<CameraXExtensionTestParams> = mutableListOf()
                 for (item in list) {

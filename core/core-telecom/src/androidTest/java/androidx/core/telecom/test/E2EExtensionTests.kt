@@ -28,6 +28,7 @@ import android.os.Build.VERSION_CODES
 import android.util.Log
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallControlResult
+import androidx.core.telecom.CallsManager.Companion.CAPABILITY_BASELINE
 import androidx.core.telecom.InCallServiceCompat
 import androidx.core.telecom.extensions.CallExtensionScope
 import androidx.core.telecom.extensions.CallIconExtensionImpl
@@ -359,6 +360,7 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
      * Run 10 iterations of adding a new call + setting up extensions to test that we do not hit
      * this condition.
      */
+    @SdkSuppress(minSdkVersion = 26, maxSdkVersion = 35) // b/438225286
     @LargeTest
     @Test(timeout = 10000)
     fun testVoipAndIcsWithParticipantsRace() = runBlocking {
@@ -709,8 +711,15 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
             )
         }
         when (parameters.serviceSource) {
-            SERVICE_SOURCE_V2 -> setUpV2Test()
-            SERVICE_SOURCE_CONNSRV -> setUpBackwardsCompatTest()
+            SERVICE_SOURCE_V2 -> {
+                Log.i(L_TAG, "setupParameterizedTest: [V2] APIs")
+                mCallsManager.registerAppWithTelecom(CAPABILITY_BASELINE)
+                logTelecomState()
+            }
+            SERVICE_SOURCE_CONNSRV -> {
+                Log.i(L_TAG, "setupParameterizedTest: [ConnectionService] APIs")
+                setUpBackwardsCompatTest()
+            }
         }
     }
 

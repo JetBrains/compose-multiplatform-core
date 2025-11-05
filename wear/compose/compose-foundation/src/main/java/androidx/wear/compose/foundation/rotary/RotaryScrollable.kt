@@ -462,22 +462,32 @@ internal class PagerRotarySnapLayoutInfoProvider(private val state: PagerState) 
 }
 
 internal class RotaryScrollLogic(
-    val overscrollEffect: OverscrollEffect?,
-    val nestedScrollDispatcher: NestedScrollDispatcher?,
-    val reverseDirection: Boolean,
+    overscrollEffect: OverscrollEffect?,
+    nestedScrollDispatcher: NestedScrollDispatcher?,
+    reverseDirection: Boolean,
 ) {
+
+    var overscrollEffect: OverscrollEffect? = overscrollEffect
+        private set
+
+    var nestedScrollDispatcher: NestedScrollDispatcher? = nestedScrollDispatcher
+        private set
+
+    var reverseDirection: Boolean = reverseDirection
+        private set
 
     var orientation = Vertical
 
-    fun ScrollScope.scroll(delta: Float, scrollableState: ScrollableState): Offset =
-        if (overscrollEffect != null && scrollableState.shouldDispatchOverscroll) {
-            overscrollEffect.applyToScroll(delta.toOffset().reverseIfNeeded(), UserInput) { offset
-                ->
+    fun ScrollScope.scroll(delta: Float, scrollableState: ScrollableState): Offset {
+        val overscroll = overscrollEffect
+        return if (overscroll != null && scrollableState.shouldDispatchOverscroll) {
+            overscroll.applyToScroll(delta.toOffset().reverseIfNeeded(), UserInput) { offset ->
                 performScroll(offset, nestedScrollDispatcher)
             }
         } else {
             performScroll(delta.toOffset().reverseIfNeeded(), nestedScrollDispatcher)
         }
+    }
 
     suspend fun ScrollScope.fling(
         velocity: Float,
@@ -485,9 +495,9 @@ internal class RotaryScrollLogic(
         scrollableState: ScrollableState,
     ): Float {
         var consumedVelocity = Velocity.Zero
-        if (overscrollEffect != null && scrollableState.shouldDispatchOverscroll) {
-            overscrollEffect.applyToFling(velocity.reverseIfNeeded().toVelocity()) { velocityToApply
-                ->
+        val overscroll = overscrollEffect
+        if (overscroll != null && scrollableState.shouldDispatchOverscroll) {
+            overscroll.applyToFling(velocity.reverseIfNeeded().toVelocity()) { velocityToApply ->
                 consumedVelocity =
                     performFling(velocityToApply, nestedScrollDispatcher, flingBehavior)
                 consumedVelocity
@@ -512,7 +522,7 @@ internal class RotaryScrollLogic(
             val scrollAvailableAfterPreScroll = delta - consumedByPreScroll
 
             val singleAxisDeltaForSelfScroll =
-                scrollAvailableAfterPreScroll.toFloat().reverseIfNeeded().toFloat()
+                scrollAvailableAfterPreScroll.toFloat().reverseIfNeeded()
 
             val consumedBySelfScroll =
                 scrollBy(singleAxisDeltaForSelfScroll).reverseIfNeeded().toOffset()
@@ -568,6 +578,16 @@ internal class RotaryScrollLogic(
         }
         // Returns consumed velocity
         return velocity - remainingVelocity
+    }
+
+    fun update(
+        overscrollEffect: OverscrollEffect?,
+        nestedScrollDispatcher: NestedScrollDispatcher?,
+        reverseDirection: Boolean,
+    ) {
+        this.overscrollEffect = overscrollEffect
+        this.nestedScrollDispatcher = nestedScrollDispatcher
+        this.reverseDirection = reverseDirection
     }
 
     // TODO(b/397650406): Implement a more efficient way to reverse the scroll direction
@@ -1486,10 +1506,7 @@ private class RotaryHandlerElement(
 
     override fun update(node: RotaryInputNode) {
         debugLog { "Update launched!" }
-        node.behavior = behavior
-        node.overscrollEffect = overscrollEffect
-        node.reverseDirection = reverseDirection
-        node.updateScrollLogic()
+        node.update(behavior, overscrollEffect, reverseDirection)
     }
 
     override fun InspectorInfo.inspectableProperties() {
@@ -1518,17 +1535,15 @@ private class RotaryHandlerElement(
 }
 
 private class RotaryInputNode(
-    var behavior: RotaryScrollableBehavior,
-    var overscrollEffect: OverscrollEffect?,
-    var reverseDirection: Boolean,
+    private var behavior: RotaryScrollableBehavior,
+    private var overscrollEffect: OverscrollEffect?,
+    private var reverseDirection: Boolean,
 ) : RotaryInputModifierNode, DelegatingNode() {
 
     val channel = Channel<RotaryScrollEvent>(capacity = Channel.CONFLATED)
     val flow = channel.receiveAsFlow()
     val nestedScrollDispatcher = NestedScrollDispatcher()
     val nestedScrollConnection = object : NestedScrollConnection {}
-
-    val scrollLogic = RotaryScrollLogic(overscrollEffect, nestedScrollDispatcher, reverseDirection)
 
     init {
         delegate(nestedScrollModifierNode(nestedScrollConnection, nestedScrollDispatcher))
@@ -1538,15 +1553,16 @@ private class RotaryInputNode(
         updateScrollLogic()
         coroutineScope.launch {
             flow.collectLatest { event ->
-                val (orientation: Orientation, deltaInPixels: Float) =
-                    if (event.verticalScrollPixels != 0.0f)
-                        Pair(Vertical, event.verticalScrollPixels)
-                    else Pair(Horizontal, event.horizontalScrollPixels)
+                val treatAsVerticalEvent = event.verticalScrollPixels != 0.0f
+                val orientation: Orientation = if (treatAsVerticalEvent) Vertical else Horizontal
+                val deltaInPixels =
+                    if (treatAsVerticalEvent) event.verticalScrollPixels
+                    else event.horizontalScrollPixels
                 debugLog {
                     "Scroll event received: " +
                         "delta:$deltaInPixels, timestamp:${event.uptimeMillis}"
                 }
-                scrollLogic.orientation = orientation
+                baseRotaryScrollableBehaviorScrollLogicOrNull()?.orientation = orientation
                 with(behavior) {
                     performScroll(
                         timestampMillis = event.uptimeMillis,
@@ -1569,9 +1585,24 @@ private class RotaryInputNode(
         return true
     }
 
-    internal fun updateScrollLogic() {
-        (behavior as? BaseRotaryScrollableBehavior)?.let { it.scrollLogic = scrollLogic }
+    fun update(
+        behavior: RotaryScrollableBehavior,
+        overscrollEffect: OverscrollEffect?,
+        reverseDirection: Boolean,
+    ) {
+        this.behavior = behavior
+        this.overscrollEffect = overscrollEffect
+        this.reverseDirection = reverseDirection
+        updateScrollLogic()
     }
+
+    private fun updateScrollLogic() {
+        baseRotaryScrollableBehaviorScrollLogicOrNull()
+            ?.update(overscrollEffect, nestedScrollDispatcher, reverseDirection)
+    }
+
+    private fun baseRotaryScrollableBehaviorScrollLogicOrNull(): RotaryScrollLogic? =
+        (behavior as? BaseRotaryScrollableBehavior)?.scrollLogic
 }
 
 /**

@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteComposeOperation;
@@ -32,6 +33,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 /** Add a click area to the document */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ClickArea extends Operation
         implements RemoteComposeOperation, AccessibleComponent, VariableSupport, Serializable {
     private static final int OP_CODE = Operations.CLICK_AREA;
@@ -53,12 +55,12 @@ public class ClickArea extends Operation
      *
      * @param id the id of the click area, which will be reported in the listener callback on the
      *     player
-     * @param contentDescription the content description (used for accessibility, as a textID)
+     * @param contentDescription the content description (used for accessibility, as a textId)
      * @param left left coordinate of the area bounds
      * @param top top coordinate of the area bounds
      * @param right right coordinate of the area bounds
      * @param bottom bottom coordinate of the area bounds
-     * @param metadata associated metadata, user-provided (as a textID, pointing to a string)
+     * @param metadata associated metadata, user-provided (as a textId, pointing to a string)
      */
     public ClickArea(
             int id,
@@ -164,7 +166,7 @@ public class ClickArea extends Operation
     }
 
     @Override
-    public Integer getContentDescriptionId() {
+    public @NonNull Integer getContentDescriptionId() {
         return mContentDescription;
     }
 

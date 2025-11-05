@@ -27,29 +27,27 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
-    api(libs.guavaListenableFuture)
     api(project(":xr:runtime:runtime"))
     api(project(":xr:scenecore:scenecore"))
+    implementation("androidx.concurrent:concurrent-futures:1.2.0")
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation(project(":xr:scenecore:scenecore-testing"))
     testImplementation(libs.junit)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
-    testImplementation(libs.kotlinTest)
     testImplementation("androidx.appcompat:appcompat:1.2.0")
 }
 
 android {
-    compileSdk 34
-
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
 
     namespace = "androidx.xr.scenecore.guava"
@@ -61,7 +59,5 @@ androidx {
     inceptionYear = "2025"
     description = "XR SceneCore compatibility APIs for Java/Guava developers."
 
-    // TODO: b/326456246
-    optOutJSpecify = true
     enableRobolectric()
 }

@@ -171,9 +171,9 @@ class MutableTriangleTest {
     }
 
     @Test
-    fun asImmutable_returnsImmutableCopy() {
+    fun toImmutable_returnsImmutableCopy() {
         val triangle = MutableTriangle(p0, p1, p2)
-        val output = triangle.asImmutable()
+        val output = triangle.toImmutable()
 
         assertThat(output.p0).isEqualTo(p0)
         assertThat(output.p1).isEqualTo(p1)

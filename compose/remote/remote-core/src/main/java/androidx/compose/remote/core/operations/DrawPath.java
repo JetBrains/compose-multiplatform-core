@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -29,10 +30,10 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DrawPath extends PaintOperation implements Serializable {
     private static final int OP_CODE = Operations.DRAW_PATH;
     private static final String CLASS_NAME = "DrawPath";
-
     int mId;
     float mStart = 0;
     float mEnd = 1;
@@ -102,12 +103,12 @@ public class DrawPath extends PaintOperation implements Serializable {
     public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Draw Operations", OP_CODE, CLASS_NAME)
                 .description("Draw a bitmap using integer coordinates")
-                .field(DocumentedOperation.INT, "id", "id of path");
+                .field(DocumentedOperation.INT, "id", "id of path high short is flags");
     }
 
     @Override
     public void paint(@NonNull PaintContext context) {
-        context.drawPath(mId, mStart, mEnd);
+        context.drawPath(getId(mId, context), mStart, mEnd);
     }
 
     @Override

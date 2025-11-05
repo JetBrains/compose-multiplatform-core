@@ -19,7 +19,7 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
@@ -27,8 +27,8 @@ android {
     defaultConfig {
         applicationId = "androidx.wear.compose.integration.demos"
         minSdk = 25
-        versionCode = 82
-        versionName = "1.82"
+        versionCode = 87
+        versionName = "1.87"
     }
 
     buildTypes {
@@ -64,6 +64,8 @@ dependencies {
     implementation(project(":wear:compose:compose-material"))
     implementation(project(":wear:compose:compose-material-samples"))
     implementation(project(":wear:compose:compose-material3"))
+    implementation(project(":wear:compose:compose-navigation"))
+    implementation(project(":wear:compose:compose-navigation-samples"))
     implementation(project(":wear:compose:integration-tests:demos:common"))
     implementation(project(":wear:compose:compose-material3-integration-tests"))
 

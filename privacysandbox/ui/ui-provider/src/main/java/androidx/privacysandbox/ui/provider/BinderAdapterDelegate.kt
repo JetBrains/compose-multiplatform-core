@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 @file:JvmName("SandboxedUiAdapterProxy")
+@file:JvmDeprecated
+@file:Suppress("DEPRECATION", "DEPRECATED_JAVA_ANNOTATION")
 
 package androidx.privacysandbox.ui.provider
 
@@ -51,6 +53,8 @@ import androidx.privacysandbox.ui.core.SessionData
 import androidx.privacysandbox.ui.core.SessionObserver
 import androidx.privacysandbox.ui.core.SessionObserverContext
 import androidx.privacysandbox.ui.provider.impl.DeferredSessionClient
+import androidx.tracing.trace
+import java.lang.Deprecated as JvmDeprecated
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -60,6 +64,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  * Provides a [Bundle] containing a Binder which represents a [SandboxedUiAdapter]. The Bundle is
  * shuttled to the host app in order for the [SandboxedUiAdapter] to be used to retrieve content.
  */
+@Deprecated("This library is no longer supported.")
 @OptIn(ExperimentalFeatures.DelegatingAdapterApi::class)
 public fun SandboxedUiAdapter.toCoreLibInfo(@Suppress("ContextFirst") context: Context): Bundle {
     // If the ui adapter has already been wrapped as a client SandboxedUiAdapter
@@ -367,14 +372,19 @@ private class BinderAdapterDelegate(
 
             override fun notifyMotionEvent(
                 motionEvent: MotionEvent,
-                eventTargetFrameTime: Long,
+                eventTargetTime: Long,
                 eventTransferCallback: IMotionEventTransferCallback?,
             ) {
                 providerViewWrapper.scheduleMotionEventProcessing(
                     motionEvent,
-                    eventTargetFrameTime,
+                    eventTargetTime,
                     eventTransferCallback,
                 )
+                trace("BinderAdapterDelegate#notifyMotionEvent", {})
+            }
+
+            override fun notifyHoverEvent(hoverEvent: MotionEvent, eventTargetTime: Long) {
+                providerViewWrapper.scheduleHoverEventProcessing(hoverEvent, eventTargetTime)
             }
 
             override fun close() {

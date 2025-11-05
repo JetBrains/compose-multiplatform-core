@@ -40,16 +40,21 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.material3.getSelectedEndDate
 import androidx.compose.material3.getSelectedStartDate
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
@@ -73,7 +78,6 @@ import java.util.Calendar
 import java.util.TimeZone
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -115,7 +119,6 @@ fun DatePickerApi26Sample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -169,7 +172,6 @@ fun DatePickerDialogSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -214,7 +216,6 @@ fun DatePickerWithDateSelectableDatesSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -251,8 +252,15 @@ fun DateRangePickerSample() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            IconButton(onClick = { /* dismiss the UI */ }) {
-                Icon(Icons.Filled.Close, contentDescription = "Localized description")
+            TooltipBox(
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                tooltip = { PlainTooltip { Text("Close") } },
+                state = rememberTooltipState(),
+            ) {
+                IconButton(onClick = { /* dismiss the UI */ }) {
+                    Icon(Icons.Filled.Close, contentDescription = "Close")
+                }
             }
             TextButton(
                 onClick = {
@@ -297,8 +305,15 @@ fun DateRangePickerApi26Sample() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            IconButton(onClick = { /* dismiss the UI */ }) {
-                Icon(Icons.Filled.Close, contentDescription = "Localized description")
+            TooltipBox(
+                positionProvider =
+                    TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                tooltip = { PlainTooltip { Text("Close") } },
+                state = rememberTooltipState(),
+            ) {
+                IconButton(onClick = { /* dismiss the UI */ }) {
+                    Icon(Icons.Filled.Close, contentDescription = "Close")
+                }
             }
             TextButton(
                 onClick = {
@@ -317,7 +332,6 @@ fun DateRangePickerApi26Sample() {
 }
 
 @RequiresApi(Build.VERSION_CODES.N)
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable

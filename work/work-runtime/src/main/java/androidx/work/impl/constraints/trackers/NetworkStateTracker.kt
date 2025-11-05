@@ -32,12 +32,8 @@ import androidx.annotation.RestrictTo
 import androidx.core.net.ConnectivityManagerCompat
 import androidx.work.Logger
 import androidx.work.impl.constraints.NetworkState
-import androidx.work.impl.utils.getActiveNetworkCompat
-import androidx.work.impl.utils.getNetworkCapabilitiesCompat
-import androidx.work.impl.utils.hasCapabilityCompat
 import androidx.work.impl.utils.registerDefaultNetworkCallbackCompat
 import androidx.work.impl.utils.taskexecutor.TaskExecutor
-import androidx.work.impl.utils.unregisterNetworkCallbackCompat
 
 /**
  * A [ConstraintTracker] for monitoring network state.
@@ -68,19 +64,15 @@ private val TAG = Logger.tagWithPrefix("NetworkStateTracker")
 
 internal val ConnectivityManager.isActiveNetworkValidated: Boolean
     get() =
-        if (Build.VERSION.SDK_INT < 23) {
-            false // NET_CAPABILITY_VALIDATED not available until API 23. Used on API 26+.
-        } else
-            try {
-                val network = getActiveNetworkCompat()
-                val capabilities = getNetworkCapabilitiesCompat(network)
-                (capabilities?.hasCapabilityCompat(NetworkCapabilities.NET_CAPABILITY_VALIDATED))
-                    ?: false
-            } catch (exception: SecurityException) {
-                // b/163342798
-                Logger.get().error(TAG, "Unable to validate active network", exception)
-                false
-            }
+        try {
+            val network = activeNetwork
+            val capabilities = getNetworkCapabilities(network)
+            (capabilities?.hasCapability(NET_CAPABILITY_VALIDATED)) ?: false
+        } catch (exception: SecurityException) {
+            // b/163342798
+            Logger.get().error(TAG, "Unable to validate active network", exception)
+            false
+        }
 
 @Suppress("DEPRECATION")
 internal val ConnectivityManager.activeNetworkState: NetworkState
@@ -189,7 +181,7 @@ internal class NetworkStateTracker24(context: Context, taskExecutor: TaskExecuto
     override fun stopTracking() {
         try {
             Logger.get().debug(TAG, "Unregistering network callback")
-            connectivityManager.unregisterNetworkCallbackCompat(networkCallback)
+            connectivityManager.unregisterNetworkCallback(networkCallback)
         } catch (e: IllegalArgumentException) {
             // Catching the exceptions since and moving on - this tracker is only used for
             // GreedyScheduler and there is nothing to be done about device-specific bugs.

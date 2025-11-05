@@ -64,7 +64,6 @@ import org.junit.runners.Parameterized
 /** Test if camera control functionality can run well in real devices. */
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class CameraControlDeviceTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,

@@ -17,18 +17,14 @@
 package androidx.xr.runtime.testing
 
 import androidx.xr.runtime.SessionConnector
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.internal.LifecycleManager
+import androidx.xr.runtime.internal.JxrRuntime
 
 @Suppress("NotCloseable")
 internal class FakeSessionConnector : SessionConnector {
     /** Whether the [SessionConnector] has been initialized or not. */
     public var isInitialized: Boolean = false
 
-    override fun initialize(
-        lifecycleManager: LifecycleManager,
-        platformAdapter: JxrPlatformAdapter,
-    ) {
+    override fun initialize(runtimes: List<JxrRuntime>) {
         isInitialized = true
     }
 

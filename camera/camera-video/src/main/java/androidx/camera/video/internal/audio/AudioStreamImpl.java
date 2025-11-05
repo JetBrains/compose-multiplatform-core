@@ -38,7 +38,6 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RequiresPermission;
 import androidx.camera.core.Logger;
-import androidx.camera.video.internal.compat.Api23Impl;
 import androidx.camera.video.internal.compat.Api24Impl;
 import androidx.camera.video.internal.compat.Api29Impl;
 import androidx.camera.video.internal.compat.Api31Impl;
@@ -286,26 +285,18 @@ public class AudioStreamImpl implements AudioStream {
     private static @NonNull AudioRecord createAudioRecord(int bufferSizeInByte,
             @NonNull AudioSettings settings, @Nullable Context context)
             throws IllegalArgumentException {
-        if (Build.VERSION.SDK_INT >= 23) {
-            AudioFormat audioFormatObj = createAudioFormat(settings);
-            AudioRecord.Builder audioRecordBuilder = Api23Impl.createAudioRecordBuilder();
-            if (Build.VERSION.SDK_INT >= 31 && context != null) {
-                Api31Impl.setContext(audioRecordBuilder, context);
-            }
-            Api23Impl.setAudioSource(audioRecordBuilder, settings.getAudioSource());
-            Api23Impl.setAudioFormat(audioRecordBuilder, audioFormatObj);
-            Api23Impl.setBufferSizeInBytes(audioRecordBuilder, bufferSizeInByte);
-            try {
-                return Api23Impl.build(audioRecordBuilder);
-            } catch (UnsupportedOperationException e) {
-                throw new IllegalArgumentException(e);
-            }
-        } else {
-            return new AudioRecord(settings.getAudioSource(),
-                    settings.getCaptureSampleRate(),
-                    channelCountToChannelConfig(settings.getChannelCount()),
-                    settings.getAudioFormat(),
-                    bufferSizeInByte);
+        AudioFormat audioFormatObj = createAudioFormat(settings);
+        AudioRecord.Builder audioRecordBuilder = new AudioRecord.Builder();
+        if (Build.VERSION.SDK_INT >= 31 && context != null) {
+            Api31Impl.setContext(audioRecordBuilder, context);
+        }
+        audioRecordBuilder.setAudioSource(settings.getAudioSource());
+        audioRecordBuilder.setAudioFormat(audioFormatObj);
+        audioRecordBuilder.setBufferSizeInBytes(bufferSizeInByte);
+        try {
+            return audioRecordBuilder.build();
+        } catch (UnsupportedOperationException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 

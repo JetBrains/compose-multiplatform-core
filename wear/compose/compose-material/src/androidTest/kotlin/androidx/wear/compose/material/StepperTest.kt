@@ -44,12 +44,13 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import com.google.common.truth.Truth
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 public class StepperTest {
-    @get:Rule public val rule = createComposeRule()
+    @get:Rule public val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     public fun supports_testtag() {
@@ -447,7 +448,7 @@ public class StepperTest {
 }
 
 public class IntegerStepperTest {
-    @get:Rule public val rule = createComposeRule()
+    @get:Rule public val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     public fun supports_testtag() {

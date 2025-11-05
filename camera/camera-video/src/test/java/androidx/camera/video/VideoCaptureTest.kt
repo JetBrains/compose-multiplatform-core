@@ -37,7 +37,6 @@ import android.media.MediaFormat.MIMETYPE_VIDEO_AV1
 import android.media.MediaFormat.MIMETYPE_VIDEO_AVC
 import android.media.MediaFormat.MIMETYPE_VIDEO_HEVC
 import android.media.MediaRecorder
-import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
@@ -76,6 +75,7 @@ import androidx.camera.core.impl.SessionConfig.DEFAULT_SESSION_TYPE
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.StreamSpec
 import androidx.camera.core.impl.Timebase
+import androidx.camera.core.impl.UseCaseConfig.OPTION_RESOLUTION_TO_MAX_FRAME_RATES
 import androidx.camera.core.impl.UseCaseConfig.OPTION_SESSION_TYPE
 import androidx.camera.core.impl.utils.CameraOrientationUtil.surfaceRotationToDegrees
 import androidx.camera.core.impl.utils.CompareSizesByArea
@@ -109,6 +109,7 @@ import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_QHD
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_QVGA
 import androidx.camera.testing.impl.EncoderProfilesUtil.RESOLUTION_VGA
 import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeAudioProfileProxy
+import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeHighSpeedEncoderProfilesProxy
 import androidx.camera.testing.impl.EncoderProfilesUtil.createFakeVideoProfileProxy
 import androidx.camera.testing.impl.FrameRateUtil.FPS_120_120
 import androidx.camera.testing.impl.FrameRateUtil.FPS_240_240
@@ -140,7 +141,6 @@ import com.google.common.truth.Truth.assertWithMessage
 import java.util.Collections
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
-import kotlin.text.get
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -160,7 +160,7 @@ private const val CAMERA_ID_0 = "0"
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class VideoCaptureTest {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
@@ -230,10 +230,10 @@ class VideoCaptureTest {
             videoCapture.getDefaultConfig(true, FakeUseCaseConfigFactory()),
         )
         videoCapture.updateSuggestedStreamSpec(StreamSpec.builder(Size(640, 480)).build(), null)
-        videoCapture.onStateAttached()
+        videoCapture.onSessionStart()
         // Assert: camera edge does not have transform.
         assertThat(videoCapture.cameraEdge!!.hasCameraTransform()).isFalse()
-        videoCapture.onStateDetached()
+        videoCapture.onSessionStop()
         videoCapture.unbindFromCamera(camera)
     }
 
@@ -242,7 +242,7 @@ class VideoCaptureTest {
         // Arrange.
         setupCamera()
         createCameraUseCaseAdapter()
-        cameraUseCaseAdapter.setEffects(listOf(createFakeEffect()))
+        cameraUseCaseAdapter.effects = listOf(createFakeEffect())
         val videoCapture = createVideoCapture(createVideoOutput())
         // Act.
         addAndAttachUseCases(videoCapture)
@@ -300,7 +300,7 @@ class VideoCaptureTest {
         setupCamera()
         createCameraUseCaseAdapter()
         val videoCapture = createVideoCapture(createVideoOutput())
-        cameraUseCaseAdapter.setEffects(listOf(createFakeEffect()))
+        cameraUseCaseAdapter.effects = listOf(createFakeEffect())
         addAndAttachUseCases(videoCapture)
         // Act: invalidate.
         videoCapture.surfaceRequest.invalidate()
@@ -317,7 +317,7 @@ class VideoCaptureTest {
         val processor = createFakeSurfaceProcessor()
         val effect = createFakeEffect(processor)
         val videoCapture = createVideoCapture(createVideoOutput())
-        cameraUseCaseAdapter.setEffects(listOf(effect))
+        cameraUseCaseAdapter.effects = listOf(effect)
         addAndAttachUseCases(videoCapture)
         // Act: invalidate.
         processor.surfaceRequest!!.invalidate()
@@ -345,7 +345,7 @@ class VideoCaptureTest {
         // Arrange: create Preview with processing then detach.
         setupCamera()
         createCameraUseCaseAdapter()
-        cameraUseCaseAdapter.setEffects(listOf(createFakeEffect()))
+        cameraUseCaseAdapter.effects = listOf(createFakeEffect())
         val videoCapture = createVideoCapture(createVideoOutput())
         addAndAttachUseCases(videoCapture)
         val surfaceRequest = videoCapture.surfaceRequest
@@ -384,7 +384,7 @@ class VideoCaptureTest {
                     )
                 val videoCapture = createVideoCapture(videoOutput)
                 videoCapture.targetRotation = targetRotation
-                effect?.apply { cameraUseCaseAdapter.setEffects(listOf(this)) }
+                effect?.apply { cameraUseCaseAdapter.effects = listOf(this) }
 
                 // Act.
                 addAndAttachUseCases(videoCapture)
@@ -453,7 +453,7 @@ class VideoCaptureTest {
 
         var timebase: Timebase? = null
         val videoOutput = createVideoOutput(surfaceRequestListener = { _, tb -> timebase = tb })
-        effect?.apply { cameraUseCaseAdapter.setEffects(listOf(this)) }
+        effect?.apply { cameraUseCaseAdapter.effects = listOf(this) }
         val videoCapture = createVideoCapture(videoOutput)
 
         // Act.
@@ -914,7 +914,7 @@ class VideoCaptureTest {
                     createVideoEncoderInfo(widthAlignment = 16, heightAlignment = 16)
                 },
             )
-        cameraUseCaseAdapter.setEffects(listOf(createFakeEffect()))
+        cameraUseCaseAdapter.effects = listOf(createFakeEffect())
 
         // Act.
         addAndAttachUseCases(videoCapture)
@@ -1180,7 +1180,7 @@ class VideoCaptureTest {
         setupCamera()
         createCameraUseCaseAdapter()
         val videoCapture = createVideoCapture()
-        cameraUseCaseAdapter.setEffects(listOf(createFakeEffect()))
+        cameraUseCaseAdapter.effects = listOf(createFakeEffect())
         addAndAttachUseCases(videoCapture)
 
         // Act: update target rotation
@@ -1202,7 +1202,7 @@ class VideoCaptureTest {
         setupCamera()
         createCameraUseCaseAdapter()
         val videoCapture = createVideoCapture()
-        cameraUseCaseAdapter.setEffects(listOf(createFakeEffect()))
+        cameraUseCaseAdapter.effects = listOf(createFakeEffect())
         addAndAttachUseCases(videoCapture)
         val backgroundHandler = createBackgroundHandler()
 
@@ -1431,7 +1431,7 @@ class VideoCaptureTest {
         val requireMirroring = videoCapture.isMirroringRequired(camera)
 
         // Act.
-        effect?.apply { cameraUseCaseAdapter.setEffects(listOf(this)) }
+        effect?.apply { cameraUseCaseAdapter.effects = listOf(this) }
         addAndAttachUseCases(videoCapture)
         shadowOf(Looper.getMainLooper()).idle()
 
@@ -1510,7 +1510,7 @@ class VideoCaptureTest {
             )
 
         val effect = createFakeEffect(processor)
-        cameraUseCaseAdapter.setEffects(listOf(effect))
+        cameraUseCaseAdapter.effects = listOf(effect)
         val videoCapture = createVideoCapture(videoOutput)
 
         // Act: bind and provide Surface.
@@ -1737,7 +1737,7 @@ class VideoCaptureTest {
         // Arrange.
         setupCamera()
         createCameraUseCaseAdapter()
-        cameraUseCaseAdapter.setEffects(listOf(createFakeEffect()))
+        cameraUseCaseAdapter.effects = listOf(createFakeEffect())
         val videoCapture = createVideoCapture(createVideoOutput())
         // Act.
         addAndAttachUseCases(videoCapture)
@@ -2041,6 +2041,65 @@ class VideoCaptureTest {
         }
     }
 
+    @Test
+    fun regularSession_doesNotSetCustomMaxFrameRate() {
+        // Arrange.
+        setupCamera()
+        createCameraUseCaseAdapter()
+        val videoCapture = createVideoCapture()
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert.
+        val resolutionToMaxFrameRates =
+            videoCapture.currentConfig.retrieveOption(OPTION_RESOLUTION_TO_MAX_FRAME_RATES, null)
+        assertThat(resolutionToMaxFrameRates).isNull()
+    }
+
+    @Test
+    fun highSpeedSession_setsCustomMaxFrameRate() {
+        // Arrange.
+        val profile1080p =
+            createFakeHighSpeedEncoderProfilesProxy(
+                videoResolution = RESOLUTION_1080P,
+                videoFrameRate = 120,
+            )
+        val profile720p =
+            createFakeHighSpeedEncoderProfilesProxy(
+                videoResolution = RESOLUTION_720P,
+                videoFrameRate = 240,
+            )
+        val profiles =
+            mapOf(
+                QUALITY_HIGH_SPEED_HIGH to profile1080p,
+                QUALITY_HIGH_SPEED_1080P to profile1080p,
+                QUALITY_HIGH_SPEED_720P to profile720p,
+                QUALITY_HIGH_SPEED_LOW to profile720p,
+            )
+        val videoCapabilities =
+            createFakeVideoCapabilities(
+                profilesMap = mapOf(DynamicRange.SDR to profiles),
+                qualitySource = QUALITY_SOURCE_HIGH_SPEED,
+            )
+        setupCamera(profiles = profiles)
+        createCameraUseCaseAdapter()
+        val videoOutput = createVideoOutput(videoCapabilities = videoCapabilities)
+        val videoCapture = createVideoCapture(videoOutput, sessionType = SESSION_TYPE_HIGH_SPEED)
+
+        // Act.
+        addAndAttachUseCases(videoCapture)
+
+        // Assert.
+        val sizeToMaxFpsMap =
+            videoCapture.currentConfig.retrieveOption(OPTION_RESOLUTION_TO_MAX_FRAME_RATES)
+        assertThat(sizeToMaxFpsMap).isNotNull()
+        assertThat(sizeToMaxFpsMap!![RESOLUTION_2160P]).isNull()
+        assertThat(sizeToMaxFpsMap[RESOLUTION_1080P]).isEqualTo(120)
+        assertThat(sizeToMaxFpsMap[RESOLUTION_720P]).isEqualTo(240)
+        assertThat(sizeToMaxFpsMap[RESOLUTION_480P]).isNull()
+    }
+
     private fun testSelectedQualityIsExpected(
         streamSpecConfiguredResolution: Size,
         streamSpecResolution: Size = streamSpecConfiguredResolution,
@@ -2147,7 +2206,7 @@ class VideoCaptureTest {
             )
 
         cropRect?.let {
-            cameraUseCaseAdapter.setEffects(listOf(createFakeEffect()))
+            cameraUseCaseAdapter.effects = listOf(createFakeEffect())
             videoCapture.setViewPortCropRect(it)
         }
 
@@ -2240,7 +2299,6 @@ class VideoCaptureTest {
         val videoCapabilities: VideoCapabilities = CAMERA_0_VIDEO_CAPABILITIES,
         val surfaceRequestCallback: (SurfaceRequest, Timebase) -> Unit,
     ) : VideoOutput {
-
         private val streamInfoObservable: MutableStateObservable<StreamInfo> =
             MutableStateObservable.withInitialState(streamInfo)
 
@@ -2272,6 +2330,13 @@ class VideoCaptureTest {
 
         fun updateStreamInfo(streamInfo: StreamInfo) {
             streamInfoObservable.setState(streamInfo)
+        }
+
+        override fun isQualitySelectorDefault(): Boolean {
+            val currentSelector = mediaSpec.fetchData().get()?.videoSpec?.qualitySelector
+            // For tests, both null and the Recorder-default are considered as default quality
+            // selector.
+            return currentSelector == null || currentSelector == Recorder.DEFAULT_QUALITY_SELECTOR
         }
     }
 
@@ -2411,7 +2476,7 @@ class VideoCaptureTest {
 
         val cameraXConfig =
             CameraXConfig.Builder.fromConfig(FakeAppConfig.create())
-                .setCameraFactoryProvider { _, _, _, _, _ -> cameraFactory }
+                .setCameraFactoryProvider { _, _, _, _, _, _ -> cameraFactory }
                 .setDeviceSurfaceManagerProvider { _, _, _ -> surfaceManager }
                 .build()
         CameraXUtil.initialize(context, cameraXConfig).get()

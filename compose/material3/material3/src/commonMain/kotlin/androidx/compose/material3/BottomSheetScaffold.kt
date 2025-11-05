@@ -43,7 +43,6 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -279,11 +278,13 @@ private fun StandardBottomSheet(
                         if (!state.skipPartiallyExpanded) {
                             PartiallyExpanded at (layoutHeight - peekHeightPx)
                         }
-                        if (sheetHeight != peekHeightPx) {
-                            Expanded at maxOf(layoutHeight - sheetHeight, 0f)
-                        }
-                        if (!state.skipHiddenState) {
+                        // Ensure when there is no content, there is just one anchor set to
+                        // layoutHeight. Hidden overrides skipHiddenState in this use case.
+                        if (sheetHeight == 0f || !state.skipHiddenState) {
                             Hidden at layoutHeight
+                        }
+                        if (sheetHeight > 0f) {
+                            Expanded at layoutHeight - sheetHeight
                         }
                     }
                     val newTarget =
@@ -296,13 +297,8 @@ private fun StandardBottomSheet(
                                     newAnchors.hasAnchorFor(Hidden) -> Hidden
                                     else -> oldTarget
                                 }
-                            Expanded ->
-                                when {
-                                    newAnchors.hasAnchorFor(Expanded) -> Expanded
-                                    newAnchors.hasAnchorFor(PartiallyExpanded) -> PartiallyExpanded
-                                    newAnchors.hasAnchorFor(Hidden) -> Hidden
-                                    else -> oldTarget
-                                }
+
+                            Expanded -> if (newAnchors.hasAnchorFor(Expanded)) Expanded else Hidden
                         }
                     return@draggableAnchors newAnchors to newTarget
                 }
@@ -334,10 +330,9 @@ private fun StandardBottomSheet(
                     getString(Strings.BottomSheetPartialExpandDescription)
                 val dismissActionLabel = getString(Strings.BottomSheetDismissDescription)
                 val expandActionLabel = getString(Strings.BottomSheetExpandDescription)
-                Box(
+                DragHandleWithTooltip(
                     modifier =
-                        Modifier.align(CenterHorizontally)
-                            .clickable {
+                        Modifier.clickable {
                                 when (state.currentValue) {
                                     Expanded ->
                                         scope.launch {
@@ -347,14 +342,16 @@ private fun StandardBottomSheet(
                                                 state.partialExpand()
                                             }
                                         }
+
                                     PartiallyExpanded -> scope.launch { state.expand() }
                                     else -> scope.launch { state.show() }
                                 }
                             }
                             .semantics(mergeDescendants = true) {
                                 with(state) {
-                                    // Provides semantics to interact with the bottomsheet if there
-                                    // is more than one anchor to swipe to and swiping is enabled.
+                                    // Provides semantics to interact with the bottomsheet if
+                                    // there is more than one anchor to swipe to and swiping is
+                                    // enabled.
                                     if (
                                         anchoredDraggableState.anchors.size > 1 && sheetSwipeEnabled
                                     ) {
@@ -387,10 +384,9 @@ private fun StandardBottomSheet(
                                         }
                                     }
                                 }
-                            }
-                ) {
-                    dragHandle()
-                }
+                            },
+                    content = dragHandle,
+                )
             }
             content()
         }

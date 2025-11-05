@@ -49,17 +49,16 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.testRules)
     testImplementation(libs.mockitoCore4)
+    testImplementation(libs.androidx.core)
 }
 
 android {
     defaultConfig {
         minSdk = 26
+        consumerProguardFiles("proguard-rules.pro")
     }
     buildFeatures {
         aidl = true
-    }
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
     }
     namespace = "androidx.wear.tiles"
 }

@@ -16,7 +16,6 @@
 
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
-import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 
 plugins {
     id("AndroidXPlugin")
@@ -39,18 +38,11 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
             }
         }
 
         androidMain {
             dependsOn(commonMain)
-        }
-
-        // Workaround for https://youtrack.jetbrains.com/issue/KT-51763
-        // Make sure commonization runs before any compilation task.
-        tasks.withType(KotlinNativeCompile).configureEach {
-            it.dependsOn(tasks.named("commonize"))
         }
     }
 }

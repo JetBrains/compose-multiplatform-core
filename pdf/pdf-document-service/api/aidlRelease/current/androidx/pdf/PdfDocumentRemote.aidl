@@ -55,4 +55,10 @@ interface PdfDocumentRemote {
   void write(in ParcelFileDescriptor destination, boolean removePasswordProtection);
   androidx.pdf.annotation.models.AnnotationResult addAnnotations(in ParcelFileDescriptor pfd);
   List<androidx.pdf.annotation.models.PdfAnnotation> getPageAnnotations(int pageNum);
+  androidx.pdf.annotation.models.AnnotationResult applyEdits(in List<androidx.pdf.annotation.models.PdfAnnotationData> annots);
+  androidx.pdf.annotation.models.AddEditResult addEdit(in List<androidx.pdf.annotation.models.PdfAnnotationData> annots);
+  androidx.pdf.annotation.models.ModifyEditResult updateEdit(in List<androidx.pdf.annotation.models.PdfAnnotationData> annots);
+  androidx.pdf.annotation.models.ModifyEditResult removeEdit(in List<androidx.pdf.annotation.models.EditId> editIds);
+  androidx.pdf.annotation.models.PaginatedAnnotations getAllPageAnnotations(int pageNum);
+  androidx.pdf.annotation.models.PaginatedAnnotations getBatchedPageAnnotations(int pageNum, in int batchIndex);
 }

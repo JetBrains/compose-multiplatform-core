@@ -57,7 +57,7 @@ androidXMultiplatform {
             dependencies {
                 api(project(":lifecycle:lifecycle-runtime"))
                 api("androidx.annotation:annotation:1.9.1")
-                api(project(":compose:runtime:runtime"))
+                api("androidx.compose.runtime:runtime:1.9.0")
             }
         }
 
@@ -78,7 +78,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(project(":lifecycle:lifecycle-runtime-testing"))
                 implementation(project(":compose:ui:ui-test"))
@@ -122,36 +122,6 @@ androidXMultiplatform {
             dependsOn(nonAndroidTest)
         }
 
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestWasm)
-            }
-        }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
@@ -166,6 +136,15 @@ androidXMultiplatform {
 
 dependencies {
     lintPublish(project(":lifecycle:lifecycle-runtime-compose-lint"))
+
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 2.9.5, this module is published as empty artifact with dependency
+        // to this androidx module.
+        commonMainImplementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.5") {
+            because "prevents symbols duplication"
+        }
+    }
 }
 
 androidx {

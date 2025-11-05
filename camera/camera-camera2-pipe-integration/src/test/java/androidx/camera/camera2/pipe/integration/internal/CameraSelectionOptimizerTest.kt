@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.integration.internal
 import android.content.Context
 import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.camera.camera2.pipe.integration.adapter.CameraFactoryProvider
@@ -48,7 +47,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
+    sdk = [Config.ALL_SDKS],
     instrumentedPackages = ["androidx.camera.camera2.pipe.integration.adapter"],
 )
 class CameraSelectionOptimizerTest {
@@ -198,6 +197,7 @@ class CameraSelectionOptimizerTest {
                     ),
                     cameraSelector,
                     -1L,
+                    null,
                     NO_OP_STREAM_SPECS_CALCULATOR,
                 )
 

@@ -74,7 +74,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraInfoAdapterTest {
     private val zoomControl = ZoomControl(FakeZoomCompat())
     private val cameraInfoAdapter = createCameraInfoAdapter(zoomControl = zoomControl)

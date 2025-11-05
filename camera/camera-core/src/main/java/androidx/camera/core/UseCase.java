@@ -46,7 +46,7 @@ import android.view.Surface;
 import androidx.annotation.CallSuper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.IntRange;
-import androidx.annotation.OptIn;
+import androidx.annotation.MainThread;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.camera.core.featuregroup.GroupableFeature;
@@ -66,7 +66,8 @@ import androidx.camera.core.impl.StreamSpec;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.stabilization.StabilizationMode;
-import androidx.camera.core.internal.CameraUseCaseAdapter;
+import androidx.camera.core.impl.stabilization.VideoStabilization;
+import androidx.camera.core.impl.utils.UseCaseUtil;
 import androidx.camera.core.internal.TargetConfig;
 import androidx.camera.core.internal.compat.quirk.AeFpsRangeQuirk;
 import androidx.camera.core.internal.utils.UseCaseConfigUtil;
@@ -92,6 +93,8 @@ import java.util.Set;
  */
 public abstract class UseCase {
     private static final String TAG = "UseCase";
+
+    private boolean mInSession = false;
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     // [UseCase lifetime constant] - Stays constant for the lifetime of the UseCase. Which means
@@ -121,7 +124,6 @@ public abstract class UseCase {
      */
     private @NonNull UseCaseConfig<?> mUseCaseConfig;
 
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     private @Nullable Set<@NonNull GroupableFeature> mFeatureGroup;
 
     /**
@@ -692,7 +694,7 @@ public abstract class UseCase {
      * Retrieves the configuration set by applications.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    protected @NonNull UseCaseConfig<?> getAppConfig() {
+    public @NonNull UseCaseConfig<?> getAppConfig() {
         return mUseCaseConfig;
     }
 
@@ -928,21 +930,25 @@ public abstract class UseCase {
     }
 
     /**
-     * Called when use case is attached to the camera. This method is called on main thread.
+     * Called when the use case is attached to the camera and the system is ready to start the
+     * camera capture session.
      *
      * <p>Once this function is invoked, the use case is attached to the {@link CameraInternal}
      * implementation of the associated camera. CameraX starts to open the camera and capture
      * session with the use case session config. The use case can receive the frame data from the
      * camera after the capture session is configured.
      *
+     * <p>This method is called on the main thread.
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
     @CallSuper
-    public void onStateAttached() {
+    @MainThread
+    public void onSessionStart() {
+        mInSession = true;
     }
 
     /**
-     * Called when use case is detached from the camera. This method is called on main thread.
+     * Called when the use case is detached from the camera.
      *
      * <p>Once this function is invoked, the use case is detached from the {@link CameraInternal}
      * implementation of the associated camera. The use case no longer receives frame data from
@@ -950,7 +956,22 @@ public abstract class UseCase {
      *
      */
     @RestrictTo(Scope.LIBRARY_GROUP)
-    public void onStateDetached() {
+    @MainThread
+    public void onSessionStop() {
+        mInSession = false;
+    }
+
+    /**
+     * Returns whether the use case is currently in an active session.
+     *
+     * <p>The use case is considered to be in a session if {@link #onSessionStart()} has been
+     * called, but {@link #onSessionStop()} has not yet been called.
+     *
+     * @return {@code true} if the use case is in a session, {@code false} otherwise.
+     */
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public boolean isInSession() {
+        return mInSession;
     }
 
     /**
@@ -1157,13 +1178,11 @@ public abstract class UseCase {
      * @see androidx.camera.core.SessionConfig#getRequiredFeatureGroup()
      * @see androidx.camera.core.SessionConfig#getPreferredFeatureGroup()
      */
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @RestrictTo(Scope.LIBRARY_GROUP)
     public void setFeatureGroup(@Nullable Set<@NonNull GroupableFeature> features) {
         mFeatureGroup = features != null ? new HashSet<>(features) : null;
     }
 
-    @OptIn(markerClass = ExperimentalSessionConfig.class)
     @RestrictTo(Scope.LIBRARY_GROUP)
     public @Nullable Set<@NonNull GroupableFeature> getFeatureGroup() {
         return mFeatureGroup;
@@ -1201,8 +1220,7 @@ public abstract class UseCase {
         // supported
         Range<Integer> fpsRange = FRAME_RATE_RANGE_UNSPECIFIED;
 
-        VideoStabilizationFeature.StabilizationMode stabilizationMode =
-                VideoStabilizationFeature.DEFAULT_STABILIZATION_MODE;
+        VideoStabilization stabilization = VideoStabilizationFeature.DEFAULT_STABILIZATION;
 
         // TODO: Use UNSPECIFIED default values for all features by default and switch to
         //  FCQ-specific default values only when the Camera2 FCQ API is required. However,
@@ -1218,11 +1236,11 @@ public abstract class UseCase {
                 FpsRangeFeature fpsFeature = ((FpsRangeFeature) feature);
                 fpsRange = new Range<>(fpsFeature.getMinFps(), fpsFeature.getMaxFps());
             } else if (feature instanceof VideoStabilizationFeature) {
-                stabilizationMode = ((VideoStabilizationFeature) feature).getMode();
+                stabilization = ((VideoStabilizationFeature) feature).getVideoStabilization();
             }
         }
 
-        if (this instanceof Preview || CameraUseCaseAdapter.isVideoCapture(this)) {
+        if (this instanceof Preview || UseCaseUtil.isVideoCapture(this)) {
             config.insertOption(OPTION_INPUT_DYNAMIC_RANGE, dynamicRange);
         }
 
@@ -1233,7 +1251,13 @@ public abstract class UseCase {
         // error-prone (e.g. if the UseCases are specified and the stabilization mode is changed for
         // some other UseCases in future, it may lead to those use cases not being handled properly
         // and it might be hard to notice such an issue).
-        switch (stabilizationMode) {
+        switch (stabilization) {
+            case UNSPECIFIED:
+                config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE,
+                        StabilizationMode.UNSPECIFIED);
+                config.insertOption(OPTION_VIDEO_STABILIZATION_MODE,
+                        StabilizationMode.UNSPECIFIED);
+                break;
             case OFF:
                 config.insertOption(OPTION_PREVIEW_STABILIZATION_MODE, StabilizationMode.OFF);
                 config.insertOption(OPTION_VIDEO_STABILIZATION_MODE, StabilizationMode.OFF);

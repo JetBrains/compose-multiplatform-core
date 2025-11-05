@@ -583,7 +583,7 @@ class ObjectFloatTest {
         )
         assertEquals(
             "x${order[0]}=${order[0].toFloat()}, ${order[1]}=${order[1].toFloat()}, " +
-                "${order[2]}=${order[2].toFloat()}...",
+                "${order[2]}=${order[2].toFloat()}, ...y",
             map.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
@@ -594,7 +594,7 @@ class ObjectFloatTest {
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
             map.joinToString(limit = 3) { _, value -> names[value.toInt()] },
         )
     }

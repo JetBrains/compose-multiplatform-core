@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class StubMediaRoute2ProviderService extends MediaRouteProviderService {
     private static final Object sLock = new Object();
@@ -92,15 +93,23 @@ public class StubMediaRoute2ProviderService extends MediaRouteProviderService {
         return new StubMediaRoute2Provider(this);
     }
 
-    class StubMediaRoute2Provider extends MediaRouteProvider {
-        Map<String, MediaRouteDescriptor> mRoutes = new ArrayMap<>();
-        Map<String, List<StubDynamicGroupRouteController>> mDescriptorIdToControllers =
-                new ArrayMap<>();
+    static class StubMediaRoute2Provider extends MediaRouteProvider {
+        private final Object mLock = new Object();
+
+        @GuardedBy("mLock")
+        private final Map<String, MediaRouteDescriptor> mRoutes = new ArrayMap<>();
+
+        @GuardedBy("mLock")
+        private final Map<String, List<StubDynamicGroupRouteController>>
+                mDescriptorIdToControllers = new ArrayMap<>();
+
+        private final AtomicInteger mNextControllerId;
         private final MediaRouteDescriptor mGroupDescriptor;
         boolean mSupportsDynamicGroup = true;
 
         StubMediaRoute2Provider(@NonNull Context context) {
             super(context);
+            mNextControllerId = new AtomicInteger(0);
             mGroupDescriptor =
                     new MediaRouteDescriptor.Builder(ROUTE_ID_GROUP, ROUTE_NAME_GROUP)
                             .addControlFilters(CONTROL_FILTERS_TEST)
@@ -134,63 +143,79 @@ public class StubMediaRoute2ProviderService extends MediaRouteProviderService {
                     new MediaRouteDescriptor.Builder(MR2_ROUTE_ID2, MR2_ROUTE_NAME2)
                             .addControlFilters(CONTROL_FILTERS_TEST)
                             .build();
-            mRoutes.put(route1.getId(), route1);
-            mRoutes.put(route2.getId(), route2);
+
+            synchronized (mLock) {
+                mRoutes.put(route1.getId(), route1);
+                mRoutes.put(route2.getId(), route2);
+            }
         }
 
         public void publishRoutes() {
-            setDescriptor(
-                    new MediaRouteProviderDescriptor.Builder()
-                            .addRoutes(mRoutes.values())
-                            .setSupportsDynamicGroupRoute(mSupportsDynamicGroup)
-                            .build());
+            synchronized (mLock) {
+                setDescriptor(
+                        new MediaRouteProviderDescriptor.Builder()
+                                .addRoutes(mRoutes.values())
+                                .setSupportsDynamicGroupRoute(mSupportsDynamicGroup)
+                                .build());
+            }
         }
 
         public void addController(String routeId, StubDynamicGroupRouteController controller) {
             Log.i(TAG, "addController with routeId = " + routeId + ", controller = " + controller);
-            List<StubDynamicGroupRouteController> controllers =
-                    mDescriptorIdToControllers.get(routeId);
-            if (controllers == null) {
-                controllers = new ArrayList<>();
+            synchronized (mLock) {
+                List<StubDynamicGroupRouteController> controllers =
+                        mDescriptorIdToControllers.get(routeId);
+                if (controllers == null) {
+                    controllers = new ArrayList<>();
+                }
+                controllers.add(controller);
+                mDescriptorIdToControllers.put(routeId, controllers);
             }
-            controllers.add(controller);
-            mDescriptorIdToControllers.put(routeId, controllers);
         }
 
         public void removeController(String routeId, StubDynamicGroupRouteController controller) {
-            Log.i(
-                    TAG,
-                    "removeController with routeId = " + routeId + ", controller = " + controller);
-            List<StubDynamicGroupRouteController> controllers =
-                    mDescriptorIdToControllers.get(routeId);
-            if (controllers == null) {
-                return;
-            }
-            if (controllers.contains(controller)) {
-                controllers.remove(controller);
-                if (controllers.isEmpty()) {
-                    mDescriptorIdToControllers.remove(routeId);
-                } else {
-                    mDescriptorIdToControllers.put(routeId, controllers);
+            synchronized (mLock) {
+                Log.i(
+                        TAG,
+                        "removeController with routeId = "
+                                + routeId
+                                + ", controller = "
+                                + controller);
+                List<StubDynamicGroupRouteController> controllers =
+                        mDescriptorIdToControllers.get(routeId);
+                if (controllers == null) {
+                    return;
+                }
+                if (controllers.contains(controller)) {
+                    controllers.remove(controller);
+                    if (controllers.isEmpty()) {
+                        mDescriptorIdToControllers.remove(routeId);
+                    } else {
+                        mDescriptorIdToControllers.put(routeId, controllers);
+                    }
                 }
             }
         }
 
-        public int getNumberOfCreatedControllers(String descriptorId) {
-            List<StubDynamicGroupRouteController> controllers =
-                    mDescriptorIdToControllers.get(descriptorId);
-            return (controllers != null) ? controllers.size() : 0;
+        public List<StubDynamicGroupRouteController> getCreatedControllers(String descriptorId) {
+            synchronized (mLock) {
+                List<StubDynamicGroupRouteController> controllers =
+                        mDescriptorIdToControllers.get(descriptorId);
+                return (controllers != null) ? controllers : List.of();
+            }
         }
 
         class StubDynamicGroupRouteController extends DynamicGroupRouteController {
             final String mRouteId;
             final RouteControllerOptions mRouteControllerOptions;
+            final int mControllerId;
             private final Set<String> mCurrentSelectedRouteIds = new HashSet<>();
 
             StubDynamicGroupRouteController(
                     String routeId, RouteControllerOptions routeControllerOptions) {
                 mRouteId = routeId;
                 mRouteControllerOptions = routeControllerOptions;
+                mControllerId = mNextControllerId.getAndIncrement();
                 mCurrentSelectedRouteIds.add(routeId);
             }
 
@@ -206,23 +231,26 @@ public class StubMediaRoute2ProviderService extends MediaRouteProviderService {
 
             private Collection<DynamicGroupRouteController.DynamicRouteDescriptor>
                     buildDynamicRouteDescriptors() {
-                ArrayList<DynamicGroupRouteController.DynamicRouteDescriptor> result =
-                        new ArrayList<>();
-                for (MediaRouteDescriptor route : mRoutes.values()) {
-                    DynamicGroupRouteController.DynamicRouteDescriptor dynamicDescriptor =
-                            new DynamicGroupRouteController.DynamicRouteDescriptor.Builder(route)
-                                    .setSelectionState(
-                                            mCurrentSelectedRouteIds.contains(route.getId())
-                                                    ? DynamicGroupRouteController
-                                                            .DynamicRouteDescriptor.SELECTED
-                                                    : DynamicGroupRouteController
-                                                            .DynamicRouteDescriptor.UNSELECTED)
-                                    .setIsUnselectable(
-                                            mCurrentSelectedRouteIds.contains(route.getId()))
-                                    .build();
-                    result.add(dynamicDescriptor);
+                synchronized (mLock) {
+                    ArrayList<DynamicGroupRouteController.DynamicRouteDescriptor> result =
+                            new ArrayList<>();
+                    for (MediaRouteDescriptor route : mRoutes.values()) {
+                        DynamicGroupRouteController.DynamicRouteDescriptor dynamicDescriptor =
+                                new DynamicGroupRouteController.DynamicRouteDescriptor.Builder(
+                                                route)
+                                        .setSelectionState(
+                                                mCurrentSelectedRouteIds.contains(route.getId())
+                                                        ? DynamicGroupRouteController
+                                                                .DynamicRouteDescriptor.SELECTED
+                                                        : DynamicGroupRouteController
+                                                                .DynamicRouteDescriptor.UNSELECTED)
+                                        .setIsUnselectable(
+                                                mCurrentSelectedRouteIds.contains(route.getId()))
+                                        .build();
+                        result.add(dynamicDescriptor);
+                    }
+                    return result;
                 }
-                return result;
             }
 
             @Override

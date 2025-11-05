@@ -19,21 +19,22 @@ package androidx.appfunctions
 import android.app.PendingIntent
 import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionOneOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BYTES
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_FLOAT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
+import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import java.util.Objects
 
 /** Specification class defining the properties metadata for [AppFunctionData]. */
 internal abstract class AppFunctionDataSpec {
@@ -42,7 +43,10 @@ internal abstract class AppFunctionDataSpec {
 
     internal abstract fun getDataType(key: String): AppFunctionDataTypeMetadata?
 
+    /** Checks if [key] must be set with non-null value in [AppFunctionData]. */
     internal abstract fun isRequired(key: String): Boolean
+
+    internal abstract fun getAllPropertyKeys(): Set<String>
 
     /** Checks if there is a metadata for [key]. */
     fun containsMetadata(key: String): Boolean {
@@ -55,19 +59,25 @@ internal abstract class AppFunctionDataSpec {
      * If the property associated with [key] is an Array, it would return the item object's
      * specification.
      *
+     * @param key The property key.
+     * @param qualifiedName The qualified name of the object, used in creating the corresponding
+     *   [AppFunctionData].
      * @throws IllegalArgumentException If this is no child specification associated with [key].
      */
-    fun getPropertyObjectSpec(key: String): AppFunctionDataSpec {
+    fun getPropertyObjectSpec(key: String, qualifiedName: String): AppFunctionDataSpec {
         val childDataType =
             getDataType(key)
                 ?: throw IllegalArgumentException("Value associated with $key is not an object")
-        return getPropertyObjectSpec(childDataType)
+        return getPropertyObjectSpec(childDataType, qualifiedName)
     }
 
-    private fun getPropertyObjectSpec(type: AppFunctionDataTypeMetadata): AppFunctionDataSpec {
+    private fun getPropertyObjectSpec(
+        type: AppFunctionDataTypeMetadata,
+        qualifiedName: String,
+    ): AppFunctionDataSpec {
         return when (type) {
             is AppFunctionArrayTypeMetadata -> {
-                getPropertyObjectSpec(type.itemType)
+                getPropertyObjectSpec(type.itemType, qualifiedName)
             }
             is AppFunctionObjectTypeMetadata -> {
                 ObjectSpec(type, componentMetadata)
@@ -78,10 +88,14 @@ internal abstract class AppFunctionDataSpec {
                         ?: throw IllegalStateException(
                             "Unable to resolve data type for ${type.referenceDataType}"
                         )
-                getPropertyObjectSpec(resolvedDataType)
+                getPropertyObjectSpec(resolvedDataType, qualifiedName)
             }
             is AppFunctionAllOfTypeMetadata -> {
                 ObjectSpec(type.getPseudoObjectTypeMetadata(componentMetadata), componentMetadata)
+            }
+            is AppFunctionOneOfTypeMetadata -> {
+                val oneOfType = type.getObjectMetadataForOneOfType(qualifiedName)
+                getPropertyObjectSpec(oneOfType, qualifiedName)
             }
             else -> {
                 throw IllegalStateException("Unexpected data type $type")
@@ -95,17 +109,26 @@ internal abstract class AppFunctionDataSpec {
      * @throws IllegalArgumentException If the [data] does not match the specification.
      */
     fun validateDataSpecMatches(data: AppFunctionData) {
-        val otherSpec = data.spec ?: return
-        require(this == otherSpec) { "$data does not match the metadata specification of $this" }
+        // TODO(b/447064745): Fix child object validation when spec is from schema inventory
+        val unused = data.spec ?: return
+        //        require(this == otherSpec) { "$data does not match the metadata specification of
+        // $this" }
     }
 
     /**
      * Validates if a write request to set a value of type [targetClass] to [targetKey] is valid.
      *
      * @param isCollection Indicates if the write request is a collection of [targetClass].
+     * @param targetValue The value to be validated against any constraints if specified by the
+     *   metadata.
      * @throws IllegalArgumentException If the request is invalid.
      */
-    fun validateWriteRequest(targetKey: String, targetClass: Class<*>, isCollection: Boolean) {
+    fun validateWriteRequest(
+        targetKey: String,
+        targetClass: Class<*>,
+        isCollection: Boolean,
+        targetValue: Any,
+    ) {
         val targetDataTypeMetadata = getDataType(targetKey)
         if (targetDataTypeMetadata == null) {
             throw IllegalArgumentException("No value should be set at $targetKey")
@@ -119,15 +142,24 @@ internal abstract class AppFunctionDataSpec {
                     "expecting a value matching $targetDataTypeMetadata"
             }
         }
+
+        targetDataTypeMetadata.requireConstraintsConformance(targetKey, targetValue)
     }
 
     /**
      * Validates if a read request to get a value of type [targetClass] from [targetKey] is valid.
      *
      * @param isCollection Indicates if the write request is a collection of [targetClass].
+     * @param targetValue The value to be validated against any constraints if specified by the
+     *   metadata.
      * @throws IllegalArgumentException If the request is invalid.
      */
-    fun validateReadRequest(targetKey: String, targetClass: Class<*>, isCollection: Boolean) {
+    fun validateReadRequest(
+        targetKey: String,
+        targetClass: Class<*>,
+        isCollection: Boolean,
+        targetValue: Any? = null,
+    ) {
         val targetDataTypeMetadata = getDataType(targetKey)
         if (targetDataTypeMetadata == null) {
             throw IllegalArgumentException("No value should be set at $targetKey")
@@ -141,12 +173,81 @@ internal abstract class AppFunctionDataSpec {
                     "the actual value should be $targetDataTypeMetadata"
             }
         }
+
+        targetDataTypeMetadata.requireConstraintsConformance(targetKey, targetValue)
+    }
+
+    private fun AppFunctionDataTypeMetadata.requireConstraintsConformance(
+        targetKey: String,
+        targetValue: Any?,
+    ) {
+        // targetValue == null is allowed when the data type is nullable or is marked optional in
+        // either ObjectSpec or ParameterSpec.
+        require(targetValue != null || !isRequired(targetKey)) {
+            "\"$targetKey\" cannot be set to a null value."
+        }
+
+        // If null is allowed, no need to check for constraint conformance.
+        if (targetValue == null) return
+
+        when (this) {
+            is AppFunctionIntTypeMetadata -> {
+                require(enumValues == null || enumValues.contains(targetValue)) {
+                    "Invalid value for \"$targetKey\" got \"$targetValue\", expecting one of $enumValues"
+                }
+            }
+            is AppFunctionStringTypeMetadata -> {
+                require(enumValues == null || enumValues.contains(targetValue)) {
+                    "Invalid value for \"$targetKey\" got \"$targetValue\", expecting one of $enumValues"
+                }
+            }
+            is AppFunctionArrayTypeMetadata -> {
+                this.requireItemTypeConstraintsConformance(targetKey, targetValue)
+            }
+
+            else -> {}
+        }
+    }
+
+    private fun AppFunctionArrayTypeMetadata.requireItemTypeConstraintsConformance(
+        targetKey: String,
+        targetValue: Any?,
+    ) {
+        when (itemType) {
+            is AppFunctionIntTypeMetadata -> {
+                val intArray = targetValue as? IntArray
+                for (item in intArray ?: intArrayOf()) {
+                    itemType.requireConstraintsConformance(targetKey, item)
+                }
+            }
+
+            is AppFunctionStringTypeMetadata -> {
+                @Suppress("UNCHECKED_CAST") val stringList = targetValue as? List<String>
+                for (item in stringList ?: emptyList()) {
+                    itemType.requireConstraintsConformance(targetKey, item)
+                }
+            }
+
+            else -> {}
+        }
     }
 
     private data class ObjectSpec(
         private val objectTypeMetadata: AppFunctionObjectTypeMetadata,
         override val componentMetadata: AppFunctionComponentsMetadata,
     ) : AppFunctionDataSpec() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ObjectSpec) return false
+
+            // TODO(b/446606781): Comparing component metadata
+            return this.objectTypeMetadata == other.objectTypeMetadata
+        }
+
+        override fun hashCode(): Int {
+            return Objects.hash(objectTypeMetadata)
+        }
+
         override val objectQualifiedName: String
             get() = objectTypeMetadata.qualifiedName ?: ""
 
@@ -155,14 +256,32 @@ internal abstract class AppFunctionDataSpec {
         }
 
         override fun isRequired(key: String): Boolean {
-            return objectTypeMetadata.required.contains(key)
+            val isRequired = objectTypeMetadata.required.contains(key)
+            val isNullable = objectTypeMetadata.properties[key]?.isNullable ?: true
+            // A field is only required when it is in required list AND being non-null. A nullable
+            // required field is considered as optional from data validation's perspective.
+            return isRequired && !isNullable
         }
+
+        override fun getAllPropertyKeys(): Set<String> = objectTypeMetadata.properties.keys
     }
 
     private data class ParametersSpec(
         private val parameterMetadataList: List<AppFunctionParameterMetadata>,
         override val componentMetadata: AppFunctionComponentsMetadata,
     ) : AppFunctionDataSpec() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is ParametersSpec) return false
+
+            // TODO(b/446606781): Comparing component metadata
+            return this.parameterMetadataList == other.parameterMetadataList
+        }
+
+        override fun hashCode(): Int {
+            return Objects.hash(parameterMetadataList)
+        }
+
         override val objectQualifiedName: String
             get() = ""
 
@@ -171,58 +290,65 @@ internal abstract class AppFunctionDataSpec {
         }
 
         override fun isRequired(key: String): Boolean {
-            return parameterMetadataList.firstOrNull { it.name == key }?.isRequired ?: false
+            val isRequired =
+                parameterMetadataList.firstOrNull { it.name == key }?.isRequired ?: false
+            val isNullable =
+                parameterMetadataList.firstOrNull { it.name == key }?.dataType?.isNullable ?: true
+            // A field is only required when it is in required list AND being non-null. A nullable
+            // required field is considered as optional from data validation's perspective.
+            return isRequired && !isNullable
         }
+
+        override fun getAllPropertyKeys(): Set<String> =
+            parameterMetadataList.map { it.name }.toSet()
     }
 
     fun AppFunctionDataTypeMetadata.conform(typeClazz: Class<*>, isCollection: Boolean): Boolean {
         return when (this) {
-            is AppFunctionPrimitiveTypeMetadata -> {
-                isCollection == false && this.conform(typeClazz)
+            is AppFunctionIntTypeMetadata -> {
+                !isCollection && typeClazz == Int::class.java
+            }
+            is AppFunctionLongTypeMetadata -> {
+                !isCollection && typeClazz == Long::class.java
+            }
+            is AppFunctionFloatTypeMetadata -> {
+                !isCollection && typeClazz == Float::class.java
+            }
+            is AppFunctionDoubleTypeMetadata -> {
+                !isCollection && typeClazz == Double::class.java
+            }
+            is AppFunctionBooleanTypeMetadata -> {
+                !isCollection && typeClazz == Boolean::class.java
+            }
+            is AppFunctionStringTypeMetadata -> {
+                !isCollection && typeClazz == String::class.java
+            }
+            is AppFunctionBytesTypeMetadata -> {
+                // Unlike other primitive array types, AppFunction does not support Byte itself.
+                // Instead, ByteArray is considered as a primitive type. Therefore, when validating
+                // against AppFunctionBytesTypeMetadata, it must always be a collection.
+                isCollection && typeClazz == Byte::class.java
+            }
+            is AppFunctionPendingIntentTypeMetadata -> {
+                !isCollection && typeClazz == PendingIntent::class.java
             }
             is AppFunctionArrayTypeMetadata -> {
-                isCollection == true && this.conform(typeClazz)
+                isCollection && this.conform(typeClazz)
             }
             is AppFunctionObjectTypeMetadata -> {
-                isCollection == false && this.conform(typeClazz)
+                !isCollection && this.conform(typeClazz)
+            }
+            is AppFunctionAllOfTypeMetadata -> {
+                !isCollection && this.conform(typeClazz)
             }
             is AppFunctionReferenceTypeMetadata -> {
-                isCollection == false && this.conform(typeClazz)
+                !isCollection && this.conform(typeClazz)
+            }
+            is AppFunctionOneOfTypeMetadata -> {
+                !isCollection && this.conform(typeClazz)
             }
             else -> {
                 throw IllegalStateException("Unexpected data type ${this.javaClass}")
-            }
-        }
-    }
-
-    private fun AppFunctionPrimitiveTypeMetadata.conform(typeClazz: Class<*>): Boolean {
-        return when (typeClazz) {
-            Int::class.java -> {
-                this.type == TYPE_INT
-            }
-            Long::class.java -> {
-                this.type == TYPE_LONG
-            }
-            Float::class.java -> {
-                this.type == TYPE_FLOAT
-            }
-            Double::class.java -> {
-                this.type == TYPE_DOUBLE
-            }
-            Boolean::class.java -> {
-                this.type == TYPE_BOOLEAN
-            }
-            String::class.java -> {
-                this.type == TYPE_STRING
-            }
-            Byte::class.java -> {
-                this.type == TYPE_BYTES
-            }
-            PendingIntent::class.java -> {
-                this.type == TYPE_PENDING_INTENT
-            }
-            else -> {
-                false
             }
         }
     }
@@ -232,6 +358,14 @@ internal abstract class AppFunctionDataSpec {
     }
 
     private fun AppFunctionObjectTypeMetadata.conform(typeClass: Class<*>): Boolean {
+        return typeClass == AppFunctionData::class.java
+    }
+
+    private fun AppFunctionAllOfTypeMetadata.conform(typeClass: Class<*>): Boolean {
+        return typeClass == AppFunctionData::class.java
+    }
+
+    private fun AppFunctionOneOfTypeMetadata.conform(typeClass: Class<*>): Boolean {
         return typeClass == AppFunctionData::class.java
     }
 

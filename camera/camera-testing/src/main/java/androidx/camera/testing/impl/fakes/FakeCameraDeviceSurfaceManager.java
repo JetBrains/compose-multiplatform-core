@@ -38,11 +38,11 @@ import androidx.camera.core.impl.SurfaceConfig;
 import androidx.camera.core.impl.SurfaceStreamSpecQueryResult;
 import androidx.camera.core.impl.UseCaseConfig;
 import androidx.camera.core.impl.UseCaseConfigFactory;
+import androidx.camera.core.impl.stabilization.VideoStabilization;
 import androidx.camera.core.streamsharing.StreamSharingConfig;
 import androidx.camera.video.impl.VideoCaptureConfig;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,6 +62,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
             mDefinedStreamSpecs = new HashMap<>();
 
     private Set<List<Integer>> mValidSurfaceCombos = createDefaultValidSurfaceCombos();
+    private int mCameraUpdateCount = 0;
 
     /**
      * Sets the given suggested stream specs for the specified camera Id and use case type.
@@ -80,7 +81,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
     }
 
     @Override
-    public @Nullable SurfaceConfig transformSurfaceConfig(
+    public @NonNull SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
@@ -98,7 +99,7 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
-            boolean isPreviewStabilizationOn,
+            @NonNull VideoStabilization videoStabilization,
             boolean hasVideoCapture, boolean isFeatureComboInvocation,
             boolean findMaxSupportedFrameRate) {
         List<UseCaseConfig<?>> newUseCaseConfigs =
@@ -226,5 +227,14 @@ public final class FakeCameraDeviceSurfaceManager implements CameraDeviceSurface
     /** Adds a valid surface combo. */
     public void addValidSurfaceCombo(@NonNull List<Integer> validSurfaceCombo) {
         mValidSurfaceCombos.add(validSurfaceCombo);
+    }
+
+    @Override
+    public void onCamerasUpdated(@NonNull List<String> cameraIds) {
+        mCameraUpdateCount++;
+    }
+
+    public int getCameraUpdateCount() {
+        return mCameraUpdateCount;
     }
 }

@@ -16,13 +16,13 @@
 
 package androidx.xr.arcore.playservices
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.runtime.internal.AnchorNotTrackingException
+import androidx.xr.arcore.runtime.AnchorNotTrackingException
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import com.google.ar.core.Anchor as ARCoreAnchor
+import com.google.ar.core.Camera
 import com.google.ar.core.Frame
 import com.google.ar.core.HitResult
 import com.google.ar.core.Plane as ARCore1xPlane
@@ -31,8 +31,10 @@ import com.google.ar.core.Session
 import com.google.ar.core.exceptions.NotTrackingException
 import com.google.ar.core.exceptions.ResourceExhaustedException
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.util.UUID
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -47,15 +49,20 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(TestParameterInjector::class)
 class ArCorePerceptionManagerTest {
 
     lateinit var mockSession: Session
     lateinit var underTest: ArCorePerceptionManager
+    lateinit var mockCamera: Camera
+    lateinit var mockCameraPose: ARCorePose
 
     @Before
     fun setUp() {
         mockSession = mock<Session>()
+        mockCamera = mock<Camera>()
+        mockCameraPose = mock<ARCorePose>()
+        whenever(mockCamera.pose).thenReturn(mockCameraPose)
 
         val timeSource = ArCoreTimeSource()
         underTest = ArCorePerceptionManager(timeSource)
@@ -75,6 +82,7 @@ class ArCorePerceptionManagerTest {
         val mockFrame = mock<Frame>()
         whenever(mockARCoreAnchor.pose).thenReturn(pose.toARCorePose())
         doReturn(mockARCoreAnchor).whenever(mockSession).createAnchor(any())
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -98,6 +106,7 @@ class ArCorePerceptionManagerTest {
             .doThrow(ResourceExhaustedException())
             .whenever(mockSession)
             .createAnchor(any())
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -142,6 +151,7 @@ class ArCorePerceptionManagerTest {
             .thenReturn(listOf(mockPlane))
         whenever(mockFrame.hitTest(any(), eq(0), any(), eq(0))).thenReturn(listOf(mockHitResult))
         whenever(mockFrame.timestamp).thenReturn(timestamp)
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -162,11 +172,6 @@ class ArCorePerceptionManagerTest {
     }
 
     @Test
-    fun loadAnchorFromNativePointer_throwsNotImplementedError() {
-        assertFailsWith<NotImplementedError> { underTest.loadAnchorFromNativePointer(0L) }
-    }
-
-    @Test
     fun unpersistAnchor_throwsNotImplementedError() {
         val uuid = UUID.randomUUID()
 
@@ -176,6 +181,7 @@ class ArCorePerceptionManagerTest {
     @Test
     fun update_callsSessionUpdate() {
         val mockFrame = mock<Frame>()
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
@@ -191,12 +197,13 @@ class ArCorePerceptionManagerTest {
         whenever(mockFrame.getUpdatedTrackables(ARCore1xPlane::class.java))
             .thenReturn(listOf(mockPlane))
         whenever(mockFrame.timestamp).thenReturn(timestamp)
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
 
         underTest.update()
 
         assertThat(underTest.trackables).hasSize(1)
-        assertThat(underTest.trackables.first()).isInstanceOf(ArCorePlane::class.java)
+        assertIs<ArCorePlane>(underTest.trackables.first())
         verify(mockFrame).getUpdatedTrackables(ARCore1xPlane::class.java)
     }
 }

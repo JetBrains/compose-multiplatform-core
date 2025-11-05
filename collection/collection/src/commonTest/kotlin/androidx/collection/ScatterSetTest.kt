@@ -29,7 +29,9 @@ class ScatterSetTest {
     @Test
     fun emptyScatterSetConstructor() {
         val set = MutableScatterSet<String>()
-        assertEquals(7, set.capacity)
+        if (!isJs()) {
+            assertEquals(7, set.capacity)
+        }
         assertEquals(0, set.size)
     }
 
@@ -52,7 +54,9 @@ class ScatterSetTest {
         // When unloading the suggested capacity, we'll fall outside of the
         // expected bucket of 2047 entries, and we'll get 4095 instead
         val set = MutableScatterSet<String>(1800)
-        assertEquals(4095, set.capacity)
+        if (!isJs()) {
+            assertEquals(4095, set.capacity)
+        }
         assertEquals(0, set.size)
     }
 
@@ -65,6 +69,24 @@ class ScatterSetTest {
         assertEquals(2, withElements.size)
         assertTrue("Hello" in withElements)
         assertTrue("World" in withElements)
+    }
+
+    @Test
+    fun mutableScatterSetFromSet() {
+        val from = setOf("Hello", "World")
+        val set = MutableScatterSet(from)
+        assertEquals(2, set.size)
+        assertTrue("Hello" in set)
+        assertTrue("World" in set)
+    }
+
+    @Test
+    fun mutableScatterSetFromScatterSet() {
+        val from = scatterSetOf("Hello", "World")
+        val set = MutableScatterSet(from)
+        assertEquals(2, set.size)
+        assertTrue("Hello" in set)
+        assertTrue("World" in set)
     }
 
     @Test
@@ -378,6 +400,9 @@ class ScatterSetTest {
 
     @Test
     fun removeDoesNotCauseGrowthOnInsert() {
+        // JS does not track capacity.
+        if (isJs()) return
+
         val set = MutableScatterSet<String>(10) // Must be > GroupWidth (8)
         assertEquals(15, set.capacity)
 
@@ -534,7 +559,7 @@ class ScatterSetTest {
             set.joinToString(),
         )
         assertEquals(
-            "x${order[0]}, ${order[1]}, ${order[2]}...",
+            "x${order[0]}, ${order[1]}, ${order[2]}, ...y",
             set.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
@@ -543,7 +568,7 @@ class ScatterSetTest {
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
             set.joinToString(limit = 3) { names[it] },
         )
     }
@@ -551,13 +576,22 @@ class ScatterSetTest {
     @Test
     fun hashCodeAddValues() {
         val set = mutableScatterSetOf<String?>()
-        assertEquals(217, set.hashCode())
+        assertEquals(0, set.hashCode())
         set += null
-        assertEquals(218, set.hashCode())
+        assertEquals(0, set.hashCode())
         set += "Hello"
         val h1 = set.hashCode()
         set += "World"
         assertNotEquals(h1, set.hashCode())
+    }
+
+    @Test
+    fun hashCodeDoesNotUseCapacity() {
+        val set1 = MutableScatterSet<String>(initialCapacity = 10)
+        set1 += "Hello"
+        val set2 = MutableScatterSet<String>(initialCapacity = 100)
+        set2 += "Hello"
+        assertEquals(set1.hashCode(), set2.hashCode())
     }
 
     @Test
@@ -779,11 +813,11 @@ class ScatterSetTest {
     @Test
     fun asSetHashCodeAddValues() {
         val set = mutableScatterSetOf<String?>()
-        assertEquals(217, set.asSet().hashCode())
-        assertEquals(217, set.asMutableSet().hashCode())
+        assertEquals(0, set.asSet().hashCode())
+        assertEquals(0, set.asMutableSet().hashCode())
         set += null
-        assertEquals(218, set.asSet().hashCode())
-        assertEquals(218, set.asMutableSet().hashCode())
+        assertEquals(0, set.asSet().hashCode())
+        assertEquals(0, set.asMutableSet().hashCode())
 
         set += "Hello"
         val h1 = set.hashCode()
@@ -794,6 +828,9 @@ class ScatterSetTest {
 
     @Test
     fun trim() {
+        // Trim is not supported on JS.
+        if (isJs()) return
+
         val set = mutableScatterSetOf("Hello", "World", "Hola", "Mundo", "Bonjour", "Monde")
         val capacity = set.capacity
         assertEquals(0, set.trim())
@@ -967,7 +1004,9 @@ class ScatterSetTest {
             }
         }
 
-        assertEquals(127, set.capacity)
+        if (!isJs()) {
+            assertEquals(127, set.capacity)
+        }
         for (i in 0..100) {
             assertTrue(set.contains(i), "Set should contain element $i")
         }

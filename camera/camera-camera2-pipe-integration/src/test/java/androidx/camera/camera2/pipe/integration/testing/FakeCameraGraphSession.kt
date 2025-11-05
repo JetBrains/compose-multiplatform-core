@@ -148,7 +148,7 @@ open class FakeCameraGraphSession : CameraGraph.Session {
         return captures
     }
 
-    override suspend fun submit3A(
+    override fun submit3A(
         aeMode: AeMode?,
         afMode: AfMode?,
         awbMode: AwbMode?,

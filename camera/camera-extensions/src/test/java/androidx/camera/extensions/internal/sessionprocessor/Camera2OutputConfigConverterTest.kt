@@ -17,7 +17,6 @@
 package androidx.camera.extensions.internal.sessionprocessor
 
 import android.graphics.ImageFormat
-import android.os.Build
 import android.util.Size
 import android.view.Surface
 import androidx.camera.extensions.impl.advanced.Camera2OutputConfigImpl
@@ -42,7 +41,7 @@ private val SIZE = Size(640, 480)
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class Camera2OutputConfigConverterTest {
     private val surface = mock(Surface::class.java)
     private val sharedConfigImpls =

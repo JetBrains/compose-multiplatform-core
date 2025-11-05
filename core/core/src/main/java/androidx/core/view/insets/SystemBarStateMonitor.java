@@ -78,6 +78,7 @@ class SystemBarStateMonitor {
                 }
             }
         };
+        mDetector.setVisibility(View.GONE);
         mDetector.setWillNotDraw(true);
         ViewCompat.setOnApplyWindowInsetsListener(mDetector, (view, windowInsets) -> {
             final Insets insets = getInsets(windowInsets);

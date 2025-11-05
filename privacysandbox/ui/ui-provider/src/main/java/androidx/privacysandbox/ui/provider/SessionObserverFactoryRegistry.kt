@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.provider
 
 import androidx.privacysandbox.ui.core.SessionObserver
 import androidx.privacysandbox.ui.core.SessionObserverFactory
 
+@Deprecated("This library is no longer supported.")
 public interface SessionObserverFactoryRegistry {
 
     public val sessionObserverFactories: List<SessionObserverFactory>

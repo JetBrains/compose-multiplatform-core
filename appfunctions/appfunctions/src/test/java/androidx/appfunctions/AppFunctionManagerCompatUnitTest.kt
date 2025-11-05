@@ -17,11 +17,10 @@
 package androidx.appfunctions
 
 import android.content.Context
-import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.testing.FakeAppFunctionManagerApi
 import androidx.appfunctions.testing.FakeAppFunctionReader
 import androidx.appfunctions.testing.FakeTranslator
@@ -85,12 +84,7 @@ class AppFunctionManagerCompatUnitTest {
                     AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 1),
                 parameters = emptyList(),
                 response =
-                    AppFunctionResponseMetadata(
-                        AppFunctionPrimitiveTypeMetadata(
-                            AppFunctionDataTypeMetadata.Companion.TYPE_UNIT,
-                            isNullable = false,
-                        )
-                    ),
+                    AppFunctionResponseMetadata(AppFunctionUnitTypeMetadata(isNullable = false)),
             )
         )
         fakeTranslateSelector.setTranslator(fakeTranslator)
@@ -121,12 +115,7 @@ class AppFunctionManagerCompatUnitTest {
                     AppFunctionSchemaMetadata(category = "notes", name = "createNote", version = 2),
                 parameters = emptyList(),
                 response =
-                    AppFunctionResponseMetadata(
-                        AppFunctionPrimitiveTypeMetadata(
-                            AppFunctionDataTypeMetadata.Companion.TYPE_UNIT,
-                            isNullable = false,
-                        )
-                    ),
+                    AppFunctionResponseMetadata(AppFunctionUnitTypeMetadata(isNullable = false)),
             )
         )
         fakeTranslateSelector.setTranslator(fakeTranslator)

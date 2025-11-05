@@ -57,10 +57,6 @@ dependencies {
     api(libs.guavaAndroid)
     api(libs.kotlinGradlePluginApi)
     api(libs.kotlinNativeUtils)
-    api(libs.kotlinStdlib)
-
-    // Remove once b/407096518 is fixed
-    implementation(libs.androidGradlePlugin)
 
     implementation(project(":benchmark:benchmark-gradle-plugin"))
     implementation(project(":inspection:inspection-gradle-plugin"))

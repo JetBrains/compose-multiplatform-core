@@ -53,9 +53,9 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 internal object ArtifactResolver {
     internal val jetbrainsRepositories =
         listOf(
-            "https://maven.pkg.jetbrains.space/kotlin/p/dokka/dev/",
+            "https://packages.jetbrains.team/maven/p/kt/dokka-dev",
             "https://maven.pkg.jetbrains.space/public/p/compose/dev",
-            "https://maven.pkg.jetbrains.space/kotlin/p/dokka/test",
+            "https://packages.jetbrains.team/maven/p/kt/dokka-test",
             "https://packages.jetbrains.team/maven/p/kt/dev",
         )
 

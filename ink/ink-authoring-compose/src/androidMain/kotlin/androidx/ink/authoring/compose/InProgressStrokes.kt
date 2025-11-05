@@ -17,7 +17,6 @@
 package androidx.ink.authoring.compose
 
 import android.view.MotionEvent
-import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.layout.Box
@@ -51,7 +50,6 @@ import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.InProgressStrokesFinishedListener
 import androidx.ink.authoring.InProgressStrokesView
 import androidx.ink.brush.Brush
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.strokes.Stroke
 import androidx.input.motionprediction.MotionEventPredictor
@@ -139,7 +137,6 @@ import java.util.concurrent.TimeUnit
  *   thread, it may not be in the same UI thread run loop and lead to a flicker.
  */
 @Composable
-@OptIn(ExperimentalInkCustomBrushApi::class)
 public fun InProgressStrokes(
     defaultBrush: Brush?,
     nextBrush: () -> Brush? = { defaultBrush },
@@ -149,7 +146,8 @@ public fun InProgressStrokes(
     textureBitmapStore: TextureBitmapStore = TextureBitmapStore { null },
     onStrokesFinished: (List<Stroke>) -> Unit,
 ) {
-    InProgressStrokes(
+    // NOMUTANTS -- Tests need to use InProgressStrokesImpl for its onSyncAvailable parameter.
+    InProgressStrokesImpl(
         nextBrush = nextBrush,
         nextPointerEventToWorldTransform = { pointerEventToWorldTransform },
         nextStrokeToWorldTransform = { strokeToWorldTransform },
@@ -158,11 +156,9 @@ public fun InProgressStrokes(
     )
 }
 
-@OptIn(ExperimentalInkCustomBrushApi::class)
 @VisibleForTesting
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 @Composable
-public fun InProgressStrokes(
+internal fun InProgressStrokesImpl(
     nextBrush: () -> Brush?,
     nextPointerEventToWorldTransform: () -> Matrix = { IDENTITY_MATRIX },
     nextStrokeToWorldTransform: () -> Matrix = { IDENTITY_MATRIX },

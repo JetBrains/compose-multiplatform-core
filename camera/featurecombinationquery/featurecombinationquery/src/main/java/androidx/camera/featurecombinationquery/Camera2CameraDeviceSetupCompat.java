@@ -37,6 +37,11 @@ class Camera2CameraDeviceSetupCompat implements CameraDeviceSetupCompat {
 
     private final CameraDevice.CameraDeviceSetup mCameraDeviceSetup;
 
+    /**
+     * @throws UnsupportedOperationException if
+     * {@link android.hardware.camera2.CameraDevice.CameraDeviceSetup} cannot be created for the
+     * provided {@code cameraId}
+     */
     Camera2CameraDeviceSetupCompat(@NonNull CameraManager cameraManager, @NonNull String cameraId)
             throws CameraAccessException {
         mCameraDeviceSetup = cameraManager.getCameraDeviceSetup(cameraId);

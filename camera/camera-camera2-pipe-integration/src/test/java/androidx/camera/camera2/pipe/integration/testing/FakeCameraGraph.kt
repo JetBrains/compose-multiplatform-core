@@ -16,13 +16,20 @@
 
 package androidx.camera.camera2.pipe.integration.testing
 
+import android.hardware.camera2.params.MeteringRectangle
 import android.view.Surface
+import androidx.camera.camera2.pipe.AeMode
+import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AudioRestrictionMode
 import androidx.camera.camera2.pipe.AudioRestrictionMode.Companion.AUDIO_RESTRICTION_NONE
+import androidx.camera.camera2.pipe.AwbMode
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraphId
+import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.GraphState
+import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Parameters
+import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
 import kotlinx.coroutines.CancellationException
@@ -88,6 +95,67 @@ class FakeCameraGraph(
     }
 
     override fun stop() {
+        throw NotImplementedError("Not used in testing")
+    }
+
+    override fun update3A(
+        aeMode: AeMode?,
+        afMode: AfMode?,
+        awbMode: AwbMode?,
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+    ): Deferred<Result3A> {
+        throw NotImplementedError("Not used in testing")
+    }
+
+    override fun submit3A(
+        aeMode: AeMode?,
+        afMode: AfMode?,
+        awbMode: AwbMode?,
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+    ): Deferred<Result3A> {
+        throw NotImplementedError("Not used in testing")
+    }
+
+    override fun setTorchOn(): Deferred<Result3A> {
+        throw NotImplementedError("Not used in testing")
+    }
+
+    override fun setTorchOff(aeMode: AeMode?): Deferred<Result3A> {
+        throw NotImplementedError("Not used in testing")
+    }
+
+    override fun lock3A(
+        aeMode: AeMode?,
+        afMode: AfMode?,
+        awbMode: AwbMode?,
+        aeRegions: List<MeteringRectangle>?,
+        afRegions: List<MeteringRectangle>?,
+        awbRegions: List<MeteringRectangle>?,
+        aeLockBehavior: Lock3ABehavior?,
+        afLockBehavior: Lock3ABehavior?,
+        awbLockBehavior: Lock3ABehavior?,
+        afTriggerStartAeMode: AeMode?,
+        convergedCondition: ((FrameMetadata) -> Boolean)?,
+        lockedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int,
+        convergedTimeLimitNs: Long,
+        lockedTimeLimitNs: Long,
+    ): Deferred<Result3A> {
+        throw NotImplementedError("Not used in testing")
+    }
+
+    override fun unlock3A(
+        ae: Boolean?,
+        af: Boolean?,
+        awb: Boolean?,
+        unlockedCondition: ((FrameMetadata) -> Boolean)?,
+        frameLimit: Int,
+        timeLimitNs: Long,
+    ): Deferred<Result3A> {
         throw NotImplementedError("Not used in testing")
     }
 }

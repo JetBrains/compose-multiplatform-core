@@ -18,6 +18,7 @@ package androidx.compose.remote.core.operations;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT_ARRAY;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -36,6 +37,12 @@ import org.jspecify.annotations.Nullable;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * A path append operation.
+ * Works with PathCreate.
+ * TODO implement winding rule
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class PathAppend extends PaintOperation implements VariableSupport, Serializable {
     private static final int OP_CODE = Operations.PATH_ADD;
     private static final String CLASS_NAME = "PathAppend";
@@ -192,7 +199,7 @@ public class PathAppend extends PaintOperation implements VariableSupport, Seria
         float[] data = context.getPathData(mInstanceId);
         float[] out = mOutputPath;
         if (Float.floatToRawIntBits(out[0]) == Float.floatToRawIntBits(RESET_NAN)) {
-            context.loadPathData(mInstanceId, new float[0]);
+            context.loadPathData(mInstanceId, 0, new float[0]);
             return;
         }
         if (data != null) {
@@ -207,7 +214,7 @@ public class PathAppend extends PaintOperation implements VariableSupport, Seria
         } else {
             System.out.println(">>>>>>>>>>> DATA IS NULL");
         }
-        context.loadPathData(mInstanceId, out);
+        context.loadPathData(mInstanceId, 0, out);
     }
 
     /**

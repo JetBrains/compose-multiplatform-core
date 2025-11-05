@@ -26,7 +26,6 @@ import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.aggregate.AggregationResultGroupedByDuration
 import androidx.health.connect.client.changes.DeletionChange
 import androidx.health.connect.client.changes.UpsertionChange
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
 import androidx.health.connect.client.feature.isPersonalHealthRecordFeatureAvailableInPlatform
 import androidx.health.connect.client.impl.platform.phr.VaccinesMedicalResourceFactory.CompleteStatus.COMPLETE
@@ -190,7 +189,6 @@ class HealthConnectClientUpsideDownImplTest {
         }
     }
 
-    @OptIn(ExperimentalMindfulnessSessionApi::class)
     @Test
     fun getFeatureStatus_belowUExt13_noneIsAvailable() {
         assumeTrue(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) < 13)
@@ -211,7 +209,6 @@ class HealthConnectClientUpsideDownImplTest {
         }
     }
 
-    @OptIn(ExperimentalMindfulnessSessionApi::class)
     @Test
     fun getFeatureStatus_featuresAddedInExt15_areAvailableInExt15() {
         assumeTrue(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) >= 15)
@@ -226,7 +223,6 @@ class HealthConnectClientUpsideDownImplTest {
         }
     }
 
-    @OptIn(ExperimentalMindfulnessSessionApi::class)
     @Test
     fun getFeatureStatus_belowUExt15_noneIsAvailable() {
         assumeTrue(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.UPSIDE_DOWN_CAKE) < 15)

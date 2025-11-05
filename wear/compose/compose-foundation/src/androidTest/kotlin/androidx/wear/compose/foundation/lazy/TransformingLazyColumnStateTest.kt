@@ -17,15 +17,20 @@
 package androidx.wear.compose.foundation.lazy
 
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -33,6 +38,7 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -40,7 +46,7 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class TransformingLazyColumnStateTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     private val lazyListTag = "LazyList"
 
@@ -60,7 +66,7 @@ class TransformingLazyColumnStateTest {
         lateinit var state: TransformingLazyColumnState
         rule.setContent { state = rememberTransformingLazyColumnState() }
         assertThat(state.anchorItemIndex).isEqualTo(0)
-        assertThat(state.anchorItemScrollOffset).isEqualTo(0)
+        assertThat(state.anchorItemScrollOffset).isEqualTo(Int.MIN_VALUE / 2)
     }
 
     @Test
@@ -162,5 +168,245 @@ class TransformingLazyColumnStateTest {
             assertThat(state.lastScrolledForward).isFalse()
             assertThat(state.lastScrolledBackward).isTrue()
         }
+    }
+
+    @Test
+    fun animateScrollToItem_visibleItemCanBeCentered_anchorMatchesTarget() {
+        val itemsCount = 10
+        val itemsPerPage = 5
+        val targetIndex = 4
+        val expectedAnchorIndex = 4
+
+        // ARRANGE
+        val state = setupLazyColumn(itemsCount, itemsPerPage)
+        assertItemInitialVisibility(state, targetIndex, expectedVisible = true)
+
+        // ACT
+        scope.launch { state.animateScrollToItem(index = targetIndex) }
+        rule.waitForIdle()
+
+        // ASSERT
+        assertItemCenteredAfterScroll(
+            state,
+            expectedAnchorIndex = expectedAnchorIndex,
+            targetIndex = targetIndex,
+        )
+    }
+
+    @Test
+    fun animateScrollToItem_visibleItemNearStart_anchorIsMiddleItem() {
+        val itemsCount = 10
+        val itemsPerPage = 5
+        val targetIndex = 1
+        val expectedAnchorIndex = 2
+
+        // ARRANGE
+        val state = setupLazyColumn(itemsCount, itemsPerPage)
+        assertItemInitialVisibility(state, targetIndex, expectedVisible = true)
+
+        // ACT
+        scope.launch { state.animateScrollToItem(index = targetIndex) }
+        rule.waitForIdle()
+
+        // ASSERT
+        assertItemCenteredAfterScroll(
+            state,
+            expectedAnchorIndex = expectedAnchorIndex,
+            targetIndex = targetIndex,
+        )
+    }
+
+    @Test
+    fun animateScrollToItem_visibleItemLastItem_anchorIsMiddleItem() {
+        val itemsCount = 5
+        val itemsPerPage = 5
+        val targetIndex = 4
+        val expectedAnchorIndex = 2
+
+        // ARRANGE
+        val state = setupLazyColumn(itemsCount, itemsPerPage)
+        assertItemInitialVisibility(state, targetIndex, expectedVisible = true)
+
+        // ACT
+        scope.launch { state.animateScrollToItem(index = targetIndex) }
+        rule.waitForIdle()
+
+        // ASSERT
+        assertItemCenteredAfterScroll(
+            state,
+            expectedAnchorIndex = expectedAnchorIndex,
+            targetIndex = targetIndex,
+        )
+    }
+
+    @Test
+    fun animateScrollToItem_nonVisibleItemCanBeCentered_anchorMatchesTarget_shortDistance() {
+        val itemsCount = 10
+        val itemsPerPage = 5
+        val targetIndex = 7
+        val expectedAnchorIndex = 7
+
+        // ARRANGE
+        val state = setupLazyColumn(itemsCount, itemsPerPage)
+        assertItemInitialVisibility(state, targetIndex, expectedVisible = false)
+
+        // ACT
+        scope.launch { state.animateScrollToItem(index = targetIndex) }
+        rule.waitForIdle()
+
+        // ASSERT
+        assertItemCenteredAfterScroll(
+            state,
+            expectedAnchorIndex = expectedAnchorIndex,
+            targetIndex = targetIndex,
+        )
+    }
+
+    @Test
+    fun animateScrollToItem_nonVisibleItemCanBeCentered_anchorMatchesTarget_mediumDistance() {
+        val itemsCount = 30
+        val itemsPerPage = 5
+        val targetIndex = 15
+        val expectedAnchorIndex = 15
+
+        // ARRANGE
+        val state = setupLazyColumn(itemsCount, itemsPerPage)
+        assertItemInitialVisibility(state, targetIndex, expectedVisible = false)
+
+        // ACT
+        scope.launch { state.animateScrollToItem(index = targetIndex) }
+        rule.waitForIdle()
+
+        // ASSERT
+        assertItemCenteredAfterScroll(
+            state,
+            expectedAnchorIndex = expectedAnchorIndex,
+            targetIndex = targetIndex,
+        )
+    }
+
+    @Test
+    fun animateScrollToItem_nonVisibleItemCanBeCentered_anchorMatchesTarget_longDistance() {
+        val itemsCount = 100
+        val itemsPerPage = 5
+        val targetIndex = 80
+        val expectedAnchorIndex = 80
+
+        // ARRANGE
+        val state = setupLazyColumn(itemsCount, itemsPerPage)
+        assertItemInitialVisibility(state, targetIndex, expectedVisible = false)
+
+        // ACT
+        scope.launch { state.animateScrollToItem(index = targetIndex) }
+        rule.waitForIdle()
+
+        // ASSERT
+        assertItemCenteredAfterScroll(
+            state,
+            expectedAnchorIndex = expectedAnchorIndex,
+            targetIndex = targetIndex,
+        )
+    }
+
+    @Test
+    fun animateScrollToItem_nonVisibleItemCanBeCentered_anchorMatchesTarget_hugeDistance() {
+        val itemsCount = 1000
+        val itemsPerPage = 5
+        val targetIndex = 950
+        val expectedAnchorIndex = 950
+
+        // ARRANGE
+        val state = setupLazyColumn(itemsCount, itemsPerPage)
+        assertItemInitialVisibility(state, targetIndex, expectedVisible = false)
+
+        // ACT
+        scope.launch { state.animateScrollToItem(index = targetIndex) }
+        rule.waitForIdle()
+
+        // ASSERT
+        assertItemCenteredAfterScroll(
+            state,
+            expectedAnchorIndex = expectedAnchorIndex,
+            targetIndex = targetIndex,
+        )
+    }
+
+    @Test
+    fun animateScrollToItem_nonVisibleItemNearEnd_anchorIsMiddleItem() {
+        val itemsCount = 10
+        val itemsPerPage = 5
+        val targetIndex = 8
+        val expectedAnchorIndex = 7
+
+        // ARRANGE
+        val state = setupLazyColumn(itemsCount, itemsPerPage)
+        assertItemInitialVisibility(state, targetIndex, expectedVisible = false)
+
+        // ACT
+        scope.launch { state.animateScrollToItem(index = targetIndex) }
+        rule.waitForIdle()
+
+        // ASSERT
+        assertItemCenteredAfterScroll(
+            state,
+            expectedAnchorIndex = expectedAnchorIndex,
+            targetIndex = targetIndex,
+        )
+    }
+
+    private fun setupLazyColumn(itemsCount: Int, itemsPerPage: Int): TransformingLazyColumnState {
+        lateinit var state: TransformingLazyColumnState
+
+        rule.setContent {
+            state = rememberTransformingLazyColumnState()
+            scope = rememberCoroutineScope()
+
+            TransformingLazyColumn(
+                Modifier.height(itemSizeDp * itemsPerPage),
+                verticalArrangement = Arrangement.Top,
+                state = state,
+            ) {
+                items(itemsCount) {
+                    BasicText(
+                        "item-$it",
+                        modifier =
+                            Modifier.background(Color.Red).height(itemSizeDp).testTag("item-$it"),
+                    )
+                }
+            }
+        }
+
+        return state
+    }
+
+    private fun assertItemInitialVisibility(
+        state: TransformingLazyColumnState,
+        targetIndex: Int,
+        expectedVisible: Boolean,
+    ) {
+        rule.runOnIdle {
+            val isTargetVisibleInitially =
+                state.layoutInfo.visibleItems.any { it.index == targetIndex }
+            assertThat(isTargetVisibleInitially).isEqualTo(expectedVisible)
+        }
+    }
+
+    private fun assertItemCenteredAfterScroll(
+        state: TransformingLazyColumnState,
+        targetIndex: Int,
+        expectedAnchorIndex: Int,
+    ) {
+        // The animateScrollToItem function is designed to make the targetIndex the new anchor
+        // by centering it in the viewport. If there are not enough items to scroll up or down past
+        // the targetItem (centering not possible), the anchor will not match the targetIndex.
+        rule.runOnIdle {
+            assertThat(state.anchorItemIndex).isEqualTo(expectedAnchorIndex)
+            assertThat(state.anchorItemScrollOffset).isEqualTo(0)
+
+            val isTargetVisibleFinally =
+                state.layoutInfo.visibleItems.any { it.index == targetIndex }
+            assertThat(isTargetVisibleFinally).isTrue()
+        }
+        rule.onNodeWithTag("item-$targetIndex").assertExists()
     }
 }

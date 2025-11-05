@@ -16,6 +16,8 @@
 
 package androidx.xr.glimmer
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.Interaction
@@ -42,6 +44,7 @@ internal fun ComposeContentTestRule.setGlimmerThemeContent(content: @Composable 
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 internal fun ComposeContentTestRule.assertRootAgainstGolden(
     goldenName: String,
     screenshotRule: AndroidXScreenshotTestRule,

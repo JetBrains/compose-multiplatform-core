@@ -109,9 +109,6 @@ fun calculateThreePaneScaffoldValue(
         }
     }
 
-    fun AdaptStrategy.Levitate.canOnlyLevitate() =
-        maxHorizontalPartitions == 1 || strategy == AdaptStrategy.Levitate.Strategy.Always
-
     var checkReflowedPane =
         maxHorizontalPartitions == 1 &&
             maxVerticalPartitions > 1 &&
@@ -119,12 +116,12 @@ fun calculateThreePaneScaffoldValue(
                 adaptStrategies[ThreePaneScaffoldRole.Secondary] is AdaptStrategy.Reflow ||
                 adaptStrategies[ThreePaneScaffoldRole.Tertiary] is AdaptStrategy.Reflow)
 
-    // Only levitate a pane when it is the current destination and cannot be expanded
-    destinationHistory.lastOrNull()?.apply {
+    val currentDestination = destinationHistory.lastOrNull()
+
+    // Only levitate a pane when it is the current destination
+    currentDestination?.apply {
         (adaptStrategies[pane] as? AdaptStrategy.Levitate)?.apply {
-            if (canOnlyLevitate()) {
-                setAdaptedValue(pane, PaneAdaptedValue.Levitated(alignment, scrim))
-            }
+            setAdaptedValue(pane, PaneAdaptedValue.Levitated(alignment, scrim, dragToResizeState))
         }
     }
 
@@ -142,7 +139,7 @@ fun calculateThreePaneScaffoldValue(
             var anchorPaneValue: PaneAdaptedValue? = null
             if (checkReflowedPane) {
                 (adaptStrategies[pane] as? AdaptStrategy.Reflow)?.apply {
-                    (this.targetPane as? ThreePaneScaffoldRole)?.apply {
+                    (this.reflowUnder as? ThreePaneScaffoldRole)?.apply {
                         reflowedPane = pane
                         anchorPane = this
                         anchorPaneValue = getAdaptedValue(anchorPane)
@@ -151,10 +148,7 @@ fun calculateThreePaneScaffoldValue(
             }
             when (anchorPaneValue) {
                 null ->
-                    if (
-                        (adaptStrategies[anchorPane] as? AdaptStrategy.Levitate)?.canOnlyLevitate()
-                            ?: false
-                    ) {
+                    if (adaptStrategies[anchorPane] is AdaptStrategy.Levitate) {
                         // The anchor pane can only be levitated, continue;
                         return@forEachPaneByPriority
                     } else if (hasAvailablePartition) {
@@ -180,6 +174,7 @@ fun calculateThreePaneScaffoldValue(
         primary = primaryPaneAdaptedValue ?: PaneAdaptedValue.Hidden,
         secondary = secondaryPaneAdaptedValue ?: PaneAdaptedValue.Hidden,
         tertiary = tertiaryPaneAdaptedValue ?: PaneAdaptedValue.Hidden,
+        currentDestination = currentDestination?.pane,
     )
 }
 
@@ -211,11 +206,24 @@ private inline fun forEachPaneByPriority(
  */
 @ExperimentalMaterial3AdaptiveApi
 @Immutable
-class ThreePaneScaffoldValue(
+class ThreePaneScaffoldValue
+internal constructor(
     val primary: PaneAdaptedValue,
     val secondary: PaneAdaptedValue,
     val tertiary: PaneAdaptedValue,
+    internal val currentDestination: ThreePaneScaffoldRole?,
 ) : PaneScaffoldValue<ThreePaneScaffoldRole>, PaneExpansionStateKeyProvider {
+    constructor(
+        primary: PaneAdaptedValue,
+        secondary: PaneAdaptedValue,
+        tertiary: PaneAdaptedValue,
+    ) : this(
+        primary = primary,
+        secondary = secondary,
+        tertiary = tertiary,
+        currentDestination = null,
+    )
+
     internal val expandedCount by lazy {
         var count = 0
         forEach { _, value ->
@@ -275,6 +283,25 @@ class ThreePaneScaffoldValue(
             ThreePaneScaffoldRole.Secondary -> secondary
             ThreePaneScaffoldRole.Tertiary -> tertiary
         }
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+internal fun ThreePaneScaffoldValue.isInteractable(role: ThreePaneScaffoldRole): Boolean {
+    return when (get(role)) {
+        PaneAdaptedValue.Hidden -> false
+        is PaneAdaptedValue.Levitated -> true
+        else -> !hasLevitatedPaneWithScrim()
+    }
+}
+
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
+private fun ThreePaneScaffoldValue.hasLevitatedPaneWithScrim(): Boolean {
+    forEach { role, value ->
+        if ((value as? PaneAdaptedValue.Levitated)?.scrim != null) {
+            return@hasLevitatedPaneWithScrim true
+        }
+    }
+    return false
 }
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)

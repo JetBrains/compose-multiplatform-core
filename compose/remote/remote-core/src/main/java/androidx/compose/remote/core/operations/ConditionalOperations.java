@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Represents conditional execution of a block of commands */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ConditionalOperations extends PaintOperation
         implements Container, VariableSupport, Serializable {
     private static final String CLASS_NAME = "ConditionalOperations";
@@ -144,6 +146,13 @@ public class ConditionalOperations extends PaintOperation
     @Override
     public void paint(@NonNull PaintContext context) {
         RemoteContext remoteContext = context.getContext();
+        RemoteContext ctx = context.getContext();
+        for (Operation op : mList) {
+            if (op instanceof VariableSupport && op.isDirty()) {
+                op.markNotDirty();
+                ((VariableSupport) op).updateVariables(ctx);
+            }
+        }
         boolean run = false;
         switch (mType) {
             case TYPE_EQ:
@@ -168,7 +177,11 @@ public class ConditionalOperations extends PaintOperation
         if (run) {
             for (Operation op : mList) {
                 remoteContext.incrementOpCount();
-                op.apply(context.getContext());
+                if (op instanceof ConditionalOperations) {
+                    ((ConditionalOperations) op).paint(context.getContext().getPaintContext());
+                } else {
+                    op.apply(context.getContext());
+                }
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -943,5 +943,64 @@ class Matrix4Test {
             .isEqualTo(
                 floatArrayOf(1f, 2f, 3f, 4f, 5f, 6f, 7f, 8f, 9f, 10f, 11f, 12f, 13f, 14f, 15f, 16f)
             )
+    }
+
+    @Test
+    fun unscaled_returnsUnscaledMatrix() {
+        // Column major, right handed 4x4 Transformation Matrix with
+        // translation of (4, 8, 12) and rotation 90 (@) around Z axis, and scale of 3.3.
+        // --     cos(@),   sin(@), 0,  0
+        // --    -sin(@),  cos(@), 0,  0
+        // --     0,        0,      1,  0
+        // --      tx,       ty,     tz, 1
+        val underTest =
+            Matrix4(
+                floatArrayOf(0f, 3.3f, 0f, 0f, -3.3f, 0f, 0f, 0f, 0f, 0f, 3.3f, 0f, 4f, 8f, 12f, 1f)
+            )
+        val expected =
+            Matrix4(floatArrayOf(0f, 1f, 0f, 0f, -1f, 0f, 0f, 0f, 0f, 0f, 1f, 0f, 4f, 8f, 12f, 1f))
+
+        val underTestUnscaled = underTest.unscaled()
+
+        assertMatrix(underTestUnscaled, expected)
+    }
+
+    @Test
+    fun unscaled_withNonUniformScale_returnsUnscaledMatrix() {
+        val underTest =
+            Matrix4.fromTrs(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f), Vector3(2f, 3f, 4f))
+
+        val underTestUnscaled = underTest.unscaled()
+
+        assertMatrix(
+            underTestUnscaled,
+            Matrix4.fromTrs(Vector3(1f, 2f, 3f), Quaternion(1f, 2f, 3f, 4f), Vector3(1f, 1f, 1f)),
+        )
+    }
+
+    @Test
+    fun unscaled_withNegativeScale_returnsUnscaledMatrix() {
+        val translation = Vector3(1f, 2f, 3f)
+        val rotation = Quaternion.fromEulerAngles(45.0f, 90.0f, -90.0f)
+        val scale = Vector3(-2f, -3f, -4f)
+        val underTest = Matrix4.fromTrs(translation, rotation, scale)
+        // TODO: b/367780918 - Update when negative scales are correctly handled.
+        val expected = Matrix4.fromTrs(translation, rotation, -Vector3.One)
+
+        val underTestUnscaled = underTest.unscaled()
+
+        assertMatrix(underTestUnscaled, expected)
+    }
+
+    @Test
+    fun unscaled_withIdentityTranslationAndRotation_returnsUnscaledMatrix() {
+        val underTest = Matrix4.fromTrs(Vector3.Zero, Quaternion.Identity, Vector3(2f, 3f, 4f))
+
+        val underTestUnscaled = underTest.unscaled()
+
+        assertMatrix(
+            underTestUnscaled,
+            Matrix4.fromTrs(Vector3.Zero, Quaternion.Identity, Vector3(1f, 1f, 1f)),
+        )
     }
 }

@@ -26,7 +26,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -42,20 +42,10 @@ dependencies {
     implementation(libs.kotlinCoroutinesCore)
     implementation(libs.kotlinCoroutinesAndroid)
 
-    testImplementation(libs.testRunner)
-    testImplementation(libs.kotlinStdlib)
-    testImplementation(libs.truth)
-    testImplementation(libs.testRules)
-    testImplementation(libs.testCore)
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
-    testImplementation(libs.junit)
-
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.dexmakerMockito)
@@ -68,7 +58,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.camera.viewfinder.view"
     lint {
         enable.add("CameraXQuirksClassDetector")
@@ -82,5 +72,4 @@ androidx {
     description = "Standalone View-based Viewfinder for Camera"
     legacyDisableKotlinStrictApiMode = true
     addGoldenImageAssets()
-    enableRobolectric()
 }

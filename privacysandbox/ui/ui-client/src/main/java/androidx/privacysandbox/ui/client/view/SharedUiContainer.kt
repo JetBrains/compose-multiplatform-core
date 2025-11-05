@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.privacysandbox.ui.client.view
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
@@ -56,9 +57,9 @@ import kotlin.math.max
  * __Asset registration__: Client-owned views and [SandboxedSdkView]s can be registered as assets
  * using [registerSharedUiAsset] and unregistered using [unregisterSharedUiAsset].
  */
+@Deprecated("This library is no longer supported.")
 // OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
 @OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
-@SuppressLint("NullAnnotationGroup")
 @ExperimentalFeatures.SharedUiPresentationApi
 public class SharedUiContainer
 @JvmOverloads
@@ -338,13 +339,13 @@ constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, 
         }
 
         fun closeSandboxedSdkViewSession(sandboxedSdkView: SandboxedSdkView) {
-            sandboxedSdkView.closeClient()
+            sandboxedSdkView.scheduleClientClose()
         }
 
         /** Closes provider UI sessions for [SandboxedSdkView]s registered as assets. */
         fun closeSandboxedSdkViewSessions() {
             registeredAssets.forEach { (view, _) ->
-                if (view is SandboxedSdkView) view.closeClient()
+                if (view is SandboxedSdkView) view.scheduleClientClose()
             }
         }
 

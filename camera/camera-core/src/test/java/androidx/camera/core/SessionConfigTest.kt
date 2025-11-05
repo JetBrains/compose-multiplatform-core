@@ -16,7 +16,6 @@
 
 package androidx.camera.core
 
-import android.os.Build
 import android.util.Range
 import android.util.Rational
 import android.view.Surface
@@ -30,8 +29,13 @@ import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
 import androidx.camera.core.impl.StreamSpec.FRAME_RATE_RANGE_UNSPECIFIED
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
+import androidx.camera.testing.fakes.FakeCamera
 import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
 import androidx.camera.testing.impl.fakes.FakeSurfaceProcessor
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.VideoCapture
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -43,8 +47,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
-@OptIn(ExperimentalSessionConfig::class)
+@Config(sdk = [Config.ALL_SDKS])
 class SessionConfigTest {
     val useCases = listOf(Preview.Builder().build(), ImageCapture.Builder().build())
     val viewPort = ViewPort.Builder(Rational(4, 3), Surface.ROTATION_0).build()
@@ -100,6 +103,27 @@ class SessionConfigTest {
         assertThat(sessionConfig.requiredFeatureGroup).isEmpty()
         assertThat(sessionConfig.preferredFeatureGroup).isEmpty()
         assertThat(sessionConfig.isLegacy).isFalse()
+    }
+
+    @Test
+    fun sessionConfig_frameRateRangeSetOnSessionConfigAndUseCase_IllegalArgumentExceptionThrown() {
+        val useCase = Preview.Builder().setTargetFrameRate(frameRateRange).build()
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(useCase), frameRateRange = frameRateRange)
+        }
+    }
+
+    @Test
+    fun sessionConfig_useCaseHasFrameRateAfterBinding_noExceptionThrown() {
+        val useCase = Preview.Builder().build()
+
+        // Binding UseCase with an arbitrary frame rate.
+        val configWithFrameRate = Preview.Builder().setTargetFrameRate(Range(15, 15)).useCaseConfig
+        useCase.bindToCamera(FakeCamera(), null, null, configWithFrameRate)
+        assertThat(useCase.currentConfig.hasTargetFrameRate()).isTrue()
+
+        // No exception is thrown.
+        SessionConfig(useCases = listOf(useCase), frameRateRange = frameRateRange)
     }
 
     @Test
@@ -276,7 +300,7 @@ class SessionConfigTest {
     }
 
     @Test
-    fun sessionConfig_conflictingReqFeatures_throwsIllegalArgumentExceptionWithCorrectMessage() {
+    fun sessionConfig_reqFeaturesConflictingForSameType_throwsIllegalArgExceptionWithCorrectMsg() {
         // Arrange
         val requiredFeatures =
             setOf(
@@ -370,6 +394,170 @@ class SessionConfigTest {
     }
 
     @Test
+    fun sessionConfig_dynamicRangeSetToUseCaseWithAnyGroupableFeature_illegalArgExceptionThrown() {
+        val sdrPreview = Preview.Builder().setDynamicRange(DynamicRange.SDR).build()
+        val hdrPreview = Preview.Builder().setDynamicRange(DynamicRange.HLG_10_BIT).build()
+
+        // SDR set to use case, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(sdrPreview), preferredFeatureGroup = listOf(FPS_60))
+        }
+
+        // HDR set to use case, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(hdrPreview), preferredFeatureGroup = listOf(FPS_60))
+        }
+
+        // SDR set to use case, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(sdrPreview), requiredFeatureGroup = setOf(FPS_60))
+        }
+
+        // HDR set to use case, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(hdrPreview), requiredFeatureGroup = setOf(FPS_60))
+        }
+    }
+
+    @Test
+    fun sessionConfig_recordingQualitySetToUseCaseWithAnyFeature_illegalArgExceptionThrown() {
+        val sdVideoCapture = createVideoCapture(Quality.SD)
+        val hdVideoCapture = createVideoCapture(Quality.HD)
+        val unspecifiedQualityVideoCapture = createVideoCapture()
+
+        // Verifications for preferred features
+
+        // SD set to VideoCapture, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(sdVideoCapture), preferredFeatureGroup = listOf(FPS_60))
+        }
+
+        // HD set to VideoCapture, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(hdVideoCapture), preferredFeatureGroup = listOf(FPS_60))
+        }
+
+        // Default VideoCapture, preferred feature group set with another feature, no exception
+        SessionConfig(
+            useCases = listOf(unspecifiedQualityVideoCapture),
+            preferredFeatureGroup = listOf(FPS_60),
+        )
+
+        // Verifications for required features
+
+        // SD set to VideoCapture, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(sdVideoCapture), requiredFeatureGroup = setOf(FPS_60))
+        }
+
+        // HD set to VideoCapture, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(hdVideoCapture), requiredFeatureGroup = setOf(FPS_60))
+        }
+
+        // Default VideoCapture, required feature group set with another feature, no exception
+        SessionConfig(
+            useCases = listOf(unspecifiedQualityVideoCapture),
+            requiredFeatureGroup = setOf(FPS_60),
+        )
+    }
+
+    @Test
+    fun sessionConfig_fpsRangeSetToUseCaseWithAnyGroupableFeature_illegalArgExceptionThrown() {
+        val preview30Fps = Preview.Builder().setTargetFrameRate(Range(30, 30)).build()
+        val preview60Fps = Preview.Builder().setTargetFrameRate(Range(60, 60)).build()
+
+        // 30 FPS set to use case, preferred feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(preview30Fps),
+                preferredFeatureGroup = listOf(HDR_HLG10),
+            )
+        }
+
+        // 60 FPS set to use case, preferred feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(preview60Fps),
+                preferredFeatureGroup = listOf(HDR_HLG10),
+            )
+        }
+
+        // 30 FPS set to use case, required feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(preview30Fps), requiredFeatureGroup = setOf(HDR_HLG10))
+        }
+
+        // 60 FPS set to use case, required feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(useCases = listOf(preview60Fps), requiredFeatureGroup = setOf(HDR_HLG10))
+        }
+    }
+
+    @Test
+    fun sessionConfig_stabilizationSetToUseCaseWithAnyGroupableFeature_illegalArgExceptionThrown() {
+        val noStabilizationPreview = Preview.Builder().setPreviewStabilizationEnabled(false).build()
+        val stabilizationEnabledPreview =
+            Preview.Builder().setPreviewStabilizationEnabled(true).build()
+
+        // stabilization disabled in use case, preferred feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(noStabilizationPreview),
+                preferredFeatureGroup = listOf(HDR_HLG10),
+            )
+        }
+
+        // stabilization enabled in use case, preferred feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(stabilizationEnabledPreview),
+                preferredFeatureGroup = listOf(HDR_HLG10),
+            )
+        }
+
+        // stabilization disabled in use case, required feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(noStabilizationPreview),
+                requiredFeatureGroup = setOf(HDR_HLG10),
+            )
+        }
+
+        // stabilization enabled in use case, required feature group also set with some feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(stabilizationEnabledPreview),
+                requiredFeatureGroup = setOf(HDR_HLG10),
+            )
+        }
+    }
+
+    @Test
+    fun sessionConfig_jpegRSetToUseCaseWithAnyGroupableFeature_illegalArgExceptionThrown() {
+        val jpegRImageCapture =
+            ImageCapture.Builder()
+                .setOutputFormat(ImageCapture.OUTPUT_FORMAT_JPEG_ULTRA_HDR)
+                .build()
+
+        // JPEG_R set to use case, preferred feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(jpegRImageCapture),
+                preferredFeatureGroup = listOf(FPS_60),
+            )
+        }
+
+        // JPEG_R set to use case, required feature group also set with another feature
+        assertThrows<IllegalArgumentException> {
+            SessionConfig(
+                useCases = listOf(jpegRImageCapture),
+                requiredFeatureGroup = setOf(FPS_60),
+            )
+        }
+    }
+
+    @Test
     fun legacySessionConfig_constructorInitializesFields() {
         val legacySessionConfig = LegacySessionConfig(useCases, viewPort, effects)
 
@@ -412,6 +600,74 @@ class SessionConfigTest {
         assertThat(legacySessionConfig.sessionType).isEqualTo(SESSION_TYPE_REGULAR)
         assertThat(legacySessionConfig.frameRateRange).isEqualTo(FRAME_RATE_RANGE_UNSPECIFIED)
         assertThat(legacySessionConfig.isLegacy).isTrue()
+    }
+
+    @Test
+    fun sessionConfig_toStringContainsAllPropertiesCorrectly() {
+        assertThat(SessionConfig(useCases, viewPort, effects, frameRateRange).toString()).apply {
+            contains("useCases=$useCases")
+            contains("viewPort=$viewPort")
+            contains("effects=$effects")
+            contains("frameRateRange=$frameRateRange")
+            contains("requiredFeatureGroup=[]")
+            contains("preferredFeatureGroup=[]")
+        }
+
+        val requiredFeatures = setOf(HDR_HLG10)
+        val preferredFeatures = listOf(FPS_60, PREVIEW_STABILIZATION)
+
+        assertThat(
+                SessionConfig(
+                        useCases,
+                        requiredFeatureGroup = requiredFeatures,
+                        preferredFeatureGroup = preferredFeatures,
+                    )
+                    .toString()
+            )
+            .apply {
+                contains("useCases=$useCases")
+                contains("requiredFeatureGroup=$requiredFeatures")
+                contains("preferredFeatureGroup=$preferredFeatures")
+                contains("viewPort=null")
+                contains("effects=[]")
+                contains("frameRateRange=[0, 0]")
+            }
+    }
+
+    @Test
+    fun sessionConfig_emptyUseCaseList_throwsIllegalArgumentException() {
+        assertThrows<IllegalArgumentException> { SessionConfig(emptyList()) }
+    }
+
+    @Test
+    fun sessionConfig_emptyUseCaseListWithRequireNonEmptyUseCasesFalse_noException() {
+        // Internal constructor to bypass public API restrictions
+        class TestSessionConfig : SessionConfig(emptyList()) {
+            override val requireNonEmptyUseCases: Boolean = false
+        }
+        TestSessionConfig() // Should not throw
+    }
+
+    @Test
+    fun legacySessionConfig_emptyUseCaseList_noException() {
+        LegacySessionConfig(emptyList())
+    }
+
+    @Test
+    fun sessionConfig_nonEmptyUseCaseList_noException() {
+        SessionConfig(useCases) // Should not throw
+    }
+
+    private fun createVideoCapture(quality: Quality? = null): VideoCapture<Recorder> {
+        return VideoCapture.withOutput(
+            Recorder.Builder()
+                .apply {
+                    if (quality != null) {
+                        setQualitySelector(QualitySelector.from(quality))
+                    }
+                }
+                .build()
+        )
     }
 
     data class FakeDynamicRangeFeature(private val dynamicRange: DynamicRange) :

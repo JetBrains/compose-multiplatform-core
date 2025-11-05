@@ -140,6 +140,7 @@ public class WebViewProviderFactoryAdapter implements WebViewProviderFactory {
                 ProfileStoreBoundaryInterface.class, mImpl.getProfileStore());
     }
 
+    @WebViewCompat.ExperimentalAsyncStartUp
     @Override
     public void startUpWebView(
             @NonNull WebViewStartUpConfig config,

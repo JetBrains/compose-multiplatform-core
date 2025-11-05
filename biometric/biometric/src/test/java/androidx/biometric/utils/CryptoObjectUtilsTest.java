@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import android.os.Build;
 
 import androidx.biometric.BiometricPrompt;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -30,7 +31,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
@@ -39,15 +39,18 @@ import java.security.Signature;
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 @DoNotInstrument
 public class CryptoObjectUtilsTest {
     @Rule
     public final MockitoRule mocks = MockitoJUnit.rule();
 
-    @Mock private Cipher mCipher;
-    @Mock private Mac mMac;
-    @Mock private Signature mSignature;
+    @Mock
+    private Cipher mCipher;
+    @Mock
+    private Mac mMac;
+    @Mock
+    private Signature mSignature;
 
     @Test
     @Config(minSdk = Build.VERSION_CODES.P)
@@ -236,7 +239,7 @@ public class CryptoObjectUtilsTest {
     public void testUnwrapFromFingerprintManager_WithCipherCryptoObject() {
         final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject
                 wrappedCrypto = new androidx.core.hardware.fingerprint.FingerprintManagerCompat
-                        .CryptoObject(mCipher);
+                .CryptoObject(mCipher);
 
         final BiometricPrompt.CryptoObject unwrappedCrypto =
                 CryptoObjectUtils.unwrapFromFingerprintManager(wrappedCrypto);
@@ -252,7 +255,7 @@ public class CryptoObjectUtilsTest {
     public void testUnwrapFromFingerprintManager_WithSignatureCryptoObject() {
         final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject
                 wrappedCrypto = new androidx.core.hardware.fingerprint.FingerprintManagerCompat
-                        .CryptoObject(mSignature);
+                .CryptoObject(mSignature);
 
         final BiometricPrompt.CryptoObject unwrappedCrypto =
                 CryptoObjectUtils.unwrapFromFingerprintManager(wrappedCrypto);
@@ -268,7 +271,7 @@ public class CryptoObjectUtilsTest {
     public void testUnwrapFromFingerprintManager_WithMacCryptoObject() {
         final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject
                 wrappedCrypto = new androidx.core.hardware.fingerprint.FingerprintManagerCompat
-                        .CryptoObject(mMac);
+                .CryptoObject(mMac);
 
         final BiometricPrompt.CryptoObject unwrappedCrypto =
                 CryptoObjectUtils.unwrapFromFingerprintManager(wrappedCrypto);

@@ -60,7 +60,6 @@ import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
@@ -538,7 +537,6 @@ internal class ImageAnalysisTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun analyzerAnalyzesYUVImages_withRotationEnabledAndReusedToHaveDifferentSize() {
         analyzerAnalyzesImages_withRotationEnabledAndReusedToHaveDifferentSize(
             ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888
@@ -546,7 +544,6 @@ internal class ImageAnalysisTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun analyzerAnalyzesYUVNV21Images_withRotationEnabledAndReusedToHaveDifferentSize() {
         analyzerAnalyzesImages_withRotationEnabledAndReusedToHaveDifferentSize(
             ImageAnalysis.OUTPUT_IMAGE_FORMAT_NV21
@@ -554,7 +551,6 @@ internal class ImageAnalysisTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun analyzerAnalyzesRGBAImages_withRotationEnabledAndReusedToHaveDifferentSize() {
         analyzerAnalyzesImages_withRotationEnabledAndReusedToHaveDifferentSize(
             ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888

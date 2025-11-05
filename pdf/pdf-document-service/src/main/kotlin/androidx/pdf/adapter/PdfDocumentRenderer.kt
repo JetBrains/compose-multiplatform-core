@@ -75,4 +75,18 @@ public interface PdfDocumentRenderer : AutoCloseable {
      * @param removePasswordProtection Whether to remove password protection from the document.
      */
     public fun write(destination: ParcelFileDescriptor, removePasswordProtection: Boolean)
+
+    public fun <T> withPage(pageNum: Int, block: (PdfPage) -> T): T? {
+        var page: PdfPage? = null
+        var results: T?
+
+        try {
+            page = this.openPage(pageNum, useCache = false)
+            results = block(page)
+        } finally {
+            this.releasePage(page, pageNum)
+        }
+
+        return results
+    }
 }

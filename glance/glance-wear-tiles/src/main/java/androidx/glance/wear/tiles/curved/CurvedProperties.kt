@@ -47,6 +47,7 @@ import androidx.glance.unit.ColorProvider
  * ```
  */
 @JvmInline
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
 public value class AnchorType private constructor(private val value: Int) {
     public companion object {
         /**
@@ -75,6 +76,7 @@ public value class AnchorType private constructor(private val value: Int) {
  * alignment in a Row.
  */
 @JvmInline
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
 public value class RadialAlignment private constructor(private val value: Int) {
     public companion object {
         /** Put the child closest to the center of the [CurvedRow], within the available space */
@@ -90,6 +92,7 @@ public value class RadialAlignment private constructor(private val value: Int) {
 
 /** Description of a text style for the [CurvedScope.curvedText] composable. */
 @Immutable
+@Deprecated("glance-wear-tiles is deprecated and will be removed")
 public class CurvedTextStyle(
     public val color: ColorProvider? = null,
     public val fontSize: TextUnit? = null,

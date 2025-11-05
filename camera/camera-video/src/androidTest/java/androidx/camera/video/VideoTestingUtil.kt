@@ -21,8 +21,8 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.util.Size
-import androidx.camera.camera2.internal.compat.quirk.DeviceQuirks as Camera2DeviceQuirks
-import androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk as Camera2ExtraCroppingQuirk
+import androidx.camera.camera2.compat.quirk.DeviceQuirks as Camera2DeviceQuirks
+import androidx.camera.camera2.compat.quirk.ExtraCroppingQuirk as Camera2ExtraCroppingQuirk
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks as PipeDeviceQuirks
 import androidx.camera.camera2.pipe.integration.compat.quirk.ExtraCroppingQuirk as PipeExtraCroppingQuirk

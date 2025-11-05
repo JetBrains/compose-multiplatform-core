@@ -18,7 +18,6 @@
 package androidx.health.connect.client.impl.converters.records
 
 import androidx.annotation.RestrictTo
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
@@ -83,7 +82,6 @@ import androidx.health.platform.client.proto.DataProto
 import java.time.Instant
 
 /** Converts public API object into internal proto for ipc. */
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 fun toRecord(proto: DataProto.DataPoint): Record =
     with(proto) {
         when (dataType.name) {

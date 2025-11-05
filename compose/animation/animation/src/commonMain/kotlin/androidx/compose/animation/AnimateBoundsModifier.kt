@@ -115,7 +115,6 @@ import kotlinx.coroutines.launch
  * @see ApproachLayoutModifierNode
  * @see LookaheadScope
  */
-@ExperimentalSharedTransitionApi // Depends on BoundsTransform
 public fun Modifier.animateBounds(
     lookaheadScope: LookaheadScope,
     modifier: Modifier = Modifier,
@@ -145,8 +144,7 @@ public fun Modifier.animateBounds(
             )
         )
 
-@ExperimentalSharedTransitionApi
-internal data class BoundsAnimationElement(
+internal class BoundsAnimationElement(
     val lookaheadScope: LookaheadScope,
     val boundsTransform: BoundsTransform,
     val resolveMeasureConstraints: (animatedSize: IntSize, constraints: Constraints) -> Constraints,
@@ -175,6 +173,19 @@ internal data class BoundsAnimationElement(
         properties["onChooseMeasureConstraints"] = resolveMeasureConstraints
         properties["animateMotionFrameOfReference"] = animateMotionFrameOfReference
     }
+
+    override fun hashCode(): Int {
+        return ((lookaheadScope.hashCode() * 31 + boundsTransform.hashCode()) * 31 +
+            resolveMeasureConstraints.hashCode()) * 31 + animateMotionFrameOfReference.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is BoundsAnimationElement &&
+            other.lookaheadScope == lookaheadScope &&
+            other.boundsTransform == boundsTransform &&
+            other.resolveMeasureConstraints === resolveMeasureConstraints &&
+            other.animateMotionFrameOfReference == animateMotionFrameOfReference
+    }
 }
 
 /**
@@ -189,7 +200,6 @@ internal data class BoundsAnimationElement(
  * @param animateMotionFrameOfReference Whether to include changes under
  *   [LayoutCoordinates.introducesMotionFrameOfReference] to trigger animations.
  */
-@ExperimentalSharedTransitionApi
 internal class BoundsAnimationModifierNode(
     var lookaheadScope: LookaheadScope,
     var boundsTransform: BoundsTransform,
@@ -278,7 +288,6 @@ internal class BoundsAnimationModifierNode(
 }
 
 /** Helper class to keep track of the BoundsAnimation state for [ApproachLayoutModifierNode]. */
-@OptIn(ExperimentalSharedTransitionApi::class)
 internal class BoundsTransformDeferredAnimation {
     private var animatable: Animatable<Rect, AnimationVector4D>? = null
 
@@ -422,7 +431,10 @@ internal class BoundsTransformDeferredAnimation {
                 isPending = false
                 coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     // Dispatch right away to make sure approach callbacks are accurate on `isIdle`
-                    anim.animateTo(target, boundsTransform.transform(currentBounds!!, target))
+                    anim.animateTo(
+                        target,
+                        boundsTransform.createAnimationSpec(currentBounds!!, target),
+                    )
                 }
             }
         }
@@ -430,7 +442,6 @@ internal class BoundsTransformDeferredAnimation {
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 private val DefaultBoundsTransform = BoundsTransform { _, _ ->
     spring(
         dampingRatio = Spring.DampingRatioNoBouncy,

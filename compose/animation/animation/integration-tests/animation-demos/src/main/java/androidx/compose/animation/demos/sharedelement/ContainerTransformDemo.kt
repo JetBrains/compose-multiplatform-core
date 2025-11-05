@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalSharedTransitionApi::class)
-
 package androidx.compose.animation.demos.sharedelement
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.SharedTransitionScope.PlaceHolderSize.Companion.animatedSize
-import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.ScaleToBounds
+import androidx.compose.animation.SharedTransitionScope.PlaceholderSize.Companion.AnimatedSize
+import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.scaleToBounds
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -224,7 +221,7 @@ fun DetailView(
                     animatedVisibilityScope,
                     fadeIn(),
                     fadeOut(),
-                    resizeMode = ScaleToBounds(ContentScale.Crop),
+                    resizeMode = scaleToBounds(ContentScale.Crop, Alignment.Center),
                     clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(20.dp)),
                 )
         ) {
@@ -238,7 +235,7 @@ fun DetailView(
                             .sharedElement(
                                 rememberSharedContentState(key = selected.id),
                                 animatedVisibilityScope,
-                                placeHolderSize = animatedSize,
+                                placeholderSize = AnimatedSize,
                             )
                             .fillMaxHeight()
                             .aspectRatio(1f)
@@ -335,7 +332,7 @@ fun KittyItem(
                     Modifier.sharedElement(
                             rememberSharedContentState(key = kitty.id),
                             animatedVisibilityScope,
-                            placeHolderSize = animatedSize,
+                            placeholderSize = AnimatedSize,
                         )
                         .aspectRatio(1f)
                         .clip(RoundedCornerShape(20.dp)),

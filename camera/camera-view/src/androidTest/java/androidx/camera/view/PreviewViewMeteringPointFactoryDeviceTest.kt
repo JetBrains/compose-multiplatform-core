@@ -23,7 +23,6 @@ import android.graphics.RectF
 import android.util.LayoutDirection
 import android.util.Size
 import androidx.camera.core.SurfaceRequest
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -34,7 +33,6 @@ import org.junit.runners.Parameterized
 /** Instrument test for [PreviewViewMeteringPointFactory]. */
 @SmallTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class PreviewViewMeteringPointFactoryDeviceTest(
     private val cropRect: Rect,
     private val rotationDegrees: Int,

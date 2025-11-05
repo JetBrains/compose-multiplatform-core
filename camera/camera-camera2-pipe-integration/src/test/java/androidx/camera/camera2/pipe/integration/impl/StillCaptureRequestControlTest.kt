@@ -16,10 +16,8 @@
 
 package androidx.camera.camera2.pipe.integration.impl
 
-import android.os.Build
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CaptureConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.adapter.ZslControlNoOpImpl
@@ -67,7 +65,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class StillCaptureRequestControlTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
@@ -437,7 +435,6 @@ class StillCaptureRequestControlTest {
             UseCaseGraphConfig(
                 graph = fakeCameraGraph,
                 surfaceToStreamMap = mapOf(fakeSurface to StreamId(0)),
-                cameraStateAdapter = CameraStateAdapter(),
             )
         fakeConfigAdapter =
             CaptureConfigAdapter(
@@ -450,7 +447,6 @@ class StillCaptureRequestControlTest {
         fakeUseCaseCameraState =
             UseCaseCameraState(
                 useCaseGraphConfig = fakeUseCaseGraphConfig,
-                threads = fakeUseCaseThreads,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
         val torchControl =

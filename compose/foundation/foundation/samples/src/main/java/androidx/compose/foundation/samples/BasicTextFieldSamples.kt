@@ -70,6 +70,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -316,40 +317,41 @@ fun BasicTextFieldCustomInputTransformationSample() {
     val state = remember { TextFieldState() }
     BasicTextField(
         state,
-        inputTransformation = {
-            // A filter that always places newly-input text at the start of the string, after a
-            // prompt character, like a shell.
-            val promptChar = '>'
+        inputTransformation =
+            InputTransformation {
+                // A filter that always places newly-input text at the start of the string, after a
+                // prompt character, like a shell.
+                val promptChar = '>'
 
-            fun CharSequence.countPrefix(char: Char): Int {
-                var i = 0
-                while (i < length && get(i) == char) i++
-                return i
-            }
-
-            // Step one: Figure out the insertion point.
-            val newPromptChars = asCharSequence().countPrefix(promptChar)
-            val insertionPoint = if (newPromptChars == 0) 0 else 1
-
-            // Step two: Ensure text is placed at the insertion point.
-            if (changes.changeCount == 1) {
-                val insertedRange = changes.getRange(0)
-                val replacedRange = changes.getOriginalRange(0)
-                if (!replacedRange.collapsed && insertedRange.collapsed) {
-                    // Text was deleted, delete forwards from insertion point.
-                    delete(insertionPoint, insertionPoint + replacedRange.length)
+                fun CharSequence.countPrefix(char: Char): Int {
+                    var i = 0
+                    while (i < length && get(i) == char) i++
+                    return i
                 }
-            }
-            // Else text was replaced or there were multiple changes - don't handle.
 
-            // Step three: Ensure the prompt character is there.
-            if (newPromptChars == 0) {
-                insert(0, ">")
-            }
+                // Step one: Figure out the insertion point.
+                val newPromptChars = asCharSequence().countPrefix(promptChar)
+                val insertionPoint = if (newPromptChars == 0) 0 else 1
 
-            // Step four: Ensure the cursor is ready for the next input.
-            placeCursorAfterCharAt(0)
-        },
+                // Step two: Ensure text is placed at the insertion point.
+                if (changes.changeCount == 1) {
+                    val insertedRange = changes.getRange(0)
+                    val replacedRange = changes.getOriginalRange(0)
+                    if (!replacedRange.collapsed && insertedRange.collapsed) {
+                        // Text was deleted, delete forwards from insertion point.
+                        delete(insertionPoint, insertionPoint + replacedRange.length)
+                    }
+                }
+                // Else text was replaced or there were multiple changes - don't handle.
+
+                // Step three: Ensure the prompt character is there.
+                if (newPromptChars == 0) {
+                    insert(0, ">")
+                }
+
+                // Step four: Ensure the cursor is ready for the next input.
+                placeCursorAfterCharAt(0)
+            },
     )
 }
 
@@ -457,6 +459,31 @@ fun BasicTextFieldInputTransformationChainingSample() {
 
     // Returns a filter that prints the number of e's before the first one is removed.
     printECountFilter.then(removeFirstEFilter)
+}
+
+@Sampled
+@Composable
+fun BasicTextFieldInputTransformationMaxLengthCustom() {
+    val state = remember { TextFieldState() }
+    BasicTextField(
+        state,
+        inputTransformation =
+            object : InputTransformation {
+                override fun SemanticsPropertyReceiver.applySemantics() {
+                    maxLength(14)
+                }
+
+                override fun TextFieldBuffer.transformInput() {
+                    if (length > 10) revertAllChanges()
+                }
+            },
+        outputTransformation =
+            OutputTransformation {
+                if (length > 0) insert(0, "(")
+                if (length > 4) insert(4, ") ")
+                if (length > 9) insert(9, "-")
+            },
+    )
 }
 
 @Sampled

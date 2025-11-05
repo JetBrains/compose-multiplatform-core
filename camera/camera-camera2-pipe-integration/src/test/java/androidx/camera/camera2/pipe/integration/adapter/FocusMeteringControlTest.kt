@@ -130,7 +130,7 @@ private val M_RECT_PVIEW_RATIO_4x3_SENSOR_1920x1080 =
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 @DoNotInstrument
 class FocusMeteringControlTest {
     private val testScope = TestScope()
@@ -169,7 +169,7 @@ class FocusMeteringControlTest {
         // CoroutineScope#cancel can throw exception if the scope has no job left
         try {
             for (useCase in runningUseCases) {
-                useCase.onStateDetached()
+                useCase.onSessionStop()
                 useCase.onUnbind()
             }
             // fakeUseCaseThreads may still be using Main dispatcher which sometimes

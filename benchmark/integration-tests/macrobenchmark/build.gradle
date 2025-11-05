@@ -27,12 +27,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.test")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     defaultConfig {
-        minSdk = 23
         testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR"
 
     }
@@ -57,6 +56,8 @@ dependencies {
     implementation(project(":benchmark:benchmark-macro-junit4"))
     implementation(project(":internal-testutils-benchmark-macro"))
     implementation(project(":tracing:tracing-ktx"))
+    implementation(project(":test:uiautomator:uiautomator"))
+    implementation(project(":test:uiautomator:uiautomator-shell"))
     implementation(libs.kotlinTest)
     implementation(libs.testRules)
     implementation(libs.testExtJunit)

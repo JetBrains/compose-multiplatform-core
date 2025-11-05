@@ -34,17 +34,20 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.xr.glimmer.samples.SurfaceSample
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class SurfaceScreenshotTest() {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_DIRECTORY)
 
@@ -81,7 +84,7 @@ class SurfaceScreenshotTest() {
                 Text("This is a surface")
             }
         }
-        rule.mainClock.advanceTimeBy(1500)
+        rule.mainClock.advanceTimeBy(1800)
         rule.assertRootAgainstGolden("surface_focused_defaultBorder_animation", screenshotRule)
     }
 
@@ -118,7 +121,7 @@ class SurfaceScreenshotTest() {
                 Text("This is a surface")
             }
         }
-        rule.mainClock.advanceTimeBy(1500)
+        rule.mainClock.advanceTimeBy(1800)
         rule.assertRootAgainstGolden("surface_focused_rectBorder_animation", screenshotRule)
     }
 
@@ -155,7 +158,7 @@ class SurfaceScreenshotTest() {
                 contentAlignment = Alignment.Center,
             ) {}
         }
-        rule.mainClock.advanceTimeBy(1500)
+        rule.mainClock.advanceTimeBy(1800)
         rule.assertRootAgainstGolden("surface_focused_genericBorder_animation", screenshotRule)
     }
 

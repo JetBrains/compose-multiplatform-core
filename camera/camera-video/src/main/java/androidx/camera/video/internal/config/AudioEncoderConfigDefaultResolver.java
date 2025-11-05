@@ -16,8 +16,6 @@
 
 package androidx.camera.video.internal.config;
 
-import android.util.Range;
-
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.Timebase;
 import androidx.camera.video.AudioSpec;
@@ -69,14 +67,19 @@ public final class AudioEncoderConfigDefaultResolver implements Supplier<AudioEn
 
     @Override
     public @NonNull AudioEncoderConfig get() {
-        Range<Integer> audioSpecBitrateRange = mAudioSpec.getBitrate();
-        Logger.d(TAG, "Using fallback AUDIO bitrate");
-        // We have no other information to go off of. Scale based on fallback defaults.
-        int resolvedBitrate = AudioConfigUtil.scaleAndClampBitrate(
-                AUDIO_BITRATE_BASE,
-                mAudioSettings.getChannelCount(), AUDIO_CHANNEL_COUNT_BASE,
-                mAudioSettings.getEncodeSampleRate(), AUDIO_SAMPLE_RATE_BASE,
-                audioSpecBitrateRange);
+        int resolvedBitrate;
+        int audioSpecBitrate = mAudioSpec.getBitrate();
+        if (audioSpecBitrate != AudioSpec.BITRATE_AUTO) {
+            resolvedBitrate = audioSpecBitrate;
+        } else {
+            Logger.d(TAG, "Using fallback AUDIO bitrate");
+            // We have no other information to go off of. Scale based on fallback defaults.
+            resolvedBitrate = AudioConfigUtil.scaleBitrate(
+                    AUDIO_BITRATE_BASE,
+                    mAudioSettings.getChannelCount(), AUDIO_CHANNEL_COUNT_BASE,
+                    mAudioSettings.getEncodeSampleRate(), AUDIO_SAMPLE_RATE_BASE
+            );
+        }
 
         return AudioEncoderConfig.builder()
                 .setMimeType(mMimeType)

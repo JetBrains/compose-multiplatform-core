@@ -18,7 +18,6 @@ package androidx.camera.core;
 
 import static androidx.camera.core.CameraUnavailableException.CAMERA_ERROR;
 import static androidx.camera.core.impl.CameraValidator.CameraIdListIncorrectException;
-import static androidx.camera.core.impl.CameraValidator.validateCameras;
 
 import android.app.Application;
 import android.content.ComponentName;
@@ -43,15 +42,18 @@ import androidx.camera.core.concurrent.CameraCoordinator;
 import androidx.camera.core.impl.CameraDeviceSurfaceManager;
 import androidx.camera.core.impl.CameraFactory;
 import androidx.camera.core.impl.CameraInternal;
+import androidx.camera.core.impl.CameraPresenceProvider;
 import androidx.camera.core.impl.CameraProviderExecutionState;
 import androidx.camera.core.impl.CameraRepository;
 import androidx.camera.core.impl.CameraThreadConfig;
+import androidx.camera.core.impl.CameraValidator;
 import androidx.camera.core.impl.MetadataHolderService;
 import androidx.camera.core.impl.QuirkSettings;
 import androidx.camera.core.impl.QuirkSettingsHolder;
 import androidx.camera.core.impl.QuirkSettingsLoader;
 import androidx.camera.core.impl.UseCaseConfigFactory;
 import androidx.camera.core.impl.utils.ContextUtil;
+import androidx.camera.core.impl.utils.executor.CameraXExecutors;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.core.internal.StreamSpecsCalculator;
 import androidx.camera.core.internal.StreamSpecsCalculatorImpl;
@@ -96,6 +98,7 @@ public final class CameraX {
     private CameraUseCaseAdapterProvider mCameraUseCaseAdapterProvider;
     private final RetryPolicy mRetryPolicy;
     private final ListenableFuture<Void> mInitInternalFuture;
+    private final CameraPresenceProvider mCameraPresenceProvider;
 
     @GuardedBy("mInitializeLock")
     private InternalInitState mInitState = InternalInitState.UNINITIALIZED;
@@ -153,6 +156,9 @@ public final class CameraX {
 
         mRetryPolicy = new RetryPolicy.Builder(
                 mCameraXConfig.getCameraProviderInitRetryPolicy()).build();
+        mCameraPresenceProvider = new CameraPresenceProvider(mCameraExecutor,
+                CameraXExecutors.newHandlerExecutor(mSchedulerHandler));
+
         mInitInternalFuture = initInternal(context);
     }
 
@@ -174,7 +180,7 @@ public final class CameraX {
     @SuppressWarnings("deprecation")
     private static CameraXConfig.@Nullable Provider getConfigProvider(@NonNull Context context) {
         CameraXConfig.Provider configProvider = null;
-        Application application = ContextUtil.getApplicationFromContext(context);
+        Application application = ContextUtil.getApplication(context);
         if (application instanceof CameraXConfig.Provider) {
             // Application is a CameraXConfig.Provider, use this directly
             configProvider = (CameraXConfig.Provider) application;
@@ -182,7 +188,7 @@ public final class CameraX {
             // Try to retrieve the CameraXConfig.Provider through meta-data provided by
             // implementation library.
             try {
-                Context appContext = ContextUtil.getApplicationContext(context);
+                Context appContext = ContextUtil.getPersistentApplicationContext(context);
                 ServiceInfo serviceInfo = appContext.getPackageManager().getServiceInfo(
                         new ComponentName(appContext, MetadataHolderService.class),
                         PackageManager.GET_META_DATA | PackageManager.MATCH_DISABLED_COMPONENTS);
@@ -366,6 +372,11 @@ public final class CameraX {
         }
     }
 
+    @RestrictTo(Scope.LIBRARY_GROUP)
+    public @NonNull CameraPresenceProvider getCameraAvailabilityProvider() {
+        return mCameraPresenceProvider;
+    }
+
     /**
      * Initializes camera stack on the given thread and retry recursively until timeout.
      */
@@ -377,7 +388,7 @@ public final class CameraX {
             CallbackToFutureAdapter.@NonNull Completer<Void> completer) {
         cameraExecutor.execute(() -> {
             Trace.beginSection("CX:initAndRetryRecursively");
-            Context appContext = ContextUtil.getApplicationContext(context);
+            Context appContext = ContextUtil.getPersistentApplicationContext(context);
             try {
                 CameraFactory.Provider cameraFactoryProvider =
                         mCameraXConfig.getCameraFactoryProvider(null);
@@ -392,6 +403,8 @@ public final class CameraX {
 
                 CameraSelector availableCamerasLimiter =
                         mCameraXConfig.getAvailableCamerasLimiter(null);
+                CameraValidator cameraValidator =
+                        CameraValidator.create(appContext, availableCamerasLimiter);
                 long cameraOpenRetryMaxTimeoutInMillis =
                         mCameraXConfig.getCameraOpenRetryMaxTimeoutInMillisWhileResuming();
 
@@ -411,6 +424,7 @@ public final class CameraX {
                         cameraThreadConfig,
                         availableCamerasLimiter,
                         cameraOpenRetryMaxTimeoutInMillis,
+                        mCameraXConfig,
                         mStreamSpecsCalculator);
                 CameraDeviceSurfaceManager.Provider surfaceManagerProvider =
                         mCameraXConfig.getDeviceSurfaceManagerProvider(null);
@@ -447,8 +461,13 @@ public final class CameraX {
                             mCameraUseCaseAdapterProvider);
                 }
 
+                mCameraPresenceProvider.startup(cameraValidator, mCameraFactory, mCameraRepository);
+                mCameraPresenceProvider.addDependentInternalListener(mSurfaceManager);
+                mCameraPresenceProvider.addDependentInternalListener(
+                        mCameraFactory.getCameraCoordinator());
+
                 // Please ensure only validate the camera at the last of the initialization.
-                validateCameras(appContext, mCameraRepository, availableCamerasLimiter);
+                cameraValidator.validateOnFirstInit(mCameraRepository);
 
                 // Set completer to null if the init was successful.
                 if (attemptCount > 1) {
@@ -459,6 +478,7 @@ public final class CameraX {
                 completer.set(null);
             } catch (CameraIdListIncorrectException | InitializationException
                      | RuntimeException e) {
+                boolean shouldShutdown = true;
                 RetryPolicy.ExecutionState executionState =
                         new CameraProviderExecutionState(startMs, attemptCount, e);
                 RetryPolicy.RetryConfig retryConfig = mRetryPolicy.onRetryDecisionRequested(
@@ -479,6 +499,7 @@ public final class CameraX {
                         // Ignoring camera failure for compatibility reasons. Initialization will
                         // be marked as complete, but some camera features might be unavailable.
                         setStateToInitialized();
+                        shouldShutdown = false;
                         completer.set(null);
                     } else if (e instanceof CameraIdListIncorrectException) {
                         String message = "Device reporting less cameras than anticipated. On real"
@@ -496,6 +517,10 @@ public final class CameraX {
                         // For any unexpected RuntimeException, catch it instead of crashing.
                         completer.setException(new InitializationException(e));
                     }
+                }
+
+                if (shouldShutdown) {
+                    mCameraPresenceProvider.shutdown();
                 }
             } finally {
                 Trace.endSection();
@@ -527,6 +552,7 @@ public final class CameraX {
                     decreaseMinLogLevelReference(mMinLogLevel);
                     mShutdownInternalFuture = CallbackToFutureAdapter.getFuture(
                             completer -> {
+                                mCameraPresenceProvider.shutdown();
                                 ListenableFuture<Void> future = mCameraRepository.deinit();
 
                                 // Deinit camera executor at last to avoid RejectExecutionException.

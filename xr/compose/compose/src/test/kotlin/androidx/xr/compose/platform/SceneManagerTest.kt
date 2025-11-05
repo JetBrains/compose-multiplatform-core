@@ -32,15 +32,20 @@ class SceneManagerTest {
 
     @Test
     fun onSceneCreated_onlyAddsSceneOnce() {
-        assertThat(SceneManager.getSceneCount()).isEqualTo(0)
+        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(0)
 
         val testSession = createFakeSession(composeTestRule.activity)
-        val scene = SpatialComposeScene(composeTestRule.activity, testSession)
+        val scene =
+            SpatialComposeScene(
+                lifecycleOwner = composeTestRule.activity,
+                context = composeTestRule.activity,
+                jxrSession = testSession,
+            )
 
-        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
 
         SceneManager.onSceneCreated(scene)
 
-        assertThat(SceneManager.getSceneCount()).isEqualTo(1)
+        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
     }
 }

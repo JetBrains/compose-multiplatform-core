@@ -22,7 +22,6 @@ import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.BuildType
 import com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceFile
-import org.gradle.api.GradleException
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 
@@ -36,12 +35,7 @@ internal inline fun <reified T : BuildType> createExtendedBuildTypes(
     extendedBuildTypeToOriginalBuildTypeMapping: MutableMap<String, String> = mutableMapOf(),
 ) {
     extensionBuildTypes
-        .filter { buildType ->
-            if (buildType !is T) {
-                throw GradleException("Build type `${buildType.name}` is not of type ${T::class}")
-            }
-            filterBlock(buildType)
-        }
+        .filter { buildType -> filterBlock(buildType) }
         .forEach { buildType ->
             val newBuildTypeName = camelCase(newBuildTypePrefix, buildType.name)
 

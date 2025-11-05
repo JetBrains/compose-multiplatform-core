@@ -18,6 +18,8 @@ package androidx.wear.compose.material3
 
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.Interaction
@@ -68,7 +70,9 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.tokens.CheckboxButtonTokens
 import androidx.wear.compose.material3.tokens.ShapeTokens
 import androidx.wear.compose.material3.tokens.SplitCheckboxButtonTokens
+import androidx.wear.compose.materialcore.SelectionStage
 import androidx.wear.compose.materialcore.animateSelectionColor
+import androidx.wear.compose.materialcore.isLayoutDirectionRtl
 
 /**
  * The Wear Material [CheckboxButton] offers three slots and a specific layout for an icon, a label,
@@ -1480,23 +1484,47 @@ private fun Checkbox(
     boxColor: @Composable (enabled: Boolean, selected: Boolean) -> State<Color>,
     checkmarkColor: @Composable (enabled: Boolean, selected: Boolean) -> State<Color>,
     modifier: Modifier = Modifier,
-) =
-    androidx.wear.compose.materialcore.Checkbox(
-        checked = checked,
-        modifier = modifier,
-        boxColor = boxColor,
-        checkmarkColor = checkmarkColor,
-        enabled = enabled,
-        onCheckedChange = null,
-        interactionSource = null,
-        drawBox = { drawScope, color, progress, isRtl ->
-            drawScope.drawBox(color = color, progress = progress, isRtl = isRtl)
-        },
-        progressAnimationSpec = PROGRESS_ANIMATION_SPEC,
-        width = CHECKBOX_WIDTH,
-        height = CHECKBOX_HEIGHT,
-        ripple = ripple(),
+) {
+    val targetState = if (checked) SelectionStage.Checked else SelectionStage.Unchecked
+    val transition = updateTransition(targetState, label = "checkboxTransition")
+    val progress =
+        transition.animateFloat(
+            transitionSpec = { PROGRESS_ANIMATION_SPEC },
+            label = "checkboxTransition",
+        ) {
+            when (it) {
+                SelectionStage.Unchecked -> 0f
+                SelectionStage.Checked -> 1f
+            }
+        }
+    val isRtl = isLayoutDirectionRtl()
+    val startXOffset = if (isRtl) 0.dp else CHECKBOX_WIDTH - CHECKBOX_HEIGHT
+
+    // For Checkbox, the color and alpha animations have the same duration and easing,
+    // so we don't need to explicitly animate alpha.
+    val boxColorState = boxColor(enabled, checked)
+    val checkmarkColorState = checkmarkColor(enabled, checked)
+
+    Box(
+        modifier =
+            modifier
+                .semantics { this.role = Role.Checkbox }
+                .height(CHECKBOX_HEIGHT)
+                .width(CHECKBOX_WIDTH)
+                .drawWithCache {
+                    onDrawWithContent {
+                        drawBox(boxColorState.value, progress.value, isRtl)
+                        animateTick(
+                            enabled = enabled,
+                            checked = checked,
+                            checkmarkColorState.value,
+                            progress.value,
+                            startXOffset = startXOffset,
+                        )
+                    }
+                }
     )
+}
 
 private fun DrawScope.drawBox(color: Color, progress: Float, isRtl: Boolean) {
     // Centering vertically.

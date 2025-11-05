@@ -23,7 +23,6 @@ import android.util.SparseArray
 import android.view.View
 import android.view.View.MeasureSpec
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.pdf.PdfPoint
 import androidx.pdf.R
 import androidx.pdf.view.fastscroll.getDimensions
@@ -442,6 +441,99 @@ class PdfViewPaginationTest {
     }
 
     @Test
+    fun getCurrentPageLocations_returnsInitialPageLocation() = runTest {
+        val pdfDocument = FakePdfDocument(List(10) { Point(500, 1000) })
+        setupPdfView(width = 500, height = 1000, pdfDocument)
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            var pageLocations = SparseArray<RectF>()
+            onActivity { activity ->
+                pageLocations =
+                    activity.findViewById<PdfView>(PDF_VIEW_ID).getCurrentPageLocations()
+            }
+            val expectedPageLocation =
+                RectF(
+                    /* left= */ 0f,
+                    /* top= */ topPageMarginPx,
+                    /* right= */ 500f,
+                    /* bottom= */ 1000 + topPageMarginPx,
+                )
+            assertThat(pageLocations).isNotNull()
+            assertThat(pageLocations.size()).isEqualTo(1)
+            assertThat(pageLocations.get(0)).isEqualTo(expectedPageLocation)
+
+            close()
+        }
+    }
+
+    @Test
+    fun getCurrentPageLocations_returnsCorrectPageLocations_afterScroll() = runTest {
+        val pdfDocument = FakePdfDocument(List(10) { Point(500, 1000) })
+        setupPdfView(width = 500, height = 1000, pdfDocument)
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            // Round up the floating-point top margin to an integer for precise pixel scrolling.
+            val scrollOffsetForTopMargin = ceil(topPageMarginPx).roundToInt()
+
+            // Scroll smoothly past page 0
+            Espresso.onView(withId(PDF_VIEW_ID))
+                .smoothScrollBy(totalPixels = 1000 + scrollOffsetForTopMargin, numSteps = 10)
+            pdfDocument.waitForLayout(untilPage = 1)
+
+            var pageLocations = SparseArray<RectF>()
+            onActivity { activity ->
+                pageLocations =
+                    activity.findViewById<PdfView>(PDF_VIEW_ID).getCurrentPageLocations()
+            }
+
+            val expectedPageLocation =
+                RectF(
+                    /* left= */ 0f,
+                    /* top= */ pageMarginPx + (topPageMarginPx - scrollOffsetForTopMargin),
+                    /* right= */ 500f,
+                    /* bottom= */ 1000 + pageMarginPx + (topPageMarginPx - scrollOffsetForTopMargin),
+                )
+
+            assertThat(pageLocations).isNotNull()
+            assertThat(pageLocations.size()).isEqualTo(1)
+            assertThat(pageLocations.get(0)).isNull()
+            assertThat(pageLocations.get(1)).isEqualTo(expectedPageLocation)
+
+            close()
+        }
+    }
+
+    @Test
+    fun getCurrentPageLocations_returnsCorrectPageLocations_afterZoom() = runTest {
+        val pdfDocument = FakePdfDocument(List(10) { Point(500, 1000) })
+        setupPdfView(width = 500, height = 1000, pdfDocument)
+        with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
+            val zoom = 5.0F
+            Espresso.onView(withId(PDF_VIEW_ID)).zoomTo(zoom)
+
+            pdfDocument.waitForLayout(0)
+
+            var pageLocations = SparseArray<RectF>(0)
+            onActivity { activity ->
+                pageLocations =
+                    activity.findViewById<PdfView>(PDF_VIEW_ID).getCurrentPageLocations()
+            }
+
+            val expectedPageLocation =
+                RectF(
+                    /* left= */ 0f,
+                    /* top= */ (topPageMarginPx * zoom),
+                    /* right= */ (500F * zoom),
+                    /* bottom= */ ((1000F + topPageMarginPx) * zoom),
+                )
+
+            assertThat(pageLocations).isNotNull()
+            assertThat(pageLocations.size()).isEqualTo(1)
+            assertThat(pageLocations.get(0)).isEqualTo(expectedPageLocation)
+
+            close()
+        }
+    }
+
+    @Test
     fun testCoordinateTranslation() =
         runTest(timeout = 30.seconds) {
             val pdfDocument = FakePdfDocument(List(10) { Point(500, 1000) })
@@ -556,18 +648,18 @@ class PdfViewPaginationTest {
     /** Create, measure, and layout a [PdfView] at the specified [width] and [height] */
     private fun setupPdfView(width: Int, height: Int, fakePdfDocument: FakePdfDocument?) {
         PdfViewTestActivity.onCreateCallback = { activity ->
-            pageMarginPx = activity.getDimensions(R.dimen.page_spacing)
-            topPageMarginPx = activity.getDimensions(R.dimen.top_page_margin)
-            val container = FrameLayout(activity)
-            pdfView = PdfView(activity)
-            container.addView(
-                pdfView?.apply {
-                    pdfDocument = fakePdfDocument
-                    id = PDF_VIEW_ID
-                },
-                ViewGroup.LayoutParams(width, height),
-            )
-            activity.setContentView(container)
+            with(activity) {
+                pageMarginPx = activity.getDimensions(R.dimen.vertical_page_spacing)
+                topPageMarginPx = activity.getDimensions(R.dimen.top_page_margin)
+                pdfView = PdfView(activity)
+                container.addView(
+                    pdfView?.apply {
+                        pdfDocument = fakePdfDocument
+                        id = PDF_VIEW_ID
+                    },
+                    ViewGroup.LayoutParams(width, height),
+                )
+            }
         }
     }
 }

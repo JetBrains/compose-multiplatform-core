@@ -22,14 +22,6 @@ import org.jetbrains.kotlin.konan.target.LinkerOutputKind
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
-}
-
-android {
-    namespace = "androidx.test.shell"
-    defaultConfig {
-        minSdk 21
-    }
 }
 
 // This is a kmp library even though it targets only android. The reason is that KonanBuildService
@@ -52,14 +44,15 @@ androidXMultiplatform {
         configureTargets(requiredNativeTargets)
     }
 
-    androidTarget() {
+    androidLibrary {
+        namespace = "androidx.test.shell"
+        androidResources.enable = true
         addNativeLibrariesToVariantAssets(it, shellNativeCompilation)
     }
 
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
             }
         }
 
@@ -70,7 +63,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(libs.testCore)
                 implementation(libs.testExtJunit)

@@ -36,17 +36,23 @@ import com.google.devtools.ksp.symbol.KSAnnotated
  * * @AppFunctionSchemaDefinition - The schema definition that are needed to generating a statically
  *   mapped inventory to look up AppFunctionMetadata with schema key.
  *
+ * In case of `FUNCTION` components, the `componentDocStrings` are also populated in the registry.
+ * Each docstring in the `componentDocStrings` list corresponds to the component name in
+ * `componentNames` at the same index.
+ *
  * For example, if there are two functions in the module "myLibrary":
  * ```
  * package com.android.example
  *
  * class NoteFunction: CreateNote {
- *   @AppFunction
+ *   /** Creates a new note. */
+ *   @AppFunction(isDescribedByKdoc = true)
  *   override suspend fun createNote(): Note { ... }
  * }
  *
  * class TaskFunction: CreateTask {
- *   @AppFunction
+ *   /** Creates a new task. */
+ *   @AppFunction(isDescribedByKdoc = true)
  *   override suspend fun createTask(): Task { ... }
  * }
  * ```
@@ -60,7 +66,11 @@ import com.google.devtools.ksp.symbol.KSAnnotated
  *   componentNames = [
  *     "com.android.example.NoteFunction.createNote",
  *     "com.android.example.TaskFunction.createTask",
- *   ]
+ *   ],
+ *   componentDocStrings = [
+ *     "Creates a new note.",
+ *     "Creates a new task.",
+ *   ],
  * )
  * @Generated
  * public class `$Mylibrary_FunctionComponentRegistry`
@@ -80,9 +90,46 @@ class AppFunctionComponentRegistryProcessor(private val codeGenerator: CodeGener
         hasProcessed = true
 
         generateFunctionComponentRegistry(resolver)
+        generateSerializableComponentRegistry(resolver)
         generateSchemaDefinitionComponentRegistry(resolver)
 
         return emptyList()
+    }
+
+    @OptIn(KspExperimental::class)
+    private fun generateSerializableComponentRegistry(resolver: Resolver) {
+        val annotatedSerializables =
+            AppFunctionSymbolResolver(resolver).resolveAnnotatedAppFunctionSerializables()
+        val serializableComponents = buildList {
+            for (annotatedSerializable in annotatedSerializables) {
+                add(
+                    AppFunctionComponent(
+                        qualifiedName = annotatedSerializable.jvmQualifiedName,
+                        docString =
+                            if (annotatedSerializable.isDescribedByKdoc) {
+                                annotatedSerializable.getDescription()
+                            } else {
+                                ""
+                            },
+                    )
+                )
+                for (property in annotatedSerializable.getProperties()) {
+                    add(
+                        AppFunctionComponent(
+                            qualifiedName = property.qualifiedName,
+                            docString = property.description,
+                        )
+                    )
+                }
+            }
+        }
+
+        AppFunctionComponentRegistryGenerator(codeGenerator)
+            .generateRegistry(
+                resolver.getModuleName().asString(),
+                AppFunctionComponentRegistryAnnotation.Category.SERIALIZABLE,
+                serializableComponents,
+            )
     }
 
     @OptIn(KspExperimental::class)
@@ -97,6 +144,12 @@ class AppFunctionComponentRegistryProcessor(private val codeGenerator: CodeGener
                             AppFunctionComponent(
                                 qualifiedName = function.ensureQualifiedName(),
                                 sourceFiles = annotatedAppFunction.getSourceFiles(),
+                                docString =
+                                    if (annotatedAppFunction.isDescribedByKdoc(function)) {
+                                        function.docString ?: ""
+                                    } else {
+                                        ""
+                                    },
                             )
                         )
                     }

@@ -46,6 +46,7 @@ import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.TRI
 import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.calculateRecommendedGapSize
 import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.filledProgressIndicatorColors
 import androidx.wear.protolayout.material3.CircularProgressIndicatorDefaults.recommendedAnimationSpec
+import androidx.wear.protolayout.material3.Versions.hasArcDirectionFixed
 import androidx.wear.protolayout.material3.Versions.hasDashedArcLineSupport
 import androidx.wear.protolayout.modifiers.LayoutModifier
 import androidx.wear.protolayout.modifiers.contentDescription
@@ -288,7 +289,21 @@ private fun MaterialScope.singleSegmentImpl(
         progressInDegrees(
             sweepAngle = sweepAngle,
             staticProgress = staticProgress,
-            dynamicProgress = dynamicProgress,
+            dynamicProgress =
+                if (
+                    deviceConfiguration.rendererSchemaVersion.hasArcDirectionFixed() ||
+                        dynamicProgress != null
+                ) {
+                    dynamicProgress
+                } else {
+                    // We got issue with the arcDirection handling before renderer version 1.520,
+                    // which is fixed in newer version of renderer.  When the progress is static,
+                    // the counterclockwise is not rendered with correct direction, see b/432663972.
+                    // This issue does not happen when the progress is dynamic, so the hack here
+                    // is to set a constant dynamic value, which delays the set of arc length after
+                    // the view is attached.
+                    DynamicFloat.constant(staticProgress)
+                },
         )
     val trackInDegrees = trackInDegrees(sweepAngle, progressInDegrees)
 

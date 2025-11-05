@@ -47,7 +47,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraXTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -159,7 +159,7 @@ class CameraXTest {
         cameras: List<FakeCamera>,
         cameraCoordinator: CameraCoordinator = FakeCameraCoordinator(),
     ) =
-        CameraFactory.Provider { _, _, _, _, _ ->
+        CameraFactory.Provider { _, _, _, _, _, _ ->
             FakeCameraFactory().apply {
                 for (camera in cameras) {
                     val cameraInfo = camera.cameraInfoInternal
@@ -171,7 +171,7 @@ class CameraXTest {
 
     private fun createConfigProvider(
         cameraFactoryProvider: CameraFactory.Provider =
-            CameraFactory.Provider { _, _, _, _, _ -> FakeCameraFactory() },
+            CameraFactory.Provider { _, _, _, _, _, _ -> FakeCameraFactory() },
         cameraDeviceSurfaceManager: CameraDeviceSurfaceManager.Provider =
             CameraDeviceSurfaceManager.Provider { _, _, _ -> FakeCameraDeviceSurfaceManager() },
         useCaseConfigFactoryProvider: UseCaseConfigFactory.Provider =

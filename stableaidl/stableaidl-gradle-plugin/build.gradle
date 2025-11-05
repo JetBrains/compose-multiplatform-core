@@ -30,8 +30,6 @@ plugins {
     id("java-gradle-plugin")
 }
 
-apply from: "../../buildSrc/kotlin-dsl-dependency.gradle"
-
 configurations {
     // Config for plugin classpath to be used during tests
     testPlugin {
@@ -57,7 +55,6 @@ dependencies {
 
     implementation(libs.apacheCommonIo)
     implementation(libs.apacheAnt)
-    implementation(libs.kotlinStdlib)
 
     testPlugin(libs.androidGradlePlugin)
 
@@ -91,5 +88,5 @@ androidx {
     type = SoftwareType.GRADLE_PLUGIN
     inceptionYear = "2022"
     description = "Stable AIDL Gradle Plugin"
-    kotlinTarget = KotlinTarget.KOTLIN_2_1
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

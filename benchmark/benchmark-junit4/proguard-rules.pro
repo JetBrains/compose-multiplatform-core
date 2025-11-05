@@ -2,6 +2,7 @@
 
 # Custom JNI registration, so entire class must be kept
 -keepclasseswithmembers class androidx.benchmark.BlackHole { *; }
+-keepclasseswithmembers class androidx.benchmark.CpuCounterJni { *; }
 
 # basic protection against junit/androidx.test reflection, shouldn't affect library/test code
 -keepclasseswithmembers class androidx.test.** { *; }

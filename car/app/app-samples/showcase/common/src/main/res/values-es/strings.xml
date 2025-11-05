@@ -343,7 +343,7 @@
     <string name="voice_access_demo_title" msgid="3825223890895361496">"Pantalla de la demo de Voice Access"</string>
     <string name="user_interactions_demo_title" msgid="1356952319161314986">"Interacciones de usuarios"</string>
     <string name="request_permission_menu_demo_title" msgid="4796486779527427017">"Demos de solicitud de permisos"</string>
-    <string name="application_overflow_title" msgid="396427940886169325">"Validador de desbordamiento de aplicaciones"</string>
+    <string name="application_overflow_title" msgid="396427940886169325">"Validador de desbordamiento de apps"</string>
     <string name="application_overflow_subtitle1" msgid="7429415605726615529">"Prueba las siguientes plantillas mientras se hace el cambio"</string>
     <string name="application_overflow_subtitle2" msgid="4385123036846369714">"el vehículo del estado de estacionamiento al de conducción"</string>
     <string name="perm_group" msgid="3834918337351876270">"Grupo de permisos"</string>

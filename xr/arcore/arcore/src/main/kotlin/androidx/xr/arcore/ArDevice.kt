@@ -17,16 +17,15 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ArDevice as RuntimeArDevice
 import androidx.xr.runtime.math.Pose
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/** Contains the tracking information of the HMD tracking. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/** Contains the information of the device that locates it with respect to the real world. */
 public class ArDevice internal constructor(internal val runtimeArDevice: RuntimeArDevice) :
     Updatable {
 
@@ -59,9 +58,9 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
     /**
      * Contains the current state of the AR Device tracking.
      *
-     * @property devicePose The current pose of the device.
+     * @property devicePose The current [Pose] of the device.
      */
-    public class State(public val devicePose: Pose) {
+    public class State internal constructor(public val devicePose: Pose) {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is State) return false
@@ -77,6 +76,7 @@ public class ArDevice internal constructor(internal val runtimeArDevice: Runtime
     /** The current [State] of the AR Device tracking. */
     public val state: StateFlow<State> = _state.asStateFlow()
 
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(State(runtimeArDevice.devicePose))
     }

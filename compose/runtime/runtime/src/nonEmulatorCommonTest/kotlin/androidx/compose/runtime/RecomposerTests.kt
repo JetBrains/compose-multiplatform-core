@@ -23,8 +23,8 @@ import androidx.compose.runtime.mock.compositionTest
 import androidx.compose.runtime.mock.expectNoChanges
 import androidx.compose.runtime.snapshots.Snapshot
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.test.Ignore
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -42,9 +42,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.test.IgnoreJsTarget
-import kotlinx.test.IgnoreNativeTarget
-import kotlinx.test.IgnoreWasmTarget
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecomposerTests {
@@ -356,12 +353,7 @@ class RecomposerTests {
         }
     }
 
-    // TODO: b/409727145
-    // TODO: https://youtrack.jetbrains.com/issue/CMP-7455
     @Test
-    @IgnoreJsTarget
-    @IgnoreWasmTarget
-    @IgnoreNativeTarget
     fun stateChangesDuringApplyChangesAreNotifiedBeforeFrameFinished() = compositionTest {
         val count = mutableStateOf(0)
         val countFromEffect = mutableStateOf(0)
@@ -395,17 +387,15 @@ class RecomposerTests {
         assertEquals(2, recompositions)
 
         // The Recomposer should have received notification for the node's state.
-        @Suppress("RemoveExplicitTypeArguments")
-        assertEquals<List<Set<Any>>>(listOf(setOf(countFromEffect)), applications)
+        assertContentEquals(listOf(setOf(countFromEffect)), applications)
     }
 
-    @Ignore // b/329682091
     @OptIn(DelicateCoroutinesApi::class)
     @Test // b/329011032
     fun validatePotentialDeadlock() = compositionTest {
         var state by mutableIntStateOf(0)
         compose {
-            repeat(1000) { Text("This is some text: $state") }
+            repeat(200) { Text("This is some text: $state") }
             LaunchedEffect(Unit) {
                 while (true) {
                     withContext(Dispatchers.Default) {

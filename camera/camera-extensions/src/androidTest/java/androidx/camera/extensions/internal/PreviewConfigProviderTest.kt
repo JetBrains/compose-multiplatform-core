@@ -35,7 +35,6 @@ import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -53,7 +52,6 @@ import org.mockito.Mockito.mock
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 23) // BasicVendorExtender requires API level 23
 class PreviewConfigProviderTest {
     @get:Rule
     val useCamera =

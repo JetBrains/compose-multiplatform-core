@@ -16,6 +16,8 @@
 
 package androidx.benchmark.macro
 
+import android.os.Build.VERSION.SDK_INT
+import androidx.benchmark.DeviceInfo.isEmulator
 import androidx.benchmark.inMemoryTrace
 import androidx.benchmark.junit4.PerfettoTraceRule
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
@@ -25,6 +27,7 @@ import androidx.benchmark.traceprocessor.TraceProcessor
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.tracing.trace
+import kotlin.test.assertContains
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
@@ -56,7 +59,8 @@ class PerfettoTraceRuleTest {
                 object : Statement() {
                     override fun evaluate() {
                         base.evaluate()
-                        if (PerfettoHelper.isAbiSupported()) {
+                        // Our API 23 emulators seem to be misconfigured b/438214932
+                        if (PerfettoHelper.isAbiSupported() && (!isEmulator || SDK_INT != 23)) {
                             assertNotNull(trace)
                             val sliceNameInstances =
                                 TraceProcessor.runSingleSessionServer(trace!!.path) {
@@ -66,11 +70,19 @@ class PerfettoTraceRuleTest {
                                     }
                                 }
                             assertEquals(listOf(UNIQUE_SLICE_NAME), sliceNameInstances)
+
+                            assertContains(
+                                trace!!.path,
+                                "/CUSTOM_LABEL_",
+                                message = "expected ${trace!!.path} to contain custom label",
+                            )
                         }
                     }
                 }
             }
-            .around(PerfettoTraceRule { trace = it })
+            .around(
+                PerfettoTraceRule(labelProvider = { description -> "CUSTOM_LABEL" }) { trace = it }
+            )
 
     @Test
     fun simple() {

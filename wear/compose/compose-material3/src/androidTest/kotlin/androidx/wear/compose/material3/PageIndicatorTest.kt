@@ -32,12 +32,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.foundation.pager.PagerState
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
 class PageIndicatorTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     public fun horizontalPageIndicator_supports_testtag_circular() {

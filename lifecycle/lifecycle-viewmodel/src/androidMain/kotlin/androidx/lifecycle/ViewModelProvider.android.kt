@@ -24,8 +24,8 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.CreationExtras.Key
 import androidx.lifecycle.viewmodel.InitializerViewModelFactory
 import androidx.lifecycle.viewmodel.ViewModelInitializer
-import androidx.lifecycle.viewmodel.ViewModelProviderImpl
 import androidx.lifecycle.viewmodel.internal.JvmViewModelProviders
+import androidx.lifecycle.viewmodel.internal.ViewModelProviderImpl
 import androidx.lifecycle.viewmodel.internal.ViewModelProviders
 import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KClass

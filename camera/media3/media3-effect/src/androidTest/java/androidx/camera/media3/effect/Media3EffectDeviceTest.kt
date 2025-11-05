@@ -35,7 +35,6 @@ import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.media3.effect.Contrast
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
@@ -52,7 +51,6 @@ import org.junit.runner.RunWith
 @SuppressLint("RestrictedApiAndroidX")
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class Media3EffectDeviceTest {
     val context: Context = ApplicationProvider.getApplicationContext()
     val fakeLifecycleOwner = FakeLifecycleOwner().apply { startAndResume() }

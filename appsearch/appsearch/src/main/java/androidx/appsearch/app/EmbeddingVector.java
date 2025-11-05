@@ -95,10 +95,16 @@ public final class EmbeddingVector extends AbstractSafeParcelable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        if (!(o instanceof EmbeddingVector)) return false;
+    public boolean equals(@Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null) {
+            return false;
+        }
+        if (!(o instanceof EmbeddingVector)) {
+            return false;
+        }
         EmbeddingVector that = (EmbeddingVector) o;
         return Arrays.equals(mValues, that.mValues)
                 && mModelSignature.equals(that.mModelSignature);

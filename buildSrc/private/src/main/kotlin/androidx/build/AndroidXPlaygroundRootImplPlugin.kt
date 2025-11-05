@@ -170,7 +170,7 @@ class AndroidXPlaygroundRootImplPlugin : Plugin<Project> {
             )
         val dokka =
             PlaygroundRepository(
-                "https://maven.pkg.jetbrains.space/kotlin/p/dokka/dev",
+                "https://packages.jetbrains.team/maven/p/kt/dokka-dev",
                 includeGroupRegex = """org\.jetbrains\.dokka""",
             )
         val kotlinDev =

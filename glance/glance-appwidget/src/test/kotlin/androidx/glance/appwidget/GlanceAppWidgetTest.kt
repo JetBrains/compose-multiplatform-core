@@ -94,7 +94,12 @@ class GlanceAppWidgetTest {
 
                     Text(options.getString("StringKey", "<NOT FOUND>"))
                 }
-                .compose(context, fakeId, bundleOf("StringKey" to "FOUND"))
+                .compose(
+                    context,
+                    fakeId,
+                    @Suppress("DEPRECATION") // bundleOf is deprecated
+                    bundleOf("StringKey" to "FOUND"),
+                )
 
         val view = context.applyRemoteViews(rv)
         assertIs<TextView>(view)

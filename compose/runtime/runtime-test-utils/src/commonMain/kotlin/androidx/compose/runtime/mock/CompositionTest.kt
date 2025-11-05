@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composition
 import androidx.compose.runtime.ControlledComposition
 import androidx.compose.runtime.ExperimentalComposeRuntimeApi
 import androidx.compose.runtime.InternalComposeApi
+import androidx.compose.runtime.MonotonicFrameClock
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.runtime.tooling.CompositionObserver
@@ -36,8 +37,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 
 @OptIn(InternalComposeApi::class, ExperimentalCoroutinesApi::class)
-fun compositionTest(block: suspend CompositionTestScope.() -> Unit) = runTest {
-    withContext(TestMonotonicFrameClock(this)) {
+fun compositionTest(
+    clock: MonotonicFrameClock? = null,
+    block: suspend CompositionTestScope.() -> Unit,
+) = runTest {
+    withContext(clock ?: TestMonotonicFrameClock(this)) {
         // Start the recomposer
         val recomposer = Recomposer(coroutineContext)
         launch { recomposer.runRecomposeAndApplyChanges() }
@@ -61,6 +65,10 @@ fun compositionTest(block: suspend CompositionTestScope.() -> Unit) = runTest {
                     val composition = Composition(ViewApplier(root), recomposer)
                     this.composition = composition
                     composition.setContent(block)
+                }
+
+                override fun hasPendingWork(): Boolean {
+                    return recomposer.hasPendingWork
                 }
 
                 @OptIn(ExperimentalComposeRuntimeApi::class)
@@ -131,6 +139,8 @@ interface CompositionTestScope : CoroutineScope {
         observer: CompositionObserver,
         block: @Composable () -> Unit,
     ): CompositionObserverHandle?
+
+    fun hasPendingWork(): Boolean
 
     /**
      * Advance the state which executes any pending compositions, if any. Returns true if advancing

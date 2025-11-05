@@ -15,6 +15,8 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.operations.layout.Container;
 import androidx.compose.remote.core.serialize.Serializable;
 
 import org.jspecify.annotations.NonNull;
@@ -23,6 +25,7 @@ import org.jspecify.annotations.NonNull;
  * PaintOperation interface, used for operations aimed at painting (while any operation _can_ paint,
  * this make it a little more explicit)
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class PaintOperation extends Operation implements Serializable {
 
     @Override
@@ -31,6 +34,17 @@ public abstract class PaintOperation extends Operation implements Serializable {
             PaintContext paintContext = context.getPaintContext();
             if (paintContext != null) {
                 paint(paintContext);
+            }
+        } else {
+            if (this instanceof Container) {
+                for (Operation op : ((Container) this).getList()) {
+                    if (op.isDirty()) {
+                        if (op instanceof VariableSupport) {
+                            ((VariableSupport) op).updateVariables(context);
+                        }
+                        op.apply(context);
+                    }
+                }
             }
         }
     }
@@ -55,5 +69,26 @@ public abstract class PaintOperation extends Operation implements Serializable {
     public boolean suitableForTransition(@NonNull Operation op) {
         // by default expects the op to not be suitable
         return false;
+    }
+
+    /** Path or Bitmap need to be dereferenced */
+    public static final int PTR_DEREFERENCE = 0x1 << 30;
+
+    /** Valid bits in Path or Bitmap */
+    public static final int VALUE_MASK = 0xFFFF;
+
+    /**
+     * Get the id from the context if needed
+     *
+     * @param id the id to get
+     * @param context the context
+     * @return the id dereferenced if needed
+     */
+    protected int getId(int id, @NonNull PaintContext context) {
+        int returnId = id & VALUE_MASK;
+        if ((id & PTR_DEREFERENCE) != 0) {
+            returnId = context.getContext().getInteger(returnId);
+        }
+        return returnId;
     }
 }

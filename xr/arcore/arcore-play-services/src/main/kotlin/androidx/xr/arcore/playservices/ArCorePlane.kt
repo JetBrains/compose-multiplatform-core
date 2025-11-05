@@ -17,11 +17,12 @@
 package androidx.xr.arcore.playservices
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorNotTrackingException
+import androidx.xr.arcore.runtime.Plane
+import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Anchor
-import androidx.xr.runtime.internal.AnchorNotTrackingException
-import androidx.xr.runtime.internal.Plane
-import androidx.xr.runtime.internal.Trackable
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import com.google.ar.core.Plane as ARCorePlane
@@ -29,7 +30,8 @@ import com.google.ar.core.Trackable as ArCoreTrackable
 import com.google.ar.core.exceptions.NotTrackingException
 
 /**
- * Wraps the [ARCorePlane] with an implementation of the [Plane] interface.
+ * Wraps the [ARCorePlane] with an implementation of the [androidx.xr.arcore.runtime.Plane]
+ * interface.
  *
  * @property arCorePlane The underlying [ARCorePlane] instance.
  * @property resources The [XrResources] instance.
@@ -75,8 +77,8 @@ internal constructor(internal val _arCorePlane: ARCorePlane, private val resourc
      *
      * @return The extents of the plane.
      */
-    override val extents: Vector2
-        get() = Vector2(_arCorePlane.extentX, _arCorePlane.extentZ)
+    override val extents: FloatSize2d
+        get() = FloatSize2d(_arCorePlane.extentX, _arCorePlane.extentZ)
 
     /**
      * ARCore 1.x does not support plane labels; this property is always [UNKNOWN].
@@ -113,7 +115,7 @@ internal constructor(internal val _arCorePlane: ARCorePlane, private val resourc
      * The type of the plane.
      *
      * This property gets the type from the underlying [ARCorePlane] instance, and converts it to a
-     * [Plane.Type].
+     * [androidx.xr.arcore.runtime.Plane.Type].
      *
      * @return The type of the plane.
      */

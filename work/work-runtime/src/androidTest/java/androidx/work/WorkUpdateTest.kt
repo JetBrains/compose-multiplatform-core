@@ -484,7 +484,7 @@ class WorkUpdateTest {
 
     @Test
     @MediumTest
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 25)
+    @SdkSuppress(maxSdkVersion = 25)
     fun testUpdatePeriodicWorker_preservesConstraintTrackingWorker() = runTest {
         val originRequest =
             OneTimeWorkRequest.Builder(TestWorker::class).setInitialDelay(10, HOURS).build()

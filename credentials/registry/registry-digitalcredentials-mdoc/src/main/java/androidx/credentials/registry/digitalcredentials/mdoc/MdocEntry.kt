@@ -31,6 +31,7 @@ import androidx.credentials.registry.provider.digitalcredentials.EntryDisplayPro
  * @property fields the given mdoc's individual properties used both for filtering and display
  *   purposes
  * @constructor
+ * @throws IllegalArgumentException if [id] length is greater than 64 characters
  */
 public class MdocEntry(
     public val docType: String,
@@ -45,8 +46,7 @@ public class MdocEntry(
             this.entryDisplayPropertySet == other.entryDisplayPropertySet &&
             this.docType == other.docType &&
             this.fields == other.fields &&
-            this.entryDisplayPropertySet == other.entryDisplayPropertySet &&
-            this.id == other.id
+            this.entryDisplayPropertySet == other.entryDisplayPropertySet
     }
 
     override fun hashCode(): Int {

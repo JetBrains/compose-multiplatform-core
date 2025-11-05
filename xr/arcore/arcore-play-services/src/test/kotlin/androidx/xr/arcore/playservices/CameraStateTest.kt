@@ -17,6 +17,7 @@
 package androidx.xr.arcore.playservices
 
 import android.hardware.HardwareBuffer
+import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Matrix4
@@ -29,6 +30,8 @@ import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TestTimeSource
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -36,6 +39,21 @@ import org.junit.runner.RunWith
 class CameraStateTest {
 
     private val timeSource = TestTimeSource()
+    private var hardwareBuffer: HardwareBuffer? = null
+
+    @Before
+    fun setUp() {
+        if (Build.VERSION.SDK_INT >= 27) {
+            hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1)
+        }
+    }
+
+    @After
+    fun tearDown() {
+        if (Build.VERSION.SDK_INT >= 27) {
+            hardwareBuffer?.close()
+        }
+    }
 
     @Test
     fun equals_sameObject_returnsTrue() {
@@ -87,7 +105,6 @@ class CameraStateTest {
                             16f,
                         )
                     ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
                 transformCoordinates2D = { inputVertices: FloatBuffer ->
                     val outputVertices =
                         ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
@@ -151,7 +168,6 @@ class CameraStateTest {
                             16f,
                         )
                     ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
                 transformCoordinates2D = { inputVertices: FloatBuffer ->
                     val outputVertices =
                         ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
@@ -226,7 +242,6 @@ class CameraStateTest {
                             16f,
                         )
                     ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
                 transformCoordinates2D = { inputVertices: FloatBuffer ->
                     val outputVertices =
                         ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
@@ -304,7 +319,6 @@ class CameraStateTest {
                             16f,
                         )
                     ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
                 transformCoordinates2D = { inputVertices: FloatBuffer ->
                     val outputVertices =
                         ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
@@ -369,7 +383,6 @@ class CameraStateTest {
                             16f,
                         )
                     ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
                 transformCoordinates2D = { inputVertices: FloatBuffer ->
                     val outputVertices =
                         ByteBuffer.allocateDirect(inputVertices.capacity() * 4)
@@ -444,7 +457,6 @@ class CameraStateTest {
                             16f,
                         )
                     ),
-                hardwareBuffer = HardwareBuffer.create(1, 1, HardwareBuffer.RGBA_8888, 1, 1),
                 transformCoordinates2D = { inputVertices: FloatBuffer ->
                     val outputVertices =
                         ByteBuffer.allocateDirect(inputVertices.capacity() * 4)

@@ -90,13 +90,13 @@ import kotlinx.coroutines.launch
  * This version of [ScreenScaffold] has a special slot for a button at the bottom, that grows and
  * shrinks to take the available space after the scrollable content.
  *
+ * When using ScreenScaffold with [EdgeButton] and [ScalingLazyColumn], you should pass
+ * autoCentering = null for the [ScalingLazyColumn] in order to achieve the correct spacing above
+ * the [EdgeButton].
+ *
  * Example of using AppScaffold and ScreenScaffold with ScalingLazyColumn:
  *
  * @sample androidx.wear.compose.material3.samples.ScaffoldWithSLCEdgeButtonSample
- *
- * Example of using AppScaffold and ScreenScaffold with TransformingLazyColumn:
- *
- * @sample androidx.wear.compose.material3.samples.ScaffoldWithTLCEdgeButtonSample
  * @param scrollState The scroll state for [ScalingLazyColumn], used to drive screen transitions
  *   such as [TimeText] scroll away and showing/hiding [ScrollIndicator].
  * @param edgeButton Slot for an [EdgeButton] that takes the available space below a scrolling list.
@@ -130,9 +130,7 @@ public fun ScreenScaffold(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = ScreenScaffoldDefaults.contentPadding,
     timeText: (@Composable () -> Unit)? = null,
-    scrollIndicator: (@Composable BoxScope.() -> Unit)? = {
-        ScrollIndicator(scrollState, modifier = Modifier.align(Alignment.CenterEnd))
-    },
+    scrollIndicator: (@Composable BoxScope.() -> Unit)? = { ScrollIndicator(scrollState) },
     edgeButtonSpacing: Dp = ScreenScaffoldDefaults.EdgeButtonSpacing,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: @Composable BoxScope.(PaddingValues) -> Unit,
@@ -191,9 +189,7 @@ public fun ScreenScaffold(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = ScreenScaffoldDefaults.contentPadding,
     timeText: (@Composable () -> Unit)? = null,
-    scrollIndicator: (@Composable BoxScope.() -> Unit)? = {
-        ScrollIndicator(scrollState, modifier = Modifier.align(Alignment.CenterEnd))
-    },
+    scrollIndicator: (@Composable BoxScope.() -> Unit)? = { ScrollIndicator(scrollState) },
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: @Composable BoxScope.(PaddingValues) -> Unit,
 ): Unit =
@@ -222,10 +218,6 @@ public fun ScreenScaffold(
  *
  * This version of [ScreenScaffold] has a special slot for a button at the bottom, that grows and
  * shrinks to take the available space after the scrollable content.
- *
- * Example of using AppScaffold and ScreenScaffold with ScalingLazyColumn:
- *
- * @sample androidx.wear.compose.material3.samples.ScaffoldWithSLCEdgeButtonSample
  *
  * Example of using AppScaffold and ScreenScaffold with TransformingLazyColumn:
  *
@@ -267,9 +259,7 @@ public fun ScreenScaffold(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = ScreenScaffoldDefaults.contentPadding,
     timeText: (@Composable () -> Unit)? = null,
-    scrollIndicator: (@Composable BoxScope.() -> Unit)? = {
-        ScrollIndicator(scrollState, modifier = Modifier.align(Alignment.CenterEnd))
-    },
+    scrollIndicator: (@Composable BoxScope.() -> Unit)? = { ScrollIndicator(scrollState) },
     edgeButtonSpacing: Dp = ScreenScaffoldDefaults.EdgeButtonSpacing,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: @Composable BoxScope.(PaddingValues) -> Unit,
@@ -302,10 +292,6 @@ public fun ScreenScaffold(
  * Example of using AppScaffold and ScreenScaffold:
  *
  * @sample androidx.wear.compose.material3.samples.ScaffoldSample
- *
- * Example of using ScreenScaffold with a [EdgeButton]:
- *
- * @sample androidx.wear.compose.material3.samples.EdgeButtonListSample
  * @param scrollState The scroll state for [TransformingLazyColumn], used to drive screen
  *   transitions such as [TimeText] scroll away and showing/hiding [ScrollIndicator].
  * @param modifier The modifier for the screen scaffold.
@@ -332,9 +318,7 @@ public fun ScreenScaffold(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = ScreenScaffoldDefaults.contentPadding,
     timeText: (@Composable () -> Unit)? = null,
-    scrollIndicator: (@Composable BoxScope.() -> Unit)? = {
-        ScrollIndicator(scrollState, modifier = Modifier.align(Alignment.CenterEnd))
-    },
+    scrollIndicator: (@Composable BoxScope.() -> Unit)? = { ScrollIndicator(scrollState) },
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: @Composable BoxScope.(PaddingValues) -> Unit,
 ): Unit =
@@ -367,10 +351,6 @@ public fun ScreenScaffold(
  * Example of using AppScaffold and ScreenScaffold with ScalingLazyColumn:
  *
  * @sample androidx.wear.compose.material3.samples.ScaffoldWithSLCEdgeButtonSample
- *
- * Example of using AppScaffold and ScreenScaffold with TransformingLazyColumn:
- *
- * @sample androidx.wear.compose.material3.samples.ScaffoldWithTLCEdgeButtonSample
  * @param scrollState The scroll state for [androidx.compose.foundation.lazy.LazyColumn], used to
  *   drive screen transitions such as [TimeText] scroll away and showing/hiding [ScrollIndicator].
  * @param edgeButton Slot for an [EdgeButton] that takes the available space below a scrolling list.
@@ -404,9 +384,7 @@ public fun ScreenScaffold(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = ScreenScaffoldDefaults.contentPadding,
     timeText: (@Composable () -> Unit)? = null,
-    scrollIndicator: (@Composable BoxScope.() -> Unit)? = {
-        ScrollIndicator(scrollState, modifier = Modifier.align(Alignment.CenterEnd))
-    },
+    scrollIndicator: (@Composable BoxScope.() -> Unit)? = { ScrollIndicator(scrollState) },
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     edgeButtonSpacing: Dp = ScreenScaffoldDefaults.EdgeButtonSpacing,
     content: @Composable BoxScope.(PaddingValues) -> Unit,
@@ -465,9 +443,7 @@ public fun ScreenScaffold(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = ScreenScaffoldDefaults.contentPadding,
     timeText: (@Composable () -> Unit)? = null,
-    scrollIndicator: (@Composable BoxScope.() -> Unit)? = {
-        ScrollIndicator(scrollState, modifier = Modifier.align(Alignment.CenterEnd))
-    },
+    scrollIndicator: (@Composable BoxScope.() -> Unit)? = { ScrollIndicator(scrollState) },
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: @Composable BoxScope.(PaddingValues) -> Unit,
 ): Unit =
@@ -525,9 +501,7 @@ public fun ScreenScaffold(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = ScreenScaffoldDefaults.contentPadding,
     timeText: (@Composable () -> Unit)? = null,
-    scrollIndicator: (@Composable BoxScope.() -> Unit)? = {
-        ScrollIndicator(scrollState, modifier = Modifier.align(Alignment.CenterEnd))
-    },
+    scrollIndicator: (@Composable BoxScope.() -> Unit)? = { ScrollIndicator(scrollState) },
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     content: @Composable BoxScope.(PaddingValues) -> Unit,
 ): Unit =
@@ -559,13 +533,6 @@ public fun ScreenScaffold(
  * shrinks to take the available space after the scrollable content. In this overload, both
  * edgeButton and scrollInfoProvider must be specified.
  *
- * Example of using AppScaffold and ScreenScaffold with ScalingLazyColumn:
- *
- * @sample androidx.wear.compose.material3.samples.ScaffoldWithSLCEdgeButtonSample
- *
- * Example of using AppScaffold and ScreenScaffold with TransformingLazyColumn:
- *
- * @sample androidx.wear.compose.material3.samples.ScaffoldWithTLCEdgeButtonSample
  * @param scrollInfoProvider Provider for scroll information used to scroll away screen elements
  *   such as [TimeText] and coordinate showing/hiding the [ScrollIndicator], this needs to be a
  *   [ScrollInfoProvider].
@@ -804,12 +771,14 @@ public fun ScreenScaffold(
     WrapWithOverscrollFactoryIfRequired(overscrollEffect) {
         Box(modifier.fillMaxSize()) {
             Box(modifier = Modifier.overscroll(overscrollEffect)) { content(contentPadding) }
+
             scrollInfoProvider?.let {
                 AnimatedIndicator(
                     isVisible = {
                         scaffoldState.screenContent.screenStage.value != ScreenStage.Idle &&
                             scrollInfoProvider.isScrollable
                     },
+                    modifier = Modifier.align(Alignment.CenterEnd),
                     content = scrollIndicator,
                 )
             } ?: scrollIndicator?.let { it() }

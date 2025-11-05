@@ -20,7 +20,6 @@ import android.media.CamcorderProfile.QUALITY_2160P
 import android.media.CamcorderProfile.QUALITY_720P
 import android.media.CamcorderProfile.QUALITY_HIGH
 import android.media.CamcorderProfile.QUALITY_LOW
-import android.os.Build
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.HLG_10_BIT
 import androidx.camera.core.DynamicRange.SDR
@@ -43,7 +42,7 @@ private const val CAMERA_ID_0 = "0"
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Suppress("DEPRECATION")
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class QualitySelectorTest {
 
     private val cameraInfo0 =

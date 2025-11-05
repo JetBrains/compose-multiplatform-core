@@ -346,7 +346,15 @@ public interface CompositionLocalAccessorScope {
  */
 @Stable
 public class CompositionLocalContext
-internal constructor(internal val compositionLocals: PersistentCompositionLocalMap)
+internal constructor(internal val compositionLocals: PersistentCompositionLocalMap) {
+    override fun equals(other: Any?): Boolean {
+        return other is CompositionLocalContext && other.compositionLocals == this.compositionLocals
+    }
+
+    override fun hashCode(): Int {
+        return compositionLocals.hashCode()
+    }
+}
 
 /**
  * [CompositionLocalProvider] binds values to [ProvidableCompositionLocal] keys. Reading the
@@ -411,4 +419,50 @@ public fun CompositionLocalProvider(
         *context.compositionLocals.map { it.value.toProvided(it.key) }.toTypedArray(),
         content = content,
     )
+}
+
+/**
+ * [withCompositionLocal] binds value to [ProvidableCompositionLocal] key and returns the result
+ * produced by the [content] lambda. Use with non-unit returning [content] lambdas or else use
+ * [CompositionLocalProvider]. Reading the [CompositionLocal] using [CompositionLocal.current] will
+ * return the value provided in [CompositionLocalProvider]'s [value] parameter for all composable
+ * functions called directly or indirectly in the [content] lambda.
+ *
+ * @see CompositionLocalProvider
+ * @see CompositionLocal
+ * @see compositionLocalOf
+ * @see staticCompositionLocalOf
+ */
+@Suppress("BanInlineOptIn") // b/430604046 - These APIs are stable so are ok to inline
+@OptIn(InternalComposeApi::class)
+@Composable
+public inline fun <T> withCompositionLocal(
+    value: ProvidedValue<*>,
+    content: @Composable () -> T,
+): T {
+    currentComposer.startProvider(value)
+    return content().also { currentComposer.endProvider() }
+}
+
+/**
+ * [withCompositionLocals] binds values to [ProvidableCompositionLocal] key and returns the result
+ * produced by the [content] lambda. Use with non-unit returning [content] lambdas or else use
+ * [CompositionLocalProvider]. Reading the [CompositionLocal] using [CompositionLocal.current] will
+ * return the values provided in [CompositionLocalProvider]'s [values] parameter for all composable
+ * functions called directly or indirectly in the [content] lambda.
+ *
+ * @see CompositionLocalProvider
+ * @see CompositionLocal
+ * @see compositionLocalOf
+ * @see staticCompositionLocalOf
+ */
+@Suppress("BanInlineOptIn") // b/430604046 - These APIs are stable so are ok to inline
+@OptIn(InternalComposeApi::class)
+@Composable
+public inline fun <T> withCompositionLocals(
+    vararg values: ProvidedValue<*>,
+    content: @Composable () -> T,
+): T {
+    currentComposer.startProviders(values)
+    return content().also { currentComposer.endProvider() }
 }

@@ -17,6 +17,7 @@ package androidx.compose.remote.core.operations.layout.animation;
 
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -33,6 +34,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 /** Basic component animation spec */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AnimationSpec extends Operation implements ModifierOperation {
     public static final AnimationSpec DEFAULT = new AnimationSpec();
     public static final AnimationSpec DISABLED = new AnimationSpec(0);
@@ -162,15 +164,14 @@ public class AnimationSpec extends Operation implements ModifierOperation {
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
-        apply(
-                buffer,
+        apply(buffer,
                 mAnimationId,
                 mMotionDuration,
                 mMotionEasingType,
                 mVisibilityDuration,
                 mVisibilityEasingType,
-                mEnterAnimation,
-                mExitAnimation);
+                mEnterAnimation.ordinal(),
+                mExitAnimation.ordinal());
     }
 
     @Override
@@ -262,16 +263,16 @@ public class AnimationSpec extends Operation implements ModifierOperation {
             int motionEasingType,
             float visibilityDuration,
             int visibilityEasingType,
-            @NonNull ANIMATION enterAnimation,
-            @NonNull ANIMATION exitAnimation) {
+            int enterAnimation,
+            int exitAnimation) {
         buffer.start(Operations.ANIMATION_SPEC);
         buffer.writeInt(animationId);
         buffer.writeFloat(motionDuration);
         buffer.writeInt(motionEasingType);
         buffer.writeFloat(visibilityDuration);
         buffer.writeInt(visibilityEasingType);
-        buffer.writeInt(animationToInt(enterAnimation));
-        buffer.writeInt(animationToInt(exitAnimation));
+        buffer.writeInt(enterAnimation);
+        buffer.writeInt(exitAnimation);
     }
 
     /**

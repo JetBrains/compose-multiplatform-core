@@ -133,11 +133,3 @@ class PdfViewZoomStateTest {
 private const val PDF_VIEW_ID = 123456789
 private const val PAGE_WIDTH = 500
 private const val PAGE_HEIGHT = 800
-
-/** The height of the viewport, minus padding */
-val PdfView.viewportHeight: Int
-    get() = bottom - top - paddingBottom - paddingTop
-
-/** The width of the viewport, minus padding */
-val PdfView.viewportWidth: Int
-    get() = right - left - paddingRight - paddingLeft

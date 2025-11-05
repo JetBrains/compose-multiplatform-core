@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations.layout;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.PaintContext;
@@ -30,20 +31,21 @@ import org.jspecify.annotations.NonNull;
 import java.util.ArrayList;
 import java.util.Vector;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class ListActionsOperation extends PaintOperation
         implements Container, ModifierOperation, DecoratorComponent {
 
-    String mOperationName;
+    @NonNull String mOperationName;
     protected float mWidth = 0;
     protected float mHeight = 0;
 
     private final float[] mLocationInWindow = new float[2];
 
-    public ListActionsOperation(String operationName) {
+    public ListActionsOperation(@NonNull String operationName) {
         mOperationName = operationName;
     }
 
-    public ArrayList<Operation> mList = new ArrayList<>();
+    public @NonNull ArrayList<Operation> mList = new ArrayList<>();
 
     @NonNull
     @Override
@@ -108,9 +110,9 @@ public abstract class ListActionsOperation extends PaintOperation
      * @return true if we applied the actions, false otherwise
      */
     public boolean applyActions(
-            RemoteContext context,
-            CoreDocument document,
-            Component component,
+            @NonNull RemoteContext context,
+            @NonNull CoreDocument document,
+            @NonNull Component component,
             float x,
             float y,
             boolean force) {

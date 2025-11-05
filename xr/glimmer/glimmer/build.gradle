@@ -27,11 +27,10 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
     api(project(":compose:runtime:runtime"))
     api(project(":compose:ui:ui"))
@@ -54,11 +53,7 @@ dependencies {
 
 android {
     namespace = "androidx.xr.glimmer"
-
     compileSdk = 35
-    defaultConfig {
-        minSdk = 35
-    }
 }
 
 androidx {

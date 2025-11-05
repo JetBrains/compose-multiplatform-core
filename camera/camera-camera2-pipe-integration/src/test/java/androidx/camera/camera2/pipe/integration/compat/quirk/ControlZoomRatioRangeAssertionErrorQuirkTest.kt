@@ -26,7 +26,7 @@ import org.robolectric.shadows.ShadowBuild
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class ControlZoomRatioRangeAssertionErrorQuirkTest(
     private val brand: String,
     private val model: String,

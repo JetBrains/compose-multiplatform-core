@@ -27,7 +27,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -36,22 +36,20 @@ dependencies {
 
     // Classes and types that are only needed at runtime
     implementation(libs.atomicFu)
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesTest)
     implementation(project(":camera:camera-camera2-pipe"))
+    implementation(project(":camera:featurecombinationquery:featurecombinationquery"))
 
     testImplementation(libs.testCore)
     testImplementation(libs.testRunner)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.kotlinCoroutinesTest)
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:sandbox:4.14")
     testImplementation(libs.kotlinCoroutinesCore)
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     lint {
         enable.add("CameraXQuirksClassDetector")
@@ -69,7 +67,6 @@ tasks.withType(KotlinCompile).configureEach {
 androidx {
     name = "Camera2 Pipe Testing"
     type = SoftwareType.PUBLISHED_LIBRARY
-    mavenVersion = LibraryVersions.CAMERA_PIPE
     inceptionYear = "2020"
     description = "Testing components for the Camera2 Pipe Library, a library providing a " +
             "consistent and reliable camera foundation that enables great camera driven " +

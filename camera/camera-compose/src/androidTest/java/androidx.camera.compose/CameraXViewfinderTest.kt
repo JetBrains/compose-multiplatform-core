@@ -52,6 +52,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.concurrent.futures.await
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
@@ -69,6 +70,7 @@ import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -88,7 +90,7 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
 
-    @get:Rule val composeTest = createComposeRule()
+    @get:Rule val composeTest = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun viewfinderIsDisplayed_withValidSurfaceRequest() = runViewfinderTest {
@@ -248,6 +250,7 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
         assertThat(newSurfaceRequest).isNotNull()
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/441562610
     @Test
     fun movableContentOf_recoversAfterMove() = runViewfinderTest {
         val moveViewfinderContent = mutableStateOf(false)

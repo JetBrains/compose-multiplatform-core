@@ -52,11 +52,17 @@ class SleepSessionRecord(
         if (stages.isNotEmpty()) {
             val sortedStages = stages.sortedWith { a, b -> a.startTime.compareTo(b.startTime) }
             for (i in 0 until sortedStages.lastIndex) {
-                require(!sortedStages[i].endTime.isAfter(sortedStages[i + 1].startTime))
+                require(!sortedStages[i].endTime.isAfter(sortedStages[i + 1].startTime)) {
+                    "Sleep stages must not overlap."
+                }
             }
             // check all stages are within parent session duration
-            require(!sortedStages.first().startTime.isBefore(startTime))
-            require(!sortedStages.last().endTime.isAfter(endTime))
+            require(!sortedStages.first().startTime.isBefore(startTime)) {
+                "The first sleep stage must start within parent session duration."
+            }
+            require(!sortedStages.last().endTime.isAfter(endTime)) {
+                "The last sleep stage must end within parent session duration."
+            }
         }
     }
 

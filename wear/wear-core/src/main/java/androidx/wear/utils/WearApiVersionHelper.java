@@ -232,7 +232,7 @@ public final class WearApiVersionHelper {
                     mPlatformApiLevel = 35; // TODO: Build.VERSION_CODES.VANILLA_ICE_CREAM;
                     break;
                 case BAKLAVA:
-                    mPlatformApiLevel = 36; // TODO: need new fullsdk Build.VERSION_CODES.BAKLAVA;
+                    mPlatformApiLevel = 36; // TODO: Build.VERSION_CODES.BAKLAVA;
                     break;
             }
 
@@ -263,6 +263,8 @@ public final class WearApiVersionHelper {
      *                          <li>{@link #WEAR_TIRAMISU_3}
      *                          <li>{@link #WEAR_TIRAMISU_4}
      *                          <li>{@link #WEAR_UDC_1}
+     *                          <li>{@link #WEAR_VIC_1}
+     *                          <li>{@link #WEAR_BAKLAVA_0}
      *                          <li>etc
      *                        </ul>.
      *                        {@code IllegalArgumentException} will result for any other value.
@@ -271,36 +273,14 @@ public final class WearApiVersionHelper {
     public static boolean isApiVersionAtLeast(@WearApiVersionCode @NonNull String requiredVersion) {
         if (sTestApiVersion != null) {
             return sTestApiVersion.compareTo(new WearApiVersionCompat(requiredVersion)) >= 0;
-        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        } else if (Build.VERSION.SDK_INT < 36) { // TODO update to BAKLAVA when fullsdk updates
             return sCurrentApiVersion.compareTo(new WearApiVersionCompat(requiredVersion)) >= 0;
         } else {
-            final com.google.wear.WearApiVersion apiVersion;
-            switch(requiredVersion) {
-                case WEAR_TIRAMISU_1:
-                    apiVersion = com.google.wear.Sdk.VERSION_CODES.WEAR_TIRAMISU_1;
-                    break;
-                case WEAR_TIRAMISU_2:
-                    apiVersion = com.google.wear.Sdk.VERSION_CODES.WEAR_TIRAMISU_2;
-                    break;
-                case WEAR_TIRAMISU_3:
-                    apiVersion = com.google.wear.Sdk.VERSION_CODES.WEAR_TIRAMISU_3;
-                    break;
-                case WEAR_TIRAMISU_4:
-                    apiVersion = com.google.wear.Sdk.VERSION_CODES.WEAR_TIRAMISU_4;
-                    break;
-                case WEAR_UDC_1:
-                    apiVersion = com.google.wear.Sdk.VERSION_CODES.WEAR_UDC_1;
-                    break;
-                case WEAR_VIC_1:
-                    apiVersion = com.google.wear.Sdk.VERSION_CODES.WEAR_VIC_1;
-                    break;
-                case WEAR_BAKLAVA_0:
-                    apiVersion = com.google.wear.Sdk.VERSION_CODES.WEAR_BAKLAVA_0;
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unrecognized version " + requiredVersion);
-            }
-            return com.google.wear.Sdk.isApiVersionAtLeast(apiVersion);
+            // As of Wear SDK API 36.0 we add a safe hashtable lookup for new API version constant
+            // declarations (type safe as we key simply on string names).
+            final com.google.wear.WearApiVersion apiVersion =
+                    com.google.wear.Sdk.VERSION_CODES.lookup(requiredVersion);
+            return apiVersion != null && com.google.wear.Sdk.isApiVersionAtLeast(apiVersion);
         }
     }
 

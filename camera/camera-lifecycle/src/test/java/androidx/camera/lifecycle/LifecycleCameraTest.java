@@ -26,7 +26,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
-import android.os.Build;
 import android.util.Rational;
 import android.view.Surface;
 
@@ -76,7 +75,7 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@org.robolectric.annotation.Config(sdk = {org.robolectric.annotation.Config.ALL_SDKS})
 public class LifecycleCameraTest {
     private LifecycleCamera mLifecycleCamera;
     private FakeLifecycleOwner mLifecycleOwner;
@@ -311,6 +310,8 @@ public class LifecycleCameraTest {
         mLifecycleOwner.start();
         ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setSupportedDynamicRanges(
                 Collections.singleton(DynamicRange.HLG_10_BIT));
+        ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setIsPreviewStabilizationSupported(
+                true);
         Preview preview = new Preview.Builder().build();
 
         SessionConfig sessionConfig =
@@ -339,6 +340,8 @@ public class LifecycleCameraTest {
         mLifecycleOwner.start();
         ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setSupportedDynamicRanges(
                 Collections.singleton(DynamicRange.HLG_10_BIT));
+        ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setIsPreviewStabilizationSupported(
+                true);
         Preview preview = new Preview.Builder().build();
 
         SessionConfig sessionConfig =
@@ -370,6 +373,8 @@ public class LifecycleCameraTest {
         mLifecycleOwner.start();
         ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setSupportedDynamicRanges(
                 Collections.singleton(DynamicRange.HLG_10_BIT));
+        ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setIsPreviewStabilizationSupported(
+                true);
         Preview preview = new Preview.Builder().build();
 
         SessionConfig sessionConfig =

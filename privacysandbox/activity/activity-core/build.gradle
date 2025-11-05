@@ -26,12 +26,11 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
     id("androidx.stableaidl")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
 }
 

@@ -111,6 +111,12 @@ public fun OpenOnPhoneDialog(
     durationMillis: Long = OpenOnPhoneDialogDefaults.DurationMillis,
     content: @Composable () -> Unit = { OpenOnPhoneDialogDefaults.Icon() },
 ) {
+    if (visible) {
+        // This will activate the screen-on flag for the duration of this screen, so that the
+        // animations run to completion and then the dialog self-dismisses.
+        KeepScreenOn()
+    }
+
     val a11yFullDurationMillis =
         LocalAccessibilityManager.current?.calculateRecommendedTimeoutMillis(
             originalTimeoutMillis = durationMillis,
@@ -488,4 +494,4 @@ private const val WidthPaddingFraction = 0.176f
 private const val SizeFraction = (1 - WidthPaddingFraction * 2)
 private val progressIndicatorStrokeWidth = 5.dp
 private val progressIndicatorPadding = 5.dp
-private const val OpenOnPhoneMaxSweepAngle = 130f
+private const val OpenOnPhoneMaxSweepAngle = 200f

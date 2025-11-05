@@ -1,57 +1,21 @@
 // Baseline format: 1.0
-AddedAbstractMethod: androidx.compose.material.ButtonColors#backgroundColor(boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.ButtonColors.backgroundColor(boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.ButtonColors#contentColor(boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.ButtonColors.contentColor(boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.ButtonElevation#elevation(boolean, androidx.compose.foundation.interaction.InteractionSource, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.ButtonElevation.elevation(boolean,androidx.compose.foundation.interaction.InteractionSource,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.CheckboxColors#borderColor(boolean, androidx.compose.ui.state.ToggleableState, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.CheckboxColors.borderColor(boolean,androidx.compose.ui.state.ToggleableState,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.CheckboxColors#boxColor(boolean, androidx.compose.ui.state.ToggleableState, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.CheckboxColors.boxColor(boolean,androidx.compose.ui.state.ToggleableState,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.CheckboxColors#checkmarkColor(androidx.compose.ui.state.ToggleableState, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.CheckboxColors.checkmarkColor(androidx.compose.ui.state.ToggleableState,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.ElevationOverlay#apply-7g2Lkgo(long, float, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.ElevationOverlay.apply-7g2Lkgo(long,float,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.FloatingActionButtonElevation#elevation(androidx.compose.foundation.interaction.InteractionSource, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.FloatingActionButtonElevation.elevation(androidx.compose.foundation.interaction.InteractionSource,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.RadioButtonColors#radioColor(boolean, boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.RadioButtonColors.radioColor(boolean,boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.SliderColors#thumbColor(boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.SliderColors.thumbColor(boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.SliderColors#tickColor(boolean, boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.SliderColors.tickColor(boolean,boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.SliderColors#trackColor(boolean, boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.SliderColors.trackColor(boolean,boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.SwitchColors#thumbColor(boolean, boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.SwitchColors.thumbColor(boolean,boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.SwitchColors#trackColor(boolean, boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.SwitchColors.trackColor(boolean,boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.TextFieldColors#backgroundColor(boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.TextFieldColors.backgroundColor(boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.TextFieldColors#cursorColor(boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.TextFieldColors.cursorColor(boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.TextFieldColors#indicatorColor(boolean, boolean, androidx.compose.foundation.interaction.InteractionSource, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.TextFieldColors.indicatorColor(boolean,boolean,androidx.compose.foundation.interaction.InteractionSource,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.TextFieldColors#labelColor(boolean, boolean, androidx.compose.foundation.interaction.InteractionSource, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.TextFieldColors.labelColor(boolean,boolean,androidx.compose.foundation.interaction.InteractionSource,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.TextFieldColors#leadingIconColor(boolean, boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.TextFieldColors.leadingIconColor(boolean,boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.TextFieldColors#placeholderColor(boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.TextFieldColors.placeholderColor(boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.TextFieldColors#textColor(boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.TextFieldColors.textColor(boolean,androidx.compose.runtime.Composer,int)
-AddedAbstractMethod: androidx.compose.material.TextFieldColors#trailingIconColor(boolean, boolean, androidx.compose.runtime.Composer, int):
-    Binary breaking change: Added method androidx.compose.material.TextFieldColors.trailingIconColor(boolean,boolean,androidx.compose.runtime.Composer,int)
-
-
-BecameUnchecked: androidx.compose.material.BottomDrawerState#getProgress():
-    Removed method androidx.compose.material.BottomDrawerState.getProgress() from compatibility checked API surface
-BecameUnchecked: androidx.compose.material.BottomSheetState#getProgress():
-    Removed method androidx.compose.material.BottomSheetState.getProgress() from compatibility checked API surface
-BecameUnchecked: androidx.compose.material.ModalBottomSheetState#getProgress():
-    Removed method androidx.compose.material.ModalBottomSheetState.getProgress() from compatibility checked API surface
-
-
-RemovedClass: androidx.compose.material.ExposedDropdownMenuKt:
-    Binary breaking change: Removed class androidx.compose.material.ExposedDropdownMenuKt
+BecameUnchecked: androidx.compose.material.ChipKt:
+    Removed class androidx.compose.material.ChipKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.ExposedDropdownMenu_androidKt:
+    Removed class androidx.compose.material.ExposedDropdownMenu_androidKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.ListItemKt:
+    Removed class androidx.compose.material.ListItemKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.SwipeToDismissKt:
+    Removed class androidx.compose.material.SwipeToDismissKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.SwipeableKt:
+    Removed class androidx.compose.material.SwipeableKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.pullrefresh:
+    Removed package androidx.compose.material.pullrefresh from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.pullrefresh.PullRefreshIndicatorKt:
+    Removed class androidx.compose.material.pullrefresh.PullRefreshIndicatorKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.pullrefresh.PullRefreshIndicatorTransformKt:
+    Removed class androidx.compose.material.pullrefresh.PullRefreshIndicatorTransformKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.pullrefresh.PullRefreshKt:
+    Removed class androidx.compose.material.pullrefresh.PullRefreshKt from compatibility checked API surface
+BecameUnchecked: androidx.compose.material.pullrefresh.PullRefreshStateKt:
+    Removed class androidx.compose.material.pullrefresh.PullRefreshStateKt from compatibility checked API surface

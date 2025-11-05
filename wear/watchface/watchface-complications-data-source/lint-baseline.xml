@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="false" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
+<issues format="6" by="lint 9.0.0-alpha08" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-alpha08)" variant="all" version="9.0.0-alpha08">
 
     <issue
         id="NewApi"
@@ -69,6 +69,15 @@
         message="`broadcastReceiver` is missing `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag for unprotected broadcasts registered for android.support.wearable.complications.ACTION_REQUEST_UPDATE, android.support.wearable.complications.ACTION_REQUEST_UPDATE_ALL"
         errorLine1="        context.registerReceiver("
         errorLine2="        ^">
+        <location
+            file="src/test/java/androidx/wear/watchface/complications/datasource/ComplicationDataSourceUpdateRequesterTest.kt"/>
+    </issue>
+
+    <issue
+        id="UseSdkSuppress"
+        message="Don&apos;t use @RequiresApi from tests; use @SdkSuppress on `requestUpdate_sendsBroadcast` instead"
+        errorLine1="    @RequiresApi(Build.VERSION_CODES.TIRAMISU)"
+        errorLine2="    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/test/java/androidx/wear/watchface/complications/datasource/ComplicationDataSourceUpdateRequesterTest.kt"/>
     </issue>

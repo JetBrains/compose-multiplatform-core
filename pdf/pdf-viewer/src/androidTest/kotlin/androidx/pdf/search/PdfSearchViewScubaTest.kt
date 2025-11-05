@@ -19,7 +19,6 @@ package androidx.pdf.search
 import android.content.Context
 import android.content.Intent
 import android.view.ViewGroup.LayoutParams
-import android.widget.FrameLayout
 import androidx.pdf.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.pdf.SEARCH_VIEW_IN_LTR_MODE
 import androidx.pdf.SEARCH_VIEW_IN_RTL_MODE
@@ -32,6 +31,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import org.junit.After
 import org.junit.Rule
@@ -40,6 +40,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class PdfSearchViewScubaTest {
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_DIRECTORY)
@@ -79,12 +80,12 @@ class PdfSearchViewScubaTest {
 
     private fun setupPdfSearchView() {
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container = FrameLayout(activity)
-            container.addView(
-                PdfSearchView(activity).apply { id = PDF_SEARCH_VIEW_ID },
-                LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT),
-            )
-            activity.setContentView(container)
+            with(activity) {
+                container.addView(
+                    PdfSearchView(activity).apply { id = PDF_SEARCH_VIEW_ID },
+                    LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT),
+                )
+            }
         }
     }
 

@@ -50,7 +50,7 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class PreviewPixelHDRnetQuirkTest(
     private val manufacturer: String,
     private val device: String,

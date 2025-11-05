@@ -29,12 +29,11 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     api(project(":sqlite:sqlite"))
-    api(libs.kotlinStdlib)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)

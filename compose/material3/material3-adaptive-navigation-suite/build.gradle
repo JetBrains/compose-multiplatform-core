@@ -43,10 +43,9 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
-                api("androidx.compose.material3:material3:1.4.0-alpha15")
-                api(project(":compose:material3:adaptive:adaptive"))
-                implementation("androidx.window:window-core:1.4.0-rc01")
+                api("androidx.compose.material3:material3:1.4.0-beta01")
+                api("androidx.compose.material3.adaptive:adaptive:1.2.0-alpha11")
+                implementation("androidx.window:window-core:1.4.0")
             }
         }
 
@@ -75,7 +74,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:test-utils"))
@@ -86,7 +85,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)

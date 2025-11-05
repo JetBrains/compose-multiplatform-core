@@ -24,6 +24,8 @@ import android.view.View
  * When [SessionObserver.onSessionClosed] is called for the associated session observers, the
  * resources of the [SessionObserverContext] will be freed.
  */
+@Deprecated("This library is no longer supported.")
+@Suppress("DEPRECATION")
 public class SessionObserverContext(
     /**
      * Returns the view that is presenting content for the associated [SandboxedUiAdapter.Session].

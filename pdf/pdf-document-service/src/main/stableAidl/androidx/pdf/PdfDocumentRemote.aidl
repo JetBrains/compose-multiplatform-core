@@ -31,6 +31,12 @@ import android.os.ParcelFileDescriptor;
 import androidx.pdf.models.Dimensions;
 import androidx.pdf.annotation.models.PdfAnnotation;
 import androidx.pdf.annotation.models.AnnotationResult;
+import androidx.pdf.annotation.models.PdfAnnotationData;
+import androidx.pdf.annotation.models.EditId;
+import androidx.pdf.annotation.models.PdfEdit;
+import androidx.pdf.annotation.models.AddEditResult;
+import androidx.pdf.annotation.models.ModifyEditResult;
+import androidx.pdf.annotation.models.PaginatedAnnotations;
 
 /** Remote interface for interacting with a PDF document */
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
@@ -220,5 +226,52 @@ interface PdfDocumentRemote {
     */
     List<PdfAnnotation> getPageAnnotations(int pageNum);
 
+    /**
+    * Applies the given list of annotations to the document.
+    *
+    * @param annotations The list of annotations to apply.
+    * @return A {@link AnnotationResult} object indicating the success or failure of the operation.
+    */
+    AnnotationResult applyEdits(in List<PdfAnnotationData> annots);
+
+    /**
+    * Adds the given list of annotations to the document.
+    *
+    * @param annotations The list of annotations to add.
+    * @return A {@link AddEditResult} object indicating the success or failure of the operation.
+    */
+    AddEditResult addEdit(in List<PdfAnnotationData> annots);
+
+    /**
+    * Updates the given list of annotations in the document.
+    *
+    * @param annotations The list of annotations to update.
+    * @return A {@link ModifyEditResult} object indicating the success or failure of the operation.
+    */
+    ModifyEditResult updateEdit(in List<PdfAnnotationData> annots);
+
+    /**
+    * Removes the given list of annotations from the document.
+    *
+    * @param editIds The list of {@link EditId} for the annotations to remove.
+    * @return A {@link ModifyEditResult} object indicating the success or failure of the operation.
+    */
+    ModifyEditResult removeEdit(in List<EditId> editIds);
+
+    /**
+    * Retrieves the annotations present on the specified page in the paginated format.
+    *
+    * @param pageNum The 0-based index of the page from which to retrieve annotations.
+    * @return Continuation token
+    */
+    PaginatedAnnotations getAllPageAnnotations(int pageNum);
+
+    /**
+    * Retrieves the annotations present on the specified page for the specific batch.
+    *
+    * @param pageNum The 0-based index of the page from which to retrieve annotations.
+    * @return Continuation token
+    */
+    PaginatedAnnotations getBatchedPageAnnotations(int pageNum, in int batchIndex);
 
 }

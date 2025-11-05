@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.semantics.ScrollableComponent;
 
@@ -25,6 +26,7 @@ import org.jspecify.annotations.NonNull;
  *
  * <p>PlayerViews should implement to provide access to the RemoteContext.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface RemoteContextActions {
 
     /**
@@ -59,7 +61,9 @@ public interface RemoteContextActions {
     /**
      * Perform a click on the given component
      *
+     * @param document the document to perform the click on
      * @param component the component to click on
+     * @param metadata the metadata of the click event
      * @return whether the event was handled
      */
     boolean performClick(

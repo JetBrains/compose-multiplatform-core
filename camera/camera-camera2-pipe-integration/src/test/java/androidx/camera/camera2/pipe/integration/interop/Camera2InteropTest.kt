@@ -20,10 +20,8 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import android.util.Range
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
-import androidx.camera.camera2.pipe.integration.impl.CAPTURE_REQUEST_ID_STEM
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.testing.impl.fakes.FakeConfig
 import com.google.common.truth.Truth.assertThat
@@ -66,7 +64,7 @@ private val DEVICE_STATE_CALLBACK =
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCamera2Interop::class)
 class Camera2InteropTest {
     @Test
@@ -200,7 +198,7 @@ class Camera2InteropTest {
         val config = Camera2ImplConfig(builder.build())
 
         // Assert
-        config.findOptions(CAPTURE_REQUEST_ID_STEM) { option ->
+        config.findOptions(Camera2ImplConfig.CAPTURE_REQUEST_ID_STEM) { option ->
             // The token should be the capture request key
             assertThat(option.getToken())
                 .isAnyOf(
@@ -224,7 +222,7 @@ class Camera2InteropTest {
         val config: androidx.camera.core.impl.Config = builder.build()
 
         // Assert
-        config.findOptions(CAPTURE_REQUEST_ID_STEM) {
+        config.findOptions(Camera2ImplConfig.CAPTURE_REQUEST_ID_STEM) {
             option: androidx.camera.core.impl.Config.Option<*>? ->
             assertThat(config.getOptionPriority(option!!))
                 .isEqualTo(androidx.camera.core.impl.Config.OptionPriority.ALWAYS_OVERRIDE)

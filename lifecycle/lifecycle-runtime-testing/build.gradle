@@ -49,7 +49,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(project(":lifecycle:lifecycle-runtime"))
             }
         }
@@ -74,11 +73,11 @@ androidXMultiplatform {
             dependsOn(jvmMain)
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(libs.truth)
@@ -114,36 +113,6 @@ androidXMultiplatform {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-            }
-        }
-
-        wasmJsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
-        }
-
-        wasmJsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-                implementation(libs.kotlinTestForWasmTests)
-            }
-        }
-
-        jsMain {
-            dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
-        }
-
-        jsTest {
-            dependsOn(webTest)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-                implementation(libs.kotlinTestJs)
             }
         }
 

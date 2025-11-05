@@ -64,7 +64,9 @@ import org.junit.Rule
 import org.junit.Test
 
 class BasicSwipeToDismissBoxTest {
-    @get:Rule val rule = createComposeRule()
+    @Suppress("ComposeTestRuleDispatcher") // b/457618558
+    @get:Rule
+    val rule = createComposeRule()
 
     @Test
     fun supports_testtag() {
@@ -368,6 +370,23 @@ class BasicSwipeToDismissBoxTest {
             horizontalScrollState = rememberScrollState(initialScrollState)
 
             BasicSwipeToDismissBox(state = state, modifier = Modifier.testTag(TEST_TAG)) {
+                NestedScrollContent(state, horizontalScrollState)
+            }
+        }
+
+        rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeRight(200f, 400f) }
+        rule.runOnIdle { assert(horizontalScrollState.value < initialScrollState) }
+    }
+
+    @Test
+    fun edgeswipe_without_swipe_box_swipe_not_crash() {
+        val initialScrollState = 200
+        lateinit var horizontalScrollState: ScrollState
+        rule.setContent {
+            val state = rememberSwipeToDismissBoxState()
+            horizontalScrollState = rememberScrollState(initialScrollState)
+
+            Box(modifier = Modifier.testTag(TEST_TAG)) {
                 NestedScrollContent(state, horizontalScrollState)
             }
         }

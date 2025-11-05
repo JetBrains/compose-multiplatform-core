@@ -24,7 +24,6 @@ import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_720P
 import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_HIGH
 import android.media.CamcorderProfile.QUALITY_HIGH_SPEED_LOW
 import android.media.CamcorderProfile.QUALITY_LOW
-import android.os.Build
 import android.util.Size
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.BIT_DEPTH_10_BIT
@@ -86,7 +85,7 @@ private val DOLBY_VISION_UNSPECIFIED = DynamicRange(ENCODING_DOLBY_VISION, BIT_D
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class RecorderVideoCapabilitiesTest(private val videoCaptureType: Int) {
 
     companion object {

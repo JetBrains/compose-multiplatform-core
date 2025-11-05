@@ -73,7 +73,6 @@ import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.SpatialEnvironment.SpatialEnvironmentPreference
 import androidx.xr.scenecore.scene
 import java.nio.file.Paths
-import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 
 class SplitEngine : ComponentActivity() {
@@ -187,7 +186,7 @@ class SplitEngine : ComponentActivity() {
                     ApiButton("Switch to FSM", modifier) {
                         session.scene.requestFullSpaceMode()
                         if (movableComponentMP.value == null) {
-                            movableComponentMP.value = MovableComponent.create(session)
+                            movableComponentMP.value = MovableComponent.createSystemMovable(session)
                             session.scene.mainPanelEntity.addComponent(movableComponentMP.value!!)
                         }
                     }
@@ -218,11 +217,10 @@ class SplitEngine : ComponentActivity() {
                     ApiButton("Load Skybox Blue", modifier) {
                         coroutineScope.launch {
                             blueSkybox.value =
-                                ExrImage.createFromZipAsync(
-                                        session,
-                                        Paths.get("skyboxes", "BlueSkybox.zip"),
-                                    )
-                                    .await()
+                                ExrImage.createFromZip(
+                                    session,
+                                    Paths.get("skyboxes", "BlueSkybox.zip"),
+                                )
                         }
                     }
                     if (blueSkybox.value != null) {
@@ -335,7 +333,7 @@ class SplitEngine : ComponentActivity() {
         val dragonEntity = remember { mutableStateOf<GltfModelEntity?>(null) }
         var isChecked by remember { mutableStateOf(false) } // State for the switch
         val dragonAnimationState = remember {
-            androidx.compose.runtime.mutableIntStateOf(GltfModelEntity.AnimationState.STOPPED)
+            androidx.compose.runtime.mutableStateOf(GltfModelEntity.AnimationState.STOPPED)
         }
         val scope = rememberCoroutineScope()
 
@@ -400,17 +398,19 @@ class SplitEngine : ComponentActivity() {
                     ) {
                         val modifier = Modifier.weight(1F)
                         ApiButton("Animate Dragon Entity", modifier) {
-                            dragonEntity.value!!.startAnimation(false, "Animation")
+                            dragonEntity.value!!.startAnimation(false, "Fast_Flying")
                         }
                         ApiButton("Loop Animate Dragon Entity", modifier) {
-                            dragonEntity.value!!.startAnimation(true, "Animation")
+                            dragonEntity.value!!.startAnimation(true, "Fast_Flying")
+                            dragonAnimationState.value =
+                                dragonEntity.value?.animationState ?: AnimationState.STOPPED
                         }
                         ApiButton("Stop Animate Dragon Entity", modifier) {
-                            if (
-                                dragonEntity.value!!.getAnimationState() == AnimationState.PLAYING
-                            ) {
+                            if (dragonEntity.value!!.animationState == AnimationState.PLAYING) {
                                 dragonEntity.value!!.stopAnimation()
                             }
+                            dragonAnimationState.value =
+                                dragonEntity.value?.animationState ?: AnimationState.STOPPED
                         }
                     }
                 }
@@ -435,7 +435,7 @@ class SplitEngine : ComponentActivity() {
 
                         val interactableComponent =
                             InteractableComponent.create(session, mainExecutor) {
-                                if (it.action == InputEvent.ACTION_DOWN) {
+                                if (it.action == InputEvent.Action.DOWN) {
                                     dragonEntity.value!!.setScale(
                                         dragonEntity.value!!.getScale() * 1.1f
                                     )
@@ -465,8 +465,7 @@ class SplitEngine : ComponentActivity() {
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val stateValue =
-                            if (dragonAnimationState.intValue == 1) "STOPPED" else "STARTED"
+                        val stateValue = dragonAnimationState.value.toString()
                         Text(
                             text = "Animation State: $stateValue",
                             modifier = Modifier.weight(1f),

@@ -26,11 +26,10 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
 
     implementation project(':biometric:biometric')
     implementation(project(":biometric:biometric-compose"))
@@ -51,7 +50,7 @@ dependencies {
 }
 
 android {
-    compileSdkVersion = 35
+    compileSdk = 35
     namespace = "androidx.biometric.integration.testappcompose"
     defaultConfig {
         applicationId = "androidx.biometric.integration.testappcompose"

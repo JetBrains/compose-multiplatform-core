@@ -22,7 +22,6 @@ import android.media.EncoderProfiles.VideoProfile.HDR_HDR10
 import android.media.EncoderProfiles.VideoProfile.HDR_HDR10PLUS
 import android.media.EncoderProfiles.VideoProfile.HDR_HLG
 import android.media.EncoderProfiles.VideoProfile.HDR_NONE
-import android.os.Build
 import androidx.camera.core.DynamicRange.DOLBY_VISION_10_BIT
 import androidx.camera.core.DynamicRange.HDR10_10_BIT
 import androidx.camera.core.DynamicRange.HDR10_PLUS_10_BIT
@@ -49,7 +48,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class DynamicRangeMatchedEncoderProfilesProviderTest {
 
     private val defaultProvider =

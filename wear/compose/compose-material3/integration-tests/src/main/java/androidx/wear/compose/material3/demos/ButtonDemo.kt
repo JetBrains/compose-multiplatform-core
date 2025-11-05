@@ -46,6 +46,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.FixedScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -207,7 +209,12 @@ fun ButtonDemo() {
                 onLongClickLabel = "Long click",
                 label = { Text("Button") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }
@@ -283,7 +290,12 @@ fun FilledTonalButtonDemo() {
                 onLongClickLabel = "Long click",
                 label = { Text("Filled Tonal Button") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }
@@ -366,7 +378,12 @@ fun FilledVariantButtonDemo() {
                 colors = ButtonDefaults.filledVariantButtonColors(),
                 label = { Text("Filled VariantButton") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }
@@ -442,7 +459,12 @@ fun OutlinedButtonDemo() {
                 onLongClickLabel = "Long click",
                 label = { Text("Outlined Button") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }
@@ -524,7 +546,12 @@ fun ChildButtonDemo() {
                 onLongClickLabel = "Long click",
                 label = { Text("Child Button") },
                 secondaryLabel = { Text("with long click") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier.fillMaxWidth().semantics {
+                        // Also override the 'click label' to say 'Double tap to press' instead of
+                        // the usual 'Double tap to activate'.
+                        onClick("press") { false }
+                    },
             )
         }
     }

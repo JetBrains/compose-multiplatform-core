@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.sdkruntime.core
 
@@ -20,6 +21,7 @@ package androidx.privacysandbox.sdkruntime.core
  * Information about runtime enabled SDK. Could represent SDK loaded in sandbox or locally loaded
  * SDK.
  */
+@Deprecated("This library is no longer supported.")
 public class SandboxedSdkInfo(
     /** Sdk Name. This is a value of `android:name` attribute <sdk-library> tag of SDK Manifest. */
     public val name: String,

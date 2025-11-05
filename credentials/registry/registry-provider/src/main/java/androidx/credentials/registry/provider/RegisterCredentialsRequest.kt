@@ -36,6 +36,7 @@ package androidx.credentials.registry.provider
  *   package, so this is useful when you need to define different fulfillment activities for
  *   different registries
  * @constructor
+ * @throws IllegalArgumentException if [id] or [intentAction] length is greater than 64 characters
  */
 public abstract class RegisterCredentialsRequest
 @JvmOverloads
@@ -45,4 +46,9 @@ constructor(
     public val credentials: ByteArray,
     public val matcher: ByteArray,
     public val intentAction: String = RegistryManager.ACTION_GET_CREDENTIAL,
-)
+) {
+    init {
+        require(id.length <= 64) { "`id` length must be less than 64" }
+        require(intentAction.length <= 64) { "`intentAction` length must be less than 64" }
+    }
+}

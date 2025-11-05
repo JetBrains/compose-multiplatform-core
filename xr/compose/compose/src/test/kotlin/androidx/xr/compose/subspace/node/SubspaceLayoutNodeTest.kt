@@ -19,6 +19,7 @@ package androidx.xr.compose.subspace.node
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.compose.platform.AndroidComposeSpatialElement
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -27,7 +28,6 @@ import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
-import androidx.xr.compose.testing.TestSetup
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.GroupEntity
@@ -39,6 +39,7 @@ import org.junit.runner.RunWith
 /** Tests for [SubspaceLayoutNode]. */
 @RunWith(AndroidJUnit4::class)
 class SubspaceLayoutNodeTest {
+
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
@@ -46,16 +47,14 @@ class SubspaceLayoutNodeTest {
         var parentEntity: Entity? = null
 
         composeTestRule.setContent {
-            TestSetup {
-                Subspace {
-                    val session = checkNotNull(LocalSession.current)
-                    parentEntity = GroupEntity.create(session, "ParentEntity")
-                    EntityLayout(entity = parentEntity!!) {
-                        EntityLayout(
-                            entity = GroupEntity.create(session, "ChildEntity"),
-                            modifier = SubspaceModifier.testTag("Child"),
-                        )
-                    }
+            Subspace {
+                val session = checkNotNull(LocalSession.current)
+                parentEntity = GroupEntity.create(session, "ParentEntity")
+                EntityLayout(entity = parentEntity) {
+                    EntityLayout(
+                        entity = GroupEntity.create(session, "ChildEntity"),
+                        modifier = SubspaceModifier.testTag("Child"),
+                    )
                 }
             }
         }
@@ -68,6 +67,52 @@ class SubspaceLayoutNodeTest {
                     ?.parent
             )
             .isEqualTo(parentEntity)
+    }
+
+    @Test
+    fun subspaceLayoutNode_verifyRootDepthIsZero() {
+        val rootNode = SubspaceLayoutNode()
+
+        assertThat(rootNode.depth).isEqualTo(0)
+    }
+
+    @Test
+    fun subspaceLayoutNode_verifyChildrenDepth() {
+        val owner = AndroidComposeSpatialElement()
+        val rootNode = SubspaceLayoutNode()
+        val grandParentNode = SubspaceLayoutNode()
+        val parentNode = SubspaceLayoutNode()
+        val childNode = SubspaceLayoutNode()
+
+        rootNode.attach(owner)
+        rootNode.insertAt(0, grandParentNode)
+        grandParentNode.insertAt(0, parentNode)
+        parentNode.insertAt(0, childNode)
+
+        assertThat(grandParentNode.depth).isEqualTo(1)
+        assertThat(parentNode.depth).isEqualTo(2)
+        assertThat(childNode.depth).isEqualTo(3)
+    }
+
+    @Test
+    fun subspaceLayoutNode_verifyDetachingChangesDepth() {
+        val owner = AndroidComposeSpatialElement()
+        val rootNode = SubspaceLayoutNode()
+        val parentNode = SubspaceLayoutNode()
+        val childNode = SubspaceLayoutNode()
+
+        rootNode.attach(owner)
+        rootNode.insertAt(0, parentNode)
+        parentNode.insertAt(0, childNode)
+
+        assertThat(parentNode.depth).isEqualTo(1)
+        assertThat(childNode.depth).isEqualTo(2)
+
+        rootNode.removeAt(0, 1)
+        parentNode.attach(owner)
+
+        assertThat(parentNode.depth).isEqualTo(0)
+        assertThat(childNode.depth).isEqualTo(1)
     }
 
     @Composable

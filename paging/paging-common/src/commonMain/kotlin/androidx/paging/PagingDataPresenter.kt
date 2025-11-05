@@ -138,8 +138,8 @@ public abstract class PagingDataPresenter<T : Any>(
                                     listOf(
                                         TransformablePage(originalPageOffset = 0, data = event.data)
                                     ),
-                                placeholdersBefore = 0,
-                                placeholdersAfter = 0,
+                                placeholdersBefore = event.placeholdersBefore,
+                                placeholdersAfter = event.placeholdersAfter,
                                 dispatchLoadStates =
                                     event.sourceLoadStates != null ||
                                         event.mediatorLoadStates != null,

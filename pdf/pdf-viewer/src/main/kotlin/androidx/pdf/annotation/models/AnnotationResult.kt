@@ -34,9 +34,9 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("BanParcelableUsage")
 public class AnnotationResult(
-    public val success: List<SavedEdit>,
-    public val failures: List<PdfAnnotation>,
-) : Parcelable {
+    public override val success: List<PdfAnnotationData>,
+    public override val failures: List<PdfAnnotation>,
+) : Parcelable, PdfEditResult<PdfAnnotationData, PdfAnnotation> {
 
     /** Default implementation for [Parcelable.describeContents], returning 0. */
     override fun describeContents(): Int = 0
@@ -44,11 +44,11 @@ public class AnnotationResult(
     /** Flattens this object in to a Parcel. */
     override fun writeToParcel(dest: Parcel, flags: Int) {
         dest.writeInt(success.size)
-        for (savedEdit in success) {
-            savedEdit.writeToParcel(dest, flags)
+        for (pdfAnnotationData in success) {
+            pdfAnnotationData.writeToParcel(dest, flags)
         }
         dest.writeInt(failures.size)
-        failures.forEach { dest.writeParcelable(it, flags) }
+        failures.forEach { it.writeToParcel(dest, flags) }
     }
 
     /** Companion object for creating [AnnotationResult] instances from a [Parcel]. */
@@ -64,10 +64,11 @@ public class AnnotationResult(
                  */
                 override fun createFromParcel(parcel: Parcel): AnnotationResult? {
                     val successSize = parcel.readInt()
-                    val success = mutableListOf<SavedEdit>()
+                    val success = mutableListOf<PdfAnnotationData>()
                     for (i in 0 until successSize) {
-                        SavedEdit.CREATOR.createFromParcel(parcel)?.let { savedEdit ->
-                            success.add(savedEdit)
+                        PdfAnnotationData.CREATOR.createFromParcel(parcel)?.let { pdfAnnotationData
+                            ->
+                            success.add(pdfAnnotationData)
                         }
                     }
                     val failuresSize = parcel.readInt()

@@ -18,9 +18,6 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraDevice
 import androidx.camera.camera2.pipe.CameraGraph
-import androidx.camera.camera2.pipe.GraphState.GraphStateError
-import androidx.camera.camera2.pipe.GraphState.GraphStateStopped
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.adapter.SessionConfigAdapter
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
@@ -30,6 +27,7 @@ import androidx.camera.core.imagecapture.CameraCapturePipeline
 import androidx.camera.core.impl.Config
 import dagger.Binds
 import dagger.Module
+import java.util.concurrent.CancellationException
 import javax.inject.Inject
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
@@ -46,6 +44,8 @@ public interface UseCaseCamera {
     // RequestControl of the UseCaseCamera
     public val requestControl: UseCaseCameraRequestControl
 
+    public fun start()
+
     public suspend fun getCameraCapturePipeline(
         @ImageCapture.CaptureMode captureMode: Int,
         @ImageCapture.FlashMode flashMode: Int,
@@ -53,6 +53,11 @@ public interface UseCaseCamera {
     ): CameraCapturePipeline
 
     public fun setActiveResumeMode(enabled: Boolean) {}
+
+    public fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
+    ): Job
 
     // Lifecycle
     public fun close(): Job
@@ -77,29 +82,38 @@ constructor(
     private val closed = atomic(false)
 
     init {
-        debug { "Configured $this for $useCases" }
-        useCaseGraphConfig.apply { cameraStateAdapter.onGraphUpdated(graph) }
-        threads.scope.launch {
-            useCaseGraphConfig.apply {
-                graph.graphState.collect {
-                    cameraStateAdapter.onGraphStateUpdated(graph, it)
+        Camera2Logger.debug { "Configured $this for $useCases" }
+    }
 
-                    // Even if the UseCaseCamera is closed, we should still update the GraphState
-                    // before cancelling the job, because it could be the last UseCaseCamera created
-                    // (i.e., no new UseCaseCamera to update CameraStateAdapter that this one as
-                    // stopped/closed).
-                    if (closed.value && it is GraphStateStopped || it is GraphStateError) {
-                        this@launch.coroutineContext[Job]?.cancel()
+    override fun start(): Unit =
+        with(useCaseGraphConfig) {
+            // Start the CameraGraph first before setting up Surfaces. Surfaces can be closed, and
+            // we will close the CameraGraph when that happens, and we cannot start a closed
+            // CameraGraph.
+            graph.start()
+
+            Camera2Logger.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
+            if (sessionConfigAdapter.isSessionConfigValid()) {
+                useCaseSurfaceManager
+                    .setupAsync(graph, sessionConfigAdapter, surfaceToStreamMap)
+                    .invokeOnCompletion { throwable ->
+                        // Only show logs for error cases, ignore CancellationException since the
+                        // task could be cancelled by UseCaseSurfaceManager#stopAsync().
+                        if (throwable != null && throwable !is CancellationException) {
+                            Camera2Logger.error(throwable) { "Surface setup error!" }
+                        }
                     }
+            } else {
+                Camera2Logger.error {
+                    "Unable to create capture session due to conflicting configurations"
                 }
             }
         }
-    }
 
     override fun close(): Job {
         return if (closed.compareAndSet(expect = false, update = true)) {
             threads.scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                debug { "Closing $this" }
+                Camera2Logger.debug { "Closing $this" }
                 requestControl.close()
                 useCaseGraphConfig.graph.close()
                 useCaseSurfaceManager.stopAsync().await()
@@ -111,6 +125,13 @@ constructor(
 
     override fun setActiveResumeMode(enabled: Boolean) {
         useCaseGraphConfig.graph.isForeground = enabled
+    }
+
+    override fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
+    ): Job {
+        return requestControl.updateRepeatingRequestAsync(isPrimary, runningUseCases)
     }
 
     override fun toString(): String = "UseCaseCamera-$debugId"

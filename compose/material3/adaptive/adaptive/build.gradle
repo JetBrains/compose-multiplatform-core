@@ -44,10 +44,9 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
-                api("androidx.compose.foundation:foundation:1.7.8")
-                api("androidx.compose.ui:ui:1.8.2")
-                api("androidx.window:window-core:1.4.0-rc01")
+                implementation(project(":compose:foundation:foundation"))
+                implementation(project(":compose:ui:ui"))
+                api("androidx.window:window-core:1.5.0")
             }
         }
 
@@ -65,9 +64,9 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.8.1")
-                api("androidx.annotation:annotation-experimental:1.4.1")
-                api("androidx.window:window:1.4.0-rc01")
+                api("androidx.annotation:annotation:1.9.1")
+                api("androidx.annotation:annotation-experimental:1.5.1")
+                api("androidx.window:window:1.5.0")
             }
         }
 
@@ -83,7 +82,7 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:material3:material3"))
@@ -95,7 +94,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)

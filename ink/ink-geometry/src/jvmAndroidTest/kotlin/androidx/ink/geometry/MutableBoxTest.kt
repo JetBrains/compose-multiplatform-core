@@ -347,9 +347,9 @@ class MutableBoxTest {
     }
 
     @Test
-    fun asImmutable_returnsImmutableCopy() {
+    fun toImmutable_returnsImmutableCopy() {
         val box = MutableBox().populateFromTwoPoints(ImmutableVec(10F, 20F), ImmutableVec(30F, 40F))
-        val output = box.asImmutable()
+        val output = box.toImmutable()
         box.setXBounds(50F, 60F) // This should not affect the copy.
 
         assertThat(output.xMin).isEqualTo(10F)

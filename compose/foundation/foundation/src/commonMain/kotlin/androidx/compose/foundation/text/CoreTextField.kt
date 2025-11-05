@@ -42,9 +42,9 @@ import androidx.compose.foundation.text.selection.SimpleLayout
 import androidx.compose.foundation.text.selection.TextFieldSelectionHandle
 import androidx.compose.foundation.text.selection.TextFieldSelectionManager
 import androidx.compose.foundation.text.selection.addBasicTextFieldTextContextMenuComponents
+import androidx.compose.foundation.text.selection.awaitSelectionGestures
 import androidx.compose.foundation.text.selection.isSelectionHandleInVisibleBound
 import androidx.compose.foundation.text.selection.rememberPlatformSelectionBehaviors
-import androidx.compose.foundation.text.selection.selectionGestureInput
 import androidx.compose.foundation.text.selection.textFieldMagnifier
 import androidx.compose.foundation.text.selection.updateSelectionTouchMode
 import androidx.compose.runtime.Composable
@@ -65,6 +65,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Rect
@@ -311,6 +312,13 @@ internal fun CoreTextField(
             rememberPlatformSelectionBehaviors(SelectedTextType.EditableText, textStyle.localeList)
     }
 
+    rememberClipboardEventsHandler(
+        isEnabled = state.hasFocus,
+        onCopy = { manager.copyWithResult() },
+        onCut = { manager.cutWithResult() },
+        onPaste = { manager.paste(it) },
+    )
+
     // Focus
     val focusModifier =
         Modifier.textFieldFocusModifier(
@@ -402,10 +410,12 @@ internal fun CoreTextField(
                     }
                 }
             }
-            .selectionGestureInput(
-                mouseSelectionObserver = manager.mouseSelectionObserver,
-                textDragObserver = manager.touchSelectionObserver,
-            )
+            .pointerInput(manager.mouseSelectionObserver, manager.touchSelectionObserver) {
+                awaitSelectionGestures(
+                    manager.mouseSelectionObserver,
+                    manager.touchSelectionObserver,
+                )
+            }
             .pointerHoverIcon(PointerIcon.Text)
 
     val drawModifier =
@@ -531,13 +541,23 @@ internal fun CoreTextField(
             }
         }
 
-    val autofillHighlightColor = LocalAutofillHighlightColor.current
+    val autofillHighlightBrush =
+        resolveAutofillHighlight(
+            brush = LocalAutofillHighlightBrush.current,
+            color = LocalAutofillHighlightColor.current,
+            defaultColor = autofillHighlightColor(),
+        )
     val drawDecorationModifier =
-        Modifier.drawBehind {
+        Modifier.drawWithContent {
+            drawContent()
+            // Autofill highlight is drawn on top of the content — this way the coloring appears
+            // over any Material background applied.
             if (state.autofillHighlightOn || state.justAutofilled) {
-                drawRect(color = autofillHighlightColor)
+                drawRect(brush = autofillHighlightBrush)
             }
         }
+
+    val overscrollEffect = rememberTextFieldOverscrollEffect()
 
     // Modifiers that should be applied to the outer text field container. Usually those include
     // gesture and semantics modifiers.
@@ -550,7 +570,7 @@ internal fun CoreTextField(
             .interceptDPadAndMoveFocus(state, focusManager)
             .previewKeyEventToDeselectOnBack(state, manager)
             .then(textKeyInputModifier)
-            .textFieldScrollable(scrollerPosition, interactionSource, enabled)
+            .textFieldScrollable(scrollerPosition, interactionSource, enabled, overscrollEffect)
             .then(pointerModifier)
             .then(semanticsModifier)
             .onGloballyPositioned @DontMemoize { state.layoutResult?.decorationBoxCoordinates = it }

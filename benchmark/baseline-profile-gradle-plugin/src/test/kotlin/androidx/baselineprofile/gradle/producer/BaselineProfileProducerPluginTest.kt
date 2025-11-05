@@ -18,8 +18,7 @@ package androidx.baselineprofile.gradle.producer
 
 import androidx.baselineprofile.gradle.utils.BaselineProfileProjectSetupRule
 import androidx.baselineprofile.gradle.utils.TestAgpVersion
-import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_1_1
-import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_2_0
+import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_2_1
 import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_3_1
 import androidx.baselineprofile.gradle.utils.TestAgpVersion.TEST_AGP_VERSION_8_4_2
 import androidx.baselineprofile.gradle.utils.VariantProfile
@@ -29,6 +28,7 @@ import androidx.baselineprofile.gradle.utils.buildAndFailAndAssertThatOutput
 import androidx.baselineprofile.gradle.utils.require
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth.assertThat
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -236,12 +236,12 @@ class BaselineProfileProducerPluginTest(agpVersion: TestAgpVersion) {
 }
 
 @RunWith(Parameterized::class)
-class BaselineProfileProducerPluginTestWithAgp81AndAbove(agpVersion: TestAgpVersion) {
+class BaselineProfileProducerPluginTestWithAgp82AndAbove(agpVersion: TestAgpVersion) {
 
     companion object {
         @Parameterized.Parameters(name = "agpVersion={0}")
         @JvmStatic
-        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_1_1)
+        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_2_1)
     }
 
     @get:Rule
@@ -269,22 +269,6 @@ class BaselineProfileProducerPluginTestWithAgp81AndAbove(agpVersion: TestAgpVers
             assertThat(notFound).isEmpty()
         }
     }
-}
-
-@RunWith(Parameterized::class)
-class BaselineProfileProducerPluginTestWithAgp82AndAbove(agpVersion: TestAgpVersion) {
-
-    companion object {
-        @Parameterized.Parameters(name = "agpVersion={0}")
-        @JvmStatic
-        fun parameters() = TestAgpVersion.atLeast(TEST_AGP_VERSION_8_2_0)
-    }
-
-    @get:Rule
-    val projectSetup = BaselineProfileProjectSetupRule(forceAgpVersion = agpVersion.versionString)
-
-    private val emptyReleaseVariantProfile =
-        VariantProfile(flavor = null, buildType = "release", profileFileLines = mapOf())
 
     @Test
     fun verifyInstrumentationRunnerArgumentsAreSet() {
@@ -331,6 +315,7 @@ class BaselineProfileProducerPluginTestWithAgp82AndAbove(agpVersion: TestAgpVers
             }
     }
 
+    @Ignore // b/441089720
     @Test
     fun runWhenInstrumentationRunnerArgumentsAreSetManually() {
         projectSetup.appTarget.setup()

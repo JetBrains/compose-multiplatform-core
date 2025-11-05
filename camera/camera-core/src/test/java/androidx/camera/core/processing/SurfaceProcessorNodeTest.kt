@@ -21,7 +21,6 @@ import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Size
@@ -58,7 +57,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [SurfaceProcessorNode]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class SurfaceProcessorNodeTest {
 
     companion object {
@@ -593,7 +592,7 @@ class SurfaceProcessorNodeTest {
     }
 
     private fun createSurfaceProcessorNode() {
-        node = SurfaceProcessorNode(FakeCamera(), surfaceProcessorInternal)
+        node = SurfaceProcessorNode(FakeCamera(), surfaceProcessorInternal, null)
     }
 
     private fun provideSurfaces(nodeOutput: SurfaceProcessorNode.Out) {

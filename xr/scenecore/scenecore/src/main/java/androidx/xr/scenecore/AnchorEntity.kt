@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,147 +17,219 @@
 package androidx.xr.scenecore
 
 import android.annotation.SuppressLint
-import androidx.annotation.IntDef
+import android.os.SystemClock
 import androidx.annotation.RestrictTo
+import androidx.annotation.VisibleForTesting
 import androidx.xr.arcore.Anchor
+import androidx.xr.arcore.AnchorCreateSuccess
+import androidx.xr.arcore.Plane
 import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.AnchorEntity as RtAnchorEntity
-import androidx.xr.runtime.internal.JxrPlatformAdapter
-import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
 import java.time.Duration
-import java.util.UUID
 import java.util.concurrent.Executor
-import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
+import kotlinx.coroutines.CompletableJob
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
- * An AnchorEntity is created to track a Pose relative to some position or surface in the "Real
- * World." Children of this Entity will remain positioned relative to that location in the real
- * world, for the purposes of creating Augmented Reality experiences.
+ * An AnchorEntity tracks a [androidx.xr.runtime.math.Pose] relative to some position or surface in
+ * the "Real World." Children of this [Entity] will remain positioned relative to that location in
+ * the real world, for the purposes of creating Augmented Reality experiences.
  *
  * Note that Anchors are only relative to the "real world", and not virtual environments. Also,
- * calling setParent() on an AnchorEntity has no effect, as the parenting of an Anchor is controlled
- * by the system.
+ * setting the [Entity.parent] property on an AnchorEntity has no effect, as the parenting of an
+ * Anchor is controlled by the system.
  */
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class AnchorEntity
 private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
     BaseEntity<RtAnchorEntity>(rtEntity, entityManager) {
-    private val state = AtomicReference(rtEntity.state.fromRtState())
 
-    private var onStateChangedListener: OnStateChangedListener? = null
+    @VisibleForTesting internal var onStateChangedListener: Consumer<State>? = null
+    private var onStateChangedExecutor: Executor = HandlerExecutor.mainThreadExecutor
+    /** Asynchronous job responsible for finding a suitable plane to anchor this entity to. */
+    private var planeFindingJob: CompletableJob? = null
+    /** Plane [Anchor] this anchor entity represents. */
+    private var planeAnchor: Anchor? = null
 
-    /** Specifies the current tracking state of the Anchor. */
-    @Target(AnnotationTarget.TYPE)
-    @IntDef(State.ANCHORED, State.UNANCHORED, State.TIMEDOUT, State.ERROR)
-    @Retention(AnnotationRetention.SOURCE)
-    internal annotation class StateValue
+    /** The current tracking state for this AnchorEntity. */
+    public var state: State = rtEntity.state.fromRtState()
+        private set(value) {
+            // TODO: b/440191514 - On dispose, verify any pending anchor entity ops are cancelled.
+            field = value
+            onStateChangedExecutor.execute { onStateChangedListener?.accept(value) }
+        }
 
-    public object State {
-        /**
-         * The ANCHORED state means that this Anchor is being actively tracked and updated by the
-         * perception stack. The application should expect children to maintain their relative
-         * positioning to the system's best understanding of a pose in the real world.
-         */
-        public const val ANCHORED: Int = 0
-        /**
-         * An UNANCHORED state could mean that the perception stack hasn't found an anchor for this
-         * Space, that it has lost tracking.
-         */
-        public const val UNANCHORED: Int = 1
-        /**
-         * The AnchorEntity timed out while searching for an underlying anchor. This it is not
-         * possible to recover the AnchorEntity.
-         */
-        public const val TIMEDOUT: Int = 2
-        /**
-         * The ERROR state means that something has gone wrong and this AnchorEntity is invalid
-         * without the possibility of recovery.
-         */
-        public const val ERROR: Int = 3
-    }
+    public class State private constructor(private val name: String) {
 
-    /** Specifies the current persist state of the Anchor. */
-    public enum class PersistState {
-        /** The anchor hasn't been requested to persist. */
-        PERSIST_NOT_REQUESTED,
-        /** The anchor is requested to persist but hasn't been persisted yet. */
-        PERSIST_PENDING,
-        /** The anchor is persisted successfully. */
-        PERSISTED,
-    }
+        public companion object {
+            /**
+             * An AnchorEntity in the ANCHORED stated is being actively tracked and updated by the
+             * perception stack. Children of the AnchorEntity will maintain their relative
+             * positioning to the system's best understanding of a pose in the real world.
+             */
+            @JvmField public val ANCHORED: State = State("ANCHORED")
 
-    /** Returns the current tracking state for this AnchorEntity. */
-    public fun getState(): @StateValue Int = state.get()
+            /**
+             * An AnchorEntity in the UNANCHORED state does not currently have a real-world pose
+             * that is being actively updated. This is the default state while searching for an
+             * anchorable position, and can also occur if the perception system has lost tracking of
+             * the real-world location.
+             */
+            @JvmField public val UNANCHORED: State = State("UNANCHORED")
 
-    /** Registers a listener callback to be issued when an anchor's state changes. */
-    @Suppress("ExecutorRegistration")
-    public fun setOnStateChangedListener(onStateChangedListener: OnStateChangedListener?) {
-        this.onStateChangedListener = onStateChangedListener
-        onStateChangedListener?.onStateChanged(state.get())
-    }
+            /**
+             * An AnchorEntity in the TIMEOUT state indicates that the perception system timed out
+             * while searching for an underlying anchorable position in the real world. The
+             * AnchorEntity cannot recover from this state.
+             */
+            @JvmField public val TIMEDOUT: State = State("TIMEOUT")
 
-    /** Updates the current state. */
-    private fun setState(newState: @StateValue Int) {
-        state.set(newState)
-        onStateChangedListener?.onStateChanged(newState)
+            /**
+             * An AnchorEntity in the ERROR state indicates that an unexpected error has occurred
+             * and this AnchorEntity is invalid, without the possibility of recovery. Logcat may
+             * include additional information about the error.
+             */
+            @JvmField public val ERROR: State = State("ERROR")
+        }
+
+        override fun toString(): String = name
     }
 
     /**
-     * Loads the ARCore for XR Anchor using a Jetpack XR Runtime session.
+     * Returns the ARCore for Jetpack XR Anchor associated with this AnchorEntity.
      *
-     * @param session the Jetpack XR Runtime session to load the Anchor from.
-     * @return the ARCore for XR Anchor corresponding to the native pointer.
+     * @return the ARCore for Jetpack XR Anchor associated with this AnchorEntity. This may be null
+     *   if the AnchorEntity is still searching for a suitable anchor.
      */
-    // TODO(b/373711152) : Remove this method once the ARCore for XR API migration is done.
-    public fun getAnchor(session: Session): Anchor {
-        return Anchor.loadFromNativePointer(session, rtEntity.nativePointer)
+    public fun getAnchor(): Anchor? {
+        checkNotDisposed()
+        return planeAnchor
+    }
+
+    internal data class PlaneFindingInfo(
+        val dimensions: FloatSize2d,
+        val orientation: @PlaneOrientationValue Int,
+        val semanticType: @PlaneSemanticTypeValue Int,
+        val searchDeadline: Long?,
+    )
+
+    private fun updateState(state: State) {
+        if (state != this.state) {
+            this.state = state
+            when (state) {
+                State.ANCHORED,
+                State.TIMEDOUT -> {
+                    planeFindingJob?.complete()
+                    planeFindingJob = null
+                }
+                State.ERROR -> {
+                    planeAnchor?.detach()
+                }
+            }
+        }
     }
 
     public companion object {
-        private const val TAG = "AnchorEntity"
+        private fun getAnchorDeadline(anchorSearchTimeout: Duration?): Long? {
+            // If the timeout is zero or null then we return null here and the anchor search will
+            // continue indefinitely.
+            if (anchorSearchTimeout == null || anchorSearchTimeout.isZero()) {
+                return null
+            }
+            return SystemClock.uptimeMillis() + anchorSearchTimeout.toMillis()
+        }
 
-        /**
-         * Factory method for AnchorEntity.
-         *
-         * @param adapter JxrPlatformAdapter to use.
-         * @param bounds Bounds for this Anchor Entity. Panels are inherently 2D, so `depth` of the
-         *   [FloatSize3d] is ignored.
-         * @param planeType Orientation for the plane to which this Anchor should attach.
-         * @param planeSemantic Semantics for the plane to which this Anchor should attach.
-         * @param timeout Maximum time to search for the anchor, if a suitable plane is not found
-         *   within the timeout time the AnchorEntity state will be set to TIMED_OUT.
-         */
-        internal fun create(
-            adapter: JxrPlatformAdapter,
-            entityManager: EntityManager,
-            bounds: FloatSize3d,
-            planeType: @PlaneOrientationValue Int,
-            planeSemantic: @PlaneSemanticTypeValue Int,
-            timeout: Duration = Duration.ZERO,
-        ): AnchorEntity {
-            val rtAnchorEntity =
-                adapter.createAnchorEntity(
-                    bounds.toRtDimensions(),
-                    planeType.toRtPlaneType(),
-                    planeSemantic.toRtPlaneSemantic(),
-                    timeout,
+        private fun findAndSetPlaneAnchor(
+            session: Session,
+            info: PlaneFindingInfo,
+            entity: AnchorEntity,
+        ) {
+            entity.planeFindingJob =
+                SupervisorJob(
+                    session.coroutineScope.launch {
+                        Plane.subscribe(session).collect {
+                            val timeNow = SystemClock.uptimeMillis()
+                            if (info.searchDeadline != null && timeNow > info.searchDeadline) {
+                                entity.updateState(State.TIMEDOUT)
+                                return@collect
+                            }
+
+                            val plane =
+                                it.firstOrNull {
+                                    val planeState = it.state.value
+                                    val planeOrientation = it.type.toSceneCoreOrientation()
+                                    val planeSemanticType =
+                                        planeState.label.toSceneCoreSemanticType()
+                                    (info.orientation == planeOrientation ||
+                                        info.orientation == PlaneOrientation.ANY) &&
+                                        (info.semanticType == planeSemanticType ||
+                                            info.semanticType == PlaneSemanticType.ANY) &&
+                                        info.dimensions.width <= planeState.extents.width &&
+                                        info.dimensions.height <= planeState.extents.height
+                                }
+
+                            if (plane != null) {
+                                val anchorCreateResult = plane.createAnchor(Pose.Identity)
+                                if (anchorCreateResult is AnchorCreateSuccess) {
+                                    val anchor = anchorCreateResult.anchor
+                                    if (entity.rtEntity!!.setAnchor(anchor)) {
+                                        entity.planeAnchor = anchor
+                                        entity.updateState(State.ANCHORED)
+                                    } else {
+                                        anchor.detach()
+                                    }
+                                }
+                            }
+                        }
+                    }
                 )
-            return create(rtAnchorEntity, entityManager)
         }
 
         /**
          * Factory method for AnchorEntity.
          *
-         * @param anchor Anchor to create an AnchorEntity for.
+         * @param session Session to use.
+         * @param entityManager EntityManager to use.
+         * @param minimumPlaneExtents The minimum extents (in meters) of the plane to which this
+         *   AnchorEntity should attach.
+         * @param planeOrientation Orientation for the plane to which this Anchor should attach.
+         * @param planeSemanticType Semantics for the plane to which this Anchor should attach.
+         * @param timeout Maximum time to search for the anchor, if a suitable plane is not found
+         *   within the timeout time the AnchorEntity state will be set to TIMED_OUT.
          */
         internal fun create(
-            adapter: JxrPlatformAdapter,
+            session: Session,
             entityManager: EntityManager,
-            anchor: Anchor,
-        ): AnchorEntity =
-            AnchorEntity.create(adapter.createAnchorEntity(anchor.runtimeAnchor), entityManager)
+            minimumPlaneExtents: FloatSize2d,
+            planeOrientation: @PlaneOrientationValue Int,
+            planeSemanticType: @PlaneSemanticTypeValue Int,
+            timeout: Duration = Duration.ZERO,
+        ): AnchorEntity {
+            check(session.config.planeTracking != PlaneTrackingMode.DISABLED) {
+                "Config.PlaneTrackingMode is set to Disabled."
+            }
+
+            val rtAnchorEntity = session.sceneRuntime.createAnchorEntity()
+            val anchorEntity = AnchorEntity(rtAnchorEntity, entityManager)
+            rtAnchorEntity.setOnStateChangedListener(anchorEntity.defaultStateChangedListener)
+
+            val info =
+                PlaneFindingInfo(
+                    minimumPlaneExtents,
+                    planeOrientation,
+                    planeSemanticType,
+                    getAnchorDeadline(timeout),
+                )
+            findAndSetPlaneAnchor(session, info, anchorEntity)
+
+            return anchorEntity
+        }
 
         /**
          * Factory method for AnchorEntity.
@@ -169,52 +241,21 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
             entityManager: EntityManager,
         ): AnchorEntity {
             val anchorEntity = AnchorEntity(rtAnchorEntity, entityManager)
-            rtAnchorEntity.setOnStateChangedListener { newRtState ->
-                when (newRtState) {
-                    RtAnchorEntity.State.UNANCHORED -> anchorEntity.setState(State.UNANCHORED)
-                    RtAnchorEntity.State.ANCHORED -> anchorEntity.setState(State.ANCHORED)
-                    RtAnchorEntity.State.TIMED_OUT -> anchorEntity.setState(State.TIMEDOUT)
-                    RtAnchorEntity.State.ERROR -> anchorEntity.setState(State.ERROR)
-                }
-            }
+            rtAnchorEntity.setOnStateChangedListener(anchorEntity.defaultStateChangedListener)
             return anchorEntity
         }
 
         /**
-         * Factory method for AnchorEntity.
+         * Factory for an AnchorEntity which searches for a real-world surface on which to anchor,
+         * from the set of tracked planes available to the perception system.
          *
-         * @param adapter JxrPlatformAdapter to use.
-         * @param uuid UUID of the persisted Anchor Entity to create.
-         * @param timeout Maximum time to search for the anchor, if a persisted anchor isn't located
-         *   within the timeout time the AnchorEntity state will be set to TIMED_OUT.
-         */
-        internal fun create(
-            adapter: JxrPlatformAdapter,
-            entityManager: EntityManager,
-            uuid: UUID,
-            timeout: Duration = Duration.ZERO,
-        ): AnchorEntity {
-            val rtAnchorEntity = adapter.createPersistedAnchorEntity(uuid, timeout)
-            val anchorEntity = AnchorEntity(rtAnchorEntity, entityManager)
-            rtAnchorEntity.setOnStateChangedListener { newRtState ->
-                when (newRtState) {
-                    RtAnchorEntity.State.UNANCHORED -> anchorEntity.setState(State.UNANCHORED)
-                    RtAnchorEntity.State.ANCHORED -> anchorEntity.setState(State.ANCHORED)
-                    RtAnchorEntity.State.TIMED_OUT -> anchorEntity.setState(State.TIMEDOUT)
-                    RtAnchorEntity.State.ERROR -> anchorEntity.setState(State.ERROR)
-                }
-            }
-            return anchorEntity
-        }
-
-        /**
-         * Public factory function for an AnchorEntity which searches for a location to create an
-         * Anchor among the tracked planes available to the perception system.
-         *
-         * @param session Session to create the AnchorEntity in.
-         * @param bounds Bounds for this AnchorEntity.
-         * @param planeType Orientation of plane to which this Anchor should attach.
-         * @param planeSemantic Semantics of the plane to which this Anchor should attach.
+         * @param session [Session] in which to create the AnchorEntity.
+         * @param minimumPlaneExtents The minimum extents (in meters) of the plane to which this
+         *   AnchorEntity should attach.
+         * @param planeOrientation [PlaneOrientation] of the plane to which this AnchorEntity should
+         *   attach.
+         * @param planeSemanticType [PlaneSemanticType] of the plane to which this AnchorEntity
+         *   should attach.
          * @param timeout The amount of time as a [Duration] to search for the a suitable plane to
          *   attach to. If a plane is not found within the timeout, the returned AnchorEntity state
          *   will be set to AnchorEntity.State.TIMEDOUT. It may take longer than the timeout period
@@ -227,39 +268,46 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         @JvmOverloads
         public fun create(
             session: Session,
-            bounds: FloatSize3d,
-            planeType: @PlaneOrientationValue Int,
-            planeSemantic: @PlaneSemanticTypeValue Int,
+            minimumPlaneExtents: FloatSize2d,
+            planeOrientation: @PlaneOrientationValue Int,
+            planeSemanticType: @PlaneSemanticTypeValue Int,
             timeout: Duration = Duration.ZERO,
         ): AnchorEntity {
-            check(session.config.planeTracking != PlaneTrackingMode.DISABLED) {
-                "Config.PlaneTrackingMode is set to Disabled."
-            }
-
-            return AnchorEntity.create(
-                session.platformAdapter,
+            return create(
+                session,
                 session.scene.entityManager,
-                bounds,
-                planeType,
-                planeSemantic,
+                minimumPlaneExtents,
+                planeOrientation,
+                planeSemanticType,
                 timeout,
             )
         }
 
         /**
-         * Public factory function for an AnchorEntity which uses an Anchor from ARCore for XR.
+         * Public factory for an AnchorEntity which uses an [Anchor] from ARCore for Jetpack XR.
          *
-         * @param session Session to create the AnchorEntity in.
-         * @param anchor The PerceptionAnchor to use for this AnchorEntity.
+         * @param session [Session] in which to create the AnchorEntity.
+         * @param anchor The [Anchor] to use for this AnchorEntity.
          */
         @JvmStatic
         public fun create(session: Session, anchor: Anchor): AnchorEntity {
-            return AnchorEntity.create(session.platformAdapter, session.scene.entityManager, anchor)
+            val rtAnchorEntity = session.sceneRuntime.createAnchorEntity()
+            val anchorEntity = AnchorEntity(rtAnchorEntity, session.scene.entityManager)
+            rtAnchorEntity.setOnStateChangedListener(anchorEntity.defaultStateChangedListener)
+            rtAnchorEntity.setAnchor(anchor)
+            return anchorEntity
         }
     }
 
-    /** Extension function that converts [RtAnchorEntity.State] to [AnchorEntity.State]. */
-    private fun Int.fromRtState() =
+    private val defaultStateChangedListener: (@RtAnchorEntity.State Int) -> Unit = { newRtState ->
+        updateState(newRtState.fromRtState())
+    }
+
+    /**
+     * Extension function that converts [androidx.xr.scenecore.runtime.AnchorEntity.State] to
+     * [AnchorEntity.State].
+     */
+    private fun Int.fromRtState(): State =
         when (this) {
             RtAnchorEntity.State.UNANCHORED -> State.UNANCHORED
             RtAnchorEntity.State.ANCHORED -> State.ANCHORED
@@ -269,24 +317,163 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
         }
 
     /**
-     * Registers a listener to be called when the Anchor moves relative to its underlying space.
+     * Registers a listener to be invoked on the main thread when the AnchorEntity's state changes,
+     * or unregisters the current listener if set to null.
      *
-     * <p> The callback is triggered by any anchor movements such as those made by the underlying
-     * perception stack to maintain the anchor's position relative to the real world. Any cached
-     * data relative to the activity space or any other "space" should be updated when this callback
-     * is triggered.
+     * The listener will fire with the current [AnchorEntity.State] value immediately upon
+     * registration. It will be automatically unregistered when the entity is disposed.
+     */
+    public fun setOnStateChangedListener(listener: Consumer<State>?) {
+        setOnStateChangedListener(HandlerExecutor.mainThreadExecutor, listener)
+    }
+
+    /**
+     * Registers a listener to be invoked on the given [Executor] when the AnchorEntity's state
+     * changes, or unregisters the current listener if set to null.
+     *
+     * The listener will fire with the current State value immediately upon registration. It will be
+     * automatically unregistered when the entity is disposed.
+     *
+     * @param executor: The executor on which the specified listener will fire.
+     * @param listener: The listener to fire upon invoking this method, and all subsequent state
+     *   changes.
+     */
+    public fun setOnStateChangedListener(executor: Executor, listener: Consumer<State>?) {
+        checkNotDisposed()
+        onStateChangedListener = listener
+        onStateChangedExecutor = executor
+        executor.execute { listener?.accept(state) }
+    }
+
+    /**
+     * Registers a listener to be called when the [Anchor] moves relative to its underlying space.
+     *
+     * The callback is triggered on the supplied [Executor] by any anchor movements such as those
+     * made by the underlying perception stack to maintain the anchor's position relative to the
+     * real world. Any cached data relative to the activity space or any other "space" should be
+     * updated when this callback is triggered. It will be automatically unregistered when the
+     * entity is disposed.
+     *
+     * @param executor The executor to run the listener on.
+     * @param listener The listener to register if non-null, else stops listening if null.
+     */
+    public fun setOnSpaceUpdatedListener(executor: Executor, listener: Runnable?) {
+        checkNotDisposed()
+        rtEntity!!.setOnSpaceUpdatedListener(listener, executor)
+    }
+
+    /**
+     * Registers a listener to be called when the [Anchor] moves relative to its underlying space.
+     *
+     * The callback is triggered on the default SceneCore [Executor] by any anchor movements such as
+     * those made by the underlying perception stack to maintain the anchor's position relative to
+     * the real world. Any cached data relative to the activity space or any other "space" should be
+     * updated when this callback is triggered. It will be automatically unregistered when the
+     * entity is disposed.
      *
      * @param listener The listener to register if non-null, else stops listening if null.
-     * @param executor The executor to run the listener on. Defaults to SceneCore executor if null.
      */
-    @JvmOverloads
-    @Suppress("ExecutorRegistration")
-    public fun setOnSpaceUpdatedListener(listener: Runnable?, executor: Executor? = null) {
-        rtEntity.setOnSpaceUpdatedListener(listener, executor)
+    public fun setOnSpaceUpdatedListener(listener: Runnable?) {
+        checkNotDisposed()
+        rtEntity!!.setOnSpaceUpdatedListener(listener, null)
     }
-}
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun interface OnStateChangedListener {
-    public fun onStateChanged(newState: @AnchorEntity.StateValue Int)
+    /**
+     * Throws [UnsupportedOperationException] if called.
+     *
+     * **Note:** The pose of the `AnchorEntity` is managed by the system. Applications should not
+     * call this method, as any changes may be overwritten by the system.
+     *
+     * @param pose The new pose to set.
+     * @param relativeTo The space in which the pose is defined.
+     * @throws UnsupportedOperationException if called.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun setPose(pose: Pose, relativeTo: Space) {
+        checkNotDisposed()
+        throw UnsupportedOperationException("Cannot set 'pose' on an AnchorEntity.")
+    }
+
+    /**
+     * Returns the pose of the `AnchorEntity` relative to the specified coordinate space.
+     *
+     * @param relativeTo The coordinate space to get the pose relative to. Defaults to
+     *   [Space.PARENT].
+     * @return The current pose of the `AnchorEntity`.
+     * @throws IllegalArgumentException if called with Space.PARENT since AnchorEntity has no
+     *   parents.
+     */
+    override fun getPose(relativeTo: Space): Pose {
+        checkNotDisposed()
+        return when (relativeTo) {
+            Space.PARENT ->
+                throw IllegalArgumentException(
+                    "AnchorEntity is a root space and it does not have a parent."
+                )
+            Space.ACTIVITY,
+            Space.REAL_WORLD -> super.getPose(relativeTo)
+            else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
+        }
+    }
+
+    /**
+     * Throws [UnsupportedOperationException] if called.
+     *
+     * **Note:** The scale of the `AnchorEntity` is managed by the system. Applications should not
+     * call this method, as any changes may be overwritten by the system.
+     *
+     * @param scale The new scale to set.
+     * @param relativeTo The space in which the scale is defined.
+     * @throws UnsupportedOperationException if called.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun setScale(scale: Float, relativeTo: Space) {
+        checkNotDisposed()
+        throw UnsupportedOperationException("Cannot set 'scale' on an AnchorEntity.")
+    }
+
+    /**
+     * Throws [UnsupportedOperationException] if called.
+     *
+     * **Note:** The scale of the `AnchorEntity` is managed by the system. Applications should not
+     * call this method, as any changes may be overwritten by the system.
+     *
+     * @param scale The new scale to set.
+     * @param relativeTo The space in which the scale is defined.
+     * @throws UnsupportedOperationException if called.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun setScale(scale: Vector3, relativeTo: Space) {
+        throw UnsupportedOperationException("Cannot set 'scale' on an AnchorEntity.")
+    }
+
+    /**
+     * Returns the scale of the `AnchorEntity` relative to the specified coordinate space.
+     *
+     * @param relativeTo The coordinate space to get the scale relative to. Defaults to
+     *   [Space.PARENT].
+     * @return The current scale of the `AnchorEntity`.
+     * @throws IllegalArgumentException if called with Space.PARENT since AnchorEntity has no
+     *   parents.
+     */
+    override fun getScale(relativeTo: Space): Float {
+        checkNotDisposed()
+        return when (relativeTo) {
+            Space.PARENT ->
+                throw IllegalArgumentException(
+                    "AnchorEntity is a root space and it does not have a parent."
+                )
+            Space.ACTIVITY,
+            Space.REAL_WORLD -> super.getScale(relativeTo)
+            else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
+        }
+    }
+
+    override fun dispose() {
+        if (rtEntity != null) {
+            setOnSpaceUpdatedListener(null)
+            setOnStateChangedListener(null)
+        }
+        super.dispose()
+    }
 }

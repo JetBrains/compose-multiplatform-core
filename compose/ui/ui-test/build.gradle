@@ -27,12 +27,15 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.ui.test"
+        androidResources.enable = true
+    }
     jvmStubs()
     linuxX64Stubs()
 
@@ -45,7 +48,6 @@ androidXMultiplatform {
                 api(project(":compose:ui:ui-text"))
                 api(project(":compose:ui:ui-unit"))
                 api(project(":compose:runtime:runtime"))
-                api(libs.kotlinStdlib)
                 api(libs.kotlinCoroutinesCore)
                 api(libs.kotlinCoroutinesTest)
                 implementation(project(":compose:ui:ui-util"))
@@ -98,7 +100,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependsOn(androidCommonTest)
             dependencies {
@@ -121,7 +123,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependsOn(androidCommonTest)
             dependencies {
@@ -139,11 +141,6 @@ androidXMultiplatform {
     }
 }
 
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.ui.test"
-}
-
 androidx {
     name = "Compose Testing"
     type = SoftwareType.PUBLISHED_KOTLIN_ONLY_TEST_LIBRARY
@@ -152,4 +149,5 @@ androidx {
     legacyDisableKotlinStrictApiMode = true
     samples(project(":compose:ui:ui-test:ui-test-samples"))
     enableRobolectric()
+    deviceTests.minSdkForFtlOverride = 24 // b/437944630
 }

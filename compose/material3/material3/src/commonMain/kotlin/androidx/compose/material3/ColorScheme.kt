@@ -680,8 +680,14 @@ class ColorScheme(
     internal var defaultOutlinedToggleButtonColorsCached: ToggleButtonColors? = null
 
     internal var defaultListItemColorsCached: ListItemColors? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultInteractiveListItemColorsCached: InteractiveListItemColors? = null
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+    internal var defaultSegmentedInteractiveListItemColorsCached: InteractiveListItemColors? = null
 
     internal var defaultMenuItemColorsCached: MenuItemColors? = null
+    internal var defaultMenuSelectableItemColorsCached: MenuItemColors? = null
+    internal var defaultMenuSelectableItemVibrantColorsCached: MenuItemColors? = null
 
     internal var defaultNavigationBarItemColorsCached: NavigationBarItemColors? = null
     internal var defaultShortNavigationBarItemColorsCached: NavigationItemColors? = null

@@ -20,7 +20,7 @@ import androidx.annotation.RestrictTo
 
 /** [FrameGraph] extends the capabilities of [CameraGraph] to provide stream controls. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public interface FrameGraph : CameraGraphBase<FrameGraph.Session>, UnsafeWrapper {
+public interface FrameGraph : CameraGraphBase<FrameGraph.Session>, CameraControls3A, UnsafeWrapper {
     public class Config(public val cameraGraphConfig: CameraGraph.Config)
 
     public class ConcurrentConfig(

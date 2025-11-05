@@ -18,6 +18,10 @@ package androidx.xr.arcore
 
 import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.xr.arcore.testing.FakeLifecycleManager
+import androidx.xr.arcore.testing.FakePerceptionManager
+import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
+import androidx.xr.arcore.testing.FakeRuntimeArDevice
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureSuccess
@@ -25,10 +29,6 @@ import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.runtime.testing.FakeLifecycleManager
-import androidx.xr.runtime.testing.FakePerceptionManager
-import androidx.xr.runtime.testing.FakeRuntimeArDevice
-import androidx.xr.runtime.testing.FakeRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -68,12 +68,12 @@ class ArDeviceTest {
             shadowApplication.grantPermissions(permission)
         }
 
-        FakeRuntimeFactory.hasCreatePermission = true
+        FakePerceptionRuntimeFactory.hasCreatePermission = true
         activityController.create()
 
         session = (Session.create(activity, testDispatcher) as SessionCreateSuccess).session
         session.configure(Config(headTracking = Config.HeadTrackingMode.LAST_KNOWN))
-        xrResourcesManager.lifecycleManager = session.runtime.lifecycleManager
+        xrResourcesManager.lifecycleManager = session.perceptionRuntime.lifecycleManager
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -83,7 +83,7 @@ class ArDeviceTest {
             val expectedDevicePose = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
             val underTest = ArDevice.getInstance(session)
             check(underTest.state.value.devicePose == Pose())
-            val perceptionManager = session.runtime.perceptionManager as FakePerceptionManager
+            val perceptionManager = getFakePerceptionManager()
             val runtimeArDevice = perceptionManager.arDevice
 
             runtimeArDevice.devicePose = expectedDevicePose
@@ -114,5 +114,9 @@ class ArDeviceTest {
         underTest.update()
 
         assertThat(underTest.state.value.devicePose).isEqualTo(expectedDevicePose)
+    }
+
+    private fun getFakePerceptionManager(): FakePerceptionManager {
+        return session.perceptionRuntime.perceptionManager as FakePerceptionManager
     }
 }

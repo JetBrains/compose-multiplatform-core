@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+@file:Suppress("FacadeClassJvmName") // Cannot be updated, the Kt name has been released
+
 package androidx.navigation.testing
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.CollectionNavType
 import androidx.navigation.NavArgument
 import androidx.navigation.NavType
+import androidx.navigation.parseAndPutFromUri
 import androidx.navigation.serialization.RouteEncoder
 import androidx.navigation.serialization.generateNavArguments
 import androidx.savedstate.read
@@ -75,7 +78,7 @@ public operator fun SavedStateHandle.Companion.invoke(
         entry.value.forEach { value ->
             try {
                 if (!tempSavedState.read { contains(argName) }) {
-                    type.parseAndPut(tempSavedState, argName, value)
+                    type.parseAndPutFromUri(tempSavedState, argName, value)
                 } else {
                     val previousValue = type[tempSavedState, argName]
                     type.parseAndPut(tempSavedState, argName, value, previousValue)

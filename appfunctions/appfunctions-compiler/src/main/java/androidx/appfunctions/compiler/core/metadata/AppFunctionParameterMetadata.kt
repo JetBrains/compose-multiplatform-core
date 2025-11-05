@@ -20,12 +20,14 @@ data class AppFunctionParameterMetadata(
     val name: String,
     val isRequired: Boolean,
     val dataType: AppFunctionDataTypeMetadata,
+    val description: String,
 ) {
     fun toAppFunctionParameterMetadataDocument(): AppFunctionParameterMetadataDocument {
         return AppFunctionParameterMetadataDocument(
             name = name,
             isRequired = isRequired,
             dataTypeMetadata = dataType.toAppFunctionDataTypeMetadataDocument(),
+            description = description,
         )
     }
 }
@@ -36,4 +38,5 @@ data class AppFunctionParameterMetadataDocument(
     val name: String,
     val isRequired: Boolean,
     val dataTypeMetadata: AppFunctionDataTypeMetadataDocument,
+    val description: String,
 )

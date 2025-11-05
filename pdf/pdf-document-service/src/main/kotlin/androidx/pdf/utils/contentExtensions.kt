@@ -64,7 +64,7 @@ public fun android.graphics.pdf.models.selection.PageSelection.toContentClass():
             page = page,
             start = start.toContentClass(),
             stop = stop.toContentClass(),
-            selectedTextContents = selectedTextContents.map { it.toContentClass() },
+            selectedContents = selectedTextContents.map { it.toContentClass() },
         )
     }
 

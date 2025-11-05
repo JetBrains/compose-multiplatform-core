@@ -29,6 +29,10 @@ import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.node.DelegatableNode
+import androidx.xr.glimmer.GlimmerTheme.Companion.colors
+import androidx.xr.glimmer.GlimmerTheme.Companion.depthLevels
+import androidx.xr.glimmer.GlimmerTheme.Companion.iconSizes
+import androidx.xr.glimmer.GlimmerTheme.Companion.shapes
 
 /**
  * Glimmer contains different theme subsystems to allow visual customization across an application.
@@ -69,6 +73,7 @@ public fun GlimmerTheme(
  * @property colors [Colors] used by Glimmer components
  * @property typography [Typography] used by Glimmer components
  * @property shapes [Shapes] used by Glimmer components
+ * @property depthLevels [DepthLevels] used by Glimmer components
  * @property iconSizes [IconSizes] used by icons
  */
 @Immutable
@@ -77,6 +82,7 @@ public class GlimmerTheme(
     public val typography: Typography = Typography(),
 ) {
     public val shapes: Shapes = _shapes
+    public val depthLevels: DepthLevels = _depthLevels
     public val iconSizes: IconSizes = _iconSizes
 
     public companion object {
@@ -91,6 +97,10 @@ public class GlimmerTheme(
         /** Retrieves the current [Shapes] at the call site's position in the hierarchy. */
         public val shapes: Shapes
             @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.shapes
+
+        /** Retrieves the current [DepthLevels] at the call site's position in the hierarchy. */
+        public val depthLevels: DepthLevels
+            @Composable @ReadOnlyComposable get() = LocalGlimmerTheme.current.depthLevels
 
         /** Retrieves the current [IconSizes] at the call site's position in the hierarchy. */
         public val iconSizes: IconSizes
@@ -111,6 +121,12 @@ public class GlimmerTheme(
          * not user-configurable.
          */
         private val _shapes = Shapes()
+
+        /**
+         * Cached DepthLevels instance to be used across [GlimmerTheme] instances - currently depth
+         * levels are not user-configurable.
+         */
+        private val _depthLevels = DepthLevels()
 
         /**
          * Cached IconSizes instance to be used across [GlimmerTheme] instances - currently icon

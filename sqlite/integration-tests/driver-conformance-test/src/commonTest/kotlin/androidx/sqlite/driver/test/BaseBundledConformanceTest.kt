@@ -17,6 +17,8 @@
 package androidx.sqlite.driver.test
 
 import androidx.kruth.assertThat
+import androidx.kruth.assertThrows
+import androidx.sqlite.SQLiteException
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_CREATE
 import androidx.sqlite.driver.bundled.SQLITE_OPEN_FULLMUTEX
@@ -34,6 +36,8 @@ abstract class BaseBundledConformanceTest : BaseConformanceTest() {
     abstract fun getDatabaseFileName(): String
 
     abstract override fun getDriver(): BundledSQLiteDriver
+
+    abstract fun getTestExtensionPath(): String
 
     @Test
     fun readSQLiteVersion() {
@@ -93,6 +97,56 @@ abstract class BaseBundledConformanceTest : BaseConformanceTest() {
         // Validate bundled SQLite is compiled with SQLITE_THREADSAFE = 2
         val driver = BundledSQLiteDriver()
         assertThat(driver.threadingMode).isEqualTo(2)
+    }
+
+    @Test
+    fun loadExtension() {
+        val extensionPath = getTestExtensionPath()
+
+        val driver =
+            BundledSQLiteDriver().apply {
+                addExtension(extensionPath, "sqlite3_test_extension_init")
+            }
+
+        driver.open(":memory:").use { connection ->
+            connection.prepare("SELECT hello_world()").use { stmt ->
+                assertThat(stmt.step()).isTrue()
+                assertThat(stmt.getText(0)).isEqualTo("Hello from sqlite_extension.cpp!")
+            }
+        }
+    }
+
+    @Test
+    fun loadExtensionMissingFile() {
+        val driver = BundledSQLiteDriver().apply { addExtension("bad path") }
+
+        assertThrows<SQLiteException> { driver.open(":memory:") }
+            .hasMessageThat()
+            .containsMatch(
+                Regex(pattern = "(not found)|(no such file)", option = RegexOption.IGNORE_CASE)
+            )
+    }
+
+    @Test
+    fun loadExtensionAlreadyAdded() {
+        val extensionPath = getTestExtensionPath()
+        val driver = BundledSQLiteDriver()
+        driver.addExtension(extensionPath)
+
+        assertThrows<IllegalStateException> { driver.addExtension(extensionPath) }
+            .hasMessageThat()
+            .contains("Extension '$extensionPath' is already added.")
+    }
+
+    @Test
+    fun mathFunctionsAvailable() {
+        val connection = getDriver().open(":memory:")
+        val pi =
+            connection.prepare("SELECT pi()").use {
+                it.step()
+                it.getText(0)
+            }
+        assertThat(pi).startsWith("3.14159")
     }
 
     companion object {

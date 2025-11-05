@@ -16,27 +16,54 @@
 
 package androidx.credentials.providerevents.exception
 
+import android.os.Bundle
 import androidx.annotation.RestrictTo
+import androidx.credentials.providerevents.internal.toJetpackGetException
 
 /** Represents an error thrown during the import flow. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ImportCredentialsException(public val type: String, message: String) :
-    Exception(message) {
+public abstract class ImportCredentialsException
+@JvmOverloads
+internal constructor(
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val type: String,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public open val errorMessage: String? = null,
+) : Exception(errorMessage) {
     public companion object {
-        /** The request json cannot be read because it is written in invalid format */
-        public const val INVALID_JSON_TYPE: String =
-            "androidx.credentials.providerevents.exception.ImportCredentialsException.INVALID_JSON_TYPE"
+        private const val EXTRA_IMPORT_CREDENTIALS_EXCEPTION_TYPE =
+            "androidx.credentials.providerevents.extra.IMPORT_CREDENTIALS_EXCEPTION_TYPE"
+        private const val EXTRA_IMPORT_CREDENTIALS_EXCEPTION_MESSAGE =
+            "androidx.credentials.providerevents.extra.IMPORT_CREDENTIALS_EXCEPTION_MESSAGE"
 
-        /** The request cannot be trusted because the caller is unknown */
-        public const val UNKNOWN_CALLER_TYPE: String =
-            "androidx.credentials.providerevents.exception.ImportCredentialsException.UNKNOWN_CALLER_TYPE"
+        /**
+         * Helper method to convert the given [ex] to a parcelable [Bundle], in case the instance
+         * needs to be sent across a process. Consumers of this method should use [fromBundle] to
+         * reconstruct the class instance back from the bundle returned here.
+         */
+        @JvmStatic
+        public fun asBundle(ex: ImportCredentialsException): Bundle {
+            val bundle = Bundle()
+            bundle.putString(EXTRA_IMPORT_CREDENTIALS_EXCEPTION_TYPE, ex.type)
+            ex.errorMessage?.let {
+                bundle.putCharSequence(EXTRA_IMPORT_CREDENTIALS_EXCEPTION_MESSAGE, it)
+            }
+            return bundle
+        }
 
-        /** Used by the system when the request fails to reach the provider */
-        public const val SYSTEM_ERROR_TYPE: String =
-            "androidx.credentials.providerevents.exception.ImportCredentialsException.SYSTEM_ERROR_TYPE"
-
-        /** The credential json cannot be returned due to unknown error */
-        public const val UNKNOWN_ERROR_TYPE: String =
-            "androidx.credentials.providerevents.exception.ImportCredentialsException.UNKNOWN_ERROR_TYPE"
+        /**
+         * Helper method to convert a [Bundle] retrieved through [asBundle], back to an instance of
+         * [ImportCredentialsException].
+         *
+         * Throws [IllegalArgumentException] if the conversion fails. This means that the given
+         * [bundle] does not contain a `ImportCredentialsException`. The bundle should be
+         * constructed and retrieved from [asBundle] itself and never be created from scratch to
+         * avoid the failure.
+         */
+        @JvmStatic
+        public fun fromBundle(bundle: Bundle): ImportCredentialsException {
+            val type =
+                bundle.getString(EXTRA_IMPORT_CREDENTIALS_EXCEPTION_TYPE)
+                    ?: throw IllegalArgumentException("Bundle was missing exception type.")
+            val msg = bundle.getString(EXTRA_IMPORT_CREDENTIALS_EXCEPTION_MESSAGE)
+            return toJetpackGetException(type, msg)
+        }
     }
 }

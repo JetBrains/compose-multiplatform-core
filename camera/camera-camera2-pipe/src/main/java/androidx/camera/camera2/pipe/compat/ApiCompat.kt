@@ -16,7 +16,8 @@
 
 package androidx.camera.camera2.pipe.compat
 
-import android.content.Context
+import android.graphics.ColorSpace
+import android.hardware.HardwareBuffer
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
@@ -33,6 +34,7 @@ import android.hardware.camera2.params.InputConfiguration
 import android.hardware.camera2.params.MultiResolutionStreamInfo
 import android.hardware.camera2.params.OutputConfiguration
 import android.hardware.camera2.params.SessionConfiguration
+import android.media.Image
 import android.media.ImageReader
 import android.media.ImageWriter
 import android.os.Handler
@@ -43,63 +45,7 @@ import androidx.annotation.RequiresPermission
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.availableVideoStabilizationModes
 import java.util.concurrent.Executor
-
-@RequiresApi(23)
-internal object Api23Compat {
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    @Suppress("deprecation")
-    fun createReprocessableCaptureSession(
-        cameraDevice: CameraDevice,
-        inputConfig: InputConfiguration,
-        outputs: List<Surface>,
-        callback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
-    ) {
-        cameraDevice.createReprocessableCaptureSession(inputConfig, outputs, callback, handler)
-    }
-
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    @Suppress("deprecation")
-    fun createConstrainedHighSpeedCaptureSession(
-        cameraDevice: CameraDevice,
-        outputs: List<Surface>,
-        stateCallback: CameraCaptureSession.StateCallback,
-        handler: Handler?,
-    ) {
-        cameraDevice.createConstrainedHighSpeedCaptureSession(outputs, stateCallback, handler)
-    }
-
-    @JvmStatic
-    @Throws(CameraAccessException::class)
-    fun createReprocessCaptureRequest(
-        cameraDevice: CameraDevice,
-        inputResult: TotalCaptureResult,
-    ): CaptureRequest.Builder {
-        return cameraDevice.createReprocessCaptureRequest(inputResult)
-    }
-
-    @JvmStatic
-    fun isReprocessable(cameraCaptureSession: CameraCaptureSession): Boolean {
-        return cameraCaptureSession.isReprocessable
-    }
-
-    @JvmStatic
-    fun getInputSurface(cameraCaptureSession: CameraCaptureSession): Surface? {
-        return cameraCaptureSession.inputSurface
-    }
-
-    @JvmStatic
-    fun newInputConfiguration(width: Int, height: Int, format: Int): InputConfiguration {
-        return InputConfiguration(width, height, format)
-    }
-
-    @JvmStatic
-    fun checkSelfPermission(context: Context, permission: String): Int {
-        return context.checkSelfPermission(permission)
-    }
-}
+import kotlin.reflect.KClass
 
 @RequiresApi(24)
 internal object Api24Compat {
@@ -280,6 +226,20 @@ internal object Api28Compat {
     @JvmStatic
     fun discardFreeBuffers(imageReader: ImageReader) {
         imageReader.discardFreeBuffers()
+    }
+
+    @JvmStatic
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> unwrapAsHardwareBuffer(image: Image, type: KClass<T>): T? {
+        if (type == HardwareBuffer::class) {
+            return image.getHardwareBuffer() as T?
+        }
+        return null
+    }
+
+    @JvmStatic
+    fun getHardwareBuffer(image: Image): HardwareBuffer? {
+        return image.hardwareBuffer
     }
 }
 
@@ -533,6 +493,11 @@ internal object Api34Compat {
         cameraMetadata[CameraCharacteristics.CONTROL_AVAILABLE_SETTINGS_OVERRIDES]?.contains(
             android.hardware.camera2.CameraMetadata.CONTROL_SETTINGS_OVERRIDE_ZOOM
         ) == true
+
+    @JvmStatic
+    fun setColorSpace(sessionConfiguration: SessionConfiguration, colorSpace: ColorSpace.Named) {
+        sessionConfiguration.setColorSpace(colorSpace)
+    }
 }
 
 @RequiresApi(35)
@@ -553,5 +518,40 @@ internal object Api35Compat {
     fun getMaxTorchStrengthLevel(cameraMetadata: CameraMetadata): Int {
         val maxLevel = cameraMetadata[CameraCharacteristics.FLASH_TORCH_STRENGTH_MAX_LEVEL]
         return maxLevel ?: 1
+    }
+
+    /**
+     * Creates a new [OutputConfiguration] for ImageReader with the specified format and surface
+     * size.
+     *
+     * @param format The image format for the output.
+     * @param surfaceSize The size of the surface for the output.
+     */
+    @JvmStatic
+    fun newImageReaderOutputConfiguration(format: Int, surfaceSize: Size): OutputConfiguration {
+        return OutputConfiguration(format, surfaceSize)
+    }
+
+    @JvmStatic
+    fun newSessionConfiguration(
+        sessionType: Int,
+        outputs: List<OutputConfiguration>,
+    ): SessionConfiguration {
+        return SessionConfiguration(sessionType, outputs)
+    }
+
+    @JvmStatic
+    fun createCaptureRequest(
+        cameraDeviceSetup: CameraDevice.CameraDeviceSetup,
+        templateType: Int,
+    ): CaptureRequest.Builder {
+        return cameraDeviceSetup.createCaptureRequest(templateType)
+    }
+
+    @JvmStatic
+    fun getAvailableSessionCharacteristicsKeys(
+        cameraCharacteristics: CameraCharacteristics
+    ): List<CameraCharacteristics.Key<*>>? {
+        return cameraCharacteristics.availableSessionCharacteristicsKeys
     }
 }

@@ -20,7 +20,6 @@ import android.content.ContentValues
 import android.content.Context
 import android.provider.MediaStore
 import android.view.View
-import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
@@ -32,6 +31,7 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ParameterizedTestConfigUtil
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
@@ -39,7 +39,6 @@ import androidx.camera.testing.impl.fakes.FakeSurfaceProcessor
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
@@ -55,7 +54,6 @@ import org.junit.runners.Parameterized
 /** Instrumentation tests for [CameraController]. */
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class CameraControllerDeviceTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
@@ -67,9 +65,8 @@ class CameraControllerDeviceTest(
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
+            ParameterizedTestConfigUtil.generateCameraXConfigParameterizedTestConfigs(
+                inLabTestRequired = true
             )
     }
 

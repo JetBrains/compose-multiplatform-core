@@ -42,7 +42,6 @@ import java.io.StringReader
 
 /** Enables capturing a Perfetto trace */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@RequiresApi(23)
 public class PerfettoCapture(
     /**
      * Bundled is available above API 28, but we default to using unbundled as well on API 29, as
@@ -100,12 +99,7 @@ public class PerfettoCapture(
         enableAndroidxTracingPerfetto(
             targetPackage = config.targetPackage,
             provideBinariesIfMissing = config.provideBinariesIfMissing,
-            isColdStartupTracing =
-                when (config.processState) {
-                    InitialProcessState.Alive -> false
-                    InitialProcessState.NotAlive -> true
-                    InitialProcessState.Unknown -> Shell.isPackageAlive(config.targetPackage)
-                },
+            isColdStartupTracing = config.launchWouldBeCold(),
         )
 
     @RequiresApi(30) // TODO(234351579): Support API < 30
@@ -256,6 +250,18 @@ public class PerfettoCapture(
 
             /** trigger cold start vs running tracing based on a check if process is alive */
             Unknown,
+        }
+
+        /**
+         * Returns true if the target package is not running, and thus will require a cold start
+         * tracing handshake
+         */
+        fun launchWouldBeCold(): Boolean {
+            return when (processState) {
+                InitialProcessState.NotAlive -> true
+                InitialProcessState.Alive -> false
+                InitialProcessState.Unknown -> !Shell.isPackageAlive(targetPackage)
+            }
         }
     }
 }

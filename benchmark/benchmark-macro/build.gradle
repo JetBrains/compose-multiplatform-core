@@ -29,12 +29,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     defaultConfig {
-        minSdk = 23
 
         // We don't care about perf from these correctness tests, so suppress
         // anything that may otherwise block these tests
@@ -66,10 +65,10 @@ android {
 }
 
 dependencies {
-    api(libs.jspecify)
     api(project(":benchmark:benchmark-common"))
+    api(project(":test:uiautomator:uiautomator"))
+    api(libs.jspecify)
     api(libs.junit)
-    api(libs.kotlinStdlib)
     api("androidx.annotation:annotation:1.8.1")
 
     implementation("androidx.core:core:1.9.0")
@@ -79,9 +78,9 @@ dependencies {
     implementation("androidx.tracing:tracing-perfetto-binary:1.0.0")
     implementation("androidx.tracing:tracing-perfetto-handshake:1.0.0")
     implementation("androidx.test:core:1.5.0")
-    implementation(libs.testUiautomator)
     implementation(libs.wireRuntime)
     implementation("androidx.test.ext:junit:1.2.1")
+    implementation libs.testRunner
 
     androidTestImplementation(project(":benchmark:benchmark-junit4"))
     androidTestImplementation(project(":internal-testutils-ktx"))

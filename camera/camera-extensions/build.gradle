@@ -26,7 +26,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -36,6 +36,7 @@ dependencies {
     api("androidx.lifecycle:lifecycle-livedata-core:2.3.1")
     implementation("androidx.core:core:1.0.0")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     implementation(libs.autoValueAnnotations)
     implementation("androidx.annotation:annotation-experimental:1.4.1")
     implementation("androidx.lifecycle:lifecycle-common:2.3.1")
@@ -59,7 +60,6 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.truth)
@@ -73,7 +73,6 @@ dependencies {
     androidTestImplementation(project(":camera:camera-video"))
     androidTestImplementation(project(":internal-testutils-truth"))
     androidTestImplementation(project(":camera:camera-testlib-extensions"))
-    androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
     androidTestImplementation(libs.espressoIdlingResource)
     androidTestImplementation(libs.guavaAndroid)
@@ -84,12 +83,8 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
-
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
-
+    compileSdk = 36
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     lint {
         enable.add("CameraXQuirksClassDetector")
     }

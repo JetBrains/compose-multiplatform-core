@@ -37,6 +37,7 @@ import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
  * to cast the binder object from [getInterface] to the prearranged interface before initiating the
  * communication.
  */
+@Deprecated("This library is no longer supported.")
 public class AppOwnedSdkSandboxInterfaceCompat(
     private val name: String,
     private val version: Long,

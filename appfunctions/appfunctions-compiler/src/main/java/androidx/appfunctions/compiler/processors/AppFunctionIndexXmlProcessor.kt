@@ -54,6 +54,7 @@ class AppFunctionIndexXmlProcessor(private val codeGenerator: CodeGenerator) : S
         generateIndexXml(
             appFunctionSymbolResolver.getAnnotatedAppFunctionsFromAllModules(),
             resolvedAnnotatedSerializableProxies,
+            appFunctionSymbolResolver.getAppFunctionSerializablesDescriptionMap(),
         )
         return emptyList()
     }
@@ -68,20 +69,26 @@ class AppFunctionIndexXmlProcessor(private val codeGenerator: CodeGenerator) : S
     private fun generateIndexXml(
         appFunctionsByClass: List<AnnotatedAppFunctions>,
         resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
+        appFunctionSerializablesDescriptionMap: Map<String, String>,
     ) {
-        if (appFunctionsByClass.isEmpty()) {
-            return
-        }
-        writeXmlFile(appFunctionsByClass, resolvedAnnotatedSerializableProxies)
+        writeXmlFile(
+            appFunctionsByClass,
+            resolvedAnnotatedSerializableProxies,
+            appFunctionSerializablesDescriptionMap,
+        )
     }
 
     private fun writeXmlFile(
         appFunctionsByClass: List<AnnotatedAppFunctions>,
         resolvedAnnotatedSerializableProxies: ResolvedAnnotatedSerializableProxies,
+        appFunctionSerializablesDescriptionMap: Map<String, String>,
     ) {
         val appFunctionMetadataList =
             appFunctionsByClass.flatMap {
-                it.createAppFunctionMetadataList(resolvedAnnotatedSerializableProxies)
+                it.createAppFunctionMetadataList(
+                    resolvedAnnotatedSerializableProxies,
+                    appFunctionSerializablesDescriptionMap,
+                )
             }
 
         val xmlDocumentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
@@ -111,11 +118,13 @@ class AppFunctionIndexXmlProcessor(private val codeGenerator: CodeGenerator) : S
             appFunctionsElement.appendChild(appFunctionElement)
         }
 
-        val componentElement =
-            AppFunctionComponentsMetadata(aggregatedDataTypes)
-                .toAppFunctionComponentsMetadataDocument()
-                .toXmlElement(doc = xmlDocument, COMPONENT_ITEM_TAG)
-        appFunctionsElement.appendChild(componentElement)
+        if (aggregatedDataTypes.isNotEmpty()) {
+            val componentElement =
+                AppFunctionComponentsMetadata(aggregatedDataTypes)
+                    .toAppFunctionComponentsMetadataDocument()
+                    .toXmlElement(doc = xmlDocument, COMPONENT_ITEM_TAG)
+            appFunctionsElement.appendChild(componentElement)
+        }
 
         val transformer =
             TransformerFactory.newInstance().newTransformer().apply {

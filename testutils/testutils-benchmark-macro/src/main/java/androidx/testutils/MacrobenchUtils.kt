@@ -35,15 +35,21 @@ import androidx.benchmark.macro.isSupportedWithVmSettings
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 
-/** Compilation modes to sweep over for jetpack internal macrobenchmarks */
+/**
+ * Compilation modes to sweep over for jetpack internal macrobenchmarks.
+ *
+ * Below API 24, only [CompilationMode.Full] is supported. On 24+, we want to benchmark startup
+ * using baseline profiles and using partial with warmup. Partial compilation is the most
+ * representative mode for our benchmarks. We want to benchmark with warmup as we can't rely on the
+ * baseline profile's effectiveness, resulting in unstable results. However, we still want to obtain
+ * measurements that capture the effectiveness of our baseline profiles, so we run with those too.
+ */
 val COMPILATION_MODES =
     if (Build.VERSION.SDK_INT < 24) {
         // other modes aren't supported
         listOf(CompilationMode.Full())
     } else {
         listOf(
-            CompilationMode.None(),
-            CompilationMode.Interpreted,
             CompilationMode.Partial(
                 baselineProfileMode = BaselineProfileMode.Disable,
                 warmupIterations = 3,
@@ -54,12 +60,17 @@ val COMPILATION_MODES =
              * jetpack macrobenchmark over time.
              */
             CompilationMode.Partial(),
-            CompilationMode.Full(),
         )
     }
 
+/**
+ * Default selection of [StartupMode]s for CI.
+ *
+ * By default, we only care about WARM and COLD startup. HOT provides important metrics, but does
+ * not provide enough delta to WARM for us to run in CI.
+ */
 val STARTUP_MODES =
-    listOf(StartupMode.HOT, StartupMode.WARM, StartupMode.COLD).filter {
+    listOf(StartupMode.WARM, StartupMode.COLD).filter {
         // skip StartupMode.HOT on Angler, API 23 - it works locally with same build on Bullhead,
         // but not in Jetpack CI (b/204572406)
         !(Build.VERSION.SDK_INT == 23 && it == StartupMode.HOT && Build.DEVICE == "angler")
@@ -113,11 +124,17 @@ private fun CompilationMode.isPrimary(): Boolean {
     }
 }
 
+/**
+ * Default selection of [CompilationMode]s for Startup benchmarks in CI.
+ *
+ * Below API 24, only [CompilationMode.Full] is supported. On 24+, we want to benchmark startup
+ * using baseline profiles and using partial with warmup. Partial compilation is the most
+ * representative mode for our benchmarks. We want to benchmark with warmup as we can't rely on the
+ * baseline profile's effectiveness, resulting in unstable results. However, we still want to obtain
+ * measurements that capture the effectiveness of our baseline profiles, , so we run with those too.
+ */
 private val STARTUP_COMPILATION_MODES =
-    COMPILATION_MODES.filter {
-        // Skip full for startup specifically, as it's not representative
-        Build.VERSION.SDK_INT < 24 || it !is CompilationMode.Full
-    }
+    COMPILATION_MODES.filter { Build.VERSION.SDK_INT < 24 || it is CompilationMode.Partial }
 
 fun createStartupCompilationParams(
     startupModes: List<StartupMode> = STARTUP_MODES,

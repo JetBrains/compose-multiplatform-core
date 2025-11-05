@@ -19,26 +19,47 @@ package androidx.credentials.providerevents.transfer
 import android.os.Bundle
 import androidx.annotation.RestrictTo
 
-/** Success response of exporting the credentials to the provider */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ExportCredentialsResponse(
-    public val numSuccess: Int,
-    public val numFailure: Int,
-    public val numIgnored: Int,
-) {
+/**
+ * Success response of exporting the credentials to the provider
+ *
+ * @property exportResults the result of exporting credentials, keyed by the [CredentialTypes]
+ */
+public class ExportCredentialsResponse(public val exportResults: Map<String, PerTypeExportResult>) {
     public companion object {
-        // values derived from identity credential sdk
-        private const val NUM_SUCCESS_KEY = "NUM_SUCCESS"
-        private const val NUM_FAILURE_KEY = "NUM_FAILURE"
-        private const val NUM_IGNORED_KEY = "NUM_IGNORED"
+        private const val BUNDLE_NUM_SUCCESS_KEY =
+            "androidx.credentials.providerevents.BUNDLE_NUM_SUCCESS_KEY"
+        private const val BUNDLE_NUM_FAILURE_KEY =
+            "androidx.credentials.providerevents.BUNDLE_NUM_FAILURE_KEY"
+        private const val BUNDLE_NUM_IGNORED_KEY =
+            "androidx.credentials.providerevents.BUNDLE_NUM_IGNORED_KEY"
 
+        /** Wraps the response class into a bundle */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY)
-        public fun asBundle(response: ExportCredentialsResponse): Bundle =
+        public fun toBundle(response: ExportCredentialsResponse): Bundle =
             Bundle().apply {
-                putInt(NUM_SUCCESS_KEY, response.numSuccess)
-                putInt(NUM_FAILURE_KEY, response.numFailure)
-                putInt(NUM_IGNORED_KEY, response.numIgnored)
+                for (result in response.exportResults.entries) {
+                    val bundle = Bundle()
+                    bundle.putInt(BUNDLE_NUM_SUCCESS_KEY, result.value.numSuccess)
+                    bundle.putInt(BUNDLE_NUM_FAILURE_KEY, result.value.numFailure)
+                    bundle.putInt(BUNDLE_NUM_IGNORED_KEY, result.value.numIgnored)
+                    putBundle(result.key, bundle)
+                }
             }
+
+        /** Unwraps the response class from a bundle */
+        @JvmStatic
+        @RestrictTo(RestrictTo.Scope.LIBRARY)
+        public fun fromBundle(bundle: Bundle): ExportCredentialsResponse {
+            val exportResults = mutableMapOf<String, PerTypeExportResult>()
+            for (key in bundle.keySet()) {
+                val resultBundle = bundle.getBundle(key) ?: continue
+                val numSuccess = resultBundle.getInt(BUNDLE_NUM_SUCCESS_KEY)
+                val numFailure = resultBundle.getInt(BUNDLE_NUM_FAILURE_KEY)
+                val numIgnored = resultBundle.getInt(BUNDLE_NUM_IGNORED_KEY)
+                exportResults[key] = PerTypeExportResult(key, numSuccess, numFailure, numIgnored)
+            }
+            return ExportCredentialsResponse(exportResults)
+        }
     }
 }

@@ -29,8 +29,8 @@ import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Size
 import android.view.Surface
+import androidx.camera.camera2.adapter.CameraUseCaseAdapter
 import androidx.camera.camera2.impl.Camera2ImplConfig
-import androidx.camera.camera2.internal.Camera2UseCaseConfigFactory
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraEffect.IMAGE_CAPTURE
@@ -96,7 +96,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [StreamSharing]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class StreamSharingTest {
 
     companion object {
@@ -366,6 +366,7 @@ class StreamSharingTest {
                 useCaseConfigFactory,
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
+        streamSharing.onSessionStart()
         streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build(), null)
         imageCapture.targetRotation = Surface.ROTATION_90
 
@@ -688,7 +689,7 @@ class StreamSharingTest {
                 CompositionSettings.DEFAULT,
                 CompositionSettings.DEFAULT,
                 setOf(previewBuilder.build()),
-                Camera2UseCaseConfigFactory(context),
+                CameraUseCaseAdapter(context),
             )
         streamSharing.bindToCamera(camera, null, null, defaultConfig)
         streamSharing.onSuggestedStreamSpecUpdated(StreamSpec.builder(size).build(), null)
@@ -869,12 +870,12 @@ class StreamSharingTest {
         assertThat(child1.stateAttachedCount).isEqualTo(0)
         assertThat(child2.stateAttachedCount).isEqualTo(0)
         // Act: attach.
-        streamSharing.onStateAttached()
+        streamSharing.onSessionStart()
         // Assert: children attached.
         assertThat(child1.stateAttachedCount).isEqualTo(1)
         assertThat(child2.stateAttachedCount).isEqualTo(1)
         // Act: detach.
-        streamSharing.onStateDetached()
+        streamSharing.onSessionStop()
         // Assert: children not attached.
         assertThat(child1.stateAttachedCount).isEqualTo(0)
         assertThat(child2.stateAttachedCount).isEqualTo(0)

@@ -33,12 +33,15 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.ActivityPanelEntity
 import androidx.xr.scenecore.MovableComponent
+import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
-import androidx.xr.scenecore.SpatialCapabilities
+import androidx.xr.scenecore.ResizeEvent
+import androidx.xr.scenecore.SpatialCapability
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.createSession
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.util.function.Consumer
 
 class ActivityPanelActivity : AppCompatActivity() {
     private lateinit var activityPanelEntity: ActivityPanelEntity
@@ -79,12 +82,7 @@ class ActivityPanelActivity : AppCompatActivity() {
         val button: Button = findViewById(R.id.spawn_activity_panel_button)
         button.setOnClickListener {
             // Check spatial capabilities of the session
-            if (
-                session!!
-                    .scene
-                    .spatialCapabilities
-                    .hasCapability(SpatialCapabilities.SPATIAL_CAPABILITY_EMBED_ACTIVITY)
-            ) {
+            if (session!!.scene.spatialCapabilities.contains(SpatialCapability.EMBED_ACTIVITY)) {
 
                 if (!secondaryPanelLaunched) {
                     // Set the pose for the activity panel
@@ -93,13 +91,18 @@ class ActivityPanelActivity : AppCompatActivity() {
                     val intent = Intent(this, ActivityPanel::class.java)
                     intent.putExtra("NAV_ICON", false)
                     // Launch an activity in the panel
-                    activityPanelEntity.launchActivity(intent, savedInstanceState)
+                    activityPanelEntity.startActivity(intent)
                     // Add movable component
-                    val movableComponent = MovableComponent.create(session!!)
+                    val movableComponent = MovableComponent.createSystemMovable(session!!)
                     activityPanelEntity.addComponent(movableComponent)
                     movableComponent.size = getSizeInLocalSpace(activityPanelEntity)
                     // Add resizeable component
-                    val resizeableComponent = ResizableComponent.create(session!!)
+                    val resizeListener =
+                        Consumer<ResizeEvent> { resizeEvent: ResizeEvent ->
+                            (resizeEvent.entity as PanelEntity).size = resizeEvent.newSize.to2d()
+                        }
+                    val resizeableComponent =
+                        ResizableComponent.create(session!!, resizeEventListener = resizeListener)
                     activityPanelEntity.addComponent(resizeableComponent)
 
                     secondaryPanelLaunched = true

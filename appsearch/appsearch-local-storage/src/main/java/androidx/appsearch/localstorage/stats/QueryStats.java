@@ -95,8 +95,6 @@ public final class QueryStats extends BaseStats {
     private final int mRewriteSearchSpecLatencyMillis;
     /** Time used to rewrite the search results. */
     private final int mRewriteSearchResultLatencyMillis;
-    /** Time passed while waiting to acquire the lock during Java function calls. */
-    private final int mJavaLockAcquisitionLatencyMillis;
     /**
      * Time spent on ACL checking. This is the time spent filtering namespaces based on package
      * permissions and Android permission access.
@@ -176,7 +174,6 @@ public final class QueryStats extends BaseStats {
         mTotalLatencyMillis = builder.mTotalLatencyMillis;
         mRewriteSearchSpecLatencyMillis = builder.mRewriteSearchSpecLatencyMillis;
         mRewriteSearchResultLatencyMillis = builder.mRewriteSearchResultLatencyMillis;
-        mJavaLockAcquisitionLatencyMillis = builder.mJavaLockAcquisitionLatencyMillis;
         mAclCheckLatencyMillis = builder.mAclCheckLatencyMillis;
         mVisibilityScope = builder.mVisibilityScope;
         mSearchSourceLogTag = builder.mSearchSourceLogTag;
@@ -239,11 +236,6 @@ public final class QueryStats extends BaseStats {
     /** Returns how much time spent on rewriting the {@link androidx.appsearch.app.SearchResult}. */
     public int getRewriteSearchResultLatencyMillis() {
         return mRewriteSearchResultLatencyMillis;
-    }
-
-    /** Returns time passed while waiting to acquire the lock during Java function calls */
-    public int getJavaLockAcquisitionLatencyMillis() {
-        return mJavaLockAcquisitionLatencyMillis;
     }
 
     /**
@@ -359,7 +351,8 @@ public final class QueryStats extends BaseStats {
     }
 
     /** Returns the type of join performed. Blank if no join is performed */
-    public @JoinableValueType int getJoinType() {
+    @JoinableValueType
+    public int getJoinType() {
         return mJoinType;
     }
 
@@ -403,35 +396,58 @@ public final class QueryStats extends BaseStats {
     public String toString() {
         return String.format(
                 "QueryStats {\n"
-                        + "package=%s, database=%s, status=%d, total_latency=%d, "
-                        + "rewrite_search_spec_latency=%d,\n"
-                        + "rewrite_search_result_latency=%d, java_lock_acquisition_latency=%d, "
-                        + "acl_check_latency=%d, visibility_score=%d,\n"
-                        + "search_source_log_tag=%s, is_first_page=%b, requested_page_size=%d, "
-                        + "num_results_returned_current_page=%d,\n"
-                        + "native_latency=%d, ranking_latency=%d, document_retrieving_latency=%d, "
-                        + "num_results_with_snippets=%d,\n"
-                        + "native_lock_acquisition_latency=%d, java_to_native_jni_latency=%d, "
-                        + "native_to_java_jni_latency=%d,\n"
-                        + "join_latency_ms=%d, num_joined_results_current_page=%d, join_type=%d, "
-                        + "lite_index_hit_buffer_byte_size=%d,\n"
-                        + "lite_index_hit_buffer_unsorted_byte_size=%d\n"
-                        + "page_token_type=%d, num_result_states_evicted=%d\n"
-                        + "parent_search_stats=%s,\n child_search_stats=%s}",
+                        + "  packageName=%s,\n"
+                        + "  database=%s,\n"
+                        + "  statusCode=%d,\n"
+                        + "  totalLatencyMillis=%d,\n"
+                        + "  rewriteSearchSpecLatencyMillis=%d,\n"
+                        + "  rewriteSearchResultLatencyMillis=%d,\n"
+                        + "  aclCheckLatencyMillis=%d,\n"
+                        + "  visibilityScope=%d,\n"
+                        + "  searchSourceLogTag=%s,\n"
+                        + "  nativeIsFirstPage=%b,\n"
+                        + "  additionalPageCount=%d,\n"
+                        + "  nativeRequestedPageSize=%d,\n"
+                        + "  nativeNumResultsReturnedCurrentPage=%d,\n"
+                        + "  numResultsReturnedAdditionalPages=%d,\n"
+                        + "  nativeLatencyMillis=%d,\n"
+                        + "  firstNativeCallLatencyMillis=%d,\n"
+                        + "  additionalPageRetrievalLatencyMillis=%d,\n"
+                        + "  nativeRankingLatencyMillis=%d,\n"
+                        + "  nativeDocumentRetrievingLatencyMillis=%d,\n"
+                        + "  nativeNumResultsWithSnippets=%d,\n"
+                        + "  nativeLockAcquisitionLatencyMillis=%d,\n"
+                        + "  javaToNativeJniLatencyMillis=%d,\n"
+                        + "  nativeToJavaJniLatencyMillis=%d,\n"
+                        + "  nativeJoinLatencyMillis=%d,\n"
+                        + "  nativeNumJoinedResultsCurrentPage=%d,\n"
+                        + "  joinType=%d,\n"
+                        + "  parentSearchStats=%s,\n"
+                        + "  childSearchStats=%s,\n"
+                        + "  liteIndexHitBufferByteSize=%d,\n"
+                        + "  liteIndexHitBufferUnsortedByteSize=%d,\n"
+                        + "  pageTokenType=%d,\n"
+                        + "  numResultStatesEvicted=%d,\n"
+                        // Include BaseStats fields
+                        + super.toString()
+                        + "}",
                 mPackageName,
                 mDatabase,
                 mStatusCode,
                 mTotalLatencyMillis,
                 mRewriteSearchSpecLatencyMillis,
                 mRewriteSearchResultLatencyMillis,
-                mJavaLockAcquisitionLatencyMillis,
                 mAclCheckLatencyMillis,
                 mVisibilityScope,
                 mSearchSourceLogTag,
                 mNativeIsFirstPage,
+                mAdditionalPageCount,
                 mNativeRequestedPageSize,
                 mNativeNumResultsReturnedCurrentPage,
+                mNumResultsReturnedAdditionalPages,
                 mNativeLatencyMillis,
+                mFirstNativeCallLatencyMillis,
+                mAdditionalPageRetrievalLatencyMillis,
                 mNativeRankingLatencyMillis,
                 mNativeDocumentRetrievingLatencyMillis,
                 mNativeNumResultsWithSnippets,
@@ -441,13 +457,14 @@ public final class QueryStats extends BaseStats {
                 mNativeJoinLatencyMillis,
                 mNativeNumJoinedResultsCurrentPage,
                 mJoinType,
+                String.valueOf(mParentSearchStats).replace("\n", "\n  "),
+                String.valueOf(mChildSearchStats).replace("\n", "\n  "),
                 mLiteIndexHitBufferByteSize,
                 mLiteIndexHitBufferUnsortedByteSize,
                 mPageTokenType,
-                mNumResultStatesEvicted,
-                mParentSearchStats.toString(),
-                mChildSearchStats.toString());
+                mNumResultStatesEvicted);
     }
+
     /** Builder for {@link QueryStats} */
     public static class Builder extends BaseStats.Builder<QueryStats.Builder> {
         final @NonNull String mPackageName;
@@ -457,7 +474,6 @@ public final class QueryStats extends BaseStats {
         int mTotalLatencyMillis;
         int mRewriteSearchSpecLatencyMillis;
         int mRewriteSearchResultLatencyMillis;
-        int mJavaLockAcquisitionLatencyMillis;
         int mAclCheckLatencyMillis;
         int mVisibilityScope;
         @Nullable String mSearchSourceLogTag;
@@ -530,14 +546,6 @@ public final class QueryStats extends BaseStats {
         public @NonNull Builder setRewriteSearchResultLatencyMillis(
                 int rewriteSearchResultLatencyMillis) {
             mRewriteSearchResultLatencyMillis = rewriteSearchResultLatencyMillis;
-            return this;
-        }
-
-        /** Sets time passed while waiting to acquire the lock during Java function calls. */
-        @CanIgnoreReturnValue
-        public @NonNull Builder setJavaLockAcquisitionLatencyMillis(
-                int javaLockAcquisitionLatencyMillis) {
-            mJavaLockAcquisitionLatencyMillis = javaLockAcquisitionLatencyMillis;
             return this;
         }
 

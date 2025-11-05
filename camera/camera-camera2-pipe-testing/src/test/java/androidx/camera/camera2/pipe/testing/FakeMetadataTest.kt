@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.testing
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.os.Build
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameNumber
@@ -46,7 +45,7 @@ class MetadataTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraMetadataTest {
     @Test
     fun cameraMetadataIsNotEqual() {
@@ -81,7 +80,7 @@ class CameraMetadataTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class RequestMetadataTest {
 
     @Test
@@ -110,7 +109,7 @@ class RequestMetadataTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class FrameMetadataTest {
     @Test
     fun canRetrieveCaptureRequestOrCameraMetadataViaInterface() {
@@ -129,7 +128,7 @@ class FrameMetadataTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class MetadataTransformTest {
     private val metadata =
         FakeCameraMetadata(

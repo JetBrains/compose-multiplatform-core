@@ -18,13 +18,19 @@ package androidx.text.vertical
 
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.os.Build
 import android.text.SpannableString
 import android.text.TextPaint
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 private const val SPAN_FLAG = SpannableString.SPAN_INCLUSIVE_EXCLUSIVE
 
+@RunWith(JUnit4::class)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.BAKLAVA)
 class RubyTest {
     private val PREFIX = "PREFIX_PREFIX_PREFIX"
     private val SUFFIX = "SUFFIX_SUFFIX_SUFFIX"
@@ -84,7 +90,7 @@ class RubyTest {
     }
 
     @Test
-    fun `Ruby Builder build and get - default`() {
+    fun rubySpan_Builder_BuildAndGetDefault() {
         RubySpan.Builder(RUBY_TEXT).build().run {
             assertThat(text).isEqualTo(RUBY_TEXT)
             assertThat(orientation).isEqualTo(TextOrientation.MIXED)
@@ -93,7 +99,7 @@ class RubyTest {
     }
 
     @Test
-    fun `Ruby Builder build and get - customize`() {
+    fun rubySpan_Builder_BuildAndGetCustomize() {
         RubySpan.Builder(RUBY_TEXT)
             .setOrientation(TextOrientation.UPRIGHT)
             .setTextScale(0.3f)
@@ -106,7 +112,7 @@ class RubyTest {
     }
 
     @Test
-    fun `RubyLayout create - Ruby is shorter than base text`() {
+    fun rubyLayoutRun_CreateRubyShorterThanBaseText() {
         val rubySpan = RubySpan.Builder(RUBY_TEXT).build()
         RubyLayoutRun(TEXT, LATIN_START, LATIN_END, TextOrientation.MIXED, PAINT, rubySpan).run {
             assertThat(start).isEqualTo(LATIN_START)
@@ -140,7 +146,7 @@ class RubyTest {
     }
 
     @Test
-    fun `RubyLayout create - Ruby is longer than base text`() {
+    fun rubyLayoutRun_CreateRubyLongerThanBaseText() {
         val LONG_RUBY_TEXT = RUBY_TEXT.repeat(10)
         val rubySpan = RubySpan.Builder(LONG_RUBY_TEXT).build()
         RubyLayoutRun(TEXT, LATIN_START, LATIN_END, TextOrientation.MIXED, PAINT, rubySpan).run {
@@ -175,7 +181,7 @@ class RubyTest {
     }
 
     @Test
-    fun `RubyLayout create - Ruby upright orientation`() {
+    fun rubyLayoutRun_CreateRubyUprightOrientation() {
         val LONG_RUBY_TEXT = RUBY_TEXT.repeat(10)
         val rubySpan =
             RubySpan.Builder(LONG_RUBY_TEXT).setOrientation(TextOrientation.UPRIGHT).build()
@@ -212,7 +218,7 @@ class RubyTest {
     }
 
     @Test
-    fun `RubyLayout create - Ruby scale`() {
+    fun rubyLayoutRun_CreateRubyScale() {
         val LONG_RUBY_TEXT = RUBY_TEXT.repeat(10)
         val rubySpan = RubySpan.Builder(LONG_RUBY_TEXT).setTextScale(0.3f).build()
         RubyLayoutRun(TEXT, LATIN_START, LATIN_END, TextOrientation.MIXED, PAINT, rubySpan).run {

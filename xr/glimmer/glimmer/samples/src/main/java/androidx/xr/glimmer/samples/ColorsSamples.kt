@@ -39,7 +39,7 @@ fun ColorsSample() {
     val colors = GlimmerTheme.colors
     VerticalList(
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         item { ColorItem(colors.primary, colorName = "primary") }
         item { ColorItem(colors.secondary, colorName = "secondary") }
@@ -65,6 +65,7 @@ private fun ColorItem(color: Color, colorName: String, modifier: Modifier = Modi
                 shape = RectangleShape,
                 color = color,
                 border = BorderStroke(1.dp, color = Color.White),
+                focusable = false,
             )
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,

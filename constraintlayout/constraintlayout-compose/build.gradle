@@ -45,7 +45,6 @@ androidXMultiplatform {
                 implementation("androidx.compose.foundation:foundation-layout:1.7.0")
                 implementation(project(":constraintlayout:constraintlayout-core"))
                 implementation("androidx.collection:collection:1.4.2")
-                implementation(libs.kotlinStdlib)
             }
         }
 
@@ -75,7 +74,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmCommonTest)
             dependencies {
                 implementation(libs.kotlinTest)
@@ -92,7 +91,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmCommonTest)
             dependencies {
                 implementation(libs.kotlinTest)
@@ -115,6 +114,5 @@ androidx {
     inceptionYear = "2022"
     description = "This library offers a flexible and adaptable way to position and animate widgets in Compose"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
     samples(project(":constraintlayout:constraintlayout-compose:constraintlayout-compose-samples"))
 }

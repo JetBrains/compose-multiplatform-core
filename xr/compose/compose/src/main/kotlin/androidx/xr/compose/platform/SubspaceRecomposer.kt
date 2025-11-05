@@ -225,7 +225,7 @@ private fun createLifecycleAwareSubspaceRecomposer(
                                     systemDurationScaleSettingConsumer?.let {
                                         val durationScaleStateFlow =
                                             getAnimationScaleFlowFor(
-                                                subspace.ownerActivity.applicationContext
+                                                subspace.context.applicationContext
                                             )
                                         it.scaleFactor = durationScaleStateFlow.value
                                         launch {

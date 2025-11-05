@@ -28,7 +28,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 public class RecordingSession(private val defaults: Defaults) {
     public companion object {
         public const val DEFAULT_VERIFY_STATUS_COUNT: Int = 5
-        public const val DEFAULT_VERIFY_TIMEOUT_MS: Long = 5000
+        public const val DEFAULT_VERIFY_TIMEOUT_MS: Long = 10000
         public const val DEFAULT_VERIFY_STATUS_TIMEOUT_MS: Long = 15000
     }
 
@@ -37,10 +37,6 @@ public class RecordingSession(private val defaults: Defaults) {
         val recorder: Recorder? = null,
         val outputOptionsProvider: () -> OutputOptions,
         val withAudio: Boolean = true,
-        val recordingStopStrategy: (androidx.camera.video.Recording, Recorder) -> Unit =
-            { recording, _ ->
-                recording.stop()
-            },
         val callbackExecutor: Executor = mainThreadExecutor(),
         val verifyStatusCount: Int = DEFAULT_VERIFY_STATUS_COUNT,
         val verifyTimeoutMs: Long = DEFAULT_VERIFY_TIMEOUT_MS,
@@ -64,7 +60,6 @@ public class RecordingSession(private val defaults: Defaults) {
                 withAudio = withAudio,
                 initialAudioMuted = initialAudioMuted,
                 asPersistentRecording = asPersistentRecording,
-                recordingStopStrategy = defaults.recordingStopStrategy,
                 callbackExecutor = defaults.callbackExecutor,
                 defaultVerifyStatusCount = defaults.verifyStatusCount,
                 defaultVerifyTimeoutMs = defaults.verifyTimeoutMs,

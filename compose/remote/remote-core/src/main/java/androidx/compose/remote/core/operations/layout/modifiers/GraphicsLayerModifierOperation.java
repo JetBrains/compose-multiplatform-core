@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations.layout.modifiers;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /** Represents a graphics layer modifier. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class GraphicsLayerModifierOperation extends DecoratorModifierOperation {
     private static final int OP_CODE = Operations.MODIFIER_GRAPHICS_LAYER;
     public static final String CLASS_NAME = "GraphicsLayerModifierOperation";
@@ -108,7 +110,7 @@ public class GraphicsLayerModifierOperation extends DecoratorModifierOperation {
      *
      * @param attributes
      */
-    public void fillInAttributes(HashMap<Integer, Object> attributes) {
+    public void fillInAttributes(@NonNull HashMap<Integer, Object> attributes) {
         for (int i = 0; i < mValues.length; i++) {
             if (mValues[i].needsToWrite()) {
                 attributes.put(i, mValues[i].getObjectValue());
@@ -339,7 +341,7 @@ public class GraphicsLayerModifierOperation extends DecoratorModifierOperation {
      *
      * @param buffer
      */
-    private void readAttributeValue(WireBuffer buffer) {
+    private void readAttributeValue(@NonNull WireBuffer buffer) {
         int tag = buffer.readInt();
         int dataType = tag >> 10;
         int index = (short) (tag & 0x3F);
@@ -361,7 +363,7 @@ public class GraphicsLayerModifierOperation extends DecoratorModifierOperation {
      *
      * @param doc to append the description to.
      */
-    public static void documentation(DocumentationBuilder doc) {
+    public static void documentation(@NonNull DocumentationBuilder doc) {
         doc.operation("Modifier Operations", OP_CODE, CLASS_NAME)
                 .description("define the GraphicsLayer Modifier");
     }

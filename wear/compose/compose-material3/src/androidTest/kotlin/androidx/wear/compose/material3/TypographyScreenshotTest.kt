@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
@@ -43,6 +42,7 @@ import androidx.wear.compose.foundation.curvedRow
 import androidx.wear.compose.material3.tokens.TypographyVariableFontsTokens
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -50,10 +50,10 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(TestParameterInjector::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 @OptIn(ExperimentalTextApi::class)
 class TypographyScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -429,7 +429,7 @@ class TypographyScreenshotTest {
 
     private fun verifyTypographyScreenshot(content: @Composable () -> Unit) {
         rule.verifyScreenshot(
-            methodName = testName.goldenIdentifier(),
+            testName = testName,
             screenshotRule = screenshotRule,
             content = { content() },
         )

@@ -27,7 +27,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import androidx.testutils.MainDispatcherRule
 import androidx.testutils.TestDispatcher
 import com.google.common.truth.Truth.assertThat
@@ -96,7 +95,6 @@ class AsyncPagingDataDifferTest {
             workerDispatcher = Dispatchers.Main,
         )
 
-    @SdkSuppress(minSdkVersion = 21) // b/189492631
     @Test
     fun performDiff_fastPathLoadStates() =
         testScope.runTest {
@@ -162,7 +160,6 @@ class AsyncPagingDataDifferTest {
             )
         }
 
-    @SdkSuppress(minSdkVersion = 21) // b/189492631
     @Test
     fun performDiff_fastPathLoadStatesFlow() =
         testScope.runTest {
@@ -358,7 +355,6 @@ class AsyncPagingDataDifferTest {
             }
         }
 
-    @SdkSuppress(minSdkVersion = 21) // b/189492631
     @Test
     fun submitData_guaranteesOrder() =
         testScope.runTest {
@@ -573,7 +569,6 @@ class AsyncPagingDataDifferTest {
      * tests already validate that but it is still good to have an integration test to clarify end
      * to end expected behavior. Repro for b/1987328.
      */
-    @SdkSuppress(minSdkVersion = 21) // b/189492631
     @Test
     fun refreshEventsAreImmediate_cached() =
         testScope.runTest {
@@ -610,7 +605,6 @@ class AsyncPagingDataDifferTest {
             job.cancelAndJoin()
         }
 
-    @SdkSuppress(minSdkVersion = 21) // b/189492631
     @Test
     fun loadStateFlowSynchronouslyUpdates() =
         testScope.runTest {
@@ -785,6 +779,91 @@ class AsyncPagingDataDifferTest {
                 assertEquals(secondList, differ.snapshot())
                 assertEquals(secondList, onInsertedSnapshot)
                 assertEquals(secondList, onRemovedSnapshot)
+            }
+        }
+
+    @Test
+    fun listUpdateCallbackStaticListPlaceholders() =
+        testScope.runTest {
+            var onInsertedPos = -1
+            var onInsertedCount = -1
+            var onChangedPos = -1
+            var onChangedCount = -1
+            withContext(coroutineContext) {
+                val listUpdateCallback =
+                    object : ListUpdateCallback {
+                        lateinit var differ: AsyncPagingDataDiffer<Int>
+
+                        override fun onChanged(position: Int, count: Int, payload: Any?) {
+                            onChangedPos = position
+                            onChangedCount = count
+                        }
+
+                        override fun onMoved(fromPosition: Int, toPosition: Int) {
+                            // TODO: Trigger this callback so we can assert state at this point as
+                            // well
+                        }
+
+                        override fun onInserted(position: Int, count: Int) {
+                            onInsertedPos = position
+                            onInsertedCount = count
+                        }
+
+                        override fun onRemoved(position: Int, count: Int) {
+                            //
+                        }
+                    }
+
+                val differ =
+                    AsyncPagingDataDiffer(
+                            diffCallback =
+                                object : DiffUtil.ItemCallback<Int>() {
+                                    override fun areContentsTheSame(
+                                        oldItem: Int,
+                                        newItem: Int,
+                                    ): Boolean {
+                                        return oldItem == newItem
+                                    }
+
+                                    override fun areItemsTheSame(
+                                        oldItem: Int,
+                                        newItem: Int,
+                                    ): Boolean {
+                                        return oldItem == newItem
+                                    }
+                                },
+                            updateCallback = listUpdateCallback,
+                            mainDispatcher = Dispatchers.Main,
+                            workerDispatcher = Dispatchers.Main,
+                        )
+                        .also { listUpdateCallback.differ = it }
+
+                // Initial insert; this only triggers onInserted
+                differ.submitData(
+                    PagingData.from(listOf(2, 3), placeholdersBefore = 2, placeholdersAfter = 96)
+                )
+                advanceUntilIdle()
+
+                val list = ItemSnapshotList(2, 96, listOf(2, 3))
+                assertEquals(list, differ.snapshot())
+                assertThat(onInsertedPos).isEqualTo(0)
+                assertThat(onInsertedCount).isEqualTo(100)
+
+                val pager =
+                    Pager(PagingConfig(pageSize = 1), initialKey = 2) {
+                        TestPagingSource(loadDelay = 500)
+                    }
+                val job = launch { pager.flow.collectLatest { differ.submitData(it) } }
+
+                // only let refresh load through
+                advanceTimeBy(600)
+
+                val list2 = ItemSnapshotList(2, 95, listOf(2, 3, 4))
+                assertEquals(list2, differ.snapshot())
+                assertThat(onChangedPos).isEqualTo(4)
+                assertThat(onChangedCount).isEqualTo(1)
+
+                job.cancel()
             }
         }
 

@@ -17,23 +17,15 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
-    compileSdk = 35
-
+    compileSdk = 36
     defaultConfig {
         applicationId = "androidx.camera.integration.antelope"
         versionCode 35
         versionName "1.35"
-    }
-    sourceSets {
-        main.manifest.srcFile "src/main/AndroidManifest.xml"
-        main.java.srcDirs = ["src/main/java"]
-        main.java.excludes = ["**/build/**"]
-        main.java.includes = ["**/*.java"]
-        main.res.srcDirs = ["src/main/res"]
     }
     buildTypes {
         release {
@@ -62,7 +54,6 @@ dependencies {
     implementation("androidx.preference:preference:1.2.1")
     implementation("androidx.exifinterface:exifinterface:1.0.0")
     implementation(libs.constraintLayout)
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.

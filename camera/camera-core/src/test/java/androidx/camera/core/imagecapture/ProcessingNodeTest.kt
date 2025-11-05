@@ -61,7 +61,7 @@ import org.robolectric.util.ReflectionHelpers.setStaticField
 /** Unit tests for [ProcessingNode]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class ProcessingNodeTest {
 
     private lateinit var processingNodeIn: ProcessingNode.In

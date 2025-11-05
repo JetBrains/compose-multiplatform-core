@@ -19,12 +19,17 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.CaptureRequest
 import android.view.Surface
 import androidx.camera.camera2.pipe.CameraGraphId
+import androidx.camera.camera2.pipe.CameraId
+import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.compat.Camera2Quirks
 import androidx.camera.camera2.pipe.graph.GraphProcessorImpl
 import androidx.camera.camera2.pipe.graph.GraphRequestProcessor
 import androidx.camera.camera2.pipe.graph.Listener3A
 import androidx.camera.camera2.pipe.graph.SessionLock
+import androidx.camera.camera2.pipe.testing.FakeCamera2MetadataProvider
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Companion.graphParameters
 import androidx.camera.camera2.pipe.testing.FakeCaptureSequenceProcessor.Companion.isRepeating
@@ -61,6 +66,13 @@ class CameraGraphParametersImplTest {
             FakeGraphConfigs.graphConfig,
             Listener3A(),
             arrayListOf(FakeRequestListener()),
+            Camera2Quirks(
+                metadataProvider =
+                    FakeCamera2MetadataProvider(
+                        mapOf(CameraId("0") to FakeCameraMetadata(cameraId = CameraId("0")))
+                    ),
+                cameraPipeFlags = CameraPipe.Flags(),
+            ),
         )
     private val surfaceMap = mapOf(StreamId(0) to Surface(SurfaceTexture(1)))
     private val csp1 = FakeCaptureSequenceProcessor().also { it.surfaceMap = surfaceMap }

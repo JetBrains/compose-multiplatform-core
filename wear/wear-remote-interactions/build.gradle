@@ -26,12 +26,12 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    api(libs.kotlinStdlib)
+    api("androidx.wear:wear-core:1.0.0-beta01")
     api(libs.guavaListenableFuture)
     api("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     api(libs.kotlinCoroutinesCore)
@@ -52,7 +52,7 @@ dependencies {
     testImplementation(libs.kotlinCoroutinesTest)
 
     implementation(libs.playServicesBasement)
-    implementation(libs.playServicesWearable, { exclude group: "androidx.core"})
+    implementation(libs.playServicesWearable)
 
     // Includes the wear-sdk jar
     compileOnly files("../../wear/wear_sdk/wear-sdk.jar")
@@ -60,9 +60,6 @@ dependencies {
 }
 
 android {
-    defaultConfig {
-        minSdk = 23
-    }
     namespace = "androidx.wear.remote.interactions"
 }
 

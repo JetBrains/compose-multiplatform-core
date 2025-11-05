@@ -126,8 +126,8 @@ private class ContextOnlySpatialConfiguration(private val context: Context) : Sp
     override val bounds: DpVolumeSize
         get() =
             DpVolumeSize(
-                context.getActivity().resources.configuration.screenWidthDp.dp,
-                context.getActivity().resources.configuration.screenHeightDp.dp,
+                context.requireActivity().resources.configuration.screenWidthDp.dp,
+                context.requireActivity().resources.configuration.screenHeightDp.dp,
                 0.dp,
             )
 }
@@ -135,8 +135,8 @@ private class ContextOnlySpatialConfiguration(private val context: Context) : Sp
 /** A [SpatialConfiguration] that is attached to the current [Session]. */
 internal class SessionSpatialConfiguration(private val session: Session) : SpatialConfiguration {
     private var boundsState by
-        mutableStateOf(session.scene.activitySpace.getBounds()).apply {
-            session.scene.activitySpace.addBoundsChangedListener { value = it }
+        mutableStateOf(session.scene.activitySpace.bounds).apply {
+            session.scene.activitySpace.addOnBoundsChangedListener { value = it }
         }
 
     override val hasXrSpatialFeature: Boolean = true

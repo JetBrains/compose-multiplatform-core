@@ -15,7 +15,6 @@
  */
 package androidx.wear.compose.foundation
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -44,6 +43,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -51,10 +51,10 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class CurvedScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -304,6 +304,56 @@ class CurvedScreenshotTest {
                 basicCurvedText("Base", style = baseStyle)
                 curvedBox(CurvedModifier.angularSizeDp(1.dp)) {}
                 basicCurvedText("Line Height 24.sp", style = baseStyle.copy(lineHeight = 24.sp))
+            }
+        }
+    }
+
+    @Test
+    fun warp_test() {
+        verify_composable_screenshot {
+            val baseStyle =
+                CurvedTextStyle(color = Color.White, background = Color.Gray, fontSize = 30.sp)
+            CurvedLayout(
+                modifier = Modifier.fillMaxSize().background(Color.Black),
+                radialAlignment = CurvedAlignment.Radial.Center,
+            ) {
+                listOf(
+                        "No" to CurvedTextStyle.WarpOffset.None,
+                        "D" to CurvedTextStyle.WarpOffset.Descent,
+                        "B" to CurvedTextStyle.WarpOffset.Baseline,
+                        "H" to CurvedTextStyle.WarpOffset.HalfOpticalHeight,
+                        "A2" to CurvedTextStyle.WarpOffset.HalfAscent,
+                        "A" to CurvedTextStyle.WarpOffset.Ascent,
+                    )
+                    .forEachIndexed { ix, (text, offset) ->
+                        if (ix != 0) curvedBox(CurvedModifier.angularSizeDp(5.dp)) {}
+                        curvedColumn(angularAlignment = CurvedAlignment.Angular.Center) {
+                            basicCurvedText("HHH", style = baseStyle.copy(warpOffset = offset))
+                            basicCurvedText(
+                                text,
+                                style = baseStyle.copy(background = Color.Transparent),
+                            )
+                        }
+                    }
+            }
+        }
+    }
+
+    @Test
+    fun arabic_test() {
+        verify_composable_screenshot {
+            val style =
+                CurvedTextStyle(
+                    color = Color.White,
+                    background = Color.Gray,
+                    fontSize = 30.sp,
+                    warpOffset = CurvedTextStyle.WarpOffset.HalfOpticalHeight,
+                )
+            Box(Modifier.fillMaxSize().background(Color.Black)) {
+                CurvedLayout { basicCurvedText("مرحبا 👋 بالعالم 🌏!", style) }
+                CurvedLayout(anchor = 90f, angularDirection = CurvedDirection.Angular.Reversed) {
+                    basicCurvedText("مرحبا 👋 بالعالم 🌏!", style)
+                }
             }
         }
     }

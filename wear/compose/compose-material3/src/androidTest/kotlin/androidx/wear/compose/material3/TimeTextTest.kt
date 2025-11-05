@@ -39,7 +39,9 @@ import org.junit.Rule
 import org.junit.Test
 
 class TimeTextTest {
-    @get:Rule val rule = createComposeRule()
+    @Suppress("ComposeTestRuleDispatcher") // b/457595340
+    @get:Rule
+    val rule = createComposeRule()
 
     @Test
     fun supports_testtag() {

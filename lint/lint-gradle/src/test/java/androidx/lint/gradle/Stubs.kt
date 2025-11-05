@@ -79,6 +79,7 @@ internal val STUBS =
                     val value: String = ""
                 )
 
+                interface TaskDependency
             """
                 .trimIndent()
         ),
@@ -152,7 +153,12 @@ internal val STUBS =
 
                 interface Action<T>
 
-                interface Task
+                interface Task {
+                    fun shouldRunAfter(vararg paths: Object): TaskDependency
+                    fun setShouldRunAfter(value: Iterable<Any>)
+                    fun mustRunAfter(vararg paths: Object): Task
+                    fun setMustRunAfter(value: Iterable<Any>)
+                }
             """
                 .trimIndent()
         ),

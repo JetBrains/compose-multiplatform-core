@@ -63,18 +63,21 @@ public fun BrushFamily.encode(output: OutputStream, textureBitmapStore: TextureB
     val textureIdToNativeBitmaps: MutableMap<String, ByteArray> = mutableMapOf()
 
     for (coat in coats) {
-        for (layer in coat.paint.textureLayers) {
-            if (textureIdToNativeBitmaps.containsKey(layer.clientTextureId)) continue
+        for (paint in coat.paintPreferences) {
+            for (layer in paint.textureLayers) {
+                if (textureIdToNativeBitmaps.containsKey(layer.clientTextureId)) continue
 
-            val bitmap = textureBitmapStore[layer.clientTextureId] ?: continue
+                val bitmap = textureBitmapStore[layer.clientTextureId] ?: continue
 
-            val pngBytes =
-                ByteArrayOutputStream().use { outputStream ->
-                    // Encode bitmap as PNG bytes. PNG is lossless, so the quality value is ignored.
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                    outputStream.toByteArray()
-                }
-            textureIdToNativeBitmaps[layer.clientTextureId] = pngBytes
+                val pngBytes =
+                    ByteArrayOutputStream().use { outputStream ->
+                        // Encode bitmap as PNG bytes. PNG is lossless, so the quality value is
+                        // ignored.
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                        outputStream.toByteArray()
+                    }
+                textureIdToNativeBitmaps[layer.clientTextureId] = pngBytes
+            }
         }
     }
     GZIPOutputStream(output).use {

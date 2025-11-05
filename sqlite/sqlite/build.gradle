@@ -40,14 +40,15 @@ androidXMultiplatform {
     jvm()
     linux()
     mac()
+    tvos()
+    watchos()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
-                api("androidx.annotation:annotation:1.8.1")
+                api("androidx.annotation:annotation:1.9.1")
             }
         }
         commonTest {
@@ -58,7 +59,7 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonMain)
         }
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)

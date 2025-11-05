@@ -243,8 +243,8 @@ public class BoxAccumulator {
             parallelogramCenterY = parallelogram.center.y,
             parallelogramWidth = parallelogram.width,
             parallelogramHeight = parallelogram.height,
-            parallelogramAngleInRadian = parallelogram.rotation,
-            parallelogramShearFactor = parallelogram.shearFactor,
+            parallelogramAngleInRadian = parallelogram.rotationDegrees,
+            parallelogramSkew = parallelogram.skew,
             output = this,
         )
         return this
@@ -269,7 +269,8 @@ public class BoxAccumulator {
         other: BoxAccumulator,
         @FloatRange(from = 0.0) tolerance: Float,
     ): Boolean =
-        (isEmpty() && other.isEmpty()) ||
+        this === other ||
+            (isEmpty() && other.isEmpty()) ||
             (!isEmpty() && !other.isEmpty() && box!!.isAlmostEqual(other.box!!, tolerance))
 
     /**
@@ -372,7 +373,7 @@ private object BoxAccumulatorNative {
         parallelogramWidth: Float,
         parallelogramHeight: Float,
         parallelogramAngleInRadian: Float,
-        parallelogramShearFactor: Float,
+        parallelogramSkew: Float,
         output: BoxAccumulator,
     )
 

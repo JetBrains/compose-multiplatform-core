@@ -59,12 +59,8 @@ fun Project.configureKtfmt() {
 
     // afterEvaluate because Gradle's default "check" task doesn't exist yet
     afterEvaluate {
-        // multiplatform projects with no enabled platforms do not actually apply the kotlin plugin
-        // and therefore do not have the check task. They are skipped unless a platform is enabled.
-        if (tasks.findByName("check") != null) {
-            addToCheckTask(ktCheckTask)
-            addToBuildOnServer(ktCheckTask)
-        }
+        addToCheckTask(ktCheckTask)
+        addToBuildOnServer(ktCheckTask)
     }
 }
 
@@ -83,7 +79,7 @@ private fun Project.getKtfmtConfiguration(): FileCollection {
             project.objects.named(TargetJvmEnvironment.STANDARD_JVM),
         )
     }
-    return files(conf)
+    return conf.incoming.files
 }
 
 @CacheableTask

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,33 +27,19 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
     api(project(":xr:runtime:runtime"))
 
     implementation("androidx.annotation:annotation:1.8.1")
     implementation(libs.truth)
-    implementation("com.google.ar:impress:0.0.4")
-
-    testImplementation(libs.kotlinCoroutinesTest)
-    testImplementation(libs.junit)
-    testImplementation(libs.testExtJunit)
-    testImplementation(libs.testRunner)
-    testImplementation(project(":kruth:kruth"))
-    testImplementation("androidx.appcompat:appcompat:1.2.0")
-
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 23
-    }
     namespace = "androidx.xr.runtime.testing"
-    sourceSets.main.resources.srcDirs += "src/main/resources"
 }
 
 androidx {
@@ -62,4 +48,9 @@ androidx {
     inceptionYear = "2024"
     description = "A fake implementation of the XR runtime used in unit tests."
     enableRobolectric()
+}
+
+// TODO: (b/441951699) Remove this if we have tests.
+tasks.withType(Test) {
+    failOnNoDiscoveredTests = false
 }

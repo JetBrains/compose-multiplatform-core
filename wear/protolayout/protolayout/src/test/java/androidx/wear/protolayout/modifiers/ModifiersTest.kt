@@ -16,8 +16,13 @@
 
 package androidx.wear.protolayout.modifiers
 
+import android.app.PendingIntent
+import android.content.Intent
 import android.graphics.Color
+import androidx.core.os.BundleCompat
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.wear.protolayout.ActionBuilders.LaunchAction
 import androidx.wear.protolayout.ActionBuilders.LoadAction
 import androidx.wear.protolayout.ColorBuilders.LinearGradient
 import androidx.wear.protolayout.ModifiersBuilders.DefaultContentTransitions.fadeInSlideIn
@@ -27,8 +32,11 @@ import androidx.wear.protolayout.ModifiersBuilders.FadeOutTransition
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_BUTTON
 import androidx.wear.protolayout.ModifiersBuilders.SEMANTICS_ROLE_NONE
 import androidx.wear.protolayout.ModifiersBuilders.SLIDE_DIRECTION_BOTTOM_TO_TOP
+import androidx.wear.protolayout.ProtoLayoutScope
+import androidx.wear.protolayout.ProtoLayoutScope.RendererCapability.PENDING_INTENT_ACTION
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicBool
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
+import androidx.wear.protolayout.expression.VersionBuilders
 import androidx.wear.protolayout.expression.dynamicDataMapOf
 import androidx.wear.protolayout.expression.intAppDataKey
 import androidx.wear.protolayout.expression.mapTo
@@ -218,6 +226,70 @@ class ModifiersTest {
     }
 
     @Test
+    fun pendingIntent_clickable_toModifier() {
+        val scope =
+            ProtoLayoutScope(
+                rendererVersionInfo =
+                    VersionBuilders.VersionInfo.Builder().setMajor(2).setMinor(0).build()
+            )
+        val id = "ID"
+        val minTouchWidth = 51f
+        val minTouchHeight = 52f
+        val pendingIntent = TEST_PENDING_INTENT
+
+        val modifiers =
+            LayoutModifier.clickable(scope.clickable(pendingIntent = pendingIntent, id = id))
+                .minimumTouchTargetSize(minTouchWidth, minTouchHeight)
+                .toProtoLayoutModifiers()
+        val collectedPendingIntents = scope.collectPendingIntents()
+
+        assertThat(modifiers.clickable?.id).isEqualTo(id)
+        assertThat(modifiers.clickable?.minimumClickableWidth?.value).isEqualTo(minTouchWidth)
+        assertThat(modifiers.clickable?.minimumClickableHeight?.value).isEqualTo(minTouchHeight)
+        // PendingIntentAction has package private access, so it is not accessible for the test here
+        assertThat(modifiers.clickable?.onClick).isNotNull()
+        assertThat(modifiers.clickable?.onClick).isNotInstanceOf(LoadAction::class.java)
+        assertThat(modifiers.clickable?.onClick).isNotInstanceOf(LaunchAction::class.java)
+
+        assertThat(collectedPendingIntents.containsKey(id)).isTrue()
+        assertThat(
+                BundleCompat.getParcelable<PendingIntent?>(
+                    collectedPendingIntents,
+                    id,
+                    PendingIntent::class.java,
+                )
+            )
+            .isEqualTo(pendingIntent)
+    }
+
+    @Test
+    fun pendingIntent_clickable_useFallbackAction_toModifier() {
+        val scope =
+            ProtoLayoutScope(
+                rendererVersionInfo =
+                    VersionBuilders.VersionInfo.Builder().setMajor(1).setMinor(500).build()
+            )
+        val id = "ID"
+        val modifiers =
+            LayoutModifier.clickable(
+                    scope.clickable(
+                        pendingIntent = TEST_PENDING_INTENT,
+                        id = id,
+                        fallbackAction = loadAction(),
+                    )
+                )
+                .toProtoLayoutModifiers()
+        val collectedPendingIntents = scope.collectPendingIntents()
+
+        assertThat(modifiers.clickable?.id).isEqualTo(id)
+        assertThat(modifiers.clickable?.onClick).isNotNull()
+
+        assertThat(scope.hasCapability(PENDING_INTENT_ACTION)).isFalse()
+        assertThat(modifiers.clickable?.onClick).isInstanceOf(LoadAction::class.java)
+        assertThat(collectedPendingIntents.isEmpty()).isTrue()
+    }
+
+    @Test
     fun padding_toModifier() {
         val modifiers =
             LayoutModifier.padding(PADDING_ALL)
@@ -322,5 +394,12 @@ class ModifiersTest {
         const val WIDTH_DP = 5f
         val DYNAMIC_BOOL = DynamicBool.constant(true)
         const val ALPHA = 0.7f
+        val TEST_PENDING_INTENT: PendingIntent =
+            PendingIntent.getActivity(
+                /* context = */ ApplicationProvider.getApplicationContext(),
+                /*requestCode = */ 0,
+                /* intent = */ Intent(),
+                /* flags = */ 1,
+            )
     }
 }

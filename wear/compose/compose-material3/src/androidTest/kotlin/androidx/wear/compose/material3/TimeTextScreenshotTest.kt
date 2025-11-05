@@ -16,7 +16,6 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
@@ -40,6 +39,7 @@ import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.wear.compose.foundation.CurvedModifier
 import androidx.wear.compose.foundation.curvedComposable
 import androidx.wear.compose.foundation.weight
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -47,9 +47,9 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class TimeTextScreenshotTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -222,7 +222,7 @@ class TimeTextScreenshotTest {
 
     private fun verifyScreenshot(content: @Composable () -> Unit) {
         rule.verifyScreenshot(
-            methodName = testName.methodName,
+            testName = testName,
             screenshotRule = screenshotRule,
             content = {
                 val screenSize = LocalContext.current.resources.configuration.smallestScreenWidthDp

@@ -61,7 +61,8 @@ import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.AnchorLoadInvalidUuid
-import androidx.xr.arcore.ViewCamera
+import androidx.xr.arcore.ArDevice
+import androidx.xr.arcore.RenderViewpoint
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
@@ -96,7 +97,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
     private val movableEntityOffset = Pose(Vector3(0f, 0.75f, -1.3f))
     private val uuids = MutableStateFlow<List<UUID>>(emptyList())
     private var anchorOffset = MutableStateFlow<Float>(0f)
-    private lateinit var viewCameras: List<ViewCamera>
+    private lateinit var renderViewpoints: List<RenderViewpoint>
     private val panelInViewStatus = MutableStateFlow<List<Pair<String, Boolean>>>(emptyList())
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,7 +112,14 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 ),
                 onSessionAvailable = { session ->
                     this.session = session
-                    this.viewCameras = ViewCamera.getAll(session)
+                    this.renderViewpoints = buildList {
+                        RenderViewpoint.left(session)?.let { add(it) }
+                        RenderViewpoint.right(session)?.let { add(it) }
+
+                        if (isEmpty()) {
+                            RenderViewpoint.mono(session)?.let { add(it) }
+                        }
+                    }
 
                     createTargetPanel()
                     setContent { MainPanel() }
@@ -125,14 +133,18 @@ class PersistentAnchorsActivity : ComponentActivity() {
 
                     startPanelInViewStatusUpdates()
 
-                    lifecycleScope.launch { session.state.collect { updatePlaneEntity() } }
+                    lifecycleScope.launch {
+                        ArDevice.getInstance(session).state.collect { arDeviceState ->
+                            updatePlaneEntity(arDeviceState)
+                        }
+                    }
                 },
             )
         sessionHelper.tryCreateSession()
     }
 
     private fun startPanelInViewStatusUpdates() {
-        val cameraStateFlows = viewCameras.map { it.state }
+        val cameraStateFlows = renderViewpoints.map { it.state }
 
         lifecycleScope.launch {
             combine(cameraStateFlows) { cameraStates ->
@@ -155,10 +167,10 @@ class PersistentAnchorsActivity : ComponentActivity() {
                                 )
                             val cameraName =
                                 when {
-                                    viewCameras.size == 1 -> "ViewCamera"
-                                    index == 0 -> "Left Eye ViewCamera"
-                                    index == 1 -> "Right Eye ViewCamera"
-                                    else -> "ViewCamera ${index + 1}"
+                                    renderViewpoints.size == 1 -> "CameraView"
+                                    index == 0 -> "Left Eye CameraView"
+                                    index == 1 -> "Right Eye CameraView"
+                                    else -> "CameraView ${index + 1}"
                                 }
                             cameraName to isInView
                         }
@@ -183,10 +195,12 @@ class PersistentAnchorsActivity : ComponentActivity() {
         configureComposeView(composeView, this)
     }
 
-    private fun updatePlaneEntity() {
-        session.scene.spatialUser.head?.let {
+    private fun updatePlaneEntity(arDeviceState: ArDevice.State) {
+        arDeviceState.devicePose.let { headPose ->
+            val headScenePose =
+                session.scene.perceptionSpace.getScenePoseFromPerceptionPose(headPose)
             movableEntity.setPose(
-                it.transformPoseTo(movableEntityOffset, session.scene.activitySpace)
+                headScenePose.transformPoseTo(movableEntityOffset, session.scene.activitySpace)
             )
         }
     }
@@ -279,7 +293,8 @@ class PersistentAnchorsActivity : ComponentActivity() {
     @Composable
     private fun MainPanel() {
         val uuidsState = uuids.collectAsStateWithLifecycle()
-
+        var title = intent.getStringExtra("TITLE")
+        if (title == null) title = "Persistent Anchors"
         Scaffold(
             modifier = Modifier.fillMaxSize().padding(0.dp),
             topBar = {
@@ -292,7 +307,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
-                        text = "Persistent Anchors",
+                        text = title,
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,
                     )

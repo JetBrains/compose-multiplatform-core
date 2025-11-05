@@ -53,7 +53,6 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
     fun createCaptureRequest(template: RequestTemplate): CaptureRequest.Builder?
 
     /** @see CameraDevice.createReprocessCaptureRequest */
-    @RequiresApi(23)
     fun createReprocessCaptureRequest(inputResult: TotalCaptureResult): CaptureRequest.Builder?
 
     /** @see CameraDevice.createCaptureSession */
@@ -63,7 +62,6 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
     ): Boolean
 
     /** @see CameraDevice.createReprocessableCaptureSession */
-    @RequiresApi(23)
     fun createReprocessableCaptureSession(
         input: InputConfiguration,
         outputs: List<Surface>,
@@ -71,7 +69,6 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
     ): Boolean
 
     /** @see CameraDevice.createConstrainedHighSpeedCaptureSession */
-    @RequiresApi(23)
     fun createConstrainedHighSpeedCaptureSession(
         outputs: List<Surface>,
         stateCallback: CameraCaptureSessionWrapper.StateCallback,
@@ -111,7 +108,15 @@ internal interface CameraDeviceWrapper : UnsafeWrapper, AudioRestrictionControll
 internal fun CameraDevice?.closeWithTrace() {
     this?.let {
         Log.info { "Closing Camera ${it.id}" }
-        Debug.instrument("CXCP#CameraDevice-${it.id}#close") { it.close() }
+        Debug.instrument("CXCP#CameraDevice-${it.id}#close") {
+            try {
+                it.close()
+            } catch (e: NullPointerException) {
+                // Certain vendors add buggy modifications to CameraDevice.close() such that it can
+                // throw NPEs during the call. See b/443330486.
+                Log.warn(e) { "NPE encountered during CameraDevice.close()" }
+            }
+        }
     }
 }
 
@@ -216,7 +221,7 @@ internal class AndroidCameraDevice(
         return result != null
     }
 
-    @RequiresApi(23)
+    @Suppress("deprecation")
     override fun createReprocessableCaptureSession(
         input: InputConfiguration,
         outputs: List<Surface>,
@@ -229,8 +234,7 @@ internal class AndroidCameraDevice(
             instrumentAndCatch("createReprocessableCaptureSession") {
                 // This function was deprecated in Android Q, but is required for some
                 // configurations when running on older versions of the OS.
-                Api23Compat.createReprocessableCaptureSession(
-                    cameraDevice,
+                cameraDevice.createReprocessableCaptureSession(
                     input,
                     outputs,
                     AndroidCaptureSessionStateCallback(
@@ -256,7 +260,7 @@ internal class AndroidCameraDevice(
         return result != null
     }
 
-    @RequiresApi(23)
+    @Suppress("deprecation")
     override fun createConstrainedHighSpeedCaptureSession(
         outputs: List<Surface>,
         stateCallback: CameraCaptureSessionWrapper.StateCallback,
@@ -269,8 +273,7 @@ internal class AndroidCameraDevice(
                 // This function was deprecated in Android Q, but is required for some
                 // configurations
                 // when running on older versions of the OS.
-                Api23Compat.createConstrainedHighSpeedCaptureSession(
-                    cameraDevice,
+                cameraDevice.createConstrainedHighSpeedCaptureSession(
                     outputs,
                     AndroidCaptureSessionStateCallback(
                         this,
@@ -349,11 +352,7 @@ internal class AndroidCameraDevice(
                 // configurations when running on older versions of the OS.
                 Api24Compat.createReprocessableCaptureSessionByConfigurations(
                     cameraDevice,
-                    Api23Compat.newInputConfiguration(
-                        inputConfig.width,
-                        inputConfig.height,
-                        inputConfig.format,
-                    ),
+                    InputConfiguration(inputConfig.width, inputConfig.height, inputConfig.format),
                     outputs.map { it.unwrapAs(OutputConfiguration::class) },
                     AndroidCaptureSessionStateCallback(
                         this,
@@ -412,12 +411,30 @@ internal class AndroidCameraDevice(
                     } else {
                         Api28Compat.setInputConfiguration(
                             sessionConfig,
-                            Api23Compat.newInputConfiguration(
+                            InputConfiguration(
                                 config.inputConfiguration.single().width,
                                 config.inputConfiguration.single().height,
                                 config.inputConfiguration.single().format,
                             ),
                         )
+                    }
+                }
+
+                // set color space if using supported API levels and color space is provided
+                val sessionColorSpace = config.sessionColorSpace
+                if (Build.VERSION.SDK_INT >= 34 && sessionColorSpace != null) {
+                    val colorSpaceNamed = sessionColorSpace.toColorSpaceNamed()
+                    if (colorSpaceNamed != null) {
+                        Api34Compat.setColorSpace(sessionConfig, colorSpaceNamed)
+                    } else {
+                        // case that sessionColorSpace is UNKNOWN
+                        Log.warn {
+                            "Provided session color space ${sessionColorSpace.colorSpaceName} is not supported"
+                        }
+                    }
+                } else if (sessionColorSpace != null) {
+                    Log.warn {
+                        "Failed to set session color space to ${sessionColorSpace.colorSpaceName}, at least API level 34 is required"
                     }
                 }
 
@@ -461,12 +478,11 @@ internal class AndroidCameraDevice(
             cameraDevice.createCaptureRequest(template.value)
         }
 
-    @RequiresApi(23)
     override fun createReprocessCaptureRequest(
         inputResult: TotalCaptureResult
     ): CaptureRequest.Builder? =
         instrumentAndCatch("createReprocessCaptureRequest") {
-            Api23Compat.createReprocessCaptureRequest(cameraDevice, inputResult)
+            cameraDevice.createReprocessCaptureRequest(inputResult)
         }
 
     @RequiresApi(30)
@@ -559,7 +575,6 @@ internal class VirtualAndroidCameraDevice(internal val androidCameraDevice: Andr
             }
         }
 
-    @RequiresApi(23)
     override fun createReprocessableCaptureSession(
         input: InputConfiguration,
         outputs: List<Surface>,
@@ -575,7 +590,6 @@ internal class VirtualAndroidCameraDevice(internal val androidCameraDevice: Andr
             }
         }
 
-    @RequiresApi(23)
     override fun createConstrainedHighSpeedCaptureSession(
         outputs: List<Surface>,
         stateCallback: CameraCaptureSessionWrapper.StateCallback,
@@ -669,7 +683,6 @@ internal class VirtualAndroidCameraDevice(internal val androidCameraDevice: Andr
             }
         }
 
-    @RequiresApi(23)
     override fun createReprocessCaptureRequest(inputResult: TotalCaptureResult) =
         synchronized(lock) {
             if (disconnected) {

@@ -15,28 +15,29 @@
 */
 
 /**
-        * This file was created using the `create_project.py` script located in the
-        * `<AndroidX root>/development/project-creator` directory.
-*
-* Please use that script when creating a new project, rather than copying an existing project and
-        * modifying its settings.
-*/
+ * This file was created using the `create_project.py` script located in the
+ * `<AndroidX root>/development/project-creator` directory.
+ *
+ * Please use that script when creating a new project, rather than copying an existing project and
+ * modifying its settings.
+ */
 
 import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
+    api(project(":xr:runtime:runtime"))
     api(project(":xr:arcore:arcore"))
     implementation(libs.kotlinCoroutinesRx3)
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(project(":xr:runtime:runtime-testing"))
+    testImplementation(project(":xr:arcore:arcore-testing"))
     testImplementation(libs.junit)
     testImplementation(libs.testExtJunit)
     testImplementation(libs.testExtTruth)
@@ -44,12 +45,7 @@ dependencies {
 }
 
 android {
-    compileSdk 35
-
-    defaultConfig {
-        minSdkVersion 23
-    }
-
+    compileSdk = 35
     namespace = "androidx.xr.arcore.rxjava3"
 }
 

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.sdkruntime.provider.controller
 
@@ -29,8 +30,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.mockito.Mockito.`when`
 
-// TODO(b/249982507) Rewrite test to use real SDK in sandbox instead of mocking controller
-@SdkSuppress(minSdkVersion = 34)
+// TODO(b/315321962) Migrate to Robolectric to remove usage of dexmakerMockito.
+// maxSdkVersion due to b/430688215
+@SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
 class SdkSandboxControllerAppOwnedInterfacesTest {
 
     @Rule @JvmField val sdkSandboxControllerMockRule = SdkSandboxControllerMockRule()
@@ -50,7 +52,8 @@ class SdkSandboxControllerAppOwnedInterfacesTest {
 
     @Test
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 8)
-    @SdkSuppress(minSdkVersion = 34)
+    // maxSdkVersion due to b/430688215
+    @SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
     fun getAppOwnedSdkSandboxInterfaces_whenApiAvailable_delegateToPlatform() {
         assumeTrue("Requires AppOwnedInterfaces API available", isAppOwnedInterfacesApiAvailable())
 

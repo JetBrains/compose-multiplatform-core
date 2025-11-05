@@ -40,6 +40,22 @@ public class StampAnnotation(
     public val pdfObjects: List<PdfObject>,
 ) : PdfAnnotation(pageNum) {
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is StampAnnotation) return false
+
+        if (bounds != other.bounds) return false
+        if (pdfObjects != other.pdfObjects) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = bounds.hashCode()
+        result = 31 * result + pdfObjects.hashCode()
+        return result
+    }
+
     override fun describeContents(): Int = 0
 
     /** Flattens this object in to a Parcel. */

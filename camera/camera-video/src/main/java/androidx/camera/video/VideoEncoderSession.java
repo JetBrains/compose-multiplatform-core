@@ -16,6 +16,8 @@
 
 package androidx.camera.video;
 
+import static androidx.core.util.Preconditions.checkState;
+
 import android.view.Surface;
 
 import androidx.camera.core.Logger;
@@ -24,7 +26,6 @@ import androidx.camera.core.impl.annotation.ExecutedBy;
 import androidx.camera.core.impl.utils.futures.FutureCallback;
 import androidx.camera.core.impl.utils.futures.Futures;
 import androidx.camera.video.internal.encoder.Encoder;
-import androidx.camera.video.internal.encoder.Encoder.SurfaceInput.OnSurfaceUpdateListener;
 import androidx.camera.video.internal.encoder.EncoderFactory;
 import androidx.camera.video.internal.encoder.InvalidConfigException;
 import androidx.camera.video.internal.encoder.VideoEncoderConfig;
@@ -79,8 +80,6 @@ final class VideoEncoderSession {
     private Encoder mVideoEncoder = null;
     private Surface mActiveSurface = null;
     private SurfaceRequest mSurfaceRequest = null;
-    private Executor mOnSurfaceUpdateExecutor = null;
-    private OnSurfaceUpdateListener mOnSurfaceUpdateListener = null;
     private VideoEncoderState mVideoEncoderState = VideoEncoderState.NOT_INITIALIZED;
     private ListenableFuture<Void> mReleasedFuture = Futures.immediateFailedFuture(
             new IllegalStateException("Cannot close the encoder before configuring."));
@@ -99,6 +98,7 @@ final class VideoEncoderSession {
     @ExecutedBy("mSequentialExecutor")
     @NonNull ListenableFuture<Encoder> configure(@NonNull SurfaceRequest surfaceRequest,
             @NonNull VideoEncoderConfig videoEncoderConfig) {
+        checkState(!surfaceRequest.isServiced());
         switch (mVideoEncoderState) {
             case NOT_INITIALIZED:
                 mVideoEncoderState = VideoEncoderState.INITIALIZING;
@@ -178,6 +178,7 @@ final class VideoEncoderSession {
      * Signal the VideoEncoder is going to the pending release state, it will not provide
      * output Surface anymore.
      *
+     * <p>
      * (1) The VideoEncoder will be released immediately if it hasn't provided the Surface to
      * the SurfaceRequest.
      * (2) If the Surface is already provided to the SurfaceRequest, it must needs to call
@@ -262,13 +263,6 @@ final class VideoEncoderSession {
     }
 
     @ExecutedBy("mSequentialExecutor")
-    void setOnSurfaceUpdateListener(@NonNull Executor executor,
-            @NonNull OnSurfaceUpdateListener onSurfaceUpdateListener) {
-        mOnSurfaceUpdateExecutor = executor;
-        mOnSurfaceUpdateListener = onSurfaceUpdateListener;
-    }
-
-    @ExecutedBy("mSequentialExecutor")
     private void configureVideoEncoderInternal(@NonNull SurfaceRequest surfaceRequest,
             @NonNull VideoEncoderConfig config,
             CallbackToFutureAdapter.@NonNull Completer<Encoder> configureCompleter) {
@@ -287,61 +281,17 @@ final class VideoEncoderSession {
                     new AssertionError("The EncoderInput of video isn't a SurfaceInput."));
             return;
         }
-        ((Encoder.SurfaceInput) encoderInput).setOnSurfaceUpdateListener(mSequentialExecutor,
-                surface -> {
-                    switch (mVideoEncoderState) {
-                        case NOT_INITIALIZED:
-                            // Fall-through
-                        case PENDING_RELEASE:
-                            // Fall-through
-                        case RELEASED:
-                            Logger.d(TAG, "Not provide surface in " + mVideoEncoderState);
-                            configureCompleter.set(null);
-                            break;
-                        case INITIALIZING:
-                            if (surfaceRequest.isServiced()) {
-                                Logger.d(TAG, "Not provide surface, "
-                                        + Objects.toString(surfaceRequest, "EMPTY")
-                                        + " is already serviced.");
-                                configureCompleter.set(null);
-                                closeInternal();
-                                break;
-                            }
-
-                            mActiveSurface = surface;
-                            Logger.d(TAG, "provide surface: " + surface);
-                            surfaceRequest.provideSurface(surface, mSequentialExecutor,
-                                    this::onSurfaceRequestComplete);
-                            mVideoEncoderState = VideoEncoderState.READY;
-                            configureCompleter.set(mVideoEncoder);
-                            break;
-                        case READY:
-                            if (mOnSurfaceUpdateListener != null
-                                    && mOnSurfaceUpdateExecutor != null) {
-                                mOnSurfaceUpdateExecutor.execute(
-                                        () -> mOnSurfaceUpdateListener.onSurfaceUpdate(surface));
-                            }
-                            Logger.w(TAG, "Surface is updated in READY state: " + surface);
-                            break;
-                        default:
-                            throw new IllegalStateException(
-                                    "State " + mVideoEncoderState + " is not handled");
-                    }
-                });
-    }
-
-    @ExecutedBy("mSequentialExecutor")
-    private void onSurfaceRequestComplete(SurfaceRequest.@NonNull Result result) {
-        Logger.d(TAG, "Surface can be closed: " + result.getSurface().hashCode());
-        Surface resultSurface = result.getSurface();
-        if (resultSurface == mActiveSurface) {
+        Surface surface = ((Encoder.SurfaceInput) mVideoEncoder.getInput()).getSurface();
+        mActiveSurface = surface;
+        Logger.d(TAG, "provide surface: " + surface);
+        surfaceRequest.provideSurface(surface, mSequentialExecutor, result -> {
+            Logger.d(TAG, "Surface can be closed: " + result.getSurface());
             mActiveSurface = null;
             mReadyToReleaseCompleter.set(mVideoEncoder);
             closeInternal();
-        } else {
-            // If the surface isn't the active surface, it also can't be the latest surface
-            resultSurface.release();
-        }
+        });
+        mVideoEncoderState = VideoEncoderState.READY;
+        configureCompleter.set(mVideoEncoder);
     }
 
     @Override

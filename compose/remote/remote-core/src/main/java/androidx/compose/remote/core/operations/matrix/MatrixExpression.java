@@ -17,6 +17,7 @@ package androidx.compose.remote.core.operations.matrix;
 
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.MatrixAccess;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
@@ -32,23 +33,25 @@ import androidx.compose.remote.core.serialize.MapSerializer;
 import androidx.compose.remote.core.serialize.Serializable;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
 
 /** This is a matrix that is formed by an expression */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MatrixExpression extends Operation
         implements VariableSupport, MatrixAccess, Serializable {
     private static final int OP_CODE = Operations.MATRIX_EXPRESSION;
     private static final String CLASS_NAME = "MatrixExpression";
     private int mMatrixId;
     private int mType;
-    private float[] mValues = new float[16];
-    private float[] mExpression;
-    private float[] mOutExpression;
+    private float @NonNull [] mValues = new float[16];
+    private final float @NonNull [] mExpression;
+    private float @Nullable [] mOutExpression;
     MatrixOperations mMatrixOperations = new MatrixOperations();
 
-    public MatrixExpression(int matrixId, int type, float[] expression) {
+    public MatrixExpression(int matrixId, int type, float @NonNull [] expression) {
         this.mMatrixId = matrixId;
         this.mType = type;
         this.mExpression = expression;
@@ -86,7 +89,7 @@ public class MatrixExpression extends Operation
      *
      * @param from value to copy from
      */
-    public void update(MatrixExpression from) {
+    public void update(@NonNull MatrixExpression from) {
         mValues = from.mValues;
     }
 
@@ -128,7 +131,8 @@ public class MatrixExpression extends Operation
      * @param type the type of matrix it is
      * @param values the value of the float
      */
-    public static void apply(@NonNull WireBuffer buffer, int matrixId, int type, float[] values) {
+    public static void apply(
+            @NonNull WireBuffer buffer, int matrixId, int type, float @NonNull [] values) {
         buffer.start(OP_CODE);
         buffer.writeInt(matrixId);
         buffer.writeInt(type);
@@ -195,7 +199,7 @@ public class MatrixExpression extends Operation
     }
 
     @Override
-    public float[] get() {
+    public float @NonNull [] get() {
         return mValues;
     }
 }

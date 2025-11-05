@@ -135,6 +135,8 @@ val ALLOW_RERUNNING_TASKS =
 
         // https://youtrack.jetbrains.com/issue/KT-70008
         "kotlinNpmCachesSetup",
+        "kotlinKotlinNpmCachesSetup",
+        "kotlinWasmKotlinNpmCachesSetup",
     )
 
 // Additional tasks that are expected to be temporarily out-of-date after running once
@@ -158,6 +160,11 @@ val DONT_TRY_RERUNNING_TASKS =
 
         // Task not cacheable, will always rerun.
         "validateIntegrationPatches",
+
+        // b/446696375
+        // no outputs, not cachable. Internal type so can't access via withType and
+        // .cacheEvenIfNoOutputs
+        "kmpPartiallyResolvedDependenciesChecker",
     )
 
 val DONT_TRY_RERUNNING_TASK_TYPES =

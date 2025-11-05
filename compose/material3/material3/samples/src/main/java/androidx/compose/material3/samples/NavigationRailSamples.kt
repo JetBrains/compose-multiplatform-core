@@ -34,16 +34,21 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalWideNavigationRail
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.WideNavigationRailValue
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -61,7 +66,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -73,35 +78,51 @@ fun WideNavigationRailResponsiveSample() {
         listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
     val state = rememberWideNavigationRailState()
     val scope = rememberCoroutineScope()
+    val headerDescription =
+        if (state.targetValue == WideNavigationRailValue.Expanded) {
+            "Collapse rail"
+        } else {
+            "Expand rail"
+        }
 
     Row(Modifier.fillMaxWidth()) {
         WideNavigationRail(
             state = state,
             header = {
-                IconButton(
-                    modifier =
-                        Modifier.padding(start = 24.dp).semantics {
-                            // The button must announce the expanded or collapsed state of the rail
-                            // for accessibility.
-                            stateDescription =
-                                if (state.currentValue == WideNavigationRailValue.Expanded) {
-                                    "Expanded"
-                                } else {
-                                    "Collapsed"
-                                }
-                        },
-                    onClick = {
-                        scope.launch {
-                            if (state.targetValue == WideNavigationRailValue.Expanded)
-                                state.collapse()
-                            else state.expand()
-                        }
-                    },
+                // Header icon button should have a tooltip.
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                    tooltip = { PlainTooltip { Text(headerDescription) } },
+                    state = rememberTooltipState(),
                 ) {
-                    if (state.targetValue == WideNavigationRailValue.Expanded) {
-                        Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
-                    } else {
-                        Icon(Icons.Filled.Menu, "Expand rail")
+                    IconButton(
+                        modifier =
+                            Modifier.padding(start = 24.dp).semantics {
+                                // The button must announce the expanded or collapsed state of the
+                                // rail for accessibility.
+                                stateDescription =
+                                    if (state.currentValue == WideNavigationRailValue.Expanded) {
+                                        "Expanded"
+                                    } else {
+                                        "Collapsed"
+                                    }
+                            },
+                        onClick = {
+                            scope.launch {
+                                if (state.targetValue == WideNavigationRailValue.Expanded)
+                                    state.collapse()
+                                else state.expand()
+                            }
+                        },
+                    ) {
+                        if (state.targetValue == WideNavigationRailValue.Expanded) {
+                            Icon(Icons.AutoMirrored.Filled.MenuOpen, headerDescription)
+                        } else {
+                            Icon(Icons.Filled.Menu, headerDescription)
+                        }
                     }
                 }
             },
@@ -145,7 +166,7 @@ fun WideNavigationRailResponsiveSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Sampled
 @Composable
@@ -157,6 +178,12 @@ fun ModalWideNavigationRailSample() {
         listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
     val state = rememberWideNavigationRailState()
     val scope = rememberCoroutineScope()
+    val headerDescription =
+        if (state.targetValue == WideNavigationRailValue.Expanded) {
+            "Collapse rail"
+        } else {
+            "Expand rail"
+        }
 
     Row(Modifier.fillMaxWidth()) {
         ModalWideNavigationRail(
@@ -165,30 +192,40 @@ fun ModalWideNavigationRailSample() {
             // order to achieve the best alignment.
             expandedHeaderTopPadding = 64.dp,
             header = {
-                IconButton(
-                    modifier =
-                        Modifier.padding(start = 24.dp).semantics {
-                            // The button must announce the expanded or collapsed state of the rail
-                            // for accessibility.
-                            stateDescription =
-                                if (state.currentValue == WideNavigationRailValue.Expanded) {
-                                    "Expanded"
-                                } else {
-                                    "Collapsed"
-                                }
-                        },
-                    onClick = {
-                        scope.launch {
-                            if (state.targetValue == WideNavigationRailValue.Expanded)
-                                state.collapse()
-                            else state.expand()
-                        }
-                    },
+                // Header icon button should have a tooltip.
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                    tooltip = { PlainTooltip { Text(headerDescription) } },
+                    state = rememberTooltipState(),
                 ) {
-                    if (state.targetValue == WideNavigationRailValue.Expanded) {
-                        Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
-                    } else {
-                        Icon(Icons.Filled.Menu, "Expand rail")
+                    IconButton(
+                        modifier =
+                            Modifier.padding(start = 24.dp).semantics {
+                                // The button must announce the expanded or collapsed state of the
+                                // rail for accessibility.
+                                stateDescription =
+                                    if (state.currentValue == WideNavigationRailValue.Expanded) {
+                                        "Expanded"
+                                    } else {
+                                        "Collapsed"
+                                    }
+                            },
+                        onClick = {
+                            scope.launch {
+                                if (state.targetValue == WideNavigationRailValue.Expanded)
+                                    state.collapse()
+                                else state.expand()
+                            }
+                        },
+                    ) {
+                        if (state.targetValue == WideNavigationRailValue.Expanded) {
+                            Icon(Icons.AutoMirrored.Filled.MenuOpen, headerDescription)
+                        } else {
+                            Icon(Icons.Filled.Menu, headerDescription)
+                        }
                     }
                 }
             },
@@ -229,7 +266,6 @@ fun ModalWideNavigationRailSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -273,7 +309,6 @@ fun DismissibleModalWideNavigationRailSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -286,6 +321,7 @@ fun WideNavigationRailCollapsedSample() {
     WideNavigationRail {
         items.forEachIndexed { index, item ->
             WideNavigationRailItem(
+                railExpanded = false,
                 icon = {
                     Icon(
                         if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
@@ -300,7 +336,6 @@ fun WideNavigationRailCollapsedSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -330,7 +365,7 @@ fun WideNavigationRailExpandedSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 fun WideNavigationRailArrangementsSample() {
@@ -342,38 +377,54 @@ fun WideNavigationRailArrangementsSample() {
     val state = rememberWideNavigationRailState()
     val scope = rememberCoroutineScope()
     var arrangement: Arrangement.Vertical by remember { mutableStateOf(Arrangement.Center) }
+    val headerDescription =
+        if (state.targetValue == WideNavigationRailValue.Expanded) {
+            "Collapse rail"
+        } else {
+            "Expand rail"
+        }
 
     Row(Modifier.fillMaxWidth()) {
         WideNavigationRail(
             state = state,
             arrangement = arrangement,
             header = {
-                IconButton(
-                    modifier =
-                        Modifier.padding(start = 24.dp).semantics {
-                            // The button must announce the expanded or collapsed state of the rail
-                            // for accessibility.
-                            stateDescription =
-                                if (state.currentValue == WideNavigationRailValue.Expanded) {
-                                    "Expanded"
-                                } else {
-                                    "Collapsed"
-                                }
-                        },
-                    onClick = {
-                        scope.launch {
-                            if (state.targetValue == WideNavigationRailValue.Expanded) {
-                                state.collapse()
-                            } else {
-                                state.expand()
-                            }
-                        }
-                    },
+                // Header icon button should have a tooltip.
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Above
+                        ),
+                    tooltip = { PlainTooltip { Text(headerDescription) } },
+                    state = rememberTooltipState(),
                 ) {
-                    if (state.targetValue == WideNavigationRailValue.Expanded) {
-                        Icon(Icons.AutoMirrored.Filled.MenuOpen, "Collapse rail")
-                    } else {
-                        Icon(Icons.Filled.Menu, "Expand rail")
+                    IconButton(
+                        modifier =
+                            Modifier.padding(start = 24.dp).semantics {
+                                // The button must announce the expanded or collapsed state of the
+                                // rail for accessibility.
+                                stateDescription =
+                                    if (state.currentValue == WideNavigationRailValue.Expanded) {
+                                        "Expanded"
+                                    } else {
+                                        "Collapsed"
+                                    }
+                            },
+                        onClick = {
+                            scope.launch {
+                                if (state.targetValue == WideNavigationRailValue.Expanded) {
+                                    state.collapse()
+                                } else {
+                                    state.expand()
+                                }
+                            }
+                        },
+                    ) {
+                        if (state.targetValue == WideNavigationRailValue.Expanded) {
+                            Icon(Icons.AutoMirrored.Filled.MenuOpen, headerDescription)
+                        } else {
+                            Icon(Icons.Filled.Menu, headerDescription)
+                        }
                     }
                 }
             },
@@ -449,31 +500,6 @@ fun NavigationRailSample() {
 }
 
 @Composable
-fun NavigationRailWithOnlySelectedLabelsSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
-    val items = listOf("Home", "Search", "Settings")
-    val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
-    val unselectedIcons =
-        listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
-    NavigationRail {
-        items.forEachIndexed { index, item ->
-            NavigationRailItem(
-                icon = {
-                    Icon(
-                        if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item,
-                    )
-                },
-                label = { Text(item) },
-                selected = selectedItem == index,
-                onClick = { selectedItem = index },
-                alwaysShowLabel = false,
-            )
-        }
-    }
-}
-
-@Composable
 fun NavigationRailBottomAlignSample() {
     var selectedItem by remember { mutableIntStateOf(0) }
     val items = listOf("Home", "Search", "Settings")
@@ -495,7 +521,6 @@ fun NavigationRailBottomAlignSample() {
                 label = { Text(item) },
                 selected = selectedItem == index,
                 onClick = { selectedItem = index },
-                alwaysShowLabel = false,
             )
         }
     }

@@ -28,6 +28,8 @@ package androidx.appfunctions.service
  * add a custom factory in [AppFunctionConfiguration.Builder.addEnclosingClassFactory]. This allows
  * you to inject dependencies or handle more complex object creation scenarios.
  *
+ * ### AppFunction Compiler
+ *
  * When a function is annotated with `@AppFunction`, the compiler will automatically:
  * * Generate an XML file within the APK. This file describes the signatures of all
  *   `@AppFunction`-annotated functions within the application.
@@ -56,9 +58,13 @@ package androidx.appfunctions.service
  * package. This generated class will contain constants like `CREATE_NOTE_ID` and `UPDATE_NOTE_ID`,
  * which correspond to the `createNote` and `updateNote` functions, respectively.
  *
+ * ### Thread Management
+ *
  * **IMPORTANT:** By default, functions annotated with `@AppFunction` are executed on the main
  * thread. For operations that may take a significant amount of time, it is crucial to use a
  * coroutine dispatcher that runs on a background thread.
+ *
+ * ### Error Handling
  *
  * In exceptional cases, implementations should throw an appropriate
  * [androidx.appfunctions.AppFunctionException]. This allows the agent to better understand the
@@ -66,8 +72,36 @@ package androidx.appfunctions.service
  * [androidx.appfunctions.AppFunctionInvalidArgumentException] with a detailed message explaining
  * why it is invalid.
  *
+ * ### Supported Types
+ *
+ * For a detailed list of supported types and the rules governing their serialization, see
+ * [androidx.appfunctions.AppFunctionSerializable].
+ *
+ * ### Deprecate AppFunction
+ *
+ * If an existing `AppFunction` needs to be deprecated (e.g., a replacement is available, but the
+ * old version must remain for backward compatibility), mark the function with the
+ * [kotlin.Deprecated] annotation.
+ *
+ * This deprecation status will be exposed in the
+ * [androidx.appfunctions.metadata.AppFunctionMetadata.deprecation] field, allowing clients to
+ * identify and migrate away from the deprecated function.
+ *
+ * Example:
+ * ```
+ * @AppFunction
+ * @Deprecated(
+ *   message = "Use newSearchFunction(query) instead. " +
+ *     "This function will be removed in a future version.",
+ * )
+ * fun oldSearchFunction(...) {
+ * // ...
+ * }
+ * ```
+ *
  * @see AppFunctionConfiguration.Builder.addEnclosingClassFactory
  * @see androidx.appfunctions.AppFunctionException
+ * @see androidx.appfunctions.AppFunctionSerializable
  */
 // Use BINARY here so that the annotation is kept around at the aggregation stage.
 @Retention(AnnotationRetention.BINARY)
@@ -83,13 +117,40 @@ public annotation class AppFunction(
     public val isEnabled: Boolean = true,
 
     /**
-     * Whether to use the function's KDoc as a function's description to the agent. The default
+     * Whether to use the function's KDoc as a function's description for the agent. The default
      * value is `false`.
      *
-     * If set to `true`, the KDoc will be set as the function's
-     * [androidx.appfunctions.metadata.AppFunctionMetadata.description]. The caller will use this
-     * description to interpret when and how to use the function, including allowed parameters,
-     * return type and thrown exceptions.
+     * If set to `true`, the KDoc will be used to populate:
+     * - The function's [androidx.appfunctions.metadata.AppFunctionMetadata.description] as the
+     *   KDoc, excluding Kotlin's supported tags like `@param`, `@throws`.
+     * - The function's parameters'
+     *   [androidx.appfunctions.metadata.AppFunctionParameterMetadata.description] from the KDoc's
+     *   `@param` tags.
+     * - The function's response's
+     *   [androidx.appfunctions.metadata.AppFunctionResponseMetadata.description] from the KDoc's
+     *   `@return` tags.
+     *
+     * Example:
+     * ```kotlin
+     * /**
+     * * Creates a new note with a given title and content.
+     * *
+     * * @param title The title of the note.
+     * * @param content The main body or text of the note.
+     * * @return The created note.
+     * * @throws IllegalArgumentException if the `title` or `content` is empty or too long.
+     * */
+     * @AppFunction(isDescribedByKdoc = true)
+     * fun CreateNote(title: String, content: String): Note { .. }
+     * ```
+     *
+     * In this example:
+     * - `AppFunctionMetadata.description` will be: "Creates a new note with a given title and
+     *   content."
+     * - `title`'s `AppFunctionParameterMetadata.description` will be: "The title of the note."
+     * - `content`'s `AppFunctionParameterMetadata.description` will be: "The main body or text of
+     *   the note."
+     * - `AppFunctionResponseMetadata.description` will be: "The created note."
      */
     public val isDescribedByKdoc: Boolean = false,
 )

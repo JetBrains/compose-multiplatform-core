@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -58,9 +57,8 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.wear.compose.material3.ButtonDefaults.buttonColors
 import androidx.wear.compose.material3.ButtonDefaults.filledTonalButtonColors
 import androidx.wear.compose.material3.internal.Icons
@@ -70,6 +68,7 @@ import androidx.wear.compose.material3.tokens.DatePickerTokens
 import androidx.wear.compose.materialcore.isLargeScreen
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import kotlin.math.max
 
 /**
  * Full screen [DatePicker] with day, month, year.
@@ -154,7 +153,6 @@ public fun DatePicker(
                 fontFeatureSettings = "tnum",
             )
         }
-    val optionHeight = if (isLargeScreen) 48.dp else 36.dp
 
     val focusRequesterConfirmButton = remember { FocusRequester() }
 
@@ -192,7 +190,24 @@ public fun DatePicker(
         }
     }
 
-    val shortMonthNames = remember { getMonthNames("MMM") }
+    val locale = LocalConfiguration.current.locales[0]
+    val monthPattern =
+        remember(locale) {
+            val yearPattern = DateFormat.getBestDateTimePattern(locale, "y")
+            // REVISED, SAFER HEURISTIC:
+            // Check if the pattern contains any letter that isn't 'y'. This correctly
+            // identifies linguistic markers like '年', '년', 'г', etc., while safely
+            // ignoring spaces or simple punctuation.
+            val useNumericMonth = yearPattern.any { it.isLetter() && it != 'y' }
+
+            if (useNumericMonth) {
+                "MM"
+            } else {
+                "MMM"
+            }
+        }
+
+    val shortMonthNames = remember(monthPattern) { getMonthNames(monthPattern) }
     val fullMonthNames = remember { getMonthNames("MMMM") }
     val yearContentDescription = {
         createDescriptionDatePicker(selectedIndex, datePickerState.selectedYear, yearString)
@@ -236,22 +251,26 @@ public fun DatePicker(
 
         // Allow more room for the initial instruction heading under TalkBck
         val maxTextLines = if (selectedIndex == null) 2 else 1
-        val textPaddingPercentage = 24f
+        val textPaddingPercentage = 30f
+        val topPadding = if (selectedIndex == null) 0.dp else 14.dp
+        val headingHeight = 38.dp - topPadding
 
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(topPadding))
             FadeLabel(
                 text = heading,
                 animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
                 modifier =
-                    Modifier.padding(
+                    Modifier.height(headingHeight)
+                        .padding(
                             horizontal =
                                 PaddingDefaults.horizontalContentPadding(textPaddingPercentage)
                         )
                         .fillMaxWidth()
+                        .align(Alignment.CenterHorizontally)
                         .semantics(mergeDescendants = true) { heading() },
                 color = colors.pickerLabelColor,
                 style = labelTextStyle,
@@ -262,21 +281,52 @@ public fun DatePicker(
             FontScaleIndependent {
                 val measurer = rememberTextMeasurer()
                 val density = LocalDensity.current
-                val (digitWidth, maxMonthWidth) =
+                val measuredMetrics =
                     remember(
                         density.density,
                         LocalConfiguration.current.screenWidthDp,
                         optionTextStyle,
                     ) {
-                        val mm =
+                        val widthMeasureResult =
                             measurer.measure(
-                                "0123456789\n" + shortMonthNames.joinToString("\n"),
+                                text =
+                                    buildString {
+                                        append("0123456789")
+                                        for (i in shortMonthNames.indices) {
+                                            append("\n")
+                                            append(shortMonthNames[i])
+                                        }
+                                    },
                                 style = optionTextStyle,
                                 density = density,
                             )
 
-                        ((0..9).maxOf { mm.getBoundingBox(it).width }) to
-                            ((1..12).maxOf { mm.getLineRight(it) - mm.getLineLeft(it) })
+                        val singleLineHeightMeasureResult =
+                            measurer.measure(
+                                text =
+                                    buildString {
+                                        append("0123456789")
+                                        for (i in shortMonthNames.indices) {
+                                            append(shortMonthNames[i])
+                                        }
+                                    },
+                                style = optionTextStyle,
+                                density = density,
+                            )
+
+                        DatePickerMeasuredMetrics(
+                            digitWidthPx =
+                                ((0..9).maxOf { widthMeasureResult.getBoundingBox(it).width }),
+                            maxMonthWidthPx =
+                                ((1..12).maxOf {
+                                    widthMeasureResult.getLineRight(it) -
+                                        widthMeasureResult.getLineLeft(it)
+                                }),
+                            optionHeightPx =
+                                singleLineHeightMeasureResult.getLineBottom(0) -
+                                    singleLineHeightMeasureResult.getLineTop(0),
+                            optionBaselinePx = singleLineHeightMeasureResult.getLineBaseline(0),
+                        )
                     }
 
                 // Add spaces on to allow room to grow
@@ -284,35 +334,39 @@ public fun DatePicker(
                     with(LocalDensity.current) {
                         maxOf(
                             // Add 1dp buffer to compensate for potential conversion loss
-                            (digitWidth * 2).toDp() + 1.dp,
+                            (measuredMetrics.digitWidthPx * 2).toDp() + 1.dp,
                             minimumInteractiveComponentSize,
                         )
                     }
-                val monthYearWidth =
+                val monthWidth =
                     with(LocalDensity.current) {
                         maxOf(
                             // Add 1dp buffer to compensate for potential conversion loss
-                            maxOf(maxMonthWidth.toDp(), (digitWidth * 4).toDp()) + 1.dp,
+                            measuredMetrics.maxMonthWidthPx.toDp() + 1.dp,
                             minimumInteractiveComponentSize,
                         )
                     }
+                val yearWidth =
+                    with(LocalDensity.current) {
+                        maxOf(
+                            // Add 1dp buffer to compensate for potential conversion loss
+                            (measuredMetrics.digitWidthPx * 4).toDp() + 1.dp,
+                            minimumInteractiveComponentSize,
+                        )
+                    }
+                val measuredOptionHeight =
+                    with(LocalDensity.current) { measuredMetrics.optionHeightPx.toDp() }
+                val minimumOptionHeight = if (isLargeScreen) 46.dp else 36.dp
+                val optionHeight = max(measuredOptionHeight, minimumOptionHeight)
+                val minimumOptionHeightPx =
+                    with(LocalDensity.current) { minimumOptionHeight.toPx() }
+                val optionBaseline =
+                    (measuredMetrics.optionBaselinePx +
+                            max(0f, (minimumOptionHeightPx - measuredMetrics.optionHeightPx) / 2))
+                        .toInt()
 
                 Row(
-                    modifier =
-                        Modifier.fillMaxWidth().weight(1f).offset {
-                            IntOffset(
-                                getPickerGroupRowOffset(
-                                        boxConstraints.maxWidth,
-                                        dayWidth,
-                                        monthYearWidth,
-                                        monthYearWidth,
-                                        touchExplorationServicesEnabled,
-                                        selectedIndex,
-                                    )
-                                    .roundToPx(),
-                                0,
-                            )
-                        },
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
@@ -346,6 +400,7 @@ public fun DatePicker(
                                                     "%02d".format(datePickerState.dayValue(it))
                                                 },
                                                 optionHeight = optionHeight,
+                                                optionBaseline = optionBaseline,
                                                 selectedContentColor =
                                                     colors.activePickerContentColor,
                                                 unselectedContentColor =
@@ -363,7 +418,7 @@ public fun DatePicker(
                                 DatePickerOption.Month ->
                                     PickerGroupItem(
                                         pickerState = datePickerState.monthState,
-                                        modifier = Modifier.width(monthYearWidth).fillMaxHeight(),
+                                        modifier = Modifier.width(monthWidth).fillMaxHeight(),
                                         onSelected = { onPickerSelected(index, index + 1) },
                                         selected = index == selectedIndex,
                                         contentDescription = monthContentDescription,
@@ -375,6 +430,7 @@ public fun DatePicker(
                                                         (datePickerState.monthValue(it) - 1) % 12]
                                                 },
                                                 optionHeight = optionHeight,
+                                                optionBaseline = optionBaseline,
                                                 selectedContentColor =
                                                     colors.activePickerContentColor,
                                                 unselectedContentColor =
@@ -392,7 +448,7 @@ public fun DatePicker(
                                 DatePickerOption.Year ->
                                     PickerGroupItem(
                                         pickerState = datePickerState.yearState,
-                                        modifier = Modifier.width(monthYearWidth).fillMaxHeight(),
+                                        modifier = Modifier.width(yearWidth).fillMaxHeight(),
                                         onSelected = { onPickerSelected(index, index + 1) },
                                         selected = index == selectedIndex,
                                         contentDescription = yearContentDescription,
@@ -403,6 +459,7 @@ public fun DatePicker(
                                                     "%4d".format(datePickerState.yearValue(it))
                                                 },
                                                 optionHeight = optionHeight,
+                                                optionBaseline = optionBaseline,
                                                 selectedContentColor =
                                                     colors.activePickerContentColor,
                                                 unselectedContentColor =
@@ -719,25 +776,6 @@ private fun getMonthNames(pattern: String): List<String> {
     return months.map { LocalDate.of(2022, it, 1).format(monthFormatter) }
 }
 
-private fun getPickerGroupRowOffset(
-    rowWidth: Dp,
-    dayPickerWidth: Dp,
-    monthPickerWidth: Dp,
-    yearPickerWidth: Dp,
-    touchExplorationServicesEnabled: Boolean,
-    selectedIndex: Int?,
-): Dp {
-    val currentOffset = (rowWidth - (dayPickerWidth + monthPickerWidth + yearPickerWidth)) / 2
-
-    return if (touchExplorationServicesEnabled && selectedIndex == null) {
-        ((rowWidth - dayPickerWidth) / 2) - currentOffset
-    } else if (touchExplorationServicesEnabled && selectedIndex!! > 2) {
-        ((rowWidth - yearPickerWidth) / 2) - (dayPickerWidth + monthPickerWidth + currentOffset)
-    } else {
-        0.dp
-    }
-}
-
 @RequiresApi(Build.VERSION_CODES.O)
 private class DatePickerState(
     initialDate: LocalDate,
@@ -888,3 +926,11 @@ private fun createDescriptionDatePicker(
     selectedValue: Int,
     label: String,
 ): String = if (selectedIndex == null) label else "$label, $selectedValue"
+
+/** A private data class to hold the measured raw pixel metrics for picker options. */
+private data class DatePickerMeasuredMetrics(
+    val digitWidthPx: Float,
+    val maxMonthWidthPx: Float,
+    val optionHeightPx: Float,
+    val optionBaselinePx: Float,
+)

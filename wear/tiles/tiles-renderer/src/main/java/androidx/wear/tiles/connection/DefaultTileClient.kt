@@ -172,7 +172,7 @@ public class DefaultTileClient : TileClient {
 
     @Deprecated(
         "Use requestTileResourcesAsync instead.",
-        replaceWith = ReplaceWith("requestTileResourcesAsync"),
+        replaceWith = ReplaceWith("requestTileResourcesAsync(requestParams = requestParams)"),
     )
     @Suppress("deprecation")
     public override fun requestResources(
@@ -224,7 +224,8 @@ public class DefaultTileClient : TileClient {
                         IllegalArgumentException("Returned Tile Data was null")
                     )
                 }
-                tileData.version != TileData.VERSION_PROTOBUF -> {
+                tileData.version != TileData.VERSION_PROTOBUF_1 &&
+                    tileData.version != TileData.VERSION_PROTOBUF_2 -> {
                     continuation.resumeWithException(
                         IllegalArgumentException(
                             "Returned Tile Data " +

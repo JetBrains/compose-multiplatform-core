@@ -29,7 +29,6 @@ import androidx.credentials.playservices.TestUtils
 import androidx.credentials.playservices.controllers.utils.CreatePublicKeyCredentialControllerTestUtils
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.android.gms.common.Feature
 import com.google.android.gms.common.api.ApiException
@@ -43,7 +42,6 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 @SmallTest
 @OptIn(ExperimentalDigitalCredentialApi::class)
-@SdkSuppress(minSdkVersion = 23)
 class CreatePublicKeyCredentialControllerTest {
 
     @Test
