@@ -23,8 +23,6 @@ import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.defaultTorchStrengthLevel
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.maxTorchStrengthLevel
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStrength
-import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.warn
 import androidx.camera.camera2.pipe.integration.adapter.propagateTo
 import androidx.camera.camera2.pipe.integration.compat.Api35Compat
 import androidx.camera.camera2.pipe.integration.compat.workaround.isFlashAvailable
@@ -116,7 +114,7 @@ constructor(
         cancelPreviousTask: Boolean = true,
         ignoreFlashUnitAvailability: Boolean = false,
     ): Deferred<Unit> {
-        debug { "TorchControl#setTorchAsync: torch mode = $mode" }
+        Camera2Logger.debug { "TorchControl#setTorchAsync: torch mode = $mode" }
 
         val signal = CompletableDeferred<Unit>()
 
@@ -146,7 +144,7 @@ constructor(
             val aeMode: AeMode =
                 AeMode.fromIntOrNull(state3AControl.getFinalSupportedAeMode())
                     ?: run {
-                        warn {
+                        Camera2Logger.warn {
                             "TorchControl#setTorchAsync: Failed to convert ae mode of value" +
                                 " ${state3AControl.getFinalSupportedAeMode()} with" +
                                 " AeMode.fromIntOrNull, fallback to AeMode.ON"
@@ -194,7 +192,7 @@ constructor(
             }
         }
 
-        if (level < 1 || level > maxTorchStrength) {
+        if (level !in 1..maxTorchStrength) {
             return CompletableDeferred<Unit>().apply {
                 createFailureResult(
                     IllegalArgumentException("The given torch strength level is invalid.")
@@ -210,7 +208,7 @@ constructor(
     }
 
     private fun updateTorchStrengthLevelAsync(level: Int): Deferred<Unit> {
-        var signal = CompletableDeferred<Unit>()
+        val signal = CompletableDeferred<Unit>()
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
                 isTorchStrengthSupported

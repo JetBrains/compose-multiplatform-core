@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.PaintContext;
@@ -32,6 +33,7 @@ import org.jspecify.annotations.NonNull;
 import java.util.List;
 
 /** The rotate the rendering command */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MatrixFromPath extends PaintOperation implements VariableSupport, Serializable {
     private static final int OP_CODE = Operations.MATRIX_FROM_PATH;
     private static final String CLASS_NAME = "MatrixFromPath";
@@ -130,6 +132,7 @@ public class MatrixFromPath extends PaintOperation implements VariableSupport, S
      * @param pathId the id of the path
      * @param percent the position on path
      * @param vOffset the vertical offset to position the string
+     * @param flags the flags to use
      */
     public static void apply(
             @NonNull WireBuffer buffer, int pathId, float percent, float vOffset, int flags) {

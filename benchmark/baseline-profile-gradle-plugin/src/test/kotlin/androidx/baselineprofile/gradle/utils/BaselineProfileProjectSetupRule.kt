@@ -49,13 +49,20 @@ class BaselineProfileProjectSetupRule(
     val rootFolder = TemporaryFolder().also { it.create() }
 
     /** Represents a module with the app target plugin applied. */
-    val appTarget by lazy { AppTargetModule(rule = appTargetSetupRule, name = appTargetName) }
+    val appTarget by lazy {
+        AppTargetModule(
+            rule = appTargetSetupRule,
+            name = appTargetName,
+            legacyGradleVersion = forcedTestAgpVersion.shouldUseLegacyGradle(),
+        )
+    }
 
     /** Represents a module with the consumer plugin applied. */
     val consumer by lazy {
         ConsumerModule(
             rule = consumerSetupRule,
             name = consumerName,
+            legacyGradleVersion = forcedTestAgpVersion.shouldUseLegacyGradle(),
             producerName = producerName,
             dependencyName = dependencyName,
         )
@@ -66,6 +73,7 @@ class BaselineProfileProjectSetupRule(
         ProducerModule(
             rule = producerSetupRule,
             name = producerName,
+            legacyGradleVersion = forcedTestAgpVersion.shouldUseLegacyGradle(),
             tempFolder = tempFolder,
             consumer = consumer,
             managedDeviceContainerName = managedDeviceContainerName,
@@ -123,6 +131,8 @@ class BaselineProfileProjectSetupRule(
                         "-Xmx4g -XX:+UseParallelGC -XX:MaxMetaspaceSize=1g",
                     )
                     props.setProperty("android.useAndroidX", "true")
+                    // b/443311090
+                    props.setProperty("android.newDsl", "false")
                     props.store(it, null)
                 }
 
@@ -326,8 +336,18 @@ interface Module {
     val rootDir: File
         get() = rule.rootDir
 
+    val legacyGradleVersion: Boolean
+
     val gradleRunner: GradleRunner
-        get() = GradleRunner.create().withProjectDir(rule.rootDir)
+        get() {
+            val runner = GradleRunner.create().withProjectDir(rule.rootDir)
+            if (legacyGradleVersion) {
+                // Run tests using Gradle 8.14 to support AGP version used for the tests,
+                // b/431846917
+                rule.setUpGradleVersion(runner, "8.14")
+            }
+            return runner
+        }
 
     fun setBuildGradle(buildGradleContent: String) =
         rule.writeDefaultBuildGradle(
@@ -342,7 +362,11 @@ interface Module {
 
 class DependencyModule(val name: String)
 
-class AppTargetModule(override val rule: ProjectSetupRule, override val name: String) : Module {
+class AppTargetModule(
+    override val rule: ProjectSetupRule,
+    override val name: String,
+    override val legacyGradleVersion: Boolean,
+) : Module {
 
     fun setup(
         buildGradleContent: String =
@@ -364,6 +388,7 @@ class AppTargetModule(override val rule: ProjectSetupRule, override val name: St
 class ProducerModule(
     override val rule: ProjectSetupRule,
     override val name: String,
+    override val legacyGradleVersion: Boolean,
     private val tempFolder: File,
     private val consumer: Module,
     private val managedDeviceContainerName: String,
@@ -683,6 +708,7 @@ class ProducerModule(
 class ConsumerModule(
     override val rule: ProjectSetupRule,
     override val name: String,
+    override val legacyGradleVersion: Boolean,
     private val producerName: String,
     private val dependencyName: String,
 ) : Module {

@@ -109,6 +109,7 @@ public class WebViewFeature {
             GET_COOKIE_INFO,
             REQUESTED_WITH_HEADER_ALLOW_LIST,
             USER_AGENT_METADATA,
+            USER_AGENT_METADATA_FORM_FACTORS,
             MULTI_PROFILE,
             ATTRIBUTION_REGISTRATION_BEHAVIOR,
             WEBVIEW_MEDIA_INTEGRITY_API_STATUS,
@@ -122,10 +123,16 @@ public class WebViewFeature {
             PRERENDER_WITH_URL,
             SAVE_STATE,
             NAVIGATION_CALLBACK_BASIC,
-            CACHE_PROVIDER,
+            NAVIGATION_LISTENER_V1,
             PAYMENT_REQUEST,
             WEBVIEW_BUILDER,
             WARM_UP_RENDERER_PROCESS,
+            PRECONNECT,
+            PROVIDER_WEAKLY_REF_WEBVIEW,
+            HYPERLINK_CONTEXT_MENU_ITEMS,
+            ORIGIN_MATCHED_HEADERS,
+            CUSTOM_REQUEST_HEADERS,
+            ADD_QUIC_HINTS_V1,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -135,11 +142,14 @@ public class WebViewFeature {
     /**
      *
      */
+    @SuppressLint("UnsafeOptInUsageError") // Don't mark WebViewStartupFeature as experimental.
     @RestrictTo(RestrictTo.Scope.LIBRARY)
     @StringDef(value = {
             STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX,
             STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS,
             STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES,
+            STARTUP_FEATURE_SET_PROFILES_TO_LOAD,
+            STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE,
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -539,7 +549,8 @@ public class WebViewFeature {
 
     /**
      * Feature for {@link #isStartupFeatureSupported(Context, String)}.
-     * This feature covers {@link ProcessGlobalConfig#setDirectoryBasePaths(Context, File, File)}
+     * This feature covers
+     * {@link ProcessGlobalConfig#setPartitionedCookiesEnabled(Context, Boolean)}
      */
     public static final String STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES =
             "STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES";
@@ -551,8 +562,12 @@ public class WebViewFeature {
      * {@link WebSettingsCompat#setRequestedWithHeaderOriginAllowList(WebSettings, Set)},
      * {@link ServiceWorkerWebSettingsCompat#getRequestedWithHeaderOriginAllowList()},
      * {@link ServiceWorkerWebSettingsCompat#setRequestedWithHeaderOriginAllowList(Set)}
+     *
+     * @deprecated The origin trial to disable the X-Requested-With feature has ended, so this
+     * API no longer does anything.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @Deprecated
     public static final String REQUESTED_WITH_HEADER_ALLOW_LIST =
             "REQUESTED_WITH_HEADER_ALLOW_LIST";
 
@@ -563,6 +578,15 @@ public class WebViewFeature {
      * {@link WebSettingsCompat#setUserAgentMetadata(WebSettings, UserAgentMetadata)}.
      */
     public static final String USER_AGENT_METADATA = "USER_AGENT_METADATA";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
+     * {@link UserAgentMetadata.Builder#setFormFactors(List)}, and
+     * {@link UserAgentMetadata#getFormFactors()}.
+     */
+    public static final String USER_AGENT_METADATA_FORM_FACTORS =
+            "USER_AGENT_METADATA_FORM_FACTORS";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
@@ -634,6 +658,15 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
+     * {@link WebSettingsCompat#setBackForwardCacheSettings(WebSettings, BackForwardCacheSettings)}
+     * {@link WebSettingsCompat#getBackForwardCacheSettings(WebSettings)}
+     */
+    public static final String BACK_FORWARD_CACHE_SETTINGS = "BACK_FORWARD_CACHE_SETTINGS";
+
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers
      * {@link Profile#prefetchUrlAsync(String, CancellationSignal, Executor, SpeculativeLoadingParameters, OutcomeReceiverCompat)}
      * {@link Profile#prefetchUrlAsync(String, CancellationSignal, Executor, OutcomeReceiverCompat)}
      * {@link Profile#clearPrefetchAsync(String, Executor, OutcomeReceiverCompat)}
@@ -660,10 +693,8 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
-     * {@link androidx.webkit.WebViewCompat#prerenderUrl(WebView, String, CancellationSignal,
-     * Executor, SpeculativeLoadingParameters, PrerenderOperationCallback)}}
+     * {@link androidx.webkit.WebViewCompat#prerenderUrlAsync(WebView, String, CancellationSignal, Executor, PrerenderOperationCallback)}}
      */
-    @WebViewCompat.ExperimentalUrlPrerender
     public static final String PRERENDER_WITH_URL = "PRERENDER_URL_V2";
 
     /**
@@ -700,12 +731,9 @@ public class WebViewFeature {
      */
     public static final String NAVIGATION_CALLBACK_BASIC = "WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE";
 
-    /**
-     * Feature for {@link #isFeatureSupported(String)}.
-     * This feature covers {@link WebViewCompat#setShouldCacheProvider(boolean)}.
-     */
-    @WebViewCompat.ExperimentalCacheProvider
-    public static final String CACHE_PROVIDER = "CACHE_PROVIDER";
+    @WebNavigationClient.ExperimentalNavigationCallback
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String NAVIGATION_LISTENER_V1 = "NAVIGATION_LISTENER_V1";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
@@ -726,13 +754,15 @@ public class WebViewFeature {
      * {@link WebViewBuilder#build(Context, AttributeSet, int, int)}.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @WebViewBuilder.Experimental
     public static final String WEBVIEW_BUILDER = "WEBVIEW_BUILDER";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers
      * {@link WebResourceResponseCompat#setCookies(List)}, as well as
-     * {@link WebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(WebSettings, boolean)} and
+     * {@link WebSettingsCompat#setCookiesIncludedInShouldInterceptRequest(WebSettings, boolean)}
+     * and
      * {@link ServiceWorkerWebSettingsCompat#setIncludeCookiesOnShouldInterceptRequestEnabled(boolean)}.
      */
     public static final String COOKIE_INTERCEPT = "COOKIE_INTERCEPT";
@@ -747,9 +777,71 @@ public class WebViewFeature {
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers {@link Profile#setOriginMatchedHeader(String, String, Set)},
-     * {@link Profile#clearOriginMatchedHeader(String)}, and {@link Profile#clearAllOriginMatchedHeaders()}.
+     * {@link Profile#hasOriginMatchedHeader(String)},
+     * {@link Profile#clearOriginMatchedHeader(String)}, and
+     * {@link Profile#clearAllOriginMatchedHeaders()}.
+     *
      */
+    @Profile.ExperimentalOriginMatchedHeader
     public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     *
+     * <p>This feature covers
+     * {@link Profile#addCustomHeader(androidx.webkit.CustomHeader)},
+     * {@link Profile#hasCustomHeader(String)},
+     * {@link Profile#getCustomHeaders()},
+     * {@link Profile#getCustomHeaders(String)},
+     * {@link Profile#getCustomHeaders(String, String)},
+     * {@link Profile#clearCustomHeader(String)},
+     * {@link Profile#clearCustomHeader(String, String)}, and
+     * {@link Profile#clearAllCustomHeaders()}.
+     */
+    public static final String CUSTOM_REQUEST_HEADERS = "CUSTOM_REQUEST_HEADERS";
+
+    /**
+     * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
+     * This feature covers {@link WebViewStartUpConfig.Builder#setProfilesToLoadDuringStartup(Set)}.
+     */
+    @WebViewCompat.ExperimentalAsyncStartUp
+    public static final String STARTUP_FEATURE_SET_PROFILES_TO_LOAD =
+            "STARTUP_FEATURE_SET_PROFILES_TO_LOAD";
+
+    /**
+     * Feature for {@link #isStartupFeatureSupported(Context, String)}.
+     * This feature covers
+     * {@link ProcessGlobalConfig#setUiThreadStartupMode(Context, int)}.
+     */
+    @WebViewCompat.ExperimentalAsyncStartUp
+    public static final String STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE =
+            "STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}.
+     * This feature covers {@link Profile#preconnect(String)}
+     */
+    @Profile.ExperimentalPreconnect
+    public static final String PRECONNECT = "PRECONNECT";
+
+    /**
+     * Feature for {@link Profile#addQuicHints(Set)}.
+     */
+    @Profile.ExperimentalAddQuicHints
+    public static final String ADD_QUIC_HINTS_V1 = "ADD_QUIC_HINTS";
+
+    /**
+     * This feature covers
+     * {@link WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)},
+     */
+    public static final String HYPERLINK_CONTEXT_MENU_ITEMS = "HYPERLINK_CONTEXT_MENU_ITEMS";
+
+    /**
+     * This is an internal only feature that indicate whether it is safe to cache WebView Provider
+     * objects for the current WebView APK.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public static final String PROVIDER_WEAKLY_REF_WEBVIEW = "PROVIDER_WEAKLY_REF_WEBVIEW";
 
     /**
      * Return whether a feature is supported at run-time. This will check whether a feature is

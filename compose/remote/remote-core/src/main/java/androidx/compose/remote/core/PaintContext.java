@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.paint.PaintBundle;
 
 import org.jspecify.annotations.NonNull;
@@ -24,6 +25,7 @@ import java.time.Clock;
 import java.util.HashMap;
 
 /** Specify an abstract paint context used by RemoteCompose commands to draw */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class PaintContext {
     public static final int TEXT_MEASURE_MONOSPACE_WIDTH = 0x01;
     public static final int TEXT_MEASURE_FONT_HEIGHT = 0x02;
@@ -76,7 +78,7 @@ public abstract class PaintContext {
         matrixSave();
     }
 
-    public Clock getClock() {
+    public @NonNull Clock getClock() {
         return mContext.getClock();
     }
 
@@ -216,9 +218,9 @@ public abstract class PaintContext {
     /**
      * Replace the current paint with the PaintBundle
      *
-     * @param paint
+     * @param paintBundle
      */
-    public abstract void replacePaint(PaintBundle paint);
+    public abstract void replacePaint(@NonNull PaintBundle paintBundle);
 
     /**
      * draw a round rect
@@ -285,7 +287,7 @@ public abstract class PaintContext {
      *
      * @return an instance of a ComputedTextLayout (typically if complex text drawing is used)
      */
-    public abstract Platform.ComputedTextLayout layoutComplexText(
+    public abstract RcPlatformServices.@Nullable ComputedTextLayout layoutComplexText(
             int textId,
             int start,
             int end,
@@ -322,7 +324,8 @@ public abstract class PaintContext {
      *
      * @param computedTextLayout pre-computed text layout
      */
-    public abstract void drawComplexText(Platform.ComputedTextLayout computedTextLayout);
+    public abstract void drawComplexText(
+            RcPlatformServices.@Nullable ComputedTextLayout computedTextLayout);
 
     /**
      * Draw an interpolation between two paths
@@ -331,10 +334,10 @@ public abstract class PaintContext {
      * @param path2Id
      * @param tween 0.0 = is path1 1.0 is path2
      * @param start
-     * @param stop
+     * @param end
      */
     public abstract void drawTweenPath(
-            int path1Id, int path2Id, float tween, float start, float stop);
+            int path1Id, int path2Id, float tween, float start, float end);
 
     /**
      * Interpolate between two path and return the resulting path
@@ -478,6 +481,15 @@ public abstract class PaintContext {
     }
 
     /**
+     * Repaint in the given time
+     *
+     * @param seconds the delay in seconds to the next render loop pass
+     */
+    public void wakeIn(float seconds) {
+        mContext.mRemoteComposeState.wakeIn(seconds);
+    }
+
+    /**
      * Starts a graphics layer
      *
      * @param w
@@ -502,10 +514,10 @@ public abstract class PaintContext {
     /**
      * Returns a String from an id
      *
-     * @param textID
+     * @param id
      * @return the string if found
      */
-    public abstract @Nullable String getText(int textID);
+    public abstract @Nullable String getText(int id);
 
     /**
      * Returns true if the document has been encoded for at least the given version MAJOR.MINOR
@@ -528,4 +540,13 @@ public abstract class PaintContext {
      * @param flags flags
      */
     public abstract void matrixFromPath(int pathId, float fraction, float vOffset, int flags);
+
+    /**
+     * Redirect drawing to a bitmap (0 = back to main canvas)
+     *
+     * @param bitmapId id of bitmap to draw to or 0 to draw to the canvas
+     * @param mode flags support init of bitmap 0 = clear to color, 1 = no clear
+     * @param color set the initial color of the bitmap
+     */
+    public abstract void drawToBitmap(int bitmapId, int mode, int color);
 }

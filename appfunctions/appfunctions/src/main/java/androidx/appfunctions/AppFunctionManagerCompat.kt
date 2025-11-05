@@ -22,8 +22,6 @@ import android.os.Build
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresPermission
 import androidx.annotation.RestrictTo
-import androidx.appfunctions.AppFunctionManagerCompat.Companion.getInstance
-import androidx.appfunctions.AppFunctionManagerCompat.Companion.isExtensionLibraryAvailable
 import androidx.appfunctions.internal.AppFunctionManagerApi
 import androidx.appfunctions.internal.AppFunctionReader
 import androidx.appfunctions.internal.AppSearchAppFunctionReader
@@ -34,6 +32,7 @@ import androidx.appfunctions.internal.PlatformAppFunctionManagerApi
 import androidx.appfunctions.internal.Translator
 import androidx.appfunctions.internal.TranslatorSelector
 import androidx.appfunctions.metadata.AppFunctionMetadata
+import androidx.appfunctions.metadata.AppFunctionPackageMetadata
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -90,7 +89,6 @@ public constructor(
      * @param newEnabledState The new state of the app function.
      * @throws IllegalArgumentException If the [functionId] is not available.
      */
-    @RequiresPermission(value = "android.permission.EXECUTE_APP_FUNCTIONS", conditional = true)
     public suspend fun setAppFunctionEnabled(
         functionId: String,
         @EnabledState newEnabledState: Int,
@@ -174,28 +172,30 @@ public constructor(
     }
 
     /**
-     * Observes for available app functions metadata based on the provided filters.
+     * Observes available app functions metadata based on the provided filters.
      *
      * Allows discovering app functions that match the given [searchSpec] criteria and continuously
-     * emits updates when relevant metadata changes. The calling app can only observe metadata for
-     * functions in packages that it is allowed to query via
-     * [android.content.pm.PackageManager.canPackageQuery]. If a package is not queryable by the
-     * calling app, its functions' metadata will not be visible.
+     * emits updates when relevant metadata changes.
      *
-     * Updates to [AppFunctionMetadata] can occur when the app defining the function is updated or
-     * when a function's enabled state changes.
+     * Updates to [AppFunctionPackageMetadata] can occur when the app defining the function is
+     * updated or when a function's enabled state changes, and if multiple updates happen within a
+     * short duration, only the latest update might be emitted.
      *
-     * If multiple updates happen within a short duration, only the latest update might be emitted.
+     * The calling app can observe metadata for:
+     * - Functions in its own package (no permission required).
+     * - When holding the `android.permission.EXECUTE_APP_FUNCTIONS` permission - functions in other
+     *   packages that it is allowed to query via
+     *   [android.content.pm.PackageManager.canPackageQuery].
      *
      * @param searchSpec an [AppFunctionSearchSpec] instance specifying the filters for searching
      *   the app function metadata.
-     * @return a flow that emits a list of [AppFunctionMetadata] matching the search criteria and
-     *   updated versions of this list when underlying data changes.
+     * @return a flow that emits a list of [AppFunctionPackageMetadata] matching the search criteria
+     *   and updated versions of this list when underlying data changes.
      */
     @RequiresPermission(value = "android.permission.EXECUTE_APP_FUNCTIONS", conditional = true)
     public fun observeAppFunctions(
         searchSpec: AppFunctionSearchSpec
-    ): Flow<List<AppFunctionMetadata>> {
+    ): Flow<List<AppFunctionPackageMetadata>> {
         return appFunctionReader.searchAppFunctions(searchSpec)
     }
 
@@ -230,59 +230,19 @@ public constructor(
         /** The version shared across all schema defined in the legacy SDK. */
         private const val LEGACY_SDK_GLOBAL_SCHEMA_VERSION = 1L
 
-        private var _appFunctionReader: AppFunctionReader? = null
-        private var _appFunctionManagerApi: AppFunctionManagerApi? = null
-
-        private var _skipExtensionLibraryCheck = false
-
-        /**
-         * Allows overriding the [AppFunctionReader] used for constructing
-         * [AppFunctionManagerCompat] instance in [getInstance] with a different implementation.
-         *
-         * Only meant to be used internally by `AppFunctionTestRule`.
-         */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun setAppFunctionReader(appFunctionReader: AppFunctionReader?) {
-            _appFunctionReader = appFunctionReader
-        }
-
-        /**
-         * Allows overriding the [AppFunctionManagerApi] used for constructing
-         * [AppFunctionManagerCompat] instance in [getInstance] with a different implementation.
-         *
-         * Only meant to be used internally by `AppFunctionTestRule`.
-         */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun setAppFunctionManagerApi(appFunctionManagerApi: AppFunctionManagerApi?) {
-            _appFunctionManagerApi = appFunctionManagerApi
-        }
-
-        /**
-         * Allows skipping [isExtensionLibraryAvailable] check in [getInstance].
-         *
-         * Only meant to be used internally by `AppFunctionTestRule`.
-         */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-        public fun setSkipExtensionLibraryCheck(skipExtensionLibraryCheck: Boolean) {
-            _skipExtensionLibraryCheck = skipExtensionLibraryCheck
-        }
-
         /**
          * Checks whether the AppFunction extension library is available.
          *
          * @return `true` if the AppFunctions extension library is available on this device, `false`
          *   otherwise.
          */
-        private fun isExtensionLibraryAvailable(): Boolean {
-            if (_skipExtensionLibraryCheck) return true
-
-            return try {
+        private fun isExtensionLibraryAvailable(): Boolean =
+            try {
                 Class.forName("com.android.extensions.appfunctions.AppFunctionManager")
                 true
             } catch (_: ClassNotFoundException) {
                 false
             }
-        }
 
         /**
          * Gets an instance of [AppFunctionManagerCompat] if the AppFunction feature is supported.
@@ -301,12 +261,11 @@ public constructor(
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA -> {
                     AppFunctionManagerCompat(
                         context,
-                        _appFunctionReader
-                            ?: AppSearchAppFunctionReader(
-                                context,
-                                Dependencies.schemaAppFunctionInventory,
-                            ),
-                        _appFunctionManagerApi ?: PlatformAppFunctionManagerApi(context),
+                        AppSearchAppFunctionReader(
+                            context,
+                            Dependencies.schemaAppFunctionInventory,
+                        ),
+                        PlatformAppFunctionManagerApi(context),
                         Dependencies.translatorSelector,
                     )
                 }
@@ -314,12 +273,11 @@ public constructor(
                     isExtensionLibraryAvailable() -> {
                     AppFunctionManagerCompat(
                         context,
-                        _appFunctionReader
-                            ?: AppSearchAppFunctionReader(
-                                context,
-                                Dependencies.schemaAppFunctionInventory,
-                            ),
-                        _appFunctionManagerApi ?: ExtensionAppFunctionManagerApi(context),
+                        AppSearchAppFunctionReader(
+                            context,
+                            Dependencies.schemaAppFunctionInventory,
+                        ),
+                        ExtensionAppFunctionManagerApi(context),
                         Dependencies.translatorSelector,
                     )
                 }

@@ -75,13 +75,13 @@ import androidx.camera.core.impl.CameraInfoInternal;
 import androidx.camera.core.impl.CameraInternal;
 import androidx.camera.core.impl.ImageOutputConfig;
 import androidx.camera.core.impl.utils.Threads;
-import androidx.camera.view.impl.ZoomGestureDetector;
 import androidx.camera.view.internal.ScreenFlashUiInfo;
 import androidx.camera.view.internal.compat.quirk.DeviceQuirks;
 import androidx.camera.view.internal.compat.quirk.SurfaceViewNotCroppedByParentQuirk;
 import androidx.camera.view.internal.compat.quirk.SurfaceViewStretchedQuirk;
 import androidx.camera.view.transform.CoordinateTransform;
 import androidx.camera.view.transform.OutputTransform;
+import androidx.camera.viewfinder.core.ZoomGestureDetector;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.fragment.app.Fragment;
@@ -343,7 +343,12 @@ public final class PreviewView extends FrameLayout {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        startListeningToDisplayChange();
+        // registerDisplayListener call might throw an IncompatibleClassChangeError and cause that
+        // the PreviewView can't be rendered in Android Studio's layout preview window. Therefore,
+        // do not invoke the startListeningToDisplayChange when in edit mode. (b/429098676)
+        if (!isInEditMode()) {
+            startListeningToDisplayChange();
+        }
         addOnLayoutChangeListener(mOnLayoutChangeListener);
         if (mImplementation != null) {
             mImplementation.onAttachedToWindow();
@@ -361,7 +366,9 @@ public final class PreviewView extends FrameLayout {
         if (mCameraController != null) {
             mCameraController.clearPreviewSurface();
         }
-        stopListeningToDisplayChange();
+        if (!isInEditMode()) {
+            stopListeningToDisplayChange();
+        }
     }
 
     @Override
@@ -1074,7 +1081,8 @@ public final class PreviewView extends FrameLayout {
                 ScreenFlashUiInfo.ProviderType.PREVIEW_VIEW, control));
     }
 
-    private void startListeningToDisplayChange() {
+    @VisibleForTesting
+    void startListeningToDisplayChange() {
         DisplayManager displayManager = getDisplayManager();
         if (displayManager == null) {
             return;
@@ -1083,7 +1091,8 @@ public final class PreviewView extends FrameLayout {
                 new Handler(Looper.getMainLooper()));
     }
 
-    private void stopListeningToDisplayChange() {
+    @VisibleForTesting
+    void stopListeningToDisplayChange() {
         DisplayManager displayManager = getDisplayManager();
         if (displayManager == null) {
             return;

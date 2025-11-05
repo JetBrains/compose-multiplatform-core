@@ -19,14 +19,20 @@ package androidx.biometric.internal
 import android.app.KeyguardManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.AuthenticationCallback
+import androidx.biometric.internal.viewmodel.AuthenticationViewModel
 import androidx.biometric.utils.AuthenticatorUtils
 import androidx.biometric.utils.DeviceUtils
 import androidx.biometric.utils.KeyguardUtils
 import androidx.biometric.utils.PackageUtils
+import androidx.lifecycle.LifecycleOwner
 import java.util.concurrent.Executor
+
+private const val TAG = "AuthenticationHandler"
 
 /**
  * This interface abstracts the underlying authentication mechanisms, allowing different
@@ -36,30 +42,12 @@ import java.util.concurrent.Executor
 internal interface AuthenticationHandler {
 
     /**
-     * Prepares the authentication, setting up view model observers. This should be called **only**
-     * when authentication is actually running.
-     */
-    fun prepareAuth()
-
-    /**
-     * Cleans up resources and unregisters any observers or callbacks associated with the
-     * authentication handler.
-     */
-    fun destroy()
-
-    /**
      * Initiates an authentication flow using the provided prompt [info] and an optional
      * [BiometricPrompt.CryptoObject].
      *
      * This is the primary method for starting a biometric or device credential authentication
      * attempt. The specific UI and underlying mechanism will depend on the implementation of this
      * handle.
-     *
-     * Note that [prepareAuth] needs to be called in this function because we're using lazy binding
-     * for the view model. This means the view model is only bound when authentication is actually
-     * happening. We also expose [prepareAuth] separately because we need to rebind the view model's
-     * observers if the activity gets recreated (which might have already triggered a [destroy]
-     * call) while an authentication is still running.
      */
     fun authenticate(info: BiometricPrompt.PromptInfo, crypto: BiometricPrompt.CryptoObject?)
 
@@ -78,7 +66,8 @@ internal interface AuthenticationHandler {
         @JvmName("create")
         fun create(
             context: Context,
-            viewModel: BiometricViewModel,
+            lifecycleOwner: LifecycleOwner,
+            viewModel: AuthenticationViewModel,
             confirmCredentialActivityLauncher: Runnable,
             clientExecutor: Executor?,
             authenticationCallback: AuthenticationCallback?,
@@ -86,32 +75,73 @@ internal interface AuthenticationHandler {
             val allowedAuthenticators = viewModel.allowedAuthenticators
             val isKeyguardManagerNeededForBiometricAndCredential =
                 isKeyguardManagerNeededForBiometricAndCredential(allowedAuthenticators)
-            viewModel.setUsingKeyguardManagerForBiometricAndCredential(
+            viewModel.isUsingKeyguardManagerForBiometricAndCredential =
                 isKeyguardManagerNeededForBiometricAndCredential
-            )
 
-            val authenticationManager =
-                AuthenticationManager(
-                    context,
-                    viewModel,
-                    confirmCredentialActivityLauncher,
-                    clientExecutor,
-                    authenticationCallback,
-                )
+            /**
+             * The [Executor] on which authentication callback methods will be invoked. Defaults to
+             * a [PromptExecutor] if not provided.
+             */
+            val clientExecutor = clientExecutor ?: PromptExecutor()
+
+            /** The [AuthenticationCallback] for the ongoing authentication. */
+            val clientAuthenticationCallback: AuthenticationCallback =
+                authenticationCallback ?: DefaultClientAuthenticationCallback()
 
             return when {
                 DeviceUtils.isWearOS(context) ||
                     context.isKeyguardManagerNeededForNoBiometric(allowedAuthenticators) ||
                     isKeyguardManagerNeededForBiometricAndCredential -> {
-                    // TODO: add AuthenticationHandlerKeyguardManager
-                    AuthenticationHandlerBiometricPrompt(authenticationManager)
+                    AuthenticationHandlerKeyguardManager(
+                        context,
+                        lifecycleOwner,
+                        viewModel,
+                        confirmCredentialActivityLauncher,
+                        clientExecutor,
+                        clientAuthenticationCallback,
+                    )
                 }
                 context.isUsingFingerprintDialog(viewModel.cryptoObject) ->
-                    // TODO: add AuthenticationHandlerFingerprintManager
-                    AuthenticationHandlerBiometricPrompt(authenticationManager)
-                else -> AuthenticationHandlerBiometricPrompt(authenticationManager)
+                    AuthenticationHandlerFingerprintManager(
+                        context,
+                        lifecycleOwner,
+                        viewModel,
+                        confirmCredentialActivityLauncher,
+                        clientExecutor,
+                        clientAuthenticationCallback,
+                    )
+                else ->
+                    AuthenticationHandlerBiometricPrompt(
+                        context,
+                        lifecycleOwner,
+                        viewModel,
+                        confirmCredentialActivityLauncher,
+                        clientExecutor,
+                        clientAuthenticationCallback,
+                    )
             }
         }
+    }
+}
+
+private class DefaultClientAuthenticationCallback : AuthenticationCallback() {
+    override fun onAuthenticationFailed() {
+        logClientCallbackNullError()
+    }
+
+    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+        logClientCallbackNullError()
+    }
+
+    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+        logClientCallbackNullError()
+    }
+
+    private fun logClientCallbackNullError() {
+        Log.e(
+            TAG,
+            "Callbacks are not re-registered when the caller's activity/fragment is " + "recreated!",
+        )
     }
 }
 
@@ -163,7 +193,8 @@ internal fun Context.isKeyguardManagerNeededForNoBiometric(allowedAuthenticators
  * Checks if this fragment should display the fingerprint dialog authentication UI to the user,
  * rather than delegate to the framework [android.hardware.biometrics.BiometricPrompt].
  */
-private fun Context.isUsingFingerprintDialog(crypto: BiometricPrompt.CryptoObject?) =
+@VisibleForTesting
+internal fun Context.isUsingFingerprintDialog(crypto: BiometricPrompt.CryptoObject?) =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.P ||
         isFingerprintDialogNeededForCrypto(crypto) ||
         isFingerprintDialogNeededForErrorHandling()

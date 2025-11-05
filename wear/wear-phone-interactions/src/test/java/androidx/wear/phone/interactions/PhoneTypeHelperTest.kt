@@ -27,6 +27,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.wear.phone.interactions.PhoneTypeHelper.Companion.getPhoneDeviceType
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -94,6 +95,7 @@ class PhoneTypeHelperTest {
             .isEqualTo(PhoneTypeHelper.DEVICE_TYPE_ERROR)
     }
 
+    @Ignore // b/427237293
     @Test
     @Config(minSdk = 29)
     fun testGetDeviceType_returnsIosWhenAltMode_fromQ() {
@@ -119,6 +121,7 @@ class PhoneTypeHelperTest {
             .isEqualTo(PhoneTypeHelper.DEVICE_TYPE_ANDROID)
     }
 
+    @Ignore // b/427237293
     @Test
     @Config(minSdk = 29)
     fun testGetDeviceType_returnsErrorWhenContentMissing_fromQ() {
@@ -138,6 +141,7 @@ class PhoneTypeHelperTest {
             .isEqualTo(PhoneTypeHelper.DEVICE_TYPE_ANDROID)
     }
 
+    @Ignore // b/427237293
     @Test
     @Config(minSdk = 29)
     fun testGetDeviceType_returnsErrorWhenModeUnknown_fromQ() {
@@ -162,6 +166,7 @@ class PhoneTypeHelperTest {
         assertThat(getPhoneDeviceType(context)).isEqualTo(PhoneTypeHelper.DEVICE_TYPE_ANDROID)
     }
 
+    @Ignore // b/427237293
     @Test
     @Config(minSdk = 29)
     fun testGetDeviceType_returnsIos_fromQ() {

@@ -155,7 +155,7 @@ internal class Camera2CaptureSequenceProcessor(
             // surface per request.
             check(hasSurface)
 
-            if (request.inputRequest != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (request.inputRequest != null) {
                 checkNotNull(imageWriter) {
                     "Failed to create ImageWriter for capture session: $session"
                 }
@@ -387,7 +387,7 @@ internal class Camera2CaptureSequenceProcessor(
      * created, assuming it's a reprocessing session.
      */
     private val imageWriter =
-        if (streamGraph.inputs.isNotEmpty() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (streamGraph.inputs.isNotEmpty()) {
             val inputStream = streamGraph.inputs.first()
             val sessionInputSurface = session.inputSurface
             checkNotNull(sessionInputSurface) {
@@ -558,17 +558,13 @@ internal class Camera2CaptureSequenceProcessor(
     ): CaptureRequest.Builder? {
         val requestBuilder =
             if (request.inputRequest != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    val totalCaptureResult =
-                        request.inputRequest.frameInfo.unwrapAs(TotalCaptureResult::class)
-                    checkNotNull(totalCaptureResult) {
-                        "Failed to unwrap FrameInfo ${request.inputRequest.frameInfo} as " +
-                            "TotalCaptureResult"
-                    }
-                    session.device.createReprocessCaptureRequest(totalCaptureResult)
-                } else {
-                    null
+                val totalCaptureResult =
+                    request.inputRequest.frameInfo.unwrapAs(TotalCaptureResult::class)
+                checkNotNull(totalCaptureResult) {
+                    "Failed to unwrap FrameInfo ${request.inputRequest.frameInfo} as " +
+                        "TotalCaptureResult"
                 }
+                session.device.createReprocessCaptureRequest(totalCaptureResult)
             } else {
                 session.device.createCaptureRequest(requestTemplate)
             }

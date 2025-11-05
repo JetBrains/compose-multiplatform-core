@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextForegroundStyle
 import androidx.compose.ui.text.style.TextGeometricTransform
 import androidx.compose.ui.text.style.lerp
+import androidx.compose.ui.text.style.takeOrElse
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.isUnspecified
@@ -795,7 +796,8 @@ internal fun resolveSpanStyleDefaults(style: SpanStyle) =
             } else {
                 style.letterSpacing
             },
-        baselineShift = style.baselineShift ?: BaselineShift.None,
+        baselineShift =
+            (style.baselineShift ?: BaselineShift.None).takeOrElse { BaselineShift.None },
         textGeometricTransform = style.textGeometricTransform ?: TextGeometricTransform.None,
         localeList = style.localeList ?: LocaleList.current,
         background = style.background.takeOrElse { DefaultBackgroundColor },

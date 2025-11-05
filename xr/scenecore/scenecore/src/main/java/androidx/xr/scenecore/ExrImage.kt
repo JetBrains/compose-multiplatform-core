@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,9 @@ import android.annotation.SuppressLint
 import android.net.Uri
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
-import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.ExrImageResource as RtExrImage
-import androidx.xr.runtime.internal.JxrPlatformAdapter
+import androidx.xr.scenecore.runtime.ExrImageResource as RtExrImage
+import androidx.xr.scenecore.runtime.RenderingRuntime
 import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Path
 
@@ -55,7 +54,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
                 "Can only retrieve reflection texture from preprocessed EXR images."
             )
         }
-        val reflectionTexture = session.platformAdapter.getReflectionTextureFromIbl(image)
+        val reflectionTexture = session.renderingRuntime.getReflectionTextureFromIbl(image)
         if (reflectionTexture == null) {
             throw IllegalStateException(
                 "Failed to retrieve reflection texture from the preprocessed EXR image."
@@ -65,20 +64,8 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
     }
 
     public companion object {
-        internal fun createFromZipAsync(
-            platformAdapter: JxrPlatformAdapter,
-            name: String,
-            session: Session,
-        ): ListenableFuture<ExrImage> {
-            require(name.endsWith(".zip", ignoreCase = true)) {
-                "Only preprocessed skybox files with the .zip extension are supported."
-            }
-
-            return createExrImageFuture(platformAdapter.loadExrImageByAssetName(name), session)
-        }
-
         internal suspend fun createFromZip(
-            platformAdapter: JxrPlatformAdapter,
+            renderingRuntime: RenderingRuntime,
             name: String,
             session: Session,
         ): ExrImage {
@@ -86,60 +73,20 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
                 "Only preprocessed skybox files with the .zip extension are supported."
             }
 
-            return createExrImage(platformAdapter.loadExrImageByAssetName(name), session)
-        }
-
-        internal fun createFromZipAsync(
-            platformAdapter: JxrPlatformAdapter,
-            byteArray: ByteArray,
-            assetKey: String,
-            session: Session,
-        ): ListenableFuture<ExrImage> {
-            return createExrImageFuture(
-                platformAdapter.loadExrImageByByteArray(byteArray, assetKey),
-                session,
-            )
+            return createExrImage(renderingRuntime.loadExrImageByAssetName(name), session)
         }
 
         @SuppressWarnings("RestrictTo")
         internal suspend fun createFromZip(
-            platformAdapter: JxrPlatformAdapter,
+            renderingRuntime: RenderingRuntime,
             byteArray: ByteArray,
             assetKey: String,
             session: Session,
         ): ExrImage {
             return createExrImage(
-                platformAdapter.loadExrImageByByteArray(byteArray, assetKey),
+                renderingRuntime.loadExrImageByByteArray(byteArray, assetKey),
                 session,
             )
-        }
-
-        /**
-         * Public factory for an ExrImage, asynchronously loading a preprocessed skybox from a
-         * [Path] relative to the application's `assets/` folder.
-         *
-         * The input `.zip` file should contain the preprocessed image-based lighting (IBL) data,
-         * typically generated from an `.exr` or `.hdr` environment map using a tool like Filament's
-         * `cmgen`. See: https://github.com/google/filament/tree/main/tools/cmgen
-         *
-         * @param session The [Session] to use for loading the asset.
-         * @param path The Path of the preprocessed `.zip` skybox file to be loaded, relative to the
-         *   application's `assets/` folder.
-         * @return a [ListenableFuture] which will provide the [ExrImage] upon completion. Listeners
-         *   will be called on the main thread if Runnable::run is supplied when adding a listener
-         *   to the ListenableFuture.
-         *     @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method
-         *       requires a relative path, or if the path does not specify a `.zip` file.
-         */
-        @MainThread
-        @JvmStatic
-        // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
-        @SuppressLint("NewApi")
-        public fun createFromZipAsync(session: Session, path: Path): ListenableFuture<ExrImage> {
-            require(!path.isAbsolute) {
-                "ExrImage.createFromZipAsync() expects a path relative to `assets/`, received absolute path $path."
-            }
-            return createFromZipAsync(session.platformAdapter, path.toString(), session)
         }
 
         /**
@@ -154,8 +101,8 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
          * @param path The Path of the preprocessed `.zip` skybox file to be loaded, relative to the
          *   application's `assets/` folder.
          * @return a [ExrImage] upon completion.
-         *     @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method
-         *       requires a relative path, or if the path does not specify a `.zip` file.
+         * @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method requires a
+         *   relative path, or if the path does not specify a `.zip` file.
          */
         @MainThread
         @JvmStatic
@@ -165,28 +112,8 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             require(!path.isAbsolute) {
                 "ExrImage.createFromZip() expects a path relative to `assets/`, received absolute path $path."
             }
-            return createFromZip(session.platformAdapter, path.toString(), session)
+            return createFromZip(session.renderingRuntime, path.toString(), session)
         }
-
-        /**
-         * Public factory for an ExrImage, asynchronously loading a preprocessed skybox from a
-         * [Uri].
-         *
-         * The input `.zip` file should contain the preprocessed image-based lighting (IBL) data,
-         * typically generated from an `.exr` or `.hdr` environment map using a tool like Filament's
-         * `cmgen`. See: https://github.com/google/filament/tree/main/tools/cmgen
-         *
-         * @param session The [Session] to use for loading the asset.
-         * @param uri The Uri of the preprocessed `.zip` skybox file to be loaded.
-         * @return a [ListenableFuture] which will provide the [ExrImage] upon completion. Listeners
-         *   will be called on the main thread if Runnable::run is supplied when adding a listener
-         *   to the ListenableFuture.
-         *     @throws IllegalArgumentException if the Uri does not specify a `.zip` file.
-         */
-        @MainThread
-        @JvmStatic
-        public fun createFromZipAsync(session: Session, uri: Uri): ListenableFuture<ExrImage> =
-            createFromZipAsync(session.platformAdapter, uri.toString(), session)
 
         /**
          * Public factory for an ExrImage, asynchronously loading a preprocessed skybox from a
@@ -199,38 +126,12 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
          * @param session The [Session] to use for loading the asset.
          * @param uri The Uri of the preprocessed `.zip` skybox file to be loaded.
          * @return a [ExrImage] upon completion.
-         *     @throws IllegalArgumentException if the Uri does not specify a `.zip` file.
+         * @throws IllegalArgumentException if the Uri does not specify a `.zip` file.
          */
         @MainThread
         @JvmStatic
         public suspend fun createFromZip(session: Session, uri: Uri): ExrImage =
-            createFromZip(session.platformAdapter, uri.toString(), session)
-
-        /**
-         * Public factory function for a preprocessed EXRImage, where the preprocessed EXRImage is
-         * asynchronously loaded.
-         *
-         * This method must be called from the main thread.
-         * https://developer.android.com/guide/components/processes-and-threads
-         *
-         * @param session The [Session] to use for loading the asset.
-         * @param assetData The byte array of the preprocessed EXR image to be loaded.
-         * @param assetKey The key of the preprocessed EXR image to be loaded. This is used to
-         *   identify the asset in the SceneCore cache.
-         * @return a [ListenableFuture] which will provide the [ExrImage] upon completion. Listeners
-         *   will be called on the main thread if Runnable::run is supplied when adding a listener
-         *   to the ListenableFuture.
-         */
-        @MainThread
-        @JvmStatic
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-        public fun createFromZipAsync(
-            session: Session,
-            assetData: ByteArray,
-            assetKey: String,
-        ): ListenableFuture<ExrImage> {
-            return createFromZipAsync(session.platformAdapter, assetData, assetKey, session)
-        }
+            createFromZip(session.renderingRuntime, uri.toString(), session)
 
         /**
          * Public factory function for a preprocessed EXRImage, where the preprocessed EXRImage is
@@ -253,28 +154,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             assetData: ByteArray,
             assetKey: String,
         ): ExrImage {
-            return createFromZip(session.platformAdapter, assetData, assetKey, session)
-        }
-
-        private fun createExrImageFuture(
-            exrImageResourceFuture: ListenableFuture<RtExrImage>,
-            session: Session,
-        ): ListenableFuture<ExrImage> {
-            val exrImageFuture = ResolvableFuture.create<ExrImage>()
-
-            exrImageResourceFuture.addListener(
-                {
-                    try {
-                        exrImageFuture.set(ExrImage(exrImageResourceFuture.get(), session))
-                    } catch (e: Exception) {
-                        if (e is InterruptedException) Thread.currentThread().interrupt()
-                        exrImageFuture.setException(e)
-                    }
-                },
-                Runnable::run,
-            )
-
-            return exrImageFuture
+            return createFromZip(session.renderingRuntime, assetData, assetKey, session)
         }
 
         private suspend fun createExrImage(

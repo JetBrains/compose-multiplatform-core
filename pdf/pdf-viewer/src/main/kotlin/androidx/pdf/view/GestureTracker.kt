@@ -25,6 +25,7 @@ import android.view.ScaleGestureDetector
 import android.view.ScaleGestureDetector.OnScaleGestureListener
 import android.view.ViewConfiguration
 import android.view.ViewParent
+import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.view.GestureTracker.Gesture
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -355,7 +356,7 @@ internal class GestureTracker(context: Context) {
 
         override fun onLongPress(e: MotionEvent) {
             detected(Gesture.LONG_PRESS)
-            if (delegate != null) {
+            if (!PdfFeatureFlags.isMultiTouchScrollEnabled && delegate != null) {
                 delegate?.onLongPress(e)
             }
         }

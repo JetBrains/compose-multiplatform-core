@@ -275,6 +275,7 @@ public class AndroidMultiResolutionImageReader(
             outputIdMap: Map<MultiResolutionStreamInfo, OutputId>,
             capacity: Int,
             executor: Executor,
+            usageFlags: Long?,
         ): ImageReaderWrapper {
             require(capacity > 0) { "Capacity ($capacity) must be > 0" }
             require(capacity <= AndroidImageReader.IMAGEREADER_MAX_CAPACITY) {
@@ -285,8 +286,18 @@ public class AndroidMultiResolutionImageReader(
             }
 
             // Create and configure a new MultiResolutionImageReader
+            if (usageFlags != null && Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
+                Log.warn {
+                    "Usage flags are only supported for API >= 36. Creating multiresolution image reader without usage flag."
+                }
+            }
+
             val multiResolutionImageReader =
-                MultiResolutionImageReader(outputIdMap.keys, outputFormat, capacity)
+                if (usageFlags != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+                    MultiResolutionImageReader(outputIdMap.keys, outputFormat, capacity, usageFlags)
+                } else {
+                    MultiResolutionImageReader(outputIdMap.keys, outputFormat, capacity)
+                }
 
             val androidMultiResolutionImageReader =
                 AndroidMultiResolutionImageReader(
@@ -310,6 +321,7 @@ public class AndroidMultiResolutionImageReader(
             cameraStream: CameraStream,
             capacity: Int,
             executor: Executor,
+            usageFlags: Long?,
         ): ImageReaderWrapper {
             require(cameraStream.outputs.isNotEmpty()) { "$cameraStream outputs cannot be empty!" }
             val format = cameraStream.outputs.first().format
@@ -318,7 +330,7 @@ public class AndroidMultiResolutionImageReader(
                     MultiResolutionStreamInfo(it.size.width, it.size.height, it.camera.value) to
                         it.id
                 }
-            return create(format.value, cameraStream.id, outputMap, capacity, executor)
+            return create(format.value, cameraStream.id, outputMap, capacity, executor, usageFlags)
         }
     }
 }

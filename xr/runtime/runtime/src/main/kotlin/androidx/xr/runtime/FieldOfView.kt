@@ -16,17 +16,14 @@
 
 package androidx.xr.runtime
 
-import androidx.annotation.RestrictTo
-
 /**
- * Represents the field of view of a camera.
+ * Represents the field of view of a virtual (or rendering) camera.
  *
  * @property angleLeft The angle in radians of the left edge of the field of view.
  * @property angleRight The angle in radians of the right edge of the field of view.
  * @property angleUp The angle in radians of the top edge of the field of view.
  * @property angleDown The angle in radians of the bottom edge of the field of view.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class FieldOfView
 constructor(
     public val angleLeft: Float,

@@ -109,6 +109,8 @@ internal class JetpackConnectionService : ConnectionService() {
         val idBundle = Bundle()
         idBundle.putString(REQUEST_ID_MATCHER_KEY, pendingConnectionRequest.requestIdMatcher)
 
+        injectSpeakerSettings(pendingConnectionRequest.preferredStartingCallEndpoint, extras)
+
         // Call into the platform to start call
         if (pendingConnectionRequest.callAttributes.isOutgoingCall()) {
             extras.putBundle(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, idBundle)
@@ -119,6 +121,14 @@ internal class JetpackConnectionService : ConnectionService() {
                 pendingConnectionRequest.callAttributes.mHandle,
                 extras,
             )
+        }
+    }
+
+    fun injectSpeakerSettings(preferredStartingCallEndpoint: CallEndpointCompat?, extras: Bundle) {
+        preferredStartingCallEndpoint?.let { endpoint ->
+            val useSpeaker = endpoint.type == CallEndpointCompat.TYPE_SPEAKER
+            extras.putBoolean(TelecomManager.EXTRA_START_CALL_WITH_SPEAKERPHONE, useSpeaker)
+            Log.v(TAG, "injectSpeakerSettings: useSpeaker=[$useSpeaker]")
         }
     }
 

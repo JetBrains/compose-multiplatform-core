@@ -23,8 +23,39 @@ import androidx.compose.ui.unit.isUnspecified
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.Entity
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import kotlin.math.abs
+
+/**
+ * Asserts that the Entity associated with the current Subspace layout node is a direct descendant
+ * of the [expectedAncestor] Entity.
+ *
+ * @param expectedAncestor the ancestor entity that is expected to be found in the current
+ *   hierarchy.
+ * @throws AssertionError if no entity is found or the expected ancestor is not in the current
+ *   entities' hierarchy.
+ */
+@CanIgnoreReturnValue
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun SubspaceSemanticsNodeInteraction.assertEntityIsDescendantOf(
+    expectedAncestor: Entity
+): SubspaceSemanticsNodeInteraction {
+    val entity =
+        fetchSemanticsNode().semanticsEntity
+            ?: throw AssertionError("Did not find an associated entity for $this.")
+
+    var current: Entity? = entity
+    while (current != null) {
+        if (current == expectedAncestor) {
+            return this // Found the ancestor
+        }
+        current = current.parent
+    }
+    throw AssertionError(
+        "Entity $entity of $this is not a descendant of the expected ancestor $expectedAncestor."
+    )
+}
 
 /**
  * Asserts that the layout of this node has width equal to [expectedWidth].
@@ -80,6 +111,20 @@ public fun SubspaceSemanticsNodeInteraction.assertHeightIsNotEqualTo(
     expectedHeight: Dp
 ): SubspaceSemanticsNodeInteraction {
     return withSize { it.height.assertIsNotEqualTo(expectedHeight, "height") }
+}
+
+/**
+ * Asserts that the layout of this node has depth that is NOT equal to [expectedDepth].
+ *
+ * @param expectedDepth The depth to assert.
+ * @throws AssertionError if comparison fails.
+ */
+@CanIgnoreReturnValue
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun SubspaceSemanticsNodeInteraction.assertDepthIsNotEqualTo(
+    expectedDepth: Dp
+): SubspaceSemanticsNodeInteraction {
+    return withSize { it.depth.assertIsNotEqualTo(expectedDepth, "depth") }
 }
 
 /**
@@ -319,45 +364,67 @@ public fun SubspaceSemanticsNodeInteraction.assertZPositionIsEqualTo(
  * Asserts that the layout of this node has rotation in the root composable that is equal to the
  * given rotation.
  *
- * @param expected The rotation to assert.
+ * This assertion uses a tolerance to account for floating-point inaccuracies.
+ *
+ * @param expected The expected rotation in the root space to assert.
+ * @param tolerance The maximum allowed difference in degrees.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertRotationInRootIsEqualTo(
-    expected: Quaternion
+    expected: Quaternion,
+    tolerance: Float = 0.01f,
 ): SubspaceSemanticsNodeInteraction {
+    val actual = getRotationInRoot()
+    val angleDiff = Quaternion.angle(actual, expected)
 
-    val makeError = { subject: String, exp: Float, actual: Float ->
-        "Actual $subject is $actual: expected $exp"
+    if (abs(angleDiff) >= tolerance) {
+        val errorMessage =
+            """
+            Rotation assertion in root failed.
+            Angular difference of ${"%.4f".format(angleDiff)}° is greater than or equal to the allowed tolerance of ${"%.4f".format(tolerance)}°.
+            Actual rotation in root:   $actual
+            Expected rotation in root: $expected
+            """
+                .trimIndent()
+        throw AssertionError(errorMessage)
     }
 
-    return withRotationInRoot {
-        check(it.x.equals(expected.x)) { makeError.invoke("x", expected.x, it.x) }
-        check(it.y.equals(expected.y)) { makeError.invoke("y", expected.y, it.y) }
-        check(it.z.equals(expected.z)) { makeError.invoke("z", expected.z, it.z) }
-        check(it.w.equals(expected.w)) { makeError.invoke("w", expected.w, it.w) }
-    }
+    return this
 }
 
 /**
  * Asserts that the layout of this node has rotation that is equal to the given rotation.
  *
+ * This assertion uses a tolerance to account for floating-point inaccuracies.
+ *
  * @param expected The rotation to assert.
+ * @param tolerance The maximum allowed difference in degrees.
  * @throws AssertionError if comparison fails.
  */
 @CanIgnoreReturnValue
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public fun SubspaceSemanticsNodeInteraction.assertRotationIsEqualTo(
-    expected: Quaternion
+    expected: Quaternion,
+    tolerance: Float = 0.01f,
 ): SubspaceSemanticsNodeInteraction {
+    val actual = getRotation()
+    val angleDiff = Quaternion.angle(actual, expected)
 
-    return withRotation {
-        check(it.x.equals(expected.x)) { "Actual x is ${it.x}: expected ${expected.x}" }
-        check(it.y.equals(expected.y)) { "Actual y is ${it.y}: expected ${expected.y}" }
-        check(it.z.equals(expected.z)) { "Actual z is ${it.z}: expected ${expected.z}" }
-        check(it.w.equals(expected.w)) { "Actual w is ${it.w}: expected ${expected.w}" }
+    if (abs(angleDiff) >= tolerance) {
+        val errorMessage =
+            """
+            Rotation assertion failed.
+            Angular difference of ${"%.4f".format(angleDiff)}° is greater than or equal to the allowed tolerance of ${"%.4f".format(tolerance)}°.
+            Actual rotation:   $actual
+            Expected rotation: $expected
+            """
+                .trimIndent()
+        throw AssertionError(errorMessage)
     }
+
+    return this
 }
 
 /**

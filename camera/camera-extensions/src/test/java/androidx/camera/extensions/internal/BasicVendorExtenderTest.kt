@@ -21,7 +21,6 @@ import android.graphics.ImageFormat
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.params.StreamConfigurationMap
-import android.os.Build
 import android.util.Size
 import androidx.camera.core.CameraInfo
 import androidx.camera.extensions.impl.PreviewExtenderImpl
@@ -46,7 +45,7 @@ import org.robolectric.shadows.ShadowCameraManager
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class BasicVendorExtenderTest {
     val yuvSize = Size(1, 1)
     val jpegSize = Size(2, 2)

@@ -40,7 +40,6 @@ import java.security.NoSuchProviderException;
 import java.security.Signature;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -308,23 +307,22 @@ public class CryptoObjectUtils {
      * @return An internal-only instance of {@link androidx.biometric.BiometricPrompt.CryptoObject}.
      */
     @SuppressLint("TrulyRandom")
-    @RequiresApi(Build.VERSION_CODES.M)
     public static BiometricPrompt.@Nullable CryptoObject createFakeCryptoObject() {
         try {
             final KeyStore keystore = KeyStore.getInstance(KEYSTORE_INSTANCE);
             keystore.load(null);
 
             final KeyGenParameterSpec.Builder keySpecBuilder =
-                    Api23Impl.createKeyGenParameterSpecBuilder(
+                    new KeyGenParameterSpec.Builder(
                             FAKE_KEY_NAME,
                             KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT);
-            Api23Impl.setBlockModeCBC(keySpecBuilder);
-            Api23Impl.setEncryptionPaddingPKCS7(keySpecBuilder);
+            keySpecBuilder.setBlockModes(KeyProperties.BLOCK_MODE_CBC);
+            keySpecBuilder.setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7);
 
             final KeyGenerator keyGenerator =
                     KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE_INSTANCE);
-            final KeyGenParameterSpec keySpec = Api23Impl.buildKeyGenParameterSpec(keySpecBuilder);
-            Api23Impl.initKeyGenerator(keyGenerator, keySpec);
+            final KeyGenParameterSpec keySpec = keySpecBuilder.build();
+            keyGenerator.init(keySpec);
             keyGenerator.generateKey();
 
             final SecretKey secretKey =
@@ -533,72 +531,6 @@ public class CryptoObjectUtils {
         static @Nullable Mac getMac(
                 android.hardware.biometrics.BiometricPrompt.@NonNull CryptoObject crypto) {
             return crypto.getMac();
-        }
-    }
-
-    /**
-     * Nested class to avoid verification errors for methods introduced in Android 6.0 (API 23).
-     */
-    @RequiresApi(Build.VERSION_CODES.M)
-    private static class Api23Impl {
-        // Prevent instantiation.
-        private Api23Impl() {
-        }
-
-        /**
-         * Creates a new instance of {@link KeyGenParameterSpec.Builder}.
-         *
-         * @param keystoreAlias The keystore alias for the resulting key.
-         * @param purposes      The purposes for which the resulting key will be used.
-         * @return An instance of {@link KeyGenParameterSpec.Builder}.
-         */
-        @SuppressWarnings("SameParameterValue")
-        static KeyGenParameterSpec.@NonNull Builder createKeyGenParameterSpecBuilder(
-                @NonNull String keystoreAlias, int purposes) {
-            return new KeyGenParameterSpec.Builder(keystoreAlias, purposes);
-        }
-
-        /**
-         * Sets CBC block mode for the given key spec builder.
-         *
-         * @param keySpecBuilder An instance of {@link KeyGenParameterSpec.Builder}.
-         */
-        static void setBlockModeCBC(KeyGenParameterSpec.@NonNull Builder keySpecBuilder) {
-            keySpecBuilder.setBlockModes(KeyProperties.BLOCK_MODE_CBC);
-        }
-
-        /**
-         * Sets PKCS7 encryption padding for the given key spec builder.
-         *
-         * @param keySpecBuilder An instance of {@link KeyGenParameterSpec.Builder}.
-         */
-        static void setEncryptionPaddingPKCS7(KeyGenParameterSpec.@NonNull Builder keySpecBuilder) {
-            keySpecBuilder.setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7);
-        }
-
-        /**
-         * Builds a key spec from the given builder.
-         *
-         * @param keySpecBuilder An instance of {@link KeyGenParameterSpec.Builder}.
-         * @return A {@link KeyGenParameterSpec} created from the given builder.
-         */
-        static @NonNull KeyGenParameterSpec buildKeyGenParameterSpec(
-                KeyGenParameterSpec.@NonNull Builder keySpecBuilder) {
-            return keySpecBuilder.build();
-        }
-
-        /**
-         * Calls {@link KeyGenerator#init(AlgorithmParameterSpec)} for the given key generator and
-         * spec.
-         *
-         * @param keyGenerator An instance of {@link KeyGenerator}.
-         * @param keySpec      The key spec with which to initialize the generator.
-         * @throws InvalidAlgorithmParameterException If the key spec is invalid.
-         */
-        static void initKeyGenerator(
-                @NonNull KeyGenerator keyGenerator, @NonNull KeyGenParameterSpec keySpec)
-                throws InvalidAlgorithmParameterException {
-            keyGenerator.init(keySpec);
         }
     }
 }

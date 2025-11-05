@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<issues format="6" by="lint 8.11.0-alpha10" type="baseline" client="gradle" dependencies="true" name="AGP (8.11.0-alpha10)" variant="all" version="8.11.0-alpha10">
+<issues format="6" by="lint 9.0.0-alpha13" type="baseline" client="gradle" dependencies="true" name="AGP (9.0.0-alpha13)" variant="all" version="9.0.0-alpha13">
 
     <issue
         id="NewApi"
@@ -129,9 +129,27 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#ofPattern`"
-        errorLine1="    val formatter = DateTimeFormatter.ofPattern(&quot;yyyy MMM d&quot;)"
-        errorLine2="                                      ~~~~~~~~~">
+        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#ofLocalizedDate`"
+        errorLine1="        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)"
+        errorLine2="                          ~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/wear/compose/material3/samples/DatePickerSample.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Field requires API level 26, or core library desugaring (current min is 25): `java.time.format.FormatStyle#MEDIUM`"
+        errorLine1="        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)"
+        errorLine2="                                          ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/wear/compose/material3/samples/DatePickerSample.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#withLocale`"
+        errorLine1="            .withLocale(LocalConfiguration.current.locales[0])"
+        errorLine2="             ~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/samples/DatePickerSample.kt"/>
     </issue>
@@ -228,9 +246,18 @@
 
     <issue
         id="NewApi"
+        message="Call requires API level 26 (current min is 25): `TimePicker-ORnUXlg`"
+        errorLine1="        TimePicker("
+        errorLine2="        ~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
         message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#ofLocalizedTime`"
-        errorLine1="        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)"
-        errorLine2="                          ~~~~~~~~~~~~~~~">
+        errorLine1="                DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)"
+        errorLine2="                                  ~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
     </issue>
@@ -238,8 +265,8 @@
     <issue
         id="NewApi"
         message="Field requires API level 26, or core library desugaring (current min is 25): `java.time.format.FormatStyle#SHORT`"
-        errorLine1="        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)"
-        errorLine2="                                          ~~~~~~~~~~~~~~~~~">
+        errorLine1="                DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)"
+        errorLine2="                                                  ~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
     </issue>
@@ -247,17 +274,8 @@
     <issue
         id="NewApi"
         message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#withLocale`"
-        errorLine1="            .withLocale(LocalConfiguration.current.locales[0])"
-        errorLine2="             ~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 26 (current min is 25): `TimePicker-0NXZJ5M`"
-        errorLine1="        TimePicker("
-        errorLine2="        ~~~~~~~~~~">
+        errorLine1="                    .withLocale(LocalConfiguration.current.locales[0])"
+        errorLine2="                     ~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
     </issue>
@@ -282,18 +300,18 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#ofPattern`"
-        errorLine1="    val formatter = DateTimeFormatter.ofPattern(&quot;HH:mm:ss&quot;)"
-        errorLine2="                                      ~~~~~~~~~">
+        message="Call requires API level 26 (current min is 25): `TimePicker-ORnUXlg`"
+        errorLine1="        TimePicker("
+        errorLine2="        ~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
     </issue>
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 25): `TimePicker-0NXZJ5M`"
-        errorLine1="        TimePicker("
-        errorLine2="        ~~~~~~~~~~">
+        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#ofPattern`"
+        errorLine1="            val formatter = DateTimeFormatter.ofPattern(&quot;mm:ss&quot;)"
+        errorLine2="                                              ~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
     </issue>
@@ -318,18 +336,54 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#ofPattern`"
-        errorLine1="    val formatter = DateTimeFormatter.ofPattern(&quot;hh:mm a&quot;)"
-        errorLine2="                                      ~~~~~~~~~">
+        message="Call requires API level 26 (current min is 25): `TimePicker-ORnUXlg`"
+        errorLine1="        TimePicker("
+        errorLine2="        ~~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
     </issue>
 
     <issue
         id="NewApi"
-        message="Call requires API level 26 (current min is 25): `TimePicker-0NXZJ5M`"
+        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#ofPattern`"
+        errorLine1="            val formatter = DateTimeFormatter.ofPattern(&quot;HH:mm:ss&quot;)"
+        errorLine2="                                              ~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.LocalTime#format`"
+        errorLine1="                secondaryLabel = { Text(timePickerTime.format(formatter)) },"
+        errorLine2="                                                       ~~~~~~">
+        <location
+            file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.LocalTime#now`"
+        errorLine1="    var timePickerTime by remember { mutableStateOf(LocalTime.now()) }"
+        errorLine2="                                                              ~~~">
+        <location
+            file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 25): `TimePicker-ORnUXlg`"
         errorLine1="        TimePicker("
         errorLine2="        ~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26, or core library desugaring (current min is 25): `java.time.format.DateTimeFormatter#ofPattern`"
+        errorLine1="            val formatter = DateTimeFormatter.ofPattern(&quot;hh:mm a&quot;)"
+        errorLine2="                                              ~~~~~~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/samples/TimePickerSample.kt"/>
     </issue>
@@ -516,7 +570,7 @@
 
     <issue
         id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        message="Reading `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
         errorLine1="                number.value -= 1"
         errorLine2="                       ~~~~~">
         <location
@@ -525,7 +579,7 @@
 
     <issue
         id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        message="Reading `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
         errorLine1="            text = &quot;${number.value}&quot;,"
         errorLine2="                             ~~~~~">
         <location
@@ -534,29 +588,11 @@
 
     <issue
         id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
+        message="Reading `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
         errorLine1="                number.value += 1"
         errorLine2="                       ~~~~~">
         <location
             file="src/main/java/androidx/wear/compose/material3/samples/AnimatedTextSample.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="            onClick = { progress.value = if (progress.value == 0f) 1f else 0f },"
-        errorLine2="                                 ~~~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/samples/ProgressIndicatorSample.kt"/>
-    </issue>
-
-    <issue
-        id="AutoboxingStateValueProperty"
-        message="Assigning `value` will cause an autoboxing operation. Use `floatValue` to avoid unnecessary allocations."
-        errorLine1="            onClick = { progress.value = if (progress.value == 0f) 1f else 0f },"
-        errorLine2="                                                      ~~~~~">
-        <location
-            file="src/main/java/androidx/wear/compose/material3/samples/ProgressIndicatorSample.kt"/>
     </issue>
 
 </issues>

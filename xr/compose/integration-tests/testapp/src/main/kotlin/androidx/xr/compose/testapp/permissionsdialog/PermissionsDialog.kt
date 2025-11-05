@@ -46,13 +46,20 @@ class PermissionsDialog : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val permissionsLauncher =
-            super.registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
                 permissions ->
-                if (permissions.values.contains(false)) {
+                // This callback is executed after the user responds to the permission dialog.
+                if (permissions.values.all { it }) {
+                    // If all permissions are granted, set the content of the activity.
+                    setContent { PermissionsDialogApp() }
+                } else {
+                    // If any permission is denied, show a toast and finish the activity.
                     Toast.makeText(this, "Missing required permissions", Toast.LENGTH_LONG).show()
                     finish()
                 }
             }
+        enableEdgeToEdge()
+        // Launch the permission request dialog. The result will be handled in the callback above.
         permissionsLauncher.launch(
             arrayOf(
                 "android.permission.SCENE_UNDERSTANDING_COARSE",
@@ -60,8 +67,6 @@ class PermissionsDialog : ComponentActivity() {
                 "android.permission.HAND_TRACKING",
             )
         )
-        enableEdgeToEdge()
-        setContent { PermissionsDialogApp() }
     }
 
     @Composable
@@ -75,6 +80,7 @@ class PermissionsDialog : ComponentActivity() {
                 onClickBackArrow = { this@PermissionsDialog.finish() },
                 onClickRecreate = { this@PermissionsDialog.recreate() },
             ) { padding ->
+                @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
                 Column(
                     modifier = Modifier.background(color = Purple80).fillMaxSize().padding(padding),
                     verticalArrangement = Arrangement.Center,

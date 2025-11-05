@@ -58,7 +58,7 @@ public class MutableTriangle(
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun asImmutable(): ImmutableTriangle = ImmutableTriangle(this.p0, this.p1, this.p2)
+    override fun toImmutable(): ImmutableTriangle = ImmutableTriangle(this.p0, this.p1, this.p2)
 
     /**
      * Equality for [MutableTriangle] is defined using the order in which [p0], [p1] and [p2] are

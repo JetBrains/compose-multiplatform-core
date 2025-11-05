@@ -31,9 +31,13 @@ import androidx.annotation.RestrictTo
  *   on a specific thread. With synchronous (non-coroutine) code, this is where most trace events
  *   should go.
  */
+// False positive: https://youtrack.jetbrains.com/issue/KTIJ-22326
+@Suppress("OPTIONAL_DECLARATION_USAGE_IN_NON_COMMON_SOURCE")
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class Track(
     /** The [TraceContext] instance. */
     @JvmField // avoid getter generation
+    @PublishedApi
     internal val context: TraceContext,
     /**
      * The uuid for the track descriptor.
@@ -42,8 +46,9 @@ public abstract class Track(
      * used to connect recorded trace events to the containing track.
      */
     @JvmField // avoid getter generation
+    @PublishedApi
     internal val uuid: Long,
-) {
+) : AutoCloseable {
     /**
      * Any time we emit trace packets relevant to this process. We need to make sure the necessary
      * preamble packets that describe the process and threads are also emitted. This is used to make
@@ -51,49 +56,65 @@ public abstract class Track(
      */
     // Every poolable that is obtained from the pool, keeps track of its owner.
     // The underlying poolable, if eventually recycled by the Sink after an emit() is complete.
+    @JvmField // avoid getter generation
     internal val pool: ProtoPool = ProtoPool(isDebug = context.isDebug)
 
     // this would be private, but internal prevents getters from being created
     @JvmField // avoid getter generation
-    internal var currentPacketArray = pool.obtainTracePacketArray()
-    @JvmField // we cache this separately to avoid having to query it with a function each time
-    internal var currentPacketArraySize = currentPacketArray.packets.size
+    internal var currentPacketArray: PooledTracePacketArray? = pool.obtainTracePacketArray()
 
     internal fun flush() {
-        context.sink.enqueue(currentPacketArray)
-        currentPacketArray = pool.obtainTracePacketArray()
-        currentPacketArraySize = currentPacketArray.packets.size
+        val currentPacketArray = this.currentPacketArray
+        if (currentPacketArray != null) {
+            context.sink.enqueue(currentPacketArray)
+            // Try obtaining a new pooled trace packet.
+            this.currentPacketArray = pool.obtainTracePacketArray()
+        }
     }
 
-    /** Emit is internal, but it must be sure to only access */
-    internal inline fun emitTraceEvent(
-        immediateDispatch: Boolean = false,
-        block: (TraceEvent) -> Unit,
-    ) {
-        currentPacketArray.apply {
-            block(packets[fillCount])
-            fillCount++
-            if (fillCount == currentPacketArraySize || immediateDispatch) {
-                context.sink.enqueue(this)
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun obtainTraceEvent(): TraceEvent? {
+        if (currentPacketArray == null) {
+            // Try obtaining another pooled trace packet array.
+            currentPacketArray = pool.obtainTracePacketArray()
+        }
+        // If we still cannot obtain a PooledTracePacketArray, then just mark the trace event
+        // as lost.
+        val currentPacketArray = currentPacketArray
+        return if (currentPacketArray == null) {
+            context.sink.onDroppedTraceEvent()
+            null
+        } else {
+            currentPacketArray.packets[currentPacketArray.fillCount]
+        }
+    }
 
+    @Suppress("NOTHING_TO_INLINE")
+    internal inline fun dispatchTraceEvent(event: TraceEvent?, immediateDispatch: Boolean = false) {
+        if (event == null) return
+        val currentTracePacketArray = currentPacketArray ?: return
+        val currentPacketArraySize = currentPacketArray?.packets?.size
+        currentTracePacketArray.apply {
+            fillCount += 1
+            if (fillCount == currentPacketArraySize || immediateDispatch) {
+                context.sink.enqueue(pooledPacketArray = this)
                 // greedy reset / reallocate array
-                currentPacketArray = pool.obtainTracePacketArray()
-                currentPacketArraySize = currentPacketArray.packets.size
+                this@Track.currentPacketArray = pool.obtainTracePacketArray()
             }
         }
     }
 
     /** Test API for benchmarking */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun enqueueSingleUnmodifiedEvent() {
-        emitTraceEvent(immediateDispatch = true) {
-            // noop
-        }
+        dispatchTraceEvent(event = obtainTraceEvent(), immediateDispatch = true)
     }
 
     /** Test API for benchmarking */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun resetFillCount() {
-        currentPacketArray.fillCount = 0
+        currentPacketArray?.fillCount = 0
+    }
+
+    override fun close() {
+        // Does nothing
     }
 }

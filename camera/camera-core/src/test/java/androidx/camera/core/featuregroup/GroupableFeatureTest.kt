@@ -17,7 +17,6 @@
 package androidx.camera.core.featuregroup
 
 import androidx.camera.core.DynamicRange
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FEATURE_TYPE_DYNAMIC_RANGE
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FEATURE_TYPE_FPS_RANGE
@@ -31,15 +30,13 @@ import androidx.camera.core.featuregroup.impl.feature.DynamicRangeFeature
 import androidx.camera.core.featuregroup.impl.feature.FpsRangeFeature
 import androidx.camera.core.featuregroup.impl.feature.ImageFormatFeature
 import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature
-import androidx.test.filters.SdkSuppress
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
-@OptIn(ExperimentalSessionConfig::class)
 @RunWith(JUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class GroupableFeatureTest {
     @Test
     fun objectHlg10_dynamicRangeIsHlg10Bit() {
@@ -49,7 +46,7 @@ class GroupableFeatureTest {
 
     @Test
     fun objectHlg10_featureTypeIsDynamicRange() {
-        assertThat(HDR_HLG10.getFeatureType()).isEqualTo(FEATURE_TYPE_DYNAMIC_RANGE)
+        assertThat(HDR_HLG10.featureType).isEqualTo(FEATURE_TYPE_DYNAMIC_RANGE)
     }
 
     @Test
@@ -61,7 +58,7 @@ class GroupableFeatureTest {
 
     @Test
     fun objectFps60_featureTypeIsFpsRange() {
-        assertThat(FPS_60.getFeatureType()).isEqualTo(FEATURE_TYPE_FPS_RANGE)
+        assertThat(FPS_60.featureType).isEqualTo(FEATURE_TYPE_FPS_RANGE)
     }
 
     @Test
@@ -72,18 +69,17 @@ class GroupableFeatureTest {
 
     @Test
     fun objectImageUltraHdr_featureTypeIsImageFormat() {
-        assertThat(IMAGE_ULTRA_HDR.getFeatureType()).isEqualTo(FEATURE_TYPE_IMAGE_FORMAT)
+        assertThat(IMAGE_ULTRA_HDR.featureType).isEqualTo(FEATURE_TYPE_IMAGE_FORMAT)
     }
 
     @Test
     fun objectPreviewStabilization_stabilizationModeIsPreview() {
-        assertThat((PREVIEW_STABILIZATION as VideoStabilizationFeature).mode)
-            .isEqualTo(VideoStabilizationFeature.StabilizationMode.PREVIEW)
+        assertThat((PREVIEW_STABILIZATION as VideoStabilizationFeature).videoStabilization)
+            .isEqualTo(VideoStabilization.PREVIEW)
     }
 
     @Test
     fun objectPreviewStabilization_featureTypeIsVideoStabilization() {
-        assertThat(PREVIEW_STABILIZATION.getFeatureType())
-            .isEqualTo(FEATURE_TYPE_VIDEO_STABILIZATION)
+        assertThat(PREVIEW_STABILIZATION.featureType).isEqualTo(FEATURE_TYPE_VIDEO_STABILIZATION)
     }
 }

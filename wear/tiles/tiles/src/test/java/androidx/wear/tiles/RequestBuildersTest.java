@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.wear.protolayout.DeviceParametersBuilders;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
+import androidx.wear.protolayout.ProtoLayoutScope;
 import androidx.wear.protolayout.StateBuilders.State;
 import androidx.wear.protolayout.expression.AppDataKey;
 import androidx.wear.protolayout.expression.DynamicDataBuilders.DynamicDataValue;
@@ -43,11 +44,29 @@ import java.time.Instant;
 public final class RequestBuildersTest {
 
     @Test
+    public void buildTileRequest_withScope_scopeIsReturned() {
+        ProtoLayoutScope scope = new ProtoLayoutScope();
+
+        TileRequest tileRequest =
+                TileRequest.fromProto(RequestProto.TileRequest.getDefaultInstance(), scope);
+
+        assertThat(tileRequest.getScope()).isEqualTo(scope);
+    }
+
+    @Test
+    public void buildTileRequest_withoutScope_defaultScopeReturned() {
+        TileRequest tileRequest =
+                TileRequest.fromProto(RequestProto.TileRequest.getDefaultInstance());
+
+        assertThat(tileRequest.getScope()).isNotNull();
+    }
+
+    @Test
     public void buildTileRequest_ifSetLastVisibleInstant_setsLastVisibleMillis() {
         long timestamp = 1000L;
         Instant instant = Instant.ofEpochMilli(timestamp);
-        TileRequest tileRequest = new TileRequest.Builder().setLastVisibleTime(instant).build();
 
+        TileRequest tileRequest = new TileRequest.Builder().setLastVisibleTime(instant).build();
         RequestProto.TileRequest protoRequest = tileRequest.toProto();
 
         assertThat(protoRequest.getLastVisibleMillis()).isEqualTo(timestamp);
@@ -56,7 +75,6 @@ public final class RequestBuildersTest {
     @Test
     public void buildTileRequest_ifNotSetLastVisibleInstant_setsLastVisibleMillisToZero() {
         TileRequest tileRequest = new TileRequest.Builder().build();
-
         RequestProto.TileRequest protoRequest = tileRequest.toProto();
 
         assertThat(protoRequest.getLastVisibleMillis()).isEqualTo(0L);

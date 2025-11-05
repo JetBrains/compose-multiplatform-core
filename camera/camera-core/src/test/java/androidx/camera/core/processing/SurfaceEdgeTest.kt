@@ -20,7 +20,6 @@ import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Size
@@ -59,7 +58,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 /** Unit tests for [SurfaceEdge]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class SurfaceEdgeTest {
 
     companion object {

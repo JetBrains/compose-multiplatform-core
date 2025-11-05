@@ -17,6 +17,7 @@
 package androidx.xr.glimmer.list
 
 import androidx.collection.mutableIntObjectMapOf
+import androidx.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
 import androidx.compose.foundation.lazy.layout.LazyLayoutMeasureScope
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.util.fastMap

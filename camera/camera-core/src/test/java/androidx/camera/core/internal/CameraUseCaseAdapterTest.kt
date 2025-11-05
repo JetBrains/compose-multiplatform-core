@@ -21,7 +21,6 @@ import android.graphics.ImageFormat.JPEG_R
 import android.graphics.ImageFormat.RAW_SENSOR
 import android.graphics.Matrix
 import android.graphics.Rect
-import android.os.Build
 import android.util.Range
 import android.util.Rational
 import android.util.Size
@@ -33,7 +32,6 @@ import androidx.camera.core.CameraEffect.PREVIEW
 import androidx.camera.core.CameraEffect.VIDEO_CAPTURE
 import androidx.camera.core.CompositionSettings
 import androidx.camera.core.DynamicRange.HDR_UNSPECIFIED_10_BIT
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.FocusMeteringAction.FLAG_AE
 import androidx.camera.core.FocusMeteringAction.FLAG_AF
@@ -114,11 +112,10 @@ private const val CAMERA_ID = "0"
 private const val SECONDARY_CAMERA_ID = "1"
 
 /** Unit tests for [CameraUseCaseAdapter]. */
-@OptIn(ExperimentalSessionConfig::class)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @org.robolectric.annotation.Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
+    sdk = [org.robolectric.annotation.Config.ALL_SDKS],
     instrumentedPackages = ["androidx.camera.core"],
 )
 class CameraUseCaseAdapterTest {
@@ -153,7 +150,8 @@ class CameraUseCaseAdapterTest {
             StreamSpecsCalculatorImpl(useCaseConfigFactory, fakeCameraDeviceSurfaceManager)
         fakeCameraInfo = FakeCameraInfoInternal(streamSpecsCalculator)
         fakeCamera = FakeCamera(CAMERA_ID, fakeCameraControl, fakeCameraInfo)
-        fakeSecondaryCamera = FakeCamera(SECONDARY_CAMERA_ID, fakeCameraControl, fakeCameraInfo)
+        val fakeCameraInfo2 = FakeCameraInfoInternal(SECONDARY_CAMERA_ID, streamSpecsCalculator)
+        fakeSecondaryCamera = FakeCamera(SECONDARY_CAMERA_ID, fakeCameraControl, fakeCameraInfo2)
         cameraCoordinator = FakeCameraCoordinator()
         executor = Executors.newSingleThreadExecutor()
         surfaceProcessorInternal = FakeSurfaceProcessorInternal(mainThreadExecutor())
@@ -464,7 +462,6 @@ class CameraUseCaseAdapterTest {
         assertThrows<CameraException> { adapter.addUseCases(setOf(imageCapture)) }
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun useRawWithExtensions_throwsException() {
         // Arrange: enable extensions.
@@ -695,7 +692,6 @@ class CameraUseCaseAdapterTest {
         assertThat(streamSharing.camera).isNull()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun extensionEnabledAndVideoCaptureExisted_streamSharingOn() {
         // Arrange: enable extensions.
@@ -712,7 +708,6 @@ class CameraUseCaseAdapterTest {
         assertThat(streamSharing.camera).isNotNull()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun extensionEnabledAndOnlyVideoCaptureAttached_streamSharingOn() {
         // Arrange: enable extensions.
@@ -824,8 +819,8 @@ class CameraUseCaseAdapterTest {
 
     @Test
     fun cameraIdEquals() {
-        val otherCameraId = createCameraUseCaseAdapter(fakeCamera).cameraId
-        assertThat(adapter.cameraId == otherCameraId).isTrue()
+        val otherCameraId = createCameraUseCaseAdapter(fakeCamera).adapterIdentifier
+        assertThat(adapter.adapterIdentifier).isEqualTo(otherCameraId)
     }
 
     @Test
@@ -1491,7 +1486,6 @@ class CameraUseCaseAdapterTest {
         assertThat(cameraInfoInternal.isCaptureProcessProgressSupported).isTrue()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun returnsCorrectSessionProcessorFromAdapterCameraControl() {
         val fakeSessionProcessor = FakeSessionProcessor()
@@ -1509,14 +1503,44 @@ class CameraUseCaseAdapterTest {
         val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera)
         val cameraUseCaseAdapter2 =
             createCameraUseCaseAdapter(fakeCamera, secondaryCamera = fakeSecondaryCamera)
-        assertThat(cameraUseCaseAdapter1.cameraId).isNotEqualTo(cameraUseCaseAdapter2.cameraId)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isNotEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
     }
 
     @Test
     fun generateCameraId_isNotDualCameraRecording() {
         val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera)
         val cameraUseCaseAdapter2 = createCameraUseCaseAdapter(fakeCamera, secondaryCamera = null)
-        assertThat(cameraUseCaseAdapter1.cameraId).isEqualTo(cameraUseCaseAdapter2.cameraId)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
+    }
+
+    @Test
+    fun generateCameraId_sameWithIdenticalCameraConfig() {
+        val cameraConfig = FakeCameraConfig()
+        val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera, cameraConfig)
+        val cameraUseCaseAdapter2 = createCameraUseCaseAdapter(fakeCamera, cameraConfig)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
+    }
+
+    @Test
+    fun generateCameraId_differsWithDifferentCameraConfig() {
+        val cameraConfig = FakeCameraConfig()
+        val cameraConfig2 = FakeCameraConfig()
+        val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera, cameraConfig)
+        val cameraUseCaseAdapter2 = createCameraUseCaseAdapter(fakeCamera, cameraConfig2)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isNotEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
+    }
+
+    @Test
+    fun generateCameraId_differsWhenOneHasConfigAndOtherDoesNot() {
+        val cameraConfig = FakeCameraConfig()
+        val cameraUseCaseAdapter1 = createCameraUseCaseAdapter(fakeCamera, cameraConfig)
+        val cameraUseCaseAdapter2 = createCameraUseCaseAdapter(fakeCamera)
+        assertThat(cameraUseCaseAdapter1.adapterIdentifier)
+            .isNotEqualTo(cameraUseCaseAdapter2.adapterIdentifier)
     }
 
     @Test

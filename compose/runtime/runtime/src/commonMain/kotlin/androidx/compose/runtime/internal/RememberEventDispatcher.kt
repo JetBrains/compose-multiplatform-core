@@ -135,10 +135,11 @@ internal class RememberEventDispatcher() : RememberManager {
             }
             val abandoning = abandoning ?: return
             abandoning.add(instance.wrapped)
-        }
-        val ignoreSet = ignoreLeavingSet
-        if (ignoreSet == null || instance !in ignoreSet) {
-            recordLeaving(instance)
+        } else {
+            val ignoreSet = ignoreLeavingSet
+            if (ignoreSet == null || instance !in ignoreSet) {
+                recordLeaving(instance)
+            }
         }
     }
 
@@ -165,7 +166,9 @@ internal class RememberEventDispatcher() : RememberManager {
             ?: mutableScatterMapOf<RecomposeScopeImpl, PausedCompositionRemembers>().also {
                 pausedPlaceholders = it
             })[scope] = pausedPlaceholder
-        this.currentRememberingList.add(RememberObserverHolder(pausedPlaceholder, after = null))
+        this.currentRememberingList.add(
+            RememberObserverHolder(pausedPlaceholder, afterGroupIndex = -1)
+        )
     }
 
     override fun startResumingScope(scope: RecomposeScopeImpl) {

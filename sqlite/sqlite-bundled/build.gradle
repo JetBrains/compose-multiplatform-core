@@ -32,7 +32,6 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 apply(from: "PrepareSqliteSourcesTask.groovy")
@@ -50,6 +49,7 @@ def SQLITE_COMPILE_FLAGS = [
         "-DSQLITE_ENABLE_FTS4",
         "-DSQLITE_ENABLE_FTS5",
         "-DSQLITE_ENABLE_JSON1",
+        "-DSQLITE_ENABLE_MATH_FUNCTIONS",
         "-DSQLITE_ENABLE_NORMALIZE",
         "-DSQLITE_ENABLE_RTREE",
         "-DSQLITE_ENABLE_STAT4",
@@ -84,7 +84,7 @@ def prepareSqliteSourcesTask = ext.registerPrepareSqliteSourcesTask(
 configurations {
     // Configuration for producing a shareable archive file of compiled SQLite. Only the Linux X64
     // target of SQLite is produced hence the explicit name and attributes
-    linuxSharedArchive {
+    register("linuxSharedArchive") {
         canBeConsumed = true
         canBeResolved = false
         attributes {
@@ -92,7 +92,7 @@ configurations {
         }
     }
     // Configuration for producing a shareable directory that includes SQLite amalgamation sources.
-    sqliteSources {
+    register("sqliteSources") {
         canBeConsumed = true
         canBeResolved = false
         attributes {
@@ -174,11 +174,21 @@ androidXMultiplatform {
                 // KT-57848
                 nativeCompilation.freeArgs.addAll("-Dat_quick_exit=atexit", "-Dquick_exit=exit")
             }
+            if (nativeCompilation.konanTarget.family == Family.LINUX) {
+                // b/444260629: Compile with no exceptions, not used and reduces linking deps
+                nativeCompilation.freeArgs.add("-fno-exceptions")
+            }
         }
         configureTargets(requiredNativeTargets)
     }
 
-    androidTarget() {
+    androidLibrary {
+        namespace = "androidx.sqlite.driver.bundled"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("src/androidMain/proguard-rules.pro"))
+        }
+        androidResources.enable = true
         addNativeLibrariesToJniLibs(it, jvmArtJniImplementation)
     }
     ios()
@@ -187,6 +197,8 @@ androidXMultiplatform {
     }
     linux()
     mac()
+    tvos()
+    watchos()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -212,7 +224,6 @@ androidXMultiplatform {
         //  jvmMain        androidMain               macMain   linuxMain    iosMain
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":sqlite:sqlite"))
             }
         }
@@ -238,13 +249,6 @@ androidXMultiplatform {
                 }
             }
         }
-    }
-}
-
-android {
-    namespace = "androidx.sqlite.driver.bundled"
-    buildTypes.configureEach {
-        consumerProguardFiles("src/androidMain/proguard-rules.pro")
     }
 }
 

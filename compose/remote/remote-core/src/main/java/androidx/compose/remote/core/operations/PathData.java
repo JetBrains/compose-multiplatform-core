@@ -18,6 +18,7 @@ package androidx.compose.remote.core.operations;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.FLOAT_ARRAY;
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -34,18 +35,22 @@ import org.jspecify.annotations.Nullable;
 import java.util.Arrays;
 import java.util.List;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class PathData extends Operation implements VariableSupport, Serializable {
     private static final int OP_CODE = Operations.DATA_PATH;
     private static final String CLASS_NAME = "PathData";
+    private static final int MAX_PATH_LENGTH = 20000;
     int mInstanceId;
     float[] mFloatPath;
     float[] mOutputPath;
+    int mWinding;
     private boolean mPathChanged = true;
 
-    PathData(int instanceId, float[] floatPath) {
+    PathData(int instanceId, float[] floatPath, int winding) {
         mInstanceId = instanceId;
         mFloatPath = floatPath;
         mOutputPath = Arrays.copyOf(mFloatPath, mFloatPath.length);
+        mWinding = winding;
     }
 
     @Override
@@ -157,12 +162,17 @@ public class PathData extends Operation implements VariableSupport, Serializable
      */
     public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         int imageId = buffer.readInt();
+        int winding = imageId >> 24;
+        imageId &= 0xffffff;
         int len = buffer.readInt();
+        if (len > MAX_PATH_LENGTH) {
+            throw new RuntimeException("Path too long");
+        }
         float[] data = new float[len];
         for (int i = 0; i < data.length; i++) {
             data[i] = buffer.readFloat();
         }
-        operations.add(new PathData(imageId, data));
+        operations.add(new PathData(imageId, data, winding));
     }
 
     /**
@@ -236,7 +246,7 @@ public class PathData extends Operation implements VariableSupport, Serializable
     @Override
     public void apply(@NonNull RemoteContext context) {
         if (mPathChanged) {
-            context.loadPathData(mInstanceId, mOutputPath);
+            context.loadPathData(mInstanceId, mWinding, mOutputPath);
         }
         mPathChanged = false;
     }

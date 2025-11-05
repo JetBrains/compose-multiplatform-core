@@ -200,7 +200,27 @@ private fun Long.nsToDoubleMs(): Double = this / 1_000_000.0
  * framerate rendering) more naturally.
  */
 @Suppress("CanSealedSubClassBeObject")
-class FrameTimingMetric : Metric() {
+class FrameTimingMetric() : Metric() {
+    private var processSuffix: String = ""
+    private var metricSuffix: String = ""
+
+    /**
+     * @param processNameSuffix A suffix appended to the app's package name for subprocesses. This
+     *   is useful when there are separate subprocesses of the app.
+     * @param metricNameSuffix A suffix appended to the metric names. Use this to distinguish
+     *   metrics collected from different subprocesses in the app. Defaults to [processNameSuffix]
+     *   with ":" replaced by "_".
+     */
+    @ExperimentalMetricApi
+    @JvmOverloads
+    constructor(
+        processNameSuffix: String,
+        metricNameSuffix: String = processNameSuffix.replace(oldValue = ":", newValue = "_"),
+    ) : this() {
+        processSuffix = processNameSuffix
+        metricSuffix = metricNameSuffix
+    }
+
     override fun getMeasurements(
         captureInfo: CaptureInfo,
         traceSession: TraceProcessor.Session,
@@ -209,7 +229,7 @@ class FrameTimingMetric : Metric() {
             FrameTimingQuery.getFrameData(
                 session = traceSession,
                 captureApiLevel = captureInfo.apiLevel,
-                packageName = captureInfo.targetPackageName,
+                packageName = captureInfo.targetPackageName + processSuffix,
             )
         return frameData
             .getFrameSubMetrics(captureInfo.apiLevel)
@@ -218,13 +238,13 @@ class FrameTimingMetric : Metric() {
                 Measurement(
                     name =
                         if (it.key == SubMetric.FrameDurationCpuNs) {
-                            "frameDurationCpuMs"
+                            "frameDurationCpuMs$metricSuffix"
                         } else {
-                            "frameOverrunMs"
+                            "frameOverrunMs$metricSuffix"
                         },
                     dataSamples = it.value.map { timeNs -> timeNs.nsToDoubleMs() },
                 )
-            } + listOf(Measurement("frameCount", frameData.size.toDouble()))
+            } + listOf(Measurement("frameCount$metricSuffix", frameData.size.toDouble()))
     }
 }
 
@@ -465,6 +485,8 @@ abstract class TraceMetric : Metric() {
     /**
      * Get the metric result for a given iteration given information about the target process and a
      * TraceProcessor session
+     *
+     * @sample androidx.benchmark.samples.getMeasurementsSample
      */
     public abstract override fun getMeasurements(
         captureInfo: CaptureInfo,
@@ -1006,10 +1028,10 @@ class PowerMetric(private val type: Type) : Metric() {
 /**
  * Metric for tracking the memory usage of the target application.
  *
- * There are two modes for measurement - `Last`, which represents the last observed value during an
- * iteration, and `Max`, which represents the largest sample observed per measurement.
- *
- * By default, reports:
+ * @param mode There are two modes for measurement - `Last`, which represents the last observed
+ *   value during an iteration, and `Max`, which represents the largest sample observed per
+ *   measurement.
+ * @param subMetrics By default, reports:
  * * `memoryRssAnonKb` - Anonymous resident/allocated memory owned by the process, not including
  *   memory mapped files or shared memory.
  * * `memoryRssAnonFileKb` - Memory allocated by the process to map files.
@@ -1017,12 +1039,22 @@ class PowerMetric(private val type: Type) : Metric() {
  * * `memoryGpuKb` - GPU Memory allocated for the process.
  *
  * By passing a custom `subMetrics` list, you can enable other [SubMetric]s.
+ *
+ * @param processNameSuffix A suffix appended to the app's package name for subprocesses. This is
+ *   useful when there are separate subprocesses of the app.
+ * @param metricNameSuffix A suffix appended to the metric names. Use this to distinguish metrics
+ *   collected from different subprocesses in the app. Defaults to [processNameSuffix] with ":"
+ *   replaced by "_".
  */
 @ExperimentalMetricApi
-class MemoryUsageMetric(
+class MemoryUsageMetric
+@JvmOverloads
+constructor(
     private val mode: Mode,
     private val subMetrics: List<SubMetric> =
         listOf(SubMetric.HeapSize, SubMetric.RssAnon, SubMetric.RssFile, SubMetric.Gpu),
+    private val processNameSuffix: String = "",
+    private val metricNameSuffix: String = processNameSuffix.replace(oldValue = ":", newValue = "_"),
 ) : TraceMetric() {
     enum class Mode {
         /**
@@ -1064,12 +1096,15 @@ class MemoryUsageMetric(
         val suffix = mode.toString()
         return MemoryUsageQuery.getMemoryUsageKb(
                 session = traceSession,
-                targetPackageName = captureInfo.targetPackageName,
+                targetPackageName = captureInfo.targetPackageName + processNameSuffix,
                 mode = mode,
             )
             ?.mapNotNull {
                 if (it.key in subMetrics) {
-                    Measurement("memory${it.key}${suffix}Kb", it.value.toDouble())
+                    Measurement(
+                        "memory${metricNameSuffix}${it.key}${suffix}Kb",
+                        it.value.toDouble(),
+                    )
                 } else {
                     null
                 }
@@ -1077,9 +1112,22 @@ class MemoryUsageMetric(
     }
 }
 
-/** Captures the number of page faults over time for a target package name. */
+/**
+ * Captures the number of page faults over time for a target package name.
+ *
+ * @param processNameSuffix A suffix appended to the app's package name for subprocesses. This is
+ *   useful when there are separate subprocesses of the app.
+ * @param metricNameSuffix A suffix appended to the metric names. Use this to distinguish metrics
+ *   collected from different subprocesses in the app. Defaults to [processNameSuffix] with ":"
+ *   replaced by "_".
+ */
 @ExperimentalMetricApi
-class MemoryCountersMetric : TraceMetric() {
+class MemoryCountersMetric
+@JvmOverloads
+constructor(
+    private val processNameSuffix: String = "",
+    private val metricNameSuffix: String = processNameSuffix.replace(oldValue = ":", newValue = "_"),
+) : TraceMetric() {
     override fun getMeasurements(
         captureInfo: CaptureInfo,
         traceSession: TraceProcessor.Session,
@@ -1087,16 +1135,25 @@ class MemoryCountersMetric : TraceMetric() {
         val metrics =
             MemoryCountersQuery.getMemoryCounters(
                 session = traceSession,
-                targetPackageName = captureInfo.targetPackageName,
+                targetPackageName = captureInfo.targetPackageName + processNameSuffix,
             ) ?: return listOf()
 
         return listOf(
-            Measurement("minorPageFaults", metrics.minorPageFaults),
-            Measurement("majorPageFaults", metrics.majorPageFaults),
-            Measurement("pageFaultsBackedBySwapCache", metrics.pageFaultsBackedBySwapCache),
-            Measurement("pageFaultsBackedByReadIO", metrics.pageFaultsBackedByReadIO),
-            Measurement("memoryCompactionEvents", metrics.memoryCompactionEvents),
-            Measurement("memoryReclaimEvents", metrics.memoryReclaimEvents),
+            Measurement("minorPageFaults${metricNameSuffix}", metrics.minorPageFaults),
+            Measurement("majorPageFaults${metricNameSuffix}", metrics.majorPageFaults),
+            Measurement(
+                "pageFaultsBackedBySwapCache${metricNameSuffix}",
+                metrics.pageFaultsBackedBySwapCache,
+            ),
+            Measurement(
+                "pageFaultsBackedByReadIO${metricNameSuffix}",
+                metrics.pageFaultsBackedByReadIO,
+            ),
+            Measurement(
+                "memoryCompactionEvents${metricNameSuffix}",
+                metrics.memoryCompactionEvents,
+            ),
+            Measurement("memoryReclaimEvents${metricNameSuffix}", metrics.memoryReclaimEvents),
         )
     }
 }

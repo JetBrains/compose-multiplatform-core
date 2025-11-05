@@ -29,16 +29,36 @@ public interface SubspaceLayoutCoordinates {
     public val pose: Pose
 
     /**
-     * The pose of this layout relative to the root entity of the Compose hierarchy, with
-     * translation in pixels.
-     */
-    public val poseInRoot: Pose
-
-    /**
      * The pose of this layout relative to its parent entity in the Compose hierarchy, with
      * translation in pixels.
      */
     public val poseInParentEntity: Pose
+
+    /**
+     * The pose of this layout relative to the root entity of the Compose for XR's hierarchy with
+     * translation values in pixels.
+     */
+    public val poseInRoot: Pose
+
+    /**
+     * The coordinates of the immediate parent in the layout hierarchy.
+     *
+     * For a layout, this is its parent layout. For a modifier, this is the modifier that preceded
+     * it, or the layout it is attached to if it is the first in the chain.
+     *
+     * Returns `null` only for the root of the hierarchy.
+     */
+    public val parentCoordinates: SubspaceLayoutCoordinates?
+
+    /**
+     * The coordinates of the nearest parent layout, skipping any intermediate modifiers.
+     *
+     * This is useful for positioning relative to the containing layout composable, irrespective of
+     * any modifiers applied to it.
+     *
+     * Returns `null` only for the root of the hierarchy.
+     */
+    public val parentLayoutCoordinates: SubspaceLayoutCoordinates?
 
     /**
      * The size of this layout in the local coordinates space.

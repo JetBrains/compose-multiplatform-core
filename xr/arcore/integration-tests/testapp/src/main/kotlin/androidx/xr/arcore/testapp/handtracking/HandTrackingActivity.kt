@@ -43,11 +43,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.arcore.Hand
+import androidx.xr.arcore.HandJointType
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.HandJointType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
@@ -226,27 +226,27 @@ class HandTrackingActivity : ComponentActivity() {
     private fun deriveAngles(handJoints: Map<HandJointType, Pose>): FloatArray {
         val directions: Array<Vector3> =
             arrayOf(
-                handJoints[HandJointType.PALM]!!.forward,
-                handJoints[HandJointType.WRIST]!!.forward,
-                handJoints[HandJointType.THUMB_METACARPAL]!!.forward,
-                handJoints[HandJointType.THUMB_PROXIMAL]!!.forward,
-                handJoints[HandJointType.THUMB_DISTAL]!!.forward,
-                handJoints[HandJointType.INDEX_METACARPAL]!!.forward,
-                handJoints[HandJointType.INDEX_PROXIMAL]!!.forward,
-                handJoints[HandJointType.INDEX_INTERMEDIATE]!!.forward,
-                handJoints[HandJointType.INDEX_DISTAL]!!.forward,
-                handJoints[HandJointType.MIDDLE_METACARPAL]!!.forward,
-                handJoints[HandJointType.MIDDLE_PROXIMAL]!!.forward,
-                handJoints[HandJointType.MIDDLE_INTERMEDIATE]!!.forward,
-                handJoints[HandJointType.MIDDLE_DISTAL]!!.forward,
-                handJoints[HandJointType.RING_METACARPAL]!!.forward,
-                handJoints[HandJointType.RING_PROXIMAL]!!.forward,
-                handJoints[HandJointType.RING_INTERMEDIATE]!!.forward,
-                handJoints[HandJointType.RING_DISTAL]!!.forward,
-                handJoints[HandJointType.LITTLE_METACARPAL]!!.forward,
-                handJoints[HandJointType.LITTLE_PROXIMAL]!!.forward,
-                handJoints[HandJointType.LITTLE_INTERMEDIATE]!!.forward,
-                handJoints[HandJointType.LITTLE_DISTAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_PALM]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_WRIST]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_THUMB_METACARPAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_THUMB_PROXIMAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_THUMB_DISTAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_INDEX_METACARPAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_INDEX_PROXIMAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_INDEX_INTERMEDIATE]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_INDEX_DISTAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_MIDDLE_METACARPAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_MIDDLE_PROXIMAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_MIDDLE_INTERMEDIATE]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_MIDDLE_DISTAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_RING_METACARPAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_RING_PROXIMAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_RING_INTERMEDIATE]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_RING_DISTAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_LITTLE_METACARPAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_LITTLE_PROXIMAL]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_LITTLE_INTERMEDIATE]!!.forward,
+                handJoints[HandJointType.HAND_JOINT_TYPE_LITTLE_DISTAL]!!.forward,
             )
         return floatArrayOf(
             // palm to wrist
@@ -301,6 +301,9 @@ class HandTrackingActivity : ComponentActivity() {
         val leftHand = Hand.left(session)
         val rightHand = Hand.right(session)
 
+        var title = intent.getStringExtra("TITLE")
+        if (title == null) title = "Hand Tracking"
+
         Scaffold(
             modifier = Modifier.fillMaxSize().padding(0.dp),
             topBar = {
@@ -313,7 +316,7 @@ class HandTrackingActivity : ComponentActivity() {
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
-                        text = "Hand Tracking",
+                        text = title,
                         color = Color.Black,
                         fontWeight = FontWeight.Bold,
                         fontSize = 24.sp,

@@ -42,11 +42,10 @@ internal constructor(errorMessage: String? = null, extras: Bundle) :
 }
 
 /**
- * Thrown when the caller supplied invalid arguments to ExecuteAppFunctionRequest's parameters.
+ * Thrown when the caller supplied invalid arguments to [ExecuteAppFunctionRequest]'s parameters.
  *
  * This error may be considered similar to [IllegalArgumentException].
  */
-// TODO(b/389738031): add reference to ExecuteAppFunctionRequest's builder when it is added.
 public class AppFunctionInvalidArgumentException
 internal constructor(errorMessage: String? = null, extras: Bundle) :
     AppFunctionRequestException(ERROR_INVALID_ARGUMENT, errorMessage, extras) {
@@ -56,10 +55,10 @@ internal constructor(errorMessage: String? = null, extras: Bundle) :
 
 /**
  * Thrown when the caller tried to execute a disabled app function. An app function can be enabled
- * at runtime through the AppFunctionManager or by setting enabledByDefault=true in the AppFunction
- * annotation.
+ * at runtime through the AppFunctionManager or by setting
+ * [androidx.appfunctions.service.AppFunction.enabledByDefault] to true in the
+ * [androidx.appfunctions.service.AppFunction] annotation.
  */
-// TODO(b/389738031): add reference to setAppFunctionEnabled and @AppFunction when they are added.
 public class AppFunctionDisabledException
 internal constructor(errorMessage: String? = null, extras: Bundle) :
     AppFunctionRequestException(ERROR_DISABLED, errorMessage, extras) {

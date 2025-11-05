@@ -19,7 +19,6 @@ package androidx.camera.camera2.pipe.graph
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.params.MeteringRectangle
-import android.os.Build
 import androidx.camera.camera2.pipe.AeMode
 import androidx.camera.camera2.pipe.AfMode
 import androidx.camera.camera2.pipe.AwbMode
@@ -45,7 +44,7 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 internal class Controller3AUpdate3ATest {
     private val graphState3A = GraphState3A()
     private val graphProcessor = FakeGraphProcessor()
@@ -63,7 +62,7 @@ internal class Controller3AUpdate3ATest {
             Controller3A(graphProcessor2, FakeCameraMetadata(), graphState3A2, listener3A)
         val result = controller3A.update3A(afMode = AfMode.OFF)
         assertThat(result.await().status).isEqualTo(Result3A.Status.SUBMIT_FAILED)
-        assertThat(graphState3A2.afMode).isEqualTo(AfMode.OFF)
+        assertThat(graphState3A2.current.afMode).isEqualTo(AfMode.OFF)
     }
 
     @Test
@@ -71,7 +70,8 @@ internal class Controller3AUpdate3ATest {
         initGraphProcessor()
 
         val result = controller3A.update3A(afMode = AfMode.OFF)
-        assertThat(graphState3A.afMode!!.value).isEqualTo(CaptureRequest.CONTROL_AF_MODE_OFF)
+        assertThat(graphState3A.current.afMode!!.value)
+            .isEqualTo(CaptureRequest.CONTROL_AF_MODE_OFF)
         assertThat(result.isCompleted).isFalse()
     }
 

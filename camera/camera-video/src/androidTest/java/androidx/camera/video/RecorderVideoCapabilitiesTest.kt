@@ -23,7 +23,6 @@ import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.CameraInfoInternal
-import androidx.camera.testing.impl.AndroidUtil
 import androidx.camera.testing.impl.AndroidUtil.isEmulator
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
@@ -33,7 +32,6 @@ import androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CAMCORDER_PROFIL
 import androidx.camera.video.Recorder.VIDEO_CAPABILITIES_SOURCE_CODEC_CAPABILITIES
 import androidx.camera.video.internal.encoder.VideoEncoderInfoImpl
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
@@ -47,7 +45,6 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 21)
 class RecorderVideoCapabilitiesTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
@@ -110,14 +107,12 @@ class RecorderVideoCapabilitiesTest(
     @Test
     fun supportStandardDynamicRange() {
         assumeFalse(isSpecificSkippedDevice())
-        assumeFalse(AndroidUtil.isEmulatorAndAPI21())
         assertThat(videoCapabilities.supportedDynamicRanges).contains(SDR)
     }
 
     @Test
     fun supportedQualitiesOfSdrIsNotEmpty() {
         assumeFalse(isSpecificSkippedDevice())
-        assumeFalse(AndroidUtil.isEmulatorAndAPI21())
         assertThat(videoCapabilities.getSupportedQualities(SDR)).isNotEmpty()
     }
 

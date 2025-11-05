@@ -19,6 +19,7 @@ package androidx.build.checkapi
 import androidx.build.getAndroidJar
 import androidx.build.multiplatformExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.api.variant.LibraryVariant
 import org.gradle.api.Project
@@ -60,23 +61,7 @@ internal sealed interface CompilationInputs {
                         .bootClasspath
                 )
 
-            // If this is a multiplatform project, set up inputs for the androidJvm compilation
-            val multiplatformExtension = project.multiplatformExtension
-            if (multiplatformExtension != null) {
-                val androidJvmTarget =
-                    multiplatformExtension.targets
-                        .requirePlatform(KotlinPlatformType.androidJvm)
-                        .findCompilation(compilationName = variant.name)
-
-                return MultiplatformCompilationInputs.fromCompilation(
-                    project = project,
-                    compilationProvider = androidJvmTarget,
-                    bootClasspath = bootClasspath,
-                )
-            }
-
             // Not a multiplatform project, set up standard inputs
-            @Suppress("UnstableApiUsage") // Usage of .kotlin
             val kotlinCollection = project.files(variant.sources.kotlin?.all)
             val javaCollection = project.files(variant.sources.java?.all)
             val sourceCollection = kotlinCollection + javaCollection
@@ -134,10 +119,17 @@ internal sealed interface CompilationInputs {
                     .single()
             val compilation = target.findCompilation(KotlinCompilation.MAIN_COMPILATION_NAME)
 
+            val bootClasspath =
+                project.files(
+                    project.extensions
+                        .findByType(KotlinMultiplatformAndroidComponentsExtension::class.java)!!
+                        .sdkComponents
+                        .bootClasspath
+                )
             return MultiplatformCompilationInputs.fromCompilation(
                 project = project,
                 compilationProvider = compilation,
-                bootClasspath = project.getAndroidJar(),
+                bootClasspath = bootClasspath,
             )
         }
 
@@ -168,7 +160,7 @@ internal sealed interface CompilationInputs {
                     checkNotNull(compilations.findByName(compilationName)) {
                         """
                     Cannot find $compilationName compilation configuration of $name in
-                    ${project.parent}.
+                    ${project.path}.
                     Available compilations: ${compilations.joinToString(", ") { it.name }}
                     """
                             .trimIndent()

@@ -234,6 +234,7 @@ package androidx.mediarouter.media {
     method public androidx.mediarouter.media.MediaRouteSelector getSelector();
     method public boolean isActiveScan();
     method public boolean isValid();
+    method public boolean shouldScanWithScreenOff();
   }
 
   public abstract class MediaRouteProvider {

@@ -511,7 +511,18 @@ public fun NavHost(
     var progress by remember { mutableFloatStateOf(0f) }
     var inPredictiveBack by remember { mutableStateOf(false) }
     PredictiveBackHandler(currentBackStack.size > 1) { backEvent ->
+        // This block handles the three phases of a predictive back gesture:
+        // 1. OnStarted: When the gesture begins.
+        // 2. OnProgressed: As the user drags their finger.
+        // 3. OnCompleted or OnCancelled: When the gesture finishes or is cancelled.
+        //
+        // Always guard with `currentBackStack.size > 1`:
+        // If `enabled` becomes stale (set false mid-frame while a gesture is in-flight),
+        // these checks prevent IndexOutOfBounds when accessing the stack.
+
         var currentBackStackEntry: NavBackStackEntry? = null
+
+        // --- OnStarted ---
         if (currentBackStack.size > 1) {
             progress = 0f
             currentBackStackEntry = currentBackStack.lastOrNull()
@@ -521,16 +532,19 @@ public fun NavHost(
         }
         try {
             backEvent.collect {
+                // --- OnProgressed ---
                 if (currentBackStack.size > 1) {
                     inPredictiveBack = true
                     progress = it.progress
                 }
             }
+            // --- OnCompleted ---
             if (currentBackStack.size > 1) {
                 inPredictiveBack = false
                 composeNavigator.popBackStack(currentBackStackEntry!!, false)
             }
-        } catch (e: CancellationException) {
+        } catch (_: CancellationException) {
+            // --- OnCancelled ---
             if (currentBackStack.size > 1) {
                 inPredictiveBack = false
             }
@@ -616,8 +630,11 @@ public fun NavHost(
 
         if (inPredictiveBack) {
             LaunchedEffect(progress) {
-                val previousEntry = currentBackStack[currentBackStack.size - 2]
-                transitionState.seekTo(progress, previousEntry)
+                // Update transition progress safely (same guard against stale enabled state).
+                if (currentBackStack.size > 1) {
+                    val previousEntry = currentBackStack[currentBackStack.size - 2]
+                    transitionState.seekTo(progress, previousEntry)
+                }
             }
         } else {
             LaunchedEffect(backStackEntry) {
@@ -714,7 +731,7 @@ public fun NavHost(
                     // We need to make sure we are completing only when the start is settled on the
                     // actual entry.
                     (navController.currentBackStackEntry == null ||
-                        transition.targetState == navController.currentBackStackEntry)
+                        transition.targetState == backStackEntry)
             ) {
                 visibleEntries.forEach { entry -> composeNavigator.onTransitionComplete(entry) }
                 zIndices.removeIf { key, _ -> key != transition.targetState.id }

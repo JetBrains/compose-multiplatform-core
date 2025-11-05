@@ -46,7 +46,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-@SdkSuppress(minSdkVersion = 22) // The Instrumentation doesn't actually wait on Idle on API 21
+@SdkSuppress(minSdkVersion = 24) // b/457498205
 @MediumTest
 @RunWith(Parameterized.class)
 public class FragmentTransitionSupportTest extends BaseTest {

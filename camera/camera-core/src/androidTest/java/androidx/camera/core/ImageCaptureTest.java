@@ -55,7 +55,6 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfigFactory;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.MediumTest;
-import androidx.test.filters.SdkSuppress;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import org.jspecify.annotations.NonNull;
@@ -77,7 +76,6 @@ import java.util.concurrent.TimeUnit;
  */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
-@SdkSuppress(minSdkVersion = 21)
 public class ImageCaptureTest {
 
     private CameraUseCaseAdapter mCameraUseCaseAdapter;
@@ -524,7 +522,6 @@ public class ImageCaptureTest {
         assertThat(resolutionInfo.getCropRect()).isEqualTo(new Rect(0, 60, 640, 420));
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void streamSpecZslNotDisabled_zslConfigAdded() {
         ImageCapture imageCapture = new ImageCapture.Builder().setCaptureMode(
@@ -544,7 +541,6 @@ public class ImageCaptureTest {
         assertThat(fakeCameraControl.isZslConfigAdded()).isTrue();
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void streamSpecZslDisabled_zslConfigNotAdded() {
         FakeCamera fakeCamera = new FakeCamera("fakeCameraId");

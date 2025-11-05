@@ -26,7 +26,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -49,9 +49,8 @@ dependencies {
     implementation("androidx.test:rules:$testRulesVersion")
     implementation("androidx.test:runner:$testRunnerVersion")
     implementation(project(":camera:camera-camera2"))
-    implementation(project(":camera:camera-camera2-pipe-integration"))
     implementation("androidx.appcompat:appcompat:1.1.0")
-    implementation("androidx.core:core:1.1.0")
+    implementation("androidx.core:core:1.16.0")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
     implementation("androidx.test.espresso:espresso-core:3.5.0")
     implementation("androidx.test.espresso:espresso-idling-resource:3.5.0")
@@ -59,7 +58,6 @@ dependencies {
     implementation(libs.guavaListenableFuture)
     implementation(libs.junit)
     implementation(libs.truth)
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(libs.testUiautomator)
     implementation 'androidx.annotation:annotation-experimental:1.4.1'
@@ -68,13 +66,12 @@ dependencies {
     implementation libs.testMonitor
 
     androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.kotlinCoroutinesAndroid)
     androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         externalNativeBuild {

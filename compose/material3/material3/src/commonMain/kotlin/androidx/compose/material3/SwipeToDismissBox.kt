@@ -309,7 +309,7 @@ fun SwipeToDismissBox(
     enableDismissFromStartToEnd: Boolean = true,
     enableDismissFromEndToStart: Boolean = true,
     gesturesEnabled: Boolean = true,
-    onDismiss: suspend (SwipeToDismissBoxValue) -> Unit = {},
+    onDismiss: (SwipeToDismissBoxValue) -> Unit = {},
     content: @Composable RowScope.() -> Unit,
 ) {
     Box(
@@ -335,7 +335,7 @@ fun SwipeToDismissBox(
                 Modifier.draggableAnchorsV2(state.anchoredDraggableState, Orientation.Horizontal) {
                     size,
                     _ ->
-                    DraggableAnchors {
+                    val newAnchors = DraggableAnchors {
                         val width = size.width.toFloat()
                         SwipeToDismissBoxValue.Settled at 0f
                         if (enableDismissFromStartToEnd) {
@@ -344,7 +344,17 @@ fun SwipeToDismissBox(
                         if (enableDismissFromEndToStart) {
                             SwipeToDismissBoxValue.EndToStart at -width
                         }
-                    } to state.targetValue
+                    }
+                    val isInitialized = state.anchoredDraggableState.anchors.size > 0
+                    val previousValue = state.currentValue
+                    val targetValue = state.targetValue
+                    val newTarget =
+                        if (!isInitialized && newAnchors.hasPositionFor(previousValue)) {
+                            previousValue
+                        } else if (newAnchors.hasPositionFor(targetValue)) {
+                            targetValue
+                        } else SwipeToDismissBoxValue.Settled
+                    return@draggableAnchorsV2 newAnchors to newTarget
                 },
         )
     }

@@ -28,12 +28,11 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
 
-    implementation(libs.kotlinStdlib)
 
     compileOnly(project(":annotation:annotation-sampled"))
 
@@ -42,7 +41,7 @@ dependencies {
     implementation("androidx.compose.foundation:foundation:1.8.1")
     implementation("androidx.compose.foundation:foundation-layout:1.8.1")
     implementation("androidx.compose.material:material:1.8.1")
-    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0-alpha04")
+    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0-alpha10")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation(project(":compose:material3:material3"))
     implementation("androidx.compose.runtime:runtime:1.8.1")

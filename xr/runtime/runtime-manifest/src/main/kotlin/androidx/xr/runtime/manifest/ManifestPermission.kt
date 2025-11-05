@@ -25,7 +25,7 @@ package androidx.xr.runtime.manifest
  *
  * Constant Value: "android.permission.EYE_TRACKING_COARSE"
  */
-@JvmField public val EYE_TRACKING_COARSE: String = "android.permission.EYE_TRACKING_COARSE"
+public const val EYE_TRACKING_COARSE: String = "android.permission.EYE_TRACKING_COARSE"
 
 /**
  * Allows an application to get face tracking data.
@@ -34,7 +34,7 @@ package androidx.xr.runtime.manifest
  *
  * Constant Value: "android.permission.FACE_TRACKING"
  */
-@JvmField public val FACE_TRACKING: String = "android.permission.FACE_TRACKING"
+public const val FACE_TRACKING: String = "android.permission.FACE_TRACKING"
 
 /**
  * Allows an application to get hand tracking data.
@@ -43,7 +43,7 @@ package androidx.xr.runtime.manifest
  *
  * Constant Value: "android.permission.HAND_TRACKING"
  */
-@JvmField public val HAND_TRACKING: String = "android.permission.HAND_TRACKING"
+public const val HAND_TRACKING: String = "android.permission.HAND_TRACKING"
 
 /**
  * Allows an application to get data derived by sensing the user's environment.
@@ -52,8 +52,8 @@ package androidx.xr.runtime.manifest
  *
  * Constant Value: "android.permission.SCENE_UNDERSTANDING_COARSE"
  */
-@JvmField
-public val SCENE_UNDERSTANDING_COARSE: String = "android.permission.SCENE_UNDERSTANDING_COARSE"
+public const val SCENE_UNDERSTANDING_COARSE: String =
+    "android.permission.SCENE_UNDERSTANDING_COARSE"
 
 /**
  * Allows an application to get precise eye gaze data.
@@ -62,7 +62,7 @@ public val SCENE_UNDERSTANDING_COARSE: String = "android.permission.SCENE_UNDERS
  *
  * Constant Value: "android.permission.EYE_TRACKING_FINE"
  */
-@JvmField public val EYE_TRACKING_FINE: String = "android.permission.EYE_TRACKING_FINE"
+public const val EYE_TRACKING_FINE: String = "android.permission.EYE_TRACKING_FINE"
 
 /**
  * Allows an application to get head tracking data. Unmanaged activities (OpenXR activities with the
@@ -77,7 +77,7 @@ public val SCENE_UNDERSTANDING_COARSE: String = "android.permission.SCENE_UNDERS
  *
  * Constant Value: "android.permission.HEAD_TRACKING"
  */
-@JvmField public val HEAD_TRACKING: String = "android.permission.HEAD_TRACKING"
+public const val HEAD_TRACKING: String = "android.permission.HEAD_TRACKING"
 
 /**
  * Allows an application to get highly precise data derived by sensing the user's environment, such
@@ -87,5 +87,4 @@ public val SCENE_UNDERSTANDING_COARSE: String = "android.permission.SCENE_UNDERS
  *
  * Constant Value: "android.permission.SCENE_UNDERSTANDING_FINE"
  */
-@JvmField
-public val SCENE_UNDERSTANDING_FINE: String = "android.permission.SCENE_UNDERSTANDING_FINE"
+public const val SCENE_UNDERSTANDING_FINE: String = "android.permission.SCENE_UNDERSTANDING_FINE"

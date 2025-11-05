@@ -21,6 +21,9 @@ import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.RectF
 import android.os.DeadObjectException
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import androidx.core.graphics.toRectF
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
@@ -48,6 +51,7 @@ internal class FormWidgetInteractionHandler(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
     private val errorFlow: MutableSharedFlow<Throwable>,
+    private val placeTextInputInLayout: (FormFillingEditText?) -> Unit,
 ) {
 
     private val _invalidatedAreas =
@@ -55,6 +59,8 @@ internal class FormWidgetInteractionHandler(
 
     val invalidatedAreas: SharedFlow<Pair<Int, List<RectF>>>
         get() = _invalidatedAreas
+
+    private val formFillingTextInputFactory = FormFillingTextInputFactory(context)
 
     private var currentApplyEditJob: Job? = null
 
@@ -97,7 +103,54 @@ internal class FormWidgetInteractionHandler(
     }
 
     /** Implements logic to take user input in a text field. Once done assembles a FormEditRecord */
-    fun handleInteractionWithTextWidget(pageNum: Int, formWidgetInfo: FormWidgetInfo) {}
+    fun handleInteractionWithTextWidget(
+        pageNum: Int,
+        formWidgetInfo: FormWidgetInfo,
+        startingText: String? = null,
+    ) {
+        val formFillingEditText = configureEditText(pageNum, formWidgetInfo, startingText)
+        placeTextInputInLayout.invoke(formFillingEditText)
+    }
+
+    private fun configureEditText(
+        pageNum: Int,
+        formWidgetInfo: FormWidgetInfo,
+        startingText: String? = null,
+    ): FormFillingEditText {
+        val formFillingEditText =
+            formFillingTextInputFactory.makeEditText(pageNum, formWidgetInfo, startingText)
+        formFillingEditText.let {
+            val editText = it.editText
+            editText.setOnEditorActionListener { _, actionId: Int, _ ->
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    commitEditTextValue(it)
+                }
+                false
+            }
+        }
+        return formFillingEditText
+    }
+
+    private fun hideKeyboard(editText: EditText) {
+        val imm: InputMethodManager =
+            context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(editText.windowToken, 0)
+    }
+
+    fun commitEditTextValue(formFillingEditText: FormFillingEditText) {
+        formFillingEditText.editText.clearFocus()
+        // send a signal to PdfView to remove the existing editText
+        placeTextInputInLayout.invoke(null)
+        applyEditRecord(
+            formFillingEditText.pageNum,
+            FormEditRecord(
+                formFillingEditText.pageNum,
+                formFillingEditText.formWidget.widgetIndex,
+                formFillingEditText.editText.text.toString(),
+            ),
+        )
+        hideKeyboard(formFillingEditText.editText)
+    }
 
     /**
      * Creates a drop-down menu with a list of options. Once option is selected by the user,

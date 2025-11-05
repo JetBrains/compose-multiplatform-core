@@ -29,24 +29,29 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     api(libs.jspecify)
-    api(project(":xr:scenecore:scenecore"))
+    api(project(":xr:runtime:runtime-testing"))
+    api(project(":xr:arcore:arcore-testing"))
+    api(project(":xr:scenecore:scenecore-runtime"))
 
+    implementation("com.google.ar:impress:0.0.8")
     implementation(libs.testExtTruth)
     implementation("androidx.annotation:annotation:1.8.1")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")
-    implementation("com.google.ar:impress:0.0.4")
 
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
-    implementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
+    testImplementation(project(":kruth:kruth"))
+    testImplementation(libs.testRunner)
+
+    testImplementation(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.host.test.jar")))
 }
 
 android {
     defaultConfig {
-        minSdkVersion 24
+        minSdk = 24
     }
     namespace = "androidx.xr.scenecore.testing"
 }
@@ -59,4 +64,5 @@ androidx {
 
     // TODO: b/379715750 - Remove this flag once the deprecated methods have been removed from the API.
     failOnDeprecationWarnings = false
+    enableRobolectric()
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.core
 
@@ -36,6 +37,7 @@ import android.os.Bundle
  * callbacks will be sent and it is safe to free any resources associated with this session
  * observer.
  */
+@Deprecated("This library is no longer supported.")
 @SuppressWarnings("CallbackName")
 public interface SessionObserver {
 

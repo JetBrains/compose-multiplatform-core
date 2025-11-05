@@ -15,10 +15,8 @@
  */
 package androidx.camera.core.impl
 
-import android.os.Build
 import androidx.camera.core.CameraUseCaseAdapterProvider
 import androidx.camera.core.CompositionSettings
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.internal.CameraUseCaseAdapter
@@ -43,7 +41,7 @@ private const val CAMERA_ID = "2"
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 internal class CameraInfoInternalTest {
 
     @Test
@@ -63,19 +61,22 @@ internal class CameraInfoInternalTest {
         cameraInfo.cameraSelector.filter(LinkedHashSet(cameras))
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun getSupportedFrameRateRanges_regularSession_returnAllFrameRateRanges() {
         val cameraInfo =
             FakeCameraInfoInternal().apply {
                 setCameraUseCaseAdapterProvider(createFakeCameraUseCaseAdapterProvider())
             }
-        val supportedFrameRateRanges = cameraInfo.getSupportedFrameRateRanges(SessionConfig())
+        val supportedFrameRateRanges =
+            cameraInfo.getSupportedFrameRateRanges(
+                object : SessionConfig() {
+                    override val requireNonEmptyUseCases: Boolean = false
+                }
+            )
         assertThat(supportedFrameRateRanges)
             .containsExactlyElementsIn(cameraInfo.supportedFrameRateRanges)
     }
 
-    @OptIn(ExperimentalSessionConfig::class)
     @Test
     fun getSupportedFrameRateRanges_highSpeedSession_filterFixedFrameRateRanges() {
         val cameraInfo =
@@ -90,6 +91,7 @@ internal class CameraInfoInternalTest {
             cameraInfo.getSupportedFrameRateRanges(
                 object : SessionConfig() {
                     override val sessionType: Int = SESSION_TYPE_HIGH_SPEED
+                    override val requireNonEmptyUseCases: Boolean = false
                 }
             )
         assertThat(supportedFrameRateRanges).containsExactly(FPS_120_120, FPS_240_240)

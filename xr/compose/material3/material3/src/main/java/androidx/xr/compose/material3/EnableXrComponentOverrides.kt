@@ -20,6 +20,9 @@ import android.os.Build
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ComponentOverrideApi
 import androidx.compose.material3.LocalBasicAlertDialogOverride
+import androidx.compose.material3.LocalHorizontalFloatingToolbarOverride
+import androidx.compose.material3.LocalHorizontalFloatingToolbarWithFabOverride
+import androidx.compose.material3.LocalModalWideNavigationRailOverride
 import androidx.compose.material3.LocalNavigationBarOverride
 import androidx.compose.material3.LocalNavigationRailOverride
 import androidx.compose.material3.LocalShortNavigationBarOverride
@@ -27,6 +30,7 @@ import androidx.compose.material3.LocalSingleRowTopAppBarOverride
 import androidx.compose.material3.LocalTwoRowsTopAppBarOverride
 import androidx.compose.material3.LocalVerticalToolbarOverride
 import androidx.compose.material3.LocalVerticalToolbarWithFabOverride
+import androidx.compose.material3.LocalWideNavigationRailOverride
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveComponentOverrideApi
 import androidx.compose.material3.adaptive.layout.LocalAnimatedPaneOverride
 import androidx.compose.material3.adaptive.layout.LocalThreePaneScaffoldOverride
@@ -80,6 +84,16 @@ public fun EnableXrComponentOverrides(
                 }
                 if (
                     shouldOverrideNavigationSuiteScaffold ||
+                        context.shouldOverrideComponent(XrComponentOverride.WideNavigationRail)
+                ) {
+                    add(LocalWideNavigationRailOverride provides XrWideNavigationRailOverride)
+                    add(
+                        LocalModalWideNavigationRailOverride provides
+                            XrModalWideNavigationRailOverride
+                    )
+                }
+                if (
+                    shouldOverrideNavigationSuiteScaffold ||
                         context.shouldOverrideComponent(XrComponentOverride.NavigationBar)
                 ) {
                     add(LocalNavigationBarOverride provides XrNavigationBarOverride)
@@ -104,6 +118,19 @@ public fun EnableXrComponentOverrides(
 
                 if (context.shouldOverrideComponent(XrComponentOverride.BasicAlertDialog)) {
                     add(LocalBasicAlertDialogOverride provides XrBasicAlertDialogOverride)
+                }
+
+                if (
+                    context.shouldOverrideComponent(XrComponentOverride.HorizontalFloatingToolbar)
+                ) {
+                    add(
+                        LocalHorizontalFloatingToolbarOverride provides
+                            XrHorizontalFloatingToolbarOverride
+                    )
+                    add(
+                        LocalHorizontalFloatingToolbarWithFabOverride provides
+                            XrHorizontalFloatingToolbarWithFabOverride
+                    )
                 }
 
                 if (context.shouldOverrideComponent(XrComponentOverride.VerticalFloatingToolbar)) {
@@ -181,10 +208,20 @@ public value class XrComponentOverride private constructor(private val name: Str
         @ExperimentalMaterial3XrApi
         public val BasicAlertDialog: XrComponentOverride = XrComponentOverride("BasicAlertDialog")
 
-        /** Material Expressive VerticalFloatingToolbar. */
+        /** Material3 Expressive VerticalFloatingToolbar. */
         @ExperimentalMaterial3XrApi
         public val VerticalFloatingToolbar: XrComponentOverride =
             XrComponentOverride("VerticalFloatingToolbar")
+
+        /** Material3 Expressive VerticalFloatingToolbar. */
+        @ExperimentalMaterial3XrApi
+        public val HorizontalFloatingToolbar: XrComponentOverride =
+            XrComponentOverride("HorizontalFloatingToolbar")
+
+        /** Material3 Expressive WideNavigationRail. */
+        @ExperimentalMaterial3XrApi
+        public val WideNavigationRail: XrComponentOverride =
+            XrComponentOverride("WideNavigationRail")
     }
 }
 

@@ -17,15 +17,15 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.Anchor
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
 import androidx.xr.runtime.AugmentedObjectCategory as Category
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Anchor
-import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
-import androidx.xr.runtime.internal.AugmentedObject as RuntimeObject
+import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
-import androidx.xr.runtime.math.Vector3
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -38,8 +38,14 @@ import kotlinx.coroutines.flow.transform
  *
  * Augmented Objects are detected by the XR system and provide information about their pose,
  * extents, and label.
+ *
+ * The pose represents the position and orientation of the center point of the object.
+ *
+ * The extents describe the size of the object, as axis-aligned half-widths.
+ *
+ * The label is an instance of [androidx.xr.runtime.AugmentedObjectCategory] that describes what the
+ * object is.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class AugmentedObject
 internal constructor(
     internal val runtimeObject: RuntimeObject,
@@ -49,9 +55,13 @@ internal constructor(
         /**
          * Subscribes to a flow of [AugmentedObject]s.
          *
+         * The flow emits a new collection of [AugmentedObject]s whenever the underlying XR system
+         * detects new objects or updates the state of existing ones. This typically happens on each
+         * frame update of the XR system.
+         *
          * @param session The [Session] to subscribe to.
-         * @return A [StateFlow] that emits a collection of [AugmentedObject]s.
-         * @throws IllegalStateException if [Config.augmentedObjectCategories] is empty.
+         * @throws IllegalStateException if the given [Session]'s [Config.augmentedObjectCategories]
+         *   is empty.
          */
         @JvmStatic
         public fun subscribe(session: Session): StateFlow<Collection<AugmentedObject>> {
@@ -76,13 +86,13 @@ internal constructor(
     }
 
     /** The representation of the current state of an [AugmentedObject]. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    public class State(
+    public class State
+    internal constructor(
         public override val trackingState: TrackingState,
         /**
          * * The category of the augmented object.
          *
-         * @see androidx.xr.runtime.AugmentedObjectCategory
+         * @see Category
          */
         public val category: Category,
         /**
@@ -92,13 +102,10 @@ internal constructor(
          */
         public val centerPose: Pose,
         /**
-         * Extents are axis aligned relative to the center pose.
-         *
-         * A set of extents used to determine the size of the object. These are assumed to originate
-         * from the [centerPose] and represent the distance in meters along each axis that the
-         * detected object extends from its center in that direction.
+         * The dimensions of the object, axis aligned relative to the center pose. These values
+         * represent the full length of the specific axis.
          */
-        public val extents: Vector3,
+        public val extents: FloatSize3d,
     ) : Trackable.State {}
 
     private val _state =
@@ -118,6 +125,7 @@ internal constructor(
      * This function is used by the runtime to propagate internal state changes. It is not intended
      * to be called directly by a developer.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(
             State(
@@ -130,7 +138,8 @@ internal constructor(
     }
 
     /**
-     * Creates an [Anchor] that is attached to this trackable, using the given initial [pose].
+     * Creates an [androidx.xr.arcore.runtime.Anchor] that is attached to this trackable, using the
+     * given initial [pose].
      *
      * @throws [IllegalStateException] if [Session.config.augmentedObjectCategories] is empty.
      */

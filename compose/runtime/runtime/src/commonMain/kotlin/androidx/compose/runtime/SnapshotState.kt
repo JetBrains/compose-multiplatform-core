@@ -253,7 +253,8 @@ public fun <T> mutableStateListOf(vararg elements: T): SnapshotStateList<T> =
 /**
  * Create an instance of [MutableList]<T> from a collection that is observable and can be snapshot.
  */
-public fun <T> Collection<T>.toMutableStateList() = SnapshotStateList<T>().also { it.addAll(this) }
+public fun <T> Collection<T>.toMutableStateList(): SnapshotStateList<T> =
+    SnapshotStateList<T>().also { it.addAll(this) }
 
 /**
  * Create a instance of [MutableMap]<K, V> that is observable and can be snapshot.
@@ -284,13 +285,15 @@ public fun <K, V> mutableStateMapOf(vararg pairs: Pair<K, V>): SnapshotStateMap<
  * snapshot.
  */
 @Suppress("unused")
-public fun <K, V> Iterable<Pair<K, V>>.toMutableStateMap() =
+public fun <K, V> Iterable<Pair<K, V>>.toMutableStateMap(): SnapshotStateMap<K, V> =
     SnapshotStateMap<K, V>().also { it.putAll(this.toMap()) }
 
 /**
  * Create a instance of [MutableSet]<T> that is observable and can be snapshot.
  *
- * @sample androidx.compose.runtime.samples.stateListSample
+ * The returned set iteration order is in the order the items were inserted into the set.
+ *
+ * @sample androidx.compose.runtime.samples.stateSetSample
  * @see mutableStateOf
  * @see mutableSetOf
  * @see MutableSet
@@ -300,6 +303,8 @@ public fun <K, V> Iterable<Pair<K, V>>.toMutableStateMap() =
 
 /**
  * Create an instance of [MutableSet]<T> that is observable and can be snapshot.
+ *
+ * The returned set iteration order is in the order the items were inserted into the set.
  *
  * @see mutableStateOf
  * @see mutableSetOf

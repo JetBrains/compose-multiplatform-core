@@ -20,6 +20,7 @@ import android.content.Context
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
+import android.util.Base64
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.credentials.CreateCredentialRequest
@@ -58,9 +59,9 @@ fun getFinalCreateCredentialData(request: CreateCredentialRequest, context: Cont
         Icon.createWithResource(
             context,
             when (request) {
-                is CreatePasswordRequest -> R.drawable.ic_password
-                is CreatePublicKeyCredentialRequest -> R.drawable.ic_passkey
-                else -> R.drawable.ic_other_sign_in
+                is CreatePasswordRequest -> R.drawable.adx_ic_password
+                is CreatePublicKeyCredentialRequest -> R.drawable.adx_ic_passkey
+                else -> R.drawable.adx_ic_other_sign_in
             },
         ),
     )
@@ -133,5 +134,15 @@ fun toJetpackCreateException(
                 CreateCredentialCustomException(errorType, errorMsg)
             }
         }
+    }
+}
+
+@RestrictTo(RestrictTo.Scope.LIBRARY)
+fun isValidBase64Url(s: String): Boolean {
+    return try {
+        Base64.decode(s, Base64.NO_WRAP or Base64.URL_SAFE or Base64.NO_PADDING)
+        true
+    } catch (e: IllegalArgumentException) {
+        false
     }
 }

@@ -18,12 +18,12 @@ package androidx.ink.rendering.android.canvas
 
 import android.graphics.Canvas
 import android.graphics.Matrix
-import androidx.annotation.Px
+import androidx.annotation.FloatRange
 import androidx.annotation.RestrictTo
+import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.nativeloader.NativeLoader
-import androidx.ink.rendering.android.canvas.internal.CanvasPathRenderer
 import androidx.ink.rendering.android.canvas.internal.CanvasStrokeUnifiedRenderer
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke
@@ -76,10 +76,6 @@ import androidx.ink.strokes.Stroke
  * than the standard implementation, for example surrounding a stroke with additional content, then
  * that additional content will not be taken into account in geometry operations like
  * [androidx.ink.geometry.Intersection] or [androidx.ink.geometry.PartitionedMesh.computeCoverage].
- *
- * If custom rendering is needed during live authoring of in-progress strokes and that custom
- * rendering involves drawing content outside the stroke boundaries, then be sure to override
- * [strokeModifiedRegionOutsetPx].
  */
 public interface CanvasStrokeRenderer {
 
@@ -97,6 +93,7 @@ public interface CanvasStrokeRenderer {
      * blurry or aliased.
      */
     // TODO: b/353561141 - Reference ComposeStrokeRenderer above once implemented.
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun draw(
         canvas: Canvas,
         stroke: Stroke,
@@ -118,12 +115,13 @@ public interface CanvasStrokeRenderer {
      * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
      * blurry or aliased.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public fun draw(
         canvas: Canvas,
         stroke: Stroke,
         strokeToScreenTransform: AffineTransform,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
 
     /**
@@ -140,6 +138,7 @@ public interface CanvasStrokeRenderer {
      * appear blurry or aliased.
      */
     // TODO: b/353561141 - Reference ComposeStrokeRenderer above once implemented.
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun draw(canvas: Canvas, stroke: Stroke, strokeToScreenTransform: Matrix): Unit =
         draw(canvas, stroke, strokeToScreenTransform, 0f)
 
@@ -158,12 +157,13 @@ public interface CanvasStrokeRenderer {
      * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
      * appear blurry or aliased.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public fun draw(
         canvas: Canvas,
         stroke: Stroke,
         strokeToScreenTransform: Matrix,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
 
     /**
@@ -176,6 +176,7 @@ public interface CanvasStrokeRenderer {
      * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
      * blurry or aliased.
      */
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
@@ -194,12 +195,13 @@ public interface CanvasStrokeRenderer {
      * [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may appear
      * blurry or aliased.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
         strokeToScreenTransform: AffineTransform,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
 
     /**
@@ -212,6 +214,7 @@ public interface CanvasStrokeRenderer {
      * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
      * appear blurry or aliased.
      */
+    @OptIn(ExperimentalInkCustomBrushApi::class)
     public fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
@@ -230,25 +233,14 @@ public interface CanvasStrokeRenderer {
      * the [canvas] during an app’s drawing logic. If this transform is inaccurate, strokes may
      * appear blurry or aliased.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
+    @ExperimentalInkCustomBrushApi
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
     public fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
         strokeToScreenTransform: Matrix,
-        textureAnimationProgress: Float,
+        @FloatRange(from = 0.0, to = 1.0, toInclusive = false) textureAnimationProgress: Float,
     )
-
-    /**
-     * The distance beyond a stroke geometry's bounds that rendering might affect. This is currently
-     * only applicable to in-progress stroke rendering, where the smallest possible region of the
-     * screen is redrawn to optimize performance. But with a custom [CanvasStrokeRenderer], certain
-     * effects like drop shadows or blurs may render beyond the stroke's geometry, and setting a
-     * higher value here can ensure that artifacts are not left on screen after an in-progress
-     * stroke has moved on from a particular region of the screen. This value should be set to the
-     * lowest value that avoids the artifacts, as larger values will be less performant, and effects
-     * that rely on larger values will be less compatible with stroke geometry operations.
-     */
-    @Px public fun strokeModifiedRegionOutsetPx(): Int = 3
 
     public companion object {
 
@@ -279,12 +271,12 @@ public interface CanvasStrokeRenderer {
          */
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
         @JvmStatic
+        @JvmOverloads
         public fun create(
             forcePathRendering: Boolean,
             textureStore: TextureBitmapStore = TextureBitmapStore { null },
         ): CanvasStrokeRenderer {
-            if (!forcePathRendering) return CanvasStrokeUnifiedRenderer(textureStore)
-            return CanvasPathRenderer(textureStore)
+            return CanvasStrokeUnifiedRenderer(textureStore, forcePathRendering)
         }
     }
 }

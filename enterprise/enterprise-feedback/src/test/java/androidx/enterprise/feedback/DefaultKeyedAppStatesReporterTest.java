@@ -69,7 +69,6 @@ import java.util.concurrent.Executor;
 @SuppressWarnings("deprecation")
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@Config(minSdk = 21)
 public class DefaultKeyedAppStatesReporterTest {
 
     private final ComponentName mTestComponentName = new ComponentName("test_package", "");

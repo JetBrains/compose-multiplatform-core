@@ -34,6 +34,7 @@ import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CoreAppTestUtil
 import androidx.camera.testing.impl.CoreAppTestUtil.ForegroundOccupiedError
 import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
+import androidx.camera.testing.impl.LabTestRule.Companion.isInLabTest
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.testrule.PreTestRule
@@ -80,7 +81,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class VideoCaptureDeviceTest(
     private val initialQuality: TargetQuality,
     private val nextQuality: TargetQuality,
@@ -139,17 +139,23 @@ class VideoCaptureDeviceTest(
         @JvmStatic
         @Parameterized.Parameters(name = "initialQuality={0}, nextQuality={1}, lensFacing={3}")
         fun data() =
-            mutableListOf<Array<Any?>>().apply {
-                CameraUtil.getAvailableCameraSelectors().forEach { selector ->
-                    val lens = selector.lensFacing
-                    add(arrayOf(TargetQuality.NOT_SPECIFIED, TargetQuality.FHD, selector, lens))
-                    add(arrayOf(TargetQuality.FHD, TargetQuality.HD, selector, lens))
-                    add(arrayOf(TargetQuality.HD, TargetQuality.HIGHEST, selector, lens))
-                    add(arrayOf(TargetQuality.HIGHEST, TargetQuality.LOWEST, selector, lens))
-                    add(arrayOf(TargetQuality.LOWEST, TargetQuality.SD, selector, lens))
-                    add(arrayOf(TargetQuality.SD, TargetQuality.UHD, selector, lens))
-                    add(arrayOf(TargetQuality.UHD, TargetQuality.NOT_SPECIFIED, selector, lens))
+            if (isInLabTest()) {
+                mutableListOf<Array<Any?>>().apply {
+                    CameraUtil.getAvailableCameraSelectors().forEach { selector ->
+                        val lens = selector.lensFacing
+                        add(arrayOf(TargetQuality.NOT_SPECIFIED, TargetQuality.FHD, selector, lens))
+                        add(arrayOf(TargetQuality.FHD, TargetQuality.HD, selector, lens))
+                        add(arrayOf(TargetQuality.HD, TargetQuality.HIGHEST, selector, lens))
+                        add(arrayOf(TargetQuality.HIGHEST, TargetQuality.LOWEST, selector, lens))
+                        add(arrayOf(TargetQuality.LOWEST, TargetQuality.SD, selector, lens))
+                        add(arrayOf(TargetQuality.SD, TargetQuality.UHD, selector, lens))
+                        add(arrayOf(TargetQuality.UHD, TargetQuality.NOT_SPECIFIED, selector, lens))
+                    }
                 }
+            } else {
+                // Return empty list since prepareDeviceUI will skip the test if not in the CameraX
+                // lab environment.
+                emptyList()
             }
     }
 
@@ -467,7 +473,7 @@ class VideoCaptureDeviceTest(
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 33) // b/262909049: Failing on SDK 34
+    @SdkSuppress(maxSdkVersion = 33) // b/262909049: Failing on SDK 34
     fun canRecordToFile_whenPauseAndResumeInTheMiddle() {
         if (Build.VERSION.SDK_INT == 33 && Build.VERSION.CODENAME != "REL") {
             return // b/262909049: Do not run this test on pre-release Android U.

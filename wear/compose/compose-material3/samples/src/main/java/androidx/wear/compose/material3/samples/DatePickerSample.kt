@@ -71,7 +71,11 @@ fun DatePickerSample() {
 fun DatePickerYearMonthDaySample() {
     var showDatePicker by remember { mutableStateOf(true) }
     var datePickerDate by remember { mutableStateOf(LocalDate.now()) }
-    val formatter = DateTimeFormatter.ofPattern("yyyy MMM d")
+
+    val formatter =
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(LocalConfiguration.current.locales[0])
+
     if (showDatePicker) {
         DatePicker(
             initialDate = datePickerDate, // Initialize with last picked date on reopen

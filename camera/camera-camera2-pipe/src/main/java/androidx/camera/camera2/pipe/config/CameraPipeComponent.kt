@@ -31,6 +31,7 @@ import androidx.camera.camera2.pipe.CameraPipe.CameraMetadataConfig
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.compat.AndroidDevicePolicyManagerWrapper
 import androidx.camera.camera2.pipe.compat.AudioRestrictionController
+import androidx.camera.camera2.pipe.compat.ConcurrentSessionSequencers
 import androidx.camera.camera2.pipe.compat.DevicePolicyManagerWrapper
 import androidx.camera.camera2.pipe.core.Debug
 import androidx.camera.camera2.pipe.core.SystemTimeSource
@@ -41,6 +42,7 @@ import androidx.camera.camera2.pipe.internal.CameraDevicesImpl
 import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.camera2.pipe.media.ImageReaderImageSources
 import androidx.camera.camera2.pipe.media.ImageSources
+import androidx.camera.featurecombinationquery.CameraDeviceSetupCompatFactory
 import dagger.Binds
 import dagger.Component
 import dagger.Module
@@ -49,11 +51,14 @@ import dagger.Reusable
 import javax.inject.Provider
 import javax.inject.Qualifier
 import javax.inject.Singleton
+import kotlinx.coroutines.Job
 
 @Qualifier internal annotation class DefaultCameraBackend
 
 /** Qualifier for requesting the CameraPipe scoped Context object */
 @Qualifier internal annotation class CameraPipeContext
+
+@Qualifier internal annotation class CameraPipeJob
 
 @Singleton
 @Component(modules = [CameraPipeModule::class, CameraPipeConfigModule::class, Camera2Module::class])
@@ -68,9 +73,13 @@ internal interface CameraPipeComponent {
 
     fun cameraBackends(): CameraBackends
 
+    fun cameraContext(): CameraContext
+
     fun cameraSurfaceManager(): CameraSurfaceManager
 
     fun cameraAudioRestrictionController(): AudioRestrictionController
+
+    fun concurrentSessionSequencers(): ConcurrentSessionSequencers
 }
 
 @Module(
@@ -79,6 +88,8 @@ internal interface CameraPipeComponent {
 )
 internal class CameraPipeConfigModule(private val config: CameraPipe.Config) {
     @Provides fun provideCameraPipeConfig(): CameraPipe.Config = config
+
+    @Provides fun provideCameraPipeFlags(): CameraPipe.Flags = config.flags
 
     @Provides
     fun provideCameraInteropConfig(
@@ -98,6 +109,8 @@ internal abstract class CameraPipeModule {
         @Provides
         @CameraPipeContext
         fun provideContext(config: CameraPipe.Config): Context = config.appContext
+
+        @Singleton @Provides @CameraPipeJob fun provideCameraPipeJob(): Job = Job()
 
         @Provides
         fun provideCameraMetadataConfig(config: CameraPipe.Config): CameraMetadataConfig =
@@ -186,5 +199,11 @@ internal abstract class CameraPipeModule {
         }
 
         @Singleton @Provides fun provideCameraSurfaceManager() = CameraSurfaceManager()
+
+        @Singleton
+        @Provides
+        fun provideCameraDeviceSetupCompatFactory(
+            @CameraPipeContext cameraPipeContext: Context
+        ): CameraDeviceSetupCompatFactory = CameraDeviceSetupCompatFactory(cameraPipeContext)
     }
 }

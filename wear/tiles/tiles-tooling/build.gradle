@@ -11,7 +11,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -24,7 +24,6 @@ dependencies {
     implementation("androidx.core:core:1.1.0")
     implementation(libs.androidx.annotation)
     implementation(libs.jspecify)
-    implementation(libs.kotlinStdlib)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore4)

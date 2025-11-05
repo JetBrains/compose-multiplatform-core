@@ -19,9 +19,21 @@ package androidx.xr.projected
 import android.app.ActivityOptions
 import android.companion.virtual.VirtualDeviceManager
 import android.content.Context
-import android.content.Intent
-import android.util.Log
+import android.hardware.display.DisplayManager
+import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_ADDED
+import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_CHANGED
+import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_REMOVED
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * Helper for accessing Projected device [Context] and its features.
@@ -36,23 +48,21 @@ import androidx.annotation.VisibleForTesting
  * depending on which activity was most recently in the foreground. Prefer using the Activity
  * context to minimize the risk of running into this problem.
  */
+@ExperimentalProjectedApi
 public object ProjectedContext {
 
     private const val TAG = "ProjectedContext"
 
     @VisibleForTesting internal const val PROJECTED_DEVICE_NAME = "ProjectionDevice"
-
-    @VisibleForTesting
-    internal const val REQUIRED_LAUNCH_FLAGS =
-        (Intent.FLAG_ACTIVITY_NEW_TASK or
-            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
-            Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    @VisibleForTesting internal const val PROJECTED_DISPLAY_NAME = "ProjectionDisplay"
 
     /**
-     * Explicitly create the Projected device context from any context object. It returns null if
-     * the projected device was not found.
+     * Explicitly create the Projected device context from any context object.
+     *
+     * @throws IllegalStateException if the projected device was not found.
      */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public fun createProjectedDeviceContext(context: Context): Context {
         val deviceId =
             getProjectedDeviceId(context)
@@ -68,6 +78,7 @@ public object ProjectedContext {
      * from the host (e.g. phone), it needs to use the host device context.
      */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public fun createHostDeviceContext(context: Context): Context =
         context.createDeviceContext(Context.DEVICE_ID_DEFAULT)
 
@@ -78,6 +89,7 @@ public object ProjectedContext {
      * @throws IllegalArgumentException If another context is used (e.g. the host context).
      */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public fun getProjectedDeviceName(context: Context): String? =
         // TODO: b/424812882 - Turn this into a lint check with an annotation.
         if (isProjectedDeviceContext(context)) {
@@ -90,47 +102,140 @@ public object ProjectedContext {
 
     /** Returns whether the provided context is the Projected device context. */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     public fun isProjectedDeviceContext(context: Context): Boolean =
         getVirtualDevice(context)?.name?.startsWith(PROJECTED_DEVICE_NAME) == true
 
     /**
-     * Takes an [Intent] with the description of the activity to start and returns it with added
-     * flags to start the activity on the Projected device.
-     *
-     * @param intent The description of the activity to start.
-     */
-    @JvmStatic
-    public fun addProjectedFlags(intent: Intent): Intent = intent.addFlags(REQUIRED_LAUNCH_FLAGS)
-
-    /**
      * Creates [ActivityOptions] that should be used to start an activity on the Projected device.
      *
-     * If the Projected device have more than one associated display, the activity will be started
-     * on the first one.
-     *
-     * @param context The Projected device context.
+     * @param context any [Context] object. If the provided context is not a Projected device
+     *   context, a Projected device context will be created automatically and used to create
+     *   Projected [ActivityOptions].
+     * @throws IllegalStateException if the projected display was not found or if the Projected
+     *   device doesn't have any displays.
      */
     @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     public fun createProjectedActivityOptions(context: Context): ActivityOptions {
-        // TODO: b/424812882 - Turn this into a lint check with an annotation.
-        if (!isProjectedDeviceContext(context)) {
-            throw IllegalArgumentException("Provided context is not the Projected device context.")
-        }
+        val projectedDeviceContext =
+            if (isProjectedDeviceContext(context)) {
+                context
+            } else {
+                createProjectedDeviceContext(context)
+            }
 
-        val displayIds = getProjectedDisplayIds(context)
+        val projectedDisplayIds = getProjectedDisplayIds(projectedDeviceContext)
 
-        if (displayIds.isEmpty()) {
-            throw IllegalStateException("No projected display found.")
-        }
+        check(projectedDisplayIds.isNotEmpty()) { "Projected device doesn't have any displays." }
 
-        if (displayIds.size > 1) {
-            // TODO: b/424812731 - Add support for multiple display IDs.
-            Log.w(TAG, "More than one projected display found. Selecting the first one.")
-        }
+        val projectedDisplay =
+            context.getSystemService(DisplayManager::class.java).displays.find {
+                it.name == PROJECTED_DISPLAY_NAME && projectedDisplayIds.contains(it.displayId)
+            } ?: throw IllegalStateException("No projected display found.")
 
-        return ActivityOptions.makeBasic().setLaunchDisplayId(displayIds.first())
+        return ActivityOptions.makeBasic().setLaunchDisplayId(projectedDisplay.displayId)
     }
 
+    /**
+     * Observe whether a Projected device is connected to the host.
+     *
+     * @param context The context used to access the [VirtualDeviceManager]. It can be any context
+     *   object.
+     * @param coroutineContext The CoroutineContext that includes CoroutineDispatcher which is where
+     *   the Projected device connectivity observer is executed on.
+     * @throws IllegalArgumentException if provided coroutineContext doesn't include
+     *   CoroutineDispatcher.
+     */
+    @JvmStatic
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    public fun isProjectedDeviceConnected(
+        context: Context,
+        coroutineContext: CoroutineContext,
+    ): Flow<Boolean> =
+        callbackFlow {
+                val coroutineDispatcher =
+                    coroutineContext[CoroutineDispatcher]
+                        ?: throw IllegalArgumentException(
+                            "CoroutineContext must contain a CoroutineDispatcher."
+                        )
+
+                fun checkAndSend() {
+                    trySend(isProjectedDisplayAvailable(context))
+                }
+
+                val virtualDeviceListener =
+                    object : VirtualDeviceManager.VirtualDeviceListener {
+                        override fun onVirtualDeviceCreated(deviceId: Int) {
+                            checkAndSend()
+                        }
+
+                        override fun onVirtualDeviceClosed(deviceId: Int) {
+                            checkAndSend()
+                        }
+                    }
+
+                val displayListener =
+                    object : DisplayManager.DisplayListener {
+                        override fun onDisplayAdded(displayId: Int) {
+                            checkAndSend()
+                        }
+
+                        override fun onDisplayChanged(displayId: Int) {
+                            checkAndSend()
+                        }
+
+                        override fun onDisplayRemoved(displayId: Int) {
+                            checkAndSend()
+                        }
+                    }
+
+                checkAndSend()
+
+                val virtualDeviceManager =
+                    context.getSystemService(VirtualDeviceManager::class.java)
+                virtualDeviceManager.registerVirtualDeviceListener(
+                    coroutineDispatcher.asExecutor(),
+                    virtualDeviceListener,
+                )
+
+                val displayManager = context.getSystemService(DisplayManager::class.java)
+                val eventFilter =
+                    EVENT_TYPE_DISPLAY_ADDED or
+                        EVENT_TYPE_DISPLAY_CHANGED or
+                        EVENT_TYPE_DISPLAY_REMOVED
+                displayManager.registerDisplayListener(
+                    coroutineDispatcher.asExecutor(),
+                    eventFilter,
+                    displayListener,
+                )
+
+                awaitClose {
+                    virtualDeviceManager.unregisterVirtualDeviceListener(virtualDeviceListener)
+                    displayManager.unregisterDisplayListener(displayListener)
+                }
+            }
+            .distinctUntilChanged()
+
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    private fun isProjectedDisplayAvailable(context: Context): Boolean {
+        val projectedDeviceContext =
+            try {
+                createProjectedDeviceContext(context)
+            } catch (e: IllegalStateException) {
+                return false
+            }
+        val projectedDisplayIds = getProjectedDisplayIds(projectedDeviceContext)
+        if (projectedDisplayIds.isEmpty()) {
+            return false
+        }
+        val displayManager = context.getSystemService(DisplayManager::class.java)
+        return displayManager.displays.any {
+            it.name == PROJECTED_DISPLAY_NAME && projectedDisplayIds.contains(it.displayId)
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun getProjectedDeviceId(context: Context) =
         context
             .getSystemService(VirtualDeviceManager::class.java)
@@ -139,11 +244,13 @@ public object ProjectedContext {
             .find { it.name?.startsWith(PROJECTED_DEVICE_NAME) ?: false }
             ?.deviceId
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     private fun getVirtualDevice(context: Context) =
         context.getSystemService(VirtualDeviceManager::class.java).virtualDevices.find {
             it.deviceId == context.deviceId
         }
 
+    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
     private fun getProjectedDisplayIds(context: Context) =
         getVirtualDevice(context)?.displayIds ?: IntArray(size = 0)
 }

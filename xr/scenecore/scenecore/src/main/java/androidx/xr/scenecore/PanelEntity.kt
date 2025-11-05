@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import android.content.Context
 import android.view.View
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.PanelEntity as RtPanelEntity
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.scenecore.runtime.PanelEntity as RtPanelEntity
+import androidx.xr.scenecore.runtime.SceneRuntime
 
 /**
  * PanelEntity contains an arbitrary 2D Android [View], within a spatialized XR scene.
@@ -34,9 +34,8 @@ import androidx.xr.runtime.math.Pose
  *   [MainPanelEntity](https://developer.android.com/develop/xr/jetpack-xr-sdk/work-with-entities),
  *   false otherwise.
  */
-// TODO(ricknels): move isMainPanelEntity check to JxrPlatformAdapter and provide better kdocs
+// TODO(ricknels): move isMainPanelEntity check to SceneRuntime and provide better kdocs
 // for mainPanelEntity
-@Suppress("HiddenSuperclass") // BaseEntity is an internal class
 public open class PanelEntity
 internal constructor(
     private val lifecycleManager: LifecycleManager,
@@ -47,9 +46,13 @@ internal constructor(
 
     /** The corner radius of the PanelEntity, in meters. */
     public var cornerRadius: Float
-        get() = rtEntity.cornerRadius
+        get() {
+            checkNotDisposed()
+            return rtEntity!!.cornerRadius
+        }
         set(value) {
-            rtEntity.cornerRadius = value
+            checkNotDisposed()
+            rtEntity!!.cornerRadius = value
         }
 
     /**
@@ -57,9 +60,13 @@ internal constructor(
      * Entity's parent.
      */
     public var size: FloatSize2d
-        get() = rtEntity.size.toFloatSize2d()
+        get() {
+            checkNotDisposed()
+            return rtEntity!!.size.toFloatSize2d()
+        }
         set(value) {
-            rtEntity.size = value.toRtDimensions()
+            checkNotDisposed()
+            rtEntity!!.size = value.toRtDimensions()
         }
 
     /**
@@ -69,20 +76,27 @@ internal constructor(
      * This API doesn't do any scale compensation to the pixel dimensions.
      */
     public var sizeInPixels: IntSize2d
-        get() = rtEntity.sizeInPixels.toIntSize2d()
+        get() {
+            checkNotDisposed()
+            return rtEntity!!.sizeInPixels.toIntSize2d()
+        }
         set(value) {
-            rtEntity.sizeInPixels = value.toRtPixelDimensions()
+            checkNotDisposed()
+            rtEntity!!.sizeInPixels = value.toRtPixelDimensions()
         }
 
     /**
      * Gets the perceived resolution of this Entity in the [CameraView].
      *
      * This API is only intended for use in Full Space Mode and will return
-     * [PerceivedResolutionResult.InvalidCameraView] in Home Space Mode.
+     * [PerceivedResolutionResult.InvalidCameraView] in Home Space Mode. For applications requiring
+     * perceived resolution in Home Space Mode, see [MainPanelEntity.getPerceivedResolution].
      *
-     * The Entity's own rotation and the camera's viewing direction are disregarded; this value
-     * represents the dimensions of the Entity on the camera view if its largest surface was facing
-     * the camera without changing the distance of the Entity to the camera.
+     * This value represents the dimensions of the Entity on the camera view if its largest surface
+     * was facing the camera without changing the distance of the Entity to the camera. This can be
+     * used by clients to dynamically optimize the resolution of assets within the PanelEntity, for
+     * example by using lower-resolution assets within panels that are further from the viewer. The
+     * Entity's own rotation and the camera's viewing direction are disregarded.
      *
      * @return A [PerceivedResolutionResult] which encapsulates the outcome:
      *     - [PerceivedResolutionResult.Success] containing the [PixelDimensions] if the calculation
@@ -91,22 +105,23 @@ internal constructor(
      *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
      *       the calculation is invalid or unavailable.
      *
-     * @throws [IllegalStateException] if [Session.config.headTracking] is set to
-     *   [Config.HeadTrackingMode.DISABLED].
+     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     *   [Config.DeviceTrackingMode.LAST_KNOWN].
      * @see PerceivedResolutionResult
      */
     public fun getPerceivedResolution(): PerceivedResolutionResult {
-        check(lifecycleManager.config.headTracking != Config.HeadTrackingMode.DISABLED) {
-            "Config.HeadTrackingMode is set to Disabled."
+        checkNotDisposed()
+        check(lifecycleManager.config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN) {
+            "Config.DeviceTrackingMode is not set to LastKnown."
         }
-        return rtEntity.getPerceivedResolution().toPerceivedResolutionResult()
+        return rtEntity!!.getPerceivedResolution().toPerceivedResolutionResult()
     }
 
     public companion object {
         internal fun create(
             lifecycleManager: LifecycleManager,
             context: Context,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             view: View,
             dimensions: FloatSize2d,
@@ -115,13 +130,13 @@ internal constructor(
         ): PanelEntity =
             PanelEntity(
                 lifecycleManager,
-                adapter.createPanelEntity(
+                sceneRuntime.createPanelEntity(
                     context,
                     pose,
                     view,
                     dimensions.toRtDimensions(),
                     name,
-                    adapter.activitySpaceRootImpl,
+                    sceneRuntime.activitySpace,
                 ),
                 entityManager,
             )
@@ -129,7 +144,7 @@ internal constructor(
         internal fun create(
             lifecycleManager: LifecycleManager,
             context: Context,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
             view: View,
             pixelDimensions: IntSize2d,
@@ -138,13 +153,13 @@ internal constructor(
         ): PanelEntity =
             PanelEntity(
                 lifecycleManager,
-                adapter.createPanelEntity(
+                sceneRuntime.createPanelEntity(
                     context,
                     pose,
                     view,
                     pixelDimensions.toRtPixelDimensions(),
                     name,
-                    adapter.activitySpaceRootImpl,
+                    sceneRuntime.activitySpace,
                 ),
                 entityManager,
             )
@@ -170,9 +185,9 @@ internal constructor(
             pose: Pose = Pose.Identity,
         ): PanelEntity =
             PanelEntity.create(
-                session.runtime.lifecycleManager,
+                session.perceptionRuntime.lifecycleManager,
                 session.activity,
-                session.platformAdapter,
+                session.sceneRuntime,
                 session.scene.entityManager,
                 view,
                 dimensions,
@@ -201,9 +216,9 @@ internal constructor(
             pose: Pose = Pose.Identity,
         ): PanelEntity =
             PanelEntity.create(
-                session.runtime.lifecycleManager,
+                session.perceptionRuntime.lifecycleManager,
                 session.activity,
-                session.platformAdapter,
+                session.sceneRuntime,
                 session.scene.entityManager,
                 view,
                 pixelDimensions,
@@ -214,12 +229,12 @@ internal constructor(
         /** Returns the PanelEntity backed by the main window for the Activity. */
         internal fun createMainPanelEntity(
             lifecycleManager: LifecycleManager,
-            adapter: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
             entityManager: EntityManager,
         ): PanelEntity =
             PanelEntity(
                 lifecycleManager,
-                adapter.mainPanelEntity,
+                sceneRuntime.mainPanelEntity,
                 entityManager,
                 isMainPanelEntity = true,
             )

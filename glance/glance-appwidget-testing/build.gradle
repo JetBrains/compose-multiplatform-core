@@ -27,11 +27,10 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesTest)
     api(project(":glance:glance-testing"))
     api(project(":glance:glance-appwidget"))
@@ -48,7 +47,6 @@ dependencies {
 
 android {
     defaultConfig {
-        minSdk = 23
         compileSdk = 35
     }
     namespace = "androidx.glance.appwidget.testing"

@@ -16,8 +16,6 @@
 
 package androidx.credentials
 
-import androidx.annotation.RestrictTo
-
 /**
  * Received by calling apps on successful propagation of a signal credential state request to the
  * user's credential providers.
@@ -25,4 +23,4 @@ import androidx.annotation.RestrictTo
  * This is an empty response and simply indicates the signal request has been successfully passed to
  * the providers.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY) class SignalCredentialStateResponse {}
+class SignalCredentialStateResponse {}

@@ -435,6 +435,7 @@ internal class ComposerChangeListWriter(
     }
 
     fun endMovableContentPlacement() {
+        pushPendingUpsAndDowns()
         changeList.pushEndMovableContentPlacement()
         writersReaderDelta = 0
     }

@@ -24,7 +24,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
@@ -86,7 +85,6 @@ internal val SDK_TO_PLATFORM_RECORD_CLASS_EXT_13:
         emptyMap()
     }
 
-@OptIn(ExperimentalMindfulnessSessionApi::class)
 @SuppressLint("NewApi") // Guarded by sdk extension
 @RequiresExtension(Build.VERSION_CODES.UPSIDE_DOWN_CAKE, 15)
 internal val SDK_TO_PLATFORM_RECORD_CLASS_EXT_15:

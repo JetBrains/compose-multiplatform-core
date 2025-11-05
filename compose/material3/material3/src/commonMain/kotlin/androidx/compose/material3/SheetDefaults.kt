@@ -26,6 +26,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -44,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -423,6 +425,22 @@ object BottomSheetDefaults {
         ) {
             Box(Modifier.size(width = width, height = height))
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun DragHandleWithTooltip(modifier: Modifier, content: @Composable (() -> Unit)) {
+    val dragHandleDescription = getString(Strings.BottomSheetDragHandleDescription)
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        TooltipBox(
+            modifier = modifier,
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(dragHandleDescription) } },
+            state = rememberTooltipState(),
+            content = content,
+        )
     }
 }
 

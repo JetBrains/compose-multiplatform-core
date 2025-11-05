@@ -16,6 +16,4 @@
 
 package androidx.compose.material3.adaptive.layout.internal
 
-import androidx.compose.material3.adaptive.layout.implementedInJetBrainsFork
-
 internal actual fun identityHashCode(instance: Any?): Int = implementedInJetBrainsFork()

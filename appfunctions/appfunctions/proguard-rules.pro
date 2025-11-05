@@ -22,3 +22,12 @@
 -keep,allowoptimization class * implements androidx.appfunctions.internal.SchemaAppFunctionInventory {
     public *;
 }
+
+-keep class androidx.appfunctions.internal.AggregatedAppFunctionInventory { *; }
+-keep,allowoptimization class * implements androidx.appfunctions.internal.AggregatedAppFunctionInventory {
+    public *;
+}
+
+# TODO: b/440484133 - Remove once AppSearch updates their rules
+-if class androidx.appsearch.app.DocumentClassFactoryRegistry {}
+-keep,allowshrinking @androidx.appsearch.annotation.Document class ** {}

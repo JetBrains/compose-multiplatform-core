@@ -24,6 +24,7 @@ import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.retain.LocalRetainedValuesStore
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.autofill.Autofill
@@ -236,6 +237,7 @@ internal fun ProvideCommonCompositionLocals(
         LocalWindowInfo provides owner.windowInfo,
         LocalPointerIconService provides owner.pointerIconService,
         LocalGraphicsContext provides owner.graphicsContext,
+        LocalRetainedValuesStore provides owner.retainedValuesStore,
         content = content,
     )
 }

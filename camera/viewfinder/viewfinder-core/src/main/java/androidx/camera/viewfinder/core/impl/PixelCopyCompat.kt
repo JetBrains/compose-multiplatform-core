@@ -31,6 +31,7 @@ import android.view.Surface
 import androidx.annotation.GuardedBy
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
+import androidx.camera.viewfinder.core.impl.PixelCopyCompat.PixelCopyApi24Impl.KEEP_ALIVE_MILLIS
 import androidx.core.os.HandlerCompat
 import androidx.core.util.Consumer
 import androidx.tracing.Trace

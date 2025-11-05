@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DrawerDefaults
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -191,6 +190,7 @@ fun rememberNavigationSuiteScaffoldState(
  *   content, if present, when it's displayed along with a horizontal navigation component.
  * @param content the content of your screen
  */
+@OptIn(ExperimentalMaterial3AdaptiveComponentOverrideApi::class)
 @Composable
 fun NavigationSuiteScaffold(
     navigationItems: @Composable () -> Unit,
@@ -208,29 +208,62 @@ fun NavigationSuiteScaffold(
         NavigationSuiteScaffoldDefaults.primaryActionContentAlignment,
     content: @Composable () -> Unit,
 ) {
-    Surface(modifier = modifier, color = containerColor, contentColor = contentColor) {
-        NavigationSuiteScaffoldLayout(
-            navigationSuite = {
-                NavigationSuite(
-                    navigationSuiteType = navigationSuiteType,
-                    colors = navigationSuiteColors,
-                    primaryActionContent = primaryActionContent,
-                    verticalArrangement = navigationItemVerticalArrangement,
-                    content = navigationItems,
-                )
-            },
+    val scope =
+        NavigationSuiteScaffoldWithPrimaryActionOverrideScope(
+            navigationItems = navigationItems,
+            modifier = modifier,
             navigationSuiteType = navigationSuiteType,
+            navigationSuiteColors = navigationSuiteColors,
+            containerColor = containerColor,
+            contentColor = contentColor,
             state = state,
+            navigationItemVerticalArrangement = navigationItemVerticalArrangement,
             primaryActionContent = primaryActionContent,
             primaryActionContentHorizontalAlignment = primaryActionContentHorizontalAlignment,
-            content = {
-                Box(
-                    Modifier.navigationSuiteScaffoldConsumeWindowInsets(navigationSuiteType, state)
-                ) {
-                    content()
-                }
-            },
+            content = content,
         )
+    with(LocalNavigationSuiteScaffoldWithPrimaryActionOverride.current) {
+        scope.NavigationSuiteScaffoldWithPrimaryAction()
+    }
+}
+
+/**
+ * This override provides the default behavior of the [NavigationSuiteScaffold] with primary action
+ * content. This implementation is used when no override is specified.
+ */
+@ExperimentalMaterial3AdaptiveComponentOverrideApi
+object DefaultNavigationSuiteScaffoldWithPrimaryActionOverride :
+    NavigationSuiteScaffoldWithPrimaryActionOverride {
+    @Composable
+    override fun NavigationSuiteScaffoldWithPrimaryActionOverrideScope
+        .NavigationSuiteScaffoldWithPrimaryAction() {
+        Surface(modifier = modifier, color = containerColor, contentColor = contentColor) {
+            NavigationSuiteScaffoldLayout(
+                navigationSuite = {
+                    NavigationSuite(
+                        navigationSuiteType = navigationSuiteType,
+                        colors = navigationSuiteColors,
+                        primaryActionContent = primaryActionContent,
+                        verticalArrangement = navigationItemVerticalArrangement,
+                        content = navigationItems,
+                    )
+                },
+                navigationSuiteType = navigationSuiteType,
+                state = state,
+                primaryActionContent = primaryActionContent,
+                primaryActionContentHorizontalAlignment = primaryActionContentHorizontalAlignment,
+                content = {
+                    Box(
+                        Modifier.navigationSuiteScaffoldConsumeWindowInsets(
+                            navigationSuiteType,
+                            state,
+                        )
+                    ) {
+                        content()
+                    }
+                },
+            )
+        }
     }
 }
 
@@ -595,7 +628,6 @@ fun NavigationSuiteScaffoldLayout(
  * @param content the content inside the current navigation component, typically
  *   [NavigationSuiteItem]s
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NavigationSuite(
     navigationSuiteType: NavigationSuiteType,
@@ -654,9 +686,8 @@ fun NavigationSuite(
                 modifier = modifier.heightIn(min = TallNavigationBarHeight),
                 containerColor = colors.navigationBarContainerColor,
                 contentColor = colors.navigationBarContentColor,
-            ) {
-                movableContent()
-            }
+                content = movableContent,
+            )
         }
         // It's advised to to use NavigationSuiteType.WideNavigationRail instead of
         // NavigationSuiteType.NavigationRail.
@@ -722,7 +753,6 @@ fun NavigationSuite(
  * @param content the content inside the current navigation component, typically
  *   [NavigationSuiteScope.item]s
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NavigationSuite(
     modifier: Modifier = Modifier,
@@ -861,7 +891,6 @@ fun NavigationSuite(
  *   preview the item in different states. Note that if `null` is provided, interactions will still
  *   happen internally.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun NavigationSuiteItem(
     selected: Boolean,
@@ -892,7 +921,6 @@ fun NavigationSuiteItem(
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun NavigationSuiteItem(
     isNavigationSuite: Boolean,
@@ -1269,7 +1297,6 @@ object NavigationSuiteDefaults {
      *   [PermanentDrawerSheet]
      * @param navigationDrawerContentColor the default content color for the [PermanentDrawerSheet]
      */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Composable
     fun colors(
         shortNavigationBarContentColor: Color = ShortNavigationBarDefaults.contentColor,
@@ -1312,7 +1339,6 @@ object NavigationSuiteDefaults {
      *   [PermanentDrawerSheet]
      * @param navigationDrawerContentColor the default content color for the [PermanentDrawerSheet]
      */
-    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     @Deprecated(
         message =
             "Deprecated in favor of colors with shortNavigationBar*Color and " +
@@ -1492,7 +1518,6 @@ internal class NavigationSuiteScaffoldStateImpl(var initialValue: NavigationSuit
 }
 
 @Composable
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 private fun Modifier.navigationSuiteScaffoldConsumeWindowInsets(
     navigationSuiteType: NavigationSuiteType,
     state: NavigationSuiteScaffoldState,
@@ -1660,4 +1685,72 @@ val LocalNavigationSuiteScaffoldOverride:
     ProvidableCompositionLocal<NavigationSuiteScaffoldOverride> =
     compositionLocalOf {
         DefaultNavigationSuiteScaffoldOverride
+    }
+
+/**
+ * Interface that allows libraries to override the behavior of the [NavigationSuiteScaffold]
+ * component. This is the version where a primary action content is present.
+ *
+ * To override this component, implement the member function of this interface, then provide the
+ * implementation to [NavigationSuiteScaffoldWithPrimaryActionOverride] in the Compose hierarchy.
+ */
+@ExperimentalMaterial3AdaptiveComponentOverrideApi
+interface NavigationSuiteScaffoldWithPrimaryActionOverride {
+    @Composable
+    fun NavigationSuiteScaffoldWithPrimaryActionOverrideScope
+        .NavigationSuiteScaffoldWithPrimaryAction()
+}
+
+/**
+ * Parameters available to [NavigationSuiteScaffold] that includes a primary action.
+ *
+ * @param navigationItems the navigation items to be displayed, typically [NavigationSuiteItem]s
+ * @param modifier the [Modifier] to be applied to the navigation suite scaffold
+ * @param navigationSuiteType the current [NavigationSuiteType]. Defaults to
+ *   [NavigationSuiteScaffoldDefaults.navigationSuiteType]
+ * @param navigationSuiteColors [NavigationSuiteColors] that will be used to determine the container
+ *   (background) color of the navigation component and the preferred color for content inside the
+ *   navigation component
+ * @param containerColor the color used for the background of the navigation suite scaffold,
+ *   including the passed [content] composable. Use [Color.Transparent] to have no color
+ * @param contentColor the preferred color to be used for typography and iconography within the
+ *   passed in [content] lambda inside the navigation suite scaffold.
+ * @param state the [NavigationSuiteScaffoldState] of this navigation suite scaffold
+ * @param navigationItemVerticalArrangement the vertical arrangement of the items inside vertical
+ *   navigation components (such as the types [NavigationSuiteType.WideNavigationRailCollapsed] and
+ *   [NavigationSuiteType.WideNavigationRailExpanded]). It's recommended to use [Arrangement.Top],
+ *   [Arrangement.Center], or [Arrangement.Bottom]. Defaults to [Arrangement.Top]
+ * @param primaryActionContent The optional primary action content of the navigation suite scaffold,
+ *   if any. Typically a [androidx.compose.material3.FloatingActionButton]. It'll be displayed
+ *   inside vertical navigation components as part of their header , and above horizontal navigation
+ *   components.
+ * @param primaryActionContentHorizontalAlignment The horizontal alignment of the primary action
+ *   content, if present, when it's displayed along with a horizontal navigation component.
+ * @param content the content of your screen
+ */
+@ExperimentalMaterial3AdaptiveComponentOverrideApi
+class NavigationSuiteScaffoldWithPrimaryActionOverrideScope
+internal constructor(
+    val navigationItems: @Composable () -> Unit,
+    val modifier: Modifier = Modifier,
+    val navigationSuiteType: NavigationSuiteType,
+    val navigationSuiteColors: NavigationSuiteColors,
+    val containerColor: Color,
+    val contentColor: Color,
+    val state: NavigationSuiteScaffoldState,
+    val navigationItemVerticalArrangement: Arrangement.Vertical,
+    val primaryActionContent: @Composable (() -> Unit),
+    val primaryActionContentHorizontalAlignment: Alignment.Horizontal,
+    val content: @Composable () -> Unit,
+)
+
+/**
+ * CompositionLocal containing the currently-selected
+ * [NavigationSuiteScaffoldWithPrimaryActionOverride].
+ */
+@ExperimentalMaterial3AdaptiveComponentOverrideApi
+val LocalNavigationSuiteScaffoldWithPrimaryActionOverride:
+    ProvidableCompositionLocal<NavigationSuiteScaffoldWithPrimaryActionOverride> =
+    compositionLocalOf {
+        DefaultNavigationSuiteScaffoldWithPrimaryActionOverride
     }

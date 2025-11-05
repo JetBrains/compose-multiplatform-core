@@ -20,7 +20,6 @@ package androidx.camera.camera2.pipe.graph
 
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
-import android.os.Build
 import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.RequestNumber
@@ -43,7 +42,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class Controller3AForCaptureTest {
     private val graphTestContext = GraphTestContext()
     private val graphState3A = GraphState3A()
@@ -212,6 +211,62 @@ class Controller3AForCaptureTest {
         assertThat(result.isCompleted).isTrue()
 
         assertThat(result3A.frameMetadata!!.frameNumber.value).isEqualTo(101L)
+        assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
+
+        // We now check if the correct sequence of requests were submitted by lock3AForCapture call.
+        // There should be a request to trigger AF and AE precapture metering.
+        assertCorrectCaptureSequenceInLock3AForCapture()
+    }
+
+    @Test
+    fun testLock3AForCapture_withPartialResult_whenAFModeIsMissing() = runTest {
+        // Arrange
+        val result = controller3A.lock3AForCapture()
+        assertThat(result.isCompleted).isFalse()
+
+        // Act
+        // Simulate a partial result where AF mode is missing
+        val cameraResponse = async {
+            listener3A.sendPartialCaptureResult(
+                resultMetadata =
+                    mapOf(
+                        CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                        CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
+                        CaptureResult.CONTROL_AF_STATE to
+                            CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                        CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                    )
+            )
+        }
+
+        // Assert: the result of lock3AForCapture call will not complete when a partial result
+        // without AF mode
+        cameraResponse.await()
+        assertThat(result.isCompleted).isFalse()
+    }
+
+    @Test
+    fun testLock3AForCapture_withPartialResult_when3AAreConverged() = runTest {
+        // Arrange
+        val result = controller3A.lock3AForCapture()
+        assertThat(result.isCompleted).isFalse()
+
+        // Act
+        // Simulate a partial result with all required modes and converged states
+        listener3A.sendPartialCaptureResult(
+            resultMetadata =
+                mapOf(
+                    CaptureResult.CONTROL_AF_MODE to
+                        CaptureResult.CONTROL_AF_MODE_CONTINUOUS_PICTURE,
+                    CaptureResult.CONTROL_AE_MODE to CaptureResult.CONTROL_AE_MODE_ON,
+                    CaptureResult.CONTROL_AWB_MODE to CaptureResult.CONTROL_AWB_MODE_AUTO,
+                    CaptureResult.CONTROL_AF_STATE to CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED,
+                    CaptureResult.CONTROL_AE_STATE to CaptureResult.CONTROL_AE_STATE_CONVERGED,
+                )
+        )
+
+        // Assert
+        val result3A = result.await()
         assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
 
         // We now check if the correct sequence of requests were submitted by lock3AForCapture call.
@@ -397,20 +452,12 @@ class Controller3AForCaptureTest {
 
     @Test
     fun testUnlock3APostCapture() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            testUnlock3APostCaptureAndroidMAndAbove()
-        } else {
-            testUnlock3APostCaptureAndroidLAndBelow()
-        }
+        testUnlock3APostCaptureAndroidMAndAbove()
     }
 
     @Test
     fun testUnlock3APostCapture_whenAfNotTriggered() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            testUnlock3APostCaptureAndroidMAndAbove(false)
-        } else {
-            testUnlock3APostCaptureAndroidLAndBelow(false)
-        }
+        testUnlock3APostCaptureAndroidMAndAbove(false)
     }
 
     private fun testUnlock3APostCaptureAndroidMAndAbove(cancelAf: Boolean = true) = runTest {
@@ -488,45 +535,6 @@ class Controller3AForCaptureTest {
                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                 CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL,
             )
-    }
-
-    private fun testUnlock3APostCaptureAndroidLAndBelow(cancelAf: Boolean = true) = runTest {
-        val result = controller3A.unlock3APostCapture(cancelAf)
-        assertThat(result.isCompleted).isFalse()
-
-        val cameraResponse = async {
-            listener3A.onRequestSequenceCreated(
-                FakeRequestMetadata(requestNumber = RequestNumber(1))
-            )
-            listener3A.onPartialCaptureResult(
-                FakeRequestMetadata(requestNumber = RequestNumber(1)),
-                FrameNumber(101L),
-                FakeFrameMetadata(frameNumber = FrameNumber(101L), resultMetadata = mapOf()),
-            )
-        }
-
-        cameraResponse.await()
-        val result3A = result.await()
-        assertThat(result3A.frameMetadata!!.frameNumber.value).isEqualTo(101L)
-        assertThat(result3A.status).isEqualTo(Result3A.Status.OK)
-
-        // We now check if the correct sequence of requests were submitted by unlock3APostCapture
-        // call. There should be a request to cancel AF and lock ae.
-        val event1 = captureSequenceProcessor.nextEvent()
-        if (cancelAf) {
-            assertThat(event1.requiredParameters)
-                .containsEntry(
-                    CaptureRequest.CONTROL_AF_TRIGGER,
-                    CaptureRequest.CONTROL_AF_TRIGGER_CANCEL,
-                )
-        }
-
-        assertThat(event1.requiredParameters).containsEntry(CaptureRequest.CONTROL_AE_LOCK, true)
-
-        // Then another request to unlock ae.
-        val captureSequence2 = captureSequenceProcessor.nextEvent()
-        assertThat(captureSequence2.requiredParameters)
-            .containsEntry(CaptureRequest.CONTROL_AE_LOCK, false)
     }
 
     private fun assertCorrectCaptureSequenceInLock3AForCapture(isAfTriggered: Boolean = true) {

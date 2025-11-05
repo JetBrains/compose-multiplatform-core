@@ -15,6 +15,13 @@
  */
 package androidx.compose.remote.core;
 
+import static androidx.compose.remote.core.RcProfiles.PROFILE_ANDROIDX;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_ANDROID_NATIVE;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_DEPRECATED;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_EXPERIMENTAL;
+import static androidx.compose.remote.core.RcProfiles.PROFILE_WIDGETS;
+
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.BitmapData;
 import androidx.compose.remote.core.operations.BitmapFontData;
 import androidx.compose.remote.core.operations.BitmapTextMeasure;
@@ -26,6 +33,7 @@ import androidx.compose.remote.core.operations.ColorConstant;
 import androidx.compose.remote.core.operations.ColorExpression;
 import androidx.compose.remote.core.operations.ComponentValue;
 import androidx.compose.remote.core.operations.ConditionalOperations;
+import androidx.compose.remote.core.operations.DataDynamicListFloat;
 import androidx.compose.remote.core.operations.DataListFloat;
 import androidx.compose.remote.core.operations.DataListIds;
 import androidx.compose.remote.core.operations.DataMapIds;
@@ -34,6 +42,7 @@ import androidx.compose.remote.core.operations.DebugMessage;
 import androidx.compose.remote.core.operations.DrawArc;
 import androidx.compose.remote.core.operations.DrawBitmap;
 import androidx.compose.remote.core.operations.DrawBitmapFontText;
+import androidx.compose.remote.core.operations.DrawBitmapFontTextOnPath;
 import androidx.compose.remote.core.operations.DrawBitmapInt;
 import androidx.compose.remote.core.operations.DrawBitmapScaled;
 import androidx.compose.remote.core.operations.DrawBitmapTextAnchored;
@@ -48,6 +57,7 @@ import androidx.compose.remote.core.operations.DrawSector;
 import androidx.compose.remote.core.operations.DrawText;
 import androidx.compose.remote.core.operations.DrawTextAnchored;
 import androidx.compose.remote.core.operations.DrawTextOnPath;
+import androidx.compose.remote.core.operations.DrawToBitmap;
 import androidx.compose.remote.core.operations.DrawTweenPath;
 import androidx.compose.remote.core.operations.FloatConstant;
 import androidx.compose.remote.core.operations.FloatExpression;
@@ -56,6 +66,7 @@ import androidx.compose.remote.core.operations.FloatFunctionDefine;
 import androidx.compose.remote.core.operations.FontData;
 import androidx.compose.remote.core.operations.HapticFeedback;
 import androidx.compose.remote.core.operations.Header;
+import androidx.compose.remote.core.operations.IdLookup;
 import androidx.compose.remote.core.operations.ImageAttribute;
 import androidx.compose.remote.core.operations.IntegerExpression;
 import androidx.compose.remote.core.operations.MatrixFromPath;
@@ -67,12 +78,14 @@ import androidx.compose.remote.core.operations.MatrixSkew;
 import androidx.compose.remote.core.operations.MatrixTranslate;
 import androidx.compose.remote.core.operations.NamedVariable;
 import androidx.compose.remote.core.operations.PaintData;
+import androidx.compose.remote.core.operations.ParticlesCompare;
 import androidx.compose.remote.core.operations.ParticlesCreate;
 import androidx.compose.remote.core.operations.ParticlesLoop;
 import androidx.compose.remote.core.operations.PathAppend;
 import androidx.compose.remote.core.operations.PathCombine;
 import androidx.compose.remote.core.operations.PathCreate;
 import androidx.compose.remote.core.operations.PathData;
+import androidx.compose.remote.core.operations.PathExpression;
 import androidx.compose.remote.core.operations.PathTween;
 import androidx.compose.remote.core.operations.Rem;
 import androidx.compose.remote.core.operations.RootContentBehavior;
@@ -90,6 +103,8 @@ import androidx.compose.remote.core.operations.TextSubtext;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.TimeAttribute;
 import androidx.compose.remote.core.operations.TouchExpression;
+import androidx.compose.remote.core.operations.UpdateDynamicFloatList;
+import androidx.compose.remote.core.operations.WakeIn;
 import androidx.compose.remote.core.operations.layout.CanvasContent;
 import androidx.compose.remote.core.operations.layout.CanvasOperations;
 import androidx.compose.remote.core.operations.layout.ClickModifierOperation;
@@ -114,6 +129,7 @@ import androidx.compose.remote.core.operations.layout.managers.ImageLayout;
 import androidx.compose.remote.core.operations.layout.managers.RowLayout;
 import androidx.compose.remote.core.operations.layout.managers.StateLayout;
 import androidx.compose.remote.core.operations.layout.managers.TextLayout;
+import androidx.compose.remote.core.operations.layout.modifiers.AlignByModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BackgroundModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.BorderModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.ClipRectModifierOperation;
@@ -126,6 +142,7 @@ import androidx.compose.remote.core.operations.layout.modifiers.HeightModifierOp
 import androidx.compose.remote.core.operations.layout.modifiers.HostActionMetadataOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.HostActionOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.HostNamedActionOperation;
+import androidx.compose.remote.core.operations.layout.modifiers.LayoutComputeOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.MarqueeModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.OffsetModifierOperation;
 import androidx.compose.remote.core.operations.layout.modifiers.PaddingModifierOperation;
@@ -151,11 +168,13 @@ import androidx.compose.remote.core.types.IntegerConstant;
 import androidx.compose.remote.core.types.LongConstant;
 
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 /** List of operations supported in a RemoteCompose document */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Operations {
 
     private Operations() {}
@@ -195,12 +214,14 @@ public class Operations {
     public static final int PAINT_VALUES = 40;
     public static final int DRAW_RECT = 42;
     public static final int DRAW_BITMAP_FONT_TEXT_RUN = 48;
+    public static final int DRAW_BITMAP_FONT_TEXT_RUN_ON_PATH = 49;
     public static final int DRAW_TEXT_RUN = 43;
     public static final int DRAW_CIRCLE = 46;
     public static final int DRAW_LINE = 47;
     public static final int DRAW_ROUND_RECT = 51;
     public static final int DRAW_SECTOR = 52;
     public static final int DRAW_TEXT_ON_PATH = 53;
+    public static final int DRAW_TEXT_ON_CIRCLE = 57;
     public static final int DRAW_OVAL = 56;
     public static final int DATA_PATH = 123;
     public static final int DRAW_PATH = 124;
@@ -228,6 +249,8 @@ public class Operations {
     public static final int ID_LIST = 146;
     public static final int FLOAT_LIST = 147;
     public static final int DATA_LONG = 148;
+    public static final int DYNAMIC_FLOAT_LIST = 197;
+    public static final int UPDATE_DYNAMIC_FLOAT_LIST = 198;
     public static final int DRAW_BITMAP_SCALED = 149;
     public static final int TEXT_LOOKUP = 151;
     public static final int DRAW_ARC = 152;
@@ -265,6 +288,11 @@ public class Operations {
     public static final int MATRIX_EXPRESSION = 187;
     public static final int MATRIX_VECTOR_MATH = 188;
     public static final int DATA_FONT = 189;
+    public static final int DRAW_TO_BITMAP = 190;
+    public static final int WAKE_IN = 191;
+    public static final int ID_LOOKUP = 192;
+    public static final int PATH_EXPRESSION = 193;
+    public static final int PARTICLE_COMPARE = 194;
 
     ///////////////////////////////////////// ======================
 
@@ -312,6 +340,7 @@ public class Operations {
     public static final int MODIFIER_SCROLL = 226;
     public static final int MODIFIER_MARQUEE = 228;
     public static final int MODIFIER_RIPPLE = 229;
+    public static final int MODIFIER_ALIGN_BY = 237;
 
     public static final int LOOP_START = 215;
 
@@ -320,6 +349,7 @@ public class Operations {
     public static final int HOST_METADATA_ACTION = 216;
     public static final int HOST_NAMED_ACTION = 210;
     public static final int RUN_ACTION = 236;
+    public static final int LAYOUT_COMPUTE = 238;
 
     public static final int VALUE_INTEGER_CHANGE_ACTION = 212;
     public static final int VALUE_STRING_CHANGE_ACTION = 213;
@@ -345,21 +375,6 @@ public class Operations {
     static UniqueIntMap<CompanionOperation> sMapV7Widgets;
     static UniqueIntMap<CompanionOperation> sMapV7WidgetsExperimental;
     static UniqueIntMap<CompanionOperation> sMapV7WidgetsDeprecated;
-
-    ////////////////////////////////////////
-    // Available profiles
-    ////////////////////////////////////////
-
-    public static final int PROFILE_BASELINE = 0x0;
-
-    // Additive profiles
-    public static final int PROFILE_EXPERIMENTAL = 0x1;
-    public static final int PROFILE_DEPRECATED = 0x2;
-    public static final int PROFILE_OEM = 0x4;
-
-    // Intersected profiles
-    public static final int PROFILE_WIDGETS = 0x100;
-    public static final int PROFILE_ANDROIDX = 0x200;
 
     /**
      * Returns true if the operation exists for the given api level
@@ -397,7 +412,8 @@ public class Operations {
      * @param profiles
      * @return
      */
-    public static UniqueIntMap<CompanionOperation> getOperations(int apiLevel, int profiles) {
+    public static @Nullable UniqueIntMap<CompanionOperation> getOperations(
+            int apiLevel, int profiles) {
         switch (apiLevel) {
             case 7:
                 if (sMapV7 == null || !sMapV7.containsKey(profiles)) {
@@ -427,9 +443,17 @@ public class Operations {
             sMapV7AndroidX.put(MATRIX_FROM_PATH, MatrixFromPath::read);
             sMapV7AndroidX.put(TEXT_SUBTEXT, TextSubtext::read);
             sMapV7AndroidX.put(BITMAP_TEXT_MEASURE, BitmapTextMeasure::read);
+            sMapV7AndroidX.put(DRAW_BITMAP_FONT_TEXT_RUN_ON_PATH, DrawBitmapFontTextOnPath::read);
             sMapV7AndroidX.put(DRAW_BITMAP_TEXT_ANCHORED, DrawBitmapTextAnchored::read);
             sMapV7AndroidX.put(DATA_SHADER, ShaderData::read);
             sMapV7AndroidX.put(DATA_FONT, FontData::read);
+            sMapV7AndroidX.put(DRAW_TO_BITMAP, DrawToBitmap::read);
+            sMapV7AndroidX.put(WAKE_IN, WakeIn::read);
+            sMapV7AndroidX.put(ID_LOOKUP, IdLookup::read);
+            sMapV7AndroidX.put(PATH_EXPRESSION, PathExpression::read);
+            sMapV7AndroidX.put(PARTICLE_COMPARE, ParticlesCompare::read);
+            sMapV7AndroidX.put(DYNAMIC_FLOAT_LIST, DataDynamicListFloat::read);
+            sMapV7AndroidX.put(UPDATE_DYNAMIC_FLOAT_LIST, UpdateDynamicFloatList::read);
         }
         return sMapV7AndroidX;
     }
@@ -438,6 +462,8 @@ public class Operations {
         if (sMapV7AndroidXExperimental == null) {
             sMapV7AndroidXExperimental = new UniqueIntMap<>();
             // add experimental operations for this profile here
+            sMapV7AndroidXExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
+            sMapV7AndroidXExperimental.put(LAYOUT_COMPUTE, LayoutComputeOperation::read);
         }
         return sMapV7AndroidXExperimental;
     }
@@ -456,7 +482,15 @@ public class Operations {
             sMapV7Widgets.put(MATRIX_FROM_PATH, MatrixFromPath::read);
             sMapV7Widgets.put(TEXT_SUBTEXT, TextSubtext::read);
             sMapV7Widgets.put(BITMAP_TEXT_MEASURE, BitmapTextMeasure::read);
+            sMapV7Widgets.put(DRAW_BITMAP_FONT_TEXT_RUN_ON_PATH, DrawBitmapFontTextOnPath::read);
             sMapV7Widgets.put(DRAW_BITMAP_TEXT_ANCHORED, DrawBitmapTextAnchored::read);
+            sMapV7Widgets.put(DRAW_TO_BITMAP, DrawToBitmap::read);
+            sMapV7Widgets.put(WAKE_IN, WakeIn::read);
+            sMapV7Widgets.put(ID_LOOKUP, IdLookup::read);
+            sMapV7Widgets.put(PATH_EXPRESSION, PathExpression::read);
+            sMapV7Widgets.put(PARTICLE_COMPARE, ParticlesCompare::read);
+            sMapV7Widgets.put(DYNAMIC_FLOAT_LIST, DataDynamicListFloat::read);
+            sMapV7Widgets.put(UPDATE_DYNAMIC_FLOAT_LIST, UpdateDynamicFloatList::read);
         }
         return sMapV7Widgets;
     }
@@ -465,6 +499,8 @@ public class Operations {
         if (sMapV7WidgetsExperimental == null) {
             sMapV7WidgetsExperimental = new UniqueIntMap<>();
             // add experimental operations for this profile here
+            sMapV7WidgetsExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
+            sMapV7WidgetsExperimental.put(LAYOUT_COMPUTE, LayoutComputeOperation::read);
         }
         return sMapV7WidgetsExperimental;
     }
@@ -503,7 +539,7 @@ public class Operations {
                 if ((profiles & PROFILE_EXPERIMENTAL) != 0) {
                     androidx.putAll(createMapV7_Androidx_Experimental());
                 }
-                if ((profiles & Operations.PROFILE_DEPRECATED) != 0) {
+                if ((profiles & PROFILE_DEPRECATED) != 0) {
                     androidx.putAll(createMapV7_Androidx_Deprecated());
                 }
                 listProfiles.add(androidx);
@@ -515,9 +551,14 @@ public class Operations {
                 if ((profiles & PROFILE_EXPERIMENTAL) != 0) {
                     widgets.putAll(createMapV7_Widgets_Experimental());
                 }
-                if ((profiles & Operations.PROFILE_DEPRECATED) != 0) {
+                if ((profiles & PROFILE_DEPRECATED) != 0) {
                     widgets.putAll(createMapV7_Widgets_Deprecated());
                 }
+                listProfiles.add(widgets);
+            }
+            if ((profiles & PROFILE_ANDROID_NATIVE) != 0) {
+                throw new UnsupportedOperationException(
+                        "Android native profiles are defined externally");
             }
 
             if (listProfiles.size() == 1) {
@@ -572,7 +613,7 @@ public class Operations {
         return result;
     }
 
-    static class UniqueIntMap<T> extends IntMap<T> {
+    public static class UniqueIntMap<T> extends IntMap<T> {
         @Override
         public T put(int key, @NonNull T value) {
             assert null == get(key) : "Opcode " + key + " already used in Operations !";
@@ -719,6 +760,5 @@ public class Operations {
         map.put(DEBUG_MESSAGE, DebugMessage::read);
         map.put(ATTRIBUTE_COLOR, ColorAttribute::read);
         // TODO ?? map.put(ACCESSIBILITY_CUSTOM_ACTION, CoreSemantics::read);
-
     }
 }

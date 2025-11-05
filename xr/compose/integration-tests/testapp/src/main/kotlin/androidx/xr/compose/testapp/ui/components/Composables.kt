@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.testapp.ui.components
 
+import android.view.Choreographer
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -45,11 +46,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
@@ -58,9 +62,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SubspaceModifier
-import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.size
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.ui.theme.Purple40
@@ -123,7 +127,7 @@ fun CommonTestPanel(
     onClickRecreate: (() -> Unit)? = null,
     composable: @Composable (padding: PaddingValues) -> Unit,
 ) {
-    SpatialPanel(modifier = SubspaceModifier.size(size).movable()) {
+    SpatialPanel(modifier = SubspaceModifier.size(size), dragPolicy = MovePolicy()) {
         CommonTestScaffold(title, showBottomBar, "", onClickBackArrow, onClickRecreate, composable)
     }
 }
@@ -141,9 +145,15 @@ fun CommonTestScaffold(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
         Scaffold(
-            modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+            modifier = Modifier.fillMaxSize(),
             topBar = { TopBarWithBackArrow(scrollBehavior, title, onClickBackArrow) },
-            bottomBar = { if (showBottomBar) NoActionBottomBar(bottomBarText) },
+            bottomBar = {
+                if (showBottomBar)
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        NoActionBottomBar(bottomBarText)
+                        FpsCounterScreen()
+                    }
+            },
             floatingActionButton = {
                 if (onClickRecreate != null) {
                     RecreateButton(onClickRecreate)
@@ -151,6 +161,50 @@ fun CommonTestScaffold(
             },
             floatingActionButtonPosition = FabPosition.EndOverlay,
             content = content,
+        )
+    }
+}
+
+@Composable
+fun FpsCounterScreen() {
+    val fps = remember { mutableIntStateOf(0) }
+    val lastFrameTime = remember { mutableLongStateOf(0L) }
+
+    // Use a LaunchedEffect to manage the Choreographer callback lifecycle
+    LaunchedEffect(Unit) {
+        val frameCallback =
+            object : Choreographer.FrameCallback {
+                override fun doFrame(frameTimeNanos: Long) {
+                    if (lastFrameTime.longValue != 0L) {
+                        val frameDeltaNanos = frameTimeNanos - lastFrameTime.longValue
+                        if (frameDeltaNanos > 0) {
+                            val currentFps = (1_000_000_000L / frameDeltaNanos).toInt()
+                            // Smooth the FPS a bit to avoid rapid fluctuations
+                            fps.intValue = (fps.intValue * 0.8 + currentFps * 0.2).toInt()
+                        }
+                    }
+                    lastFrameTime.longValue = frameTimeNanos
+                    Choreographer.getInstance().postFrameCallback(this) // Post for the next frame
+                }
+            }
+
+        Choreographer.getInstance().postFrameCallback(frameCallback)
+    }
+    // Display the FPS using a Text composable.
+    // The Text composable will recompose automatically whenever 'fps' state changes.
+    Column(
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(horizontal = 20.dp),
+    ) {
+        Text(
+            text = "FPS: ${fps.intValue}",
+            color = Color.White,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            modifier =
+                Modifier.background(Color.Black) // Semi-transparent black background
+                    .padding(4.dp), // Padding around the text
         )
     }
 }

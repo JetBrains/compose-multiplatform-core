@@ -27,7 +27,6 @@ import androidx.camera.video.internal.BufferProvider.State
 import androidx.concurrent.futures.await
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
 import java.util.concurrent.CountDownLatch
@@ -60,7 +59,6 @@ import org.mockito.invocation.InvocationOnMock
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class AudioEncoderTest {
 
     companion object {

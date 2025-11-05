@@ -106,9 +106,14 @@ public final class GenericDocumentToPlatformConverter {
                 ApiHelperForB.setPlatformPropertyEmbedding(platformBuilder, propertyName,
                         embeddingVectors);
             } else if (property instanceof AppSearchBlobHandle[]) {
-                // TODO(b/273591938): Remove this once blob APIs are available.
-                throw new UnsupportedOperationException(Features.BLOB_STORAGE
-                        + " is not available on this AppSearch implementation.");
+                if (!AppSearchVersionUtil.isAtLeastB()) {
+                    throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
+                            + " is not available on this AppSearch implementation.");
+                }
+
+                AppSearchBlobHandle[] blobHandles = (AppSearchBlobHandle[]) property;
+                ApiHelperForB.setPlatformPropertyBlobHandle(platformBuilder, propertyName,
+                        blobHandles);
             } else {
                 throw new IllegalStateException(
                         String.format("Property \"%s\" has unsupported value type %s", propertyName,
@@ -170,6 +175,12 @@ public final class GenericDocumentToPlatformConverter {
                         (android.app.appsearch.EmbeddingVector[]) property;
                 ApiHelperForB.setJetpackPropertyEmbedding(jetpackBuilder, propertyName,
                         embeddingVectors);
+            } else if (AppSearchVersionUtil.isAtLeastB()
+                    && property instanceof android.app.appsearch.AppSearchBlobHandle[]) {
+                android.app.appsearch.AppSearchBlobHandle[] blobHandles =
+                        (android.app.appsearch.AppSearchBlobHandle[]) property;
+                ApiHelperForB.setJetpackPropertyBlobHandles(jetpackBuilder, propertyName,
+                        blobHandles);
             } else {
                 throw new IllegalStateException(
                         String.format("Property \"%s\" has unsupported value type %s", propertyName,
@@ -203,6 +214,21 @@ public final class GenericDocumentToPlatformConverter {
             platformBuilder.setPropertyEmbedding(propertyName, platformEmbeddingVectors);
         }
 
+        @DoNotInline
+        static void setPlatformPropertyBlobHandle(
+                android.app.appsearch.GenericDocument.@NonNull Builder<
+                        android.app.appsearch.GenericDocument.Builder<?>> platformBuilder,
+                @NonNull String propertyName,
+                AppSearchBlobHandle @NonNull [] jetpackBlobHandles) {
+            android.app.appsearch.AppSearchBlobHandle[] platformBlobHandles =
+                    new android.app.appsearch.AppSearchBlobHandle[jetpackBlobHandles.length];
+            for (int i = 0; i < jetpackBlobHandles.length; i++) {
+                platformBlobHandles[i] = AppSearchBlobHandleToPlatformConverter
+                        .toPlatformBlobHandle(jetpackBlobHandles[i]);
+            }
+            platformBuilder.setPropertyBlobHandle(propertyName, platformBlobHandles);
+        }
+
         @SuppressLint("NewApi") // getValues() is incorrectly flagged as needing 34-ext16
         @DoNotInline
         static void setJetpackPropertyEmbedding(
@@ -217,6 +243,20 @@ public final class GenericDocumentToPlatformConverter {
                         platformEmbeddingVectors[i].getModelSignature());
             }
             jetpackBuilder.setPropertyEmbedding(propertyName, jetpackEmbeddingVectors);
+        }
+
+        @DoNotInline
+        static void setJetpackPropertyBlobHandles(
+                GenericDocument.@NonNull Builder<GenericDocument.Builder<?>> jetpackBuilder,
+                @NonNull String propertyName,
+                android.app.appsearch.AppSearchBlobHandle @NonNull [] platformBlobHandles) {
+            AppSearchBlobHandle[] jetpackBlobHandles =
+                    new AppSearchBlobHandle[platformBlobHandles.length];
+            for (int i = 0; i < platformBlobHandles.length; i++) {
+                jetpackBlobHandles[i] = AppSearchBlobHandleToPlatformConverter
+                        .toJetpackBlobHandle(platformBlobHandles[i]);
+            }
+            jetpackBuilder.setPropertyBlobHandle(propertyName, jetpackBlobHandles);
         }
     }
 }

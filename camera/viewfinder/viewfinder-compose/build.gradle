@@ -27,7 +27,7 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -37,7 +37,6 @@ dependencies {
     implementation("androidx.compose.ui:ui:1.7.8")
     implementation("androidx.compose.ui:ui-util:1.7.8")
     implementation("androidx.core:core-ktx:1.12.0")
-    implementation(libs.kotlinStdlib)
     implementation("androidx.compose.ui:ui-geometry:1.7.8")
     implementation("androidx.compose.ui:ui-graphics:1.7.8")
     implementation("androidx.compose.ui:ui-unit:1.7.8")
@@ -67,7 +66,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
     namespace = "androidx.camera.viewfinder.compose"
 }
 

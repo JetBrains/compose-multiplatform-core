@@ -15,7 +15,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg1</name>
         </parameters>
         <parameters>
@@ -30,7 +30,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg2</name>
         </parameters>
         <parameters>
@@ -45,7 +45,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg3</name>
         </parameters>
         <parameters>
@@ -60,7 +60,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg4</name>
         </parameters>
         <parameters>
@@ -75,7 +75,7 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg5</name>
         </parameters>
         <parameters>
@@ -90,22 +90,17 @@
                 <type>10</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg6</name>
         </parameters>
         <parameters>
             <dataTypeMetadata>
                 <id>unused</id>
                 <isNullable>true</isNullable>
-                <itemType>
-                    <id>unused</id>
-                    <isNullable>false</isNullable>
-                    <type>2</type>
-                </itemType>
-                <type>10</type>
+                <type>2</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg7</name>
         </parameters>
         <response>
@@ -131,7 +126,7 @@
                 <type>7</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg1</name>
         </parameters>
         <parameters>
@@ -141,7 +136,7 @@
                 <type>6</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg2</name>
         </parameters>
         <parameters>
@@ -151,7 +146,7 @@
                 <type>5</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg3</name>
         </parameters>
         <parameters>
@@ -161,7 +156,7 @@
                 <type>4</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg4</name>
         </parameters>
         <parameters>
@@ -171,7 +166,7 @@
                 <type>8</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg5</name>
         </parameters>
         <parameters>
@@ -181,7 +176,7 @@
                 <type>1</type>
             </dataTypeMetadata>
             <id>unused</id>
-            <isRequired>true</isRequired>
+            <isRequired>false</isRequired>
             <name>arg6</name>
         </parameters>
         <response>
@@ -197,7 +192,4 @@
         <schemaVersion>1</schemaVersion>
         <functionId>com.testdata.FakeAllNullablePrimitiveParamsWithDefaultValuesImpl#allNullablePrimitiveParamsWithDefault</functionId>
     </appfunction>
-    <AppFunctionComponentMetadataDocument>
-        <id>unused</id>
-    </AppFunctionComponentMetadataDocument>
 </appfunctions>

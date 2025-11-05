@@ -199,10 +199,6 @@
                     <id>unused</id>
                     <name>nullableAttachments</name>
                 </properties>
-                <required>title</required>
-                <required>nullableTitle</required>
-                <required>attachments</required>
-                <required>nullableAttachments</required>
                 <type>3</type>
             </dataTypeMetadata>
             <id>unused</id>

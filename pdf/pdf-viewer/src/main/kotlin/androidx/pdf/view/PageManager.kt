@@ -201,21 +201,28 @@ internal class PageManager(
         pages.put(pageNum, page)
     }
 
-    fun maybeLoadFormWidgetMetadata() {
+    fun maybeLoadFormWidgetMetadata(formWidgetMetadataLoader: FormWidgetMetadataLoader) {
         pages.valueIterator().forEach {
             if (it.formWidgetInfos == null) {
-                it.maybeUpdateFormWidgetInfos()
+                it.maybeUpdateFormWidgetInfos(formWidgetMetadataLoader)
             }
         }
     }
 
     /** Updates the form widget information in the given [pageNum] when a edit is applied. */
-    fun maybeUpdateFormWidgetMetadata(pageNum: Int) {
-        pages[pageNum]?.maybeUpdateFormWidgetInfos()
+    fun maybeUpdateFormWidgetMetadata(
+        pageNum: Int,
+        formWidgetMetadataLoader: FormWidgetMetadataLoader,
+    ) {
+        pages[pageNum]?.maybeUpdateFormWidgetInfos(formWidgetMetadataLoader)
     }
 
     /** Adds [newHighlights]s to this manager to be drawn along with the pages they belong to */
     fun setHighlights(newHighlights: List<Highlight>) {
+        // Prevent extra invalidation of Pdfview on new pdf load by setting empty highlights
+        if (highlights.isEmpty() && newHighlights.isEmpty()) {
+            return
+        }
         highlights.clear()
         for (highlight in newHighlights) {
             highlights.getOrPut(highlight.area.pageNum) { mutableListOf() }.add(highlight)
@@ -239,8 +246,8 @@ internal class PageManager(
         }
     }
 
-    fun getLinkAtTapPoint(pdfPoint: PdfPoint): PdfDocument.PdfPageLinks? {
-        return pages[pdfPoint.pageNum]?.links
+    fun getPageLinks(pageNum: Int): PdfDocument.PdfPageLinks? {
+        return pages[pageNum]?.links
     }
 
     fun getWidgetAtTapPoint(pdfPoint: PdfPoint): List<FormWidgetInfo>? {

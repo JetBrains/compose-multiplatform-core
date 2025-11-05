@@ -17,6 +17,7 @@ package androidx.compose.remote.core.operations.layout.modifiers;
 
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.CoreDocument;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
@@ -31,7 +32,6 @@ import androidx.compose.remote.core.operations.layout.Component;
 import androidx.compose.remote.core.operations.layout.DecoratorComponent;
 import androidx.compose.remote.core.operations.layout.LayoutComponent;
 import androidx.compose.remote.core.operations.layout.ListActionsOperation;
-import androidx.compose.remote.core.operations.layout.RootLayoutComponent;
 import androidx.compose.remote.core.operations.layout.ScrollDelegate;
 import androidx.compose.remote.core.operations.layout.TouchHandler;
 import androidx.compose.remote.core.operations.utilities.StringSerializer;
@@ -45,6 +45,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /** Represents a scroll modifier. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ScrollModifierOperation extends ListActionsOperation
         implements TouchHandler,
                 DecoratorComponent,
@@ -127,15 +128,6 @@ public class ScrollModifierOperation extends ListActionsOperation
 
     public float getScrollY() {
         return mScrollY;
-    }
-
-    @Override
-    public void apply(@NonNull RemoteContext context) {
-        RootLayoutComponent root = context.getDocument().getRootLayoutComponent();
-        if (root != null) {
-            root.setHasTouchListeners(true);
-        }
-        super.apply(context);
     }
 
     @Override

@@ -19,7 +19,6 @@ package androidx.datastore.core
 import androidx.kruth.assertThat
 import androidx.kruth.assertThrows
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.MediumTest
 import java.io.File
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -32,7 +31,6 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 
 @ExperimentalCoroutinesApi
-@MediumTest
 @RunWith(AndroidJUnit4::class)
 class SharedCounterTest {
     @get:Rule val tempFolder = TemporaryFolder()

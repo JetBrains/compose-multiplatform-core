@@ -180,10 +180,9 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
     if (name.startsWith("androidTest")) return false
     if (name.startsWith("androidAndroidTest")) return false
     if (name.startsWith("androidCommonTest")) return false
-    if (name.startsWith("androidInstrumentedTest")) return false
+    if (name.startsWith("androidDeviceTest")) return false
     if (name.startsWith("androidReleaseUnitTest")) return false
     if (name.startsWith("androidHostTest")) return false
-    if (name.startsWith("androidUnitTest")) return false
     if (name.startsWith("debug")) return false
     if (name.startsWith("androidDebug")) return false
     if (name.startsWith("releaseAndroidTest")) return false
@@ -204,9 +203,11 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
     if (name == "annotationProcessor") return false
     if (name == "errorprone") return false
     if (name.startsWith("lint")) return false
+    if (name.endsWith("LintChecksClasspath")) return false
     if (name == "metalava") return false
     if (name.startsWith("kotlinBuild")) return false
     if (name.startsWith("kotlinCompiler")) return false
+    if (name.startsWith("kotlinKaptWorkerDependencies")) return false
     if (name.startsWith("kotlinKlib")) return false
     if (name.startsWith("kapt")) return false
     if (name.startsWith("ksp")) return false
@@ -254,8 +255,15 @@ internal fun Project.shouldVerifyConfiguration(configuration: Configuration): Bo
         return false
     }
 
+    // don't verify swift export because we don't have any libraries that use it
+    if (name == "swiftExportClasspathResolvable") return false
+
     // don't verify baseline profile generating project dependencies
     if (name == "baselineProfile") return false
+    if (name == "releaseBaselineProfile") return false
+
+    // Only used to run kotlinx benchmarks. Artifacts are not published by this configuration.
+    if (name == "benchmarkGenerator.resolver") return false
 
     // don't verify samples
     if (name == "samples") return false

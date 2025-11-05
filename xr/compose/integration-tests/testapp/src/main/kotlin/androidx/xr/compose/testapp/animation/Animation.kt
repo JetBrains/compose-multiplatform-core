@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.testapp.animation
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -40,25 +41,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.spatial.Subspace
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.alpha
 import androidx.xr.compose.subspace.layout.height
+import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.scale
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.R
-import androidx.xr.compose.testapp.ui.components.ColumnWithCenterText
+import androidx.xr.compose.testapp.ui.components.CUJButton
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
 import androidx.xr.compose.testapp.ui.components.TopBarWithBackArrow
 import androidx.xr.compose.testapp.ui.theme.IntegrationTestsAppTheme
 import androidx.xr.compose.testapp.ui.theme.Purple80
-import kotlinx.coroutines.launch
 
 class Animation : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -67,26 +68,38 @@ class Animation : ComponentActivity() {
         setContent { IntegrationTestsAppTheme { ValueBasedAnimationsApp() } }
     }
 
+    private inline fun <reified T : ComponentActivity> startActivity() {
+        startActivity(Intent(this, T::class.java))
+    }
+
     @Composable
     @SubspaceComposable
     private fun ValueBasedAnimationsApp() {
         MainPanelContent()
 
-        ApplicationSubspace {
+        Subspace {
             val (showSidePanel, updateShowSidePanel) = remember { mutableStateOf(false) }
             val toggleSidePanel: () -> Unit = { updateShowSidePanel(!showSidePanel) }
             val desiredWidth = 300.dp
             val desiredHeight = 150.dp
+            val zOffset = (-30).dp
 
             SpatialRow {
                 val animatedAlpha = remember { Animatable(0.5f) }
                 val mainPanelAnimatedScale = remember { Animatable(1.0f) }
 
-                LaunchedEffect(Unit) {
-                    launch { animatedAlpha.animateTo(1.0f, animationSpec = tween(2000)) }
+                LaunchedEffect(Unit) { animatedAlpha.animateTo(1.0f, animationSpec = tween(2000)) }
+                LaunchedEffect(showSidePanel) {
+                    if (showSidePanel) {
+                        mainPanelAnimatedScale.animateTo(0.01f, animationSpec = tween(10))
+                        mainPanelAnimatedScale.animateTo(2.0f, animationSpec = tween(2000))
+                        mainPanelAnimatedScale.animateTo(1.0f, animationSpec = tween(2000))
+                    } else {
+                        mainPanelAnimatedScale.animateTo(1.0f, animationSpec = tween(500))
+                    }
                 }
 
-                MainPanel(
+                SpatialMainPanel(
                     modifier =
                         SubspaceModifier.width(600.dp)
                             .height(400.dp)
@@ -98,8 +111,10 @@ class Animation : ComponentActivity() {
                     modifier =
                         SubspaceModifier.width(desiredWidth)
                             .height(desiredHeight)
+                            .offset(z = zOffset * 2)
                             .alpha(animatedAlpha.value)
                 ) {
+                    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
                     PanelContent(
                         "Faded in content",
                         "Show side Panel",
@@ -110,14 +125,7 @@ class Animation : ComponentActivity() {
 
                 if (showSidePanel) {
                     val sidePanelAnimatedScale = remember { Animatable(0.01f) }
-
-                    LaunchedEffect(Unit) {
-                        mainPanelAnimatedScale.animateTo(0.01f, animationSpec = tween(10))
-                        mainPanelAnimatedScale.animateTo(2.0f, animationSpec = tween(2000))
-                        mainPanelAnimatedScale.animateTo(1.0f, animationSpec = tween(2000))
-                    }
-
-                    LaunchedEffect(Unit) {
+                    LaunchedEffect(true) {
                         sidePanelAnimatedScale.animateTo(2.0f, animationSpec = tween(2000))
                         sidePanelAnimatedScale.animateTo(1.0f, animationSpec = tween(2000))
                     }
@@ -126,8 +134,10 @@ class Animation : ComponentActivity() {
                         modifier =
                             SubspaceModifier.width(desiredWidth)
                                 .height(desiredHeight)
+                                .offset(z = zOffset)
                                 .scale(sidePanelAnimatedScale.value)
                     ) {
+                        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
                         PanelContent(
                             "Grown content",
                             "Hide side panel",
@@ -150,7 +160,15 @@ class Animation : ComponentActivity() {
             onClickBackArrow = { this@Animation.finish() },
             onClickRecreate = { this@Animation.recreate() },
         ) {
-            ColumnWithCenterText(text = "Main Panel Content")
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement =
+                    Arrangement.spacedBy(20.dp, alignment = Alignment.CenterVertically),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(text = "Main Panel Content", fontSize = 20.sp)
+                CUJButton("Show sample animations") { startActivity<SampleAnimations>() }
+            }
         }
     }
 
@@ -163,6 +181,7 @@ class Animation : ComponentActivity() {
         showButton: Boolean,
         buttonOnClick: () -> Unit,
     ) {
+        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
         Box(modifier = Modifier.background(Purple80).fillMaxSize()) {
             Column {
                 Row(modifier = Modifier.fillMaxWidth()) {

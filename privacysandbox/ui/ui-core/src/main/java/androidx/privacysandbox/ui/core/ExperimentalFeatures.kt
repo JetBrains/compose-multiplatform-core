@@ -17,6 +17,7 @@
 package androidx.privacysandbox.ui.core
 
 /** Contains UI Lib experimental feature opt-in annotations. */
+@Deprecated("This library is no longer supported.")
 public sealed interface ExperimentalFeatures {
     @RequiresOptIn(
         "This API is experimental. It may be changed in the future without notice.",

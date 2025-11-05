@@ -89,7 +89,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class VideoCaptureDeviceTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,

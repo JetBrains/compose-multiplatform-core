@@ -28,16 +28,15 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     api project(":appfunctions:appfunctions")
 
     // Internal dependencies
-    implementation("androidx.annotation:annotation:1.9.0-rc01")
+    implementation("androidx.annotation:annotation:1.9.0")
     implementation(libs.kotlinCoroutinesGuava) {
         exclude group: "com.google.guava", module: "guava"
     }
@@ -56,8 +55,8 @@ dependencies {
     testImplementation(libs.kotlinTest)
 
     androidTestCompileOnly(project(":appfunctions:appfunctions-stubs"))
-    androidTestImplementation("androidx.appsearch:appsearch:1.1.0-rc01")
-    androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0-rc01")
+    androidTestImplementation("androidx.appsearch:appsearch:1.1.0")
+    androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0")
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinCoroutinesTest)
@@ -71,9 +70,7 @@ dependencies {
 
 android {
     compileSdk = 36
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.appfunctions.service"
 }
 

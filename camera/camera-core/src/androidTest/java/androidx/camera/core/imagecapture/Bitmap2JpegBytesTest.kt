@@ -42,7 +42,6 @@ import org.junit.runner.RunWith
 /** Instrumented tests for [JpegBytes2CroppedBitmap]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class Bitmap2JpegBytesTest {
 
     private val operation = Bitmap2JpegBytes()

@@ -19,11 +19,9 @@ package androidx.compose.ui.spatial
 import androidx.collection.IntObjectMap
 import androidx.collection.intObjectMapOf
 import androidx.collection.mutableObjectListOf
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.currentTimeMillis
+import androidx.compose.ui.focus.FocusTargetModifierNode
 import androidx.compose.ui.geometry.MutableRect
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.isIdentity
 import androidx.compose.ui.node.DelegatableNode
@@ -31,13 +29,16 @@ import androidx.compose.ui.node.DelegatableNode.RegistrationHandle
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.node.Nodes
+import androidx.compose.ui.node.requireCoordinator
+import androidx.compose.ui.node.requireLayoutNode
+import androidx.compose.ui.node.requireOwner
+import androidx.compose.ui.node.requireSemanticsInfo
 import androidx.compose.ui.postDelayed
 import androidx.compose.ui.removePost
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.plus
-import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toOffset
+import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.trace
 import kotlin.math.max
 
@@ -83,6 +84,10 @@ internal class RectManager(
 
     // TODO: we need to make sure these are dispatched after draw if needed
     fun dispatchCallbacks() {
+        // on every invalidation we schedule callback, and then in some cases we call this function
+        // manually in the end of the frame, which means that the callback is not needed anymore
+        removeScheduledCallback()
+
         val currentTime = currentTimeMillis()
 
         // For ThrottledCallbacks on global changes we need to make sure they are all called for any
@@ -95,11 +100,6 @@ internal class RectManager(
             callbacks.forEach { it() }
             rects.forEachUpdatedRect { id, topLeft, bottomRight ->
                 throttledCallbacks.fireOnUpdatedRect(id, topLeft, bottomRight, currentTime)
-            }
-            throttledCallbacks.forEachNewCallbackNeverInvoked { entry ->
-                rects.withTopLeftBottomRight(entry.id) { topLeft, bottomRight ->
-                    throttledCallbacks.fireWithUpdatedRect(entry, topLeft, bottomRight, currentTime)
-                }
             }
             rects.clearUpdated()
         }
@@ -125,6 +125,9 @@ internal class RectManager(
         // this gets called frequently, but we might need to schedule it more often to ensure that
         // debounced callbacks get fired
         throttledCallbacks.triggerDebounced(currentTime)
+        if (throttledCallbacks.minDebounceDeadline > 0) {
+            scheduleDebounceCallback(ensureSomethingScheduled = true)
+        }
     }
 
     fun scheduleDebounceCallback(ensureSomethingScheduled: Boolean) {
@@ -148,6 +151,13 @@ internal class RectManager(
         dispatchToken = postDelayed(delay, dispatchLambda)
     }
 
+    fun removeScheduledCallback() {
+        if (dispatchToken != null) {
+            removePost(dispatchToken)
+            dispatchToken = null
+        }
+    }
+
     fun registerOnChangedCallback(callback: () -> Unit): Any? {
         callbacks.add(callback)
         return callback
@@ -163,6 +173,10 @@ internal class RectManager(
         return throttledCallbacks
             .registerOnRectChanged(id, throttleMillis, debounceMillis, node, callback)
             .also {
+                val layoutNode = node.node.requireLayoutNode()
+                if (layoutNode.addedToRectList) {
+                    rects.updateHasCallbacks(id, true)
+                }
                 invalidate()
                 scheduleDebounceCallback(true)
             }
@@ -191,8 +205,10 @@ internal class RectManager(
     }
 
     fun invalidateCallbacksFor(layoutNode: LayoutNode) {
-        isDirty = true
-        rects.markUpdated(layoutNode.semanticsId)
+        if (layoutNode.addedToRectList) {
+            isDirty = true
+            rects.markUpdated(layoutNode.semanticsId)
+        }
         scheduleDebounceCallback(ensureSomethingScheduled = true)
     }
 
@@ -207,7 +223,9 @@ internal class RectManager(
     }
 
     fun onLayoutLayerPositionalPropertiesChanged(layoutNode: LayoutNode) {
-        @OptIn(ExperimentalComposeUiApi::class) if (!ComposeUiFlags.isRectTrackingEnabled) return
+        // no need to update the positions on not placed items, as technically not placed items
+        // doesn't have a position. they will get the correct position once they became placed.
+        if (!layoutNode.isPlaced) return
         val outerToInnerOffset = layoutNode.outerToInnerOffset()
         if (outerToInnerOffset.isSet) {
             // translational properties only. AABB still valid.
@@ -216,7 +234,7 @@ internal class RectManager(
             layoutNode.forEachChild {
                 // NOTE: this calls rectlist.move(...) so does not need to be recursive
                 // TODO: we could potentially move to a single call of `updateSubhierarchy(...)`
-                onLayoutPositionChanged(it, false)
+                onLayoutPositionChanged(it)
             }
             invalidateCallbacksFor(layoutNode)
         } else {
@@ -225,8 +243,10 @@ internal class RectManager(
         }
     }
 
-    fun onLayoutPositionChanged(layoutNode: LayoutNode, firstPlacement: Boolean) {
-        @OptIn(ExperimentalComposeUiApi::class) if (!ComposeUiFlags.isRectTrackingEnabled) return
+    fun onLayoutPositionChanged(layoutNode: LayoutNode, forceUpdate: Boolean = false) {
+        // no need to update the positions on not placed items, as technically not placed items
+        // doesn't have a position. they will get the correct position once they became placed.
+        if (!layoutNode.isPlaced) return
         // Our goal here is to get the right "root" coordinates for every layout. We can use
         // LayoutCoordinates.localToRoot to calculate this somewhat readily, however this function
         // is getting called with a very high frequency and so it is important that extracting these
@@ -236,86 +256,156 @@ internal class RectManager(
         // minimize this, we store the "offsetFromRoot" of each layout node as we calculate it, and
         // attempt to utilize this value when calculating it for a node that is below it.
         // Additionally, we calculate and cache the parent's "outer to inner offset" which may
-        val delegate = layoutNode.measurePassDelegate
-        val width = delegate.measuredWidth
-        val height = delegate.measuredHeight
+        val parent = layoutNode.parent
+        val parentOuterInnerOffset =
+            if (parent != null && !parent.hasPositionalLayerTransformationsInOffsetFromRoot) {
+                if (parent.outerToInnerOffsetDirty) {
+                    parent.outerToInnerOffsetDirty = false
+                    parent.outerToInnerOffset = parent.outerToInnerOffset()
+                }
+                parent.outerToInnerOffset
+            } else if (parent == null) {
+                IntOffset.Zero
+            } else {
+                // parent has layer transformations
+                IntOffset.Max
+            }
+        val outer = layoutNode.outerCoordinator
+        if (parentOuterInnerOffset.isSet && !outer.hasPositionalLayerTransformations()) {
+            if (!layoutNode.hasPositionalLayerTransformationsInOffsetFromRoot) {
+                val offsetFromParent = parentOuterInnerOffset + outer.position
 
-        val lastOffset = layoutNode.offsetFromRoot
-        val lastSize = layoutNode.lastSize
-        val lastWidth = lastSize.width
-        val lastHeight = lastSize.height
+                val delegate = layoutNode.measurePassDelegate
+                val width = delegate.measuredWidth
+                val height = delegate.measuredHeight
+                val size = IntSize(width, height)
+                val semanticsId = layoutNode.semanticsId
 
-        recalculateOffsetFromRoot(layoutNode)
+                if (layoutNode.addedToRectList) {
+                    if (
+                        forceUpdate ||
+                            offsetFromParent != layoutNode.lastOffsetFromParent ||
+                            size != layoutNode.lastSize
+                    ) {
+                        if (parent != null) {
+                            rects.moveBasedOnParentOffset(
+                                value = semanticsId,
+                                parentId = parent.semanticsId,
+                                offsetFromParentX = offsetFromParent.x,
+                                offsetFromParentY = offsetFromParent.y,
+                                width = width,
+                                height = height,
+                            )
+                        } else {
+                            // moving the root.
+                            // when parent is null offsetFromParent is just the outer coordinator
+                            // offset.
+                            rects.move(
+                                value = semanticsId,
+                                l = offsetFromParent.x,
+                                t = offsetFromParent.y,
+                                r = offsetFromParent.x + width,
+                                b = offsetFromParent.y + height,
+                            )
+                        }
+                        invalidate()
+                    }
+                } else {
+                    layoutNode.addedToRectList = true
+                    val focusable = layoutNode.nodes.has(Nodes.FocusTarget)
+                    val gesturable = layoutNode.nodes.has(Nodes.PointerInput)
+                    val hasCallbacks = throttledCallbacks.rectChangedMap.containsKey(semanticsId)
+                    if (parent != null) {
+                        rects.insertBasedOnParentOffset(
+                            value = semanticsId,
+                            parentId = parent.semanticsId,
+                            offsetFromParentX = offsetFromParent.x,
+                            offsetFromParentY = offsetFromParent.y,
+                            width = width,
+                            height = height,
+                            focusable = focusable,
+                            gesturable = gesturable,
+                            hasCallbacks = hasCallbacks,
+                        )
+                    } else {
+                        // inserting the root, which has no parent.
+                        // when parent is null offsetFromParent is just the outer coordinator
+                        // offset.
+                        rects.insert(
+                            value = semanticsId,
+                            l = offsetFromParent.x,
+                            t = offsetFromParent.y,
+                            r = offsetFromParent.x + width,
+                            b = offsetFromParent.y + height,
+                            focusable = focusable,
+                            gesturable = gesturable,
+                            hasCallbacks = hasCallbacks,
+                        )
+                    }
+                    invalidate()
+                }
+                layoutNode.lastSize = size
+                layoutNode.lastOffsetFromParent = offsetFromParent
+            } else {
+                // even if we don't have layer transformations anymore, we had it previously
+                // and the whole subtree was calculated with that. we need to recalculate the
+                // rects for the subtree. after that next moves will be handled more efficiently
+                insertOrUpdateTransformedNodeSubhierarchy(layoutNode)
 
-        val offset = layoutNode.offsetFromRoot
-
-        // If unset is returned then that means there is a rotation/skew/scale
-        if (!offset.isSet) {
-            insertOrUpdateTransformedNode(layoutNode, firstPlacement)
-            return
+                // this will recursively reset [hasPositionalLayerTransformationsInOffsetFromRoot]
+                // to false if this specific node was the only reason the whole subtree were having
+                // a layer transformation, and this transformation was removed.
+                // [insertOrUpdateTransformedNodeSubhierarchy] is doing opposite, it is setting
+                // [hasPositionalLayerTransformationsInOffsetFromRoot] to true for the subtree
+                layoutNode.resetHasPositionalLayerTransformationsForSubtreeIfNeeded()
+            }
+        } else {
+            // If unset is returned then that means there is a rotation/skew/scale
+            insertOrUpdateTransformedNodeSubhierarchy(layoutNode)
         }
-
-        layoutNode.lastSize = IntSize(width, height)
-
-        val l = offset.x
-        val t = offset.y
-        val r = l + width
-        val b = t + height
-
-        if (!firstPlacement && offset == lastOffset && lastWidth == width && lastHeight == height) {
-            return
-        }
-
-        insertOrUpdate(layoutNode, firstPlacement, l, t, r, b)
     }
 
-    private fun recalculateOffsetFromRoot(layoutNode: LayoutNode) {
-        val position = layoutNode.outerCoordinator.position
-        val parent = layoutNode.parent
-        layoutNode.offsetFromRoot =
-            if (parent != null) {
-                if (!parent.offsetFromRoot.isSet) {
-                    recalculateOffsetFromRoot(parent)
-                }
+    fun getOffsetFromRectListFor(layoutNode: LayoutNode): IntOffset {
+        val topLeft = rects.getTopLeft(layoutNode.semanticsId)
+        return if (topLeft == Long.MAX_VALUE) {
+            IntOffset.Max
+        } else {
+            IntOffset(unpackX(topLeft), unpackY(topLeft))
+        }
+    }
 
-                val parentOffset = parent.offsetFromRoot
-                if (!parentOffset.isSet) {
-                    // if after recalculateOffsetFromRoot() on parent we still have unset return
-                    // unset
-                    IntOffset.Max
-                } else {
-                    val parentOuterInnerOffset =
-                        if (parent.outerToInnerOffsetDirty) {
-                            val it = parent.outerToInnerOffset()
-
-                            parent.outerToInnerOffset = it
-                            parent.outerToInnerOffsetDirty = false
-                            it
-                        } else {
-                            parent.outerToInnerOffset
-                        }
-                    if (!parentOuterInnerOffset.isSet) {
-                        IntOffset.Max
-                    } else {
-                        parentOffset + parentOuterInnerOffset + position
-                    }
-                }
-            } else {
-                // root
-                position
+    private fun LayoutNode.resetHasPositionalLayerTransformationsForSubtreeIfNeeded() {
+        if (
+            hasPositionalLayerTransformationsInOffsetFromRoot &&
+                !outerCoordinator.hasPositionalLayerTransformations()
+        ) {
+            hasPositionalLayerTransformationsInOffsetFromRoot = false
+            if (outerToInnerOffsetDirty) {
+                val it = outerToInnerOffset()
+                outerToInnerOffset = it
+                outerToInnerOffsetDirty = false
             }
+            if (outerToInnerOffset != IntOffset.Max) {
+                forEachChild { it.resetHasPositionalLayerTransformationsForSubtreeIfNeeded() }
+            }
+        }
     }
 
     private fun insertOrUpdateTransformedNodeSubhierarchy(layoutNode: LayoutNode) {
+        insertOrUpdateTransformedNode(layoutNode)
         layoutNode.forEachChild {
-            insertOrUpdateTransformedNode(it, false)
-            insertOrUpdateTransformedNodeSubhierarchy(it)
+            if (it.isPlaced) {
+                insertOrUpdateTransformedNodeSubhierarchy(it)
+            }
         }
     }
 
     private val cachedRect = MutableRect(0f, 0f, 0f, 0f)
 
-    private fun insertOrUpdateTransformedNode(layoutNode: LayoutNode, firstPlacement: Boolean) {
+    private fun insertOrUpdateTransformedNode(layoutNode: LayoutNode) {
+        layoutNode.hasPositionalLayerTransformationsInOffsetFromRoot = true
+        layoutNode.lastOffsetFromParent = IntOffset.Max
+
         val coord = layoutNode.outerCoordinator
         val delegate = layoutNode.measurePassDelegate
         val width = delegate.measuredWidth
@@ -331,6 +421,8 @@ internal class RectManager(
         val r = rect.right.toInt()
         val b = rect.bottom.toInt()
         val id = layoutNode.semanticsId
+        val firstPlacement = !layoutNode.addedToRectList
+        layoutNode.addedToRectList = true
         // NOTE: we call update here instead of move since the subhierarchy will not be moved by a
         // simple delta since we are dealing with rotation/skew/scale/etc.
         if (firstPlacement || !rects.update(id, l, t, r, b)) {
@@ -344,78 +436,68 @@ internal class RectManager(
                 parentId = parentId,
                 focusable = layoutNode.nodes.has(Nodes.FocusTarget),
                 gesturable = layoutNode.nodes.has(Nodes.PointerInput),
-            )
-        }
-        invalidate()
-    }
-
-    private fun insertOrUpdate(
-        layoutNode: LayoutNode,
-        firstPlacement: Boolean,
-        l: Int,
-        t: Int,
-        r: Int,
-        b: Int,
-    ) {
-        val id = layoutNode.semanticsId
-        if (firstPlacement || !rects.move(id, l, t, r, b)) {
-            val parentId = layoutNode.parent?.semanticsId ?: -1
-            rects.insert(
-                id,
-                l,
-                t,
-                r,
-                b,
-                parentId = parentId,
-                focusable = layoutNode.nodes.has(Nodes.FocusTarget),
-                gesturable = layoutNode.nodes.has(Nodes.PointerInput),
+                hasCallbacks = throttledCallbacks.rectChangedMap.containsKey(id),
             )
         }
         invalidate()
     }
 
     private fun NodeCoordinator.boundingRectInRoot(rect: MutableRect) {
-        // TODO: can we use offsetFromRoot here to speed up calculation?
         var coordinator: NodeCoordinator? = this
         while (coordinator != null) {
+            val layoutNode = coordinator.layoutNode
+            if (
+                coordinator === layoutNode.outerCoordinator &&
+                    !layoutNode.hasPositionalLayerTransformationsInOffsetFromRoot
+            ) {
+                val offset = getOffsetFromRectListFor(layoutNode)
+                if (offset != IntOffset.Max) {
+                    rect.translate(offset.toOffset())
+                    return
+                }
+            }
+
             val layer = coordinator.layer
-            rect.translate(coordinator.position.toOffset())
-            coordinator = coordinator.wrappedBy
             if (layer != null) {
                 val matrix = layer.underlyingMatrix
                 if (!matrix.isIdentity()) {
                     matrix.map(rect)
                 }
             }
+            rect.translate(coordinator.position.toOffset())
+            coordinator = coordinator.wrappedBy
         }
     }
 
+    private fun NodeCoordinator.hasPositionalLayerTransformations() =
+        layer?.underlyingMatrix?.isIdentity() == false
+
+    /**
+     * @return combined offset for all coordinators not including the outer one. it can also return
+     *   [IntOffset.Max], if there are layer transformations.
+     */
     private fun LayoutNode.outerToInnerOffset(): IntOffset {
         val terminator = outerCoordinator
-        var position = Offset.Zero
+        var position = IntOffset.Zero
         var coordinator: NodeCoordinator? = innerCoordinator
         while (coordinator != null) {
             if (coordinator === terminator) break
-            val layer = coordinator.layer
+            if (coordinator.hasPositionalLayerTransformations()) {
+                return IntOffset.Max
+            }
             position += coordinator.position
             coordinator = coordinator.wrappedBy
-            if (layer != null) {
-                val matrix = layer.underlyingMatrix
-                val analysis = matrix.analyzeComponents()
-                if (analysis.isIdentity) continue
-                if (analysis.hasNonTranslationComponents) {
-                    return IntOffset.Max
-                }
-                position = matrix.map(position)
-            }
         }
-        return position.round()
+        return position
     }
 
     fun remove(layoutNode: LayoutNode) {
-        rects.remove(layoutNode.semanticsId)
-        invalidate()
-        isFragmented = true
+        if (layoutNode.addedToRectList) {
+            rects.remove(layoutNode.semanticsId)
+            layoutNode.addedToRectList = false
+            invalidate()
+            isFragmented = true
+        }
     }
 
     /**
@@ -472,6 +554,120 @@ internal class RectManager(
         } else {
             return lastParentA.measurePassDelegate.zIndex < lastParentB.measurePassDelegate.zIndex
         }
+    }
+
+    /**
+     * Traverses the [RectList] to find the most suitable focusable node matching the given rect
+     * ([left], [top], [right], [bottom]).
+     *
+     * Returns the best candidate node that:
+     * - Is focusable
+     * - Is not currently focused
+     * - Is a descendant of the container ([containerId])
+     * - Intersects with the given rect ([left], [top], [right], [bottom])
+     * - Appears as high as possible in the node hierarchy
+     *
+     * Returns `null` if:
+     * - No matching focusable node is found, or
+     * - The given rect intersects a node that is already focused (regardless of its position in the
+     *   hierarchy)
+     *
+     * **Note:** If there are multiple focusable modifier nodes inside the given container node,
+     * only the first one in the chain will have an effect. Subsequent focusable modifiers will be
+     * ignored.
+     *
+     * @param containerId the container layout node semantic id that we want to restrict our search
+     *   to.
+     * @return The most relevant focusable node, or `null` if none is applicable.
+     */
+    internal fun findFocusableNodeFromRect(
+        left: Int,
+        top: Int,
+        right: Int,
+        bottom: Int,
+        containerId: Int,
+    ): FocusTargetModifierNode? {
+        val container = layoutNodes[containerId] ?: return null
+        val currentlyFocusedId =
+            container
+                .requireOwner()
+                .focusOwner
+                .activeFocusTargetNode
+                ?.requireSemanticsInfo()
+                ?.semanticsId ?: -1
+
+        var bestTarget: FocusTargetModifierNode? = null
+        var bestDepth = Int.MAX_VALUE
+
+        rects.forEachFocusableIntersection(left, top, right, bottom) { semanticsId ->
+            val node = layoutNodes[semanticsId]
+            if (node != null) {
+                // If we are still intersecting the currently focused node, do not change focus.
+                if (currentlyFocusedId == semanticsId && currentlyFocusedId != -1) return null
+                // We want to find the "highest" focusable node that intersects, which means the
+                // smallest depth. We also want to constrain the results to only those which are
+                // inside of the container.
+                if (node.depth < bestDepth && node.isDescendantOf(container)) {
+                    val target = node.nodes.head(Nodes.FocusTarget)
+                    if (target != null && target.intersects(left, top, right, bottom)) {
+                        bestTarget = target
+                        bestDepth = node.depth
+                    }
+                }
+            }
+        }
+
+        return bestTarget
+    }
+
+    /**
+     * The boundaries of a Modifier.Node may differ from those of its LayoutNode (e.g., due to
+     * modifiers like `offset()` or `padding()`).
+     *
+     * This method checks whether the actual global coordinates of the Modifier.Node intersect with
+     * the given rectangle.
+     *
+     * @return `true` if the Modifier.Node intersects the given coordinates, or if it shares
+     *   coordinates with its LayoutNode.
+     */
+    internal fun DelegatableNode.intersects(left: Int, top: Int, right: Int, bottom: Int): Boolean {
+        val coordinator = requireCoordinator(Nodes.FocusTarget)
+        val layout = coordinator.layoutNode
+
+        // The LayoutNode's intersection has already been checked earlier.
+        // If this ModifierNode uses the same coordinator, we can skip it.
+        if (coordinator == layout.outerCoordinator) {
+            return true
+        }
+
+        // Get the local position of the modifier node (relative to its LayoutNode).
+        val localTopLeft = layout.outerCoordinator.localPositionOf(coordinator)
+        // Convert the local position to global (relative to the root).
+        val topLeft = layout.outerCoordinator.localToRoot(localTopLeft)
+        val size = coordinator.size
+
+        val containerLeft: Int = topLeft.x.fastRoundToInt()
+        val containerRight: Int = containerLeft + size.width
+        val containerTop: Int = topLeft.y.fastRoundToInt()
+        val containerBottom: Int = containerTop + size.height
+
+        // Intersection.
+        return left < containerRight &&
+            right > containerLeft &&
+            top < containerBottom &&
+            bottom > containerTop
+    }
+
+    internal fun LayoutNode.isDescendantOf(container: LayoutNode): Boolean {
+        val ups = this.depth - container.depth
+        if (ups <= 0) return false // node has higher or equal depth than container
+        var node = this
+        repeat(ups) { node = node.parent ?: return false }
+        return node === container
+    }
+
+    fun unsetHasCallbacksFor(layoutNode: LayoutNode) {
+        rects.updateHasCallbacks(layoutNode.semanticsId, false)
     }
 }
 

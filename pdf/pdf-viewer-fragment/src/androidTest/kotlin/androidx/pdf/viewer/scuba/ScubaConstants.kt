@@ -35,7 +35,6 @@ internal object ScubaConstants {
         "fastScroller_withStyle_inPortrait"
     internal const val FILE_FAST_SCROLLER_WITH_STYLE_IN_LANDSCAPE =
         "fastScroller_withStyle_inLandscape"
-    internal const val FILE_PASSWORD_DIALOG_KEYBOARD_PORTRAIT = "password_dialog_keyboard_portrait"
-    internal const val FILE_PASSWORD_DIALOG_KEYBOARD_LANDSCAPE =
-        "password_dialog_keyboard_landscape"
+    internal const val FILE_PASSWORD_DIALOG_VISIBLE_PORTRAIT = "password_dialog_portrait"
+    internal const val FILE_PASSWORD_DIALOG_VISIBLE_LANDSCAPE = "password_dialog_landscape"
 }

@@ -43,6 +43,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -73,6 +74,7 @@ constructor(
     private val timeSource: TimeSource,
     override val cameraGraphId: CameraGraphId,
     private val shutdownListener: ShutdownListener,
+    concurrentSessionSequencers: ConcurrentSessionSequencers,
 ) : CameraController {
     private val lock = Any()
 
@@ -96,6 +98,11 @@ constructor(
     @GuardedBy("lock") private var lastCameraPrioritiesChangedTs: TimestampNs? = null
 
     @GuardedBy("lock") private var restartJob: Job? = null
+
+    private val concurrentSessionSequencer =
+        graphConfig.concurrentCameraGraphs?.let {
+            concurrentSessionSequencers.getSequencer(cameraGraphId, it)
+        }
 
     private val closedDeferred = CompletableDeferred<Unit>()
 
@@ -193,10 +200,12 @@ constructor(
             return
         }
         lastCameraError = null
+        val cameraId = graphConfig.camera
+        val allCameraIds = graphConfig.concurrentCameraGraphs?.cameraIds ?: setOf(cameraId)
         val camera =
             camera2DeviceManager.open(
-                cameraId = graphConfig.camera,
-                sharedCameraIds = graphConfig.sharedCameraIds,
+                cameraId = cameraId,
+                sharedCameraIds = (allCameraIds - cameraId).toList(),
                 graphListener = graphListener,
                 isPrewarm = false,
             ) { _ ->
@@ -219,6 +228,7 @@ constructor(
                 cameraSurfaceManager,
                 timeSource,
                 graphConfig.flags,
+                concurrentSessionSequencer,
                 threads,
                 scope,
             )
@@ -420,6 +430,7 @@ constructor(
 
                 shutdownListener.onControllerClosed(this)
                 closedDeferred.complete(Unit)
+                scope.cancel()
             }
         }
     }

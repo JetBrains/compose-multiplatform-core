@@ -32,18 +32,16 @@ import androidx.annotation.VisibleForTesting
 import androidx.collection.MutableObjectLongMap
 import androidx.ink.brush.BrushPaint
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
+import androidx.ink.brush.SelfOverlap
 import androidx.ink.brush.TextureBitmapStore
 import androidx.ink.brush.color.Color as ComposeColor
 import androidx.ink.brush.color.colorspace.ColorSpaces as ComposeColorSpaces
-import androidx.ink.geometry.AffineTransform
 import androidx.ink.geometry.BoxAccumulator
 import androidx.ink.geometry.Mesh as InkMesh
 import androidx.ink.geometry.MeshAttributeUnpackingParams
 import androidx.ink.geometry.MeshFormat
-import androidx.ink.geometry.populateMatrix
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
-import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import androidx.ink.strokes.InProgressStroke
 import androidx.ink.strokes.Stroke
 import androidx.ink.strokes.StrokeInput
@@ -64,7 +62,9 @@ internal class CanvasMeshRenderer(
     textureStore: TextureBitmapStore = TextureBitmapStore { null },
     /** Monotonic time with a non-epoch zero time. */
     private val getDurationTimeMillis: () -> Long = SystemClock::elapsedRealtime,
-) : CanvasStrokeRenderer {
+) : CanvasStrokeCoatRenderer {
+
+    private val meshSupport: CanvasMeshSupport = CanvasMeshSupport()
 
     /** Caches [Paint] objects so these can be reused between strokes with the same [BrushPaint]. */
     private val paintCache = BrushPaintCache(textureStore)
@@ -147,9 +147,6 @@ internal class CanvasMeshRenderer(
      */
     private val meshFormatToUnpackedShaderMetadata = ArrayList<Pair<MeshFormat, ShaderMetadata>>()
 
-    /** Scratch [Matrix] used for draw calls taking an [AffineTransform]. */
-    private val scratchMatrix = Matrix()
-
     /** Scratch space used as the argument to [Matrix.getValues]. */
     private val matrixValuesScratchArray = FloatArray(9)
 
@@ -164,78 +161,87 @@ internal class CanvasMeshRenderer(
     private val scratchFirstInput = StrokeInput()
     private val scratchLastInput = StrokeInput()
 
-    override fun draw(
+    private fun noDrawingNeeded(meshCount: Int, inputCount: Int) = meshCount == 0 || inputCount == 0
+
+    private fun canDraw(
         canvas: Canvas,
-        stroke: Stroke,
-        strokeToScreenTransform: AffineTransform,
-        textureAnimationProgress: Float,
-    ) {
-        strokeToScreenTransform.populateMatrix(scratchMatrix)
-        draw(canvas, stroke, scratchMatrix, textureAnimationProgress)
+        meshCount: Int,
+        inputCount: Int,
+        meshFormat: MeshFormat,
+        paint: BrushPaint,
+    ): Boolean {
+        if (noDrawingNeeded(meshCount = meshCount, inputCount = inputCount)) return true
+        if (!meshSupport.canDrawMesh(canvas)) return false
+        if (!paint.isCompatibleWithMeshFormat(meshFormat)) return false
+        if (!SUPPORTED_SELF_OVERLAP_MODES.contains(paint.selfOverlap)) return false
+        return true
     }
 
-    /**
-     * Draw a [Stroke] to the [Canvas].
-     *
-     * @param canvas The [Canvas] to draw to.
-     * @param stroke The [Stroke] to draw.
-     * @param strokeToScreenTransform The transform [Matrix] to convert from [Stroke] coordinates to
-     *   the coordinates of pixels on the screen used to display the stroke. It is important to pass
-     *   this here to be applied internally rather than applying it to [canvas] in calling code, to
-     *   ensure anti-aliasing has the information it needs to render properly. Also, any additional
-     *   transforms applied to [canvas] must only be translations. If you are rendering in a
-     *   [android.view.View] where it (or one of its ancestors) is rotated or scaled within its
-     *   parent, or if you are applying rotation or scaling transforms to [canvas] yourself, then
-     *   care must be taken so that these transformations are reflected in the
-     *   [strokeToScreenTransform]. Without this, anti-aliasing at the edge of strokes will not
-     *   render properly.
-     * @param textureAnimationProgress The animation progress value for the stroke's animated
-     *   textures, if any.
-     */
+    override fun canDraw(
+        canvas: Canvas,
+        stroke: Stroke,
+        coatIndex: Int,
+        paintPreferenceIndex: Int,
+    ): Boolean =
+        canDraw(
+            canvas = canvas,
+            meshCount = stroke.shape.renderGroupMeshes(coatIndex).size,
+            inputCount = stroke.inputs.size,
+            meshFormat = stroke.shape.renderGroupFormat(coatIndex),
+            paint =
+                stroke.brush.getPaint(
+                    coatIndex = coatIndex,
+                    paintPreferenceIndex = paintPreferenceIndex,
+                ),
+        )
+
     override fun draw(
         canvas: Canvas,
         stroke: Stroke,
+        coatIndex: Int,
+        paintPreferenceIndex: Int,
         strokeToScreenTransform: Matrix,
         textureAnimationProgress: Float,
     ) {
-        strokeToScreenTransform.assertIsAffine()
-        if (stroke.inputs.isEmpty()) return // nothing to draw
+        val meshes = stroke.shape.renderGroupMeshes(coatIndex)
+        val inputCount = stroke.inputs.size
+        if (noDrawingNeeded(meshCount = meshes.size, inputCount = inputCount)) return
+        val paint =
+            stroke.brush.getPaint(
+                coatIndex = coatIndex,
+                paintPreferenceIndex = paintPreferenceIndex,
+            )
         stroke.inputs.populate(0, scratchFirstInput)
-        stroke.inputs.populate(stroke.inputs.size - 1, scratchLastInput)
-        for (coatIndex in 0 until stroke.brush.family.coats.size) {
-            val meshes = stroke.shape.renderGroupMeshes(coatIndex)
-            if (meshes.isEmpty()) continue
-            val brushPaint = stroke.brush.family.coats[coatIndex].paint
-            val textureMapping = getTextureMapping(brushPaint)
-            val numTextureAnimationFrames = getNumTextureAnimationFrames(brushPaint)
-            val numTextureAnimationRows = getNumTextureAnimationRows(brushPaint)
-            val numTextureAnimationColumns = getNumTextureAnimationColumns(brushPaint)
-            val blendMode = finalBlendMode(brushPaint)
-            // A white paint color ensures that the paint color doesn't affect how the paint texture
-            // is blended with the mesh coloring.
-            val androidPaint =
-                paintCache.obtain(
-                    brushPaint,
-                    ComposeColor.White,
-                    stroke.brush.size,
-                    scratchFirstInput,
-                    scratchLastInput,
-                )
-            for (mesh in meshes) {
-                drawFromStroke(
-                    canvas,
-                    mesh,
-                    strokeToScreenTransform,
-                    stroke.brush.internalColor,
-                    textureMapping,
-                    textureAnimationProgress,
-                    numTextureAnimationFrames,
-                    numTextureAnimationRows,
-                    numTextureAnimationColumns,
-                    blendMode,
-                    androidPaint,
-                )
-            }
+        stroke.inputs.populate(inputCount - 1, scratchLastInput)
+        val textureMapping = paint.getTextureMapping()
+        val numTextureAnimationFrames = getNumTextureAnimationFrames(paint)
+        val numTextureAnimationRows = getNumTextureAnimationRows(paint)
+        val numTextureAnimationColumns = getNumTextureAnimationColumns(paint)
+        val blendMode = finalBlendMode(paint)
+        // A white paint color ensures that the paint color doesn't affect how the paint texture
+        // is blended with the mesh coloring.
+        val androidPaint =
+            paintCache.obtain(
+                paint,
+                ComposeColor.White,
+                stroke.brush.size,
+                scratchFirstInput,
+                scratchLastInput,
+            )
+        for (mesh in meshes) {
+            drawFromStroke(
+                canvas,
+                mesh,
+                strokeToScreenTransform,
+                paint.applyColorFunctions(stroke.brush.internalColor),
+                textureMapping,
+                textureAnimationProgress,
+                numTextureAnimationFrames,
+                numTextureAnimationRows,
+                numTextureAnimationColumns,
+                blendMode,
+                androidPaint,
+            )
         }
     }
 
@@ -340,86 +346,81 @@ internal class CanvasMeshRenderer(
         }
     }
 
-    override fun draw(
+    override fun canDraw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
-        strokeToScreenTransform: AffineTransform,
-        textureAnimationProgress: Float,
-    ) {
-        strokeToScreenTransform.populateMatrix(scratchMatrix)
-        draw(canvas, inProgressStroke, scratchMatrix, textureAnimationProgress)
-    }
+        coatIndex: Int,
+        paintPreferenceIndex: Int,
+    ): Boolean =
+        canDraw(
+            canvas = canvas,
+            meshCount = inProgressStroke.getMeshPartitionCount(coatIndex),
+            inputCount = inProgressStroke.getInputCount(),
+            meshFormat = inProgressStroke.getMeshFormat(coatIndex),
+            paint =
+                checkNotNull(inProgressStroke.brush)
+                    .getPaint(coatIndex = coatIndex, paintPreferenceIndex = paintPreferenceIndex),
+        )
 
     override fun draw(
         canvas: Canvas,
         inProgressStroke: InProgressStroke,
+        coatIndex: Int,
+        paintPreferenceIndex: Int,
         strokeToScreenTransform: Matrix,
         textureAnimationProgress: Float,
     ) {
+        val inputCount = inProgressStroke.getInputCount()
+        if (
+            noDrawingNeeded(
+                meshCount = inProgressStroke.getMeshPartitionCount(coatIndex),
+                inputCount = inputCount,
+            )
+        ) {
+            return
+        }
+        inProgressStroke.populateInput(scratchFirstInput, 0)
+        inProgressStroke.populateInput(scratchLastInput, inputCount - 1)
+        val meshFormat = inProgressStroke.getMeshFormat(coatIndex)
         val brush =
             checkNotNull(inProgressStroke.brush) {
                 "Attempting to draw an InProgressStroke that has not been started."
             }
-        strokeToScreenTransform.assertIsAffine()
-        val inputCount = inProgressStroke.getInputCount()
-        if (inputCount == 0) return // nothing to draw
-        inProgressStroke.populateInput(scratchFirstInput, 0)
-        inProgressStroke.populateInput(scratchLastInput, inputCount - 1)
+        val paint =
+            brush.getPaint(coatIndex = coatIndex, paintPreferenceIndex = paintPreferenceIndex)
         fillObjectToCanvasLinearComponent(
             strokeToScreenTransform,
             objectToCanvasLinearComponentScratch,
         )
-        val brushCoatCount = inProgressStroke.getBrushCoatCount()
-        for (coatIndex in 0 until brushCoatCount) {
-            val brushPaint = brush.family.coats[coatIndex].paint
-            val textureMapping = getTextureMapping(brushPaint)
-            val numTextureAnimationFrames = getNumTextureAnimationFrames(brushPaint)
-            val numTextureAnimationRows = getNumTextureAnimationRows(brushPaint)
-            val numTextureAnimationColumns = getNumTextureAnimationColumns(brushPaint)
-            val blendMode = finalBlendMode(brushPaint)
-            val androidPaint =
-                paintCache.obtain(
-                    brushPaint,
-                    ComposeColor.White,
-                    brush.size,
-                    scratchFirstInput,
-                    scratchLastInput,
-                )
-            val inProgressMeshData = obtainInProgressMeshData(inProgressStroke, coatIndex)
-            for (meshIndex in 0 until inProgressMeshData.androidMeshes.size) {
-                val androidMesh = inProgressMeshData.androidMeshes[meshIndex] ?: continue
-                updateAndroidMesh(
-                    androidMesh,
-                    inProgressStroke.getMeshFormat(coatIndex, meshIndex),
-                    objectToCanvasLinearComponentScratch,
-                    brush.internalColor,
-                    attributeUnpackingParams = null,
-                    textureMapping,
-                    textureAnimationProgress,
-                    numTextureAnimationFrames,
-                    numTextureAnimationRows,
-                    numTextureAnimationColumns,
-                )
-                canvas.drawMesh(androidMesh, blendMode, androidPaint)
-            }
-        }
-    }
-
-    /** Assert that the given [Matrix] is affine. */
-    private fun Matrix.assertIsAffine() {
-        if (isAffine) return
-        // Don't throw yet - there seem to be cases where Matrix.isAffine returns false, but the
-        // Matrix
-        // is actually affine when examined directly. The above check is fast for the normal case.
-        // See b/418261442 for more context.
-        val vals = matrixValuesScratchArray
-        getValues(vals)
-        require(
-            vals[Matrix.MPERSP_0] == 0F &&
-                vals[Matrix.MPERSP_1] == 0F &&
-                vals[Matrix.MPERSP_2] == 1F
-        ) {
-            "The matrix must be affine."
+        val textureMapping = paint.getTextureMapping()
+        val numTextureAnimationFrames = getNumTextureAnimationFrames(paint)
+        val numTextureAnimationRows = getNumTextureAnimationRows(paint)
+        val numTextureAnimationColumns = getNumTextureAnimationColumns(paint)
+        val blendMode = finalBlendMode(paint)
+        val androidPaint =
+            paintCache.obtain(
+                paint,
+                ComposeColor.White,
+                brush.size,
+                scratchFirstInput,
+                scratchLastInput,
+            )
+        val inProgressMeshData = obtainInProgressMeshData(inProgressStroke, coatIndex)
+        for (meshIndex in 0 until inProgressMeshData.androidMeshes.size) {
+            val androidMesh = inProgressMeshData.androidMeshes[meshIndex] ?: continue
+            updateAndroidMesh(
+                androidMesh,
+                meshFormat,
+                objectToCanvasLinearComponentScratch,
+                paint.applyColorFunctions(brush.internalColor),
+                attributeUnpackingParams = null,
+                textureMapping,
+                textureAnimationProgress,
+                numTextureAnimationFrames,
+                numTextureAnimationRows,
+                numTextureAnimationColumns,
+            )
+            canvas.drawMesh(androidMesh, blendMode, androidPaint)
         }
     }
 
@@ -580,7 +581,6 @@ internal class CanvasMeshRenderer(
         objectToCanvasTransform: Matrix,
         @Size(min = 4) objectToCanvasLinearComponent: FloatArray,
     ) {
-        objectToCanvasTransform.assertIsAffine()
         objectToCanvasTransform.getValues(matrixValuesScratchArray)
         objectToCanvasLinearComponent.let {
             it[0] = matrixValuesScratchArray[Matrix.MSCALE_X]
@@ -642,10 +642,7 @@ internal class CanvasMeshRenderer(
         val bounds = BoxAccumulator().apply { inProgressStroke.populateMeshBounds(coatIndex, this) }
         if (bounds.isEmpty()) return null // Empty mesh; nothing to render.
         return AndroidMesh(
-            obtainShaderMetadata(
-                    inProgressStroke.getMeshFormat(coatIndex, meshIndex),
-                    isPacked = false,
-                )
+            obtainShaderMetadata(inProgressStroke.getMeshFormat(coatIndex), isPacked = false)
                 .meshSpecification,
             AndroidMesh.TRIANGLES,
             inProgressStroke.getRawVertexBuffer(coatIndex, meshIndex),
@@ -672,21 +669,6 @@ internal class CanvasMeshRenderer(
                 // Populate the cache before returning the newly-created ShaderMetadata.
                 meshFromatToShaderMetaData.add(Pair(meshFormat, it))
             }
-    }
-
-    /**
-     * Returns true when the [stroke]'s [inputs] are empty, or [MeshFormat] is compatible with the
-     * native Skia `MeshSpecificationData`.
-     */
-    internal fun canDraw(stroke: Stroke): Boolean {
-        for (groupIndex in 0 until stroke.shape.getRenderGroupCount()) {
-            if (stroke.shape.renderGroupMeshes(groupIndex).isEmpty()) continue
-            val format = stroke.shape.renderGroupFormat(groupIndex)
-            if (!nativeIsMeshFormatRenderable(format.nativePointer, isPacked = true)) {
-                return false
-            }
-        }
-        return true
     }
 
     private fun createShaderMetadata(meshFormat: MeshFormat, isPacked: Boolean): ShaderMetadata {
@@ -816,21 +798,6 @@ internal class CanvasMeshRenderer(
         fragmentShaderOut: Array<String>,
     )
 
-    /**
-     * Constructs native [MeshFormat] from [meshFormatNativePointer] and checks whether it is
-     * compatible with the native Skia `MeshSpecificationData`.
-     *
-     * @param isPacked checks whether [meshFormat] describes a packed format (as in native
-     *   ink::Mesh) or an unpacked format (as in native ink::MutableMesh).
-     *
-     * [fillSkiaMeshSpecData] throws IllegalArgumentException when this method returns false.
-     */
-    @UsedByNative
-    private external fun nativeIsMeshFormatRenderable(
-        meshFormatNativePointer: Long,
-        isPacked: Boolean,
-    ): Boolean
-
     private fun saveRecentlyDrawnAndroidMesh(androidMesh: AndroidMesh, currentTimeMillis: Long) {
         recentlyDrawnMeshesToLastDrawTimeMillis[androidMesh] = currentTimeMillis
     }
@@ -946,6 +913,8 @@ internal class CanvasMeshRenderer(
         init {
             NativeLoader.load()
         }
+
+        private val SUPPORTED_SELF_OVERLAP_MODES = setOf(SelfOverlap.ANY, SelfOverlap.ACCUMULATE)
 
         /**
          * On Android U, how long to hold a reference to an [android.graphics.Mesh] after it has
@@ -1131,15 +1100,6 @@ internal class CanvasMeshRenderer(
         private fun finalBlendMode(brushPaint: BrushPaint): BlendMode =
             brushPaint.textureLayers.lastOrNull()?.let { it.blendMode.toBlendMode() }
                 ?: BlendMode.MODULATE
-
-        /**
-         * Returns the texture mapping mode used by the [BrushPaint]. (This is actually specified
-         * separately in each texture layer, but currently, we require all texture layers in the
-         * same paint to use the same texture mapping mode.)
-         */
-        private fun getTextureMapping(brushPaint: BrushPaint): BrushPaint.TextureMapping =
-            brushPaint.textureLayers.firstOrNull()?.let { it.mapping }
-                ?: BrushPaint.TextureMapping.TILING
 
         /**
          * Returns the number of texture animation frames in the [BrushPaint]. (This is actually

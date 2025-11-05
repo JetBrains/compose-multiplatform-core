@@ -22,16 +22,16 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     api(libs.hiltAndroid)
 }
 
@@ -41,6 +41,7 @@ androidx {
     mavenVersion = LibraryVersions.HILT
     inceptionYear = "2025"
     description = "ViewModel Hilt Extension"
+    kotlinTarget = KotlinTarget.KOTLIN_2_1
 }
 
 android {

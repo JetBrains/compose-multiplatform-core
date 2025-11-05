@@ -133,7 +133,6 @@ public class OutputsTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun dirUsableByAppAndShell_writeAppReadShell() {
         val dir = Outputs.dirUsableByAppAndShell
         val file = File.createTempFile("testFile", null, dir)
@@ -150,7 +149,6 @@ public class OutputsTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun dirUsableByAppAndShell_writeShellReadShell() {
         val dir = Outputs.dirUsableByAppAndShell
 
@@ -170,7 +168,6 @@ public class OutputsTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21)
     public fun dirUsableByAppAndShell_writeShellReadApp() {
         val dir = Outputs.dirUsableByAppAndShell
 

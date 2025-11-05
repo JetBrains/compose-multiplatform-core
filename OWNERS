@@ -11,16 +11,14 @@ jellefresen@google.com
 juliamcclellan@google.com
 lpf@google.com
 mount@google.com
-natnaelbelay@google.com
 omarismail@google.com
 radhanakade@google.com
 seanmcq@google.com
-tiem@google.com
 sindhujasubr@google.com
 
 # docs
 per-file docs-tip-of-tree/build.gradle = set noparent
-per-file docs-tip-of-tree/build.gradle = asfalcone@google.com, juliamcclellan@google.com, aurimas@google.com, alanv@google.com, natnaelbelay@google.com, tiem@google.com, omarismail@google.com
+per-file docs-tip-of-tree/build.gradle = asfalcone@google.com, juliamcclellan@google.com, aurimas@google.com, alanv@google.com, omarismail@google.com
 
 # settings.gradle
 per-file *settings.gradle = set noparent
@@ -35,6 +33,8 @@ per-file *libraryversions.toml = pbirk@google.com, elabadysayed@google.com
 per-file *docs-public/build.gradle = juanrdz@google.com, diegovela@google.com
 # Compose *
 per-file *libraryversions.toml = juanrdz@google.com
+# Credentials *
+per-file *libraryversions.toml = helenqin@google.com, leecam@google.com, reemabajwa@google.com
 # Glance
 per-file *libraryversions.toml = zakcohen@google.com
 # AppSearch
@@ -47,6 +47,8 @@ per-file *libraryversions.toml = rafiahmad@google.com
 per-file *libraryversions.toml = aquilescanta@google.com, asapperstein@google.com, shenqiuz@google.com
 # PDF *
 per-file *libraryversions.toml = anuragadarsh@google.com, bhavyajain@google.com, rahulkanojia@google.com
+# Camera *
+per-file *libraryversions.toml = wujulie@google.com, scottnien@google.com, trevormcguire@google.com
 
 # Copybara can self-approve CLs within synced docs.
 per-file docs/** = copybara-worker-blackhole@google.com

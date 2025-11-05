@@ -76,7 +76,6 @@ public class FastScroller(
      * `renderer`.
      *
      * @param canvas The canvas on which to draw the scroller.
-     * @param scrollX The raw horizontal scroll position in pixels.
      * @param scrollY The raw vertical scroll position in pixels.
      * @param viewWidth The width of the view in pixels.
      * @param viewHeight The height of the view in pixels.
@@ -85,7 +84,6 @@ public class FastScroller(
      */
     public fun drawScroller(
         canvas: Canvas,
-        scrollX: Int,
         scrollY: Int,
         viewWidth: Int,
         viewHeight: Int,
@@ -103,12 +101,7 @@ public class FastScroller(
             lastScrollY = scrollY
         }
 
-        fastScrollDrawer.draw(
-            canvas,
-            xOffset = scrollX + viewWidth,
-            yOffset = scrollY + fastScrollY,
-            visiblePages,
-        )
+        fastScrollDrawer.draw(canvas, xOffset = viewWidth, yOffset = fastScrollY, visiblePages)
     }
 
     /**

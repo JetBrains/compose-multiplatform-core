@@ -17,13 +17,13 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
     id("AndroidXComposePlugin")
 }
 
 android {
     namespace = "androidx.camera.integration.avsync"
-    compileSdk = 35
+    compileSdk = 36
     defaultConfig {
         applicationId = "androidx.camera.integration.avsync"
     }
@@ -70,8 +70,8 @@ dependencies {
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
     testImplementation(libs.truth)
-    androidTestImplementation(project(":concurrent:concurrent-futures"))
-    androidTestImplementation(project(":concurrent:concurrent-futures-ktx"))
+    androidTestImplementation("androidx.concurrent:concurrent-futures:1.1.0")
+    androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     androidTestImplementation("androidx.lifecycle:lifecycle-viewmodel:2.6.1")
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.testExtJunit)

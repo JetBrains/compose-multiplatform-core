@@ -1,6 +1,5 @@
 // This file applies configuration common to projects in buildSrc
 
-
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -32,6 +31,10 @@ project.tasks.withType(Jar).configureEach { task ->
     task.preserveFileTimestamps = false
 }
 
+tasks.withType(ValidatePlugins).configureEach {
+    it.enableStricterValidation = true
+}
+
 project.repos.addMavenRepositories(project.repositories)
 tasks.withType(KotlinCompile).configureEach { task ->
     task.compilerOptions {
@@ -43,7 +46,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
         )
         // TODO(b/410631668): Remove when we migrate away from using internal API in binary compatibility validator
         if (task.path == ":imports:binary-compatibility-validator:compileKotlin") {
-            friendPaths.from(configurations.friends.incoming.artifactView {}.files)
+            friendPaths.from(configurations.friends.incoming.files)
         }
         languageVersion.set(KotlinVersion.KOTLIN_2_0)
         apiVersion.set(KotlinVersion.KOTLIN_2_0)

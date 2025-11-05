@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.semantics;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -29,13 +30,14 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /** Implementation of the most common semantics used in typical Android apps. */
-public class CoreSemantics extends Operation implements AccessibilityModifier {
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public final class CoreSemantics extends Operation implements AccessibilityModifier {
     public int mContentDescriptionId = 0;
     public @Nullable Role mRole = null;
     public int mTextId = 0;
     public int mStateDescriptionId = 0;
     public boolean mEnabled = true;
-    public Mode mMode = Mode.SET;
+    public @NonNull Mode mMode = Mode.SET;
     public boolean mClickable = false;
 
     @Override
@@ -50,12 +52,44 @@ public class CoreSemantics extends Operation implements AccessibilityModifier {
     }
 
     @Override
-    public Mode getMode() {
+    public @NonNull Mode getMode() {
         return mMode;
+    }
+
+    /**
+     * Applies the semantics to a WireBuffer.
+     * @param buffer WireBuffer to apply the semantics to
+     * @param contentDescriptionId content description id
+     * @param role role
+     * @param textId text id
+     * @param stateDescriptionId state description id
+     * @param mode mode
+     * @param enabled enabled
+     * @param clickable clickable
+     */
+    public static void apply(
+            @NonNull WireBuffer buffer,
+            int contentDescriptionId,
+            byte role,
+            int textId,
+            int stateDescriptionId,
+            int mode,
+            boolean enabled,
+            boolean clickable) {
+
+        buffer.start(Operations.ACCESSIBILITY_SEMANTICS);
+        buffer.writeInt(contentDescriptionId);
+        buffer.writeByte(role);
+        buffer.writeInt(textId);
+        buffer.writeInt(stateDescriptionId);
+        buffer.writeByte(mode);
+        buffer.writeBoolean(enabled);
+        buffer.writeBoolean(clickable);
     }
 
     @Override
     public void write(@NonNull WireBuffer buffer) {
+        // TODO this should write its start
         buffer.writeInt(mContentDescriptionId);
         buffer.writeByte((mRole != null) ? mRole.ordinal() : -1);
         buffer.writeInt(mTextId);
@@ -136,7 +170,7 @@ public class CoreSemantics extends Operation implements AccessibilityModifier {
      * @param operations The list of operations to which the read CoreSemantics object will be
      *     added.
      */
-    public static void read(WireBuffer buffer, List<Operation> operations) {
+    public static void read(@NonNull WireBuffer buffer, @NonNull List<Operation> operations) {
         CoreSemantics semantics = new CoreSemantics();
 
         semantics.read(buffer);
@@ -145,7 +179,7 @@ public class CoreSemantics extends Operation implements AccessibilityModifier {
     }
 
     @Override
-    public Integer getContentDescriptionId() {
+    public @NonNull Integer getContentDescriptionId() {
         return mContentDescriptionId != 0 ? mContentDescriptionId : null;
     }
 

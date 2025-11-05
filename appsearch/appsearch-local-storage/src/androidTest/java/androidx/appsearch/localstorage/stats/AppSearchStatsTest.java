@@ -19,7 +19,10 @@ package androidx.appsearch.localstorage.stats;
 import static com.google.common.truth.Truth.assertThat;
 
 import androidx.appsearch.app.AppSearchResult;
+import androidx.appsearch.stats.BaseStats;
 import androidx.appsearch.stats.SchemaMigrationStats;
+
+import com.google.android.icing.proto.PersistType;
 
 import org.junit.Test;
 
@@ -34,8 +37,23 @@ public class AppSearchStatsTest {
         final int estimatedBinderLatencyMillis = 1;
         final int numOperationsSucceeded = 2;
         final int numOperationsFailed = 3;
+        final int javaLockAcquisitionLatencyMillis = 4;
+        final @CallStats.CallType int lastBlockingOperation = BaseStats.CALL_TYPE_REMOVE_BLOB;
+        final int lastBlockingOperationLatencyMillis = 6;
+        final int getVmLatency1 = 7;
+        final int getVmLatency2 = 8;
+        final int unblockedAppSearchLatencyMillis = 9;
+        final int callReceivedTimestampMillis = 10;
+        final int lastCallTypeHoldExecutor = 11;
+        final int executorAcquisitionLatencyMillis = 12;
+        final int onExecutorLatencyMillis = 13;
+        final int getUserInstanceLatencyMillis = 14;
+        final int pvmBinderLatencyMillis = 15;
+        final int requestPayloadSize = 16;
+        final int responsePayloadSize = 17;
+
         final @CallStats.CallType int callType =
-                CallStats.CALL_TYPE_PUT_DOCUMENTS;
+                BaseStats.CALL_TYPE_PUT_DOCUMENTS;
 
         final CallStats cStats = new CallStats.Builder()
                 .setPackageName(TEST_PACKAGE_NAME)
@@ -47,6 +65,20 @@ public class AppSearchStatsTest {
                 .setNumOperationsSucceeded(numOperationsSucceeded)
                 .setNumOperationsFailed(numOperationsFailed)
                 .setLaunchVMEnabled(true)
+                .setJavaLockAcquisitionLatencyMillis(javaLockAcquisitionLatencyMillis)
+                .setLastBlockingOperation(lastBlockingOperation)
+                .setLastBlockingOperationLatencyMillis(lastBlockingOperationLatencyMillis)
+                .addGetVmLatencyMillis(getVmLatency1)
+                .addGetVmLatencyMillis(getVmLatency2)
+                .setUnblockedAppSearchLatencyMillis(unblockedAppSearchLatencyMillis)
+                .setCallReceivedTimestampMillis(callReceivedTimestampMillis)
+                .setLastCallTypeHoldExecutor(lastCallTypeHoldExecutor)
+                .setExecutorAcquisitionLatencyMillis(executorAcquisitionLatencyMillis)
+                .setOnExecutorLatencyMillis(onExecutorLatencyMillis)
+                .setGetUserInstanceLatency(getUserInstanceLatencyMillis)
+                .setPvmBinderLatency(pvmBinderLatencyMillis)
+                .setRequestPayloadSize(requestPayloadSize)
+                .setResponsePayloadSize(responsePayloadSize)
                 .build();
 
         assertThat(cStats.getPackageName()).isEqualTo(TEST_PACKAGE_NAME);
@@ -60,6 +92,59 @@ public class AppSearchStatsTest {
         assertThat(cStats.getNumOperationsSucceeded()).isEqualTo(numOperationsSucceeded);
         assertThat(cStats.getNumOperationsFailed()).isEqualTo(numOperationsFailed);
         assertThat(cStats.getEnabledFeatures()).isEqualTo(1);
+        assertThat(cStats.getJavaLockAcquisitionLatencyMillis())
+                .isEqualTo(javaLockAcquisitionLatencyMillis);
+        assertThat(cStats.getLastBlockingOperation()).isEqualTo(lastBlockingOperation);
+        assertThat(cStats.getLastBlockingOperationLatencyMillis())
+                .isEqualTo(lastBlockingOperationLatencyMillis);
+        assertThat(cStats.getGetVmLatencyMillis())
+                .isEqualTo(getVmLatency1 + getVmLatency2);
+        assertThat(cStats.getUnblockedAppSearchLatencyMillis())
+                .isEqualTo(unblockedAppSearchLatencyMillis);
+        assertThat(cStats.getNumIcingCalls())
+                .isEqualTo(2);
+        assertThat(cStats.getCallReceivedTimestampMillis())
+                .isEqualTo(callReceivedTimestampMillis);
+        assertThat(cStats.getLastCallTypeHoldExecutor())
+                .isEqualTo(lastCallTypeHoldExecutor);
+        assertThat(cStats.getExecutorAcquisitionLatencyMillis())
+                .isEqualTo(executorAcquisitionLatencyMillis);
+        assertThat(cStats.getOnExecutorLatencyMillis())
+                .isEqualTo(onExecutorLatencyMillis);
+        assertThat(cStats.getGetUserInstanceLatencyMillis())
+                .isEqualTo(getUserInstanceLatencyMillis);
+        assertThat(cStats.getPvmBinderLatencyMillis())
+                .isEqualTo(pvmBinderLatencyMillis);
+        assertThat(cStats.getRequestPayloadSize())
+                .isEqualTo(requestPayloadSize);
+        assertThat(cStats.getResponsePayloadSize())
+                .isEqualTo(responsePayloadSize);
+        String expectedString = "CallStats {\n"
+                + "  packageName=com.google.test,\n"
+                + "  database=testDataBase,\n"
+                + "  statusCode=2,\n"
+                + "  totalLatencyMillis=20,\n"
+                + "  callType=3,\n"
+                + "  estimatedBinderLatencyMillis=1,\n"
+                + "  numOperationsSucceeded=2,\n"
+                + "  numOperationsFailed=3,\n"
+                + "  callReceivedTimestampMillis=10,\n"
+                + "  lastCallTypeHoldExecutor=11,\n"
+                + "  executorAcquisitionLatencyMillis=12,\n"
+                + "  onExecutorLatencyMillis=13,\n"
+                + "  getUserInstanceLatencyMillis=14,\n"
+                + "  pvmBinderLatencyMillis=15,\n"
+                + "  requestPayloadSize=16,\n"
+                + "  responsePayloadSize=17,\n"
+                + "  enabledFeatures=1,\n"
+                + "  javaLockAcquisitionLatencyMillis=4,\n"
+                + "  lastBlockingOperation=36,\n"
+                + "  lastBlockingOperationLatencyMillis=6,\n"
+                + "  getVmLatencyMillis=15,\n"
+                + "  unblockedAppSearchLatencyMillis=9,\n"
+                + "  numIcingCalls=2\n"
+                + "}";
+        assertThat(cStats.toString()).isEqualTo(expectedString);
     }
 
     @Test
@@ -83,7 +168,7 @@ public class AppSearchStatsTest {
     @Test
     public void testAppSearchCallStats_nullValues() {
         final @CallStats.CallType int callType =
-                CallStats.CALL_TYPE_PUT_DOCUMENTS;
+                BaseStats.CALL_TYPE_PUT_DOCUMENTS;
 
         final CallStats.Builder cStatsBuilder = new CallStats.Builder()
                 .setCallType(callType);
@@ -113,6 +198,10 @@ public class AppSearchStatsTest {
         final int enabledFeatures = 1;
         int metadataTermIndexLatencyMillis = 13;
         int embeddingIndexLatencyMillis = 14;
+        final int javaLockAcquisitionLatencyMillis = 15;
+        final int lastBlockingOperation = 16;
+        final int lastBlockingOperationLatencyMillis = 17;
+        final int getVmLatencyMillis = 18;
         final PutDocumentStats.Builder pStatsBuilder =
                 new PutDocumentStats.Builder(TEST_PACKAGE_NAME, TEST_DATA_BASE)
                         .setStatusCode(TEST_STATUS_CODE)
@@ -132,7 +221,11 @@ public class AppSearchStatsTest {
                         .setNativeLiteIndexSortLatencyMillis(nativeLiteIndexSortLatencyMillis)
                         .setLaunchVMEnabled(true)
                         .setMetadataTermIndexLatencyMillis(metadataTermIndexLatencyMillis)
-                        .setEmbeddingIndexLatencyMillis(embeddingIndexLatencyMillis);
+                        .setEmbeddingIndexLatencyMillis(embeddingIndexLatencyMillis)
+                        .setJavaLockAcquisitionLatencyMillis(javaLockAcquisitionLatencyMillis)
+                        .setLastBlockingOperation(lastBlockingOperation)
+                        .setLastBlockingOperationLatencyMillis(lastBlockingOperationLatencyMillis)
+                        .addGetVmLatencyMillis(getVmLatencyMillis);
 
         final PutDocumentStats pStats = pStatsBuilder.build();
 
@@ -167,6 +260,40 @@ public class AppSearchStatsTest {
                 metadataTermIndexLatencyMillis);
         assertThat(pStats.getEmbeddingIndexLatencyMillis()).isEqualTo(
                 embeddingIndexLatencyMillis);
+        assertThat(pStats.getJavaLockAcquisitionLatencyMillis())
+                .isEqualTo(javaLockAcquisitionLatencyMillis);
+        assertThat(pStats.getLastBlockingOperation()).isEqualTo(lastBlockingOperation);
+        assertThat(pStats.getLastBlockingOperationLatencyMillis())
+                .isEqualTo(lastBlockingOperationLatencyMillis);
+        assertThat(pStats.getGetVmLatencyMillis()).isEqualTo(getVmLatencyMillis);
+        String expectedString = "PutDocumentStats {\n"
+                + "  packageName=com.google.test,\n"
+                + "  database=testDataBase,\n"
+                + "  statusCode=2,\n"
+                + "  totalLatencyMillis=20,\n"
+                + "  generateDocumentProtoLatencyMillis=1,\n"
+                + "  rewriteDocumentTypesLatencyMillis=2,\n"
+                + "  nativeLatencyMillis=3,\n"
+                + "  nativeDocumentStoreLatencyMillis=4,\n"
+                + "  nativeIndexLatencyMillis=5,\n"
+                + "  nativeIndexMergeLatencyMillis=6,\n"
+                + "  nativeDocumentSizeBytes=7,\n"
+                + "  nativeNumTokensIndexed=8,\n"
+                + "  nativeTermIndexLatencyMillis=9,\n"
+                + "  nativeIntegerIndexLatencyMillis=10,\n"
+                + "  nativeQualifiedIdJoinIndexLatencyMillis=11,\n"
+                + "  nativeLiteIndexSortLatencyMillis=12,\n"
+                + "  metadataTermIndexLatencyMillis=13,\n"
+                + "  embeddingIndexLatencyMillis=14,\n"
+                + "  enabledFeatures=1,\n"
+                + "  javaLockAcquisitionLatencyMillis=15,\n"
+                + "  lastBlockingOperation=16,\n"
+                + "  lastBlockingOperationLatencyMillis=17,\n"
+                + "  getVmLatencyMillis=18,\n"
+                + "  unblockedAppSearchLatencyMillis=0,\n"
+                + "  numIcingCalls=1\n"
+                + "}";
+        assertThat(pStats.toString()).isEqualTo(expectedString);
     }
 
     @Test
@@ -191,6 +318,10 @@ public class AppSearchStatsTest {
         int embeddingIndexRestorationCause = InitializeStats.RECOVERY_CAUSE_DATA_LOSS;
         int initializeIcuDataStatusCode = 11;
         int numFailedReindexedDocuments = 12;
+        final int javaLockAcquisitionLatencyMillis = 13;
+        final int lastBlockingOperation = 14;
+        final int lastBlockingOperationLatencyMillis = 15;
+        int getVmLatencyMillis = 16;
 
         final InitializeStats.Builder iStatsBuilder = new InitializeStats.Builder()
                 .setStatusCode(TEST_STATUS_CODE)
@@ -217,7 +348,11 @@ public class AppSearchStatsTest {
                 .setNativeQualifiedIdJoinIndexRestorationCause(qualifiedIdJoinIndexRestorationCause)
                 .setNativeEmbeddingIndexRestorationCause(embeddingIndexRestorationCause)
                 .setNativeInitializeIcuDataStatusCode(initializeIcuDataStatusCode)
-                .setNativeNumFailedReindexedDocuments(numFailedReindexedDocuments);
+                .setNativeNumFailedReindexedDocuments(numFailedReindexedDocuments)
+                .setJavaLockAcquisitionLatencyMillis(javaLockAcquisitionLatencyMillis)
+                .setLastBlockingOperation(lastBlockingOperation)
+                .setLastBlockingOperationLatencyMillis(lastBlockingOperationLatencyMillis)
+                .addGetVmLatencyMillis(getVmLatencyMillis);
         final InitializeStats iStats = iStatsBuilder.build();
 
         assertThat(iStats.getStatusCode()).isEqualTo(TEST_STATUS_CODE);
@@ -258,6 +393,45 @@ public class AppSearchStatsTest {
                 .isEqualTo(initializeIcuDataStatusCode);
         assertThat(iStats.getNativeNumFailedReindexedDocuments())
                 .isEqualTo(numFailedReindexedDocuments);
+        assertThat(iStats.getJavaLockAcquisitionLatencyMillis())
+                .isEqualTo(javaLockAcquisitionLatencyMillis);
+        assertThat(iStats.getLastBlockingOperation()).isEqualTo(lastBlockingOperation);
+        assertThat(iStats.getLastBlockingOperationLatencyMillis())
+                .isEqualTo(lastBlockingOperationLatencyMillis);
+        assertThat(iStats.getGetVmLatencyMillis()).isEqualTo(getVmLatencyMillis);
+        String expectedString = "InitializeStats {\n"
+                + "  statusCode=2,\n"
+                + "  totalLatencyMillis=20,\n"
+                + "  hasDeSync=true,\n"
+                + "  prepareSchemaAndNamespacesLatencyMillis=1,\n"
+                + "  prepareVisibilityStoreLatencyMillis=2,\n"
+                + "  nativeLatencyMillis=3,\n"
+                + "  nativeDocumentStoreRecoveryCause=7,\n"
+                + "  nativeIndexRestorationCause=8,\n"
+                + "  nativeSchemaStoreRecoveryCause=4,\n"
+                + "  nativeDocumentStoreRecoveryLatencyMillis=4,\n"
+                + "  nativeIndexRestorationLatencyMillis=5,\n"
+                + "  nativeSchemaStoreRecoveryLatencyMillis=6,\n"
+                + "  nativeDocumentStoreDataStatus=7,\n"
+                + "  nativeNumDocuments=8,\n"
+                + "  nativeNumSchemaTypes=9,\n"
+                + "  nativeNumPreviousInitFailures=10,\n"
+                + "  nativeIntegerIndexRestorationCause=1,\n"
+                + "  nativeQualifiedIdJoinIndexRestorationCause=2,\n"
+                + "  nativeEmbeddingIndexRestorationCause=1,\n"
+                + "  nativeInitializeIcuDataStatusCode=11,\n"
+                + "  nativeNumFailedReindexedDocuments=12,\n"
+                + "  hasReset=true,\n"
+                + "  resetStatusCode=7,\n"
+                + "  enabledFeatures=1,\n"
+                + "  javaLockAcquisitionLatencyMillis=13,\n"
+                + "  lastBlockingOperation=14,\n"
+                + "  lastBlockingOperationLatencyMillis=15,\n"
+                + "  getVmLatencyMillis=16,\n"
+                + "  unblockedAppSearchLatencyMillis=0,\n"
+                + "  numIcingCalls=1\n"
+                + "}";
+        assertThat(iStats.toString()).isEqualTo(expectedString);
     }
 
     @Test
@@ -277,6 +451,10 @@ public class AppSearchStatsTest {
         int queryProcessorLexerExtractTokenLatencyMillis = 12;
         int queryProcessorParserConsumeQueryLatencyMillis = 13;
         int queryProcessorQueryVisitorLatencyMillis = 14;
+        int numUnquantizedEmbeddingsScored = 15;
+        int numQuantizedEmbeddingsScored = 16;
+        int numEmbeddingShardsRead = 17;
+        long numEmbeddingBytesRead = 18L;
 
         final SearchStats.Builder sStatsBuilder = new SearchStats.Builder()
                 .setNativeQueryLength(nativeQueryLength)
@@ -298,7 +476,11 @@ public class AppSearchStatsTest {
                 .setNativeQueryProcessorParserConsumeQueryLatencyMillis(
                         queryProcessorParserConsumeQueryLatencyMillis)
                 .setNativeQueryProcessorQueryVisitorLatencyMillis(
-                        queryProcessorQueryVisitorLatencyMillis);
+                        queryProcessorQueryVisitorLatencyMillis)
+                .setNativeNumUnquantizedEmbeddingsScored(numUnquantizedEmbeddingsScored)
+                .setNativeNumQuantizedEmbeddingsScored(numQuantizedEmbeddingsScored)
+                .setNativeNumEmbeddingShardsRead(numEmbeddingShardsRead)
+                .setNativeNumEmbeddingBytesRead(numEmbeddingBytesRead);
         final SearchStats sStats = sStatsBuilder.build();
 
         assertThat(sStats.getNativeQueryLength()).isEqualTo(nativeQueryLength);
@@ -322,16 +504,33 @@ public class AppSearchStatsTest {
                 .isEqualTo(queryProcessorParserConsumeQueryLatencyMillis);
         assertThat(sStats.getNativeQueryProcessorQueryVisitorLatencyMillis())
                 .isEqualTo(queryProcessorQueryVisitorLatencyMillis);
+        assertThat(sStats.getNativeNumUnquantizedEmbeddingsScored()).isEqualTo(
+                numUnquantizedEmbeddingsScored);
+        assertThat(sStats.getNativeNumQuantizedEmbeddingsScored()).isEqualTo(
+                numQuantizedEmbeddingsScored);
+        assertThat(sStats.getNativeNumEmbeddingShardsRead()).isEqualTo(numEmbeddingShardsRead);
+        assertThat(sStats.getNativeNumEmbeddingBytesRead()).isEqualTo(numEmbeddingBytesRead);
         String expectedString = "SearchStats {\n"
-                + "query_length=1, num_terms=2, num_namespaces_filtered=3, "
-                + "num_schema_types_filtered=4,\n"
-                + "ranking_strategy=5, num_docs_scored=6, parse_query_latency=7, "
-                + "scoring_latency=8, is_numeric_query=true,\n"
-                + "num_fetched_hits_lite_index=9, num_fetched_hits_main_index=10, "
-                + "num_fetched_hits_integer_index=11,\n"
-                + "query_processor_lexer_extract_token_latency=12, "
-                + "query_processor_parser_consume_query_latency=13,\n"
-                + "query_processor_query_visitor_latency=14}";
+                + "  nativeQueryLength=1,\n"
+                + "  nativeNumTerms=2,\n"
+                + "  nativeNumNamespacesFiltered=3,\n"
+                + "  nativeNumSchemaTypesFiltered=4,\n"
+                + "  nativeRankingStrategy=5,\n"
+                + "  nativeNumDocumentsScored=6,\n"
+                + "  nativeParseQueryLatencyMillis=7,\n"
+                + "  nativeScoringLatencyMillis=8,\n"
+                + "  nativeIsNumericQuery=true,\n"
+                + "  nativeNumFetchedHitsLiteIndex=9,\n"
+                + "  nativeNumFetchedHitsMainIndex=10,\n"
+                + "  nativeNumFetchedHitsIntegerIndex=11,\n"
+                + "  nativeQueryProcessorLexerExtractTokenLatencyMillis=12,\n"
+                + "  nativeQueryProcessorParserConsumeQueryLatencyMillis=13,\n"
+                + "  nativeQueryProcessorQueryVisitorLatencyMillis=14\n"
+                + "  nativeNumUnquantizedEmbeddingsScored=15\n"
+                + "  nativeNumQuantizedEmbeddingsScored=16\n"
+                + "  nativeNumEmbeddingShardsRead=17\n"
+                + "  nativeNumEmbeddingBytesRead=18\n"
+                + "}";
         assertThat(sStats.toString()).isEqualTo(expectedString);
     }
 
@@ -352,6 +551,10 @@ public class AppSearchStatsTest {
         int queryProcessorLexerExtractTokenLatencyMillis = 112;
         int queryProcessorParserConsumeQueryLatencyMillis = 113;
         int queryProcessorQueryVisitorLatencyMillis = 114;
+        int numUnquantizedEmbeddingsScored = 115;
+        int numQuantizedEmbeddingsScored = 116;
+        int numEmbeddingShardsRead = 117;
+        long numEmbeddingBytesRead = 118L;
 
         SearchStats searchStats = new SearchStats.Builder()
                 .setNativeQueryLength(nativeQueryLength)
@@ -373,7 +576,12 @@ public class AppSearchStatsTest {
                 .setNativeQueryProcessorParserConsumeQueryLatencyMillis(
                         queryProcessorParserConsumeQueryLatencyMillis)
                 .setNativeQueryProcessorQueryVisitorLatencyMillis(
-                        queryProcessorQueryVisitorLatencyMillis).build();
+                        queryProcessorQueryVisitorLatencyMillis)
+                .setNativeNumUnquantizedEmbeddingsScored(numUnquantizedEmbeddingsScored)
+                .setNativeNumQuantizedEmbeddingsScored(numQuantizedEmbeddingsScored)
+                .setNativeNumEmbeddingShardsRead(numEmbeddingShardsRead)
+                .setNativeNumEmbeddingBytesRead(numEmbeddingBytesRead)
+                .build();
 
         int enabledFeatures = 1;
         int rewriteSearchSpecLatencyMillis = 202;
@@ -400,8 +608,11 @@ public class AppSearchStatsTest {
         int numResultsReturnedAdditionalPages = 219;
         int additionalPagesRetrievalLatency = 220;
         int firstNativeCallLatencyMillis = 221;
+        int lastBlockingOperation = 222;
+        int lastBlockingOperationLatencyMillis = 223;
+        int getVmLatencyMillis = 224;
 
-        final QueryStats.Builder sStatsBuilder = new QueryStats.Builder(visibilityScope,
+        final QueryStats.Builder qStatsBuilder = new QueryStats.Builder(visibilityScope,
                 TEST_PACKAGE_NAME)
                 .setDatabase(TEST_DATA_BASE)
                 .setStatusCode(TEST_STATUS_CODE)
@@ -431,90 +642,145 @@ public class AppSearchStatsTest {
                 .setAdditionalPageCount(additionalPageCount)
                 .setAdditionalPagesReturnedResultCount(numResultsReturnedAdditionalPages)
                 .setAdditionalPageRetrievalLatencyMillis(additionalPagesRetrievalLatency)
-                .setFirstNativeCallLatency(firstNativeCallLatencyMillis);
-        final QueryStats sStats = sStatsBuilder.build();
+                .setFirstNativeCallLatency(firstNativeCallLatencyMillis)
+                .setLastBlockingOperation(lastBlockingOperation)
+                .setLastBlockingOperationLatencyMillis(lastBlockingOperationLatencyMillis)
+                .addGetVmLatencyMillis(getVmLatencyMillis);
+        final QueryStats qStats = qStatsBuilder.build();
 
-        assertThat(sStats.getEnabledFeatures()).isEqualTo(enabledFeatures);
-        assertThat(sStats.getPackageName()).isEqualTo(TEST_PACKAGE_NAME);
-        assertThat(sStats.getDatabase()).isEqualTo(TEST_DATA_BASE);
-        assertThat(sStats.getStatusCode()).isEqualTo(TEST_STATUS_CODE);
-        assertThat(sStats.getTotalLatencyMillis()).isEqualTo(
+        assertThat(qStats.getEnabledFeatures()).isEqualTo(enabledFeatures);
+        assertThat(qStats.getPackageName()).isEqualTo(TEST_PACKAGE_NAME);
+        assertThat(qStats.getDatabase()).isEqualTo(TEST_DATA_BASE);
+        assertThat(qStats.getStatusCode()).isEqualTo(TEST_STATUS_CODE);
+        assertThat(qStats.getTotalLatencyMillis()).isEqualTo(
                 TEST_TOTAL_LATENCY_MILLIS);
-        assertThat(sStats.getRewriteSearchSpecLatencyMillis()).isEqualTo(
+        assertThat(qStats.getRewriteSearchSpecLatencyMillis()).isEqualTo(
                 rewriteSearchSpecLatencyMillis);
-        assertThat(sStats.getRewriteSearchResultLatencyMillis()).isEqualTo(
+        assertThat(qStats.getRewriteSearchResultLatencyMillis()).isEqualTo(
                 rewriteSearchResultLatencyMillis);
-        assertThat(sStats.getJavaLockAcquisitionLatencyMillis()).isEqualTo(
+        assertThat(qStats.getJavaLockAcquisitionLatencyMillis()).isEqualTo(
                 javaLockAcquisitionLatencyMillis);
-        assertThat(sStats.getAclCheckLatencyMillis()).isEqualTo(
+        assertThat(qStats.getAclCheckLatencyMillis()).isEqualTo(
                 aclCheckLatencyMillis);
-        assertThat(sStats.getVisibilityScope()).isEqualTo(visibilityScope);
-        assertThat(sStats.getSearchSourceLogTag()).isEqualTo(searchSourceLogTag);
-        assertThat(sStats.isFirstPage()).isTrue();
-        assertThat(sStats.getRequestedPageSize()).isEqualTo(nativeRequestedPageSize);
-        assertThat(sStats.getCurrentPageReturnedResultCount()).isEqualTo(
+        assertThat(qStats.getVisibilityScope()).isEqualTo(visibilityScope);
+        assertThat(qStats.getSearchSourceLogTag()).isEqualTo(searchSourceLogTag);
+        assertThat(qStats.isFirstPage()).isTrue();
+        assertThat(qStats.getRequestedPageSize()).isEqualTo(nativeRequestedPageSize);
+        assertThat(qStats.getCurrentPageReturnedResultCount()).isEqualTo(
                 nativeNumResultsReturnedCurrentPage);
-        assertThat(sStats.getNativeLatencyMillis()).isEqualTo(nativeLatencyMillis);
-        assertThat(sStats.getFirstNativeCallLatencyMillis()).isEqualTo(
+        assertThat(qStats.getNativeLatencyMillis()).isEqualTo(nativeLatencyMillis);
+        assertThat(qStats.getFirstNativeCallLatencyMillis()).isEqualTo(
                 firstNativeCallLatencyMillis);
-        assertThat(sStats.getRankingLatencyMillis()).isEqualTo(nativeRankingLatencyMillis);
-        assertThat(sStats.getResultWithSnippetsCount()).isEqualTo(nativeNumResultsSnippeted);
-        assertThat(sStats.getDocumentRetrievingLatencyMillis()).isEqualTo(
+        assertThat(qStats.getRankingLatencyMillis()).isEqualTo(nativeRankingLatencyMillis);
+        assertThat(qStats.getResultWithSnippetsCount()).isEqualTo(nativeNumResultsSnippeted);
+        assertThat(qStats.getDocumentRetrievingLatencyMillis()).isEqualTo(
                 nativeDocumentRetrievingLatencyMillis);
-        assertThat(sStats.getNativeLockAcquisitionLatencyMillis()).isEqualTo(
+        assertThat(qStats.getNativeLockAcquisitionLatencyMillis()).isEqualTo(
                 nativeLockAcquisitionLatencyMillis);
-        assertThat(sStats.getJavaToNativeJniLatencyMillis()).isEqualTo(
+        assertThat(qStats.getJavaToNativeJniLatencyMillis()).isEqualTo(
                 javaToNativeJniLatencyMillis);
-        assertThat(sStats.getNativeToJavaJniLatencyMillis()).isEqualTo(
+        assertThat(qStats.getNativeToJavaJniLatencyMillis()).isEqualTo(
                 nativeToJavaJniLatencyMillis);
-        assertThat(sStats.getParentSearchStats()).isEqualTo(searchStats);
-        assertThat(sStats.getChildSearchStats()).isEqualTo(searchStats);
-        assertThat(sStats.getLiteIndexHitBufferByteSize()).isEqualTo(liteIndexHitBufferByteSize);
-        assertThat(sStats.getLiteIndexHitBufferUnsortedByteSize())
+        assertThat(qStats.getParentSearchStats()).isEqualTo(searchStats);
+        assertThat(qStats.getChildSearchStats()).isEqualTo(searchStats);
+        assertThat(qStats.getLiteIndexHitBufferByteSize()).isEqualTo(liteIndexHitBufferByteSize);
+        assertThat(qStats.getLiteIndexHitBufferUnsortedByteSize())
                 .isEqualTo(liteIndexHitBufferUnsortedByteSize);
-        assertThat(sStats.getPageTokenType()).isEqualTo(pageTypeToken);
-        assertThat(sStats.getNumResultStatesEvicted()).isEqualTo(numResultStatesEvicted);
-        assertThat(sStats.getAdditionalPageCount()).isEqualTo(additionalPageCount);
-        assertThat(sStats.getAdditionalPagesReturnedResultCount()).isEqualTo(
+        assertThat(qStats.getPageTokenType()).isEqualTo(pageTypeToken);
+        assertThat(qStats.getNumResultStatesEvicted()).isEqualTo(numResultStatesEvicted);
+        assertThat(qStats.getAdditionalPageCount()).isEqualTo(additionalPageCount);
+        assertThat(qStats.getAdditionalPagesReturnedResultCount()).isEqualTo(
                 numResultsReturnedAdditionalPages);
-        assertThat(sStats.getAdditionalPageRetrievalLatencyMillis()).isEqualTo(
+        assertThat(qStats.getAdditionalPageRetrievalLatencyMillis()).isEqualTo(
                 additionalPagesRetrievalLatency);
+        assertThat(qStats.getJavaLockAcquisitionLatencyMillis())
+                .isEqualTo(javaLockAcquisitionLatencyMillis);
+        assertThat(qStats.getLastBlockingOperation()).isEqualTo(lastBlockingOperation);
+        assertThat(qStats.getLastBlockingOperationLatencyMillis())
+                .isEqualTo(lastBlockingOperationLatencyMillis);
         String expectedString = "QueryStats {\n"
-                + "package=com.google.test, database=testDataBase, status=2, total_latency=20, "
-                + "rewrite_search_spec_latency=202,\n"
-                + "rewrite_search_result_latency=203, java_lock_acquisition_latency=204, "
-                + "acl_check_latency=205, visibility_score=1,\n"
-                + "search_source_log_tag=tag, is_first_page=true, requested_page_size=206, "
-                + "num_results_returned_current_page=207,\n"
-                + "native_latency=208, ranking_latency=209, document_retrieving_latency=210, "
-                + "num_results_with_snippets=211,\n"
-                + "native_lock_acquisition_latency=212, java_to_native_jni_latency=213, "
-                + "native_to_java_jni_latency=214,\n"
-                + "join_latency_ms=0, num_joined_results_current_page=0, join_type=0, "
-                + "lite_index_hit_buffer_byte_size=215,\n"
-                + "lite_index_hit_buffer_unsorted_byte_size=216\n"
-                + "page_token_type=3, num_result_states_evicted=217\n"
-                + "parent_search_stats=SearchStats {\n"
-                + "query_length=101, num_terms=102, num_namespaces_filtered=103, "
-                + "num_schema_types_filtered=104,\n"
-                + "ranking_strategy=105, num_docs_scored=106, parse_query_latency=107, "
-                + "scoring_latency=108, is_numeric_query=true,\n"
-                + "num_fetched_hits_lite_index=109, num_fetched_hits_main_index=110, "
-                + "num_fetched_hits_integer_index=111,\n"
-                + "query_processor_lexer_extract_token_latency=112, "
-                + "query_processor_parser_consume_query_latency=113,\n"
-                + "query_processor_query_visitor_latency=114},\n"
-                + " child_search_stats=SearchStats {\n"
-                + "query_length=101, num_terms=102, num_namespaces_filtered=103, "
-                + "num_schema_types_filtered=104,\n"
-                + "ranking_strategy=105, num_docs_scored=106, parse_query_latency=107, "
-                + "scoring_latency=108, is_numeric_query=true,\n"
-                + "num_fetched_hits_lite_index=109, num_fetched_hits_main_index=110, "
-                + "num_fetched_hits_integer_index=111,\n"
-                + "query_processor_lexer_extract_token_latency=112, "
-                + "query_processor_parser_consume_query_latency=113,\n"
-                + "query_processor_query_visitor_latency=114}}";
-        assertThat(sStats.toString()).isEqualTo(expectedString);
+                + "  packageName=com.google.test,\n"
+                + "  database=testDataBase,\n"
+                + "  statusCode=2,\n"
+                + "  totalLatencyMillis=20,\n"
+                + "  rewriteSearchSpecLatencyMillis=202,\n"
+                + "  rewriteSearchResultLatencyMillis=203,\n"
+                + "  aclCheckLatencyMillis=205,\n"
+                + "  visibilityScope=1,\n"
+                + "  searchSourceLogTag=tag,\n"
+                + "  nativeIsFirstPage=true,\n"
+                + "  additionalPageCount=218,\n"
+                + "  nativeRequestedPageSize=206,\n"
+                + "  nativeNumResultsReturnedCurrentPage=207,\n"
+                + "  numResultsReturnedAdditionalPages=219,\n"
+                + "  nativeLatencyMillis=208,\n"
+                + "  firstNativeCallLatencyMillis=221,\n"
+                + "  additionalPageRetrievalLatencyMillis=220,\n"
+                + "  nativeRankingLatencyMillis=209,\n"
+                + "  nativeDocumentRetrievingLatencyMillis=210,\n"
+                + "  nativeNumResultsWithSnippets=211,\n"
+                + "  nativeLockAcquisitionLatencyMillis=212,\n"
+                + "  javaToNativeJniLatencyMillis=213,\n"
+                + "  nativeToJavaJniLatencyMillis=214,\n"
+                + "  nativeJoinLatencyMillis=0,\n"
+                + "  nativeNumJoinedResultsCurrentPage=0,\n"
+                + "  joinType=0,\n"
+                + "  parentSearchStats=SearchStats {\n"
+                + "    nativeQueryLength=101,\n"
+                + "    nativeNumTerms=102,\n"
+                + "    nativeNumNamespacesFiltered=103,\n"
+                + "    nativeNumSchemaTypesFiltered=104,\n"
+                + "    nativeRankingStrategy=105,\n"
+                + "    nativeNumDocumentsScored=106,\n"
+                + "    nativeParseQueryLatencyMillis=107,\n"
+                + "    nativeScoringLatencyMillis=108,\n"
+                + "    nativeIsNumericQuery=true,\n"
+                + "    nativeNumFetchedHitsLiteIndex=109,\n"
+                + "    nativeNumFetchedHitsMainIndex=110,\n"
+                + "    nativeNumFetchedHitsIntegerIndex=111,\n"
+                + "    nativeQueryProcessorLexerExtractTokenLatencyMillis=112,\n"
+                + "    nativeQueryProcessorParserConsumeQueryLatencyMillis=113,\n"
+                + "    nativeQueryProcessorQueryVisitorLatencyMillis=114\n"
+                + "    nativeNumUnquantizedEmbeddingsScored=115\n"
+                + "    nativeNumQuantizedEmbeddingsScored=116\n"
+                + "    nativeNumEmbeddingShardsRead=117\n"
+                + "    nativeNumEmbeddingBytesRead=118\n"
+                + "  },\n"
+                + "  childSearchStats=SearchStats {\n"
+                + "    nativeQueryLength=101,\n"
+                + "    nativeNumTerms=102,\n"
+                + "    nativeNumNamespacesFiltered=103,\n"
+                + "    nativeNumSchemaTypesFiltered=104,\n"
+                + "    nativeRankingStrategy=105,\n"
+                + "    nativeNumDocumentsScored=106,\n"
+                + "    nativeParseQueryLatencyMillis=107,\n"
+                + "    nativeScoringLatencyMillis=108,\n"
+                + "    nativeIsNumericQuery=true,\n"
+                + "    nativeNumFetchedHitsLiteIndex=109,\n"
+                + "    nativeNumFetchedHitsMainIndex=110,\n"
+                + "    nativeNumFetchedHitsIntegerIndex=111,\n"
+                + "    nativeQueryProcessorLexerExtractTokenLatencyMillis=112,\n"
+                + "    nativeQueryProcessorParserConsumeQueryLatencyMillis=113,\n"
+                + "    nativeQueryProcessorQueryVisitorLatencyMillis=114\n"
+                + "    nativeNumUnquantizedEmbeddingsScored=115\n"
+                + "    nativeNumQuantizedEmbeddingsScored=116\n"
+                + "    nativeNumEmbeddingShardsRead=117\n"
+                + "    nativeNumEmbeddingBytesRead=118\n"
+                + "  },\n"
+                + "  liteIndexHitBufferByteSize=215,\n"
+                + "  liteIndexHitBufferUnsortedByteSize=216,\n"
+                + "  pageTokenType=3,\n"
+                + "  numResultStatesEvicted=217,\n"
+                + "  enabledFeatures=1,\n"
+                + "  javaLockAcquisitionLatencyMillis=204,\n"
+                + "  lastBlockingOperation=222,\n"
+                + "  lastBlockingOperationLatencyMillis=223,\n"
+                + "  getVmLatencyMillis=224,\n"
+                + "  unblockedAppSearchLatencyMillis=0,\n"
+                + "  numIcingCalls=1\n"
+                + "}";
+        assertThat(qStats.toString()).isEqualTo(expectedString);
+        assertThat(qStats.getGetVmLatencyMillis()).isEqualTo(getVmLatencyMillis);
     }
 
     @Test
@@ -538,7 +804,22 @@ public class AppSearchStatsTest {
         int getOldSchemaLatencyMillis = 16;
         int getObserverLatencyMillis = 17;
         int sendNotificationLatencyMillis = 18;
+        int lastBlockingOperation = 19;
+        int lastBlockingOperationLatencyMillis = 20;
+        int getVmLatencyMillis = 21;
         int enabledFeatures = 1;
+        int joinIndexIncompatibleTypeChangeCount = 22;
+        int scorablePropertyIncompatibleTypeChangeCount = 23;
+        int deletedDocumentCount = 24;
+        boolean isTermIndexRestored = true;
+        boolean isIntegerIndexRestored = true;
+        boolean isEmbeddingIndexRestored = true;
+        boolean isQualifiedIdJoinIndexRestored = true;
+        int nativeSchemaStoreSetSchemaLatencyMillis = 25;
+        int nativeDocumentStoreUpdateSchemaLatencyMillis = 26;
+        int nativeDocumentStoreOptimizedUpdateSchemaLatencyMillis = 27;
+        int nativeIndexRestorationLatencyMillis = 28;
+        int nativeScorablePropertyCacheRegenerationLatencyMillis = 29;
         SetSchemaStats sStats = new SetSchemaStats.Builder(TEST_PACKAGE_NAME, TEST_DATA_BASE)
                 .setStatusCode(TEST_STATUS_CODE)
                 .setTotalLatencyMillis(TEST_TOTAL_LATENCY_MILLIS)
@@ -546,13 +827,29 @@ public class AppSearchStatsTest {
                 .setDeletedTypeCount(deletedTypeCount)
                 .setCompatibleTypeChangeCount(compatibleTypeChangeCount)
                 .setIndexIncompatibleTypeChangeCount(indexIncompatibleTypeChangeCount)
+                .setJoinIndexIncompatibleTypeChangeCount(joinIndexIncompatibleTypeChangeCount)
+                .setScorablePropertyIncompatibleTypeChangeCount(
+                        scorablePropertyIncompatibleTypeChangeCount)
                 .setBackwardsIncompatibleTypeChangeCount(backwardsIncompatibleTypeChangeCount)
+                .setDeletedDocumentCount(deletedDocumentCount)
+                .setIsTermIndexRestored(isTermIndexRestored)
+                .setIsIntegerIndexRestored(isIntegerIndexRestored)
+                .setIsEmbeddingIndexRestored(isEmbeddingIndexRestored)
+                .setIsQualifiedIdJoinIndexRestored(isQualifiedIdJoinIndexRestored)
                 .setVerifyIncomingCallLatencyMillis(verifyIncomingCallLatencyMillis)
                 .setExecutorAcquisitionLatencyMillis(executorAcquisitionLatencyMillis)
                 .setRebuildFromBundleLatencyMillis(rebuildFromBundleLatencyMillis)
                 .setJavaLockAcquisitionLatencyMillis(javaLockAcquisitionLatencyMillis)
                 .setRewriteSchemaLatencyMillis(rewriteSchemaLatencyMillis)
                 .setTotalNativeLatencyMillis(totalNativeLatencyMillis)
+                .setNativeSchemaStoreSetSchemaLatencyMillis(nativeSchemaStoreSetSchemaLatencyMillis)
+                .setNativeDocumentStoreUpdateSchemaLatencyMillis(
+                        nativeDocumentStoreUpdateSchemaLatencyMillis)
+                .setNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis(
+                        nativeDocumentStoreOptimizedUpdateSchemaLatencyMillis)
+                .setNativeIndexRestorationLatencyMillis(nativeIndexRestorationLatencyMillis)
+                .setNativeScorablePropertyCacheRegenerationLatencyMillis(
+                        nativeScorablePropertyCacheRegenerationLatencyMillis)
                 .setVisibilitySettingLatencyMillis(visibilitySettingLatencyMillis)
                 .setConvertToResponseLatencyMillis(convertToResponseLatencyMillis)
                 .setDispatchChangeNotificationsLatencyMillis(
@@ -564,6 +861,10 @@ public class AppSearchStatsTest {
                 .setPreparingChangeNotificationLatencyMillis(sendNotificationLatencyMillis)
                 .setSchemaMigrationCallType(SchemaMigrationStats.SECOND_CALL_APPLY_NEW_SCHEMA)
                 .setLaunchVMEnabled(true)
+                .setJavaLockAcquisitionLatencyMillis(javaLockAcquisitionLatencyMillis)
+                .setLastBlockingOperation(lastBlockingOperation)
+                .setLastBlockingOperationLatencyMillis(lastBlockingOperationLatencyMillis)
+                .addGetVmLatencyMillis(getVmLatencyMillis)
                 .build();
 
         assertThat(sStats.getPackageName()).isEqualTo(TEST_PACKAGE_NAME);
@@ -576,8 +877,18 @@ public class AppSearchStatsTest {
         assertThat(sStats.getCompatibleTypeChangeCount()).isEqualTo(compatibleTypeChangeCount);
         assertThat(sStats.getIndexIncompatibleTypeChangeCount()).isEqualTo(
                 indexIncompatibleTypeChangeCount);
+        assertThat(sStats.getJoinIndexIncompatibleTypeChangeCount()).isEqualTo(
+                joinIndexIncompatibleTypeChangeCount);
+        assertThat(sStats.getScorablePropertyIncompatibleTypeChangeCount()).isEqualTo(
+                scorablePropertyIncompatibleTypeChangeCount);
         assertThat(sStats.getBackwardsIncompatibleTypeChangeCount()).isEqualTo(
                 backwardsIncompatibleTypeChangeCount);
+        assertThat(sStats.getDeletedDocumentCount()).isEqualTo(deletedDocumentCount);
+        assertThat(sStats.isTermIndexRestored()).isEqualTo(isTermIndexRestored);
+        assertThat(sStats.isIntegerIndexRestored()).isEqualTo(isIntegerIndexRestored);
+        assertThat(sStats.isEmbeddingIndexRestored()).isEqualTo(isEmbeddingIndexRestored);
+        assertThat(sStats.isQualifiedIdJoinIndexRestored()).isEqualTo(
+                isQualifiedIdJoinIndexRestored);
         assertThat(sStats.getVerifyIncomingCallLatencyMillis()).isEqualTo(
                 verifyIncomingCallLatencyMillis);
         assertThat(sStats.getExecutorAcquisitionLatencyMillis()).isEqualTo(
@@ -588,6 +899,16 @@ public class AppSearchStatsTest {
                 javaLockAcquisitionLatencyMillis);
         assertThat(sStats.getRewriteSchemaLatencyMillis()).isEqualTo(rewriteSchemaLatencyMillis);
         assertThat(sStats.getTotalNativeLatencyMillis()).isEqualTo(totalNativeLatencyMillis);
+        assertThat(sStats.getNativeSchemaStoreSetSchemaLatencyMillis()).isEqualTo(
+                nativeSchemaStoreSetSchemaLatencyMillis);
+        assertThat(sStats.getNativeDocumentStoreUpdateSchemaLatencyMillis()).isEqualTo(
+                nativeDocumentStoreUpdateSchemaLatencyMillis);
+        assertThat(sStats.getNativeDocumentStoreOptimizedUpdateSchemaLatencyMillis()).isEqualTo(
+                nativeDocumentStoreOptimizedUpdateSchemaLatencyMillis);
+        assertThat(sStats.getNativeIndexRestorationLatencyMillis()).isEqualTo(
+                nativeIndexRestorationLatencyMillis);
+        assertThat(sStats.getNativeScorablePropertyCacheRegenerationLatencyMillis()).isEqualTo(
+                nativeScorablePropertyCacheRegenerationLatencyMillis);
         assertThat(sStats.getVisibilitySettingLatencyMillis()).isEqualTo(
                 visibilitySettingLatencyMillis);
         assertThat(sStats.getConvertToResponseLatencyMillis()).isEqualTo(
@@ -604,6 +925,58 @@ public class AppSearchStatsTest {
                 .isEqualTo(SchemaMigrationStats.SECOND_CALL_APPLY_NEW_SCHEMA);
         assertThat(sStats.getEnabledFeatures())
                 .isEqualTo(enabledFeatures);
+        assertThat(sStats.getJavaLockAcquisitionLatencyMillis())
+                .isEqualTo(javaLockAcquisitionLatencyMillis);
+        assertThat(sStats.getLastBlockingOperation()).isEqualTo(lastBlockingOperation);
+        assertThat(sStats.getLastBlockingOperationLatencyMillis())
+                .isEqualTo(lastBlockingOperationLatencyMillis);
+        assertThat(sStats.getGetVmLatencyMillis()).isEqualTo(getVmLatencyMillis);
+        String expectedString = "SetSchemaStats {\n"
+                + "  packageName=com.google.test,\n"
+                + "  database=testDataBase,\n"
+                + "  statusCode=2,\n"
+                + "  totalLatencyMillis=20,\n"
+                + "  newTypeCount=1,\n"
+                + "  deletedTypeCount=2,\n"
+                + "  compatibleTypeChangeCount=3,\n"
+                + "  indexIncompatibleTypeChangeCount=4,\n"
+                + "  joinIndexIncompatibleTypeChangeCount=22,\n"
+                + "  scorablePropertyIncompatibleTypeChangeCount=23,\n"
+                + "  backwardsIncompatibleTypeChangeCount=5,\n"
+                + "  deletedDocumentCount=24,\n"
+                + "  isTermIndexRestored=true,\n"
+                + "  isIntegerIndexRestored=true,\n"
+                + "  isEmbeddingIndexRestored=true,\n"
+                + "  isQualifiedIdJoinIndexRestored=true,\n"
+                + "  verifyIncomingCallLatencyMillis=6,\n"
+                + "  executorAcquisitionLatencyMillis=7,\n"
+                + "  rebuildFromBundleLatencyMillis=8,\n"
+                + "  rewriteSchemaLatencyMillis=11,\n"
+                + "  totalNativeLatencyMillis=10,\n"
+                + "  nativeSchemaStoreSetSchemaLatencyMillis=25,\n"
+                + "  nativeDocumentStoreUpdateSchemaLatencyMillis=26,\n"
+                + "  nativeDocumentStoreOptimizedUpdateSchemaLatencyMillis=27,\n"
+                + "  nativeIndexRestorationLatencyMillis=28,\n"
+                + "  nativeScorablePropertyCacheRegenerationLatencyMillis=29,\n"
+                + "  visibilitySettingLatencyMillis=12,\n"
+                + "  convertToResponseLatencyMillis=13,\n"
+                + "  dispatchChangeNotificationsLatencyMillis=14,\n"
+                + "  optimizeLatencyMillis=15,\n"
+                + "  isPackageObserved=true,\n"
+                + "  getOldSchemaLatencyMillis=16,\n"
+                + "  getObserverLatencyMillis=17,\n"
+                + "  preparingChangeNotificationLatencyMillis=18,\n"
+                + "  schemaMigrationCallType=2,\n"
+                + "  skippedIcingInteraction=false,\n"
+                + "  enabledFeatures=1,\n"
+                + "  javaLockAcquisitionLatencyMillis=9,\n"
+                + "  lastBlockingOperation=19,\n"
+                + "  lastBlockingOperationLatencyMillis=20,\n"
+                + "  getVmLatencyMillis=21,\n"
+                + "  unblockedAppSearchLatencyMillis=0,\n"
+                + "  numIcingCalls=1\n"
+                + "}";
+        assertThat(sStats.toString()).isEqualTo(expectedString);
     }
 
     @Test
@@ -650,6 +1023,24 @@ public class AppSearchStatsTest {
         assertThat(sStats.getTotalNeedMigratedDocumentCount()).isEqualTo(migratedDocumentCount);
         assertThat(sStats.getTotalSuccessMigratedDocumentCount()).isEqualTo(savedDocumentCount);
         assertThat(sStats.getMigrationFailureCount()).isEqualTo(migrationFailureCount);
+        String expectedString = "SchemaMigrationStats {\n"
+                + "  packageName=com.google.test,\n"
+                + "  database=testDataBase,\n"
+                + "  statusCode=2,\n"
+                + "  executorAcquisitionLatencyMillis=1,\n"
+                + "  totalLatencyMillis=20,\n"
+                + "  getSchemaLatencyMillis=2,\n"
+                + "  queryAndTransformLatencyMillis=3,\n"
+                + "  firstSetSchemaLatencyMillis=4,\n"
+                + "  isFirstSetSchemaSuccess=true,\n"
+                + "  secondSetSchemaLatencyMillis=5,\n"
+                + "  saveDocumentLatencyMillis=6,\n"
+                + "  totalNeedMigratedDocumentCount=7,\n"
+                + "  migrationFailureCount=9,\n"
+                + "  totalSuccessMigratedDocumentCount=8,\n"
+                + "  enabledFeatures=0\n"
+                + "}";
+        assertThat(sStats.toString()).isEqualTo(expectedString);
     }
 
     @Test
@@ -664,6 +1055,10 @@ public class AppSearchStatsTest {
         int numSchemaTypesFiltered = 7;
         int parseQueryLatencyMillis = 8;
         int documentRemovalLatencyMillis = 9;
+        int javaLockAcquisitionLatencyMillis = 10;
+        int lastBlockingOperation = 11;
+        int lastBlockingOperationLatencyMillis = 12;
+        int getVmLatencyMillis = 13;
 
         final RemoveStats rStats = new RemoveStats.Builder(TEST_PACKAGE_NAME,
                 TEST_DATA_BASE)
@@ -679,6 +1074,10 @@ public class AppSearchStatsTest {
                 .setNumSchemaTypesFiltered(numSchemaTypesFiltered)
                 .setParseQueryLatencyMillis(parseQueryLatencyMillis)
                 .setDocumentRemovalLatencyMillis(documentRemovalLatencyMillis)
+                .setJavaLockAcquisitionLatencyMillis(javaLockAcquisitionLatencyMillis)
+                .setLastBlockingOperation(lastBlockingOperation)
+                .setLastBlockingOperationLatencyMillis(lastBlockingOperationLatencyMillis)
+                .addGetVmLatencyMillis(getVmLatencyMillis)
                 .build();
 
 
@@ -697,6 +1096,35 @@ public class AppSearchStatsTest {
         assertThat(rStats.getParseQueryLatencyMillis()).isEqualTo(parseQueryLatencyMillis);
         assertThat(rStats.getDocumentRemovalLatencyMillis())
                 .isEqualTo(documentRemovalLatencyMillis);
+        assertThat(rStats.getJavaLockAcquisitionLatencyMillis())
+                .isEqualTo(javaLockAcquisitionLatencyMillis);
+        assertThat(rStats.getLastBlockingOperation()).isEqualTo(lastBlockingOperation);
+        assertThat(rStats.getLastBlockingOperationLatencyMillis())
+                .isEqualTo(lastBlockingOperationLatencyMillis);
+        assertThat(rStats.getGetVmLatencyMillis()).isEqualTo(getVmLatencyMillis);
+        String expectedString = "RemoveStats {\n"
+                + "  packageName=com.google.test,\n"
+                + "  database=testDataBase,\n"
+                + "  statusCode=2,\n"
+                + "  totalLatencyMillis=20,\n"
+                + "  nativeLatencyMillis=1,\n"
+                + "  nativeDeleteType=2,\n"
+                + "  nativeNumDocumentsDeleted=3,\n"
+                + "  queryLength=4,\n"
+                + "  numTerms=5,\n"
+                + "  numNamespacesFiltered=6,\n"
+                + "  numSchemaTypesFiltered=7,\n"
+                + "  parseQueryLatencyMillis=8,\n"
+                + "  documentRemovalLatencyMillis=9,\n"
+                + "  enabledFeatures=1,\n"
+                + "  javaLockAcquisitionLatencyMillis=10,\n"
+                + "  lastBlockingOperation=11,\n"
+                + "  lastBlockingOperationLatencyMillis=12,\n"
+                + "  getVmLatencyMillis=13,\n"
+                + "  unblockedAppSearchLatencyMillis=0,\n"
+                + "  numIcingCalls=1\n"
+                + "}";
+        assertThat(rStats.toString()).isEqualTo(expectedString);
     }
 
     @Test
@@ -714,6 +1142,10 @@ public class AppSearchStatsTest {
         int indexRestorationMode = 1;
         int numOriginalNamespaces = 7;
         int numDeletedNamespaces = 8;
+        int javaLockAcquisitionLatencyMillis = 9;
+        int lastBlockingOperation = 10;
+        int lastBlockingOperationLatencyMillis = 11;
+        int getVmLatencyMillis = 12;
 
         final OptimizeStats oStats = new OptimizeStats.Builder()
                 .setStatusCode(TEST_STATUS_CODE)
@@ -731,6 +1163,10 @@ public class AppSearchStatsTest {
                 .setIndexRestorationMode(indexRestorationMode)
                 .setNumOriginalNamespaces(numOriginalNamespaces)
                 .setNumDeletedNamespaces(numDeletedNamespaces)
+                .setJavaLockAcquisitionLatencyMillis(javaLockAcquisitionLatencyMillis)
+                .setLastBlockingOperation(lastBlockingOperation)
+                .setLastBlockingOperationLatencyMillis(lastBlockingOperationLatencyMillis)
+                .addGetVmLatencyMillis(getVmLatencyMillis)
                 .build();
 
         assertThat(oStats.getStatusCode()).isEqualTo(TEST_STATUS_CODE);
@@ -752,5 +1188,162 @@ public class AppSearchStatsTest {
         assertThat(oStats.getIndexRestorationMode()).isEqualTo(indexRestorationMode);
         assertThat(oStats.getNumOriginalNamespaces()).isEqualTo(numOriginalNamespaces);
         assertThat(oStats.getNumDeletedNamespaces()).isEqualTo(numDeletedNamespaces);
+        assertThat(oStats.getJavaLockAcquisitionLatencyMillis())
+                .isEqualTo(javaLockAcquisitionLatencyMillis);
+        assertThat(oStats.getLastBlockingOperation()).isEqualTo(lastBlockingOperation);
+        assertThat(oStats.getLastBlockingOperationLatencyMillis())
+                .isEqualTo(lastBlockingOperationLatencyMillis);
+        assertThat(oStats.getGetVmLatencyMillis()).isEqualTo(getVmLatencyMillis);
+        String expectedString = "OptimizeStats {\n"
+                + "  statusCode=2,\n"
+                + "  totalLatencyMillis=20,\n"
+                + "  nativeLatencyMillis=1,\n"
+                + "  nativeDocumentStoreOptimizeLatencyMillis=2,\n"
+                + "  nativeIndexRestorationLatencyMillis=3,\n"
+                + "  nativeOriginalDocumentCount=4,\n"
+                + "  nativeDeletedDocumentCount=5,\n"
+                + "  nativeExpiredDocumentCount=6,\n"
+                + "  nativeStorageSizeBeforeBytes=-2147483648,\n"
+                + "  nativeStorageSizeAfterBytes=-2147483647,\n"
+                + "  nativeTimeSinceLastOptimizeMillis=-2147483646,\n"
+                + "  indexRestorationMode=1,\n"
+                + "  numOriginalNamespaces=7,\n"
+                + "  numDeletedNamespaces=8,\n"
+                + "  callReceivedTimestampMillis=0,\n"
+                + "  executorAcquisitionLatencyMillis=0,\n"
+                + "  onExecutorLatencyMillis=0,\n"
+                + "  enabledFeatures=1,\n"
+                + "  javaLockAcquisitionLatencyMillis=9,\n"
+                + "  lastBlockingOperation=10,\n"
+                + "  lastBlockingOperationLatencyMillis=11,\n"
+                + "  getVmLatencyMillis=12,\n"
+                + "  unblockedAppSearchLatencyMillis=0,\n"
+                + "  numIcingCalls=1\n"
+                + "}";
+        assertThat(oStats.toString()).isEqualTo(expectedString);
+    }
+
+    @Test
+    public void testAppSearchStats_JavaLockLatencyCanBeSetOnce() {
+        final OptimizeStats oStats = new OptimizeStats.Builder()
+                .setJavaLockAcquisitionLatencyMillis(-10)
+                .setJavaLockAcquisitionLatencyMillis(10)
+                .setJavaLockAcquisitionLatencyMillis(20)
+                .build();
+        // Can only be set once for non-negative latency.
+        assertThat(oStats.getJavaLockAcquisitionLatencyMillis()).isEqualTo(10);
+    }
+
+    @Test
+    public void testAppSearchStats_PersistToDiskStats() {
+        int triggerCallType = 1;
+        PersistType.Code persistType = PersistType.Code.FULL;
+        int nativeLatencyMillis = 3;
+        int blobStorePersistLatencyMillis = 4;
+        int documentStoreTotalPersistLatencyMillis = 5;
+        int documentStoreComponentsPersistLatencyMillis = 6;
+        int documentStoreChecksumUpdateLatencyMillis = 7;
+        int documentLogChecksumUpdateLatencyMillis = 8;
+        int documentLogDataSyncLatencyMillis = 9;
+        int schemaStorePersistLatencyMillis = 10;
+        int indexPersistLatencyMillis = 11;
+        int integerIndexPersistLatencyMillis = 12;
+        int qualifiedIdJoinIndexPersistLatencyMillis = 13;
+        int embeddingIndexPersistLatencyMillis = 14;
+        int javaLockAcquisitionLatencyMillis = 101;
+        int lastBlockingOperation = 102;
+        int lastBlockingOperationLatencyMillis = 103;
+        int getVmLatencyMillis = 104;
+        int enabledFeatures = 1;
+
+        final PersistToDiskStats pStats = new PersistToDiskStats.Builder(
+                TEST_PACKAGE_NAME, triggerCallType)
+                .setStatusCode(TEST_STATUS_CODE)
+                .setTotalLatencyMillis(TEST_TOTAL_LATENCY_MILLIS)
+                .setPersistType(persistType)
+                .setNativeLatencyMillis(nativeLatencyMillis)
+                .setNativeBlobStorePersistLatencyMillis(blobStorePersistLatencyMillis)
+                .setNativeDocumentStoreTotalPersistLatencyMillis(
+                        documentStoreTotalPersistLatencyMillis)
+                .setNativeDocumentStoreComponentsPersistLatencyMillis(
+                        documentStoreComponentsPersistLatencyMillis)
+                .setNativeDocumentStoreChecksumUpdateLatencyMillis(
+                        documentStoreChecksumUpdateLatencyMillis)
+                .setNativeDocumentLogChecksumUpdateLatencyMillis(
+                        documentLogChecksumUpdateLatencyMillis)
+                .setNativeDocumentLogDataSyncLatencyMillis(documentLogDataSyncLatencyMillis)
+                .setNativeSchemaStorePersistLatencyMillis(schemaStorePersistLatencyMillis)
+                .setNativeIndexPersistLatencyMillis(indexPersistLatencyMillis)
+                .setNativeIntegerIndexPersistLatencyMillis(integerIndexPersistLatencyMillis)
+                .setNativeQualifiedIdJoinIndexPersistLatencyMillis(
+                        qualifiedIdJoinIndexPersistLatencyMillis)
+                .setNativeEmbeddingIndexPersistLatencyMillis(embeddingIndexPersistLatencyMillis)
+                .setJavaLockAcquisitionLatencyMillis(javaLockAcquisitionLatencyMillis)
+                .setLastBlockingOperation(lastBlockingOperation)
+                .setLastBlockingOperationLatencyMillis(lastBlockingOperationLatencyMillis)
+                .addGetVmLatencyMillis(getVmLatencyMillis)
+                .setLaunchVMEnabled(true)
+                .build();
+
+        assertThat(pStats.getPackageName()).isEqualTo(TEST_PACKAGE_NAME);
+        assertThat(pStats.getTriggerCallType()).isEqualTo(triggerCallType);
+        assertThat(pStats.getStatusCode()).isEqualTo(TEST_STATUS_CODE);
+        assertThat(pStats.getTotalLatencyMillis()).isEqualTo(TEST_TOTAL_LATENCY_MILLIS);
+        assertThat(pStats.getNativeLatencyMillis()).isEqualTo(nativeLatencyMillis);
+        assertThat(pStats.getBlobStorePersistLatencyMillis())
+                .isEqualTo(blobStorePersistLatencyMillis);
+        assertThat(pStats.getDocumentStoreTotalPersistLatencyMillis())
+                .isEqualTo(documentStoreTotalPersistLatencyMillis);
+        assertThat(pStats.getDocumentStoreComponentsPersistLatencyMillis())
+                .isEqualTo(documentStoreComponentsPersistLatencyMillis);
+        assertThat(pStats.getDocumentStoreChecksumUpdateLatencyMillis())
+                .isEqualTo(documentStoreChecksumUpdateLatencyMillis);
+        assertThat(pStats.getDocumentLogChecksumUpdateLatencyMillis())
+                .isEqualTo(documentLogChecksumUpdateLatencyMillis);
+        assertThat(pStats.getDocumentLogDataSyncLatencyMillis())
+                .isEqualTo(documentLogDataSyncLatencyMillis);
+        assertThat(pStats.getSchemaStorePersistLatencyMillis())
+                .isEqualTo(schemaStorePersistLatencyMillis);
+        assertThat(pStats.getIndexPersistLatencyMillis()).isEqualTo(indexPersistLatencyMillis);
+        assertThat(pStats.getIntegerIndexPersistLatencyMillis())
+                .isEqualTo(integerIndexPersistLatencyMillis);
+        assertThat(pStats.getQualifiedIdJoinIndexPersistLatencyMillis())
+                .isEqualTo(qualifiedIdJoinIndexPersistLatencyMillis);
+        assertThat(pStats.getEmbeddingIndexPersistLatencyMillis())
+                .isEqualTo(embeddingIndexPersistLatencyMillis);
+
+        assertThat(pStats.getJavaLockAcquisitionLatencyMillis())
+                .isEqualTo(javaLockAcquisitionLatencyMillis);
+        assertThat(pStats.getLastBlockingOperation()).isEqualTo(lastBlockingOperation);
+        assertThat(pStats.getLastBlockingOperationLatencyMillis())
+                .isEqualTo(lastBlockingOperationLatencyMillis);
+        assertThat(pStats.getGetVmLatencyMillis()).isEqualTo(getVmLatencyMillis);
+        String expectedString = "PersistToDiskStats {\n"
+                + "  packageName=com.google.test,\n"
+                + "  triggerCallType=1,\n"
+                + "  statusCode=2,\n"
+                + "  totalLatencyMillis=20,\n"
+                + "  persistType=FULL,\n"
+                + "  nativeLatencyMillis=3,\n"
+                + "  blobStorePersistLatencyMillis=4,\n"
+                + "  documentStoreTotalPersistLatencyMillis=5,\n"
+                + "  documentStoreComponentsPersistLatencyMillis=6,\n"
+                + "  documentStoreChecksumUpdateLatencyMillis=7,\n"
+                + "  documentLogChecksumUpdateLatencyMillis=8,\n"
+                + "  documentLogDataSyncLatencyMillis=9,\n"
+                + "  schemaStorePersistLatencyMillis=10,\n"
+                + "  indexPersistLatencyMillis=11,\n"
+                + "  integerIndexPersistLatencyMillis=12,\n"
+                + "  qualifiedIdJoinIndexPersistLatencyMillis=13,\n"
+                + "  embeddingIndexPersistLatencyMillis=14,\n"
+                + "  enabledFeatures=1,\n"
+                + "  javaLockAcquisitionLatencyMillis=101,\n"
+                + "  lastBlockingOperation=102,\n"
+                + "  lastBlockingOperationLatencyMillis=103,\n"
+                + "  getVmLatencyMillis=104,\n"
+                + "  unblockedAppSearchLatencyMillis=0,\n"
+                + "  numIcingCalls=1\n"
+                + "}";
+        assertThat(pStats.toString()).isEqualTo(expectedString);
     }
 }

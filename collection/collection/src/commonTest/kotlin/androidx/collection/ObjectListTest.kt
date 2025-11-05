@@ -91,10 +91,10 @@ class ObjectListTest {
     @Test
     fun joinToString() {
         assertEquals("1, 2, 3, 4, 5", list.joinToString())
-        assertEquals("x1, 2, 3...", list.joinToString(prefix = "x", postfix = "y", limit = 3))
+        assertEquals("x1, 2, 3, ...y", list.joinToString(prefix = "x", postfix = "y", limit = 3))
         assertEquals(">1-2-3-4-5<", list.joinToString(separator = "-", prefix = ">", postfix = "<"))
         assertEquals(
-            "one, two, three...",
+            "one, two, three, ...",
             list.joinToString(limit = 3) {
                 when (it) {
                     1 -> "one"

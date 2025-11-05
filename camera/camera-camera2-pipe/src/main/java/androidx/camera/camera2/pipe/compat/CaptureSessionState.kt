@@ -67,6 +67,7 @@ internal class CaptureSessionState(
     private val cameraSurfaceManager: CameraSurfaceManager,
     private val timeSource: TimeSource,
     private val cameraGraphFlags: CameraGraph.Flags,
+    private val concurrentSessionSequencer: ConcurrentSessionSequencer?,
     private val threads: Threads,
     private val scope: CoroutineScope,
 ) : CameraCaptureSessionWrapper.StateCallback {
@@ -76,6 +77,7 @@ internal class CaptureSessionState(
 
     private val activeSurfaceMap = synchronizedMap(HashMap<StreamId, Surface>())
     private var sessionCreatingTimestamp: TimestampNs? = null
+    private val sessionSequencer = concurrentSessionSequencer?.let { SessionSequencer(it) }
 
     @GuardedBy("lock") private var _cameraDevice: CameraDeviceWrapper? = null
     var cameraDevice: CameraDeviceWrapper?
@@ -163,6 +165,7 @@ internal class CaptureSessionState(
         Debug.traceStart { "$this#onClosed" }
         shutdown()
         captureSessionAttemptCompleted.countDown()
+        sessionSequencer?.release()
         Debug.traceStop()
     }
 
@@ -171,6 +174,7 @@ internal class CaptureSessionState(
         Debug.traceStart { "$this#onConfigureFailed" }
         shutdown()
         captureSessionAttemptCompleted.countDown()
+        sessionSequencer?.release()
         Debug.traceStop()
     }
 
@@ -179,6 +183,7 @@ internal class CaptureSessionState(
         Debug.traceStart { "$this#configure" }
         configure(session)
         captureSessionAttemptCompleted.countDown()
+        sessionSequencer?.release()
         Debug.traceStop()
     }
 
@@ -308,6 +313,11 @@ internal class CaptureSessionState(
             }
         }
 
+        // Release the session sequencer, which would unblock the sibling camera graphs under
+        // concurrent camera scenarios. Doing it here allows us to release it just once during
+        // disconnect and shutdown, though it isn't strictly required.
+        sessionSequencer?.release()
+
         if (shouldAwaitCaptureSessionCallback) {
             Log.debug { "Waiting for CameraCaptureSession configuration" }
             // Important: Wait for session configuration with a timeout. From b/146773463, it was
@@ -324,6 +334,10 @@ internal class CaptureSessionState(
             }
         }
 
+        Debug.traceStart { "$graphListener#onGraphStopping" }
+        graphListener.onGraphStopping()
+        Debug.traceStop()
+
         val captureSession = configuredCaptureSession
         if (captureSession != null) {
             val graphProcessor = captureSession.processor
@@ -338,11 +352,7 @@ internal class CaptureSessionState(
             //
             // WARNING - DO NOT CALL session.close().
             Log.debug { "$this Shutdown" }
-
             Debug.traceStart { "$this#shutdown" }
-            Debug.traceStart { "$graphListener#onGraphStopped" }
-            graphListener.onGraphStopped(graphProcessor)
-            Debug.traceStop()
 
             // On newer API levels, aborting capture allows us to switch to a new capture session
             // sooner [1]. However, it has been shown during field metrics, that faulty HAL
@@ -390,6 +400,11 @@ internal class CaptureSessionState(
                         "Failed to close the capture session in ${CLOSE_SESSION_TIMEOUT_MS}ms"
                     }
             }
+
+            Debug.traceStart { "$graphListener#onGraphStopped" }
+            graphListener.onGraphStopped(graphProcessor)
+            Debug.traceStop()
+
             Debug.traceStop()
         } else {
             // We still need to indicate the stop signal because the graph state would transition to
@@ -506,7 +521,7 @@ internal class CaptureSessionState(
         }
     }
 
-    private fun tryCreateCaptureSession() {
+    private suspend fun tryCreateCaptureSession() {
         val surfaces: Map<StreamId, Surface>?
         val device: CameraDeviceWrapper?
         synchronized(lock) {
@@ -525,12 +540,19 @@ internal class CaptureSessionState(
             sessionCreatingTimestamp = Timestamps.now(timeSource)
         }
 
+        // Acquire session lock if session sequencer is present. This is needed to work around
+        // b/422329694 where under concurrent camera configurations, one is less likely to run into
+        // camera platform issues if one creates capture sessions serially (one after another).
+        sessionSequencer?.let {
+            Log.debug { "Awaiting session lock" }
+            it.awaitSessionLock()
+        }
+
         // Create the capture session and return a Map of StreamId -> OutputConfiguration for any
         // outputs that were not initially available. These will be configured later.
         Log.info {
             "Creating CameraCaptureSession from ${device?.cameraId} using $this with $surfaces"
         }
-
         val deferred =
             Debug.trace("CameraDevice-${device?.cameraId?.value}#createCaptureSession") {
                 captureSessionFactory.create(device!!, surfaces!!, this)

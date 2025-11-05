@@ -123,6 +123,7 @@ class LayoutElementAssertionsProviderTest {
         provider.onRoot().assert(platformEventMatcher)
     }
 
+    @Suppress("deprecation")
     companion object {
         val isImage = LayoutElementMatcher("Element type is Image") { element -> element is Image }
         val isText = LayoutElementMatcher("Element type is Text") { element -> element is Text }

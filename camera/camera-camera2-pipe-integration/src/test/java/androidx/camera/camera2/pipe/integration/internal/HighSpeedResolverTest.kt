@@ -21,7 +21,6 @@ import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LE
 import android.hardware.camera2.CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP
 import android.hardware.camera2.CameraMetadata.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
 import android.hardware.camera2.params.StreamConfigurationMap
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.camera2.pipe.CameraId
@@ -29,6 +28,7 @@ import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.DynamicRange.SDR
 import androidx.camera.core.impl.AttachedSurfaceInfo
+import androidx.camera.core.impl.FrameRates.FRAME_RATE_UNLIMITED
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_HIGH_SPEED
 import androidx.camera.core.impl.SessionConfig.SESSION_TYPE_REGULAR
@@ -56,7 +56,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class HighSpeedResolverTest {
 
     private companion object {
@@ -376,6 +376,7 @@ class HighSpeedResolverTest {
         sessionType: Int = SESSION_TYPE_HIGH_SPEED,
         targetFrameRate: Range<Int> = FRAME_RATE_RANGE_UNSPECIFIED,
         isStrictFrameRateRequired: Boolean = false,
+        customMaxFrameRate: Int = FRAME_RATE_UNLIMITED,
     ): AttachedSurfaceInfo =
         AttachedSurfaceInfo.create(
             surfaceConfig,
@@ -387,6 +388,7 @@ class HighSpeedResolverTest {
             sessionType,
             targetFrameRate,
             isStrictFrameRateRequired,
+            customMaxFrameRate,
         )
 
     private fun List<List<Size>>.toUseCaseSupportedSizeMap(): Map<UseCaseConfig<*>, List<Size>> {

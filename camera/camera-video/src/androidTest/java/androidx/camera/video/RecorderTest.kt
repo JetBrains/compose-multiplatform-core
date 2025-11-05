@@ -28,10 +28,10 @@ import android.content.Context
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCharacteristics
 import android.location.Location
+import android.media.MediaCodec
 import android.media.MediaMetadataRetriever
 import android.media.MediaRecorder
 import android.net.Uri
-import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.util.Size
@@ -43,12 +43,14 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.core.impl.AdapterCameraInfo
 import androidx.camera.core.impl.ImageFormatConstants
 import androidx.camera.core.impl.Observable.Observer
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThreadExecutor
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
+import androidx.camera.testing.fakes.FakeCameraInfoInternal
 import androidx.camera.testing.impl.AudioUtil
 import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
@@ -58,8 +60,10 @@ import androidx.camera.testing.impl.IgnoreVideoRecordingProblematicDeviceRule
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
 import androidx.camera.testing.impl.asFlow
+import androidx.camera.testing.impl.fakes.FakeCameraConfig
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.fakes.FakeSessionProcessor
+import androidx.camera.testing.impl.fakes.NoOpMuxer
 import androidx.camera.testing.impl.getDurationMs
 import androidx.camera.testing.impl.getLocation
 import androidx.camera.testing.impl.getMimeType
@@ -85,13 +89,14 @@ import androidx.camera.video.VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE
 import androidx.camera.video.VideoRecordEvent.Pause
 import androidx.camera.video.VideoRecordEvent.Resume
 import androidx.camera.video.internal.OutputStorage
-import androidx.camera.video.internal.compat.quirk.DeactivateEncoderSurfaceBeforeStopEncoderQuirk
 import androidx.camera.video.internal.compat.quirk.DeviceQuirks
-import androidx.camera.video.internal.compat.quirk.EncoderNotUsePersistentInputSurfaceQuirk
 import androidx.camera.video.internal.compat.quirk.ExtraSupportedResolutionQuirk
 import androidx.camera.video.internal.compat.quirk.MediaStoreVideoCannotWrite
 import androidx.camera.video.internal.encoder.EncoderFactory
 import androidx.camera.video.internal.encoder.InvalidConfigException
+import androidx.camera.video.internal.muxer.MuxerException
+import androidx.camera.video.internal.muxer.MuxerFactory
+import androidx.camera.video.internal.utils.StorageUtil.NO_SPACE_LEFT_MESSAGE
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
@@ -102,6 +107,8 @@ import androidx.testutils.fail
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import java.io.File
+import java.io.IOException
+import java.nio.ByteBuffer
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
@@ -137,9 +144,9 @@ private const val TEST_ATTRIBUTION_TAG = "testAttribution"
 // file length and file size limit.
 private const val FILE_SIZE_LIMIT_BUFFER = 50 * 1024 // 50k threshold buffer
 
+@SdkSuppress(minSdkVersion = 23)
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class RecorderTest(private val implName: String, private val cameraConfig: CameraXConfig) {
 
     @get:Rule
@@ -177,6 +184,8 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
                 arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
                 arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
             )
+
+        private val storageFullException = lazy { IOException(NO_SPACE_LEFT_MESSAGE) }
     }
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -288,9 +297,6 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
                     recorder = createRecorder(),
                     outputOptionsProvider = { createFileOutputOptions() },
                     withAudio = true,
-                    recordingStopStrategy = { recording, recorder ->
-                        recording.stopSafely(recorder)
-                    },
                 )
             )
     }
@@ -384,6 +390,22 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
+    fun muxer_failedToSetOutput_receiveError() {
+        val muxerFactory = MuxerFactory {
+            object : NoOpMuxer() {
+                override fun setOutput(path: String, format: Int) {
+                    throw IOException("Failure on purpose")
+                }
+            }
+        }
+        val recorder = createRecorder(muxerFactory = muxerFactory)
+        val recording = recordingSession.createRecording(recorder = recorder)
+
+        // Act & Assert.
+        recording.start().verifyFinalize(error = ERROR_INVALID_OUTPUT_OPTIONS)
+    }
+
+    @Test
     @SdkSuppress(minSdkVersion = 26)
     fun recordToFileDescriptor_withClosedFileDescriptor_receiveError() {
         // Arrange.
@@ -401,7 +423,7 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 25)
+    @SdkSuppress(maxSdkVersion = 25)
     @SuppressLint("NewApi") // Intentionally testing behavior of calling from invalid API level
     fun prepareRecordingWithFileDescriptor_throwsExceptionBeforeApi26() {
         // Arrange.
@@ -1074,10 +1096,6 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
 
     @Test
     fun insufficientStorageOnNextRecordingStarts_shouldFailWithInsufficientStorageError() {
-        assumeTrue(
-            "RecorderTest can't support second recording when using non persistent input surface",
-            DeviceQuirks.get(EncoderNotUsePersistentInputSurfaceQuirk::class.java) == null,
-        )
         // Arrange.
         var storageAvailableBytes = 100L * 1024L * 1024L // 100MB
         // Required size is less than storage size.
@@ -1115,7 +1133,80 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
+    fun throwStorageFullExceptionOnMuxerStart_receiveInsufficientStorageError() {
+        // Arrange.
+        val muxerFactory = MuxerFactory {
+            object : NoOpMuxer() {
+                override fun start() {
+                    throw MuxerException(storageFullException.value)
+                }
+            }
+        }
+        val recorder = createRecorder(muxerFactory = muxerFactory)
+
+        // Act.
+        val recording = recordingSession.createRecording(recorder = recorder).start()
+
+        // Assert.
+        recording.verifyFinalize(
+            error = ERROR_INSUFFICIENT_STORAGE,
+            shouldSkipOutputFileVerification = true,
+        )
+    }
+
+    @Test
+    fun throwStorageFullExceptionOnMuxerWriteSampleData_receiveInsufficientStorageError() {
+        // Arrange.
+        val muxerFactory = MuxerFactory {
+            object : NoOpMuxer() {
+                override fun writeSampleData(
+                    trackIndex: Int,
+                    byteBuffer: ByteBuffer,
+                    bufferInfo: MediaCodec.BufferInfo,
+                ) {
+                    throw MuxerException(storageFullException.value)
+                }
+            }
+        }
+        val recorder = createRecorder(muxerFactory = muxerFactory)
+
+        // Act.
+        val recording = recordingSession.createRecording(recorder = recorder).start()
+
+        // Assert.
+        recording.verifyFinalize(
+            error = ERROR_INSUFFICIENT_STORAGE,
+            shouldSkipOutputFileVerification = true,
+        )
+    }
+
+    @Test
+    fun throwStorageFullExceptionOnMuxerStop_receiveInsufficientStorageError() {
+        // Arrange.
+        val muxerFactory = MuxerFactory {
+            object : NoOpMuxer() {
+                override fun writeSampleData(
+                    trackIndex: Int,
+                    byteBuffer: ByteBuffer,
+                    bufferInfo: MediaCodec.BufferInfo,
+                ) {
+                    throw MuxerException(storageFullException.value)
+                }
+            }
+        }
+        val recorder = createRecorder(muxerFactory = muxerFactory)
+
+        // Act.
+        val recording = recordingSession.createRecording(recorder = recorder).start()
+
+        // Assert.
+        recording.verifyFinalize(
+            error = ERROR_INSUFFICIENT_STORAGE,
+            shouldSkipOutputFileVerification = true,
+        )
+    }
+
+    @Test
     fun getVideoCapabilitiesStabilizationSupportIsCorrect_whenNotSupportedInExtensions() {
         assumeTrue(
             Recorder.getVideoCapabilities(cameraProvider.getCameraInfo(cameraSelector))
@@ -1144,7 +1235,6 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun getVideoCapabilitiesStabilizationSupportIsCorrect_whenSupportedInExtensions() {
         assumeFalse(
             Recorder.getVideoCapabilities(cameraProvider.getCameraInfo(cameraSelector))
@@ -1170,6 +1260,141 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
             Recorder.getVideoCapabilities(cameraProvider.getCameraInfo(cameraSelector))
 
         assertThat(capabilities.isStabilizationSupported).isTrue()
+    }
+
+    @Test
+    fun getVideoCapabilities_returnsCachedInstanceForSameCameraInfo() {
+        // Arrange
+        val cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
+
+        // Act
+        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo)
+        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo)
+
+        // Assert
+        assertThat(capabilities1).isSameInstanceAs(capabilities2)
+    }
+
+    @Test
+    fun getVideoCapabilities_returnsDifferentInstanceForDifferentCameraInfos() {
+        // Arrange
+        val cameraInfos = cameraProvider.availableCameraInfos
+        assumeTrue("The device must have at least 2 cameras.", cameraInfos.size >= 2)
+        val cameraInfo1 = cameraInfos[0]
+        val cameraInfo2 = cameraInfos[1]
+
+        // Act
+        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo1)
+        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo2)
+
+        // Assert
+        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
+    }
+
+    @Test
+    fun getVideoCapabilities_returnsCachedInstanceForDifferentCameraInfoWithSameIdAndConfig() {
+        // Arrange
+        val cameraConfig = FakeCameraConfig()
+        val cameraInfo1 = AdapterCameraInfo(FakeCameraInfoInternal("0"), cameraConfig)
+        val cameraInfo2 = AdapterCameraInfo(FakeCameraInfoInternal("0"), cameraConfig)
+
+        // Act
+        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo1)
+        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo2)
+
+        // Assert
+        assertThat(capabilities1).isSameInstanceAs(capabilities2)
+    }
+
+    @Test
+    fun getVideoCapabilities_returnsCachedInstanceForCameraInfoOfNewBinding() = runBlocking {
+        // Arrange & act
+        val capabilities1 = Recorder.getVideoCapabilities(camera.cameraInfo)
+        val capabilities2 =
+            Recorder.getVideoCapabilities(
+                withContext(Dispatchers.Main) {
+                    cameraProvider
+                        .bindToLifecycle(
+                            FakeLifecycleOwner().also { it.startAndResume() },
+                            cameraSelector,
+                            Preview.Builder().build(),
+                        )
+                        .cameraInfo
+                }
+            )
+
+        // Assert
+        assertThat(capabilities1).isSameInstanceAs(capabilities2)
+    }
+
+    @Test
+    fun getVideoCapabilities_doesNotCacheForExternalCamera() {
+        // Arrange
+        val cameraInfo =
+            AdapterCameraInfo(
+                FakeCameraInfoInternal("0", CameraSelector.LENS_FACING_EXTERNAL),
+                FakeCameraConfig(),
+            )
+
+        // Act
+        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo)
+        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo)
+
+        // Assert
+        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
+    }
+
+    @Test
+    fun getVideoCapabilities_doesNotCacheForUnknownLensFacingCamera() {
+        // Arrange
+        val cameraInfo =
+            AdapterCameraInfo(
+                FakeCameraInfoInternal("0", CameraSelector.LENS_FACING_UNKNOWN),
+                FakeCameraConfig(),
+            )
+
+        // Act
+        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo)
+        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo)
+
+        // Assert
+        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
+    }
+
+    @Test
+    fun getVideoCapabilities_returnsDifferentInstancesForDifferentCameraConfigs() {
+        // Arrange
+        val cameraInfo1 = AdapterCameraInfo(FakeCameraInfoInternal("0"), FakeCameraConfig())
+        val cameraInfo2 = AdapterCameraInfo(FakeCameraInfoInternal("0"), FakeCameraConfig())
+
+        // Act
+        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo1)
+        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo2)
+
+        // Assert
+        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
+    }
+
+    @Test
+    fun getVideoCapabilities_returnsDifferentInstancesForExtensionCameraSelector() {
+        // Arrange
+        val cameraInfo1 = cameraProvider.getCameraInfo(cameraSelector)
+
+        val sessionProcessor = FakeSessionProcessor()
+        val cameraSelector2 =
+            ExtensionsUtil.getCameraSelectorWithSessionProcessor(
+                cameraProvider,
+                cameraSelector,
+                sessionProcessor,
+            )
+        val cameraInfo2 = cameraProvider.getCameraInfo(cameraSelector2)
+
+        // Act
+        val capabilities1 = Recorder.getVideoCapabilities(cameraInfo1)
+        val capabilities2 = Recorder.getVideoCapabilities(cameraInfo2)
+
+        // Assert
+        assertThat(capabilities1).isNotSameInstanceAs(capabilities2)
     }
 
     private fun testRecorderIsConfiguredBasedOnTargetVideoEncodingBitrate(targetBitrate: Int) {
@@ -1208,6 +1433,7 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
         executor: Executor? = null,
         videoEncoderFactory: EncoderFactory? = null,
         audioEncoderFactory: EncoderFactory? = null,
+        muxerFactory: MuxerFactory? = null,
         outputStorageFactory: OutputStorage.Factory? = null,
         targetBitrate: Int? = null,
         retrySetupVideoMaxCount: Int? = null,
@@ -1224,6 +1450,7 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
                     executor?.let { setExecutor(it) }
                     videoEncoderFactory?.let { setVideoEncoderFactory(it) }
                     audioEncoderFactory?.let { setAudioEncoderFactory(it) }
+                    muxerFactory?.let { setMuxerFactory(it) }
                     outputStorageFactory?.let { setOutputStorageFactory(it) }
                     targetBitrate?.let { setTargetVideoEncodingBitRate(it) }
                     audioSource?.let { setAudioSource(it) }
@@ -1304,21 +1531,6 @@ class RecorderTest(private val implName: String, private val cameraConfig: Camer
             } else {
                 Recorder.DEFAULT_ENCODER_FACTORY.createEncoder(executor, config, sessionType)
             }
-        }
-    }
-
-    // It fails on devices with certain chipset if the codec is stopped when the camera is still
-    // producing frames to the provided surface. This method first stop the camera from
-    // producing frames then stops the recording safely on the problematic devices.
-    private fun Recording.stopSafely(recorder: Recorder) {
-        val deactivateSurfaceBeforeStop =
-            DeviceQuirks.get(DeactivateEncoderSurfaceBeforeStopEncoderQuirk::class.java) != null
-        if (deactivateSurfaceBeforeStop) {
-            instrumentation.runOnMainSync { preview.surfaceProvider = null }
-        }
-        stop()
-        if (deactivateSurfaceBeforeStop && Build.VERSION.SDK_INT >= 23) {
-            recorder.sendSurfaceRequest()
         }
     }
 

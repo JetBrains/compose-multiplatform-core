@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:icon="@mipmap/ic_launcher"
@@ -35,6 +36,11 @@
             android:exported="true"
             android:label="@string/title_activity_mode_change"
             android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".anchoredsubspace.AnchoredSubspaceApp"
+            android:exported="true"
+            android:label="@string/anchored_subspace_app_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
        <activity
            android:name=".movable.MovableActivity"
            android:exported="true"
@@ -48,8 +54,15 @@
        <activity
            android:name=".animation.Animation"
            android:exported="true"
+           android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+           android:enableOnBackInvokedCallback="true"
            android:label="ValueBasedAnimations"
            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".animation.SampleAnimations"
+            android:exported="true"
+            android:label="SampleAnimationExamples"
+            android:theme="@style/Theme.IntegrationTestsApp" />
        <activity
            android:name=".curvedlayout.CurvedLayout"
            android:exported="true"
@@ -76,6 +89,7 @@
             android:exported="true"
             android:label="SpatialCompose"
             android:enableOnBackInvokedCallback="true"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
             android:theme="@style/Theme.IntegrationTestsApp" />
         <activity
             android:name=".spatialcompose.SpatialComposeWindowManager"
@@ -95,6 +109,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".spatialcompose.FragmentBasedVideoPlayerActivity"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+            android:enableOnBackInvokedCallback="true"
+            android:exported="true">
+        </activity>
        <activity
            android:name=".videoplayer.VideoPlayerActivity"
            android:exported="true"
@@ -105,7 +125,108 @@
            android:exported="true"
            android:label="SplitEngineTest"
            android:theme="@style/Theme.IntegrationTestsApp" />
-
+        <activity
+            android:name=".depthstacking.DepthStacking"
+            android:exported="true"
+            android:label="DepthStacking"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".panelembeddedsubspace.PanelEmbeddedSubspace"
+            android:exported="true"
+            android:label="PanelEmbeddedSubspace"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".usersubspace.UserSubspaceActivity"
+            android:exported="true"
+            android:label="UserSubspace"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".panelvolume.PanelVolume"
+            android:exported="true"
+            android:label="PanelVolume"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".resizablepanel.ResizablePanel"
+            android:exported="true"
+            android:label="ResizablePanel"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".spacemodechange.SpaceModeActivity"
+            android:exported="true"
+            android:label="@string/lifecycle_resize_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".spatialpanel.SpatialPanelActivity"
+            android:exported="true"
+            android:label="@string/spatial_panel_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".focuschange.FocusStealerActivity"
+            android:label="FocusStealer Activity"
+            android:launchMode="singleInstance" />
+        <activity
+            android:name=".focuschange.HSMFocusChangeActivity"
+            android:exported="true"
+            android:label="@string/hsm_focus_change_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".focuschange.FSMFocusChangeActivity"
+            android:exported="true"
+            android:label="@string/fsm_focus_change_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".lifecycle.OpenCloseActivity"
+            android:exported="true"
+            android:label="@string/lifecycle_open_close_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".lifecycle.OpenCloseChildActivity"
+            android:exported="true"
+            android:label="@string/lifecycle_open_close_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".lifecycle.ResizeActivity"
+            android:exported="true"
+            android:label="@string/lifecycle_resize_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".lifecycle.RuntimeSessionActivity"
+            android:exported="true"
+            android:label="@string/lifecycle_runtime_session_test"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".accessibility.AccessibilityActivity"
+            android:exported="true"
+            android:label="AccessibilityTest"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".spatialalignmentusage.SpatialAlignmentUsageActivity"
+            android:exported="true"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+            android:enableOnBackInvokedCallback="true"
+            android:label="SpatialAlignment"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".spatialarrangementusage.SpatialArrangementUsageActivity"
+            android:exported="true"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+            android:enableOnBackInvokedCallback="true"
+            android:label="SpatialArrangementUsage"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".pose.Pose"
+            android:exported="true"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+            android:enableOnBackInvokedCallback="true"
+            android:label="Pose"
+            android:theme="@style/Theme.IntegrationTestsApp" />
+        <activity
+            android:name=".gravityaligned.GravityAlignedActivity"
+            android:exported="true"
+            android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout"
+            android:enableOnBackInvokedCallback="true"
+            android:label="@string/gravity_aligned_test_case"
+            android:theme="@style/Theme.IntegrationTestsApp" />
 
         <property
             android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"

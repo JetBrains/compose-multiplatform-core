@@ -18,6 +18,7 @@ package androidx.appfunctions.compiler.core
 
 import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadataDocument
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDeprecationMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionNamedDataTypeMetadataDocument
 import androidx.appfunctions.compiler.core.metadata.AppFunctionParameterMetadataDocument
@@ -36,7 +37,7 @@ internal fun AppFunctionMetadataDocument.toXmlElement(doc: Document, elementName
             doc.createElementWithTextNode("enabledByDefault", isEnabledByDefault.toString())
         )
 
-        if (!description.isEmpty()) {
+        if (description.isNotEmpty()) {
             appendChild(doc.createElementWithTextNode("description", description))
         }
 
@@ -54,6 +55,10 @@ internal fun AppFunctionMetadataDocument.toXmlElement(doc: Document, elementName
 
         schemaVersion?.let {
             appendChild(doc.createElementWithTextNode("schemaVersion", it.toString()))
+        }
+
+        if (deprecation != null) {
+            appendChild(deprecation.toXmlElement(doc, "deprecation"))
         }
     }
 
@@ -76,6 +81,11 @@ private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
         for (property in allOf) {
             appendChild(property.toXmlElement(doc, "allOf"))
         }
+
+        for (dataType in oneOf) {
+            appendChild(dataType.toXmlElement(doc, "oneOf"))
+        }
+
         dataTypeReference?.let {
             appendChild(doc.createElementWithTextNode("dataTypeReference", it))
         }
@@ -90,7 +100,7 @@ private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
             appendChild(doc.createElementWithTextNode("objectQualifiedName", it))
         }
 
-        if (!description.isEmpty()) {
+        if (description.isNotEmpty()) {
             appendChild(doc.createElementWithTextNode("description", description))
         }
 
@@ -100,6 +110,10 @@ private fun AppFunctionDataTypeMetadataDocument.toXmlElement(
 
         for (property in required) {
             appendChild(doc.createElementWithTextNode("required", property))
+        }
+
+        for (enumValue in enumValues) {
+            appendChild(doc.createElementWithTextNode("enumValues", enumValue))
         }
 
         appendChild(doc.createElementWithTextNode("type", type.toString()))
@@ -122,6 +136,9 @@ private fun AppFunctionResponseMetadataDocument.toXmlElement(
     doc.createElement(elementName).apply {
         appendChild(doc.createElementWithTextNode("id", id))
         appendChild(valueType.toXmlElement(doc, "valueType"))
+        if (description.isNotEmpty()) {
+            appendChild(doc.createElementWithTextNode("description", description))
+        }
     }
 
 private fun AppFunctionParameterMetadataDocument.toXmlElement(
@@ -133,4 +150,17 @@ private fun AppFunctionParameterMetadataDocument.toXmlElement(
         appendChild(doc.createElementWithTextNode("id", id))
         appendChild(doc.createElementWithTextNode("isRequired", isRequired.toString()))
         appendChild(doc.createElementWithTextNode("name", name))
+        if (description.isNotEmpty()) {
+            appendChild(doc.createElementWithTextNode("description", description))
+        }
     }
+
+private fun AppFunctionDeprecationMetadataDocument.toXmlElement(
+    doc: Document,
+    elementName: String,
+): Element {
+    return doc.createElement(elementName).apply {
+        appendChild(doc.createElementWithTextNode("id", id))
+        appendChild(doc.createElementWithTextNode("message", message))
+    }
+}

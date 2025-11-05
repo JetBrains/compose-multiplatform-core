@@ -33,23 +33,26 @@ import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
-import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.ExrImage
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.ResizableComponent
-import androidx.xr.scenecore.ResizeListener
+import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.SpatialEnvironment
+import androidx.xr.scenecore.SpatialWindow
+import androidx.xr.scenecore.createBundleForFullSpaceModeLaunch
+import androidx.xr.scenecore.createBundleForFullSpaceModeLaunchWithEnvironmentInherited
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.format
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
 import java.nio.file.Paths
 import java.util.concurrent.Executors
-import kotlinx.coroutines.guava.await
+import java.util.function.Consumer
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n", "RestrictedApi")
@@ -63,10 +66,11 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
     private var skybox: ExrImage? = null
     private var spatialEnvironmentPreference: SpatialEnvironment.SpatialEnvironmentPreference? =
         null
+    private lateinit var defaultPanelSize: FloatSize2d
 
     private fun mainPanelPixelDimensionsString(): String {
-        val width = session!!.scene.mainPanelEntity.size.width
-        val height = session!!.scene.mainPanelEntity.size.height
+        val width = session!!.scene.mainPanelEntity.size.width.format(2)
+        val height = session!!.scene.mainPanelEntity.size.height.format(2)
         return "{w:$width, h:$height}"
     }
 
@@ -76,6 +80,20 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
 
         session = createSession(this)
         if (session == null) this.finish()
+
+        if (savedInstanceState != null) {
+            val width = savedInstanceState.getFloat("defaultPanelSizeWidth")
+            val height = savedInstanceState.getFloat("defaultPanelSizeHeight")
+            defaultPanelSize = FloatSize2d(width, height)
+        } else {
+            defaultPanelSize = session!!.scene.mainPanelEntity.size
+        }
+        Log.d(
+            TAG,
+            "defaultPanelSize: " +
+                "w ${defaultPanelSize.width.format(2)} x " +
+                "h ${defaultPanelSize.height.format(2)}",
+        )
 
         // Set visibility of components per mode
         componentVisibility()
@@ -92,7 +110,14 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         // Toolbar action
         findViewById<Toolbar>(R.id.top_app_bar_activity_panel).also {
             setSupportActionBar(it)
-            it.setNavigationOnClickListener { this.finish() }
+            it.setNavigationOnClickListener {
+                val resultIntent = Intent()
+                resultIntent.putExtra("defaultPanelSizeWidth", defaultPanelSize.width)
+                resultIntent.putExtra("defaultPanelSizeHeight", defaultPanelSize.height)
+                setResult(RESULT_OK, resultIntent)
+
+                this.finish()
+            }
         }
 
         // Recreate button
@@ -121,7 +146,7 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
 
         // Movable switch
         findViewById<SwitchMaterial>(R.id.switch_movable_in_fsm).also {
-            val movableComponent = MovableComponent.create(session!!)
+            val movableComponent = MovableComponent.createSystemMovable(session!!)
             it.setOnCheckedChangeListener { _, isOn ->
                 movableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
                 when (isOn) {
@@ -139,29 +164,32 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         // Resizeable switch
         findViewById<SwitchMaterial>(R.id.switch_resizeable_in_fsm).also {
             val resizableComponent =
-                ResizableComponent.create(session!!).also { component ->
-                    component.addResizeListener(
-                        Executors.newSingleThreadExecutor(),
-                        object : ResizeListener {
-                            override fun onResizeEnd(entity: Entity, finalSize: FloatSize3d) {
-                                Log.i(TAG, "resize event $finalSize")
-                                (entity as PanelEntity).size = finalSize.to2d()
+                ResizableComponent.create(
+                    session!!,
+                    executor = Executors.newSingleThreadExecutor(),
+                    resizeEventListener =
+                        Consumer<ResizeEvent> { resizeEvent: ResizeEvent ->
+                            if (resizeEvent.resizeState == ResizeEvent.ResizeState.END) {
+                                Log.i(TAG, "resize event ${resizeEvent.newSize}")
+                                (resizeEvent.entity as PanelEntity).size =
+                                    resizeEvent.newSize.to2d()
                                 findViewById<TextView>(R.id.text_main_panel_dimensions_value).text =
                                     mainPanelPixelDimensionsString()
                             }
                         },
-                    )
-                }
+                )
             it.setOnCheckedChangeListener { _, isOn ->
-                resizableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
+                resizableComponent.affordanceSize = session!!.scene.mainPanelEntity.size.to3d()
                 when (isOn) {
                     true ->
                         resizableActive =
                             session!!.scene.mainPanelEntity.addComponent(resizableComponent)
-                    false ->
-                        resizableActive.let {
+                    false -> {
+                        if (resizableActive) {
                             session!!.scene.mainPanelEntity.removeComponent(resizableComponent)
+                            resizableActive = false
                         }
+                    }
                 }
             }
         }
@@ -169,14 +197,18 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         // Resize to portrait in fsm
         findViewById<Button>(R.id.button_resize_in_fsm_portrait).also {
             it.setOnClickListener {
-                session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1200, 1600)
+                if (resizableActive) {
+                    session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1200, 1600)
+                }
             }
         }
 
         // Resize to landscape in fsm
         findViewById<Button>(R.id.button_resize_in_fsm_landscape).also {
             it.setOnClickListener {
-                session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1600, 1200)
+                if (resizableActive) {
+                    session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(1600, 1200)
+                }
             }
         }
 
@@ -202,7 +234,11 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         }
 
         // No aspect ratio preferences initially
-        session!!.scene.setPreferredAspectRatio(this, 0.0f)
+        SpatialWindow.setPreferredAspectRatio(
+            session!!,
+            this,
+            SpatialWindow.NO_PREFERRED_ASPECT_RATIO,
+        )
 
         // Make components visible per mode
         findViewById<RadioButton>(R.id.choice_any_aspect_ratio_in_hsm).isChecked = true
@@ -212,11 +248,11 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
                     when (checkedId) {
                         R.id.choice_portrait_in_hsm -> 0.7f
                         R.id.choice_landscape_in_hsm -> 1.4f
-                        else -> -12.345f // A negative ratio means "no preferences."
+                        else -> SpatialWindow.NO_PREFERRED_ASPECT_RATIO
                     }
                 // Note: If currently in FSM, the ratio will be applied
                 // when the mode switches back to HSM.
-                session!!.scene.setPreferredAspectRatio(this, ratio)
+                SpatialWindow.setPreferredAspectRatio(session!!, this, ratio)
             }
         }
 
@@ -224,15 +260,27 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         findViewById<Button>(R.id.button_launch_settings_app).also {
             it.setOnClickListener {
                 var (intent, bundle) = createIntent()
-                bundle = session!!.scene.setFullSpaceMode(bundle)
+                bundle = createBundleForFullSpaceModeLaunch(session!!, bundle)
+                startActivity(intent, bundle)
+            }
+        }
+
+        // Launch settings app with environment inherited
+        findViewById<Button>(R.id.button_launch_settings_app_with_env_inherited).also {
+            it.setOnClickListener {
+                var (intent, bundle) = createIntent()
+                bundle =
+                    createBundleForFullSpaceModeLaunchWithEnvironmentInherited(session!!, bundle)
                 startActivity(intent, bundle)
             }
         }
 
         // Add bounds check listener for activity space bounds
-        session!!.scene.activitySpace.addBoundsChangedListener { dimensions ->
+        session!!.scene.activitySpace.addOnBoundsChangedListener { dimensions ->
             val dimsString =
-                "{w:${dimensions.width}, h:${dimensions.height}, d:${dimensions.depth}}"
+                "{w:${dimensions.width.format(2)}, " +
+                    "h:${dimensions.height.format(2)}, " +
+                    "d:${dimensions.depth.format(2)}"
             // Set activity space dimensions
             findViewById<TextView>(R.id.text_activity_space_dimensions_value).text = dimsString
             // Set main panel dimensions
@@ -247,14 +295,18 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            skybox =
-                ExrImage.createFromZipAsync(session!!, Paths.get("skyboxes", "BlueSkybox.zip"))
-                    .await()
+            skybox = ExrImage.createFromZip(session!!, Paths.get("skyboxes", "BlueSkybox.zip"))
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putFloat("defaultPanelSizeWidth", defaultPanelSize.width)
+        outState.putFloat("defaultPanelSizeHeight", defaultPanelSize.height)
     }
 
     private fun componentVisibility() {

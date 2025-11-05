@@ -20,7 +20,6 @@ import android.annotation.SuppressLint
 import android.health.connect.datatypes.Metadata.RECORDING_METHOD_UNKNOWN
 import android.os.Build
 import androidx.health.connect.client.RECORD_CLASSES
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.ActivityIntensityRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
@@ -647,7 +646,6 @@ class RecordConvertersTest {
         assertPlatformRecord(platformMenstruationPeriod)
     }
 
-    @OptIn(ExperimentalMindfulnessSessionApi::class)
     @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
     @Test
     fun mindfulnessSessionRecord_convertToPlatform() {
@@ -669,7 +667,6 @@ class RecordConvertersTest {
         }
     }
 
-    @OptIn(ExperimentalMindfulnessSessionApi::class)
     @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
     @Test
     fun mindfulnessSessionRecord_unknownType_convertToPlatform() {
@@ -2035,7 +2032,6 @@ class RecordConvertersTest {
         assertSdkRecord(sdkMenstruationPeriod)
     }
 
-    @OptIn(ExperimentalMindfulnessSessionApi::class)
     @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
     @Test
     fun mindfulnessSessionRecord_convertToSdk() {
@@ -2063,7 +2059,6 @@ class RecordConvertersTest {
         }
     }
 
-    @OptIn(ExperimentalMindfulnessSessionApi::class)
     @SuppressLint("NewApi") // Using assumeTrue to only run on the new API version
     @Test
     fun mindfulnessSessionRecord_otherType_convertToSdk() {

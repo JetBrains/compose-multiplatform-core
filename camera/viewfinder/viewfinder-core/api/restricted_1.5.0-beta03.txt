@@ -60,7 +60,7 @@ package androidx.camera.viewfinder.core {
     ctor public ViewfinderSurfaceRequest(int width, int height);
     ctor public ViewfinderSurfaceRequest(int width, int height, optional androidx.camera.viewfinder.core.ImplementationMode? implementationMode);
     ctor public ViewfinderSurfaceRequest(int width, int height, optional androidx.camera.viewfinder.core.ImplementationMode? implementationMode, optional String? requestId);
-    method @kotlin.jvm.JvmSynthetic public androidx.camera.viewfinder.core.ViewfinderSurfaceRequest copy(optional int width, optional int height, optional androidx.camera.viewfinder.core.ImplementationMode? implementationMode, optional String? requestId);
+    method @InaccessibleFromJava @kotlin.jvm.JvmSynthetic public androidx.camera.viewfinder.core.ViewfinderSurfaceRequest copy(optional int width, optional int height, optional androidx.camera.viewfinder.core.ImplementationMode? implementationMode, optional String? requestId);
     method public int getHeight();
     method public androidx.camera.viewfinder.core.ImplementationMode? getImplementationMode();
     method public String? getRequestId();
@@ -112,9 +112,9 @@ package androidx.camera.viewfinder.core {
     method public final long getEventTime();
     method public final int getFocusX();
     method public final int getFocusY();
-    property @IntRange(from=0L) public final long eventTime;
-    property @IntRange(from=0L) @Px public final int focusX;
-    property @IntRange(from=0L) @Px public final int focusY;
+    property public final long eventTime;
+    property public final int focusX;
+    property public final int focusY;
   }
 
   public static final class ZoomGestureDetector.ZoomEvent.Begin extends androidx.camera.viewfinder.core.ZoomGestureDetector.ZoomEvent {
@@ -124,13 +124,13 @@ package androidx.camera.viewfinder.core {
   public static final class ZoomGestureDetector.ZoomEvent.End extends androidx.camera.viewfinder.core.ZoomGestureDetector.ZoomEvent {
     ctor public ZoomGestureDetector.ZoomEvent.End(@IntRange(from=0L) long eventTime, @IntRange(from=0L) @Px int focusX, @IntRange(from=0L) @Px int focusY, @FloatRange(from=0.0, fromInclusive=false) float incrementalScaleFactor);
     method public float getIncrementalScaleFactor();
-    property @FloatRange(from=0.0, fromInclusive=false) public float incrementalScaleFactor;
+    property public float incrementalScaleFactor;
   }
 
   public static final class ZoomGestureDetector.ZoomEvent.Move extends androidx.camera.viewfinder.core.ZoomGestureDetector.ZoomEvent {
     ctor public ZoomGestureDetector.ZoomEvent.Move(@IntRange(from=0L) long eventTime, @IntRange(from=0L) @Px int focusX, @IntRange(from=0L) @Px int focusY, @FloatRange(from=0.0, fromInclusive=false) float incrementalScaleFactor);
     method public float getIncrementalScaleFactor();
-    property @FloatRange(from=0.0, fromInclusive=false) public float incrementalScaleFactor;
+    property public float incrementalScaleFactor;
   }
 
 }

@@ -50,6 +50,8 @@ import javax.inject.Qualifier
 import javax.inject.Scope
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 
 @Scope internal annotation class CameraGraphScope
 
@@ -80,8 +82,13 @@ internal interface CameraGraphComponent {
 }
 
 @Module
-internal class CameraGraphConfigModule(private val config: CameraGraph.Config) {
+internal class CameraGraphConfigModule(
+    private val config: CameraGraph.Config,
+    private val cameraGraphId: CameraGraphId,
+) {
     @Provides fun provideCameraGraphConfig(): CameraGraph.Config = config
+
+    @Provides fun provideCameraGraphId(): CameraGraphId = cameraGraphId
 }
 
 @Module
@@ -107,15 +114,15 @@ internal abstract class SharedCameraGraphModules {
     companion object {
         @CameraGraphScope
         @Provides
-        fun provideCameraGraphId(): CameraGraphId {
-            return CameraGraphId.nextId()
-        }
-
-        @CameraGraphScope
-        @Provides
         @ForCameraGraph
-        fun provideCameraGraphCoroutineScope(threads: Threads): CoroutineScope {
-            return CoroutineScope(threads.lightweightDispatcher.plus(CoroutineName("CXCP-Graph")))
+        fun provideCameraGraphCoroutineScope(
+            threads: Threads,
+            @CameraPipeJob cameraPipeJob: Job,
+        ): CoroutineScope {
+            return CoroutineScope(
+                SupervisorJob(cameraPipeJob) +
+                    threads.lightweightDispatcher.plus(CoroutineName("CXCP-Graph"))
+            )
         }
 
         @CameraGraphScope

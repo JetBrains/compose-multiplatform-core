@@ -20,7 +20,6 @@ import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
 import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.aggregate.AggregateMetric
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.records.metadata.Metadata
 import java.time.Duration
 import java.time.Instant
@@ -37,7 +36,6 @@ import java.time.ZoneOffset
  * installed on the device. To check if available: call [HealthConnectFeatures.getFeatureStatus] and
  * pass [HealthConnectFeatures.FEATURE_MINDFULNESS_SESSION] as an argument.
  */
-@ExperimentalMindfulnessSessionApi
 class MindfulnessSessionRecord(
     override val startTime: Instant,
     override val startZoneOffset: ZoneOffset?,

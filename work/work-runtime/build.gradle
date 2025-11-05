@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 import androidx.build.KotlinTarget
+import androidx.build.ProjectLayoutType
 import androidx.build.SoftwareType
 
 import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
@@ -29,6 +30,7 @@ import static androidx.inspection.gradle.InspectionPluginKt.packageInspector
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    // Remove when b/442128557 is fixed
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("androidx.stableaidl")
@@ -39,13 +41,12 @@ android {
         aidl = true
     }
     buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-
         stableAidl {
             version = 1
         }
     }
     defaultConfig {
+        consumerProguardFiles("proguard-rules.pro")
         javaCompileOptions {
             annotationProcessorOptions {
                 arguments = [
@@ -75,7 +76,6 @@ dependencies {
     api("androidx.startup:startup-runtime:1.1.1")
     implementation("androidx.lifecycle:lifecycle-service:2.6.2")
     implementation("androidx.tracing:tracing-ktx:1.2.0")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     androidTestImplementation(libs.kotlinCoroutinesTest)
     androidTestImplementation(libs.truth)
@@ -97,7 +97,13 @@ dependencies {
     lintPublish(project(":work:work-runtime-lint"))
 }
 
-packageInspector(project, ":work:work-inspection")
+if (!ProjectLayoutType.isPlayground(project)) {
+    androidComponents {
+        onVariants(selector().withBuildType("release"), { variant ->
+            packageInspector(variant, project, project(":work:work-inspection"))
+        })
+    }
+}
 
 // KSP does not support argument per flavor so we set it to global instead.
 ksp {

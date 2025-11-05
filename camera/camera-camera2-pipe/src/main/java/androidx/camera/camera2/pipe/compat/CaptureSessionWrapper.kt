@@ -222,9 +222,7 @@ internal class AndroidCaptureSessionStateCallback(
         // return a CameraConstrainedHighSpeedCaptureSession depending on the configuration. If
         // this happens, several methods are not allowed, the behavior is different, and interacting
         // with the session requires several behavior changes for these interactions to work well.
-        return if (
-            Build.VERSION.SDK_INT >= 23 && session is CameraConstrainedHighSpeedCaptureSession
-        ) {
+        return if (session is CameraConstrainedHighSpeedCaptureSession) {
             AndroidCameraConstrainedHighSpeedCaptureSession(
                 device,
                 session,
@@ -299,23 +297,10 @@ internal open class AndroidCameraCaptureSession(
         CameraInterop.nextCameraCaptureSessionId()
 
     override val isReprocessable: Boolean
-        get() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                return Api23Compat.isReprocessable(cameraCaptureSession)
-            }
-            // Reprocessing is not supported  prior to Android M
-            return false
-        }
+        get() = cameraCaptureSession.isReprocessable
 
     override val inputSurface: Surface?
-        get() {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                return Api23Compat.getInputSurface(cameraCaptureSession)
-            }
-            // Reprocessing is not supported prior to Android M, and a CaptureSession that does not
-            // support reprocessing will have a null input surface on M and beyond.
-            return null
-        }
+        get() = cameraCaptureSession.inputSurface
 
     @RequiresApi(26)
     override fun finalizeOutputConfigurations(
@@ -358,7 +343,6 @@ internal open class AndroidCameraCaptureSession(
  * An implementation of [CameraConstrainedHighSpeedCaptureSessionWrapper] forwards calls to a real
  * [CameraConstrainedHighSpeedCaptureSession].
  */
-@RequiresApi(23)
 internal class AndroidCameraConstrainedHighSpeedCaptureSession
 internal constructor(
     device: CameraDeviceWrapper,

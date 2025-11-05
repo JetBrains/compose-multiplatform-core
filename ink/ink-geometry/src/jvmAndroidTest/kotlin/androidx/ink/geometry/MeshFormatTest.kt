@@ -56,4 +56,10 @@ class MeshFormatTest {
         val meshFormat = Mesh().format
         assertThat(meshFormat.isUnpackedEquivalent(Mesh().format)).isTrue()
     }
+
+    @Test
+    fun attributeCount_returnsCorrectCount() {
+        val meshFormat = Mesh().format
+        assertThat(meshFormat.attributeCount()).isEqualTo(1)
+    }
 }

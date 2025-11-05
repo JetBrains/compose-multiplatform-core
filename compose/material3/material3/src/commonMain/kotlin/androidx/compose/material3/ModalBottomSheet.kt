@@ -188,6 +188,7 @@ fun ModalBottomSheet(
                 color = scrimColor,
                 onDismissRequest = animateToDismiss,
                 visible = sheetState.targetValue != Hidden,
+                dismissEnabled = properties.shouldDismissOnClickOutside,
             )
             ModalBottomSheetContent(
                 predictiveBackProgress,
@@ -379,10 +380,9 @@ internal fun BoxScope.ModalBottomSheetContent(
                 val collapseActionLabel = getString(Strings.BottomSheetPartialExpandDescription)
                 val dismissActionLabel = getString(Strings.BottomSheetDismissDescription)
                 val expandActionLabel = getString(Strings.BottomSheetExpandDescription)
-                Box(
+                DragHandleWithTooltip(
                     modifier =
-                        Modifier.align(Alignment.CenterHorizontally)
-                            .clickable {
+                        Modifier.clickable {
                                 when (sheetState.currentValue) {
                                     Expanded -> animateToDismiss()
                                     PartiallyExpanded -> scope.launch { sheetState.expand() }
@@ -390,8 +390,8 @@ internal fun BoxScope.ModalBottomSheetContent(
                                 }
                             }
                             .semantics(mergeDescendants = true) {
-                                // Provides semantics to interact with the bottomsheet based on its
-                                // current value.
+                                // Provides semantics to interact with the bottomsheet based on
+                                // its current value.
                                 if (sheetGesturesEnabled) {
                                     with(sheetState) {
                                         dismiss(dismissActionLabel) {
@@ -423,10 +423,9 @@ internal fun BoxScope.ModalBottomSheetContent(
                                         }
                                     }
                                 }
-                            }
-                ) {
-                    dragHandle()
-                }
+                            },
+                    content = dragHandle,
+                )
             }
             content()
         }
@@ -456,11 +455,23 @@ private fun GraphicsLayerScope.calculatePredictiveBackScaleY(progress: Float): F
  *
  * @param shouldDismissOnBackPress Whether the modal bottom sheet can be dismissed by pressing the
  *   back button. If true, pressing the back button will call onDismissRequest.
+ * @param shouldDismissOnClickOutside Whether the modal bottom sheet can be dismissed by clicking on
+ *   the scrim.
  */
 @Immutable
 @ExperimentalMaterial3Api
-expect class ModalBottomSheetProperties(shouldDismissOnBackPress: Boolean = true) {
+expect class ModalBottomSheetProperties(
+    shouldDismissOnBackPress: Boolean = true,
+    shouldDismissOnClickOutside: Boolean = true,
+) {
     val shouldDismissOnBackPress: Boolean
+    val shouldDismissOnClickOutside: Boolean
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "Replaced with additional shouldDismissOnClickOutside param constructor.",
+    )
+    constructor(shouldDismissOnBackPress: Boolean)
 }
 
 /** Default values for [ModalBottomSheet] */
@@ -493,7 +504,12 @@ fun rememberModalBottomSheetState(
     )
 
 @Composable
-private fun Scrim(color: Color, onDismissRequest: () -> Unit, visible: Boolean) {
+private fun Scrim(
+    color: Color,
+    onDismissRequest: () -> Unit,
+    visible: Boolean,
+    dismissEnabled: Boolean,
+) {
     // TODO Load the motionScheme tokens from the component tokens file
     if (color.isSpecified) {
         val alpha by
@@ -503,7 +519,7 @@ private fun Scrim(color: Color, onDismissRequest: () -> Unit, visible: Boolean) 
             )
         val closeSheet = getString(Strings.CloseSheet)
         val dismissSheet =
-            if (visible) {
+            if (dismissEnabled) {
                 Modifier.pointerInput(onDismissRequest) { detectTapGestures { onDismissRequest() } }
                     .semantics(mergeDescendants = true) {
                         traversalIndex = 1f

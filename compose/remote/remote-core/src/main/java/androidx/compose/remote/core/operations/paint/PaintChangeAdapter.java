@@ -15,9 +15,12 @@
  */
 package androidx.compose.remote.core.operations.paint;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class PaintChangeAdapter implements PaintChanges {
 
     @Override
@@ -34,6 +37,13 @@ public class PaintChangeAdapter implements PaintChanges {
 
     @Override
     public void setFontVariationAxes(@NonNull String[] tags, float @NonNull [] values) {}
+
+    @Override
+    public void setTextureShader(
+            int bitmapId, short tileX, short tileY, short filterMode, short maxAnisotropy) {}
+
+    @Override
+    public void setPathEffect(float @Nullable [] pathEffect) {}
 
     @Override
     public void setStrokeWidth(float width) {}
@@ -66,7 +76,7 @@ public class PaintChangeAdapter implements PaintChanges {
     public void setFilterBitmap(boolean filter) {}
 
     @Override
-    public void setBlendMode(int blendmode) {}
+    public void setBlendMode(int mode) {}
 
     @Override
     public void setAntiAlias(boolean aa) {}

@@ -47,6 +47,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
@@ -100,9 +101,7 @@ class CameraExtensionsInfoTest(private val config: CameraXExtensionTestParams) {
         ProcessCameraProvider.configureInstance(config.cameraXConfig)
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
 
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = runBlocking { ExtensionsManager.getInstance(context, cameraProvider) }
 
         baseCameraSelector = CameraSelectorUtil.createCameraSelectorById(config.cameraId)
         assumeTrue(extensionsManager.isExtensionAvailable(baseCameraSelector, config.extensionMode))

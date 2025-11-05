@@ -16,8 +16,6 @@
 
 package androidx.xr.runtime.math
 
-import androidx.annotation.RestrictTo
-
 /**
  * Describes a specific location, elevation, and orientation relative to Earth. It is comprised of:
  * - Latitude and longitude, specified in degrees, with positive values being north of the equator
@@ -34,7 +32,6 @@ import androidx.annotation.RestrictTo
  * @property eastUpSouthQuaternion The orientation of the GeospatialPose in the EUS coordinate
  *   system.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class GeospatialPose
 constructor(
     public val latitude: Double = 0.0,

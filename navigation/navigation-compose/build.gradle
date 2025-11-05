@@ -38,7 +38,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(project(":navigation:navigation-runtime"))
                 api(project(":navigation:navigation-common"))
                 implementation("androidx.annotation:annotation:1.8.0")
@@ -93,10 +92,10 @@ androidXMultiplatform {
                 implementation("androidx.activity:activity:1.8.0")
             }
         }
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmCommonTest)
         }
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmCommonTest)
             dependencies {
                 implementation("androidx.activity:activity:1.9.2")
@@ -112,6 +111,7 @@ androidXMultiplatform {
                 implementation(libs.testRunner)
                 implementation(libs.junit)
                 implementation(libs.truth)
+                implementation(project(":internal-testutils-navigation"))
 
                 // Compose test dependencies
                 implementation(project(":compose:animation:animation"))
@@ -129,9 +129,7 @@ androidXMultiplatform {
                 implementation(project(":compose:test-utils"))
                 implementation(project(":compose:ui:ui-test-junit4"))
                 implementation(project(":compose:ui:ui-tooling"))
-                implementation(project(":internal-testutils-navigation"), {
-                    exclude group: "androidx.navigation", module: "navigation-common"
-                })
+                implementation(project(":internal-testutils-navigation"))
             }
         }
         nonJvmCommonMain {

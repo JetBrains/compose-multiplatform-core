@@ -24,6 +24,8 @@ import androidx.tracing.Trace
 import androidx.work.impl.DefaultRunnableScheduler
 import androidx.work.impl.Scheduler
 import androidx.work.impl.utils.INITIAL_ID
+import androidx.work.multiprocess.RemoteWorkManager.DEFAULT_SESSION_TIMEOUT_MILLIS
+import androidx.work.multiprocess.RemoteWorkManager.MAX_SESSION_TIMEOUT_MILLIS
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
@@ -93,6 +95,15 @@ public class Configuration internal constructor(builder: Builder) {
 
     /** The [String] name of the process where work should be scheduled. */
     public val defaultProcessName: String?
+
+    /**
+     * The time in milliseconds that the designated process stays active before unbinding when using
+     * [androidx.work.multiprocess.RemoteWorkManager].
+     *
+     * The default timeout is
+     * [androidx.work.multiprocess.RemoteWorkManager.DEFAULT_SESSION_TIMEOUT_MILLIS].
+     */
+    @IntRange(from = 0, to = MAX_SESSION_TIMEOUT_MILLIS) public val remoteSessionTimeoutMillis: Long
 
     /** The minimum logging level, corresponding to the constants found in [Log] */
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public val minimumLoggingLevel: Int
@@ -200,6 +211,7 @@ public class Configuration internal constructor(builder: Builder) {
         workerInitializationExceptionHandler = builder.workerInitializationExceptionHandler
         workerExecutionExceptionHandler = builder.workerExecutionExceptionHandler
         defaultProcessName = builder.defaultProcessName
+        remoteSessionTimeoutMillis = builder.remoteSessionTimeoutMillis
         contentUriTriggerWorkersLimit = builder.contentUriTriggerWorkersLimit
         isMarkingJobsAsImportantWhileForeground = builder.markJobsAsImportantWhileForeground
         tracer = builder.tracer ?: createDefaultTracer()
@@ -219,6 +231,7 @@ public class Configuration internal constructor(builder: Builder) {
         internal var workerInitializationExceptionHandler: Consumer<WorkerExceptionInfo>? = null
         internal var workerExecutionExceptionHandler: Consumer<WorkerExceptionInfo>? = null
         internal var defaultProcessName: String? = null
+        internal var remoteSessionTimeoutMillis: Long = DEFAULT_SESSION_TIMEOUT_MILLIS
         internal var loggingLevel: Int = Log.INFO
         internal var minJobSchedulerId: Int = INITIAL_ID
         internal var maxJobSchedulerId: Int = Int.MAX_VALUE
@@ -255,6 +268,7 @@ public class Configuration internal constructor(builder: Builder) {
                 configuration.workerInitializationExceptionHandler
             workerExecutionExceptionHandler = configuration.workerExecutionExceptionHandler
             defaultProcessName = configuration.defaultProcessName
+            remoteSessionTimeoutMillis = configuration.remoteSessionTimeoutMillis
             contentUriTriggerWorkersLimit = configuration.contentUriTriggerWorkersLimit
             markJobsAsImportantWhileForeground =
                 configuration.isMarkingJobsAsImportantWhileForeground
@@ -517,6 +531,27 @@ public class Configuration internal constructor(builder: Builder) {
          */
         public fun setDefaultProcessName(processName: String): Builder {
             defaultProcessName = processName
+            return this
+        }
+
+        /**
+         * Set how long in milliseconds that a [androidx.work.multiprocess.RemoteWorkManager]
+         * binding to the designated process stays active before timing out and unbinding.
+         *
+         * The default timeout is
+         * [androidx.work.multiprocess.RemoteWorkManager.DEFAULT_SESSION_TIMEOUT_MILLIS] and can be
+         * configured up to
+         * [androidx.work.multiprocess.RemoteWorkManager.MAX_SESSION_TIMEOUT_MILLIS]. A timeout of 0
+         * will unbind immediately after each call.
+         *
+         * @param timeoutMillis Timeout in milliseconds before the session unbinds
+         * @return This [Builder] instance
+         */
+        public fun setRemoteSessionTimeoutMillis(
+            @IntRange(from = 0, to = MAX_SESSION_TIMEOUT_MILLIS) timeoutMillis: Long
+        ): Builder {
+            require(timeoutMillis >= 0) { "The remote session timeout must not be negative." }
+            remoteSessionTimeoutMillis = timeoutMillis.coerceAtMost(MAX_SESSION_TIMEOUT_MILLIS)
             return this
         }
 

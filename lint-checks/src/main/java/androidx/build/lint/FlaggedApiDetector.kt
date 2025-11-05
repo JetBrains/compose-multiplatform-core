@@ -265,7 +265,8 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         } == true
 
     private fun getFlaggedApiString(context: JavaContext, annotation: UAnnotation): String? =
-        annotation.findAttributeValue(ATTR_VALUE)?.let { value ->
+        // Sometimes we get an UnknownJavaExpression from UAST and need to drop to PSI.
+        annotation.findAttributeValue(ATTR_VALUE)?.sourcePsi?.let { value ->
             ConstantEvaluator.evaluate(context, value)
         } as? String
 

@@ -24,7 +24,6 @@ import android.widget.TextView
 import android.window.BackEvent
 import androidx.activity.BackEventCompat
 import androidx.annotation.LayoutRes
-import androidx.annotation.RequiresApi
 import androidx.core.app.SharedElementCallback
 import androidx.fragment.app.test.FragmentTestActivity
 import androidx.fragment.test.R
@@ -54,7 +53,6 @@ import org.junit.runners.Parameterized
 
 @MediumTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.LOLLIPOP)
 class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
 
     @Suppress("DEPRECATION")
@@ -1385,7 +1383,10 @@ class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
 
         val fragmentContainer = activityRule.activity.findViewById<View>(R.id.fragmentContainer)
 
-        assertThat(fragmentContainer.getTag(R.id.visible_removing_fragment_view_tag)).isNull()
+        assertThat(
+                fragmentContainer.getTag(androidx.fragment.R.id.visible_removing_fragment_view_tag)
+            )
+            .isNull()
 
         // Now we remove fragment1 which is detached
         fragmentManager
@@ -1395,7 +1396,10 @@ class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
             .commit()
         activityRule.waitForExecution()
 
-        assertThat(fragmentContainer.getTag(R.id.visible_removing_fragment_view_tag)).isNull()
+        assertThat(
+                fragmentContainer.getTag(androidx.fragment.R.id.visible_removing_fragment_view_tag)
+            )
+            .isNull()
     }
 
     @Test
@@ -1913,7 +1917,6 @@ class FragmentTransitionTest(private val reorderingAllowed: ReorderingAllowed) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class AddTransitionFragmentInActivity : FragmentActivity() {
     val fragment = TransitionFragment()
 

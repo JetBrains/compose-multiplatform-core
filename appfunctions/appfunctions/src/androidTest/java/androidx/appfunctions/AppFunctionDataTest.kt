@@ -20,30 +20,42 @@ import android.app.PendingIntent
 import android.app.appsearch.GenericDocument
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
 import android.os.ext.SdkExtensions
+import androidx.appfunctions.Attachment.Companion.ATTACHMENT_OBJECT_TYPE_METADATA
+import androidx.appfunctions.Note.Companion.NOTE_OBJECT_TYPE_METADATA
+import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA
+import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_COMPONENT_METADATA
+import androidx.appfunctions.internal.AppFunctionUriGrantTestInventory.Companion.TEST_NESTED_APP_FUNCTION_URI_GRANT_OBJECT_METADATA
+import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBooleanTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionBytesTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionDoubleTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionOneOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BOOLEAN
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_BYTES
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_DOUBLE
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_FLOAT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_INT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_LONG
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_PENDING_INTENT
-import androidx.appfunctions.metadata.AppFunctionPrimitiveTypeMetadata.Companion.TYPE_STRING
+import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionResponseMetadata
+import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import org.junit.Assume.assumeTrue
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
@@ -54,6 +66,182 @@ class AppFunctionDataTest {
     @Before
     fun setup() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
+    }
+
+    @Test
+    fun testBuild_missingRequiredNullableParameter_succeed() {
+        val parameterMetadata =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "requiredNullableString",
+                    isRequired = true,
+                    dataType = AppFunctionStringTypeMetadata(isNullable = true),
+                )
+            )
+
+        AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata()).build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredNullableObjectFields_succeed() {
+        val objectMetadata =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "requiredNullableDouble" to AppFunctionDoubleTypeMetadata(isNullable = true)
+                    ),
+                required = listOf("requiredNullableDouble"),
+                qualifiedName = "testObject",
+                isNullable = false,
+            )
+
+        AppFunctionData.Builder(objectMetadata, AppFunctionComponentsMetadata()).build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredNullableAllOfObjectFields_succeed() {
+        val allOfTypeMetadata =
+            AppFunctionAllOfTypeMetadata(
+                matchAll =
+                    listOf(
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "requiredNullableStringList" to
+                                        AppFunctionArrayTypeMetadata(
+                                            itemType =
+                                                AppFunctionStringTypeMetadata(isNullable = false),
+                                            isNullable = true,
+                                        )
+                                ),
+                            required = listOf("requiredNullableStringList"),
+                            qualifiedName = "testObject",
+                            isNullable = false,
+                        )
+                    ),
+                qualifiedName = "testAllOf",
+                isNullable = false,
+            )
+
+        AppFunctionData.Builder(allOfTypeMetadata, AppFunctionComponentsMetadata()).build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredNullableResponseFields_succeed() {
+        val responseMetadata =
+            AppFunctionResponseMetadata(
+                valueType =
+                    AppFunctionObjectTypeMetadata(
+                        properties =
+                            mapOf(
+                                "unimportantField" to
+                                    AppFunctionStringTypeMetadata(isNullable = false)
+                            ),
+                        required = listOf("unimportantField"),
+                        isNullable = true,
+                        qualifiedName = "testObject",
+                    )
+            )
+
+        AppFunctionData.Builder(responseMetadata, AppFunctionComponentsMetadata()).build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredFields_throwsException() {
+        val parameterMetadata =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "requiredInt",
+                    isRequired = true,
+                    dataType = AppFunctionIntTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "optionalString",
+                    isRequired = false,
+                    dataType = AppFunctionStringTypeMetadata(isNullable = true),
+                ),
+            )
+        val builder = AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata())
+
+        // Attempt to build without setting the required "requiredInt" field
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the optional field but still miss the required one
+        builder.setString("optionalString", "test")
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the required field, now build should succeed
+        builder.setInt("requiredInt", 123)
+        // No exception should be thrown here
+        builder.build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredPendingIntent_throwsException() {
+        val parameterMetadata =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "requiredPi",
+                    isRequired = true,
+                    dataType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "optionalString",
+                    isRequired = false,
+                    dataType = AppFunctionStringTypeMetadata(isNullable = true),
+                ),
+            )
+        val builder = AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata())
+
+        // Attempt to build without setting the required "requiredPi" field
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the optional field but still miss the required PendingIntent
+        builder.setString("optionalString", "test")
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the required PendingIntent field, now build should succeed
+        val dummyPendingIntent =
+            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        builder.setPendingIntent("requiredPi", dummyPendingIntent)
+        // No exception should be thrown here
+        builder.build()
+    }
+
+    @Test
+    fun testBuild_missingRequiredPendingIntentList_throwsException() {
+        val parameterMetadata =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "requiredPiList",
+                    isRequired = true,
+                    dataType =
+                        AppFunctionArrayTypeMetadata(
+                            itemType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
+                            isNullable = false,
+                        ),
+                ),
+                AppFunctionParameterMetadata(
+                    name = "optionalInt",
+                    isRequired = false,
+                    dataType = AppFunctionIntTypeMetadata(isNullable = true),
+                ),
+            )
+        val builder = AppFunctionData.Builder(parameterMetadata, AppFunctionComponentsMetadata())
+
+        // Attempt to build without setting the required "requiredPiList" field
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the optional field but still miss the required PendingIntent list
+        builder.setInt("optionalInt", 42)
+        assertFailsWith<IllegalArgumentException> { builder.build() }
+
+        // Set the required PendingIntent list field, now build should succeed
+        val dummyPendingIntent =
+            PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
+        builder.setPendingIntentList("requiredPiList", listOf(dummyPendingIntent))
+        // No exception should be thrown here
+        builder.build()
     }
 
     @Test
@@ -296,6 +484,8 @@ class AppFunctionDataTest {
     @Test
     fun testReadWrite_asObject_conformSpec() {
         val builder = AppFunctionData.Builder(TEST_OBJECT_METADATA, AppFunctionComponentsMetadata())
+        val testBitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        val testGameCharacter = GameCharacter(name = "Test", level = 10, characterClass = "test")
 
         builder.setInt("int", 234)
         builder.setLong("long", 123L)
@@ -307,6 +497,8 @@ class AppFunctionDataTest {
             "pendingIntent",
             PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
         )
+        builder.setParcelable("bitmap", testBitmap)
+        builder.setParcelable("customParcelable", testGameCharacter)
         builder.setIntArray("intArray", intArrayOf(4, 5, 6))
         builder.setLongArray("longArray", longArrayOf(1L, 2L, 3L))
         builder.setFloatArray("floatArray", floatArrayOf(10.0f, 20.0f, 30.0f))
@@ -321,6 +513,8 @@ class AppFunctionDataTest {
                 PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             ),
         )
+        builder.setParcelableList("bitmapList", listOf(testBitmap))
+        builder.setParcelableList("customParcelableList", listOf(testGameCharacter))
         val data = builder.build()
 
         assertThat(data.getInt("int")).isEqualTo(234)
@@ -333,6 +527,9 @@ class AppFunctionDataTest {
             .isEqualTo(
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE)
             )
+        assertThat(data.getParcelable("bitmap", Bitmap::class.java)).isEqualTo(testBitmap)
+        assertThat(data.getParcelable("customParcelable", GameCharacter::class.java))
+            .isEqualTo(testGameCharacter)
         assertThat(data.getIntArray("intArray")).asList().containsExactly(4, 5, 6)
         assertThat(data.getLongArray("longArray")).asList().containsExactly(1L, 2L, 3L)
         assertThat(data.getFloatArray("floatArray"))
@@ -353,6 +550,166 @@ class AppFunctionDataTest {
                 PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
                 PendingIntent.getService(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
             )
+        assertThat(data.getParcelableList("bitmapList", Bitmap::class.java))
+            .containsExactly(testBitmap)
+        assertThat(data.getParcelableList("customParcelableList", GameCharacter::class.java))
+            .containsExactly(testGameCharacter)
+    }
+
+    @Test
+    fun testWrite_intEnumValue_conformanceFailsForInvalidValues() {
+        val afdBuilder =
+            AppFunctionData.Builder(
+                parameterMetadataList =
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "intEnum",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionIntTypeMetadata(
+                                    isNullable = false,
+                                    enumValues = setOf(1, 2),
+                                ),
+                        ),
+                        AppFunctionParameterMetadata(
+                            name = "intEnumArray",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionArrayTypeMetadata(
+                                    isNullable = false,
+                                    itemType =
+                                        AppFunctionIntTypeMetadata(
+                                            isNullable = false,
+                                            enumValues = setOf(1, 2),
+                                        ),
+                                ),
+                        ),
+                    ),
+                componentMetadata = AppFunctionComponentsMetadata(),
+            )
+
+        assertFailsWith<IllegalArgumentException> { afdBuilder.setInt("intEnum", 190) }
+        assertFailsWith<IllegalArgumentException> {
+            afdBuilder.setIntArray("intEnumArray", intArrayOf(1, 2, 190))
+        }
+    }
+
+    @Test
+    fun testReadWrite_intEnumValues_conformanceSuccess() {
+        val afdBuilder =
+            AppFunctionData.Builder(
+                parameterMetadataList =
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "intEnum",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionIntTypeMetadata(
+                                    isNullable = false,
+                                    enumValues = setOf(1, 2),
+                                ),
+                        ),
+                        AppFunctionParameterMetadata(
+                            name = "intEnumArray",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionArrayTypeMetadata(
+                                    isNullable = false,
+                                    itemType =
+                                        AppFunctionIntTypeMetadata(
+                                            isNullable = false,
+                                            enumValues = setOf(1, 2),
+                                        ),
+                                ),
+                        ),
+                    ),
+                componentMetadata = AppFunctionComponentsMetadata(),
+            )
+
+        afdBuilder.setInt("intEnum", 2)
+        afdBuilder.setIntArray("intEnumArray", intArrayOf(1, 2))
+        val afd = afdBuilder.build()
+
+        assertThat(afd.getInt("intEnum")).isEqualTo(2)
+        assertThat(afd.getIntArray("intEnumArray")?.asList()).containsExactly(1, 2)
+    }
+
+    @Test
+    fun testWrite_stringEnumValue_conformanceFailsForInvalidValues() {
+        val afdBuilder =
+            AppFunctionData.Builder(
+                parameterMetadataList =
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "stringEnum",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionStringTypeMetadata(
+                                    isNullable = false,
+                                    enumValues = setOf("A", "B"),
+                                ),
+                        ),
+                        AppFunctionParameterMetadata(
+                            name = "stringEnumArray",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionArrayTypeMetadata(
+                                    isNullable = false,
+                                    itemType =
+                                        AppFunctionStringTypeMetadata(
+                                            isNullable = false,
+                                            enumValues = setOf("A", "B"),
+                                        ),
+                                ),
+                        ),
+                    ),
+                componentMetadata = AppFunctionComponentsMetadata(),
+            )
+
+        assertFailsWith<IllegalArgumentException> { afdBuilder.setString("stringEnum", "C") }
+        assertFailsWith<IllegalArgumentException> {
+            afdBuilder.setStringList("stringEnumArray", listOf("A", "B", "C"))
+        }
+    }
+
+    @Test
+    fun testReadWrite_stringEnumValues_conformanceSuccess() {
+        val afdBuilder =
+            AppFunctionData.Builder(
+                parameterMetadataList =
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "stringEnum",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionStringTypeMetadata(
+                                    isNullable = false,
+                                    enumValues = setOf("A", "B"),
+                                ),
+                        ),
+                        AppFunctionParameterMetadata(
+                            name = "stringEnumList",
+                            isRequired = false,
+                            dataType =
+                                AppFunctionArrayTypeMetadata(
+                                    isNullable = false,
+                                    itemType =
+                                        AppFunctionStringTypeMetadata(
+                                            isNullable = false,
+                                            enumValues = setOf("A", "B"),
+                                        ),
+                                ),
+                        ),
+                    ),
+                componentMetadata = AppFunctionComponentsMetadata(),
+            )
+
+        afdBuilder.setString("stringEnum", "A")
+        afdBuilder.setStringList("stringEnumList", listOf("A", "B"))
+        val afd = afdBuilder.build()
+
+        assertThat(afd.getString("stringEnum")).isEqualTo("A")
+        assertThat(afd.getStringList("stringEnumList")).containsExactly("A", "B")
     }
 
     @Test
@@ -569,14 +926,12 @@ class AppFunctionDataTest {
         val personMetadata =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "firstName" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false)
-                    ),
+                    mapOf("firstName" to AppFunctionStringTypeMetadata(isNullable = false)),
                 required = listOf(),
                 qualifiedName =
                     "com.testdata.anotherDifferentPackage.AnotherDiffPackageSerializable",
                 isNullable = true,
+                description = "Description for AnotherDiffPackageSerializable",
             )
         val componentMetadata =
             AppFunctionComponentsMetadata(dataTypes = mapOf("Person" to personMetadata))
@@ -627,13 +982,11 @@ class AppFunctionDataTest {
         val innerObjectType =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
-                    ),
+                    mapOf("innerDouble" to AppFunctionDoubleTypeMetadata(isNullable = false)),
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
+                description = "Inner data description",
             )
         val outerObjectType =
             AppFunctionObjectTypeMetadata(
@@ -641,6 +994,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "outerData",
                 isNullable = false,
+                description = "Outer data description",
             )
         val innerDataBuilder =
             AppFunctionData.Builder(innerObjectType, AppFunctionComponentsMetadata())
@@ -656,27 +1010,34 @@ class AppFunctionDataTest {
     }
 
     @Test
-    fun testWrite_nestedAppFunctionData_notConformSpec() {
+    fun testReadWrite_nestedAllOfType_conformSpec() {
         val innerObjectType =
-            AppFunctionObjectTypeMetadata(
-                properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
+            AppFunctionAllOfTypeMetadata(
+                matchAll =
+                    listOf(
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "innerLong" to AppFunctionLongTypeMetadata(isNullable = false)
+                                ),
+                            required = emptyList(),
+                            qualifiedName = "innerLongData",
+                            isNullable = false,
+                            description = "Inner data description",
+                        ),
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "innerDouble" to
+                                        AppFunctionDoubleTypeMetadata(isNullable = false)
+                                ),
+                            required = emptyList(),
+                            qualifiedName = "innerDoubleData",
+                            isNullable = false,
+                            description = "Inner data description",
+                        ),
                     ),
-                required = emptyList(),
-                qualifiedName = "innerData",
-                isNullable = false,
-            )
-        val incorrectInnerObjectType =
-            AppFunctionObjectTypeMetadata(
-                properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
-                    ),
-                required = emptyList(),
-                qualifiedName = "innerData",
+                qualifiedName = null,
                 isNullable = false,
             )
         val outerObjectType =
@@ -685,6 +1046,52 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "outerData",
                 isNullable = false,
+                description = "Outer data description",
+            )
+
+        val innerDataBuilder =
+            AppFunctionData.Builder(innerObjectType, AppFunctionComponentsMetadata())
+        val outerDataBuilder =
+            AppFunctionData.Builder(outerObjectType, AppFunctionComponentsMetadata())
+
+        innerDataBuilder.setDouble("innerDouble", 500.0)
+        innerDataBuilder.setLong("innerLong", 100)
+        outerDataBuilder.setAppFunctionData("nestedData", innerDataBuilder.build())
+        val outerData = outerDataBuilder.build()
+
+        assertThat(outerData.getAppFunctionData("nestedData")?.getDouble("innerDouble"))
+            .isEqualTo(500.0)
+        assertThat(outerData.getAppFunctionData("nestedData")?.getLong("innerLong")).isEqualTo(100)
+    }
+
+    @Test
+    @Ignore("b/447064745: Re-enable when the child object validation is fixed")
+    fun testWrite_nestedAppFunctionData_notConformSpec() {
+        val innerObjectType =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf("innerDouble" to AppFunctionDoubleTypeMetadata(isNullable = false)),
+                required = emptyList(),
+                qualifiedName = "innerData",
+                isNullable = false,
+                description = "Inner data description",
+            )
+        val incorrectInnerObjectType =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf("innerDouble" to AppFunctionLongTypeMetadata(isNullable = false)),
+                required = emptyList(),
+                qualifiedName = "innerData",
+                isNullable = false,
+                description = "Incorrect inner data description",
+            )
+        val outerObjectType =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("nestedData" to innerObjectType),
+                required = emptyList(),
+                qualifiedName = "outerData",
+                isNullable = false,
+                description = "Outer data description",
             )
         val incorrectInnerDataBuilder =
             AppFunctionData.Builder(incorrectInnerObjectType, AppFunctionComponentsMetadata())
@@ -698,28 +1105,25 @@ class AppFunctionDataTest {
     }
 
     @Test
+    @Ignore("b/447064745: Re-enable when the child object validation is fixed")
     fun testWrite_nestedListAppFunctionData_notConformSpec() {
         val innerObjectType =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false)
-                    ),
+                    mapOf("innerDouble" to AppFunctionDoubleTypeMetadata(isNullable = false)),
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
+                description = "Inner data description",
             )
         val incorrectInnerObjectType =
             AppFunctionObjectTypeMetadata(
                 properties =
-                    mapOf(
-                        "innerDouble" to
-                            AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false)
-                    ),
+                    mapOf("innerDouble" to AppFunctionLongTypeMetadata(isNullable = false)),
                 required = emptyList(),
                 qualifiedName = "innerData",
                 isNullable = false,
+                description = "Incorrect inner data description",
             )
         val outerObjectType =
             AppFunctionObjectTypeMetadata(
@@ -728,6 +1132,7 @@ class AppFunctionDataTest {
                 required = emptyList(),
                 qualifiedName = "outerData",
                 isNullable = false,
+                description = "Outer data description",
             )
         val correctInnerDataBuilder =
             AppFunctionData.Builder(innerObjectType, AppFunctionComponentsMetadata())
@@ -770,11 +1175,27 @@ class AppFunctionDataTest {
     @Test
     fun testDeserialize() {
         val data =
-            AppFunctionData.Builder("androidx.appfunctions.Note")
+            AppFunctionData.Builder(
+                    NOTE_OBJECT_TYPE_METADATA,
+                    AppFunctionComponentsMetadata(
+                        mapOf(
+                            "androidx.appfunctions.Attachment" to ATTACHMENT_OBJECT_TYPE_METADATA,
+                            "androidx.appfunctions.Note" to NOTE_OBJECT_TYPE_METADATA,
+                        )
+                    ),
+                )
                 .setString("title", "Test Title")
                 .setAppFunctionData(
                     "attachment",
-                    AppFunctionData.Builder("androidx.appfunctions.Attachment")
+                    AppFunctionData.Builder(
+                            ATTACHMENT_OBJECT_TYPE_METADATA,
+                            AppFunctionComponentsMetadata(
+                                mapOf(
+                                    "androidx.appfunctions.Attachment" to
+                                        ATTACHMENT_OBJECT_TYPE_METADATA
+                                )
+                            ),
+                        )
                         .setString("uri", "Test Uri")
                         .build(),
                 )
@@ -789,11 +1210,27 @@ class AppFunctionDataTest {
     @Test
     fun testDeserialize_withQualifiedName() {
         val data =
-            AppFunctionData.Builder("androidx.appfunctions.Note")
+            AppFunctionData.Builder(
+                    NOTE_OBJECT_TYPE_METADATA,
+                    AppFunctionComponentsMetadata(
+                        mapOf(
+                            "androidx.appfunctions.Attachment" to ATTACHMENT_OBJECT_TYPE_METADATA,
+                            "androidx.appfunctions.Note" to NOTE_OBJECT_TYPE_METADATA,
+                        )
+                    ),
+                )
                 .setString("title", "Test Title")
                 .setAppFunctionData(
                     "attachment",
-                    AppFunctionData.Builder("androidx.appfunctions.Attachment")
+                    AppFunctionData.Builder(
+                            ATTACHMENT_OBJECT_TYPE_METADATA,
+                            AppFunctionComponentsMetadata(
+                                mapOf(
+                                    "androidx.appfunctions.Attachment" to
+                                        ATTACHMENT_OBJECT_TYPE_METADATA
+                                )
+                            ),
+                        )
                         .setString("uri", "Test Uri")
                         .build(),
                 )
@@ -817,7 +1254,16 @@ class AppFunctionDataTest {
     @Test
     fun testDeserialize_missingFactory() {
         val data =
-            AppFunctionData.Builder("androidx.appfunctions-MissingFactoryClass")
+            AppFunctionData.Builder(
+                    AppFunctionObjectTypeMetadata(
+                        properties =
+                            mapOf("item" to AppFunctionStringTypeMetadata(isNullable = false)),
+                        required = listOf("item"),
+                        qualifiedName = "androidx.appfunctions-MissingFactoryClass",
+                        isNullable = false,
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
                 .setString("item", "test")
                 .build()
 
@@ -829,7 +1275,19 @@ class AppFunctionDataTest {
     @Test
     fun testId_buildAsAppFunctionData_ReadAsGenericDocument() {
         assumeTrue(SdkExtensions.getExtensionVersion(Build.VERSION_CODES.TIRAMISU) >= 13)
-        val data = AppFunctionData.Builder("").setString("id", "123456").build()
+        val data =
+            AppFunctionData.Builder(
+                    listOf(
+                        AppFunctionParameterMetadata(
+                            name = "id",
+                            isRequired = true,
+                            dataType = AppFunctionStringTypeMetadata(isNullable = false),
+                        )
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
+                .setString("id", "123456")
+                .build()
         val gd = data.genericDocument
 
         assertThat(gd.id).isEqualTo("123456")
@@ -850,7 +1308,7 @@ class AppFunctionDataTest {
     fun buildAppFunctionData_withPrimitiveResponse_incorrectType() {
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, isNullable = true)
+                valueType = AppFunctionStringTypeMetadata(isNullable = true)
             )
 
         assertFailsWith(IllegalArgumentException::class) {
@@ -864,7 +1322,7 @@ class AppFunctionDataTest {
     fun buildAppFunctionData_withPrimitiveResponse_correctType() {
         val responseMetadata =
             AppFunctionResponseMetadata(
-                valueType = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, isNullable = true)
+                valueType = AppFunctionStringTypeMetadata(isNullable = true)
             )
 
         val data =
@@ -880,13 +1338,11 @@ class AppFunctionDataTest {
     fun buildAppFunctionData_withObjectResponse() {
         val objectMetadata =
             AppFunctionObjectTypeMetadata(
-                properties =
-                    mapOf(
-                        "long" to AppFunctionPrimitiveTypeMetadata(TYPE_LONG, isNullable = false)
-                    ),
+                properties = mapOf("long" to AppFunctionLongTypeMetadata(isNullable = false)),
                 required = listOf("long"),
                 isNullable = false,
                 qualifiedName = "testObject",
+                description = "Test object description",
             )
         val responseMetadata = AppFunctionResponseMetadata(valueType = objectMetadata)
 
@@ -912,13 +1368,11 @@ class AppFunctionDataTest {
     fun buildAppFunctionData_withReferenceResponse() {
         val objectMetadata =
             AppFunctionObjectTypeMetadata(
-                properties =
-                    mapOf(
-                        "long" to AppFunctionPrimitiveTypeMetadata(TYPE_LONG, isNullable = false)
-                    ),
+                properties = mapOf("long" to AppFunctionLongTypeMetadata(isNullable = false)),
                 required = listOf("long"),
                 isNullable = false,
                 qualifiedName = "testObject",
+                description = "Test object description",
             )
         val componentMetadata =
             AppFunctionComponentsMetadata(dataTypes = mapOf("testObject" to objectMetadata))
@@ -949,64 +1403,362 @@ class AppFunctionDataTest {
             .isEqualTo(100L)
     }
 
+    @Test
+    fun visitAppFunctionUriGrant_visitAllGrants() {
+        val data =
+            AppFunctionData.Builder(
+                    TEST_NESTED_APP_FUNCTION_URI_GRANT_OBJECT_METADATA,
+                    TEST_COMPONENT_METADATA,
+                )
+                .setAppFunctionData(
+                    "firstGrant",
+                    AppFunctionData.serialize(
+                        AppFunctionUriGrant(
+                            uri = Uri.parse("content://com.example/1"),
+                            modeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                        ),
+                        AppFunctionUriGrant::class.java,
+                    ),
+                )
+                .setAppFunctionData(
+                    "nest",
+                    AppFunctionData.Builder(
+                            TEST_APP_FUNCTION_URI_GRANT_HOLDER_OBJECT_METADATA,
+                            TEST_COMPONENT_METADATA,
+                        )
+                        .setAppFunctionData(
+                            "secondGrant",
+                            AppFunctionData.serialize(
+                                AppFunctionUriGrant(
+                                    uri = Uri.parse("content://com.example/2"),
+                                    modeFlags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                                ),
+                                AppFunctionUriGrant::class.java,
+                            ),
+                        )
+                        .build(),
+                )
+                .setAppFunctionDataList(
+                    "thirdGrants",
+                    listOf(
+                        AppFunctionData.serialize(
+                            AppFunctionUriGrant(
+                                uri = Uri.parse("content://com.example/3-1"),
+                                modeFlags =
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                            ),
+                            AppFunctionUriGrant::class.java,
+                        ),
+                        AppFunctionData.serialize(
+                            AppFunctionUriGrant(
+                                uri = Uri.parse("content://com.example/3-2"),
+                                modeFlags =
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                                        Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
+                            ),
+                            AppFunctionUriGrant::class.java,
+                        ),
+                    ),
+                )
+                .build()
+
+        val visited = buildList { data.visitAppFunctionUriGrants { uriGrant -> add(uriGrant) } }
+
+        assertThat(visited)
+            .containsExactly(
+                AppFunctionUriGrant(
+                    uri = Uri.parse("content://com.example/1"),
+                    modeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                ),
+                AppFunctionUriGrant(
+                    uri = Uri.parse("content://com.example/2"),
+                    modeFlags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                ),
+                AppFunctionUriGrant(
+                    uri = Uri.parse("content://com.example/3-1"),
+                    modeFlags =
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                ),
+                AppFunctionUriGrant(
+                    uri = Uri.parse("content://com.example/3-2"),
+                    modeFlags =
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                            Intent.FLAG_GRANT_PREFIX_URI_PERMISSION,
+                ),
+            )
+    }
+
+    @Test
+    fun getParcelable_withWrongParcelableName_returnsNull() {
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
+        val gameCharacter = GameCharacter(name = "Test", level = 10, characterClass = "Warrior")
+        val data =
+            AppFunctionData.Builder(TEST_OBJECT_METADATA, TEST_COMPONENT_METADATA)
+                .setParcelable(key = "bitmap", bitmap)
+                .setParcelableList(key = "customParcelableList", listOf(gameCharacter))
+                .build()
+
+        assertThat(data.getParcelable("bitmap", GameCharacter::class.java)).isNull()
+        assertThat(data.getParcelableList("customParcelableList", Bitmap::class.java)).isNull()
+    }
+
+    /** A custom Parcelable class representing a game character, implemented manually. */
+    private data class GameCharacter(val name: String, val level: Int, val characterClass: String) :
+        Parcelable {
+
+        constructor(
+            parcel: Parcel
+        ) : this(
+            name = parcel.readString() ?: "",
+            level = parcel.readInt(),
+            characterClass = parcel.readString() ?: "",
+        )
+
+        override fun writeToParcel(parcel: Parcel, flags: Int) {
+            parcel.writeString(name)
+            parcel.writeInt(level)
+            parcel.writeString(characterClass)
+        }
+
+        override fun describeContents(): Int {
+            return 0
+        }
+
+        companion object CREATOR : Parcelable.Creator<GameCharacter> {
+            override fun createFromParcel(parcel: Parcel): GameCharacter {
+                return GameCharacter(parcel)
+            }
+
+            override fun newArray(size: Int): Array<GameCharacter?> {
+                return arrayOfNulls(size)
+            }
+        }
+    }
+
+    @Test
+    fun buildAllOfTypeObject_allRequiredField_success() {
+        val data =
+            AppFunctionData.Builder(
+                    OpenableNote.OPENABLE_NOTE_ALL_OF_TYPE_METADATA,
+                    OpenableNote.COMPONENT_METADATA,
+                )
+                .setString("title", "test")
+                .setAppFunctionData(
+                    "attachment",
+                    AppFunctionData.Builder(
+                            ATTACHMENT_OBJECT_TYPE_METADATA,
+                            AppFunctionComponentsMetadata(),
+                        )
+                        .setString("uri", "test")
+                        .build(),
+                )
+                .setPendingIntent(
+                    "intentToOpen",
+                    PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
+                )
+                .build()
+
+        assertThat(data.getString("title")).isEqualTo("test")
+        assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("test")
+        assertThat(data.getPendingIntent("intentToOpen")).isNotNull()
+    }
+
+    @Test
+    fun serializeAllOfTypeObject_allRequiredField_success() {
+        val data =
+            AppFunctionData.serialize(
+                OpenableNote(
+                    title = "test",
+                    attachment = Attachment(uri = "test"),
+                    intentToOpen =
+                        PendingIntent.getActivity(
+                            context,
+                            0,
+                            Intent(),
+                            PendingIntent.FLAG_IMMUTABLE,
+                        ),
+                ),
+                OpenableNote::class.java,
+            )
+
+        assertThat(data.getString("title")).isEqualTo("test")
+        assertThat(data.getAppFunctionData("attachment")?.getString("uri")).isEqualTo("test")
+        assertThat(data.getPendingIntent("intentToOpen")).isNotNull()
+        // Also ensure that read validation is applied
+        assertFailsWith<IllegalArgumentException> { data.getInt("intentToOpen") }
+    }
+
+    @Test
+    fun buildAllOfTypeObject_missOriginalClassField_fail() {
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.Builder(
+                    OpenableNote.OPENABLE_NOTE_ALL_OF_TYPE_METADATA,
+                    OpenableNote.COMPONENT_METADATA,
+                )
+                .setPendingIntent(
+                    "intentToOpen",
+                    PendingIntent.getActivity(context, 0, Intent(), PendingIntent.FLAG_IMMUTABLE),
+                )
+                .build()
+        }
+    }
+
+    @Test
+    fun buildAllOfTypeObject_missCapabilityField_fail() {
+        assertFailsWith<IllegalArgumentException> {
+            AppFunctionData.Builder(
+                    OpenableNote.OPENABLE_NOTE_ALL_OF_TYPE_METADATA,
+                    OpenableNote.COMPONENT_METADATA,
+                )
+                .setString("title", "test")
+                .setAppFunctionData(
+                    "attachment",
+                    AppFunctionData.Builder(
+                            ATTACHMENT_OBJECT_TYPE_METADATA,
+                            AppFunctionComponentsMetadata(),
+                        )
+                        .setString("uri", "test")
+                        .build(),
+                )
+                .build()
+        }
+    }
+
+    @Test
+    fun buildOneOfType_wrongNestedType_fails() {
+        val exception =
+            assertFailsWith<IllegalArgumentException> {
+                AppFunctionData.Builder(
+                        AppFunctionResponseMetadata(TEST_ONE_OF_TYPE_METADATA),
+                        AppFunctionComponentsMetadata(),
+                    )
+                    .setAppFunctionData(
+                        ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                        AppFunctionData.Builder(
+                                AppFunctionObjectTypeMetadata(
+                                    emptyMap(),
+                                    emptyList(),
+                                    "randomTestObject",
+                                    false,
+                                ),
+                                AppFunctionComponentsMetadata(),
+                            )
+                            .build(),
+                    )
+                    .build()
+            }
+        assertThat(exception)
+            .hasMessageThat()
+            .contains("randomTestObject does not match any of the oneOf types")
+    }
+
+    @Test
+    fun buildOneOfType_correctSubclasses_success() {
+        val afd =
+            AppFunctionData.Builder(
+                    AppFunctionResponseMetadata(
+                        AppFunctionArrayTypeMetadata(TEST_ONE_OF_TYPE_METADATA, isNullable = false)
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
+                .setAppFunctionDataList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    listOf(
+                        AppFunctionData.Builder(
+                                TEST_ONE_OF_TYPE_A_METADATA,
+                                AppFunctionComponentsMetadata(),
+                            )
+                            .setInt("int", 10)
+                            .build(),
+                        AppFunctionData.Builder(
+                                TEST_ONE_OF_TYPE_B_WITH_ALL_OF_METADATA,
+                                AppFunctionComponentsMetadata(),
+                            )
+                            .setString("str", "hello")
+                            .setAppFunctionDataList(
+                                "resources",
+                                listOf(
+                                    AppFunctionData.Builder(
+                                            TEST_APP_FUNCTION_TEXT_RESOURCE_METADATA,
+                                            AppFunctionComponentsMetadata(),
+                                        )
+                                        .setString("mimeType", "text/plain")
+                                        .setString("content", "hello again!")
+                                        .build()
+                                ),
+                            )
+                            .build(),
+                    ),
+                )
+                .build()
+
+        val oneOfList =
+            assertNotNull(
+                afd.getAppFunctionDataList(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+            )
+        assertThat(oneOfList[0].getInt("int")).isEqualTo(10)
+        assertThat(oneOfList[1].getString("str")).isEqualTo("hello")
+        assertThat(oneOfList[1].getAppFunctionDataList("resources")?.single()?.getString("content"))
+            .isEqualTo("hello again!")
+    }
+
     companion object {
         val TEST_OBJECT_METADATA =
             AppFunctionObjectTypeMetadata(
                 properties =
                     mapOf(
-                        "int" to AppFunctionPrimitiveTypeMetadata(TYPE_INT, false),
-                        "long" to AppFunctionPrimitiveTypeMetadata(TYPE_LONG, false),
-                        "float" to AppFunctionPrimitiveTypeMetadata(TYPE_FLOAT, false),
-                        "double" to AppFunctionPrimitiveTypeMetadata(TYPE_DOUBLE, false),
-                        "boolean" to AppFunctionPrimitiveTypeMetadata(TYPE_BOOLEAN, false),
-                        "string" to AppFunctionPrimitiveTypeMetadata(TYPE_STRING, false),
-                        "pendingIntent" to
-                            AppFunctionPrimitiveTypeMetadata(TYPE_PENDING_INTENT, false),
+                        "int" to AppFunctionIntTypeMetadata(false),
+                        "long" to AppFunctionLongTypeMetadata(false),
+                        "float" to AppFunctionFloatTypeMetadata(false),
+                        "double" to AppFunctionDoubleTypeMetadata(false),
+                        "boolean" to AppFunctionBooleanTypeMetadata(false),
+                        "string" to AppFunctionStringTypeMetadata(false),
+                        "pendingIntent" to AppFunctionPendingIntentTypeMetadata(false),
                         "intArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_INT, false),
+                                itemType = AppFunctionIntTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "longArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_LONG, false),
+                                itemType = AppFunctionLongTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "floatArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_FLOAT, false),
+                                itemType = AppFunctionFloatTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "doubleArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_DOUBLE, false),
+                                itemType = AppFunctionDoubleTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "booleanArray" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_BOOLEAN, false),
+                                itemType = AppFunctionBooleanTypeMetadata(false),
                                 isNullable = false,
                             ),
-                        "byteArray" to
-                            AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_BYTES, false),
-                                isNullable = false,
-                            ),
+                        "byteArray" to AppFunctionBytesTypeMetadata(false),
                         "stringList" to
                             AppFunctionArrayTypeMetadata(
-                                itemType = AppFunctionPrimitiveTypeMetadata(TYPE_STRING, false),
+                                itemType = AppFunctionStringTypeMetadata(false),
                                 isNullable = false,
                             ),
                         "pendingIntentList" to
                             AppFunctionArrayTypeMetadata(
-                                itemType =
-                                    AppFunctionPrimitiveTypeMetadata(TYPE_PENDING_INTENT, false),
+                                itemType = AppFunctionPendingIntentTypeMetadata(false),
                                 isNullable = false,
                             ),
                     ),
                 required = emptyList(),
                 qualifiedName = "test",
                 isNullable = false,
+                description = "Test object description",
             )
 
         val TEST_PARAMETER_METADATA =
@@ -1014,57 +1766,44 @@ class AppFunctionDataTest {
                 AppFunctionParameterMetadata(
                     name = "int",
                     isRequired = true,
-                    dataType = AppFunctionPrimitiveTypeMetadata(type = TYPE_INT, isNullable = false),
+                    dataType = AppFunctionIntTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "long",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_LONG, isNullable = false),
+                    dataType = AppFunctionLongTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "float",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_FLOAT, isNullable = false),
+                    dataType = AppFunctionFloatTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "double",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_DOUBLE, isNullable = false),
+                    dataType = AppFunctionDoubleTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "boolean",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_BOOLEAN, isNullable = false),
+                    dataType = AppFunctionBooleanTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "string",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(type = TYPE_STRING, isNullable = false),
+                    dataType = AppFunctionStringTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "pendingIntent",
                     isRequired = true,
-                    dataType =
-                        AppFunctionPrimitiveTypeMetadata(
-                            type = TYPE_PENDING_INTENT,
-                            isNullable = false,
-                        ),
+                    dataType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "intArray",
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_INT,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionIntTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1073,11 +1812,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_LONG,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionLongTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1086,11 +1821,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_FLOAT,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionFloatTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1099,11 +1830,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_DOUBLE,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionDoubleTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1112,37 +1839,21 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_BOOLEAN,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionBooleanTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
                 AppFunctionParameterMetadata(
                     name = "byteArray",
                     isRequired = true,
-                    dataType =
-                        AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_BYTES,
-                                    isNullable = false,
-                                ),
-                            isNullable = false,
-                        ),
+                    dataType = AppFunctionBytesTypeMetadata(isNullable = false),
                 ),
                 AppFunctionParameterMetadata(
                     name = "stringList",
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_STRING,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionStringTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1151,11 +1862,7 @@ class AppFunctionDataTest {
                     isRequired = true,
                     dataType =
                         AppFunctionArrayTypeMetadata(
-                            itemType =
-                                AppFunctionPrimitiveTypeMetadata(
-                                    type = TYPE_PENDING_INTENT,
-                                    isNullable = false,
-                                ),
+                            itemType = AppFunctionPendingIntentTypeMetadata(isNullable = false),
                             isNullable = false,
                         ),
                 ),
@@ -1176,6 +1883,62 @@ class AppFunctionDataTest {
                             isNullable = false,
                         ),
                 ),
+            )
+
+        val TEST_APP_FUNCTION_TEXT_RESOURCE_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "mimeType" to AppFunctionStringTypeMetadata(isNullable = false),
+                        "content" to AppFunctionStringTypeMetadata(isNullable = false),
+                    ),
+                required = listOf("mimeType", "content"),
+                qualifiedName = "androidx.appfunctions.AppFunctionTextResource",
+                isNullable = false,
+            )
+
+        val TEST_ONE_OF_TYPE_A_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("int" to AppFunctionIntTypeMetadata(isNullable = false)),
+                required = listOf("int"),
+                qualifiedName = "androidx.appfunctions.TestOneOfASubclass",
+                isNullable = false,
+            )
+
+        val TEST_ONE_OF_TYPE_B_WITH_ALL_OF_METADATA =
+            AppFunctionAllOfTypeMetadata(
+                matchAll =
+                    listOf(
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf("str" to AppFunctionStringTypeMetadata(isNullable = false)),
+                            required = listOf("str"),
+                            qualifiedName = "androidx.appfunctions.TestOneOfBSubclass",
+                            isNullable = false,
+                        ),
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "resources" to
+                                        AppFunctionArrayTypeMetadata(
+                                            itemType = TEST_APP_FUNCTION_TEXT_RESOURCE_METADATA,
+                                            isNullable = false,
+                                        )
+                                ),
+                            required = listOf("resources"),
+                            qualifiedName = "androidx.appfunctions.AppFunctionResourceContainer",
+                            isNullable = false,
+                        ),
+                    ),
+                qualifiedName = "androidx.appfunctions.TestOneOfBSubclass",
+                isNullable = false,
+            )
+        val TEST_ONE_OF_TYPE_METADATA =
+            AppFunctionOneOfTypeMetadata(
+                qualifiedName = "androidx.appfunctions.TestOneOfType",
+                isNullable = false,
+                matchOneOf =
+                    listOf(TEST_ONE_OF_TYPE_A_METADATA, TEST_ONE_OF_TYPE_B_WITH_ALL_OF_METADATA),
             )
     }
 }

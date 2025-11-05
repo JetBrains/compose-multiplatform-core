@@ -36,6 +36,7 @@ import androidx.sqlite.SQLiteDriver
 // TODO(b/313895287): Explore usability of @FastNative and @CriticalNative for the external
 // functions.
 public actual class BundledSQLiteDriver : SQLiteDriver {
+    private val extensions = mutableMapOf<String, String?>()
 
     @Suppress("INAPPLICABLE_JVM_NAME") // Due to KT-31420
     @get:JvmName("hasConnectionPool")
@@ -67,7 +68,60 @@ public actual class BundledSQLiteDriver : SQLiteDriver {
     public actual fun open(fileName: String, @OpenFlag flags: Int): SQLiteConnection {
         NativeLibraryObject // loads native library
         val address = nativeOpen(fileName, flags)
-        return BundledSQLiteConnection(address)
+        val connection = BundledSQLiteConnection(address)
+        try {
+            extensions.forEach { (file, entrypoint) -> connection.loadExtension(file, entrypoint) }
+        } catch (th: Throwable) {
+            connection.close()
+            throw th
+        }
+        return connection
+    }
+
+    /**
+     * Registers a dynamically-linked SQLite extension to load for every subsequent connection
+     * opened with this driver.
+     *
+     * The extension is loaded by SQLite in a platform-specific way. SQLite will attempt to open the
+     * file using (e.g. dlopen on POSIX) and look up a native function responsible for initializing
+     * the extension. SQLite will derive the entry function from the file name.
+     *
+     * It is the developer's responsibility to ensure that the library is actually available with
+     * the app. If the file is not available when a connection from this driver is opened, then an
+     * [androidx.sqlite.SQLiteException] will be thrown during [open].
+     *
+     * See also: [Load an extension](https://www.sqlite.org/c3ref/load_extension.html)
+     *
+     * @param fileName The path to the extension to load. A given file can only be added as an
+     *   extension once.
+     */
+    public actual fun addExtension(fileName: String) {
+        check(fileName !in extensions) { "Extension '$fileName' is already added." }
+        extensions[fileName] = null
+    }
+
+    /**
+     * Registers a dynamically-linked SQLite extension to load for every subsequent connection
+     * opened with this driver.
+     *
+     * The extension is loaded by SQLite in a platform-specific way. SQLite will attempt to open the
+     * file using (e.g. dlopen on POSIX) and look up a native function responsible for initializing
+     * the extension. The [entryPoint] defines the function name to be invoke to initialize the
+     * extension.
+     *
+     * It is the developer's responsibility to ensure that the library is actually available with
+     * the app. If the file is not available when a connection from this driver is opened, then an
+     * [androidx.sqlite.SQLiteException] will be thrown during [open].
+     *
+     * See also: [Load an extension](https://www.sqlite.org/c3ref/load_extension.html)
+     *
+     * @param fileName The path to the extension to load. A given file can only be added as an
+     *   extension once.
+     * @param entryPoint The function name to serve as entry point in the loaded extension library.
+     */
+    public actual fun addExtension(fileName: String, entryPoint: String) {
+        check(fileName !in extensions) { "Extension '$fileName' is already added." }
+        extensions[fileName] = entryPoint
     }
 
     private object NativeLibraryObject {

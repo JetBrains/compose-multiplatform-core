@@ -225,10 +225,15 @@ public interface Features {
     /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
      * {@link
-     * AppSearchSchema.DocumentPropertyConfig.Builder#addIndexableNestedProperties(String...)} and
-     * {@link AppSearchSchema.DocumentPropertyConfig#getIndexableNestedProperties()}.
+     * AppSearchSchema.DocumentPropertyConfig.Builder#addIndexableNestedProperties(String...)}.
      */
     String SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_ADD_INDEXABLE_NESTED_PROPERTIES";
+
+    /**
+     * Feature for {@link #isFeatureSupported(String)}. This feature covers
+     * {@link AppSearchSchema.DocumentPropertyConfig#getIndexableNestedProperties()}.
+     */
+    String SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES = "SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}. This feature covers
@@ -273,14 +278,19 @@ public interface Features {
             "SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS";
 
     /**
-     * Feature for {@link #isFeatureSupported(String)}. This feature covers
-     * {@link AppSearchBlobHandle}.
+     * Feature for {@link #isFeatureSupported(String)}.
+     *
+     * <p> This feature covers {@link AppSearchBlobHandle},
+     * {@link AppSearchSchema.BlobHandlePropertyConfig},
+     * {@link GenericDocument#getPropertyBlobHandle},
+     * {@link AppSearchSession#openBlobForWriteAsync},
+     * {@link AppSearchSession#commitBlobAsync},
+     * {@link AppSearchSession#removeBlobAsync},
+     * {@link AppSearchSession#openBlobForReadAsync},
+     * {@link AppSearchSession#setBlobVisibilityAsync},
+     * {@link GlobalSearchSession#openBlobForReadAsync(Set)},
      */
-    // TODO(b/273591938) improve the java doc when we support set blob property in GenericDocument
-    // TODO(b/273591938) unhide the API once it read for API review.
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    @ExperimentalAppSearchApi
-    String BLOB_STORAGE = "BLOB_STORAGE";
+    String SCHEMA_BLOB_HANDLE = "SCHEMA_BLOB_HANDLE";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}. This feature indicates whether or not the
@@ -361,12 +371,14 @@ public interface Features {
     String SEARCH_EMBEDDING_MATCH_INFO = "SEARCH_EMBEDDING_MATCH_INFO";
 
     /**
-     * Feature for {@link #isFeatureSupported(String)}. This feature covers {@link
-     * androidx.appsearch.usagereporting.ActionAccumulator#create}.
+     * Feature for {@link #isFeatureSupported(String)}. This feature check if
+     * READ_GLOBAL_APP_SEARCH_DATA permission is supported in this environment.
+     * This permission allows documents to be visible on any system UI surface.
+     * This feature covers {@link SetSchemaRequest.Builder#setSchemaTypeDisplayedBySystem}.
      */
-    // Due to lint checks, we cannot include the word "ACTION" in this value
     @ExperimentalAppSearchApi
-    String SEARCH_AND_CLICK_ACCUMULATOR = "SEARCH_AND_CLICK_ACCUMULATOR";
+    String SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM =
+            "SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM";
 
     /**
      * Returns whether a feature is supported at run-time. Feature support depends on the

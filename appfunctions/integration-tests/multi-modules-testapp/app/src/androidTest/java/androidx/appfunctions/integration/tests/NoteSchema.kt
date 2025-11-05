@@ -19,14 +19,11 @@ package androidx.appfunctions.integration.tests
 import android.net.Uri
 import androidx.appfunctions.AppFunctionContext
 import androidx.appfunctions.AppFunctionSchemaDefinition
-import androidx.appfunctions.AppFunctionSerializableInterface
+import androidx.appfunctions.AppFunctionSerializable
 
 /** Creates an [AppFunctionNote] with the given parameters. */
 @AppFunctionSchemaDefinition(name = "createNote", version = 2, category = "myNotes")
-public interface CreateNoteAppFunction<
-    Parameters : CreateNoteAppFunction.Parameters,
-    Response : CreateNoteAppFunction.Response,
-> {
+public interface CreateNoteAppFunction {
     /**
      * Creates an [AppFunctionNote] with the given parameters.
      *
@@ -35,25 +32,26 @@ public interface CreateNoteAppFunction<
      *
      * @param appFunctionContext The AppFunction execution context.
      * @param parameters The parameters for creating a note.
+     * @param tag Optional tag.
      * @return The response including the created note.
      */
     public suspend fun createNote(
         appFunctionContext: AppFunctionContext,
         parameters: Parameters,
+        tag: String? = null,
     ): Response
 
     /** The parameters for creating a note. */
-    @AppFunctionSerializableInterface
-    public interface Parameters {
+    @AppFunctionSerializable(isDescribedByKdoc = true)
+    public data class Parameters(
         /** The title of the note. */
-        public val title: String
+        val title: String,
+
         /** The text content of the note. */
-        public val content: String?
-            get() = null
+        val content: String? = null,
 
         /** The attachments of the note. */
-        public val attachments: List<AppFunctionNote.Attachment>
-            get() = emptyList()
+        val attachments: List<AppFunctionNote.Attachment> = emptyList(),
 
         /**
          * The ID of the group the note is in, if any else `null`.
@@ -61,8 +59,7 @@ public interface CreateNoteAppFunction<
          * [androidx.appfunctions.AppFunctionElementNotFoundException] should be thrown when a group
          * with the specified groupId doesn't exist.
          */
-        public val groupId: String?
-            get() = null
+        val groupId: String? = null,
 
         /**
          * An optional UUID for this note provided by the caller. If provided, the caller can use
@@ -78,38 +75,37 @@ public interface CreateNoteAppFunction<
          * application should expect subsequent requests from the caller to reference the note using
          * the application generated [AppFunctionNote.id].
          */
-        public val externalUuid: String?
-            get() = null
-    }
+        val externalUuid: String? = null,
+    )
 
     /** The response including the created note. */
-    @AppFunctionSerializableInterface
-    public interface Response {
+    @AppFunctionSerializable(isDescribedByKdoc = true)
+    public data class Response(
         /** The created note. */
-        public val createdNote: AppFunctionNote
-    }
+        public val createdNote: AppFunctionNote,
+        /** Optional tag. */
+        public val tag: String? = null,
+    )
 }
 
 /** A note entity. */
-@AppFunctionSerializableInterface
-public interface AppFunctionNote {
+@AppFunctionSerializable(isDescribedByKdoc = true)
+public data class AppFunctionNote(
     /** The ID of the note. */
-    public val id: String
+    val id: String,
 
     /** The title of the note. */
-    public val title: String
+    val title: String,
 
     /** The content of the note. */
-    public val content: String?
-        get() = null
+    val content: String? = null,
 
     /** The attachments of the note. */
-    public val attachments: List<Attachment>
-        get() = emptyList()
-
+    val attachments: List<Attachment> = emptyList(),
+) {
     /** An attached file. */
-    @AppFunctionSerializableInterface
-    public interface Attachment {
+    @AppFunctionSerializable(isDescribedByKdoc = true)
+    data class Attachment(
         /**
          * The URI of the attached file.
          *
@@ -119,13 +115,12 @@ public interface AppFunctionNote {
          * The providing app should also consider revoking the URI permission by using
          * [android.content.Context.revokeUriPermission] after a certain time period.
          */
-        public val uri: Uri
+        val uri: Uri,
 
         /** The display name of the attached file. */
-        public val displayName: String
+        val displayName: String,
 
         /** The MIME type of the attached file. Format defined in RFC 6838. */
-        public val mimeType: String?
-            get() = null
-    }
+        val mimeType: String? = null,
+    )
 }

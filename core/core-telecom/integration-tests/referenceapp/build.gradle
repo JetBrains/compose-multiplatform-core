@@ -17,9 +17,8 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
     id("AndroidXComposePlugin")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
@@ -27,7 +26,7 @@ android {
 
     defaultConfig {
         applicationId = "androidx.core.telecom.reference"
-        minSdkVersion 26
+        minSdk = 26
     }
 
     buildTypes {
@@ -43,7 +42,6 @@ dependencies {
     // This is the target test package
     implementation(project(":core:core-telecom"))
     // Kotlin essentials
-    implementation(libs.kotlinStdlib)
     // -- @Serialize
     implementation(libs.kotlinSerializationCore)
     // Compose

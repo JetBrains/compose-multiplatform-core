@@ -98,10 +98,14 @@ internal class LayoutNode(
     InteroperableComposeUiNode,
     Owner.OnLayoutCompletedListener {
 
-    internal var offsetFromRoot: IntOffset = IntOffset.Max
+    // Params managed by RectManager start:
+    internal var hasPositionalLayerTransformationsInOffsetFromRoot: Boolean = false
+    internal var lastOffsetFromParent: IntOffset = IntOffset.Max
     internal var lastSize: IntSize = IntSize.Zero
     internal var outerToInnerOffset: IntOffset = IntOffset.Max
     internal var outerToInnerOffsetDirty: Boolean = true
+    internal var addedToRectList: Boolean = false
+    // Params managed by RectManager end.
 
     override var compositeKeyHash: Int = 0
 
@@ -513,6 +517,9 @@ internal class LayoutNode(
         val parent = this.parent
         if (parent == null) {
             measurePassDelegate.isPlaced = true
+            // regular nodes go through markNodeAndSubtreeAsPlaced(), from where we call this
+            // function on rectManager. as root marked as placed here, we need to call it.
+            owner.rectManager.onLayoutPositionChanged(this)
             lookaheadPassDelegate?.onAttachedToNullParent()
         }
 
@@ -600,9 +607,9 @@ internal class LayoutNode(
         ignoreRemeasureRequests { _foldedChildren.forEach { child -> child.detach() } }
         nodes.markAsDetached()
         owner.onDetach(this)
+        owner.rectManager.remove(this)
         this.owner = null
 
-        offsetFromRoot = IntOffset.Max
         lookaheadRoot = null
         depth = 0
         measurePassDelegate.onNodeDetached()
@@ -1126,7 +1133,6 @@ internal class LayoutNode(
         scheduleMeasureAndLayout: Boolean = true,
         invalidateIntrinsics: Boolean = true,
     ) {
-        outerToInnerOffsetDirty = true
         if (!ignoreRemeasureRequests && !isVirtual) {
             val owner = owner ?: return
             owner.onRequestMeasure(
@@ -1153,7 +1159,6 @@ internal class LayoutNode(
             "Lookahead measure cannot be requested on a node that is not a part of the " +
                 "LookaheadScope"
         }
-        outerToInnerOffsetDirty = true
         val owner = owner ?: return
         if (!ignoreRemeasureRequests && !isVirtual) {
             owner.onRequestMeasure(
@@ -1198,19 +1203,15 @@ internal class LayoutNode(
         requireOwner().requestOnPositionedCallback(this)
     }
 
-    /**
-     * When the position of this node changes, we need to invalidate the cached [offsetFromRoot]
-     * value. Additionally, this will make all of the [offsetFromRoot] values below it incorrect as
-     * well.
-     */
-    internal fun invalidateOffsetFromRoot() {
-        // we want to avoid doing this recursive invalidation multiple times.
-        // if offsetFromRoot is already "unset", then we can assume that everything below
-        // it is also unset, and can exit early.
-        if (offsetFromRoot == IntOffset.Max) return
-        // Recursively "unset" offsetFromRoot
-        offsetFromRoot = IntOffset.Max
-        forEachChild { it.invalidateOffsetFromRoot() }
+    internal fun onCoordinatorPositionChanged() {
+        outerToInnerOffsetDirty = true
+
+        // Since there has been an update to a coordinator somewhere in the
+        // modifier chain of this layout node, we might have onRectChanged
+        // callbacks that need to be notified of that change. As a result, even
+        // if the outer rect of this layout node hasn't changed, we want to
+        // invalidate the callbacks for them
+        owner?.rectManager?.invalidateCallbacksFor(this)
     }
 
     internal inline fun <T> ignoreRemeasureRequests(block: () -> T): T {
@@ -1222,14 +1223,12 @@ internal class LayoutNode(
 
     /** Used to request a new layout pass from the owner. */
     internal fun requestRelayout(forceRequest: Boolean = false) {
-        outerToInnerOffsetDirty = true
         if (!isVirtual) {
             owner?.onRequestRelayout(this, forceRequest = forceRequest)
         }
     }
 
     internal fun requestLookaheadRelayout(forceRequest: Boolean = false) {
-        outerToInnerOffsetDirty = true
         if (!isVirtual) {
             owner?.onRequestRelayout(this, affectsLookahead = true, forceRequest)
         }
@@ -1329,6 +1328,19 @@ internal class LayoutNode(
         _children.forEach { it.invalidateSubtree(false) }
     }
 
+    fun invalidateMeasurementForSubtree() {
+        requestRemeasure()
+        _children.forEach { it.invalidateMeasurementForSubtree() }
+    }
+
+    fun invalidateDrawForSubtree(isRootOfInvalidation: Boolean = true) {
+        if (isRootOfInvalidation) {
+            parent?.invalidateLayer()
+        }
+        nodes.headToTail(Nodes.Layout) { it.requireCoordinator(Nodes.Layout).layer?.invalidate() }
+        _children.forEach { it.invalidateDrawForSubtree(false) }
+    }
+
     /** Marks the layoutNode dirty for another lookahead measure pass. */
     internal fun markLookaheadMeasurePending() = layoutDelegate.markLookaheadMeasurePending()
 
@@ -1348,7 +1360,7 @@ internal class LayoutNode(
     }
 
     override fun onLayoutComplete() {
-        innerCoordinator.visitNodes(Nodes.LayoutAware) { it.onPlaced(innerCoordinator) }
+        innerCoordinator.visitNodes(Nodes.OnPlaced) { it.onPlaced(innerCoordinator) }
     }
 
     /** Calls [block] on all [LayoutModifierNodeCoordinator]s in the NodeCoordinator chain. */
@@ -1450,6 +1462,8 @@ internal class LayoutNode(
             resetModifierState()
         }
         val oldSemanticsId = semanticsId
+        // semanticsId is used as the identity. we need to remove from rectlist before changing it
+        owner?.rectManager?.remove(this)
         semanticsId = generateSemanticsId()
         owner?.onPreLayoutNodeReused(this, oldSemanticsId)
         // resetModifierState detaches all nodes, so we need to re-attach them upon reuse.
@@ -1461,6 +1475,10 @@ internal class LayoutNode(
         }
         rescheduleRemeasureOrRelayout(this)
         owner?.onPostLayoutNodeReused(this, oldSemanticsId)
+        // Sometimes, while scrolling with reuse, a child LayoutNode, might not
+        // require measure or layout at all, but at a minimum we need to update RectManager with
+        // the correct information.
+        owner?.rectManager?.onLayoutPositionChanged(this, forceUpdate = true)
     }
 
     override fun onDeactivate() {

@@ -18,6 +18,7 @@ package androidx.xr.glimmer.list
 
 import androidx.compose.foundation.lazy.layout.LazyLayoutIntervalContent
 import androidx.compose.foundation.lazy.layout.LazyLayoutItemProvider
+import androidx.compose.foundation.lazy.layout.LazyLayoutKeyIndexMap
 import androidx.compose.foundation.lazy.layout.LazyLayoutPinnableItem
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -38,7 +39,7 @@ internal fun rememberGlimmerListItemProviderLambda(
         val itemProviderState =
             derivedStateOf(referentialEqualityPolicy()) {
                 val intervalContent = intervalContentState.value
-                val map = NearestRangeKeyIndexMap(state.nearestRange, intervalContent)
+                val map = LazyLayoutKeyIndexMap(state.nearestRange, intervalContent)
                 GlimmerListItemProvider(
                     state = state,
                     intervalContent = intervalContent,
@@ -53,7 +54,7 @@ internal fun rememberGlimmerListItemProviderLambda(
 internal class GlimmerListItemProvider(
     val itemScope: GlimmerListItemScopeImpl,
     val intervalContent: LazyLayoutIntervalContent<GlimmerListInterval>,
-    val keyIndexMap: NearestRangeKeyIndexMap,
+    val keyIndexMap: LazyLayoutKeyIndexMap,
     private val state: ListState,
 ) : LazyLayoutItemProvider {
     override val itemCount: Int

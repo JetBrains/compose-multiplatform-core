@@ -35,7 +35,7 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(Enclosed::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 object VideoEncoderInfoWrapperTest {
 
     private const val WIDTH_ALIGNMENT = 2
@@ -61,7 +61,7 @@ object VideoEncoderInfoWrapperTest {
 
     @RunWith(ParameterizedRobolectricTestRunner::class)
     @DoNotInstrument
-    @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+    @Config(sdk = [Config.ALL_SDKS])
     class ModelWrappingTest(
         private val brand: String,
         private val model: String,
@@ -103,7 +103,7 @@ object VideoEncoderInfoWrapperTest {
 
     @RunWith(RobolectricTestRunner::class)
     @DoNotInstrument
-    @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+    @Config(sdk = [Config.ALL_SDKS])
     class WrappingMethodTest {
 
         @Test

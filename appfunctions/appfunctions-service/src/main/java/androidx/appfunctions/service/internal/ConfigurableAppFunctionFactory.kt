@@ -21,7 +21,6 @@ import android.util.Log
 import androidx.annotation.RestrictTo
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.service.AppFunctionConfiguration
-import java.lang.reflect.InvocationTargetException
 
 /**
  * A factory that will incorporate [AppFunctionConfiguration] from [context] to create AppFunction
@@ -29,13 +28,16 @@ import java.lang.reflect.InvocationTargetException
  *
  * If the application context from [context] overrides [AppFunctionConfiguration.Provider], the
  * customized factory method will be used to instantiate the enclosing class. Otherwise, it will use
- * reflection to create the instance assuming the enclosing class has a no argument constructor.
+ * [defaultFactory] to create the instance if available.
  *
  * [createEnclosingClass] will throw [AppFunctionInstantiationException] if unable to instantiate
  * the enclosing class.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class ConfigurableAppFunctionFactory<T : Any>(private val context: Context) {
+public class ConfigurableAppFunctionFactory<T : Any>(
+    private val context: Context,
+    private val defaultFactory: (() -> T)? = null,
+) {
     public fun createEnclosingClass(enclosingClass: Class<T>): T {
         val configurationProvider = context.applicationContext as? AppFunctionConfiguration.Provider
         val customFactory =
@@ -45,7 +47,7 @@ public class ConfigurableAppFunctionFactory<T : Any>(private val context: Contex
                 ?.get(enclosingClass)
         if (customFactory == null) {
             Log.d(APP_FUNCTIONS_TAG, "Unable to find custom factory for [$enclosingClass]")
-            return getNoArgumentAppFunctionFactory<T>().invoke(enclosingClass)
+            return createFromDefault(enclosingClass)
         }
 
         val instance = customFactory.invoke()
@@ -53,38 +55,18 @@ public class ConfigurableAppFunctionFactory<T : Any>(private val context: Contex
         return instance as T
     }
 
+    private fun createFromDefault(enclosingClass: Class<T>): T {
+        if (defaultFactory == null) {
+            throw AppFunctionInstantiationException(
+                "Unable to instantiate $enclosingClass. " +
+                    "Either setup a custom factory with AppFunctionConfiguration or provide a " +
+                    "public no-arg constructor."
+            )
+        }
+        return defaultFactory.invoke()
+    }
+
     /** Thrown when unable to instantiate the AppFunction enclosing class. */
     public class AppFunctionInstantiationException(errorMessage: String) :
         RuntimeException(errorMessage)
-
-    private fun <T : Any> getNoArgumentAppFunctionFactory(): (Class<T>) -> T {
-        return { enclosingClass: Class<T> ->
-            try {
-                enclosingClass.getDeclaredConstructor().newInstance()
-            } catch (_: IllegalAccessException) {
-                throw AppFunctionInstantiationException(
-                    "Cannot access the constructor of $enclosingClass"
-                )
-            } catch (_: NoSuchMethodException) {
-                throw AppFunctionInstantiationException(
-                    "$enclosingClass requires additional parameter to create. " +
-                        "Please either remove the additional parameters or implement the " +
-                        "factory and provide it in " +
-                        "${AppFunctionConfiguration::class.qualifiedName}"
-                )
-            } catch (_: InstantiationException) {
-                throw AppFunctionInstantiationException(
-                    "$enclosingClass should have a public no-argument constructor"
-                )
-            } catch (_: InvocationTargetException) {
-                throw AppFunctionInstantiationException(
-                    "Something went wrong when creating $enclosingClass"
-                )
-            } catch (_: ExceptionInInitializerError) {
-                throw AppFunctionInstantiationException(
-                    "Something went wrong when creating $enclosingClass"
-                )
-            }
-        }
-    }
 }

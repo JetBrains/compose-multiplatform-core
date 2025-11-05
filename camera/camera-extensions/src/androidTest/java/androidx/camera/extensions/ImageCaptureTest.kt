@@ -19,9 +19,7 @@ package androidx.camera.extensions
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageFormat
-import android.graphics.SurfaceTexture
 import android.util.Log
-import android.util.Size
 import android.view.Surface
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
@@ -42,12 +40,10 @@ import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.ExifUtil
 import androidx.camera.testing.impl.ExtensionsUtil.assumePcsSupportedForImageCapture
 import androidx.camera.testing.impl.SurfaceTextureProvider
-import androidx.camera.testing.impl.SurfaceTextureProvider.SurfaceTextureCallback
 import androidx.camera.testing.impl.WakelockEmptyActivityRule
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CompletableDeferred
@@ -72,7 +68,6 @@ import org.mockito.Mockito
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class ImageCaptureTest(
     private val implName: String,
     private val cameraXConfig: CameraXConfig,
@@ -116,9 +111,7 @@ class ImageCaptureTest(
         cameraProvider = ProcessCameraProvider.getInstance(context)[10000, TimeUnit.MILLISECONDS]
         baseCameraSelector = CameraSelector.Builder().requireLensFacing(lensFacing).build()
         ExtensionsTestlibControl.getInstance().setImplementationType(implType)
-        extensionsManager =
-            ExtensionsManager.getInstanceAsync(context, cameraProvider)[
-                    10000, TimeUnit.MILLISECONDS]
+        extensionsManager = ExtensionsManager.getInstance(context, cameraProvider)
 
         assumeTrue(
             ExtensionsTestUtil.isExtensionAvailable(extensionsManager, lensFacing, extensionMode)
@@ -372,22 +365,8 @@ class ImageCaptureTest(
         val preview = Preview.Builder().build()
         return withContext(Dispatchers.Main) {
             // To set the update listener and Preview will change to active state.
-            preview.setSurfaceProvider(
-                SurfaceTextureProvider.createSurfaceTextureProvider(
-                    object : SurfaceTextureCallback {
-                        override fun onSurfaceTextureReady(
-                            surfaceTexture: SurfaceTexture,
-                            resolution: Size,
-                        ) {
-                            // No-op.
-                        }
-
-                        override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
-                            // No-op.
-                        }
-                    }
-                )
-            )
+            preview.surfaceProvider =
+                SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider()
 
             val camera =
                 cameraProvider.bindToLifecycle(
@@ -460,22 +439,8 @@ class ImageCaptureTest(
         val preview = Preview.Builder().build()
         return withContext(Dispatchers.Main) {
             // To set the update listener and Preview will change to active state.
-            preview.setSurfaceProvider(
-                SurfaceTextureProvider.createSurfaceTextureProvider(
-                    object : SurfaceTextureCallback {
-                        override fun onSurfaceTextureReady(
-                            surfaceTexture: SurfaceTexture,
-                            resolution: Size,
-                        ) {
-                            // No-op.
-                        }
-
-                        override fun onSafeToRelease(surfaceTexture: SurfaceTexture) {
-                            // No-op.
-                        }
-                    }
-                )
-            )
+            preview.surfaceProvider =
+                SurfaceTextureProvider.createAutoDrainingSurfaceTextureProvider()
 
             val camera =
                 cameraProvider.bindToLifecycle(

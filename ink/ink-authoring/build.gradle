@@ -38,8 +38,8 @@ androidXMultiplatform {
                 implementation("androidx.graphics:graphics-core:1.0.3")
                 implementation("androidx.fragment:fragment-ktx:1.5.7")
                 implementation("androidx.test.espresso:espresso-idling-resource:3.5.0")
-                implementation("androidx.core:core:1.16.0-rc01")
-                implementation("androidx.core:core-ktx:1.16.0-rc01")
+                implementation("androidx.core:core:1.16.0")
+                implementation("androidx.core:core-ktx:1.16.0")
                 implementation(project(":ink:ink-nativeloader"))
                 implementation(project(":ink:ink-geometry"))
                 implementation(project(":ink:ink-brush"))
@@ -48,7 +48,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(libs.testExtJunit)
                 implementation(libs.testRules)
@@ -56,8 +56,8 @@ androidXMultiplatform {
                 implementation(libs.espressoCore)
                 implementation(libs.junit)
                 implementation(libs.kotlinTest)
-                implementation(libs.mockitoCore4)
-                implementation(libs.mockitoKotlin4)
+                implementation(libs.mockitoCore)
+                implementation(libs.mockitoKotlin)
                 implementation(libs.dexmakerMockito)
                 implementation(libs.truth)
                 implementation(project(":test:screenshot:screenshot"))

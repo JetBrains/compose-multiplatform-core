@@ -293,9 +293,9 @@ public final class VideoConfigUtil {
     }
 
     /**
-     * Scales and clamps the bitrate based on the input conditions.
+     * Scales the bitrate based on the input conditions.
      *
-     * @param baseBitrate     the bitrate to be scaled and clamped.
+     * @param baseBitrate     the bitrate to be scaled.
      * @param actualBitDepth  the actual bit depth.
      * @param baseBitDepth    the base bit depth.
      * @param actualFrameRate the actual frame rate.
@@ -304,17 +304,14 @@ public final class VideoConfigUtil {
      * @param baseWidth       the base video width.
      * @param actualHeight    the actual video height.
      * @param baseHeight      the base video height.
-     * @param clampedRange    the range to clamp. Set {@link VideoSpec#BITRATE_RANGE_AUTO} as no
-     *                        clamp required.
-     * @return the scaled and clamped bit rate.
+     * @return the scaled bit rate.
      */
-    public static int scaleAndClampBitrate(
+    public static int scaleBitrate(
             int baseBitrate,
             int actualBitDepth, int baseBitDepth,
             int actualFrameRate, int baseFrameRate,
             int actualWidth, int baseWidth,
-            int actualHeight, int baseHeight,
-            @NonNull Range<Integer> clampedRange) {
+            int actualHeight, int baseHeight) {
         //  Scale bit depth to match new bit depth
         Rational bitDepthRatio = new Rational(actualBitDepth, baseBitDepth);
         // Scale bitrate to match current frame rate
@@ -339,14 +336,6 @@ public final class VideoConfigUtil {
                     resolvedBitrate);
         }
 
-        if (!VideoSpec.BITRATE_RANGE_AUTO.equals(clampedRange)) {
-            // Clamp the resolved bitrate
-            resolvedBitrate = clampedRange.clamp(resolvedBitrate);
-            if (Logger.isDebugEnabled(TAG)) {
-                debugString += String.format("\nClamped to range %s -> %dbps", clampedRange,
-                        resolvedBitrate);
-            }
-        }
         Logger.d(TAG, debugString);
         return resolvedBitrate;
     }

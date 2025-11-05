@@ -46,8 +46,8 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 implementation("androidx.collection:collection:1.4.3")
+                implementation(project(":compose:runtime:runtime"))
             }
         }
 
@@ -85,14 +85,14 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRunner)
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(jvmTest)
             dependencies {
                 implementation(libs.truth)
@@ -107,8 +107,4 @@ androidx {
     inceptionYear = "2020"
     description = "Internal Compose utilities used by other modules"
     legacyDisableKotlinStrictApiMode = true
-}
-
-androidxCompose {
-    composeCompilerPluginEnabled = false
 }

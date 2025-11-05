@@ -69,9 +69,9 @@ public class SearchResultCtsTest {
         assertThat(actualMatchInfo.getExactMatchRange()).isEqualTo(exactMatchRange);
         assertThat(actualMatchInfo.getSubmatchRange()).isEqualTo(submatchRange);
         assertThat(actualMatchInfo.getSnippetRange()).isEqualTo(snippetMatchRange);
-        assertThat(actualMatchInfo.getExactMatch()).isEqualTo("lo Wo");
-        assertThat(actualMatchInfo.getSubmatch()).isEqualTo("lo");
-        assertThat(actualMatchInfo.getSnippet()).isEqualTo("ello Worl");
+        assertThat(actualMatchInfo.getExactMatch().toString()).isEqualTo("lo Wo");
+        assertThat(actualMatchInfo.getSubmatch().toString()).isEqualTo("lo");
+        assertThat(actualMatchInfo.getSnippet().toString()).isEqualTo("ello Worl");
         assertThat(actualMatchInfo.getFullText()).isEqualTo("Hello World.");
     }
 
@@ -106,9 +106,9 @@ public class SearchResultCtsTest {
         assertThat(actualMatchInfo.getExactMatchRange()).isEqualTo(exactMatchRange);
         assertThat(actualMatchInfo.getSubmatchRange()).isEqualTo(submatchRange);
         assertThat(actualMatchInfo.getSnippetRange()).isEqualTo(snippetMatchRange);
-        assertThat(actualMatchInfo.getExactMatch()).isEqualTo("lo Wo");
-        assertThat(actualMatchInfo.getSubmatch()).isEqualTo("lo");
-        assertThat(actualMatchInfo.getSnippet()).isEqualTo("ello Worl");
+        assertThat(actualMatchInfo.getExactMatch().toString()).isEqualTo("lo Wo");
+        assertThat(actualMatchInfo.getSubmatch().toString()).isEqualTo("lo");
+        assertThat(actualMatchInfo.getSnippet().toString()).isEqualTo("ello Worl");
         assertThat(actualMatchInfo.getFullText()).isEqualTo("Hello World.");
     }
 
@@ -189,7 +189,7 @@ public class SearchResultCtsTest {
                 .addMatchInfo(matchInfo)
                 .build();
         final SearchResult.MatchInfo actualMatchInfo = searchResult.getMatchInfos().get(0);
-        assertThat(actualMatchInfo.getSubmatch()).isEqualTo("lo");
+        assertThat(actualMatchInfo.getSubmatch().toString()).isEqualTo("lo");
         assertThat(actualMatchInfo.getSubmatchRange()).isEqualTo(submatchRange);
     }
 

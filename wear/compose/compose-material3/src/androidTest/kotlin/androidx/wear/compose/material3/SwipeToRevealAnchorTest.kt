@@ -21,8 +21,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -30,6 +32,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.wear.compose.material3.RevealDirection.Companion.RightToLeft
 import androidx.wear.compose.material3.RevealState.SingleSwipeCoordinator
 import androidx.wear.compose.material3.RevealValue.Companion.Covered
@@ -42,6 +45,7 @@ import androidx.wear.compose.material3.SwipeToRevealDefaults.SingleActionAnchorW
 import androidx.wear.compose.material3.SwipeToRevealDefaults.bidirectionalGestureInclusion
 import androidx.wear.compose.materialcore.CustomTouchSlopProvider
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -56,7 +60,7 @@ import org.junit.runners.Parameterized
  */
 @RunWith(Parameterized::class)
 class SwipeToRevealAnchorTest(val testParams: TestParams) {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun setUp() {
@@ -64,15 +68,27 @@ class SwipeToRevealAnchorTest(val testParams: TestParams) {
     }
 
     @Test
-    fun performSwipe_settlesOnCorrectAnchor() {
+    fun performSwipe_onLtrLayout_settlesOnCorrectAnchor() {
+        performSwipe_settlesOnCorrectAnchor(isRtl = false)
+    }
+
+    @Test
+    fun performSwipe_onRtlLayout_settlesOnCorrectAnchor() {
+        performSwipe_settlesOnCorrectAnchor(isRtl = true)
+    }
+
+    fun performSwipe_settlesOnCorrectAnchor(isRtl: Boolean = false) {
         lateinit var revealState: RevealState
         var density = 0f
+        val layoutDirection = if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr
 
         rule.setContent {
             ScreenConfiguration(screenSizeDp = SCREEN_SIZE_LARGE) {
-                revealState = rememberRevealState(initialValue = testParams.initialRevealValue)
-                with(LocalDensity.current) { density = this.density }
-                Content(revealState)
+                CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                    revealState = rememberRevealState(initialValue = testParams.initialRevealValue)
+                    with(LocalDensity.current) { density = this.density }
+                    Content(revealState)
+                }
             }
         }
 

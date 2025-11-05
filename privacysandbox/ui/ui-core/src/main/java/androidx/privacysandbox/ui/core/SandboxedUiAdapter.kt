@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.core
 
@@ -26,6 +27,7 @@ import java.util.concurrent.Executor
 /**
  * An Adapter that provides content from a SandboxedSdk to be displayed as part of a host app's UI.
  */
+@Deprecated("This library is no longer supported.")
 public interface SandboxedUiAdapter {
 
     /**

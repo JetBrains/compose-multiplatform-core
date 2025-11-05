@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.sdkruntime.provider
 
@@ -30,6 +31,7 @@ import androidx.privacysandbox.sdkruntime.core.SandboxedSdkProviderCompat
  * Implementation of platform [SandboxedSdkProvider] that delegate to [SandboxedSdkProviderCompat]
  * Gets compat class name from asset "SandboxedSdkProviderCompatClassName.txt"
  */
+@Deprecated("This library is no longer supported.")
 @RequiresApi(34)
 public class SandboxedSdkProviderAdapter
 internal constructor(private val classNameProvider: CompatClassNameProvider) :

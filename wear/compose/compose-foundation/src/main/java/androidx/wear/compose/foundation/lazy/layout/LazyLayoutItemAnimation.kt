@@ -91,6 +91,13 @@ internal class LazyLayoutItemAnimation(
      */
     var finalOffset: IntOffset = IntOffset.Zero
 
+    /**
+     * The final logical offset of the item in a standard, top-to-bottom coordinate space. This
+     * value does NOT account for `reverseLayout`. It is used by the animator as a stable, logical
+     * anchor to calculate the starting position for placement animations when items are reordered.
+     */
+    var logicalOffset: IntOffset = IntOffset.Zero
+
     /** Current [GraphicsLayer]. It will be set to null in [release]. */
     var layer: GraphicsLayer? = graphicsContext?.createGraphicsLayer()
         private set

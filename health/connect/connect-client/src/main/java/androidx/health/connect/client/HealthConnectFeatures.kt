@@ -18,7 +18,6 @@ package androidx.health.connect.client
 
 import androidx.annotation.IntDef
 import androidx.annotation.RestrictTo
-import androidx.health.connect.client.feature.ExperimentalMindfulnessSessionApi
 import androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi
 import androidx.health.connect.client.feature.HealthConnectPlatformVersion
 import androidx.health.connect.client.feature.HealthConnectVersionInfo
@@ -50,15 +49,32 @@ interface HealthConnectFeatures {
         const val FEATURE_READ_HEALTH_DATA_HISTORY = 4
 
         /** Feature constant for mindfulness session. */
-        @ExperimentalMindfulnessSessionApi const val FEATURE_MINDFULNESS_SESSION = 5
+        const val FEATURE_MINDFULNESS_SESSION = 5
 
         /** Feature constant for Personal Health Records APIs. */
         @ExperimentalPersonalHealthRecordApi const val FEATURE_PERSONAL_HEALTH_RECORD = 6
 
         /** Feature constant for Activity Intensity APIs. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY) const val FEATURE_ACTIVITY_INTENSITY = 7
+        const val FEATURE_ACTIVITY_INTENSITY = 7
 
-        @OptIn(ExperimentalPersonalHealthRecordApi::class, ExperimentalMindfulnessSessionApi::class)
+        /**
+         * Feature constant for extended device types.
+         *
+         * When this feature is available, the following device types are supported:
+         * - `Device.TYPE_CONSUMER_MEDICAL_DEVICE`
+         * - `Device.TYPE_GLASSES`
+         * - `Device.TYPE_HEARABLE`
+         * - `Device.TYPE_FITNESS_MACHINE`
+         * - `Device.TYPE_FITNESS_EQUIPMENT`
+         * - `Device.TYPE_PORTABLE_COMPUTER`
+         * - `Device.TYPE_METER`
+         *
+         * If this feature is not available, these device types will be treated as
+         * `Device.TYPE_UNKNOWN`.
+         */
+        const val FEATURE_EXTENDED_DEVICE_TYPES = 8
+
+        @OptIn(ExperimentalPersonalHealthRecordApi::class)
         @Retention(AnnotationRetention.SOURCE)
         @IntDef(
             value =
@@ -70,6 +86,7 @@ interface HealthConnectFeatures {
                     FEATURE_PERSONAL_HEALTH_RECORD,
                     FEATURE_MINDFULNESS_SESSION,
                     FEATURE_ACTIVITY_INTENSITY,
+                    FEATURE_EXTENDED_DEVICE_TYPES,
                 ]
         )
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -97,8 +114,10 @@ interface HealthConnectFeatures {
             HealthConnectPlatformVersion(buildVersionCode = 34, sdkExtensionVersion = 15)
         private val SDK_EXT_16_PLATFORM_VERSION: HealthConnectPlatformVersion =
             HealthConnectPlatformVersion(buildVersionCode = 34, sdkExtensionVersion = 16)
+        private val SDK_EXT_19_PLATFORM_VERSION: HealthConnectPlatformVersion =
+            HealthConnectPlatformVersion(buildVersionCode = 34, sdkExtensionVersion = 19)
 
-        @OptIn(ExperimentalPersonalHealthRecordApi::class, ExperimentalMindfulnessSessionApi::class)
+        @OptIn(ExperimentalPersonalHealthRecordApi::class)
         internal val FEATURE_TO_VERSION_INFO_MAP: Map<Int, HealthConnectVersionInfo> =
             mapOf(
                 FEATURE_READ_HEALTH_DATA_IN_BACKGROUND to
@@ -108,7 +127,7 @@ interface HealthConnectFeatures {
                     ),
                 FEATURE_SKIN_TEMPERATURE to
                     HealthConnectVersionInfo(
-                        apkVersionCode = 187759,
+                        apkVersionCode = 200027,
                         platformVersion = SDK_EXT_13_PLATFORM_VERSION,
                     ),
                 FEATURE_READ_HEALTH_DATA_HISTORY to
@@ -127,6 +146,8 @@ interface HealthConnectFeatures {
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_16_PLATFORM_VERSION),
                 FEATURE_ACTIVITY_INTENSITY to
                     HealthConnectVersionInfo(platformVersion = SDK_EXT_16_PLATFORM_VERSION),
+                FEATURE_EXTENDED_DEVICE_TYPES to
+                    HealthConnectVersionInfo(platformVersion = SDK_EXT_19_PLATFORM_VERSION),
             )
     }
 }

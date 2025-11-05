@@ -77,7 +77,7 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 23, maxSdkVersion = 33)
+@SdkSuppress(maxSdkVersion = 33)
 @Suppress("deprecation")
 class PendingIntentHandlerApi23Test {
     private val mContext: Context = ApplicationProvider.getApplicationContext()

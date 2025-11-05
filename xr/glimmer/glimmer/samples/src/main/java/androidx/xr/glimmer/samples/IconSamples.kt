@@ -42,7 +42,7 @@ fun IconSampleUsage() {
     VerticalList(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         item { IconSizesSample() }
@@ -65,7 +65,7 @@ fun IconSampleUsage() {
 fun IconSizesSample() {
     val iconSizes = GlimmerTheme.iconSizes
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(FavoriteIcon, "Localized description", Modifier.size(iconSizes.small))

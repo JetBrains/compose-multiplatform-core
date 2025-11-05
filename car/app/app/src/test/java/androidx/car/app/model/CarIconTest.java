@@ -20,8 +20,10 @@ import static androidx.car.app.model.CarColor.BLUE;
 import static androidx.car.app.model.CarColor.DEFAULT;
 import static androidx.car.app.model.CarColor.GREEN;
 import static androidx.car.app.model.CarIcon.BACK;
+import static androidx.car.app.model.CarIcon.MEDIA_PLAYBACK;
 import static androidx.car.app.model.CarIcon.TYPE_BACK;
 import static androidx.car.app.model.CarIcon.TYPE_CUSTOM;
+import static androidx.car.app.model.CarIcon.TYPE_MEDIA_PLAYBACK;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -82,6 +84,13 @@ public class CarIconTest {
         assertThat(carIcon.getType()).isEqualTo(TYPE_BACK);
         assertThat(carIcon.getTint()).isEqualTo(GREEN);
         assertThat(carIcon.getIcon()).isEqualTo(BACK.getIcon());
+    }
+
+    @Test
+    public void buildMediaPlaybackAction() {
+        CarIcon carIcon = new CarIcon.Builder(MEDIA_PLAYBACK).build();
+
+        assertThat(carIcon.getType()).isEqualTo(TYPE_MEDIA_PLAYBACK);
     }
 
     @Test

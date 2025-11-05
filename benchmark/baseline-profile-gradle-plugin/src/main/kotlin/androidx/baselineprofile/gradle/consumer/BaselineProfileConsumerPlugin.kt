@@ -377,7 +377,7 @@ private class BaselineProfileConsumerAgpPlugin(private val project: Project) :
                         mergeAwareTaskName = mergeAwareTaskName,
                         library = isLibraryModule(),
                         sourceDir = mergeTaskProvider.flatMap { it.baselineProfileDir },
-                        outputDir = project.provider { srcOutputDir },
+                        outputDir = srcOutputDir,
                         hasDependencies = baselineProfileConfiguration.allDependencies.isNotEmpty(),
                         isLastTask = true,
                         warnings = baselineProfileExtension.warnings,

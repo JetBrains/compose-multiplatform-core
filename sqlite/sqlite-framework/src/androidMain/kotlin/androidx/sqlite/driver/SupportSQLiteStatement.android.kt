@@ -57,10 +57,16 @@ internal sealed class SupportSQLiteStatement(
                 return OtherSQLiteStatement(db, sql)
             }
             val transactionOp = getTransactionOperation(sqlPrefix, sqlString)
-            return if (transactionOp != null) {
+            if (transactionOp != null) {
                 // Special-case statement for transactions
-                TransactionSQLiteStatement(db, sql, transactionOp)
-            } else if (isRowStatement(sqlPrefix)) {
+                return TransactionSQLiteStatement(db, sql, transactionOp)
+            }
+            // Special-case statements for certain PRAGMA with dedicated APIs
+            val specialOp = getSpecialOperation(sqlPrefix, sqlString)
+            if (specialOp is SpecialOperation.JournalModeOperation) {
+                return JournalModeSetStatement(db, sql, RowSQLiteStatement(db, sql))
+            }
+            return if (isRowStatement(sqlPrefix)) {
                 // Statements that return rows (SQLITE_ROW)
                 RowSQLiteStatement(db, sql)
             } else {
@@ -86,6 +92,19 @@ internal sealed class SupportSQLiteStatement(
                         TransactionOperation.BEGIN_IMMEDIATE
                     } else {
                         TransactionOperation.BEGIN_DEFERRED
+                    }
+                }
+                else -> null
+            }
+
+        private fun getSpecialOperation(prefix: String, sql: String): SpecialOperation? =
+            when (prefix) {
+                // TODO: Consider handling foreign_keys with setForeignKeyConstraintsEnabled()
+                "PRA" -> {
+                    if (sql.lowercase().substringAfter("journal_mode", "").contains("=")) {
+                        SpecialOperation.JournalModeOperation
+                    } else {
+                        null
                     }
                 }
                 else -> null
@@ -153,6 +172,10 @@ internal sealed class SupportSQLiteStatement(
             BEGIN_EXCLUSIVE,
             BEGIN_IMMEDIATE,
             BEGIN_DEFERRED,
+        }
+
+        private sealed class SpecialOperation {
+            object JournalModeOperation : SpecialOperation()
         }
     }
 
@@ -251,6 +274,24 @@ internal sealed class SupportSQLiteStatement(
 
         override fun close() {
             isClosed = true
+        }
+    }
+
+    private class JournalModeSetStatement(
+        db: SupportSQLiteDatabase,
+        sql: String,
+        private val delegate: SupportSQLiteStatement,
+    ) : SupportSQLiteStatement(db, sql), SQLiteStatement by delegate {
+        override fun step(): Boolean {
+            val result = delegate.step()
+            // For WAL-mode Android has a dedicate API since it reconfigures the internal connection
+            // pool to increase the max amount of connections.
+            if (getText(0).equals("wal", ignoreCase = true)) {
+                db.enableWriteAheadLogging()
+            } else {
+                db.disableWriteAheadLogging()
+            }
+            return result
         }
     }
 

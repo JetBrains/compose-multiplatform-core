@@ -28,7 +28,6 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
 import androidx.testutils.ActivityScenarioResetRule
 import androidx.testutils.ResettableActivityScenarioRule
-import java.util.ArrayList
 import java.util.Arrays
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.closeTo

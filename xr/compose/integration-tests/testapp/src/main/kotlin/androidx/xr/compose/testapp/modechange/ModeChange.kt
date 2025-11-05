@@ -31,13 +31,13 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
@@ -53,29 +53,36 @@ import androidx.xr.compose.testapp.ui.theme.Purple40
 import androidx.xr.compose.testapp.ui.theme.PurpleGrey80
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.scenecore.scene
 
 class ModeChange : ComponentActivity() {
-    private var renderingSession: Session? = null
 
+    @Suppress("deprecation")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         setContent {
+            val renderingSession = remember {
+                (Session.create(
+                        activity = this@ModeChange,
+                        unscaledGravityAlignedActivitySpace = true,
+                    ) as SessionCreateSuccess)
+                    .session
+            }
             IntegrationTestsAppTheme {
                 if (LocalSpatialCapabilities.current.isSpatialUiEnabled) {
-                    FullSpaceMainPanel()
+                    FullSpaceMainPanel(renderingSession)
                 } else {
-                    HomeSpaceMainPanel()
+                    HomeSpaceMainPanel(renderingSession)
                 }
             }
         }
     }
 
     @Composable
-    private fun FullSpaceMainPanel() {
-        renderingSession = LocalSession.current
+    private fun FullSpaceMainPanel(renderingSession: Session) {
         Subspace {
             SpatialRow {
                 CommonTestPanel(
@@ -94,7 +101,7 @@ class ModeChange : ComponentActivity() {
                     onClickRecreate = { this@ModeChange.recreate() },
                 ) { padding ->
                     PanelContent(padding, "FullSpace Mode", "Transition to HomeSpace Mode") {
-                        renderingSession!!.scene.requestHomeSpaceMode()
+                        renderingSession.scene.requestHomeSpaceMode()
                     }
                 }
 
@@ -110,7 +117,8 @@ class ModeChange : ComponentActivity() {
     }
 
     @Composable
-    private fun HomeSpaceMainPanel() {
+    private fun HomeSpaceMainPanel(renderingSession: Session) {
+
         CommonTestScaffold(
             title = getString(R.string.mode_change_test),
             showBottomBar = true,

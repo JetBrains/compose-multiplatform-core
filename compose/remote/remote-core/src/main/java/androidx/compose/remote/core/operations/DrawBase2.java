@@ -17,6 +17,7 @@ package androidx.compose.remote.core.operations;
 
 import static androidx.compose.remote.core.operations.Utils.floatToString;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.PaintOperation;
 import androidx.compose.remote.core.RemoteContext;
@@ -31,6 +32,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /** Base class for commands that take 3 float */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class DrawBase2 extends PaintOperation implements VariableSupport, Serializable {
     @NonNull protected String mName = "DrawRectBase";
     float mV1;
@@ -120,7 +122,8 @@ public abstract class DrawBase2 extends PaintOperation implements VariableSuppor
         buffer.writeFloat(y1);
     }
 
-    protected MapSerializer serialize(MapSerializer serializer, String v1Name, String v2Name) {
+    protected @NonNull MapSerializer serialize(
+            @NonNull MapSerializer serializer, @NonNull String v1Name, @NonNull String v2Name) {
         return serializer.add(v1Name, mValue1, mV1).add(v2Name, mValue2, mV2);
     }
 }

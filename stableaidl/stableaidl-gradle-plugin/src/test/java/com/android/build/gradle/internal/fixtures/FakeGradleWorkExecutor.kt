@@ -78,16 +78,16 @@ open class FakeGradleWorkExecutor(
         return workQueue
     }
 
-    override fun noIsolation(action: Action<in WorkerSpec?>): WorkQueue {
+    override fun noIsolation(action: Action<in WorkerSpec>): WorkQueue {
         throw NotImplementedError()
     }
 
-    override fun classLoaderIsolation(action: Action<in ClassLoaderWorkerSpec?>): WorkQueue {
+    override fun classLoaderIsolation(action: Action<in ClassLoaderWorkerSpec>): WorkQueue {
         check(executionMode == ExecutionMode.CAPTURING)
         return workQueue
     }
 
-    override fun processIsolation(action: Action<in ProcessWorkerSpec?>): WorkQueue {
+    override fun processIsolation(action: Action<in ProcessWorkerSpec>): WorkQueue {
         check(executionMode == ExecutionMode.CAPTURING)
         return workQueue
     }

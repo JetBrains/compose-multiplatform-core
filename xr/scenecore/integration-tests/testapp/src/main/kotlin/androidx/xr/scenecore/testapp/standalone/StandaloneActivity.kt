@@ -96,14 +96,19 @@ class StandaloneActivity : AppCompatActivity() {
     }
 
     private fun createModelSolarSystem(session: Session, model: GltfModel) {
-        val sunEntity = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 2f, -9f)))
+        val sunEntity = GltfModelEntity.create(session, model, Pose(Vector3(-0.5f, 0.5f, -0.5f)))
         sunEntity.parent = session.scene.activitySpace
-        val planetEntity = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 2f, -9f)))
+        // Each child is scaled down relative to the parent to make it more visually clear which
+        // entities are the "sun", "planet", and "moon".
+        sunEntity.setScale(0.50f) // Scale down the sun entity so everything fits in the FOV better
+        val planetEntity = GltfModelEntity.create(session, model, Pose(Vector3(-1f, 2f, -0.5f)))
         planetEntity.parent = sunEntity
-        val moonEntity = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 2f, -9f)))
+        planetEntity.setScale(0.5f)
+        val moonEntity = GltfModelEntity.create(session, model, Pose(Vector3(-1.5f, 2f, -0.5f)))
         moonEntity.parent = planetEntity
+        moonEntity.setScale(0.5f)
 
-        orbitModelAroundParent(planetEntity, 4f, 0f, 20000f)
+        orbitModelAroundParent(planetEntity, 3f, 0f, 20000f)
         orbitModelAroundParent(moonEntity, 2f, 1.67f, 5000f)
     }
 

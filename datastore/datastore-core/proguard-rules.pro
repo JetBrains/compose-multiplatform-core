@@ -3,3 +3,7 @@
 -assumenosideeffects class androidx.datastore.core.SharedCounter$Factory {
     private boolean isDalvik() return true;
 }
+
+-keepclasseswithmembernames,includedescriptorclasses class androidx.datastore.core.NativeSharedCounter {
+    native <methods>;
+}

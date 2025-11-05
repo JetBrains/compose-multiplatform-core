@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.sdkruntime.core
 
@@ -22,8 +23,9 @@ package androidx.privacysandbox.sdkruntime.core
  *
  * When an SDK wants to get notified about changes in client's importance, it should register an
  * implementation of this interface by calling
- * [androidx.privacysandbox.sdkruntime.core.controller.SdkSandboxControllerCompat.registerSdkSandboxClientImportanceListener].
+ * [androidx.privacysandbox.sdkruntime.provider.controller.SdkSandboxControllerCompat.registerSdkSandboxClientImportanceListener].
  */
+@Deprecated("This library is no longer supported.")
 public interface SdkSandboxClientImportanceListenerCompat {
     /**
      * Invoked every time the client transitions from a value <=

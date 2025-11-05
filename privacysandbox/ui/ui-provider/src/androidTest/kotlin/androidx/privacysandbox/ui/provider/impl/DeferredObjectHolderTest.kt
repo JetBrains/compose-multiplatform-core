@@ -20,7 +20,6 @@ import android.os.MessageQueue
 import androidx.core.util.Consumer
 import androidx.core.util.Supplier
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -32,7 +31,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 23)
 class DeferredObjectHolderTest {
 
     private lateinit var messageQueue: StubMessageQueue

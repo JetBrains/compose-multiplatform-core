@@ -42,12 +42,16 @@ internal sealed class PageEvent<T : Any> {
         val data: List<T>,
         val sourceLoadStates: LoadStates? = null,
         val mediatorLoadStates: LoadStates? = null,
+        val placeholdersBefore: Int = 0,
+        val placeholdersAfter: Int = 0,
     ) : PageEvent<T>() {
         override suspend fun <R : Any> map(transform: suspend (T) -> R): PageEvent<R> {
             return StaticList(
                 data = data.map { transform(it) },
                 sourceLoadStates = sourceLoadStates,
                 mediatorLoadStates = mediatorLoadStates,
+                placeholdersBefore = placeholdersBefore,
+                placeholdersAfter = placeholdersAfter,
             )
         }
 
@@ -58,6 +62,8 @@ internal sealed class PageEvent<T : Any> {
                 data = data.flatMap { transform(it) },
                 sourceLoadStates = sourceLoadStates,
                 mediatorLoadStates = mediatorLoadStates,
+                placeholdersBefore = placeholdersBefore,
+                placeholdersAfter = placeholdersAfter,
             )
         }
 
@@ -66,6 +72,8 @@ internal sealed class PageEvent<T : Any> {
                 data = data.filter { predicate(it) },
                 sourceLoadStates = sourceLoadStates,
                 mediatorLoadStates = mediatorLoadStates,
+                placeholdersBefore = placeholdersBefore,
+                placeholdersAfter = placeholdersAfter,
             )
         }
 
@@ -74,7 +82,9 @@ internal sealed class PageEvent<T : Any> {
                 """PageEvent.StaticList with ${data.size} items (
                     |   first item: ${data.firstOrNull()}
                     |   last item: ${data.lastOrNull()}
-                    |   sourceLoadStates: $sourceLoadStates
+                    |   sourceLoadStates: $sourceLoadStates,
+                    |   placeholdersBefore: $placeholdersBefore,
+                    |   placeholdersAfter: $placeholdersAfter,
                     """
             }
         }

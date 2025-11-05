@@ -16,7 +16,6 @@
 
 package androidx.camera.video.internal.config;
 
-import android.util.Range;
 import android.util.Rational;
 
 import androidx.camera.core.Logger;
@@ -79,11 +78,18 @@ public final class AudioSettingsAudioProfileResolver implements Supplier<AudioSe
                     + ", Resolved Channel Count: " + resolvedChannelCount + "]");
         }
 
-        Range<Integer> audioSpecSampleRate = mAudioSpec.getSampleRate();
+        // Resolve sample rate
+        int targetSampleRate;
+        int audioSpecSampleRate = mAudioSpec.getSampleRate();
         int audioProfileSampleRate = mAudioProfile.getSampleRate();
+        if (audioSpecSampleRate != AudioSpec.SAMPLE_RATE_AUTO) {
+            targetSampleRate = audioSpecSampleRate;
+        } else {
+            targetSampleRate = audioProfileSampleRate;
+        }
         CaptureEncodeRates resolvedSampleRates = AudioConfigUtil.resolveSampleRates(
-                audioSpecSampleRate, audioProfileSampleRate, resolvedChannelCount,
-                resolvedSourceFormat, mCaptureToEncodeRatio);
+                targetSampleRate, resolvedChannelCount, resolvedSourceFormat,
+                mCaptureToEncodeRatio);
         Logger.d(TAG, "Using resolved AUDIO sample rate or nearest supported from "
                 + "AudioProfile: Capture sample rate: " + resolvedSampleRates.getCaptureRate()
                 + "Hz. Encode sample rate: " + resolvedSampleRates.getEncodeRate() + "Hz. "

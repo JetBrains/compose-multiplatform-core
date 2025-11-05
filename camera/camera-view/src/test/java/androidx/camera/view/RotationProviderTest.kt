@@ -16,7 +16,6 @@
 
 package androidx.camera.view
 
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.view.Surface
 import androidx.camera.core.impl.utils.executor.CameraXExecutors
@@ -37,7 +36,7 @@ private const val INVALID_ROTATION = -1
 /** Unit tests for [RotationProvider]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class RotationProviderTest {
 
     private val rotationProvider = RotationProvider(getInstrumentation().context)

@@ -61,7 +61,17 @@ internal fun FocusTargetNode.restoreFocusedChild(): Boolean {
         if (
             it.isAttached && it.requireLayoutNode().compositeKeyHash == previouslyFocusedChildHash
         ) {
-            return it.restoreFocusedChild() || it.requestFocus()
+            @OptIn(ExperimentalComposeUiApi::class)
+            return if (ComposeUiFlags.isRequestFocusOnNonFocusableFocusTargetEnabled) {
+                return it.restoreFocusedChild() ||
+                    // When requestFocus fails, it attempts to grant focus to one of its children.
+                    // We don't want to send focus to the children when restoreFocusedChild() fails,
+                    // since it has its own fallback logic. So we call requestFocus only if this
+                    // focus target is itself focusable.
+                    it.fetchFocusProperties().canFocus && it.requestFocus()
+            } else {
+                it.restoreFocusedChild() || it.requestFocus()
+            }
         }
     }
     return false
@@ -105,22 +115,9 @@ internal class FocusRestorerNode(var fallback: FocusRequester) :
     FocusRequesterModifierNode,
     Modifier.Node() {
 
-    private var pinnedHandle: PinnedHandle? = null
-    private val onExit: FocusEnterExitScope.() -> Unit = {
-        saveFocusedChild()
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (!ComposeUiFlags.isNoPinningInFocusRestorationEnabled) {
-            pinnedHandle?.release()
-            pinnedHandle = pinFocusedChild()
-        }
-    }
+    private val onExit: FocusEnterExitScope.() -> Unit = { saveFocusedChild() }
 
     private val onEnter: FocusEnterExitScope.() -> Unit = {
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (!ComposeUiFlags.isNoPinningInFocusRestorationEnabled) {
-            pinnedHandle?.release()
-            pinnedHandle = null
-        }
         // Restoring the focused child involved calling requestFocus() and will automatically cancel
         // the current focus change. If restoration fails, we don't need to do anything for the
         // default case, where focus will enter this block. We have to handle the non-default case.
@@ -132,15 +129,6 @@ internal class FocusRestorerNode(var fallback: FocusRequester) :
     override fun applyFocusProperties(focusProperties: FocusProperties) {
         focusProperties.onEnter = onEnter
         focusProperties.onExit = onExit
-    }
-
-    override fun onDetach() {
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (!ComposeUiFlags.isNoPinningInFocusRestorationEnabled) {
-            pinnedHandle?.release()
-            pinnedHandle = null
-        }
-        super.onDetach()
     }
 }
 

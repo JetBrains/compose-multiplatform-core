@@ -20,7 +20,6 @@ import android.view.Menu.NONE
 import android.view.MenuItem
 import android.widget.Toolbar
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import androidx.testutils.assertThrows
 import androidx.testutils.fail
@@ -31,7 +30,6 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-@SdkSuppress(minSdkVersion = 21)
 @SmallTest
 class MenuTest {
     private val menu =

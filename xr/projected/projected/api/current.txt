@@ -1,14 +1,51 @@
 // Signature format: 4.0
 package androidx.xr.projected {
 
-  public final class ProjectedContext {
-    method public static android.content.Intent addProjectedFlags(android.content.Intent intent);
-    method public static android.content.Context createHostDeviceContext(android.content.Context context);
-    method public static android.app.ActivityOptions createProjectedActivityOptions(android.content.Context context);
-    method public static android.content.Context createProjectedDeviceContext(android.content.Context context);
-    method public static String? getProjectedDeviceName(android.content.Context context);
-    method public static boolean isProjectedDeviceContext(android.content.Context context);
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedContext {
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createHostDeviceContext(android.content.Context context);
+    method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static android.app.ActivityOptions createProjectedActivityOptions(android.content.Context context);
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createProjectedDeviceContext(android.content.Context context);
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static String? getProjectedDeviceName(android.content.Context context);
+    method @RequiresApi(android.os.Build.VERSION_CODES.BAKLAVA) public static kotlinx.coroutines.flow.Flow<java.lang.Boolean> isProjectedDeviceConnected(android.content.Context context, kotlin.coroutines.CoroutineContext coroutineContext);
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static boolean isProjectedDeviceContext(android.content.Context context);
     field public static final androidx.xr.projected.ProjectedContext INSTANCE;
+  }
+
+  public final class ProjectedDisplayController implements java.lang.AutoCloseable {
+    method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void addLayoutParamsFlags(int flags);
+    method public void close();
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) @androidx.xr.projected.experimental.ExperimentalProjectedApi public static suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
+    method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void removeLayoutParamsFlags(int flags);
+    field public static final androidx.xr.projected.ProjectedDisplayController.Companion Companion;
+  }
+
+  public static final class ProjectedDisplayController.Companion {
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) @androidx.xr.projected.experimental.ExperimentalProjectedApi public suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
+  }
+
+}
+
+package @SuppressCompatibility androidx.xr.projected.experimental {
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalProjectedApi {
+  }
+
+}
+
+package @SuppressCompatibility androidx.xr.projected.permissions {
+
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedPermissionsRequestParams {
+    ctor public ProjectedPermissionsRequestParams(java.util.List<java.lang.String> permissions, String? rationale);
+    method @InaccessibleFromKotlin public java.util.List<java.lang.String> getPermissions();
+    method @InaccessibleFromKotlin public String? getRationale();
+    property public java.util.List<java.lang.String> permissions;
+    property public String? rationale;
+  }
+
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedPermissionsResultContract extends androidx.activity.result.contract.ActivityResultContract<java.util.List<? extends androidx.xr.projected.permissions.ProjectedPermissionsRequestParams>,java.util.Map<java.lang.String,? extends java.lang.Boolean>> {
+    ctor public ProjectedPermissionsResultContract();
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public android.content.Intent createIntent(android.content.Context context, java.util.List<androidx.xr.projected.permissions.ProjectedPermissionsRequestParams> input);
+    method public java.util.Map<java.lang.String,java.lang.Boolean> parseResult(int resultCode, android.content.Intent? intent);
   }
 
 }
