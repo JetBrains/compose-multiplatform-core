@@ -70,7 +70,7 @@ open class DefaultArchitectureComponentsOwner(
     override val viewModelStore = ViewModelStore()
     override val navigationEventDispatcher = NavigationEventDispatcher()
 
-    protected val savedStateController = SavedStateRegistryController.create(this)
+    protected open val savedStateController = SavedStateRegistryController.create(this)
     override val savedStateRegistry: SavedStateRegistry
         get() = savedStateController.savedStateRegistry
 

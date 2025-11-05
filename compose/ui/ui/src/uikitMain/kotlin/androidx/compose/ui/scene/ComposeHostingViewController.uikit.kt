@@ -21,8 +21,6 @@ import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
-import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
@@ -49,13 +47,14 @@ import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
-import androidx.compose.ui.window.SceneActiveStateListener
 import androidx.compose.ui.window.ComposeView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
+import androidx.compose.ui.window.SceneActiveStateListener
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
+import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
 import kotlin.native.runtime.NativeRuntimeApi
@@ -95,9 +94,8 @@ import platform.darwin.dispatch_get_main_queue
 internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
     private val content: @Composable () -> Unit,
-    private val architectureComponentsOwner: UIKitArchitectureComponentsOwner = UIKitArchitectureComponentsOwner(),
     coroutineContext: CoroutineContext = Dispatchers.Main,
-    private val lifecycleDelegate: ViewControllerLifecycleDelegate = ViewControllerLifecycleDelegate(architectureComponentsOwner)
+    private val lifecycleDelegate: ViewControllerLifecycleDelegate = ViewControllerLifecycleDelegate()
 ) : CMPViewController(lifecycleDelegate = lifecycleDelegate) {
     private val hapticFeedback = CupertinoHapticFeedback()
 
@@ -114,9 +112,10 @@ internal class ComposeHostingViewController(
     private val motionDurationScale = MotionDurationScaleImpl()
     private var activeStateListener: SceneActiveStateListener? = null
     private val composeCoroutineContext: CoroutineContext = coroutineContext + motionDurationScale
-    private var savableStateRegistry = SaveableStateRegistry(
-        restoredValues = null, canBeSaved = { true }
-    )
+
+    private val architectureComponentsOwner = UIKitArchitectureComponentsOwner()
+    private var savedState: SavedState? = null
+
     private val interfaceOrientationObserver = SceneGeometryObserver {
         updateInterfaceOrientationState()
     }
@@ -311,6 +310,8 @@ internal class ComposeHostingViewController(
             layersHolder = it
         }
 
+        architectureComponentsOwner.initSavedStateController(savedState)
+        lifecycleDelegate.lifecycleListener = architectureComponentsOwner::onLifecycleState
         mediator = ComposeSceneMediator(
             onFocusBehavior = configuration.onFocusBehavior,
             focusedViewsList = focusedViewsList,
@@ -353,13 +354,11 @@ internal class ComposeHostingViewController(
     override fun viewControllerDidLeaveWindowHierarchy() {
         super.viewControllerDidLeaveWindowHierarchy()
 
-        // Store the current state in the next SaveableStateRegistry instance. It is used to
+        // Store the current state in the local savedState property. It is used to
         // provide the saved state to the next compose scene when the view controller re-enters
         // the window hierarchy.
-        savableStateRegistry = SaveableStateRegistry(
-            restoredValues = savableStateRegistry.performSave(),
-            canBeSaved = { true }
-        )
+        savedState = architectureComponentsOwner.saveState()
+        lifecycleDelegate.lifecycleListener = null
 
         rootView.updateMetalView(metalView = null)
         navigationEventInput.onDidMoveToWindow(null, rootView)
@@ -518,9 +517,6 @@ internal class ComposeHostingViewController(
             LocalHapticFeedback provides hapticFeedback,
             LocalUIViewController provides this,
             LocalSystemTheme provides systemThemeState.value,
-
-            // TODO: Move to ProvidePlatformCompositionLocals
-            LocalSaveableStateRegistry provides savableStateRegistry,
             content = content
         )
 

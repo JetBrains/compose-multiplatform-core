@@ -18,46 +18,34 @@ package androidx.compose.ui.platform
 
 import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.enableSavedStateHandles
+import androidx.savedstate.SavedState
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.savedState
 
 internal class UIKitArchitectureComponentsOwner : DefaultArchitectureComponentsOwner() {
-    var isViewAppeared = false
-        set(value) {
-            field = value
-            updateLifecycleState()
-        }
-    var isSceneInForeground = false
-        set(value) {
-            field = value
-            updateLifecycleState()
-        }
-    var isSceneActive = false
-        set(value) {
-            field = value
-            updateLifecycleState()
-        }
+    private var _savedStateController: SavedStateRegistryController? = null
+    override val savedStateController: SavedStateRegistryController
+        get() = _savedStateController ?: error("SavedStateRegistryController is not initialized")
 
-    private var isDisposed = false
+    fun initSavedStateController(savedState: SavedState?) {
+        _savedStateController = SavedStateRegistryController.create(this)
 
-    init {
-        updateLifecycleState()
         savedStateController.performAttach()
-        // TODO: CMP-9219 Provide a way to save/restore state of an app on iOS
-        // savedStateController.performRestore(savedState)
+        savedStateController.performRestore(savedState)
         enableSavedStateHandles()
     }
 
-    fun dispose() {
-        isDisposed = true
-        viewModelStore.clear()
-        updateLifecycleState()
+    fun saveState(): SavedState {
+        val savedState = savedState()
+        savedStateController.performSave(savedState)
+        _savedStateController = null
+        return savedState
     }
 
-    private fun updateLifecycleState() {
-        lifecycle.currentState = when {
-            isDisposed -> State.DESTROYED
-            isViewAppeared && isSceneInForeground && isSceneActive -> State.RESUMED
-            isViewAppeared && isSceneInForeground && !isSceneActive -> State.STARTED
-            else -> State.CREATED
+    fun onLifecycleState(state: State) {
+        lifecycle.currentState = state
+        if (state == State.DESTROYED) {
+            viewModelStore.clear()
         }
     }
 }

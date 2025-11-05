@@ -240,9 +240,10 @@ private object EmptyArchitectureComponentsOwner : DefaultArchitectureComponentsO
     enforceMainThread = false
 ) {
     init {
-        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
         savedStateController.performAttach()
+        savedStateController.performRestore(savedState = null)
         enableSavedStateHandles()
+        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 }
 

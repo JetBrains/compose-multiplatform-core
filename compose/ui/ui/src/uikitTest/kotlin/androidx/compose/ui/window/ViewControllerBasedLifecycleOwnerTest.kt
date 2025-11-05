@@ -32,7 +32,8 @@ class ViewControllerBasedLifecycleOwnerTest {
     fun allEvents() {
         val notificationCenter = NSNotificationCenter()
         val lifecycleOwner = UIKitArchitectureComponentsOwner()
-        val lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner, notificationCenter)
+        val lifecycleDelegate = ViewControllerLifecycleDelegate(notificationCenter)
+        lifecycleDelegate.lifecycleListener = lifecycleOwner::onLifecycleState
         val scene = UIWindowScene()
         lifecycleDelegate.windowScene = scene
         assertEquals(Lifecycle.State.CREATED, lifecycleOwner.lifecycle.currentState)
@@ -71,7 +72,8 @@ class ViewControllerBasedLifecycleOwnerTest {
     fun foregroundThenViewWillAppear() {
         val notificationCenter = NSNotificationCenter()
         val lifecycleOwner = UIKitArchitectureComponentsOwner()
-        val lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner, notificationCenter)
+        val lifecycleDelegate = ViewControllerLifecycleDelegate(notificationCenter)
+        lifecycleDelegate.lifecycleListener = lifecycleOwner::onLifecycleState
         val scene = UIWindowScene()
         lifecycleDelegate.windowScene = scene
 
@@ -87,7 +89,8 @@ class ViewControllerBasedLifecycleOwnerTest {
     fun viewDidDisappearThenBackground() {
         val notificationCenter = NSNotificationCenter()
         val lifecycleOwner = UIKitArchitectureComponentsOwner()
-        val lifecycleDelegate = ViewControllerLifecycleDelegate(lifecycleOwner, notificationCenter)
+        val lifecycleDelegate = ViewControllerLifecycleDelegate(notificationCenter)
+        lifecycleDelegate.lifecycleListener = lifecycleOwner::onLifecycleState
         val scene = UIWindowScene()
         lifecycleDelegate.windowScene = scene
         lifecycleDelegate.viewControllerWillAppear()
