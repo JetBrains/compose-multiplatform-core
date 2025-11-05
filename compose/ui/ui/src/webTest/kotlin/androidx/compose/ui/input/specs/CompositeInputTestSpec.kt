@@ -132,6 +132,35 @@ internal interface ChromeCompositeInput : СompositeInputTestSpec {
             ).sendToHtmlInput()
 
         textFieldValue.awaitAndAssertTextEquals("手扌搵")
+
+        eventsSequence(
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "1", code = "Digit1", keyCode = 229),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            compositionEnd(data = "手"),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            keyEvent(key = "1", code = "Digit1", keyCode = 49, type = "keyup"),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            keyEvent(key = "2", code = "Digit2", keyCode = 229),
+            beforeInput(inputType = "insertCompositionText", data = "扌", isComposing = true),
+            compositionEnd(data = "扌"),
+            keyEvent(key = "2", code = "Digit2", keyCode = 50, type = "keyup"),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            keyEvent(key = "3", code = "Digit3", keyCode = 229),
+            beforeInput(inputType = "insertCompositionText", data = "搵", isComposing = true),
+            compositionEnd(data = "搵"),
+            keyEvent(key = "3", code = "Digit3", keyCode = 51, type = "keyup"),
+        ).sendToHtmlInput()
+
+        textFieldValue.awaitAndAssertTextEquals("手扌搵\n手扌搵")
     }
 }
 
