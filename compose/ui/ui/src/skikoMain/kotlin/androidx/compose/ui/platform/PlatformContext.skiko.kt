@@ -236,15 +236,11 @@ private object EmptyPlatformScreenReader : PlatformScreenReader {
     override val isActive: Boolean = false
 }
 
-private object EmptyArchitectureComponentsOwner : DefaultArchitectureComponentsOwner(
+private val EmptyArchitectureComponentsOwner = DefaultArchitectureComponentsOwner(
     enforceMainThread = false
-) {
-    init {
-        savedStateController.performAttach()
-        savedStateController.performRestore(savedState = null)
-        enableSavedStateHandles()
-        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    }
+).apply {
+    initSavedStateController(null)
+    onLifecycleState(Lifecycle.State.RESUMED)
 }
 
 internal class DefaultInputModeManager(
@@ -321,11 +317,18 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
     }
 
     @Suppress("RedundantNullableReturnType")
-    operator fun getValue(thisRef: Any?, property: KProperty<*>): PlatformContext.RootForTestListener? {
+    operator fun getValue(
+        thisRef: Any?,
+        property: KProperty<*>
+    ): PlatformContext.RootForTestListener? {
         return this
     }
 
-    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: PlatformContext.RootForTestListener?) {
+    operator fun setValue(
+        thisRef: Any?,
+        property: KProperty<*>,
+        value: PlatformContext.RootForTestListener?
+    ) {
         listener = value
         sendMissingEvents()
     }

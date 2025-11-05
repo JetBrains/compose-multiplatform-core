@@ -19,6 +19,7 @@ package androidx.compose.ui.platform
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
+import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
@@ -27,13 +28,16 @@ import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.enableSavedStateHandles
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.savedstate.SavedState
 import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.savedState
 
 /**
  * Provides platform-specific component owners.
@@ -50,7 +54,7 @@ interface PlatformArchitectureComponentsOwner {
  * Default implementation of [PlatformArchitectureComponentsOwner].
  */
 @InternalComposeUiApi
-open class DefaultArchitectureComponentsOwner(
+internal class DefaultArchitectureComponentsOwner(
     enforceMainThread: Boolean = true,
 ) : PlatformArchitectureComponentsOwner,
     LifecycleOwner,
@@ -70,12 +74,34 @@ open class DefaultArchitectureComponentsOwner(
     override val viewModelStore = ViewModelStore()
     override val navigationEventDispatcher = NavigationEventDispatcher()
 
-    protected open val savedStateController = SavedStateRegistryController.create(this)
+    private var savedStateController: SavedStateRegistryController? = null
     override val savedStateRegistry: SavedStateRegistry
-        get() = savedStateController.savedStateRegistry
+        get() = savedStateController?.savedStateRegistry ?: error("SavedStateRegistry is not initialized")
 
     override val defaultViewModelProviderFactory = SavedStateViewModelFactory()
     override val defaultViewModelCreationExtras = defaultViewModelCreationExtras(this, this)
+
+    fun initSavedStateController(savedState: SavedState?) {
+        savedStateController = SavedStateRegistryController.create(this).apply {
+            performAttach()
+            performRestore(savedState)
+        }
+        enableSavedStateHandles()
+    }
+
+    fun saveState(): SavedState {
+        val savedState = savedState()
+        savedStateController?.performSave(savedState)
+        savedStateController = null
+        return savedState
+    }
+
+    fun onLifecycleState(state: State) {
+        lifecycle.currentState = state
+        if (state == State.DESTROYED) {
+            viewModelStore.clear()
+        }
+    }
 }
 
 internal fun defaultViewModelCreationExtras(

@@ -30,6 +30,7 @@ import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.DisposableSaveableStateRegistry
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
@@ -110,12 +111,7 @@ internal class ComposeContainer(
     private val layerType: LayerType = ComposeFeatureFlags.layerType.value,
     private val renderSettings: RenderSettings = RenderSettings.SkiaSurface(),
 ) : WindowFocusListener,
-    WindowListener,
-    LifecycleOwner,
-    NavigationEventDispatcherOwner,
-    SavedStateRegistryOwner,
-    ViewModelStoreOwner,
-    HasDefaultViewModelProviderFactory {
+    WindowListener {
     val windowContext = PlatformWindowContext()
     var window: Window? = null
         private set
@@ -148,12 +144,7 @@ internal class ComposeContainer(
             onWindowContainerPositionChanged()
         }
 
-    val architectureComponentsOwner = object : PlatformArchitectureComponentsOwner {
-        override val lifecycleOwner get() = this@ComposeContainer
-        override val navigationEventDispatcherOwner get() = this@ComposeContainer
-        override val viewModelStoreOwner get() = this@ComposeContainer
-        override val savedStateRegistryOwner get() = this@ComposeContainer
-    }
+    val architectureComponentsOwner = DefaultArchitectureComponentsOwner()
 
     private val coroutineExceptionHandler = DesktopCoroutineExceptionHandler()
     private val coroutineContext = MainUIDispatcher + coroutineExceptionHandler
@@ -207,27 +198,13 @@ internal class ComposeContainer(
     val preferredSize by mediator::preferredSize
     val semanticsOwners by mediator::semanticsOwners
 
-    override val lifecycle = LifecycleRegistry(this)
-
-    private val savedStateController = SavedStateRegistryController.create(this)
-    override val savedStateRegistry: SavedStateRegistry
-        get() = savedStateController.savedStateRegistry
-    override val viewModelStore = ViewModelStore()
-    override val defaultViewModelProviderFactory = SavedStateViewModelFactory()
-    override val defaultViewModelCreationExtras = defaultViewModelCreationExtras(this, this)
-
-    override val navigationEventDispatcher = NavigationEventDispatcher()
-
     private var isDisposed = false
     private var isDetached = true
     private var isMinimized = false
     private var isFocused = false
 
     init {
-        savedStateController.performAttach()
-        savedStateController.performRestore(savedState)
-        enableSavedStateHandles()
-
+        architectureComponentsOwner.initSavedStateController(savedState)
         setWindow(window)
         this.windowContainer = windowContainer
 
@@ -243,15 +220,12 @@ internal class ComposeContainer(
      * @return A [SavedState] object containing the current UI state.
      */
     fun saveState(): SavedState {
-        val state = androidx.savedstate.savedState()
-        savedStateController.performSave(state)
-        return state
+        return architectureComponentsOwner.saveState()
     }
 
     fun dispose() {
         isDisposed = true
         updateLifecycleState()
-        viewModelStore.clear()
 
         _windowContainer?.removeComponentListener(windowContainerComponentListener)
         mediator.dispose()
@@ -526,12 +500,14 @@ internal class ComposeContainer(
         ComposeSceneContextImpl(platformContext)
 
     private fun updateLifecycleState() {
-        lifecycle.currentState = when {
-            isDisposed -> State.DESTROYED
-            isDetached || isMinimized -> State.CREATED
-            !isDetached && !isMinimized && isFocused -> State.RESUMED
-            else -> State.STARTED
-        }
+        architectureComponentsOwner.onLifecycleState(
+            when {
+                isDisposed -> State.DESTROYED
+                isDetached || isMinimized -> State.CREATED
+                !isDetached && !isMinimized && isFocused -> State.RESUMED
+                else -> State.STARTED
+            }
+        )
     }
 
     private inner class ComposeSceneContextImpl(

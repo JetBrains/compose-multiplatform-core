@@ -26,11 +26,11 @@ import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
-import androidx.compose.ui.platform.UIKitArchitectureComponentsOwner
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
@@ -113,7 +113,7 @@ internal class ComposeHostingViewController(
     private var activeStateListener: SceneActiveStateListener? = null
     private val composeCoroutineContext: CoroutineContext = coroutineContext + motionDurationScale
 
-    private val architectureComponentsOwner = UIKitArchitectureComponentsOwner()
+    private val architectureComponentsOwner = DefaultArchitectureComponentsOwner()
     private var savedState: SavedState? = null
 
     private val interfaceOrientationObserver = SceneGeometryObserver {
