@@ -144,6 +144,7 @@ internal class ComposeContainer(
         override val lifecycleOwner get() = this@ComposeContainer
         override val navigationEventDispatcherOwner get() = this@ComposeContainer
         override val viewModelStoreOwner get() = this@ComposeContainer
+        override val savedStateRegistryOwner get() = this@ComposeContainer
     }
 
     private val coroutineExceptionHandler = DesktopCoroutineExceptionHandler()
@@ -390,11 +391,7 @@ internal class ComposeContainer(
     }
 
     fun setContent(content: @Composable () -> Unit) {
-        mediator.setContent {
-            ProvideContainerCompositionLocals(this) {
-                content()
-            }
-        }
+        mediator.setContent(content)
     }
 
     private fun createSkiaLayerComponent(mediator: ComposeSceneMediator): SkiaLayerComponent {
@@ -572,23 +569,4 @@ internal class ComposeContainer(
         override fun shouldSendMouseEvent(event: AwtMouseEvent): Boolean = noFocusableLayers
         override fun shouldSendKeyEvent(event: AwtKeyEvent): Boolean = noFocusableLayers
     }
-}
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun ProvideContainerCompositionLocals(
-    composeContainer: ComposeContainer,
-    content: @Composable () -> Unit,
-) {
-    // TODO: Move to ProvidePlatformCompositionLocals
-    val saveableStateRegistry = remember {
-        DisposableSaveableStateRegistry("ComposeContainer", composeContainer)
-    }
-    DisposableEffect(Unit) { onDispose { saveableStateRegistry.dispose() } }
-
-    CompositionLocalProvider(
-        LocalSavedStateRegistryOwner provides composeContainer,
-        LocalSaveableStateRegistry provides saveableStateRegistry,
-        content = content,
-    )
 }

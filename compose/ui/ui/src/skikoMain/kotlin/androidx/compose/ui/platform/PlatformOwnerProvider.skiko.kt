@@ -23,6 +23,9 @@ import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
 
 /**
  * Provides platform-specific component owners.
@@ -32,8 +35,7 @@ interface PlatformArchitectureComponentsOwner {
     val lifecycleOwner: LifecycleOwner
     val navigationEventDispatcherOwner: NavigationEventDispatcherOwner
     val viewModelStoreOwner: ViewModelStoreOwner?
-
-    // TODO: Add SavedStateRegistryOwner
+    val savedStateRegistryOwner: SavedStateRegistryOwner
 }
 
 /**
@@ -45,10 +47,12 @@ open class DefaultArchitectureComponentsOwner(
 ) : PlatformArchitectureComponentsOwner,
     LifecycleOwner,
     ViewModelStoreOwner,
-    NavigationEventDispatcherOwner {
+    NavigationEventDispatcherOwner,
+    SavedStateRegistryOwner {
     override val lifecycleOwner get() = this
     override val navigationEventDispatcherOwner get() = this
     override val viewModelStoreOwner get() = this
+    override val savedStateRegistryOwner get() = this
     override val lifecycle = if (enforceMainThread) {
         LifecycleRegistry(this)
     } else {
@@ -56,4 +60,8 @@ open class DefaultArchitectureComponentsOwner(
     }
     override val viewModelStore = ViewModelStore()
     override val navigationEventDispatcher = NavigationEventDispatcher()
+
+    protected val savedStateController = SavedStateRegistryController.create(this)
+    override val savedStateRegistry: SavedStateRegistry
+        get() = savedStateController.savedStateRegistry
 }

@@ -17,6 +17,7 @@
 package androidx.compose.ui.platform
 
 import androidx.lifecycle.Lifecycle.State
+import androidx.lifecycle.enableSavedStateHandles
 
 internal class UIKitArchitectureComponentsOwner : DefaultArchitectureComponentsOwner() {
     var isViewAppeared = false
@@ -39,6 +40,10 @@ internal class UIKitArchitectureComponentsOwner : DefaultArchitectureComponentsO
 
     init {
         updateLifecycleState()
+        savedStateController.performAttach()
+        // TODO: CMP-9219 Provide a way to save/restore state of an app on iOS
+        // savedStateController.performRestore(savedState)
+        enableSavedStateHandles()
     }
 
     fun dispose() {
