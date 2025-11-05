@@ -138,11 +138,11 @@ internal class AccessibilityController(
                         val text = newSemanticsNode.config.getOrNull(SemanticsProperties.EditableText)
                         val prevHasSelection = prevTextSelectionRange?.collapsed == false
                         val nowHasSelection = !newTextSelectionRange.collapsed
-                        if ((text != null) && (prevHasSelection != nowHasSelection)) {
+                        if (prevHasSelection != nowHasSelection) {
                             accessibleContext.firePropertyChange(
                                 ACCESSIBLE_SELECTION_PROPERTY,
                                 null,  // AccessibleJTextComponent also sends oldValue = null
-                                text.subSequence(newTextSelectionRange)
+                                text?.subSequence(newTextSelectionRange)
                             )
                         }
                     }
