@@ -95,8 +95,6 @@ class ComposeWindow @ExperimentalComposeUiApi constructor(
 
     /**
      * Controls whether mouse-down on an unfocusable element clears focus.
-     *
-     * To have an effect, this needs to be set before the window is made visible.
      */
     @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean by composePanel::isClearFocusOnMouseDownEnabled

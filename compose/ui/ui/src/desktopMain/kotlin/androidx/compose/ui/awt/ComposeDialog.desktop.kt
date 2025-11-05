@@ -154,8 +154,6 @@ class ComposeDialog : JDialog {
 
     /**
      * Controls whether mouse-down on an unfocusable element clears focus.
-     *
-     * To have an effect, this needs to be set before the dialog is made visible.
      */
     @ExperimentalComposeUiApi
     var isClearFocusOnMouseDownEnabled: Boolean
