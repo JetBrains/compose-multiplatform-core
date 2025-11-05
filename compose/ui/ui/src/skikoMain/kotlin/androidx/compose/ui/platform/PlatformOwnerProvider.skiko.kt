@@ -54,7 +54,7 @@ interface PlatformArchitectureComponentsOwner {
  * Default implementation of [PlatformArchitectureComponentsOwner].
  */
 @InternalComposeUiApi
-internal class DefaultArchitectureComponentsOwner(
+class DefaultArchitectureComponentsOwner(
     enforceMainThread: Boolean = true,
 ) : PlatformArchitectureComponentsOwner,
     LifecycleOwner,
