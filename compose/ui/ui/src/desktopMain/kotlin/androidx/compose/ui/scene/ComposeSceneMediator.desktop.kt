@@ -590,7 +590,7 @@ internal class ComposeSceneMediator(
     fun onComponentDetached() {
         isComponentAttached = false
         architectureComponentsOwner.navigationEventDispatcherOwner
-            .navigationEventDispatcher.addInput(navigationEventInput)
+            .navigationEventDispatcher.removeInput(navigationEventInput)
         scene.focusManager.releaseFocus()
     }
 
