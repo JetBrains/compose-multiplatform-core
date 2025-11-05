@@ -373,12 +373,23 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleAt(p: Point): Accessible? {
-            for (i in 0 until accessibleChildrenCount) {
-                val child = (getAccessibleChild(i)?.accessibleContext as? AccessibleComponent)
-                child?.getAccessibleAt(p)?.let {
+            val accessibleChildren = semanticsNode.traversalOrderedChildren()
+            for (child in accessibleChildren) {
+                val accessible = controller.accessibleByNodeId(child.id) as? Accessible ?: continue
+                val accessibleComponent = (accessible.accessibleContext as? AccessibleComponent) ?: continue
+                accessibleComponent.getAccessibleAt(p)?.let {
                     return it
                 }
             }
+
+            for (accessibleChild in auxiliaryChildren) {
+                val accessibleComponent =
+                    accessibleChild.accessibleContext as? AccessibleComponent ?: continue
+                accessibleComponent.getAccessibleAt(p)?.let {
+                    return it
+                }
+            }
+
             if (contains(p)) {
                 return this@ComposeAccessible
             }
