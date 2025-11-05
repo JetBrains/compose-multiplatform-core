@@ -16,7 +16,7 @@
 
 package androidx.compose.ui.window
 
-import androidx.compose.ui.platform.UIKitArchitectureComponentsOwner
+import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.lifecycle.Lifecycle
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -31,7 +31,7 @@ class ViewControllerBasedLifecycleOwnerTest {
     @Test
     fun allEvents() {
         val notificationCenter = NSNotificationCenter()
-        val lifecycleOwner = UIKitArchitectureComponentsOwner()
+        val lifecycleOwner = DefaultArchitectureComponentsOwner()
         val lifecycleDelegate = ViewControllerLifecycleDelegate(notificationCenter)
         lifecycleDelegate.lifecycleListener = lifecycleOwner::onLifecycleState
         val scene = UIWindowScene()
@@ -71,7 +71,7 @@ class ViewControllerBasedLifecycleOwnerTest {
     @Test
     fun foregroundThenViewWillAppear() {
         val notificationCenter = NSNotificationCenter()
-        val lifecycleOwner = UIKitArchitectureComponentsOwner()
+        val lifecycleOwner = DefaultArchitectureComponentsOwner()
         val lifecycleDelegate = ViewControllerLifecycleDelegate(notificationCenter)
         lifecycleDelegate.lifecycleListener = lifecycleOwner::onLifecycleState
         val scene = UIWindowScene()
@@ -88,7 +88,7 @@ class ViewControllerBasedLifecycleOwnerTest {
     @Test
     fun viewDidDisappearThenBackground() {
         val notificationCenter = NSNotificationCenter()
-        val lifecycleOwner = UIKitArchitectureComponentsOwner()
+        val lifecycleOwner = DefaultArchitectureComponentsOwner()
         val lifecycleDelegate = ViewControllerLifecycleDelegate(notificationCenter)
         lifecycleDelegate.lifecycleListener = lifecycleOwner::onLifecycleState
         val scene = UIWindowScene()
