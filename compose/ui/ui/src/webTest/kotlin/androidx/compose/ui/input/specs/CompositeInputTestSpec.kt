@@ -97,6 +97,42 @@ internal interface ChromeCompositeInput : СompositeInputTestSpec {
         textFieldValue.awaitAndAssertTextEquals("홀")
     }
 
+    // https://youtrack.jetbrains.com/issue/CMP-8872
+    @Test
+    fun `CMP-8872 IME text input broken on Firefox (Wasm)`() = runApplicationTest {
+        val textFieldValue = createApplicationWithHolder()
+        eventsSequence(
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "1", code = "Digit1", keyCode = 229),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            compositionEnd(data = "手"),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            keyEvent(key = "1", code = "Digit1", keyCode = 49, type = "keyup"),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            keyEvent(key = "2", code = "Digit2", keyCode = 229),
+            beforeInput(inputType = "insertCompositionText", data = "扌", isComposing = true),
+            compositionEnd(data = "扌"),
+            keyEvent(key = "2", code = "Digit2", keyCode = 50, type = "keyup"),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            keyEvent(key = "3", code = "Digit3", keyCode = 229),
+            beforeInput(inputType = "insertCompositionText", data = "搵", isComposing = true),
+            compositionEnd(data = "搵"),
+            keyEvent(key = "3", code = "Digit3", keyCode = 51, type = "keyup"),
+            keyEvent(key = "Enter", code = "Enter", keyCode = 13),
+            beforeInput(inputType = "insertLineBreak", data = "null", isComposing = false),
+            keyEvent(key = "Enter", code = "Enter", keyCode = 13, type = "keyup"),
+            ).sendToHtmlInput()
+
+        textFieldValue.awaitAndAssertTextEquals("手扌搵")
+    }
 }
 
 internal interface FirefoxCompositeInput : СompositeInputTestSpec {
