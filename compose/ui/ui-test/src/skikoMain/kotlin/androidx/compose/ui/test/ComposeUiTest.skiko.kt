@@ -313,11 +313,13 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             platformContext = TestContext(),
             invalidate = { }
         )
-        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+        architectureComponentsOwner.initSavedStateController(null)
+        architectureComponentsOwner.onLifecycleState(Lifecycle.State.CREATED)
     }
 
     private fun closeScene() {
-        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+        architectureComponentsOwner.saveState()
+        architectureComponentsOwner.onLifecycleState(Lifecycle.State.DESTROYED)
         scene.close()
     }
 
