@@ -22,10 +22,6 @@ internal object SkikoComposeUiFlags {
     @Suppress("MutableBareField")
     @JvmField
     var useLegacyRenderNodeLayers: Boolean = false
-
-    @Suppress("MutableBareField")
-    @JvmField
-    var isClearFocusOnPointerDownEnabled: Boolean = true
 }
 
 /**
@@ -36,7 +32,3 @@ internal object SkikoComposeUiFlags {
  */
 @ExperimentalComposeUiApi
 var ComposeUiFlags.useLegacyRenderNodeLayers by SkikoComposeUiFlags::useLegacyRenderNodeLayers
-
-/** This flag enables clearing focus on pointer down by default. */
-@ExperimentalComposeUiApi
-var ComposeUiFlags.isClearFocusOnPointerDownEnabled by SkikoComposeUiFlags::isClearFocusOnPointerDownEnabled

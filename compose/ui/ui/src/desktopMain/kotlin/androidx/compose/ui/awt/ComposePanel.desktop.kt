@@ -121,6 +121,14 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     private var _composeContent: (@Composable () -> Unit)? = null
 
     /**
+     * Controls whether mouse-down on an unfocusable element clears focus.
+     *
+     * To have an effect, this needs to be set before [ComposePanel] is added to the UI hierarchy.
+     */
+    @ExperimentalComposeUiApi
+    var isClearFocusOnMouseDownEnabled: Boolean = true
+
+    /**
      * Determines whether the Compose state in [ComposePanel] should be disposed
      * when panel is detached from Swing hierarchy (when [removeNotify] is called).
      *
@@ -279,6 +287,8 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
 
                 override fun focusLost(e: FocusEvent) = Unit
             })
+
+            isClearFocusOnMouseDownEnabled = this@ComposePanel.isClearFocusOnMouseDownEnabled
         }
     }
 

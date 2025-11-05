@@ -26,7 +26,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Canvas
@@ -38,7 +37,6 @@ import androidx.compose.ui.input.pointer.PointerInputEvent
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
-import androidx.compose.ui.isClearFocusOnPointerDownEnabled
 import androidx.compose.ui.node.SnapshotInvalidationTracker
 import androidx.compose.ui.platform.GlobalSnapshotManager
 import androidx.compose.ui.platform.ProvidePlatformCompositionLocals
@@ -298,7 +296,7 @@ internal abstract class BaseComposeScene(
 
     private fun onPointerInputEvent(event: PointerInputEvent) = processPointerInputEvent(event)
         .also {
-            if (ComposeUiFlags.isClearFocusOnPointerDownEnabled) {
+            if (composeSceneContext.platformContext.isClearFocusOnMouseDownEnabled) {
                 val isDown = event.eventType == PointerEventType.Press
                 val pointer = event.pointers.singleOrNull()
                 val isFromMouse = pointer?.type == PointerType.Mouse

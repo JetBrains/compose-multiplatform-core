@@ -180,6 +180,11 @@ interface PlatformContext {
      */
     val semanticsOwnerListener: SemanticsOwnerListener? get() = null
 
+    /**
+     * Controls whether mouse-down on an unfocusable element clears focus.
+     */
+    val isClearFocusOnMouseDownEnabled: Boolean get() = true
+
     interface RootForTestListener {
         fun onRootForTestCreated(root: PlatformRootForTest)
         fun onRootForTestDisposed(root: PlatformRootForTest)

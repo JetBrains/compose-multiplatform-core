@@ -367,6 +367,8 @@ internal class ComposeSceneMediator(
 
     private val composeInvalidationExecutor = DebouncingEdtExecutor()
 
+    var isClearFocusOnMouseDownEnabled: Boolean = true
+
     init {
         // Transparency is used during redrawer creation that triggered by [addNotify], so
         // it must be set to correct value before adding to the hierarchy to handle cases
@@ -828,6 +830,8 @@ internal class ComposeSceneMediator(
             get() = this@ComposeSceneMediator.rootForTestListener
         override val semanticsOwnerListener
             get() = this@ComposeSceneMediator.semanticsOwnerListener
+        override val isClearFocusOnMouseDownEnabled: Boolean
+            get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
     }
 
     private inner class DesktopPlatformComponent : PlatformComponent {
