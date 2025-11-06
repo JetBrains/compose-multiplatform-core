@@ -190,6 +190,43 @@ internal interface FirefoxCompositeInput : СompositeInputTestSpec {
             keyEvent(compositionInput, type = "keyup")
         )
     }
+
+    @Test
+    fun `CMP-8872 IME text input broken on Firefox (Wasm)`() = runApplicationTest {
+        // https://youtrack.jetbrains.com/issue/CMP-8872
+        val textFieldValue = createApplicationWithHolder()
+        eventsSequence(
+            keyEvent(key = "Process", code = "KeyQ", keyCode = 229),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "Process", code = "Digit1", keyCode = 229),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            compositionEnd(data = "手"),
+            keyEvent(key = "q", code = "KeyQ", keyCode = 81, type = "keyup"),
+            keyEvent(key = "1", code = "Digit1", keyCode = 49, type = "keyup"),
+            keyEvent(key = "Process", code = "KeyQ", keyCode = 229),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "q", code = "KeyQ", keyCode = 81, type = "keyup"),
+            keyEvent(key = "Process", code = "Digit2", keyCode = 229),
+            beforeInput(inputType = "insertCompositionText", data = "扌", isComposing = true),
+            compositionEnd(data = "扌"),
+            keyEvent(key = "2", code = "Digit2", keyCode = 50, type = "keyup"),
+            keyEvent(key = "Process", code = "KeyQ", keyCode = 229),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            compositionEnd(data = "手"),
+            keyEvent(key = "q", code = "KeyQ", keyCode = 81, type = "keyup"),
+            keyEvent(key = "3", code = "Digit3", keyCode = 51),
+            beforeInput(inputType = "insertText", data = "3", isComposing = false),
+            keyEvent(key = "3", code = "Digit3", keyCode = 51, type = "keyup"),
+        ).sendToHtmlInput()
+
+        textFieldValue.awaitAndAssertTextEquals("手扌搵")
+
+        //textFieldValue.awaitAndAssertTextEquals("手扌搵手扌搵")
+    }
+
 }
 
 internal interface WinCompositeInput : СompositeInputTestSpec {
