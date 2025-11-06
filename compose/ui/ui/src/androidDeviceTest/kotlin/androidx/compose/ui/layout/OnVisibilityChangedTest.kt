@@ -20,6 +20,7 @@ import androidx.annotation.IntRange
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,32 +69,31 @@ class OnVisibilityChangedTest(private val useDelegation: Boolean) {
         }
         rule.runOnIdle {
             // initially it is off-screen and not visible
-            assertEquals(1, called)
-            assertEquals(false, isVisible)
+            assertEquals(0, called)
             top = -20
         }
         rule.runOnIdle {
             // it still isn't completely in the viewport, so still shouldn't be called
-            assertEquals(1, called)
+            assertEquals(0, called)
             top = 0
         }
         rule.runOnIdle {
             // completely in the viewport now, so got called with true
-            assertEquals(2, called)
+            assertEquals(1, called)
             assertEquals(true, isVisible)
             top = -20
         }
         rule.runOnIdle {
             // partially in the viewport, but minFraction = 1 means the whole thing needs to be.
             // so now called with false
-            assertEquals(3, called)
+            assertEquals(2, called)
             assertEquals(false, isVisible)
             top = -1000
         }
         rule.runOnIdle {
             // outside the viewport completely now, but not called any additional amount since it
             // was already marked as out
-            assertEquals(3, called)
+            assertEquals(2, called)
         }
     }
 
@@ -122,37 +122,35 @@ class OnVisibilityChangedTest(private val useDelegation: Boolean) {
         }
         rule.runOnIdle {
             // initially outside the viewport
-            assertEquals(1, called)
-            assertEquals(false, isVisible)
+            assertEquals(0, called)
             top = -101
         }
         rule.runOnIdle {
             // it should be just bordering the viewport, but still 100% outside of it, so still no
             // call
-            assertEquals(1, called)
-            assertEquals(false, isVisible)
+            assertEquals(0, called)
             top = -99
         }
         rule.runOnIdle {
             // should be 1dp inside the viewport, so callback should trigger
-            assertEquals(2, called)
+            assertEquals(1, called)
             assertEquals(true, isVisible)
             top = 10
         }
         rule.runOnIdle {
             // completely inside the viewport, but no extra calls made
-            assertEquals(2, called)
+            assertEquals(1, called)
             top = -99
         }
         rule.runOnIdle {
             // still 1dp inside the viewport
-            assertEquals(2, called)
+            assertEquals(1, called)
             assertEquals(true, isVisible)
             top = -101
         }
         rule.runOnIdle {
             // completely outside the viewport
-            assertEquals(3, called)
+            assertEquals(2, called)
             assertEquals(false, isVisible)
         }
     }
@@ -182,43 +180,41 @@ class OnVisibilityChangedTest(private val useDelegation: Boolean) {
         }
         rule.runOnIdle {
             // initially outside the viewport
-            assertEquals(1, called)
-            assertEquals(false, isVisible)
+            assertEquals(0, called)
             top = -99
         }
         rule.runOnIdle {
             // it should be just barely inside the viewport, but since minFraction is 0.5, it still
             // should not have triggered
-            assertEquals(1, called)
-            assertEquals(false, isVisible)
+            assertEquals(0, called)
             top = -40
         }
         rule.runOnIdle {
             // should be inside inside the viewport, so callback should trigger
-            assertEquals(2, called)
+            assertEquals(1, called)
             assertEquals(true, isVisible)
             top = 10
         }
         rule.runOnIdle {
             // completely inside the viewport, but no extra calls made
-            assertEquals(2, called)
+            assertEquals(1, called)
             top = -40
         }
         rule.runOnIdle {
             // still 1dp inside the viewport
-            assertEquals(2, called)
+            assertEquals(1, called)
             assertEquals(true, isVisible)
             top = -60
         }
         rule.runOnIdle {
             // more than half is outside the viewport, callback should be triggered
-            assertEquals(3, called)
+            assertEquals(2, called)
             assertEquals(false, isVisible)
             top = -1000
         }
         rule.runOnIdle {
             // completely outside the viewport, no additional calls
-            assertEquals(3, called)
+            assertEquals(2, called)
         }
     }
 
@@ -261,6 +257,38 @@ class OnVisibilityChangedTest(private val useDelegation: Boolean) {
                     )
                 }
             }
+        }
+        rule.runOnIdle {
+            assertEquals(1, called)
+            assertEquals(true, isVisible)
+        }
+    }
+
+    @Test
+    fun testVisibleNotCalledWhenNotVisibleInitially() {
+        var called = 0
+        var isVisible = false
+        var parentSize by mutableStateOf(50.dp)
+        val callback = { visible: Boolean ->
+            called++
+            isVisible = visible
+        }
+        rule.setContent {
+            Column {
+                Column(Modifier.size(parentSize)) {
+                    Box(
+                        Modifier.requiredSize(100.dp)
+                            .onVisibilityChangedTestImpl(
+                                minFractionVisible = 1f,
+                                callback = callback,
+                            )
+                    )
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertEquals(0, called)
+            parentSize = 100.dp
         }
         rule.runOnIdle {
             assertEquals(1, called)
