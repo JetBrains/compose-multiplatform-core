@@ -97,9 +97,9 @@ internal interface ChromeCompositeInput : СompositeInputTestSpec {
         textFieldValue.awaitAndAssertTextEquals("홀")
     }
 
-    // https://youtrack.jetbrains.com/issue/CMP-8872
     @Test
     fun `CMP-8872 IME text input broken on Firefox (Wasm)`() = runApplicationTest {
+        // https://youtrack.jetbrains.com/issue/CMP-8872
         val textFieldValue = createApplicationWithHolder()
         eventsSequence(
             keyEvent(key = "手", code = "KeyQ", keyCode = 229),
@@ -274,6 +274,79 @@ internal interface SafariCompositeInput : СompositeInputTestSpec {
             keyEvent(compositionInput, type = "keyup")
         )
     }
+
+    @Test
+    fun `CMP-8872 IME text input broken on Firefox (Wasm)`() = runApplicationTest {
+        // https://youtrack.jetbrains.com/issue/CMP-8872
+        val textFieldValue = createApplicationWithHolder()
+        eventsSequence(
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            beforeInput(inputType = "deleteCompositionText", data = "null", isComposing = true),
+            beforeInput(inputType = "insertFromComposition", data = "手", isComposing = true),
+            compositionEnd(data = "手"),
+            keyEvent(key = "1", code = "Digit1", keyCode = 229),
+            keyEvent(key = "1", code = "Digit1", keyCode = 49, type = "keyup"),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            beforeInput(inputType = "deleteCompositionText", data = "null", isComposing = true),
+            beforeInput(inputType = "insertFromComposition", data = "扌", isComposing = true),
+            compositionEnd(data = "扌"),
+            keyEvent(key = "2", code = "Digit2", keyCode = 229),
+            keyEvent(key = "2", code = "Digit2", keyCode = 50, type = "keyup"),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            beforeInput(inputType = "deleteCompositionText", data = "null", isComposing = true),
+            beforeInput(inputType = "insertFromComposition", data = "搵", isComposing = true),
+            compositionEnd(data = "搵"),
+            keyEvent(key = "3", code = "Digit3", keyCode = 229),
+            keyEvent(key = "3", code = "Digit3", keyCode = 51, type = "keyup"),
+        ).sendToHtmlInput()
+
+        textFieldValue.awaitAndAssertTextEquals("手扌搵")
+
+        eventsSequence(
+            keyEvent(key = "Enter", code = "Enter", keyCode = 13),
+            beforeInput(inputType = "insertLineBreak", data = "null", isComposing = false),
+            keyEvent(key = "Enter", code = "Enter", keyCode = 13, type = "keyup"),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            beforeInput(inputType = "deleteCompositionText", data = "null", isComposing = true),
+            beforeInput(inputType = "insertFromComposition", data = "手", isComposing = true),
+            compositionEnd(data = "手"),
+            keyEvent(key = "1", code = "Digit1", keyCode = 229),
+            keyEvent(key = "1", code = "Digit1", keyCode = 49, type = "keyup"),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            beforeInput(inputType = "deleteCompositionText", data = "null", isComposing = true),
+            beforeInput(inputType = "insertFromComposition", data = "扌", isComposing = true),
+            compositionEnd(data = "扌"),
+            keyEvent(key = "2", code = "Digit2", keyCode = 229),
+            keyEvent(key = "2", code = "Digit2", keyCode = 50, type = "keyup"),
+            compositionStart(data = ""),
+            beforeInput(inputType = "insertCompositionText", data = "手", isComposing = true),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 229),
+            keyEvent(key = "手", code = "KeyQ", keyCode = 81, type = "keyup"),
+            beforeInput(inputType = "deleteCompositionText", data = "null", isComposing = true),
+            beforeInput(inputType = "insertFromComposition", data = "搵", isComposing = true),
+            compositionEnd(data = "搵"),
+            keyEvent(key = "3", code = "Digit3", keyCode = 229),
+            keyEvent(key = "3", code = "Digit3", keyCode = 51, type = "keyup"),
+        ).sendToHtmlInput()
+
+        textFieldValue.awaitAndAssertTextEquals("手扌搵手扌搵")
+    }
+
 }
 
 internal interface IosCompositeInput : СompositeInputTestSpec {
