@@ -57,7 +57,6 @@ import org.w3c.dom.get
  *   It led to awaitA11YChanges hanging forever or to a timeout.
  *   That's why it's better to use an Int state in such tests, so the change in HTML will be noticed 100%.
  * - Note: running the k/js tests in FF takes 15% longer than in Chrome. K/Wasm is fast in both cases.
- *
  */
 class CfWA11YTest : OnCanvasTests {
 
@@ -210,6 +209,10 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals("Button3", buttonsContainer.children[2]!!.innerHTML)
     }
 
+    /**
+     * The tests use a TestCoroutineScope with delay skipping.
+     * In some cases we need a test to wait for some time, and that's the purpose of this function.
+     */
     suspend fun realDelay(timeMs: Long) {
         withContext(Dispatchers.Default) {
             delay(timeMs)
