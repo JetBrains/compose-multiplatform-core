@@ -45,8 +45,18 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.get
 
-// It's flaky on Firefox JS. After ignoring one test it fails on another.
-// FIXME: https://youtrack.jetbrains.com/issue/CMP-9069
+/**
+ * These tests were flaky in Firefox:
+ * https://youtrack.jetbrains.com/issue/CMP-9069/CfWA11YTest.-timed-out-in-Firefox
+ *
+ * Here, I'd like to share my findings:
+ * - `awaitIdle` can take an undefined amount of time, that's why I removed it in tests checking the timing of A11Y updates.
+ *   Then the tests use `awaitA11YChanges` - awaiting the HTML mutations.
+ * - In some tests I used a Boolean state switching it back and forth.
+ *   Even though the state changes caused the invalidation, the A11Y tree didn't change if an update produced the same A11Y tree (for the same state).
+ *   That's why it's better to use an Int state in such tests, so the change in HTML will be noticed 100%.
+ * - Note: running the k/js tests in FF takes 15% longer than in Chrome. K/Wasm is fast in both cases.
+ */
 class CfWA11YTest : OnCanvasTests {
 
     @Test
