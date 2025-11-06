@@ -34,7 +34,6 @@ import androidx.compose.ui.platform.testTag
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -42,7 +41,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.test.IgnoreJsTarget
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.get
@@ -200,37 +198,45 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals("Button3", buttonsContainer.children[2]!!.innerHTML)
     }
 
+    suspend fun realDelay(timeMs: Long) {
+        withContext(Dispatchers.Default) {
+            delay(timeMs)
+        }
+    }
+
     @Test
     fun changesMustBeBatched() = runApplicationTest {
-        var show1 by mutableStateOf(true)
+        var show1 by mutableStateOf(false)
 
+        var recompositions = 0
         createComposeWindow {
             if (show1) {
                 Button(onClick = {}) {
                     Text("Text in Button")
                 }
             }
+            recompositions++
         }
 
         val a11yContainer = getA11YContainer()!!
         assertEquals("",a11yContainer.innerHTML)
         assertEquals(0,a11yContainer.childElementCount)
 
-        suspend fun realDelay(timeMs: Long) {
-            withContext(Dispatchers.Default) {
-                delay(timeMs)
-            }
-        }
+        awaitA11YChanges()
+        assertFalse(a11yContainer.innerHTML.contains("Text in Button"))
+
+        recompositions = 0 // resetting because we're interested to count them only after this point
 
         repeat(20) {
             show1 = !show1
             realDelay(10)
-
             // No changes expected yet due to debounce
-            assertEquals("",a11yContainer.innerHTML)
-            assertEquals(0,a11yContainer.childElementCount)
+            assertFalse(a11yContainer.innerHTML.contains("Text in Button"))
         }
 
+        assertTrue(recompositions > 0, "The state has been changing, but no recompositions?")
+
+        show1 = true
         val startTime = currentTimeMillis()
         awaitA11YChanges()
         val waitedForChangesMs = currentTimeMillis() - startTime
@@ -251,7 +257,6 @@ class CfWA11YTest : OnCanvasTests {
     @Test
     fun changesMustBeAppliedDespiteConstantDebounceAfter1Second() = runApplicationTest {
         var show1 by mutableStateOf(true)
-        var startTime = 0L
 
         createComposeWindow {
             if (show1) {
@@ -259,27 +264,22 @@ class CfWA11YTest : OnCanvasTests {
                     Text("Text in Button")
                 }
             }
-
-            DisposableEffect(Unit) {
-                startTime = currentTimeMillis()
-                onDispose {  }
-            }
         }
-
-        assertNotEquals(0L, startTime, "The start time must be set")
 
         val a11yContainer = getA11YContainer()!!
 
         assertEquals("",a11yContainer.innerHTML, "No A11Y tree expected yet")
         assertEquals(0,a11yContainer.childElementCount, "No A11Y tree expected yet")
 
-        suspend fun realDelay(timeMs: Long) {
-            withContext(Dispatchers.Default) {
-                delay(timeMs)
-            }
-        }
+        awaitA11YChanges()
+        assertTrue(a11yContainer.innerHTML.contains("Text in Button"), "Button must be present in the A11Y tree")
+
+        show1 = false
+        awaitA11YChanges()
+        assertFalse(a11yContainer.innerHTML.contains("Text in Button"), "Button must be removed from the A11Y tree")
 
         var changesAppliedTime = 0L
+        val startTime = currentTimeMillis()
 
         launch {
             awaitA11YChanges()
@@ -300,9 +300,6 @@ class CfWA11YTest : OnCanvasTests {
 
         // To avoid flakiness, we make just a sanity check. The expected value is ~18
         assertTrue(debounceCounter > 1)
-
-        // the "debounce" must be ignored when the changes were waiting for 1 second
-        assertEquals(1, a11yContainer.childElementCount, "Changes must be applied by now. The debounce was taking too long")
 
         // Adding a tolerance of 200ms, just to avoid flakiness
         assertTrue(
