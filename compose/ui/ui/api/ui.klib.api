@@ -1540,6 +1540,10 @@ final class androidx.compose.ui.autofill/AutofillTree { // androidx.compose.ui.a
     final fun plusAssign(androidx.compose.ui.autofill/AutofillNode) // androidx.compose.ui.autofill/AutofillTree.plusAssign|plusAssign(androidx.compose.ui.autofill.AutofillNode){}[0]
 }
 
+final class androidx.compose.ui.draganddrop/DragAndDropEvent // androidx.compose.ui.draganddrop/DragAndDropEvent|null[0]
+
+final class androidx.compose.ui.draganddrop/DragAndDropTransferData // androidx.compose.ui.draganddrop/DragAndDropTransferData|null[0]
+
 final class androidx.compose.ui.draw/CacheDrawScope : androidx.compose.ui.unit/Density { // androidx.compose.ui.draw/CacheDrawScope|null[0]
     final val density // androidx.compose.ui.draw/CacheDrawScope.density|{}density[0]
         final fun <get-density>(): kotlin/Float // androidx.compose.ui.draw/CacheDrawScope.density.<get-density>|<get-density>(){}[0]
@@ -2036,14 +2040,6 @@ final class androidx.compose.ui.platform/ClipEntry { // androidx.compose.ui.plat
 
     // Targets: [apple]
     final object Companion // androidx.compose.ui.platform/ClipEntry.Companion|null[0]
-
-    // Targets: [js, wasmJs]
-    final val clipboardItems // androidx.compose.ui.platform/ClipEntry.clipboardItems|{}clipboardItems[0]
-        // Targets: [js]
-        final fun <get-clipboardItems>(): kotlin/Array<androidx.compose.ui.platform/ClipboardItem> // androidx.compose.ui.platform/ClipEntry.clipboardItems.<get-clipboardItems>|<get-clipboardItems>(){}[0]
-
-        // Targets: [wasmJs]
-        final fun <get-clipboardItems>(): kotlin.js/JsArray<androidx.compose.ui.platform/ClipboardItem> // androidx.compose.ui.platform/ClipEntry.clipboardItems.<get-clipboardItems>|<get-clipboardItems>(){}[0]
 
     // Targets: [js, wasmJs]
     final object Companion { // androidx.compose.ui.platform/ClipEntry.Companion|null[0]
@@ -3903,8 +3899,12 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_DefaultViewC
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_InspectableModifier$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_InspectableModifier$stableprop|#static{}androidx_compose_ui_platform_InspectableModifier$stableprop[0]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_InspectorInfo$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_InspectorInfo$stableprop|#static{}androidx_compose_ui_platform_InspectorInfo$stableprop[0]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_InspectorValueInfo$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_InspectorValueInfo$stableprop|#static{}androidx_compose_ui_platform_InspectorValueInfo$stableprop[0]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_DefaultViewConfiguration$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_DefaultViewConfiguration$stableprop|#static{}androidx_compose_ui_platform_PlatformContext_DefaultViewConfiguration$stableprop[0]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_Empty$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_Empty$stableprop|#static{}androidx_compose_ui_platform_PlatformContext_Empty$stableprop[0]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_EmptyFocusManager$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_EmptyFocusManager$stableprop|#static{}androidx_compose_ui_platform_PlatformContext_EmptyFocusManager$stableprop[0]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_ValueElement$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_ValueElement$stableprop|#static{}androidx_compose_ui_platform_ValueElement$stableprop[0]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_ValueElementSequence$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_ValueElementSequence$stableprop|#static{}androidx_compose_ui_platform_ValueElementSequence$stableprop[0]
+final val androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneContext_Empty$stableprop // androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneContext_Empty$stableprop|#static{}androidx_compose_ui_scene_ComposeSceneContext_Empty$stableprop[0]
 final val androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneDragAndDropNode$stableprop // androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneDragAndDropNode$stableprop|#static{}androidx_compose_ui_scene_ComposeSceneDragAndDropNode$stableprop[0]
 final val androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneFocusManager$stableprop // androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneFocusManager$stableprop|#static{}androidx_compose_ui_scene_ComposeSceneFocusManager$stableprop[0]
 final val androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeScenePointer$stableprop // androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeScenePointer$stableprop|#static{}androidx_compose_ui_scene_ComposeScenePointer$stableprop[0]
@@ -4359,8 +4359,12 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_DefaultViewC
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_InspectableModifier$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_InspectableModifier$stableprop_getter|androidx_compose_ui_platform_InspectableModifier$stableprop_getter(){}[0]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_InspectorInfo$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_InspectorInfo$stableprop_getter|androidx_compose_ui_platform_InspectorInfo$stableprop_getter(){}[0]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_InspectorValueInfo$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_InspectorValueInfo$stableprop_getter|androidx_compose_ui_platform_InspectorValueInfo$stableprop_getter(){}[0]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_DefaultViewConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_DefaultViewConfiguration$stableprop_getter|androidx_compose_ui_platform_PlatformContext_DefaultViewConfiguration$stableprop_getter(){}[0]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_Empty$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_Empty$stableprop_getter|androidx_compose_ui_platform_PlatformContext_Empty$stableprop_getter(){}[0]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_EmptyFocusManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_PlatformContext_EmptyFocusManager$stableprop_getter|androidx_compose_ui_platform_PlatformContext_EmptyFocusManager$stableprop_getter(){}[0]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_ValueElement$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_ValueElement$stableprop_getter|androidx_compose_ui_platform_ValueElement$stableprop_getter(){}[0]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_ValueElementSequence$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_ValueElementSequence$stableprop_getter|androidx_compose_ui_platform_ValueElementSequence$stableprop_getter(){}[0]
+final fun androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneContext_Empty$stableprop_getter(): kotlin/Int // androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneContext_Empty$stableprop_getter|androidx_compose_ui_scene_ComposeSceneContext_Empty$stableprop_getter(){}[0]
 final fun androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneDragAndDropNode$stableprop_getter(): kotlin/Int // androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneDragAndDropNode$stableprop_getter|androidx_compose_ui_scene_ComposeSceneDragAndDropNode$stableprop_getter(){}[0]
 final fun androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneFocusManager$stableprop_getter(): kotlin/Int // androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeSceneFocusManager$stableprop_getter|androidx_compose_ui_scene_ComposeSceneFocusManager$stableprop_getter(){}[0]
 final fun androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeScenePointer$stableprop_getter(): kotlin/Int // androidx.compose.ui.scene/androidx_compose_ui_scene_ComposeScenePointer$stableprop_getter|androidx_compose_ui_scene_ComposeScenePointer$stableprop_getter(){}[0]
@@ -4413,18 +4417,6 @@ final inline fun androidx.compose.ui.layout/ScaleFactor(kotlin/Float, kotlin/Flo
 final inline fun androidx.compose.ui.platform/debugInspectorInfo(crossinline kotlin/Function1<androidx.compose.ui.platform/InspectorInfo, kotlin/Unit>): kotlin/Function1<androidx.compose.ui.platform/InspectorInfo, kotlin/Unit> // androidx.compose.ui.platform/debugInspectorInfo|debugInspectorInfo(kotlin.Function1<androidx.compose.ui.platform.InspectorInfo,kotlin.Unit>){}[0]
 final suspend fun (androidx.compose.ui.node/DelegatableNode).androidx.compose.ui.relocation/bringIntoView(kotlin/Function0<androidx.compose.ui.geometry/Rect?>? = ...) // androidx.compose.ui.relocation/bringIntoView|bringIntoView@androidx.compose.ui.node.DelegatableNode(kotlin.Function0<androidx.compose.ui.geometry.Rect?>?){}[0]
 final suspend fun (androidx.compose.ui.platform/PlatformTextInputModifierNode).androidx.compose.ui.platform/establishTextInputSession(kotlin.coroutines/SuspendFunction1<androidx.compose.ui.platform/PlatformTextInputSessionScope, kotlin/Nothing>): kotlin/Nothing // androidx.compose.ui.platform/establishTextInputSession|establishTextInputSession@androidx.compose.ui.platform.PlatformTextInputModifierNode(kotlin.coroutines.SuspendFunction1<androidx.compose.ui.platform.PlatformTextInputSessionScope,kotlin.Nothing>){}[0]
-
-// Targets: [ios, js, wasmJs]
-final class androidx.compose.ui.draganddrop/DragAndDropEvent // androidx.compose.ui.draganddrop/DragAndDropEvent|null[0]
-
-// Targets: [js, macos, wasmJs]
-final class androidx.compose.ui.draganddrop/DragAndDropTransferData { // androidx.compose.ui.draganddrop/DragAndDropTransferData|null[0]
-    // Targets: [js, wasmJs]
-    constructor <init>(org.w3c.dom/DataTransfer? = ...) // androidx.compose.ui.draganddrop/DragAndDropTransferData.<init>|<init>(org.w3c.dom.DataTransfer?){}[0]
-
-    // Targets: [macos]
-    constructor <init>() // androidx.compose.ui.draganddrop/DragAndDropTransferData.<init>|<init>(){}[0]
-}
 
 // Targets: [ios]
 abstract interface androidx.compose.ui.uikit/ComposeUIViewControllerDelegate { // androidx.compose.ui.uikit/ComposeUIViewControllerDelegate|null[0]
@@ -4482,9 +4474,6 @@ sealed interface androidx.compose.ui.viewinterop/UIKitInteropInteractionMode { /
 }
 
 // Targets: [ios]
-final class androidx.compose.ui.draganddrop/DragAndDropTransferData // androidx.compose.ui.draganddrop/DragAndDropTransferData|null[0]
-
-// Targets: [ios]
 final class androidx.compose.ui.main/DefaultIOSAppDelegate : platform.UIKit/UIApplicationDelegateProtocol, platform.UIKit/UIResponder { // androidx.compose.ui.main/DefaultIOSAppDelegate|null[0]
     constructor <init>() // androidx.compose.ui.main/DefaultIOSAppDelegate.<init>|<init>(){}[0]
 
@@ -4513,6 +4502,10 @@ final class androidx.compose.ui.main/DefaultIOSAppDelegate : platform.UIKit/UIAp
         final fun <get-window>(): platform.UIKit/UIWindow? // androidx.compose.ui.main/DefaultIOSAppDelegate.window.<get-window>|objc:window#Accessor[0]
         final fun <set-window>(platform.UIKit/UIWindow?) // androidx.compose.ui.main/DefaultIOSAppDelegate.window.<set-window>|objc:setWindow:#Accessor[0]
 
+    final fun alignCenter(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.alignCenter|objc:alignCenter:[0]
+    final fun alignJustified(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.alignJustified|objc:alignJustified:[0]
+    final fun alignLeft(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.alignLeft|objc:alignLeft:[0]
+    final fun alignRight(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.alignRight|objc:alignRight:[0]
     final fun application(platform.UIKit/UIApplication, kotlin.collections/List<*>, platform.Foundation/NSCoder): platform.UIKit/UIViewController? // androidx.compose.ui.main/DefaultIOSAppDelegate.application|objc:application:viewControllerWithRestorationIdentifierPath:coder:[0]
     final fun application(platform.UIKit/UIApplication, kotlin.collections/Map<kotlin/Any?, *>) // androidx.compose.ui.main/DefaultIOSAppDelegate.application|objc:application:didReceiveRemoteNotification:[0]
     final fun application(platform.UIKit/UIApplication, kotlin.collections/Map<kotlin/Any?, *>, kotlin/Function1<platform.UIKit/UIBackgroundFetchResult, kotlin/Unit>) // androidx.compose.ui.main/DefaultIOSAppDelegate.application|objc:application:didReceiveRemoteNotification:fetchCompletionHandler:[0]
@@ -4610,11 +4603,13 @@ final class androidx.compose.ui.main/DefaultIOSAppDelegate : platform.UIKit/UIAp
     final fun motionEnded(kotlin/Long, platform.UIKit/UIEvent?) // androidx.compose.ui.main/DefaultIOSAppDelegate.motionEnded|objc:motionEnded:withEvent:[0]
     final fun move(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.move|objc:move:[0]
     final fun mutableCopy(): kotlin/Any? // androidx.compose.ui.main/DefaultIOSAppDelegate.mutableCopy|objc:mutableCopy[0]
+    final fun newFromPasteboard(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.newFromPasteboard|objc:newFromPasteboard:[0]
     final fun nextResponder(): platform.UIKit/UIResponder? // androidx.compose.ui.main/DefaultIOSAppDelegate.nextResponder|objc:nextResponder[0]
     final fun paste(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.paste|objc:paste:[0]
     final fun pasteAndGo(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.pasteAndGo|objc:pasteAndGo:[0]
     final fun pasteAndMatchStyle(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.pasteAndMatchStyle|objc:pasteAndMatchStyle:[0]
     final fun pasteAndSearch(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.pasteAndSearch|objc:pasteAndSearch:[0]
+    final fun performClose(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.performClose|objc:performClose:[0]
     final fun performSelector(kotlinx.cinterop/CPointer<out kotlinx.cinterop/CPointed>?): kotlin/Any? // androidx.compose.ui.main/DefaultIOSAppDelegate.performSelector|objc:performSelector:[0]
     final fun performSelector(kotlinx.cinterop/CPointer<out kotlinx.cinterop/CPointed>?, kotlin/Any?): kotlin/Any? // androidx.compose.ui.main/DefaultIOSAppDelegate.performSelector|objc:performSelector:withObject:[0]
     final fun performSelector(kotlinx.cinterop/CPointer<out kotlinx.cinterop/CPointed>?, kotlin/Any?, kotlin/Any?): kotlin/Any? // androidx.compose.ui.main/DefaultIOSAppDelegate.performSelector|objc:performSelector:withObject:withObject:[0]
@@ -4623,6 +4618,7 @@ final class androidx.compose.ui.main/DefaultIOSAppDelegate : platform.UIKit/UIAp
     final fun pressesChanged(kotlin.collections/Set<*>, platform.UIKit/UIPressesEvent?) // androidx.compose.ui.main/DefaultIOSAppDelegate.pressesChanged|objc:pressesChanged:withEvent:[0]
     final fun pressesEnded(kotlin.collections/Set<*>, platform.UIKit/UIPressesEvent?) // androidx.compose.ui.main/DefaultIOSAppDelegate.pressesEnded|objc:pressesEnded:withEvent:[0]
     final fun print(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.print|objc:print:[0]
+    final fun providerForDeferredMenuElement(platform.UIKit/UIDeferredMenuElement): platform.UIKit/UIDeferredMenuElementProvider? // androidx.compose.ui.main/DefaultIOSAppDelegate.providerForDeferredMenuElement|objc:providerForDeferredMenuElement:[0]
     final fun remoteControlReceivedWithEvent(platform.UIKit/UIEvent?) // androidx.compose.ui.main/DefaultIOSAppDelegate.remoteControlReceivedWithEvent|objc:remoteControlReceivedWithEvent:[0]
     final fun rename(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.rename|objc:rename:[0]
     final fun resignFirstResponder(): kotlin/Boolean // androidx.compose.ui.main/DefaultIOSAppDelegate.resignFirstResponder|objc:resignFirstResponder[0]
@@ -4630,11 +4626,14 @@ final class androidx.compose.ui.main/DefaultIOSAppDelegate : platform.UIKit/UIAp
     final fun select(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.select|objc:select:[0]
     final fun selectAll(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.selectAll|objc:selectAll:[0]
     final fun setWindow(platform.UIKit/UIWindow?) // androidx.compose.ui.main/DefaultIOSAppDelegate.setWindow|objc:setWindow:[0]
+    final fun showWritingTools(kotlin/Any) // androidx.compose.ui.main/DefaultIOSAppDelegate.showWritingTools|objc:showWritingTools:[0]
     final fun superclass(): kotlinx.cinterop/ObjCClass? // androidx.compose.ui.main/DefaultIOSAppDelegate.superclass|objc:superclass[0]
     final fun targetForAction(kotlinx.cinterop/CPointer<out kotlinx.cinterop/CPointed>?, kotlin/Any?): kotlin/Any? // androidx.compose.ui.main/DefaultIOSAppDelegate.targetForAction|objc:targetForAction:withSender:[0]
     final fun toString(): kotlin/String // androidx.compose.ui.main/DefaultIOSAppDelegate.toString|toString(){}[0]
     final fun toggleBoldface(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.toggleBoldface|objc:toggleBoldface:[0]
+    final fun toggleInspector(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.toggleInspector|objc:toggleInspector:[0]
     final fun toggleItalics(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.toggleItalics|objc:toggleItalics:[0]
+    final fun toggleSidebar(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.toggleSidebar|objc:toggleSidebar:[0]
     final fun toggleUnderline(kotlin/Any?) // androidx.compose.ui.main/DefaultIOSAppDelegate.toggleUnderline|objc:toggleUnderline:[0]
     final fun touchesBegan(kotlin.collections/Set<*>, platform.UIKit/UIEvent?) // androidx.compose.ui.main/DefaultIOSAppDelegate.touchesBegan|objc:touchesBegan:withEvent:[0]
     final fun touchesCancelled(kotlin.collections/Set<*>, platform.UIKit/UIEvent?) // androidx.compose.ui.main/DefaultIOSAppDelegate.touchesCancelled|objc:touchesCancelled:withEvent:[0]
@@ -4916,11 +4915,6 @@ final fun androidx.compose.ui.window/androidx_compose_ui_window_KeyboardModeStat
 abstract interface androidx.compose.ui.window/WindowScope { // androidx.compose.ui.window/WindowScope|null[0]
     abstract val window // androidx.compose.ui.window/WindowScope.window|{}window[0]
         abstract fun <get-window>(): platform.AppKit/NSWindow // androidx.compose.ui.window/WindowScope.window.<get-window>|<get-window>(){}[0]
-}
-
-// Targets: [macos]
-final class androidx.compose.ui.draganddrop/DragAndDropEvent { // androidx.compose.ui.draganddrop/DragAndDropEvent|null[0]
-    constructor <init>() // androidx.compose.ui.draganddrop/DragAndDropEvent.<init>|<init>(){}[0]
 }
 
 // Targets: [macos]
