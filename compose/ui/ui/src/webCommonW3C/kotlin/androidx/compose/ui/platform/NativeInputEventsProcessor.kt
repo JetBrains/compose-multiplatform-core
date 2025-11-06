@@ -21,6 +21,7 @@ import androidx.compose.ui.input.key.toComposeEvent
 import androidx.compose.ui.text.input.BackspaceCommand
 import androidx.compose.ui.text.input.CommitTextCommand
 import androidx.compose.ui.text.input.DeleteSurroundingTextCommand
+import androidx.compose.ui.text.input.EditCommand
 import androidx.compose.ui.text.input.SetComposingTextCommand
 import androidx.compose.ui.text.input.SetSelectionCommand
 import androidx.compose.ui.text.input.TextFieldValue
@@ -121,6 +122,11 @@ internal abstract class NativeInputEventsProcessor(
     }
 
     private fun InputEvent.process(lastProcessedEventIsBackspace: Boolean, currentTextFieldValue: TextFieldValue) {
+        fun MutableList<EditCommand>.addAndExplain(command: EditCommand, explanation: String = "no explanation"): Unit {
+            println("EditCommand: $command, explanation: $explanation")
+            add(command)
+        }
+
         val editCommands = when (inputType) {
             "deleteContentBackward" -> buildList {
                 // this means "deleteContentBackward" happened because of an earlier "keydown" event, so skipping it here
@@ -130,7 +136,7 @@ internal abstract class NativeInputEventsProcessor(
                     // Likely it's on mobile, where the Backspace has Unidentified key value.
                     // When Compose TextField shows text selection,
                     // a good UX for deleteContentBackward would be to emulate Backspace
-                    add(BackspaceCommand())
+                    addAndExplain(BackspaceCommand(), "CASE A \n")
                 } else {
                     // This happens when an autocorrection is applied on mobile:
                     // The system first tells us to delete the old text,
@@ -139,12 +145,12 @@ internal abstract class NativeInputEventsProcessor(
                         // deleteContentBackward can happen under very non-trivial circumstances,
                         // for instance; when an input suggestion on Android Chrome is accepted,
                         // the browser then deletes space after the word just to add space again
-                        add(SetSelectionCommand(textRangeStart, textRangeEnd))
-                        add(BackspaceCommand())
+                        addAndExplain(SetSelectionCommand(textRangeStart, textRangeEnd))
+                        addAndExplain(BackspaceCommand())
                     } else if (textRangeSize == 0) {
                         // under specific circumstance previous symbol can be deleted while inputing new one
                         // see https://youtrack.jetbrains.com/issue/CMP-8773
-                        add(BackspaceCommand())
+                        addAndExplain(BackspaceCommand(), "CASE B \n")
                     }
                 }
             }
@@ -152,27 +158,27 @@ internal abstract class NativeInputEventsProcessor(
             "insertReplacementText" -> buildList {
                 if (data == null) return@buildList
                 if (textRangeSize > 0) {
-                    add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    addAndExplain(SetSelectionCommand(textRangeStart, textRangeEnd))
                 }
 
-                add(CommitTextCommand(data, 1))
+                addAndExplain(CommitTextCommand(data, 1), "CASE C \n")
             }
 
             "insertText" -> buildList {
                 if (data == null) return@buildList
                 if (textRangeSize > 0 && currentTextFieldValue.selection.collapsed) {
-                    add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    addAndExplain(SetSelectionCommand(textRangeStart, textRangeEnd))
                 }
 
-                add(CommitTextCommand(data, 1))
+                addAndExplain(CommitTextCommand(data, 1), "CASE D \n")
             }
 
             "insertCompositionText" -> buildList {
                 if (data == null) return@buildList
                 if (textRangeSize > 0) {
-                    add(SetSelectionCommand(textRangeStart, textRangeEnd))
+                    addAndExplain(SetSelectionCommand(textRangeStart, textRangeEnd))
                 }
-                add(SetComposingTextCommand(data, 1))
+                addAndExplain(SetComposingTextCommand(data, 1), explanation = "CASE E \n")
             }
 
             // "insertFromComposition", "deleteCompositionText" are triggered in Safari just before the 'compositionEnd' event.

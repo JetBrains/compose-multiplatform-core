@@ -193,6 +193,7 @@ internal interface FirefoxCompositeInput : СompositeInputTestSpec {
 
     @Test
     fun `CMP-8872 IME text input broken on Firefox (Wasm)`() = runApplicationTest {
+        println("=================== CMP-8872 IME text input broken on Firefox (Wasm) ======================== \n")
         // https://youtrack.jetbrains.com/issue/CMP-8872
         val textFieldValue = createApplicationWithHolder()
         eventsSequence(
@@ -222,6 +223,7 @@ internal interface FirefoxCompositeInput : СompositeInputTestSpec {
             keyEvent(key = "3", code = "Digit3", keyCode = 51, type = "keyup"),
         ).sendToHtmlInput()
 
+        println("=================== CMP-8872 IME text input broken on Firefox (Wasm) ======================== ASSERTION \n")
         textFieldValue.awaitAndAssertTextEquals("手扌搵")
 
         //textFieldValue.awaitAndAssertTextEquals("手扌搵手扌搵")
