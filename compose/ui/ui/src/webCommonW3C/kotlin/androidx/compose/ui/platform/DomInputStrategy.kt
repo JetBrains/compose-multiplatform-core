@@ -54,7 +54,7 @@ internal class DomInputStrategy(
 
         htmlInput.addEventListener("keydown", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
-            println("[${evt.timeStamp}] keyEvent(key = \"${evt.key}\", code = \"${evt.code}\", keyCode = ${evt.keyCode}),")
+            println("keyEvent(key = \"${evt.key}\", code = \"${evt.code}\", keyCode = ${evt.keyCode}),")
 
 
             if (evt.keyCode == tabKeyCode) {
@@ -65,13 +65,13 @@ internal class DomInputStrategy(
 
         htmlInput.addEventListener("keyup", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as KeyboardEvent)
-            println("[${evt.timeStamp}] keyEvent(key = \"${evt.key}\", code = \"${evt.code}\", keyCode = ${evt.keyCode}, type = \"keyup\"),")
+            println("keyEvent(key = \"${evt.key}\", code = \"${evt.code}\", keyCode = ${evt.keyCode}, type = \"keyup\"),")
         })
 
         htmlInput.addEventListener("beforeinput", { evt ->
             if (evt is InputEvent) {
                 htmlInput as HTMLElementWithValue
-                println("[${evt.timeStamp}] beforeInput(inputType = \"${evt.inputType}\", data = \"${evt.data}\", isComposing = ${evt.isComposing}),")
+                println("beforeInput(inputType = \"${evt.inputType}\", data = \"${evt.data}\", isComposing = ${evt.isComposing}),")
 
                 evt.textRangeStart = htmlInput.selectionStart
                 evt.textRangeEnd = htmlInput.selectionEnd
@@ -82,12 +82,12 @@ internal class DomInputStrategy(
 
         htmlInput.addEventListener("compositionstart", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
-            println("[${evt.timeStamp}] compositionStart(data = \"${evt.data}\"),")
+            println("compositionStart(data = \"${evt.data}\"),")
         })
 
         htmlInput.addEventListener("compositionend", { evt ->
             nativeInputEventsProcessor.registerEvent(evt as CompositionEvent)
-            println("[${evt.timeStamp}] compositionEnd(data = \"${evt.data}\"),")
+            println("compositionEnd(data = \"${evt.data}\"),")
         })
     }
 }
