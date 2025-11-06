@@ -48,7 +48,7 @@ fun heightKeyBasedLazyColumn(
     measureItemsWithWidthConstraints: Boolean = false,
     spacing: Int = 0,
     nth: (Int) -> Row,
-): (Int) -> ItemVerticalPosition {
+) {
     // TODO
     return approximatingLazyColumn(
         size,

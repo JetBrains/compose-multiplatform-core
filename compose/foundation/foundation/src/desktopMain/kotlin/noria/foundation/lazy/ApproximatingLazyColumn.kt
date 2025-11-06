@@ -43,7 +43,7 @@ fun approximatingLazyColumn(
     maxViewportHeight: Int = 0,
     startLayoutFromBottom: Boolean = false,
     nth: (Int) -> Row
-): (Int) -> ItemVerticalPosition {
+) {
     var maxSeenWidth by remember(state) { mutableStateOf(0.dp) }
     // TODO custom VerticalArrangement to respect overscrollPolicy or translate it into an OverscrollEffect
     val verticalArrangement = if (spacing != 0) {
@@ -78,14 +78,6 @@ fun approximatingLazyColumn(
             ) {
                 nth(index).render()
             }
-        }
-    }
-
-    return { index ->
-        state.layoutInfo.run {
-            visibleItemsInfo.find { it.index == index }?.let {
-                ItemVerticalPosition(it.offset, it.size)
-            } ?: ItemVerticalPosition(0, 0) // TODO
         }
     }
 }
