@@ -34,3 +34,4 @@ FOUNDATION_EXPORT const unsigned char CMPUIKitUtilsVersionString[];
 #import "CMPHoverGestureHandler.h"
 #import "CMPScreenEdgePanGestureRecognizer.h"
 #import "CMPScrollView.h"
+#import "CMPLayoutRegion.h"
