@@ -256,13 +256,11 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun changesMustBeAppliedDespiteConstantDebounceAfter1Second() = runApplicationTest {
-        var show1 by mutableStateOf(true)
+        var value by mutableStateOf(0)
 
         createComposeWindow {
-            if (show1) {
-                Button(onClick = {}) {
-                    Text("Text in Button")
-                }
+            Button(onClick = {}) {
+                Text("Text in Button - $value")
             }
         }
 
@@ -272,11 +270,7 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals(0,a11yContainer.childElementCount, "No A11Y tree expected yet")
 
         awaitA11YChanges()
-        assertTrue(a11yContainer.innerHTML.contains("Text in Button"), "Button must be present in the A11Y tree")
-
-        show1 = false
-        awaitA11YChanges()
-        assertFalse(a11yContainer.innerHTML.contains("Text in Button"), "Button must be removed from the A11Y tree")
+        assertTrue(a11yContainer.innerHTML.contains("Text in Button - 0"), "Button must be present in the A11Y tree")
 
         var changesAppliedTime = 0L
 
@@ -285,16 +279,20 @@ class CfWA11YTest : OnCanvasTests {
             changesAppliedTime = currentTimeMillis()
         }
 
-        var debounceCounter = 0
+        // Make sure nothing else interferes with the A11Y tree
+        realDelay(250)
+        assertEquals(0, changesAppliedTime, "There were no state changes! Why did A11Y tree change?")
 
+        var debounceCounter = 0
         val startTime = currentTimeMillis()
+
         while(changesAppliedTime == 0L) {
             if (currentTimeMillis() - startTime > 2000) {
                 error("Changes must be applied after 1 second, waited for ${currentTimeMillis() - startTime} ms")
             }
-            // Change the state every 55ms. Such changes must be "debounced", (time delta is less than 100ms)
-            show1 = !show1
-            realDelay(55)
+            // Change the state every 10ms. Such changes must be "debounced", (time delta is less than 100ms)
+            value += 1
+            realDelay(10)
 
             if (changesAppliedTime == 0L) {
                 debounceCounter++
