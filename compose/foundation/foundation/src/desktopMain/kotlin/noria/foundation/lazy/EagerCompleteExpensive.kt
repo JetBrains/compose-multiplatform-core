@@ -30,7 +30,7 @@ fun eagerCompleteExpensiveColumn(
     overscrollPolicy: LazyColumnOverscrollPolicy = { 0 },
     spacing: Int,
     nth: (Int) -> Row,
-): (Int) -> ItemVerticalPosition {
+) {
     // TODO
     return approximatingLazyColumn(
         size,
