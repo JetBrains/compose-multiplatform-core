@@ -63,10 +63,9 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
-        awaitIdle()
-
         val a11yContainer = getA11YContainer()
         assertNotNull(a11yContainer)
+        assertEquals("", a11yContainer.innerHTML, "No A11Y tree expected yet")
 
         awaitA11YChanges()
 
@@ -105,13 +104,11 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
-        awaitIdle()
-
         val a11yContainer = getA11YContainer()
         assertNotNull(a11yContainer)
+        assertEquals("", a11yContainer.innerHTML, "No A11Y tree expected yet")
 
         awaitA11YChanges()
-
         val buttonsContainer = a11yContainer.children[0] as HTMLDivElement
         assertEquals(1, buttonsContainer.children.length)
 
@@ -120,7 +117,6 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals("Button1", button1.innerText)
 
         showButton2 = true
-        awaitIdle()
         awaitA11YChanges()
 
         assertEquals(2, buttonsContainer.children.length)
@@ -140,7 +136,6 @@ class CfWA11YTest : OnCanvasTests {
         }
 
         showButton2 = false
-        awaitIdle()
         awaitA11YChanges()
 
         assertEquals(1, buttonsContainer.children.length)
@@ -171,20 +166,16 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
-        awaitIdle()
-
         val a11yContainer = getA11YContainer()
         assertNotNull(a11yContainer)
+        assertEquals("", a11yContainer.innerHTML, "No A11Y tree expected yet")
 
         awaitA11YChanges()
-
         val buttonsContainer = a11yContainer.children[0] as HTMLDivElement
         assertEquals(1, buttonsContainer.children.length)
 
         show2 = true
         show3 = true
-
-        awaitIdle()
         awaitA11YChanges()
 
         assertEquals(3, buttonsContainer.children.length)
@@ -194,7 +185,6 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals("Button3", buttonsContainer.children[2]!!.innerHTML)
 
         show1 = false
-        awaitIdle()
         awaitA11YChanges()
 
         assertEquals(2, buttonsContainer.children.length)
@@ -202,7 +192,6 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals("Button3", buttonsContainer.children[1]!!.innerHTML)
 
         show1 = true
-        awaitIdle()
         awaitA11YChanges()
 
         assertEquals(3, buttonsContainer.children.length)
@@ -223,9 +212,7 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
-        awaitIdle()
         val a11yContainer = getA11YContainer()!!
-
         assertEquals("",a11yContainer.innerHTML)
         assertEquals(0,a11yContainer.childElementCount)
 
@@ -279,7 +266,6 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
-        awaitIdle()
         assertNotEquals(0L, startTime, "The start time must be set")
 
         val a11yContainer = getA11YContainer()!!
@@ -337,7 +323,6 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
-        awaitIdle()
         awaitA11YChanges()
 
         val textEl = getShadowRoot().getElementById("testText") as HTMLElement
@@ -384,8 +369,6 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
-
-        awaitIdle()
         awaitA11YChanges()
 
         val a11yContainer = getA11YContainer()!!
@@ -425,8 +408,6 @@ class CfWA11YTest : OnCanvasTests {
                 Text("Button1")
             }
         }
-
-        awaitIdle()
         assertNull(getA11YContainer())
 
         suspend fun realDelay(timeMs: Long) {
@@ -465,7 +446,6 @@ class CfWA11YTest : OnCanvasTests {
             }
         }
 
-        awaitIdle()
         awaitA11YChanges()
 
         val button = getShadowRoot().getElementById("buttonTag") as? HTMLElement
@@ -474,7 +454,6 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals(1, clickCounter)
 
         showButton = false
-        awaitIdle()
         awaitA11YChanges()
 
         assertNull(getShadowRoot().getElementById("buttonTag"))
@@ -492,7 +471,6 @@ class CfWA11YTest : OnCanvasTests {
             )
         }
 
-        awaitIdle()
         awaitA11YChanges()
 
         val textField = getShadowRoot().getElementById("textFieldTag") as? HTMLElement
