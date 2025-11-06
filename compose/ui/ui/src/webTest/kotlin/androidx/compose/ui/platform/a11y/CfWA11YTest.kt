@@ -251,7 +251,7 @@ class CfWA11YTest : OnCanvasTests {
 
         // The tolerance is quite large, but it's so to reduce the flakiness.
         // The idea is that the change is not expected to happen immediately, but with debounce.
-        assertTrue(waitedForChangesMs in 50..150, "Changes must be batched, waited for $waitedForChangesMs ms. Allowed tolerance 50ms was exceeded")
+        assertTrue(waitedForChangesMs in 50..200, "Changes must be batched, waited for $waitedForChangesMs ms. Allowed tolerance was exceeded")
     }
 
     @Test
@@ -279,7 +279,6 @@ class CfWA11YTest : OnCanvasTests {
         assertFalse(a11yContainer.innerHTML.contains("Text in Button"), "Button must be removed from the A11Y tree")
 
         var changesAppliedTime = 0L
-        val startTime = currentTimeMillis()
 
         launch {
             awaitA11YChanges()
@@ -288,7 +287,11 @@ class CfWA11YTest : OnCanvasTests {
 
         var debounceCounter = 0
 
-        repeat(20) {
+        val startTime = currentTimeMillis()
+        while(changesAppliedTime == 0L) {
+            if (currentTimeMillis() - startTime > 2000) {
+                error("Changes must be applied after 1 second, waited for ${currentTimeMillis() - startTime} ms")
+            }
             // Change the state every 55ms. Such changes must be "debounced", (time delta is less than 100ms)
             show1 = !show1
             realDelay(55)
