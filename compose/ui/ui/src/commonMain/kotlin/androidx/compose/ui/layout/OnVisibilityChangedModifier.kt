@@ -181,14 +181,11 @@ internal class OnVisibilityChangedNode(
     var lastResult = false
     var lastBounds: RelativeLayoutBounds? = null
     var lastViewport: RelativeLayoutBounds? = null
-        set(value) {
-            if (field != value) {
-                field = value
-                forceUpdate()
-            }
-        }
 
     val rectChanged = { bounds: RelativeLayoutBounds ->
+        // as the bounds of the provided viewportBounds might have changed within the same
+        // relayout pass, we should recalculate them without waiting for onObservedReadsChanged()
+        lastViewport = this.viewportBounds?.bounds
         checkVisibility(minFractionVisible, bounds, lastViewport)
     }
 
@@ -259,10 +256,19 @@ internal class OnVisibilityChangedNode(
 
     fun updateViewport() {
         if (viewportBounds == null) {
-            lastViewport = null
+            if (lastViewport != null) {
+                lastViewport = null
+                forceUpdate()
+            }
             return
         }
-        observeReads { lastViewport = viewportBounds?.bounds }
+        observeReads {
+            val newViewport = viewportBounds?.bounds
+            if (lastViewport != newViewport) {
+                lastViewport = newViewport
+                forceUpdate()
+            }
+        }
     }
 
     override fun onAttach() {

@@ -32,6 +32,7 @@ import androidx.compose.ui.test.TestActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
+import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -376,6 +377,32 @@ class OnVisibilityChangedTest(private val useDelegation: Boolean) {
         rule.runOnIdle {
             assertEquals(2, called)
             assertEquals(false, isVisible)
+        }
+    }
+
+    @Test
+    fun testPassingParentsBounds_parentAndChildMovesTogether_noExtraCallbacks() {
+        val parentBounds = LayoutBoundsHolder()
+        val calls = mutableListOf<Boolean>()
+        val callback: (Boolean) -> Unit = { visible -> calls.add(visible) }
+        var offset by mutableStateOf(0.dp)
+        rule.setContent {
+            Column(Modifier.size(200.dp).offset(offset)) {
+                Column(Modifier.size(100.dp).layoutBounds(parentBounds)) {
+                    Box(
+                        Modifier.size(100.dp)
+                            .onVisibilityChanged(viewportBounds = parentBounds, callback = callback)
+                    )
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertThat(calls).isEqualTo(listOf(true))
+            offset = 1.dp
+        }
+        rule.runOnIdle {
+            // as parent and child moves together there are no changes in visibility expected
+            assertThat(calls).isEqualTo(listOf(true))
         }
     }
 
