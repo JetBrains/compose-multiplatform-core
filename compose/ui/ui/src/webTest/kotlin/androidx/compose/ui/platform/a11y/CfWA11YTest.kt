@@ -54,6 +54,7 @@ import org.w3c.dom.get
  *   Then the tests use `awaitA11YChanges` - awaiting the HTML mutations.
  * - In some tests I used a Boolean state switching it back and forth.
  *   Even though the state changes caused the invalidation, the A11Y tree didn't change if an update produced the same A11Y tree (for the same state).
+ *   It led to awaitA11YChanges hanging forever or to a timeout.
  *   That's why it's better to use an Int state in such tests, so the change in HTML will be noticed 100%.
  * - Note: running the k/js tests in FF takes 15% longer than in Chrome. K/Wasm is fast in both cases.
  */
@@ -336,13 +337,6 @@ class CfWA11YTest : OnCanvasTests {
         val textEl = getShadowRoot().getElementById("testText") as HTMLElement
         assertEquals("Test", textEl.innerText)
 
-
-        suspend fun realDelay(timeMs: Long) {
-            withContext(Dispatchers.Default) {
-                delay(timeMs)
-            }
-        }
-
         realDelay(1200)
 
         assertTrue(textEl.isConnected, "textEl must be connected")
@@ -421,11 +415,6 @@ class CfWA11YTest : OnCanvasTests {
         }
         assertNull(getA11YContainer())
 
-        suspend fun realDelay(timeMs: Long) {
-            withContext(Dispatchers.Default) {
-                delay(timeMs)
-            }
-        }
         // Wait a bit and make sure the a11y root didn't appear
         realDelay(500)
         assertNull(getA11YContainer())
