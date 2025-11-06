@@ -19,7 +19,6 @@ package androidx.compose.runtime
 import androidx.collection.MutableObjectIntMap
 import androidx.collection.MutableScatterMap
 import androidx.collection.ScatterSet
-import androidx.compose.runtime.platform.makeSynchronizedObject
 import androidx.compose.runtime.snapshots.fastAny
 import androidx.compose.runtime.snapshots.fastForEach
 
@@ -73,8 +72,6 @@ internal interface RecomposeScopeOwner {
 
     fun recordReadOf(value: Any)
 }
-
-private val callbackLock = makeSynchronizedObject()
 
 /**
  * A RecomposeScope is created for a region of the composition that can be recomposed independently
