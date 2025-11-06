@@ -616,7 +616,7 @@ private const val TestFile = "ErrorTraceComposables.kt"
 private const val DebugKeepLineNumbers = false
 
 private fun exceptionTest(vararg trace: String, block: suspend CompositionTestScope.() -> Unit) {
-    assertTrace(trace.toList()) { compositionTest(block) }
+    assertTrace(trace.toList()) { compositionTest(block = block) }
 }
 
 private fun assertTrace(expected: List<String>, block: () -> Unit) {
