@@ -46,7 +46,7 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.get
 
 /**
- * These tests were flaky in Firefox:
+ * These tests were flaky in Firefox when running the k/js target:
  * https://youtrack.jetbrains.com/issue/CMP-9069/CfWA11YTest.-timed-out-in-Firefox
  *
  * Here, I'd like to share my findings:
@@ -240,7 +240,7 @@ class CfWA11YTest : OnCanvasTests {
 
         repeat(20) {
             show1 = !show1
-            realDelay(10)
+            awaitAnimationFrame()
             // No changes expected yet due to debounce
             assertFalse(a11yContainer.innerHTML.contains("Text in Button"))
         }
@@ -291,7 +291,7 @@ class CfWA11YTest : OnCanvasTests {
         }
 
         // Make sure nothing else interferes with the A11Y tree
-        realDelay(250)
+        realDelay(1200)
         assertEquals(0, changesAppliedTime, "There were no state changes! Why did A11Y tree change?")
 
         var debounceCounter = 0
@@ -301,9 +301,9 @@ class CfWA11YTest : OnCanvasTests {
             if (currentTimeMillis() - startTime > 2000) {
                 error("Changes must be applied after 1 second, waited for ${currentTimeMillis() - startTime} ms")
             }
-            // Change the state every 10ms. Such changes must be "debounced", (time delta is less than 100ms)
+            // Change the state every frame. Such changes must be "debounced", (time delta is less than 100ms)
             value += 1
-            realDelay(10)
+            awaitAnimationFrame()
 
             if (changesAppliedTime == 0L) {
                 debounceCounter++
@@ -344,7 +344,7 @@ class CfWA11YTest : OnCanvasTests {
         recompositions = 0
         repeat(10) {
             show = !show
-            realDelay(5)
+            awaitAnimationFrame()
             assertTrue(textEl.isConnected, "textEl must be connected despite value changes - debounce expected. (Iteration $it)")
         }
 
@@ -416,7 +416,7 @@ class CfWA11YTest : OnCanvasTests {
         assertNull(getA11YContainer())
 
         // Wait a bit and make sure the a11y root didn't appear
-        realDelay(500)
+        realDelay(1200)
         assertNull(getA11YContainer())
 
         assertTrue(getCanvas().isConnected)
