@@ -315,10 +315,12 @@ class CfWA11YTest : OnCanvasTests {
     fun noChangesFor1SecondTheDebounceShouldWork() = runApplicationTest {
         var show by mutableStateOf(true)
 
+        var recompositions = 0
         createComposeWindow {
             if (show) {
                 Text("Test", modifier = Modifier.testTag("testText"))
             }
+            recompositions++
         }
 
         awaitA11YChanges()
@@ -337,11 +339,14 @@ class CfWA11YTest : OnCanvasTests {
 
         assertTrue(textEl.isConnected, "textEl must be connected")
 
+        recompositions = 0
         repeat(10) {
             show = !show
             realDelay(5)
             assertTrue(textEl.isConnected, "textEl must be connected despite value changes - debounce expected. (Iteration $it)")
         }
+
+        assertTrue(recompositions > 0, "The state has been changing, but no recompositions?")
 
         show = false
         awaitA11YChanges()
