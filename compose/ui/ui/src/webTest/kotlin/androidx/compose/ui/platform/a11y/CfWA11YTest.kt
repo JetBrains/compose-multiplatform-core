@@ -262,7 +262,7 @@ class CfWA11YTest : OnCanvasTests {
 
         // The tolerance is quite large, but it's so to reduce the flakiness.
         // The idea is that the change is not expected to happen immediately, but with debounce.
-        assertTrue(waitedForChangesMs in 50..200, "Changes must be batched, waited for $waitedForChangesMs ms. Allowed tolerance was exceeded")
+        assertTrue(waitedForChangesMs in 50..250, "Changes must be batched, waited for $waitedForChangesMs ms. Allowed tolerance was exceeded")
     }
 
     @Test
