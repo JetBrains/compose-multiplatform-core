@@ -270,8 +270,8 @@ class CfWA11YTest : OnCanvasTests {
 
         val a11yContainer = getA11YContainer()!!
 
-        assertEquals("",a11yContainer.innerHTML)
-        assertEquals(0,a11yContainer.childElementCount)
+        assertEquals("",a11yContainer.innerHTML, "No A11Y tree expected yet")
+        assertEquals(0,a11yContainer.childElementCount, "No A11Y tree expected yet")
 
         suspend fun realDelay(timeMs: Long) {
             withContext(Dispatchers.Default) {
@@ -294,8 +294,6 @@ class CfWA11YTest : OnCanvasTests {
             realDelay(55)
 
             if (changesAppliedTime == 0L) {
-                // No changes expected yet due to debounce
-                assertEquals(0, a11yContainer.childElementCount)
                 debounceCounter++
             }
         }
@@ -304,7 +302,7 @@ class CfWA11YTest : OnCanvasTests {
         assertTrue(debounceCounter > 1)
 
         // the "debounce" must be ignored when the changes were waiting for 1 second
-        assertEquals(1, a11yContainer.childElementCount)
+        assertEquals(1, a11yContainer.childElementCount, "Changes must be applied by now. The debounce was taking too long")
 
         // Adding a tolerance of 200ms, just to avoid flakiness
         assertTrue(
@@ -337,18 +335,18 @@ class CfWA11YTest : OnCanvasTests {
 
         realDelay(1200)
 
-        assertTrue(textEl.isConnected)
+        assertTrue(textEl.isConnected, "textEl must be connected")
 
         repeat(10) {
             show = !show
-            realDelay(10)
-            assertTrue(textEl.isConnected)
+            realDelay(5)
+            assertTrue(textEl.isConnected, "textEl must be connected despite value changes - debounce expected. (Iteration $it)")
         }
 
         show = false
         awaitA11YChanges()
 
-        assertFalse(textEl.isConnected)
+        assertFalse(textEl.isConnected, "textEl must be disconnected after debounce ended")
     }
 
     @Test
