@@ -48,6 +48,7 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
