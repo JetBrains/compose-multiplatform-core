@@ -24,7 +24,7 @@ import noria.Cell
 
 data class SlideAnimation(val toggledIndices: IntRange, val slideProgress: State<Float>, val isExpansion: Boolean)
 
-fun slidingPictureLazyColumn(slideAnimationCell: Cell<SlideAnimation?>, state: LazyListState, contentPadding: PaddingValues, spacing: Int): @Composable (size: Int, nth: (Int) -> Row) -> (Int) -> ItemVerticalPosition = { size, nth ->
+fun slidingPictureLazyColumn(slideAnimationCell: Cell<SlideAnimation?>, state: LazyListState, contentPadding: PaddingValues, spacing: Int): @Composable (size: Int, nth: (Int) -> Row) -> Unit = { size, nth ->
   // TODO
   approximatingLazyColumn(size, state, contentPadding, spacing = spacing, nth = nth)
 }
