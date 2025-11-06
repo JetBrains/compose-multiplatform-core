@@ -217,16 +217,14 @@ class CfWA11YTest : OnCanvasTests {
 
     @Test
     fun changesMustBeBatched() = runApplicationTest {
-        var show1 by mutableStateOf(false)
+        var value by mutableStateOf(0)
 
         var recompositions = 0
         createComposeWindow {
-            if (show1) {
-                Button(onClick = {}) {
-                    Text("Text in Button")
-                }
+            Button(onClick = {}) {
+                Text("Text in Button - $value")
+                recompositions++
             }
-            recompositions++
         }
 
         val a11yContainer = getA11YContainer()!!
@@ -234,20 +232,19 @@ class CfWA11YTest : OnCanvasTests {
         assertEquals(0,a11yContainer.childElementCount)
 
         awaitA11YChanges()
-        assertFalse(a11yContainer.innerHTML.contains("Text in Button"))
+        assertTrue(a11yContainer.innerHTML.contains("Text in Button - 0"), "Expected the button to be added in HTML")
 
         recompositions = 0 // resetting because we're interested to count them only after this point
 
         repeat(20) {
-            show1 = !show1
+            value++
             awaitAnimationFrame()
             // No changes expected yet due to debounce
-            assertFalse(a11yContainer.innerHTML.contains("Text in Button"))
+            assertTrue(a11yContainer.innerHTML.contains("Text in Button - 0"), "The state is changing but we expect a debounce and no A11Y tree changes")
         }
 
         assertTrue(recompositions > 0, "The state has been changing, but no recompositions?")
 
-        show1 = true
         val startTime = currentTimeMillis()
         awaitA11YChanges()
         val waitedForChangesMs = currentTimeMillis() - startTime
@@ -257,7 +254,7 @@ class CfWA11YTest : OnCanvasTests {
 
         (buttonsContainer.children[0] as HTMLElement).let { button ->
             assertEquals("button", button.getAttribute("role"))
-            assertEquals("Text in Button", button.innerHTML)
+            assertEquals("Text in Button - 20", button.innerHTML)
         }
 
         // The tolerance is quite large, but it's so to reduce the flakiness.
