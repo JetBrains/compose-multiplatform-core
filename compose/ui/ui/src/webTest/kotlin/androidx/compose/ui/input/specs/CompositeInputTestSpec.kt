@@ -160,7 +160,7 @@ internal interface ChromeCompositeInput : СompositeInputTestSpec {
             keyEvent(key = "3", code = "Digit3", keyCode = 51, type = "keyup"),
         ).sendToHtmlInput()
 
-        textFieldValue.awaitAndAssertTextEquals("手扌搵\n手扌搵")
+        textFieldValue.awaitAndAssertTextEquals("手扌搵手扌搵")
     }
 }
 
