@@ -420,6 +420,7 @@ internal class ComposeWindow(
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
+        archComponentsOwner.initSavedStateController(null)
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
@@ -443,7 +444,6 @@ internal class ComposeWindow(
             )
         }
 
-        archComponentsOwner.initSavedStateController(null)
         archComponentsOwner.lifecycle.handleLifecycleEvent(
             if (document.hasFocus()) Lifecycle.Event.ON_RESUME
             else Lifecycle.Event.ON_START
