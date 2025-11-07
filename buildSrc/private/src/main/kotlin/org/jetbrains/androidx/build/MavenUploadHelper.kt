@@ -116,6 +116,7 @@ private fun Project.configureComponentPublishing(
     val androidLibrariesSetProvider: Provider<Set<String>> = provider {
         val androidxAndroidProjects = mutableSetOf<String>()
         // Check every project is the project map to see if they are an Android Library
+        // TODO mavenCoordinatesToProjectPathMap doesn't have jetbrains groups
         val projectModules = extension.mavenCoordinatesToProjectPathMap
         for ((mavenCoordinates, projectPath) in projectModules) {
             project.findProject(projectPath)?.let { project ->
@@ -178,25 +179,39 @@ private fun Project.configureComponentPublishing(
             }
         }
     }
-    project.tasks.withType(GenerateMavenPom::class.java).configureEach { task ->
-        task.doLast {
+    // run code only after all projects because it depends on redirection info,
+    // which is constructed at a project evaluation step
+    gradle.projectsEvaluated {
+        project.tasks.withType(GenerateMavenPom::class.java).configureEach { task ->
             fun hasTargetWithComponent(componentName: String) =
                 task.project.multiplatformExtension?.targets?.find { target ->
                     target.components.any { it.name == componentName }
                 } != null
 
-            // extract heuristically from:
-            // "build/publications/kotlinMultiplatformDecorated/pom-default.xml"
-            // "build/publications/desktop/pom-default.xml"
+            // extract heuristically from the task name:
+            // generatePomFileForKotlinMultiplatformDecoratedPublication
+            // generatePomFileForDesktopDecoratedPublication
             // ...
             // and take only if it is a target's component (we redirect only targets)
-            val componentName = task.destination.parentFile.name.takeIf(::hasTargetWithComponent)
+            val componentName: String? = Regex("^generatePomFileFor(.*)Publication$")
+                .matchEntire(task.name)
+                ?.groupValues?.get(1)
+                ?.replaceFirstChar { it.lowercase() }
+                ?.takeIf(::hasTargetWithComponent)
 
-            val pomFile = task.destination
-            val pom = pomFile.readText()
-            val modifiedPom = task.project.modifyPomDependencies(extension, pom, componentName)
-            if (pom != modifiedPom) {
-                pomFile.writeText(modifiedPom)
+            val originalToRedirected: Map<ModuleIdentifier, ModuleVersionIdentifier> = if (componentName != null) {
+                originalToRedirectedDependency(extension, componentName)
+            } else {
+                emptyMap()
+            }
+
+            task.doLast {
+                val pomFile = task.destination
+                val pom = pomFile.readText()
+                val modifiedPom = modifyPomDependencies(pom, originalToRedirected)
+                if (pom != modifiedPom) {
+                    pomFile.writeText(modifiedPom)
+                }
             }
         }
     }
@@ -205,7 +220,10 @@ private fun Project.configureComponentPublishing(
 /**
  * Looks for a dependencies XML element within [pom], sorts its contents and modify it by redirecting coordinates
  */
-internal fun Project.modifyPomDependencies(extension: AndroidXExtension, pom: String, componentName: String?): String {
+internal fun modifyPomDependencies(
+    pom: String,
+    originalToRedirected: Map<ModuleIdentifier, ModuleVersionIdentifier>
+): String {
     // Workaround for using the default namespace in dom4j.
     val namespaceUris = mapOf("ns" to "http://maven.apache.org/POM/4.0.0")
     val docFactory = DocumentFactory()
@@ -213,12 +231,6 @@ internal fun Project.modifyPomDependencies(extension: AndroidXExtension, pom: St
     // Ensure that we're consistently using JAXP parser.
     val xmlReader = JAXPSAXParser()
     val document = parseText(docFactory, xmlReader, pom)
-
-    val originalToRedirected = if (componentName != null) {
-        originalToRedirectedDependency(extension, componentName)
-    } else {
-        emptyMap()
-    }
 
     // For each <dependencies> element, sort the contained elements in-place.
     document.rootElement

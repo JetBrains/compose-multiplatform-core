@@ -18,8 +18,10 @@
 import androidx.build.AndroidXConfig
 
 plugins {
+    id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("kotlin-multiplatform")
+    id("JetBrainsAndroidXPlugin")
 }
 
 kotlin {
