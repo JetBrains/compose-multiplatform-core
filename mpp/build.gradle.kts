@@ -1,6 +1,7 @@
 import org.jetbrains.androidx.build.AbstractComposePublishingTask
 import org.jetbrains.androidx.build.ArtifactRedirection
 import org.jetbrains.androidx.build.ComposePlatforms
+import org.jetbrains.androidx.build.ComposeProperties
 import org.jetbrains.androidx.build.JetBrainsPublication
 import org.jetbrains.androidx.build.artifactRedirection
 import org.jetbrains.androidx.build.hasRedirection
@@ -21,21 +22,25 @@ val libraryToComponents = JetBrainsPublication.libraryToComponents
 val pathToComposeComponent = libraryToComponents.values.flatten().associateBy { it.path }
 val Project.composeComponent get() = pathToComposeComponent[path]
 
+val parsedComposeProperties = ComposeProperties(project)
+
 tasks.register("publishComposeJb", ComposePublishingTask::class) {
     group = "Compose Multiplatform"
     repository = "MavenRepository"
+    composeProperties = parsedComposeProperties
 
     libraries.forEach {
-        libraryToComponents[it]?.forEach(::publish)
+        libraryToComponents[it]?.forEach { publish(rootProject, it) }
     }
 }
 
 tasks.register("publishComposeJbToMavenLocal", ComposePublishingTask::class) {
     group = "Compose Multiplatform"
     repository = "MavenLocal"
+    composeProperties = parsedComposeProperties
 
     libraries.forEach {
-        libraryToComponents[it]?.forEach(::publish)
+        libraryToComponents[it]?.forEach { publish(rootProject, it) }
     }
 }
 

@@ -5,6 +5,7 @@
 package org.jetbrains.androidx.build
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Internal
 
@@ -13,9 +14,8 @@ abstract class AbstractComposePublishingTask : DefaultTask() {
     @get:Internal
     lateinit var repository: String
 
-    private val composeProperties by lazy {
-        ComposeProperties(project)
-    }
+    @get:Internal
+    lateinit var composeProperties: ComposeProperties
 
     private val targetPlatforms: Set<ComposePlatforms> by lazy {
         composeProperties.targetPlatforms
@@ -23,7 +23,7 @@ abstract class AbstractComposePublishingTask : DefaultTask() {
 
     abstract fun dependsOnComposeTask(task: String)
 
-    fun publish(component: ComposeComponent) {
+    fun publish(rootProject: Project, component: ComposeComponent) {
         if (component.customTasks.isNotEmpty()) {
             publish(
                 component.path,
@@ -31,25 +31,32 @@ abstract class AbstractComposePublishingTask : DefaultTask() {
                 publications = component.customTasks
             )
         } else {
-            publishMultiplatform(component)
+            publishMultiplatform(rootProject, component)
         }
     }
 
-    private fun publish(project: String, publications: Collection<String>) {
+    private fun publish(
+        project: String,
+        publications: Collection<String>
+    ) {
         for (publication in publications) {
             dependsOnComposeTask("$project:publish${publication}PublicationTo$repository")
         }
         dependsOnComposeTask("$project:jbVerifyDependencyVersions")
     }
 
-    private fun publish(project: String, publications: Collection<String>, onlyWithPlatforms: Set<ComposePlatforms>) {
+    private fun publish(
+        project: String,
+        publications: Collection<String>,
+        onlyWithPlatforms: Set<ComposePlatforms>
+    ) {
         if (onlyWithPlatforms.any { it in targetPlatforms }) {
-            publish(project, publications)
+            publish( project, publications)
         }
     }
 
-    private fun publishMultiplatform(component: ComposeComponent) {
-        val project = project.rootProject.findProject(component.path) ?:
+    private fun publishMultiplatform(rootProject: Project, component: ComposeComponent) {
+        val project = rootProject.findProject(component.path) ?:
             throw IllegalArgumentException("Cannot find project ${component.path}")
 
         val useArtifactRedirectionPublication =
