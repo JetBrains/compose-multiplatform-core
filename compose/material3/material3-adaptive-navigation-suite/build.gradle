@@ -25,6 +25,7 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
 plugins {
     id("AndroidXPlugin")
@@ -36,7 +37,11 @@ androidXMultiplatform {
         namespace = "androidx.compose.material3.adaptive.navigationsuite"
         compileSdk = 35
     }
-    jvmStubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -68,11 +73,6 @@ androidXMultiplatform {
             }
         }
 
-        jvmStubsMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
-        }
 
         androidDeviceTest {
             dependsOn(commonTest)
@@ -94,6 +94,49 @@ androidXMultiplatform {
                 implementation(libs.truth)
                 implementation(project(":compose:ui:ui"))
                 implementation(project(":window:window-core"))
+            }
+        }
+
+        // TODO: Align naming: nonAndroidMain
+        skikoMain {
+            dependsOn(commonMain)
+        }
+
+        skikoTest {
+            dependsOn(commonTest)
+        }
+
+        desktopMain {
+            dependsOn(skikoMain)
+        }
+
+        desktopTest {
+            dependsOn(skikoTest)
+        }
+
+        nativeMain {
+            dependsOn(skikoMain)
+        }
+
+        nativeTest {
+            dependsOn(skikoTest)
+        }
+
+        webMain {
+            dependsOn(skikoMain)
+        }
+
+        webTest {
+            dependsOn(skikoTest)
+        }
+
+        targets.configureEach { target ->
+            if (target.platformType == KotlinPlatformType.native) {
+                target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
+            } else if (target.platformType in [KotlinPlatformType.js, KotlinPlatformType.wasm]) {
+                target.compilations["main"].defaultSourceSet.dependsOn(webMain)
+                target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
         }
     }

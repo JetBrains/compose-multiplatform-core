@@ -36,8 +36,11 @@ androidXMultiplatform {
         namespace = "androidx.compose.material3.adaptive.navigation3"
         androidResources.enable = true
     }
-    jvmStubs()
-    linuxX64Stubs()
+    desktop()
+    mac()
+    ios()
+    js()
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
