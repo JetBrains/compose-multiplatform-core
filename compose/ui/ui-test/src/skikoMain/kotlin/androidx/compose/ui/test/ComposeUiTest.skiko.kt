@@ -313,7 +313,7 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             invalidate = { }
         )
         architectureComponentsOwner.initSavedStateController(null)
-        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
     private fun closeScene() {
