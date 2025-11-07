@@ -311,7 +311,7 @@ internal class ComposeHostingViewController(
         }
 
         architectureComponentsOwner.initSavedStateController(savedState)
-        lifecycleDelegate.lifecycleListener = architectureComponentsOwner::onLifecycleState
+        lifecycleDelegate.lifecycleListener = architectureComponentsOwner::setLifecycleState
         mediator = ComposeSceneMediator(
             onFocusBehavior = configuration.onFocusBehavior,
             focusedViewsList = focusedViewsList,

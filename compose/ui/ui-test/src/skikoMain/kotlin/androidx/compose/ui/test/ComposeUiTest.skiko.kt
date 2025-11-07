@@ -18,7 +18,6 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
 import androidx.compose.ui.geometry.Offset
@@ -314,12 +313,12 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             invalidate = { }
         )
         architectureComponentsOwner.initSavedStateController(null)
-        architectureComponentsOwner.onLifecycleState(Lifecycle.State.CREATED)
+        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
     }
 
     private fun closeScene() {
         architectureComponentsOwner.saveState()
-        architectureComponentsOwner.onLifecycleState(Lifecycle.State.DESTROYED)
+        architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         scene.close()
     }
 

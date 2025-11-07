@@ -17,7 +17,6 @@
 package androidx.compose.ui.platform
 
 import androidx.compose.ui.InternalComposeUiApi
-import androidx.lifecycle.DEFAULT_ARGS_KEY
 import androidx.lifecycle.HasDefaultViewModelProviderFactory
 import androidx.lifecycle.Lifecycle.State
 import androidx.lifecycle.LifecycleOwner
@@ -25,7 +24,6 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.SAVED_STATE_REGISTRY_OWNER_KEY
 import androidx.lifecycle.SavedStateViewModelFactory
 import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.enableSavedStateHandles
@@ -96,7 +94,7 @@ class DefaultArchitectureComponentsOwner(
         return savedState
     }
 
-    fun onLifecycleState(state: State) {
+    fun setLifecycleState(state: State) {
         lifecycle.currentState = state
         if (state == State.DESTROYED) {
             viewModelStore.clear()

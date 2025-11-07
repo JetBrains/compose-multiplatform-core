@@ -44,7 +44,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.enableSavedStateHandles
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.awaitCancellation
 
@@ -240,7 +239,7 @@ private val EmptyArchitectureComponentsOwner = DefaultArchitectureComponentsOwne
     enforceMainThread = false
 ).apply {
     initSavedStateController(null)
-    onLifecycleState(Lifecycle.State.RESUMED)
+    setLifecycleState(Lifecycle.State.RESUMED)
 }
 
 internal class DefaultInputModeManager(
