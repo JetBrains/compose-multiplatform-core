@@ -202,6 +202,7 @@ internal fun Project.originalToRedirectedDependency(
      * org.jetbrains.compose.collection-internal:collection-jvm=androidx.collection:collection-jvm:1.5.0-beta01
      * ...
      */
+    // TODO mavenCoordinatesToProjectPathMap doesn't have jetbrains groups
     val projectDefined =
         extension.mavenCoordinatesToProjectPathMap
             .values
