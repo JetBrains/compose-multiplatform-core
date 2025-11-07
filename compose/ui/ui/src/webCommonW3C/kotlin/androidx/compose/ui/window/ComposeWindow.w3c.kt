@@ -443,6 +443,7 @@ internal class ComposeWindow(
             )
         }
 
+        archComponentsOwner.initSavedStateController(null)
         archComponentsOwner.lifecycle.handleLifecycleEvent(
             if (document.hasFocus()) Lifecycle.Event.ON_RESUME
             else Lifecycle.Event.ON_START
@@ -478,6 +479,7 @@ internal class ComposeWindow(
         archComponentsOwner.viewModelStore.clear()
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.removeInput(navigationEventInput)
+        archComponentsOwner.saveState()
 
         scene.close()
         skiaLayer.detach()
