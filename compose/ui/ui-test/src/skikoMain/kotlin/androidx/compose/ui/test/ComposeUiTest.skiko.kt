@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.enableSavedStateHandles
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
@@ -312,12 +313,11 @@ open class SkikoComposeUiTest @InternalTestApi constructor(
             platformContext = TestContext(),
             invalidate = { }
         )
-        architectureComponentsOwner.initSavedStateController(null)
+        architectureComponentsOwner.enableSavedStateHandles()
         architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
     private fun closeScene() {
-        architectureComponentsOwner.saveState()
         architectureComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         scene.close()
     }

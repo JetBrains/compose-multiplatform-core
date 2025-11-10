@@ -72,6 +72,7 @@ import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.enableSavedStateHandles
 import kotlin.coroutines.coroutineContext
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
@@ -203,7 +204,7 @@ internal class ComposeWindow(
         isWindowFocused = true
     }
     @VisibleForTesting
-    internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
+    internal val archComponentsOwner = DefaultArchitectureComponentsOwner(null)
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -420,7 +421,7 @@ internal class ComposeWindow(
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
-        archComponentsOwner.initSavedStateController(null)
+        archComponentsOwner.enableSavedStateHandles()
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
@@ -479,7 +480,6 @@ internal class ComposeWindow(
         archComponentsOwner.viewModelStore.clear()
         archComponentsOwner.navigationEventDispatcherOwner
             .navigationEventDispatcher.removeInput(navigationEventInput)
-        archComponentsOwner.saveState()
 
         scene.close()
         skiaLayer.detach()

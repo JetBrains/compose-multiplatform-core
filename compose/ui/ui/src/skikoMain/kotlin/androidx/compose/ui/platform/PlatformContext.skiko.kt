@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.enableSavedStateHandles
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.awaitCancellation
 
@@ -238,7 +239,7 @@ private object EmptyPlatformScreenReader : PlatformScreenReader {
 private val EmptyArchitectureComponentsOwner = DefaultArchitectureComponentsOwner(
     enforceMainThread = false
 ).apply {
-    initSavedStateController(null)
+    enableSavedStateHandles()
     setLifecycleState(Lifecycle.State.RESUMED)
 }
 

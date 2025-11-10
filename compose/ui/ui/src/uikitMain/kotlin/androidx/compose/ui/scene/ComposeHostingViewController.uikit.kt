@@ -29,6 +29,7 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.MotionDurationScaleImpl
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
@@ -54,6 +55,7 @@ import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.SceneActiveStateListener
 import androidx.compose.ui.window.ViewControllerLifecycleDelegate
+import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.GC
@@ -103,6 +105,7 @@ internal class ComposeHostingViewController(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
+
     // Used for testing
     val rootViewRedrawer: MetalRedrawer? get() = rootView.redrawer
     private var mediator: ComposeSceneMediator? = null
@@ -113,8 +116,11 @@ internal class ComposeHostingViewController(
     private var activeStateListener: SceneActiveStateListener? = null
     private val composeCoroutineContext: CoroutineContext = coroutineContext + motionDurationScale
 
-    private val architectureComponentsOwner = DefaultArchitectureComponentsOwner()
     private var savedState: SavedState? = null
+    private var mediatorComponentsOwner: DefaultArchitectureComponentsOwner? = null
+    private val architectureComponentsOwner: DefaultArchitectureComponentsOwner
+        get() = mediatorComponentsOwner
+            ?: error("ArchitectureComponentsOwner is not initialized yet.")
 
     private val interfaceOrientationObserver = SceneGeometryObserver {
         updateInterfaceOrientationState()
@@ -310,8 +316,10 @@ internal class ComposeHostingViewController(
             layersHolder = it
         }
 
-        architectureComponentsOwner.initSavedStateController(savedState)
+        mediatorComponentsOwner = DefaultArchitectureComponentsOwner(savedState)
+        architectureComponentsOwner.enableSavedStateHandles()
         lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
+
         mediator = ComposeSceneMediator(
             onFocusBehavior = configuration.onFocusBehavior,
             focusedViewsList = focusedViewsList,
@@ -470,7 +478,6 @@ internal class ComposeHostingViewController(
                     ownerProvider = architectureComponentsOwner,
                     coroutineContext = composeCoroutineContext,
                     interfaceOrientationState = interfaceOrientationState,
-                    navigationEventDispatcher = architectureComponentsOwner.navigationEventDispatcher,
                 )
 
                 layersHolder.getLayersViewController().attach(layer)
@@ -536,8 +543,9 @@ internal class ComposeHostingViewController(
         }
     }
 
-    private val windowScene: UIWindowScene? get() =
-        view.window?.windowScene
+    private val windowScene: UIWindowScene?
+        get() =
+            view.window?.windowScene
 }
 
 private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {
@@ -561,6 +569,7 @@ private class ComposeLayersHolder(
 ) {
     var layersViewController: ComposeLayersViewController? = null
         private set
+
     fun getLayersViewController(): ComposeLayersViewController {
         return layersViewController ?: run {
             val layers = ComposeLayersViewController(
@@ -572,6 +581,7 @@ private class ComposeLayersHolder(
             layers
         }
     }
+
     fun disposeIfNeeded() {
         layersViewController?.dispose()
         layersViewController = null
@@ -580,7 +590,7 @@ private class ComposeLayersHolder(
 
 private class SceneGeometryObserver(
     val onGeometryChanged: () -> Unit
-): CMPKeyValueObserver() {
+) : CMPKeyValueObserver() {
     private val observingKey = "effectiveGeometry"
 
     var windowScene: UIWindowScene? = null

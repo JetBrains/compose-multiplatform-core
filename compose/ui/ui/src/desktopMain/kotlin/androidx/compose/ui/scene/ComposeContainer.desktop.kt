@@ -41,6 +41,7 @@ import androidx.compose.ui.window.WindowExceptionHandler
 import androidx.compose.ui.window.density
 import androidx.compose.ui.window.layoutDirectionFor
 import androidx.lifecycle.Lifecycle.State
+import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import java.awt.Component
 import java.awt.Window
@@ -119,7 +120,7 @@ internal class ComposeContainer(
             onWindowContainerPositionChanged()
         }
 
-    val architectureComponentsOwner = DefaultArchitectureComponentsOwner()
+    val architectureComponentsOwner = DefaultArchitectureComponentsOwner(savedState)
 
     private val coroutineExceptionHandler = DesktopCoroutineExceptionHandler()
     private val coroutineContext = MainUIDispatcher + coroutineExceptionHandler
@@ -179,7 +180,7 @@ internal class ComposeContainer(
     private var isFocused = false
 
     init {
-        architectureComponentsOwner.initSavedStateController(savedState)
+        architectureComponentsOwner.enableSavedStateHandles()
         setWindow(window)
         this.windowContainer = windowContainer
 

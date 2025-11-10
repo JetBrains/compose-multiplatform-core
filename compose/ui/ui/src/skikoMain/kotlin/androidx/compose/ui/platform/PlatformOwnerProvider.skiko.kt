@@ -26,7 +26,6 @@ import androidx.lifecycle.SavedStateViewModelFactory
 import androidx.lifecycle.VIEW_MODEL_STORE_OWNER_KEY
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.enableSavedStateHandles
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
 import androidx.navigationevent.NavigationEventDispatcher
@@ -53,7 +52,8 @@ interface PlatformArchitectureComponentsOwner {
  */
 @InternalComposeUiApi
 class DefaultArchitectureComponentsOwner(
-    enforceMainThread: Boolean = true,
+    savedState: SavedState? = null,
+    enforceMainThread: Boolean = true
 ) : PlatformArchitectureComponentsOwner,
     LifecycleOwner,
     ViewModelStoreOwner,
@@ -72,25 +72,21 @@ class DefaultArchitectureComponentsOwner(
     override val viewModelStore = ViewModelStore()
     override val navigationEventDispatcher = NavigationEventDispatcher()
 
-    private var savedStateController: SavedStateRegistryController? = null
+    private val savedStateController = SavedStateRegistryController.create(this)
     override val savedStateRegistry: SavedStateRegistry
-        get() = savedStateController?.savedStateRegistry ?: error("SavedStateRegistry is not initialized")
+        get() = savedStateController.savedStateRegistry
 
     override val defaultViewModelProviderFactory = SavedStateViewModelFactory()
     override val defaultViewModelCreationExtras = defaultViewModelCreationExtras(this, this)
 
-    fun initSavedStateController(savedState: SavedState?) {
-        savedStateController = SavedStateRegistryController.create(this).apply {
-            performAttach()
-            performRestore(savedState)
-        }
-        enableSavedStateHandles()
+    init {
+        savedStateController.performAttach()
+        savedStateController.performRestore(savedState)
     }
 
     fun saveState(): SavedState {
         val savedState = savedState()
-        savedStateController?.performSave(savedState)
-        savedStateController = null
+        savedStateController.performSave(savedState)
         return savedState
     }
 
