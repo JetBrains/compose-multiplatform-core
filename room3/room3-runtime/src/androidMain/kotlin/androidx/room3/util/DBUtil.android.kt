@@ -24,7 +24,6 @@ import androidx.room3.RoomDatabase
 import androidx.room3.TransactionElement
 import androidx.room3.coroutines.RawConnectionAccessor
 import androidx.room3.coroutines.runBlockingUninterruptible
-import androidx.room3.withTransactionContext
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.driver.SupportSQLiteConnection
@@ -34,7 +33,7 @@ import java.io.IOException
 import java.nio.ByteBuffer
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 
 /** Performs a database operation. */
@@ -45,7 +44,7 @@ public actual suspend fun <R> performSuspending(
     inTransaction: Boolean,
     block: (SQLiteConnection) -> R,
 ): R =
-    db.compatCoroutineExecute(inTransaction) {
+    withContext(db.getCoroutineContext(inTransaction)) {
         db.internalPerform(isReadOnly, inTransaction) { connection ->
             (connection as RawConnectionAccessor).useRawConnection { rawConnection ->
                 block.invoke(rawConnection)
@@ -62,14 +61,9 @@ public fun <R> performBlocking(
     block: (SQLiteConnection) -> R,
 ): R {
     db.assertNotMainThread()
-    db.assertNotSuspendingTransaction()
     val context = db.suspendingTransactionContext.get() ?: EmptyCoroutineContext
     return runBlockingUninterruptible {
         withContext(context) {
-            // If in compatibility mode and the database is already in a transaction, then do not
-            // start a nested transaction to avoid the overhead and because the SupportSQLite APIs
-            // do not support real SAVEPOINT-based nested transactions.
-            val inTransaction = !(db.inCompatibilityMode() && db.inTransaction()) && inTransaction
             db.internalPerform(isReadOnly, inTransaction) { connection ->
                 (connection as RawConnectionAccessor).useRawConnection { rawConnection ->
                     block.invoke(rawConnection)
@@ -90,46 +84,20 @@ public actual suspend fun <R> performInTransactionSuspending(
     db: RoomDatabase,
     block: suspend () -> R,
 ): R =
-    if (db.inCompatibilityMode()) {
-        db.withTransactionContext {
-            db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
-        }
-    } else {
-        db.compatCoroutineExecute(true) {
-            db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
-        }
+    withContext(db.getCoroutineContext(true)) {
+        db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
     }
 
 /** Blocking version of [performInTransactionSuspending] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
 public fun <R> performInTransactionBlocking(db: RoomDatabase, block: () -> R): R {
     db.assertNotMainThread()
-    db.assertNotSuspendingTransaction()
     val context = db.suspendingTransactionContext.get() ?: EmptyCoroutineContext
     return runBlockingUninterruptible {
         withContext(context) {
-            // If in compatibility mode and the database is already in a transaction, then do not
-            // start a nested transaction to avoid the overhead and because the SupportSQLite APIs
-            // do not support real SAVEPOINT-based nested transactions.
-            val inTransaction = !db.inCompatibilityMode() || !db.inTransaction()
-            db.internalPerform(false, inTransaction) { block.invoke() }
+            db.internalPerform(isReadOnly = false, inTransaction = true) { block.invoke() }
         }
     }
-}
-
-/**
- * Compatibility suspend function execution with driver usage. This will maintain the dispatcher
- * behaviour in [androidx.room3.CoroutinesRoom.execute] when Room is in compatibility mode executing
- * driver codegen utility functions.
- */
-private suspend inline fun <R> RoomDatabase.compatCoroutineExecute(
-    inTransaction: Boolean,
-    crossinline block: suspend () -> R,
-): R {
-    if (inCompatibilityMode() && isOpenInternal && inTransaction()) {
-        return block.invoke()
-    }
-    return withContext(getCoroutineContext(inTransaction)) { block.invoke() }
 }
 
 /**
@@ -140,20 +108,8 @@ private suspend inline fun <R> RoomDatabase.compatCoroutineExecute(
 internal actual suspend fun RoomDatabase.getCoroutineContext(
     inTransaction: Boolean
 ): CoroutineContext {
-    val transactionDispatcher = coroutineContext[TransactionElement]?.transactionDispatcher
-    return if (inCompatibilityMode()) {
-        // If in compatibility mode check if we are on a transaction coroutine, if so combine
-        // it with the database context, otherwise use the database dispatchers.
-        if (transactionDispatcher != null) {
-            getQueryContext() + transactionDispatcher
-        } else if (inTransaction) {
-            getTransactionContext()
-        } else {
-            getQueryContext()
-        }
-    } else {
-        getQueryContext() + (transactionDispatcher ?: EmptyCoroutineContext)
-    }
+    val transactionDispatcher = currentCoroutineContext()[TransactionElement]?.transactionDispatcher
+    return getQueryContext() + (transactionDispatcher ?: EmptyCoroutineContext)
 }
 
 /**

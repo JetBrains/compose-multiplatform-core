@@ -43,5 +43,5 @@ actual constructor(public actual val startVersion: Int, public actual val endVer
      *
      * @param connection The database connection
      */
-    public actual open fun migrate(connection: SQLiteConnection) {}
+    public actual abstract fun migrate(connection: SQLiteConnection)
 }

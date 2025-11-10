@@ -107,6 +107,10 @@ internal class ItemDecorationNode(
 
     override fun onAttach() {
         depthNode = delegate(DepthNode(currentValueOfDepth(), shape))
+        if (size != Size.Zero) {
+            // If this node is reused, we need to update the shape in case there is no remeasure.
+            updateShapeInItemScope()
+        }
     }
 
     override fun onRemeasured(size: IntSize) {

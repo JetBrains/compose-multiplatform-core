@@ -95,6 +95,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
         textView.text = "\n\n\n\nWaiting for Geospatial Pose..."
         setContentView(textView)
         lifecycleScope.launch(Dispatchers.IO) {
+            delay(4000) // TODO: b/436981970 - the onResume 2x is happening again with this change.
             tryCreateSession()
             lifecycleScope.launch {
                 Log.i(TAG, "before sessionInitialized.await()")

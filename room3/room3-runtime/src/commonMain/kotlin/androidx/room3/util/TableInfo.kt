@@ -387,10 +387,8 @@ internal fun formatString(collection: Collection<*>): String {
     }
 }
 
-private fun Collection<*>.joinToStringMiddleWithIndent() {
+private fun Collection<*>.joinToStringMiddleWithIndent(): String =
     this.joinToString(",").prependIndent() + "},".prependIndent()
-}
 
-private fun Collection<*>.joinToStringEndWithIndent() {
+private fun Collection<*>.joinToStringEndWithIndent(): String =
     this.joinToString(",").prependIndent() + " }".prependIndent()
-}

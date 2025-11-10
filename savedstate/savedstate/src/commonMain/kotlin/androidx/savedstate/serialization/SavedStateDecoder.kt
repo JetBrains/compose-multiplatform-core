@@ -247,6 +247,10 @@ internal class SavedStateDecoder(
             intListDescriptor -> savedState.read { getIntList(key) }
             stringListDescriptor -> savedState.read { getStringList(key) }
             booleanListDescriptor -> savedState.read { getBooleanArray(key).toList() }
+            longListDescriptor -> savedState.read { getLongArray(key).toList() }
+            floatListDescriptor -> savedState.read { getFloatArray(key).toList() }
+            doubleListDescriptor -> savedState.read { getDoubleArray(key).toList() }
+            charListDescriptor -> savedState.read { getCharArray(key).toList() }
             booleanArrayDescriptor -> savedState.read { getBooleanArray(key) }
             charArrayDescriptor -> savedState.read { getCharArray(key) }
             doubleArrayDescriptor -> savedState.read { getDoubleArray(key) }

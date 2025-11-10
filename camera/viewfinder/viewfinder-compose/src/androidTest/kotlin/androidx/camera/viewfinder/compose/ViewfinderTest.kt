@@ -66,6 +66,8 @@ import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.Rule
@@ -84,7 +86,8 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
             arrayOf(ImplementationMode.EXTERNAL, ImplementationMode.EMBEDDED)
     }
 
-    @get:Rule val rule = createComposeRule()
+    val testDispatcher = StandardTestDispatcher()
+    @get:Rule val rule = createComposeRule(testDispatcher)
 
     @Test
     fun coordinatesTransformationSameSizeNoRotation(): Unit = runBlocking {
@@ -222,7 +225,7 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
                         // A new surface would need to be created on API 28 and lower, wait for
                         // the new surface session
                         allowNextSessionCompletion()
-
+                        rule.awaitIdle()
                         val newSurfaceSession =
                             withTimeoutOrNull(5.seconds) {
                                 awaitSurfaceSession { it !== surfaceSession }
@@ -236,44 +239,48 @@ class ViewfinderTest(private val implementationMode: ImplementationMode) {
 
     @Test
     fun viewfinderInPagerWithDefaultOffscreenPageCount_afterMoveOffThenOnScreen_validSurfaceIsAvailable():
-        Unit = runBlocking {
-        testPageableWithSession(beyondViewportPageCount = 0) {
-            val firstSurfaceSession = awaitSurfaceSession()
-            assertThat(firstSurfaceSession.surface.isValid).isTrue()
+        Unit =
+        runTest(testDispatcher) {
+            testPageableWithSession(beyondViewportPageCount = 0) {
+                val firstSurfaceSession = awaitSurfaceSession()
+                assertThat(firstSurfaceSession.surface.isValid).isTrue()
 
-            scrollToPage(1)
+                scrollToPage(1)
 
-            rule.awaitIdleWithPausedRendering()
-            // Moving off screen will remove the View from the composition, so the session should
-            // be completed.
-            allowNextSessionCompletion()
+                rule.awaitIdleWithPausedRendering()
+                // Moving off screen will remove the View from the composition, so the session
+                // should
+                // be completed.
+                allowNextSessionCompletion()
 
-            scrollToPage(0)
-            rule.awaitIdleWithPausedRendering()
-            val secondSurfaceSession = awaitSurfaceSession()
+                scrollToPage(0)
+                rule.awaitIdleWithPausedRendering()
+                val secondSurfaceSession = awaitSurfaceSession()
 
-            assertThat(secondSurfaceSession.surface.isValid).isTrue()
+                assertThat(secondSurfaceSession.surface.isValid).isTrue()
+            }
         }
-    }
 
     @Test
     fun viewfinderInPagerWithOneOffscreenPageCount_afterMoveOffThenOnScreen_validSurfaceIsAvailable():
-        Unit = runBlocking {
-        // When the beyondViewportPageCount keeps the underlying View alive, we don't expect
-        // the session to be recreated since the composable is never removed from the composition.
-        testPageableWithSession(beyondViewportPageCount = 1) {
-            val surfaceSession = awaitSurfaceSession()
-            assertThat(surfaceSession.surface.isValid).isTrue()
+        Unit =
+        runTest(testDispatcher) {
+            // When the beyondViewportPageCount keeps the underlying View alive, we don't expect
+            // the session to be recreated since the composable is never removed from the
+            // composition.
+            testPageableWithSession(beyondViewportPageCount = 1) {
+                val surfaceSession = awaitSurfaceSession()
+                assertThat(surfaceSession.surface.isValid).isTrue()
 
-            scrollToPage(1)
-            rule.awaitIdleWithPausedRendering()
+                scrollToPage(1)
+                rule.awaitIdleWithPausedRendering()
 
-            scrollToPage(0)
-            rule.awaitIdleWithPausedRendering()
+                scrollToPage(0)
+                rule.awaitIdleWithPausedRendering()
 
-            assertThat(surfaceSession.surface.isValid).isTrue()
+                assertThat(surfaceSession.surface.isValid).isTrue()
+            }
         }
-    }
 
     private interface SessionTestScope {
 

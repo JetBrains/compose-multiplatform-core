@@ -36,9 +36,6 @@ android {
             useSupportLibrary = true
         }
     }
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
 }
 
 dependencies {
@@ -51,8 +48,8 @@ dependencies {
 
     // Hilt Dependency Injection
     implementation(libs.hiltAndroid)
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.6.8")
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+    debugImplementation(project(":compose:ui:ui-test-manifest"))
     ksp(libs.hiltCompiler)
 
     // Arch Components

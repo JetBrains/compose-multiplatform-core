@@ -22,8 +22,9 @@
  * modifying its settings.
  */
 
-import androidx.build.SoftwareType
+
 import androidx.build.PlatformIdentifier
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
@@ -132,6 +133,15 @@ androidXMultiplatform {
 
 dependencies {
     lintPublish(project(":compose:runtime:runtime-saveable-lint"))
+
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with version 1.9.2, this module is published as empty artifact with dependency
+        // to this androidx module.
+        commonMainImplementation("org.jetbrains.compose.runtime:runtime-saveable:1.9.2") {
+            because "prevents symbols duplication"
+        }
+    }
 }
 
 androidx {

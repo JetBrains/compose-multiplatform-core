@@ -55,13 +55,12 @@ class FtsTableTest(private val useDriver: UseDriver) {
         val context: Context = ApplicationProvider.getApplicationContext()
         database =
             Room.inMemoryDatabaseBuilder<FtsTestDatabase>(context)
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .build()
         mailDao = database.getMailDao()
         songDao = database.getSongDao()

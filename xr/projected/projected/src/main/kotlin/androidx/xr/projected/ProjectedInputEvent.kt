@@ -25,7 +25,7 @@ import java.util.Objects
  *
  * @property inputAction The action of this input event.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedInputEvent
 internal constructor(public val inputAction: ProjectedInputAction) {
 

@@ -437,8 +437,9 @@ internal class ThrottledCallbacks {
     private inline fun MutableIntObjectMap<Entry>.runFor(id: Int, block: (Entry) -> Unit) {
         var entry: Entry? = get(id)
         while (entry != null) {
+            val next = entry.next
             block(entry)
-            entry = entry.next
+            entry = next
         }
     }
 

@@ -498,9 +498,10 @@ actual constructor() {
          * @throws IllegalArgumentException if the builder was misconfigured.
          */
         public actual fun build(): T {
-            requireNotNull(driver) {
-                "Cannot create a RoomDatabase without providing a SQLiteDriver via setDriver()."
-            }
+            val driver =
+                requireNotNull(driver) {
+                    "Cannot create a RoomDatabase without providing a SQLiteDriver via setDriver()."
+                }
 
             validateMigrationsNotRequired(migrationStartAndEndVersions, migrationsNotRequiredFrom)
 

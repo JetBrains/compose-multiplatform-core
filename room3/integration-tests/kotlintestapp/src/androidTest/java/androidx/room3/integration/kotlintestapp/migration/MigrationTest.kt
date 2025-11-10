@@ -508,21 +508,6 @@ class MigrationTest {
         assertThat(tableNames).doesNotContain("order")
     }
 
-    @Test
-    fun compatModeWithNoOverrideError() {
-        class NoOverrideMigration(startVersion: Int, endVersion: Int) :
-            Migration(startVersion, endVersion)
-
-        helper.createDatabase(2).close()
-
-        assertThrows<NotImplementedError> {
-            helper.runMigrationsAndValidate(
-                version = 3,
-                migrations = listOf(NoOverrideMigration(2, 3)),
-            )
-        }
-    }
-
     private val MIGRATION_1_2: Migration =
         object : Migration(1, 2) {
             override fun migrate(connection: SQLiteConnection) {

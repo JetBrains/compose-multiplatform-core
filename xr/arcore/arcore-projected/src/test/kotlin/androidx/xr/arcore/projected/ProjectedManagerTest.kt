@@ -110,7 +110,7 @@ class ProjectedManagerTest {
         expectedUpdateResult.devicePose = projectedPose
         `when`(mockPerceptionService.update()).thenReturn(expectedUpdateResult)
         underTest.create()
-        underTest.running = true
+        underTest.running.set(true)
 
         underTest.update()
         assertThat(perceptionManager.xrResources.deviceTrackingState)
@@ -137,7 +137,7 @@ class ProjectedManagerTest {
     @Test
     fun configure_whenAllFeaturesAreDisabled_stopsService() {
         underTest.create()
-        underTest.running = true
+        underTest.running.set(true)
 
         val config =
             Config(
@@ -162,7 +162,7 @@ class ProjectedManagerTest {
     @Test
     fun configure_withValidConfigs_sendsCorrectAidlConfig() {
         underTest.create()
-        underTest.running = true
+        underTest.running.set(true)
         val configWithGeospatial =
             Config(
                 deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
@@ -202,7 +202,7 @@ class ProjectedManagerTest {
     @Test
     fun stop_whenServiceIsRunning_stopsService() {
         underTest.create()
-        underTest.running = true
+        underTest.running.set(true)
 
         underTest.stop()
 
@@ -211,7 +211,7 @@ class ProjectedManagerTest {
 
     @Test
     fun stop_whenServiceIsNotRunning_doesNothing() {
-        underTest.running = false
+        underTest.running.set(false)
 
         underTest.stop()
 

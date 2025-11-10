@@ -21,70 +21,18 @@ package androidx.room3.guava
 
 import android.os.CancellationSignal
 import androidx.room3.RoomDatabase
-import androidx.room3.RoomSQLiteQuery
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.db.SupportSQLiteQuery
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.Callable
 import java.util.concurrent.Executor
 
 class GuavaRoomArtifactMarker private constructor()
 
-fun <T> createListenableFuture(
-        db: RoomDatabase,
-        isReadOnly: Boolean,
-        inTransaction: Boolean,
-        block: (SQLiteConnection) -> T
-): ListenableFuture<T> {
-    TODO()
-}
-
-fun <T> createListenableFuture(
-    roomDatabase: RoomDatabase,
+public fun <T> createListenableFuture(
+    db: RoomDatabase,
+    isReadOnly: Boolean,
     inTransaction: Boolean,
-    callable: Callable<T>,
-    query: RoomSQLiteQuery,
-    releaseQuery: Boolean
-): ListenableFuture<T> {
-    TODO()
-}
-
-fun <T> createListenableFuture(
-    roomDatabase: RoomDatabase,
-    inTransaction: Boolean,
-    callable: Callable<T>,
-    query: RoomSQLiteQuery,
-    releaseQuery: Boolean,
-    cancellationSignal: CancellationSignal?
-): ListenableFuture<T> {
-    TODO()
-}
-
-fun <T> createListenableFuture(
-    roomDatabase: RoomDatabase,
-    inTransaction: Boolean,
-    callable: Callable<T>,
-    query: SupportSQLiteQuery,
-    releaseQuery: Boolean,
-    cancellationSignal: CancellationSignal?
-): ListenableFuture<T> {
-    TODO()
-}
-
-fun <T> createListenableFuture(
-    executor: Executor,
-    callable: Callable<T>,
-    query: SupportSQLiteQuery,
-    releaseQuery: Boolean,
-    cancellationSignal: CancellationSignal?
-): ListenableFuture<T> {
-    TODO()
-}
-
-fun <T> createListenableFuture(
-    roomDatabase: RoomDatabase,
-    inTransaction: Boolean,
-    callable: Callable<T>
+    block: (SQLiteConnection) -> T,
 ): ListenableFuture<T> {
     TODO()
 }

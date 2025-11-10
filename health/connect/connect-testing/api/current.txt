@@ -111,7 +111,7 @@ package androidx.health.connect.client.testing.stubs {
     property public kotlin.jvm.functions.Function1<T,R?> defaultHandler;
   }
 
-  public final class MutableStubKt {
+  public final class MutableStubs {
     method public static <R> androidx.health.connect.client.testing.stubs.MutableStub<java.lang.Object?,R> MutableStub(Throwable defaultError);
     method public static <R> androidx.health.connect.client.testing.stubs.MutableStub<java.lang.Object?,R> MutableStub(R? defaultResponse);
     method public static inline <T, R> androidx.health.connect.client.testing.stubs.Stub<T,R> buildStub(kotlin.jvm.functions.Function1<? super androidx.health.connect.client.testing.stubs.MutableStub<T,R>,kotlin.Unit> builder);
@@ -124,7 +124,7 @@ package androidx.health.connect.client.testing.stubs {
     method public R? next(T request);
   }
 
-  public final class StubKt {
+  public final class Stubs {
     method public static inline <R> androidx.health.connect.client.testing.stubs.Stub<java.lang.Object?,R> stub();
     method public static inline <R> androidx.health.connect.client.testing.stubs.Stub<java.lang.Object?,R> stub(optional Iterable<? extends R> queue);
     method public static inline <R> androidx.health.connect.client.testing.stubs.Stub<java.lang.Object?,R> stub(optional Iterable<? extends R> queue, optional kotlin.jvm.functions.Function0<? extends R?> defaultHandler);

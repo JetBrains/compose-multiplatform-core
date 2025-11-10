@@ -52,9 +52,9 @@ dependencies {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")
     }
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.6.1")
-    androidTestImplementation("androidx.compose.ui:ui-test-manifest:1.6.1")
-    androidTestImplementation("androidx.compose.ui:ui-test:1.7.8")
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
+    androidTestImplementation(project(":compose:ui:ui-test-manifest"))
+    androidTestImplementation(project(":compose:ui:ui-test"))
     androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     androidTestImplementation("androidx.lifecycle:lifecycle-common:2.8.3")
     androidTestImplementation(libs.guavaAndroid)
@@ -77,9 +77,6 @@ dependencies {
 android {
     compileSdk = 36
     namespace = "androidx.camera.compose"
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
 }
 
 androidx {

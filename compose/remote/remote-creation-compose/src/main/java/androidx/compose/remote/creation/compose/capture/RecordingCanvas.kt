@@ -1489,11 +1489,6 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         return object : RemoteBitmap(creationState, null) {
             public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
                 bitmapId
-
-            public override val value: Bitmap
-                get() {
-                    throw UnsupportedOperationException()
-                }
         }
     }
 

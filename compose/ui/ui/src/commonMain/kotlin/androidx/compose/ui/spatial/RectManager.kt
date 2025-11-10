@@ -101,11 +101,6 @@ internal class RectManager(
             rects.forEachUpdatedRect { id, topLeft, bottomRight ->
                 throttledCallbacks.fireOnUpdatedRect(id, topLeft, bottomRight, currentTime)
             }
-            throttledCallbacks.forEachNewCallbackNeverInvoked { entry ->
-                rects.withTopLeftBottomRight(entry.id) { topLeft, bottomRight ->
-                    throttledCallbacks.fireWithUpdatedRect(entry, topLeft, bottomRight, currentTime)
-                }
-            }
             rects.clearUpdated()
         }
         if (isScreenOrWindowDirty) {

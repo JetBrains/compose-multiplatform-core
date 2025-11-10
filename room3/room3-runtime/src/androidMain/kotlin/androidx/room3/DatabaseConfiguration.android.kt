@@ -24,7 +24,6 @@ import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.prepackage.PrePackagedCopyConfig
 import androidx.room3.util.isMigrationRequired as isMigrationRequiredExt
 import androidx.sqlite.SQLiteDriver
-import androidx.sqlite.db.SupportSQLiteOpenHelper
 import java.util.concurrent.Executor
 import kotlin.coroutines.CoroutineContext
 
@@ -39,9 +38,6 @@ constructor(
 
     /* The name of the database file or null if it is an in-memory database. */
     @JvmField public actual val name: String?,
-
-    /* The factory to use to access the database. */
-    @JvmField public val sqliteOpenHelperFactory: SupportSQLiteOpenHelper.Factory?,
 
     /* Collection of available migrations. */
     @JvmField public actual val migrationContainer: RoomDatabase.MigrationContainer,
@@ -90,7 +86,7 @@ constructor(
     @JvmField public actual val allowDestructiveMigrationForAllTables: Boolean,
 
     /* The SQLite Driver for the database. */
-    @JvmField public actual val sqliteDriver: SQLiteDriver?,
+    @JvmField public actual val sqliteDriver: SQLiteDriver,
 
     /* The Coroutine context for the database. */
     @JvmField public actual val queryCoroutineContext: CoroutineContext?,
@@ -126,7 +122,6 @@ constructor(
     public fun copy(
         context: Context = this.context,
         name: String? = this.name,
-        sqliteOpenHelperFactory: SupportSQLiteOpenHelper.Factory? = this.sqliteOpenHelperFactory,
         migrationContainer: RoomDatabase.MigrationContainer = this.migrationContainer,
         callbacks: List<RoomDatabase.Callback>? = this.callbacks,
         allowMainThreadQueries: Boolean = this.allowMainThreadQueries,
@@ -143,13 +138,12 @@ constructor(
         typeConverters: List<Any> = this.typeConverters,
         autoMigrationSpecs: List<AutoMigrationSpec> = this.autoMigrationSpecs,
         allowDestructiveMigrationForAllTables: Boolean = this.allowDestructiveMigrationForAllTables,
-        sqliteDriver: SQLiteDriver? = this.sqliteDriver,
+        sqliteDriver: SQLiteDriver = this.sqliteDriver,
         queryCoroutineContext: CoroutineContext? = this.queryCoroutineContext,
     ): DatabaseConfiguration =
         DatabaseConfiguration(
             context,
             name,
-            sqliteOpenHelperFactory,
             migrationContainer,
             callbacks,
             allowMainThreadQueries,

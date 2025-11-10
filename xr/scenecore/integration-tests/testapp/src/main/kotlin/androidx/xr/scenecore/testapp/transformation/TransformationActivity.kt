@@ -293,6 +293,7 @@ class TransformationActivity : AppCompatActivity() {
         val movableComponent = MovableComponent.createSystemMovable(session!!, scaleInZ = false)
         if (switchState) {
             movableActive.value = session!!.scene.mainPanelEntity.addComponent(movableComponent)
+            movableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
         } else {
             movableActive.let { session!!.scene.mainPanelEntity.removeAllComponents() }
         }

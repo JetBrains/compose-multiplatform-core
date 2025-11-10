@@ -192,7 +192,7 @@ constructor(
             }
         }
 
-        if (level < 1 || level > maxTorchStrength) {
+        if (level !in 1..maxTorchStrength) {
             return CompletableDeferred<Unit>().apply {
                 createFailureResult(
                     IllegalArgumentException("The given torch strength level is invalid.")
@@ -208,7 +208,7 @@ constructor(
     }
 
     private fun updateTorchStrengthLevelAsync(level: Int): Deferred<Unit> {
-        var signal = CompletableDeferred<Unit>()
+        val signal = CompletableDeferred<Unit>()
         if (
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
                 isTorchStrengthSupported

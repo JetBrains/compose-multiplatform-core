@@ -27,10 +27,12 @@ import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContex
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionSchemaDefinitionAnnotation
 import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDeprecationMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSDeclaration
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.google.devtools.ksp.validate
@@ -244,6 +246,7 @@ data class AnnotatedAppFunctions(
                     seenDataTypeQualifiers = seenDataTypeQualifiers,
                     functionAnnotations = functionDeclaration.annotations,
                 )
+            val deprecationMetadata = functionDeclaration.getDeprecationMetadata()
 
             CompileTimeAppFunctionMetadata(
                 id = getAppFunctionIdentifier(functionDeclaration),
@@ -258,6 +261,7 @@ data class AnnotatedAppFunctions(
                     ),
                 components = AppFunctionComponentsMetadata(dataTypes = sharedDataTypeMap),
                 description = sanitizeKDoc(functionDescription),
+                deprecation = deprecationMetadata,
             )
         }
     }
@@ -341,5 +345,17 @@ data class AnnotatedAppFunctions(
         return AppFunctionMetadataCreatorHelper()
             .computeAppFunctionAnnotationProperties(functionDeclaration)
             .isDescribedByKdoc ?: false
+    }
+
+    private fun KSDeclaration.getDeprecationMetadata(): AppFunctionDeprecationMetadata? {
+        val annotation =
+            annotations.findAnnotation(IntrospectionHelper.DeprecatedAnnotation.CLASS_NAME)
+                ?: return null
+        val message =
+            annotation.requirePropertyValueOfType(
+                IntrospectionHelper.DeprecatedAnnotation.PROPERTY_MESSAGE,
+                String::class,
+            )
+        return AppFunctionDeprecationMetadata(message)
     }
 }

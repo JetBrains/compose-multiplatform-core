@@ -60,7 +60,8 @@ class XrDeviceTest {
             .single()
             .xrDevicePreferredDisplayBlendMode = DisplayBlendMode.ADDITIVE
 
-        assertThat(XrDevice.getPreferredBlendMode(session)).isEqualTo(DisplayBlendMode.ADDITIVE)
+        assertThat(XrDevice.getCurrentDevice(session).getPreferredBlendMode())
+            .isEqualTo(DisplayBlendMode.ADDITIVE)
     }
 
     private fun createSession(coroutineDispatcher: CoroutineDispatcher = testDispatcher): Session {

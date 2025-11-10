@@ -29,5 +29,13 @@ internal const val BRUSH_SIZE_SELECTED_ON_STEP_0 = "brush_size_selector_on_step_
 internal const val BRUSH_SIZE_SELECTED_ON_STEP_4 = "brush_size_selector_on_step_4"
 internal const val PALETTE_COLOR_ITEM_UNSELECTED = "palette_color_item_unselected"
 internal const val PALETTE_COLOR_ITEM_SELECTED = "palette_color_item_selected"
+internal const val PALETTE_COLOR_ITEM_SELECTED_INVERSE_COLOR_TICK =
+    "palette_color_item_selected_inverse_color_tick"
 internal const val PALETTE_EMOJI_ITEM_UNSELECTED = "palette_emoji_item_unselected"
 internal const val PALETTE_EMOJI_ITEM_SELECTED = "palette_emoji_item_selected"
+
+internal const val PALETTE_VIEW_WITH_PEN_ITEMS = "palette_view_with_pen_items"
+
+internal const val PALETTE_VIEW_WITH_HIGHLIGHT_ITEMS = "palette_view_highlight_items"
+internal const val PALETTE_VIEW_AFTER_CLICK_COLOR = "palette_view_after_click_color"
+internal const val PALETTE_VIEW_AFTER_CLICK_EMOJI = "palette_view_after_click_emoji"

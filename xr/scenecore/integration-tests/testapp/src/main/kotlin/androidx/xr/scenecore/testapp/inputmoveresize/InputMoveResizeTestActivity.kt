@@ -146,7 +146,6 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         val mainPanelScaleInZ = findViewById<CheckBox>(R.id.scaleInZ)
         mainPanelScaleInZ.isChecked = true
         var mainPanelMovableComponent = MovableComponent.createSystemMovable(session!!)
-        mainPanelMovableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
 
         fun updateMainPanelMovableComponent() {
             if (mainPanelMovableActive) {
@@ -177,12 +176,12 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
 
         val mainPanelMovableSwitch = findViewById<MaterialSwitch>(R.id.movableSwitch)
         mainPanelMovableSwitch.setOnCheckedChangeListener { _, isChecked ->
-            mainPanelMovableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
             when (isChecked) {
                 true -> {
                     updateMainPanelMovableComponent()
                     mainPanelMovableActive =
                         session!!.scene.mainPanelEntity.addComponent(mainPanelMovableComponent)
+                    mainPanelMovableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
                     mainPanelSystemMovable.visibility = View.VISIBLE
                     mainPanelScaleInZ.visibility = View.VISIBLE
                 }
@@ -302,7 +301,6 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         scaleInZCheckBox.isChecked = true
 
         var movablePanelComponent = MovableComponent.createSystemMovable(session!!)
-        movablePanelComponent.size = movablePanelEntity.size.to3d()
         fun updateMovablePanelComponent() {
             if (movablePanelActive) {
                 movablePanelEntity.removeComponent(movablePanelComponent)

@@ -76,7 +76,7 @@ public class ValueChangeAction<T>(
             updatedValue as RemoteString
             ValueStringChange(
                 remoteValue.getIdForCreationState(FallbackCreationState.state),
-                updatedValue.value,
+                updatedValue.constantValue!!,
             )
         } else {
             TODO("println unsupported type in ValueChange $remoteValue")

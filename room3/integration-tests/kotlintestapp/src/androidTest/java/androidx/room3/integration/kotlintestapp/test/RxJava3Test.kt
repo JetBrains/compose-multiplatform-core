@@ -20,8 +20,11 @@ import androidx.arch.core.executor.TaskExecutor
 import androidx.kruth.assertThat
 import androidx.room3.integration.kotlintestapp.vo.User
 import androidx.room3.rxjava3.EmptyResultSetException
+import androidx.room3.rxjava3.NOTHING
 import androidx.room3.rxjava3.createCompletable
+import androidx.room3.rxjava3.createFlowable
 import androidx.room3.rxjava3.createMaybe
+import androidx.room3.rxjava3.createObservable
 import androidx.room3.rxjava3.createSingle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
@@ -415,35 +418,6 @@ class RxJava3Test : TestDatabaseTest(UseDriver.ANDROID) {
     }
 
     @Test
-    fun createSingle_emptyResult_disposed() {
-        val queryLatch = CountDownLatch(1)
-        val bgThreadLatch = CountDownLatch(1)
-        val testObserver =
-            createSingle {
-                    bgThreadLatch.countDown()
-                    queryLatch.await()
-                    throw EmptyResultSetException("Empty result")
-                }
-                .subscribeOn(testScheduler)
-                .test()
-        val t = Thread {
-            try {
-                drainScheduler()
-            } catch (e: InterruptedException) {
-                throw RuntimeException(e)
-            }
-        }
-        t.start()
-        bgThreadLatch.await()
-        testObserver.assertNotComplete()
-        testObserver.dispose()
-        queryLatch.countDown()
-        t.join()
-        testObserver.assertNoValues()
-        testObserver.assertNotComplete()
-    }
-
-    @Test
     fun createCompletable_cancellable() {
         val testObserver = TestObserver<Void>()
         val completable =
@@ -480,6 +454,32 @@ class RxJava3Test : TestDatabaseTest(UseDriver.ANDROID) {
         testObserver.assertNotComplete()
         testObserver.dispose()
         testObserver.assertNoErrors()
+    }
+
+    @Test
+    fun createObservable_helper() {
+        // Validates the public API utility helper, the ones not used by generated code
+        val testObservable = createObservable(database, "user").test()
+        drainScheduler()
+        testObservable.assertValueCount(1)
+        testObservable.assertValueAt(0, NOTHING)
+        database.usersDao().insertUser(TestUtil.createUser(1))
+        drainScheduler()
+        testObservable.assertValueCount(2)
+        testObservable.assertValueAt(1, NOTHING)
+    }
+
+    @Test
+    fun createFlowable_helper() {
+        // Validates the public API utility helper, the ones not used by generated code
+        val testConsumer = createFlowable(database, "user").test()
+        drainScheduler()
+        testConsumer.assertValueCount(1)
+        testConsumer.assertValueAt(0, NOTHING)
+        database.usersDao().insertUser(TestUtil.createUser(1))
+        drainScheduler()
+        testConsumer.assertValueCount(2)
+        testConsumer.assertValueAt(1, NOTHING)
     }
 
     private fun createUsersArray(vararg ids: Int): Array<User> {

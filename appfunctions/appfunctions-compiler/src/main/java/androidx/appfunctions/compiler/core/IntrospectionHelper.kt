@@ -31,6 +31,11 @@ object IntrospectionHelper {
     private const val APP_FUNCTIONS_METADATA_PACKAGE_NAME = "androidx.appfunctions.metadata"
 
     // Annotation classes
+    object DeprecatedAnnotation {
+        val CLASS_NAME = ClassName("kotlin", "Deprecated")
+        const val PROPERTY_MESSAGE = "message"
+    }
+
     object AppFunctionAnnotation {
         val CLASS_NAME = ClassName(APP_FUNCTIONS_SERVICE_PACKAGE_NAME, "AppFunction")
         const val PROPERTY_IS_ENABLED = "isEnabled"

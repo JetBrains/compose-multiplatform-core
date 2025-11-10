@@ -1,19 +1,64 @@
 // Signature format: 4.0
 package androidx.xr.projected {
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ProjectedActivityCompat implements java.lang.AutoCloseable {
+    method public void close();
+    method public static suspend Object? create(android.content.Context context, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedActivityCompat>);
+    method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<androidx.xr.projected.ProjectedInputEvent> getProjectedInputEvents();
+    property public kotlinx.coroutines.flow.Flow<androidx.xr.projected.ProjectedInputEvent> projectedInputEvents;
+    field public static final androidx.xr.projected.ProjectedActivityCompat.Companion Companion;
+  }
+
+  public static final class ProjectedActivityCompat.Companion {
+    method public suspend Object? create(android.content.Context context, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedActivityCompat>);
+  }
+
   public final class ProjectedContext {
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createHostDeviceContext(android.content.Context context);
     method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static android.app.ActivityOptions createProjectedActivityOptions(android.content.Context context);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createProjectedDeviceContext(android.content.Context context);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static String? getProjectedDeviceName(android.content.Context context);
-    method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static kotlinx.coroutines.flow.Flow<java.lang.Boolean> isProjectedDeviceConnected(android.content.Context context, kotlin.coroutines.CoroutineContext coroutineContext);
+    method @RequiresApi(android.os.Build.VERSION_CODES.BAKLAVA) public static kotlinx.coroutines.flow.Flow<java.lang.Boolean> isProjectedDeviceConnected(android.content.Context context, kotlin.coroutines.CoroutineContext coroutineContext);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static boolean isProjectedDeviceContext(android.content.Context context);
     field public static final androidx.xr.projected.ProjectedContext INSTANCE;
+  }
+
+  public final class ProjectedController implements java.lang.AutoCloseable {
+    method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void addLayoutParamsFlags(int flags);
+    method public void close();
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedController>);
+    method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void removeLayoutParamsFlags(int flags);
+    field public static final androidx.xr.projected.ProjectedController.Companion Companion;
+  }
+
+  public static final class ProjectedController.Companion {
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedController>);
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ProjectedInputEvent {
+    method @InaccessibleFromKotlin public androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction getInputAction();
+    property public androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction inputAction;
+  }
+
+  public static final class ProjectedInputEvent.ProjectedInputAction {
+    field public static final androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction.Companion Companion;
+    field public static final androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction TOGGLE_APP_CAMERA;
+  }
+
+  public static final class ProjectedInputEvent.ProjectedInputAction.Companion {
+    property public androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction TOGGLE_APP_CAMERA;
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ProjectedServiceBinding {
     method public static boolean bind(android.content.Context context, android.content.ServiceConnection serviceConnection);
     field public static final androidx.xr.projected.ProjectedServiceBinding INSTANCE;
+  }
+
+}
+
+package @SuppressCompatibility androidx.xr.projected.experimental {
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalProjectedApi {
   }
 
 }

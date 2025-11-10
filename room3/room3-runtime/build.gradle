@@ -148,7 +148,7 @@ androidXMultiplatform {
                 api(project(":sqlite:sqlite-framework"))
                 api(libs.kotlinCoroutinesAndroid)
                 implementation("androidx.arch.core:core-runtime:2.2.0")
-                compileOnly("androidx.lifecycle:lifecycle-livedata-core:2.0.0")
+                compileOnly("androidx.lifecycle:lifecycle-livedata:2.9.4")
                 implementation("androidx.annotation:annotation-experimental:1.5.0")
             }
         }

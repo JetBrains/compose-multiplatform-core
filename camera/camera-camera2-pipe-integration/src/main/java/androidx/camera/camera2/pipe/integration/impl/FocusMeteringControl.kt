@@ -105,6 +105,15 @@ constructor(
         cameraProperties.metadata.getOrDefault(CameraCharacteristics.CONTROL_MAX_REGIONS_AE, 0)
     private val maxAwbRegionCount =
         cameraProperties.metadata.getOrDefault(CameraCharacteristics.CONTROL_MAX_REGIONS_AWB, 0)
+    private val supportsAutoFocusTrigger = cameraProperties.metadata.supportsAutoFocusTrigger
+    private val availableAeModes: List<AeMode?>? =
+        cameraProperties.metadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES]?.map {
+            AeMode.fromIntOrNull(it)
+        }
+    private val availableAfModes =
+        cameraProperties.metadata[CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES]?.map {
+            AfMode.fromIntOrNull(it)
+        }
 
     private var updateSignal: CompletableDeferred<FocusMeteringResult>? = null
     private var cancelSignal: CompletableDeferred<Result3A?>? = null
@@ -178,7 +187,7 @@ constructor(
                 else null
 
             val deferredResult3A =
-                if (afRectangles.isEmpty() || !cameraProperties.metadata.supportsAutoFocusTrigger) {
+                if (afRectangles.isEmpty() || !supportsAutoFocusTrigger) {
                     /*
                      * Controller3A.lock3A() returns early in such cases without updating the 3A
                      * regions which conflicts with [CameraControl.startFocusAndMetering] doc.
@@ -218,7 +227,7 @@ constructor(
                         awbRegions = awbRegions,
                         afLockBehavior =
                             if (maxAfRegionCount > 0) Lock3ABehavior.IMMEDIATE else null,
-                        afTriggerStartAeMode = cameraProperties.getSupportedAeMode(AeMode.ON),
+                        afTriggerStartAeMode = getSupportedAeMode(AeMode.ON),
                         timeLimitNs =
                             TimeUnit.NANOSECONDS.convert(finalFocusTimeout, TimeUnit.MILLISECONDS),
                     )
@@ -339,19 +348,16 @@ constructor(
     }
 
     // TODO: Move this to a lower level so it is automatically checked for all requests
-    private fun CameraProperties.getSupportedAeMode(preferredMode: AeMode): AeMode {
-        val modes =
-            metadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES]?.map {
-                AeMode.fromIntOrNull(it)
-            } ?: return AeMode.OFF
+    private fun getSupportedAeMode(preferredMode: AeMode): AeMode {
+        if (availableAeModes == null) return AeMode.OFF
 
         // if preferredMode is supported, use it
-        if (modes.contains(preferredMode)) {
+        if (availableAeModes.contains(preferredMode)) {
             return preferredMode
         }
 
         // if not found, priority is AE_ON > AE_OFF
-        return if (modes.contains(AeMode.ON)) {
+        return if (availableAeModes.contains(AeMode.ON)) {
             AeMode.ON
         } else AeMode.OFF
     }
@@ -414,7 +420,7 @@ constructor(
         val isFocusSuccessful =
             when {
                 !shouldTriggerAf -> false
-                !cameraProperties.isAfModeSupported(AfMode.AUTO) -> true
+                !isAfModeSupported(AfMode.AUTO) -> true
                 frameMetadata == null -> false
                 resultAfState == null -> true
                 else -> resultAfState == CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED
@@ -423,12 +429,8 @@ constructor(
         return FocusMeteringResult.create(isFocusSuccessful)
     }
 
-    private fun CameraProperties.isAfModeSupported(afMode: AfMode): Boolean {
-        val modes =
-            metadata[CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES]?.map {
-                AfMode.fromIntOrNull(it)
-            } ?: return false
-
+    private fun isAfModeSupported(afMode: AfMode): Boolean {
+        val modes = availableAfModes ?: return false
         return modes.contains(afMode)
     }
 

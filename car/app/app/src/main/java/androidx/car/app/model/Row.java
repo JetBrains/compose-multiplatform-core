@@ -114,6 +114,7 @@ public final class Row implements Item {
     private final @Nullable CarText mTitle;
     private final List<CarText> mTexts;
     private final @Nullable CarIcon mImage;
+    private final @Nullable CarIcon mEndImage;
     private final List<Action> mActions;
     private final int mNumericDecoration;
     private final @Nullable Toggle mToggle;
@@ -151,6 +152,17 @@ public final class Row implements Item {
      */
     public @Nullable CarIcon getImage() {
         return mImage;
+    }
+
+    /**
+     * Returns a fixed-sized image to display at the end of the row content, or {@code null} if
+     * not set.
+     *
+     * @see Builder#setEndImage(CarIcon)
+     */
+    @RequiresCarApi(8)
+    public @Nullable CarIcon getEndImage() {
+        return mEndImage;
     }
 
     /**
@@ -268,6 +280,8 @@ public final class Row implements Item {
                 + (mTexts != null ? mTexts.size() : 0)
                 + ", image: "
                 + mImage
+                + ", endImage: "
+                + mEndImage
                 + ", isBrowsable: "
                 + mIsBrowsable
                 + ", isEnabled: "
@@ -281,6 +295,7 @@ public final class Row implements Item {
                 mTitle,
                 mTexts,
                 mImage,
+                mEndImage,
                 mToggle,
                 mOnClickDelegate == null,
                 mMetadata,
@@ -304,6 +319,7 @@ public final class Row implements Item {
         return Objects.equals(mTitle, otherRow.mTitle)
                 && Objects.equals(mTexts, otherRow.mTexts)
                 && Objects.equals(mImage, otherRow.mImage)
+                && Objects.equals(mEndImage, otherRow.mEndImage)
                 && Objects.equals(mToggle, otherRow.mToggle)
                 && Objects.equals(mOnClickDelegate == null, otherRow.mOnClickDelegate == null)
                 && Objects.equals(mMetadata, otherRow.mMetadata)
@@ -317,6 +333,7 @@ public final class Row implements Item {
         mTitle = builder.mTitle;
         mTexts = CollectionUtils.unmodifiableCopy(builder.mTexts);
         mImage = builder.mImage;
+        mEndImage = builder.mEndImage;
         mActions = CollectionUtils.unmodifiableCopy(builder.mActions);
         mNumericDecoration = builder.mDecoration;
         mToggle = builder.mToggle;
@@ -333,6 +350,7 @@ public final class Row implements Item {
         mTitle = null;
         mTexts = Collections.emptyList();
         mImage = null;
+        mEndImage = null;
         mActions = Collections.emptyList();
         mNumericDecoration = NO_DECORATION;
         mToggle = null;
@@ -350,6 +368,7 @@ public final class Row implements Item {
         @Nullable CarText mTitle;
         final List<CarText> mTexts = new ArrayList<>();
         @Nullable CarIcon mImage;
+        @Nullable CarIcon mEndImage;
         final List<Action> mActions = new ArrayList<>();
         int mDecoration = Row.NO_DECORATION;
         @Nullable Toggle mToggle;
@@ -523,6 +542,31 @@ public final class Row implements Item {
             CarIconConstraints.UNCONSTRAINED.validateOrThrow(requireNonNull(image));
             mImage = image;
             mRowImageType = imageType;
+            return this;
+        }
+
+        /**
+         * Sets a fixed-sized image to show at the <strong>end</strong> of the row content, but
+         * <strong>before</strong> the <strong>secondary actions</strong> (if set via
+         * {@link #addAction(Action)}), and is distinct from the primary image set via
+         * {@link #setImage(CarIcon)}.
+         *
+         * <p>The <strong>end image will not be honored</strong> if the row has any of the following
+         * elements:
+         * <ul>
+         * <li>A {@link Toggle} is set via {@link #setToggle(Toggle)}.</li>
+         * <li>The row is set to be browsable via {@link #setBrowsable(boolean)}.</li>
+         * <li>The row is part of a selectable itemlist </li>
+         * </ul>
+         *
+         * @param endImage The {@link CarIcon} to display at the end of the row, or {@code null} to
+         * not display one.
+         * @throws NullPointerException if {@code endImage} is {@code null}
+         */
+        @RequiresCarApi(8)
+        public @NonNull Builder setEndImage(@NonNull CarIcon endImage) {
+            CarIconConstraints.UNCONSTRAINED.validateOrThrow(requireNonNull(endImage));
+            mEndImage = endImage;
             return this;
         }
 
@@ -708,7 +752,10 @@ public final class Row implements Item {
                     throw new IllegalStateException("A browsable row must not have a secondary "
                             + "action set");
                 }
-
+                if (mEndImage != null) {
+                    throw new IllegalStateException("A browsable row must not have an end image "
+                            + "set");
+                }
             }
 
             if (mToggle != null) {
@@ -725,6 +772,10 @@ public final class Row implements Item {
                 if (!mActions.isEmpty()) {
                     throw new IllegalStateException("If a row contains a toggle, it must not have "
                             + "a secondary action set");
+                }
+                if (mEndImage != null) {
+                    throw new IllegalStateException("If a row contains a toggle, it must not have "
+                            + "an end image set");
                 }
             }
 

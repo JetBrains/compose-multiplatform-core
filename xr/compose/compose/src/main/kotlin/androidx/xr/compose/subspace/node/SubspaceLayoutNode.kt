@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CoreEntityNode
+import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.compose.subspace.layout.LayoutSubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.OpaqueEntity
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
@@ -88,6 +89,9 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     internal val isPlaced: Boolean
         get() = measurableLayout.isPlaced
 
+    internal val canMeasurementAffectOtherTrees: Boolean
+        get() = coreEntity is CoreMainPanelEntity
+
     internal val nodes: SubspaceModifierNodeChain = SubspaceModifierNodeChain(this)
 
     /**
@@ -100,6 +104,12 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     internal var depth: Int = 0
 
     override var measurePolicy: SubspaceMeasurePolicy = ErrorMeasurePolicy
+        set(value) {
+            if (field != value) {
+                field = value
+                requestMeasure()
+            }
+        }
 
     override var modifier: SubspaceModifier = SubspaceModifier
         set(value) {
@@ -127,6 +137,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             field = value
             density = value[LocalDensity]
             layoutDirection = value[LocalLayoutDirection]
+            nodes.invalidateCompositionLocals()
         }
 
     internal var density: Density = DefaultDensity
@@ -359,8 +370,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
      * Returns true if the measured size has changed or the node has not been measured, in which
      * case the parent layout node should be remeasured.
      */
-    internal fun remeasure(): Boolean =
-        outerCoordinator?.remeasure() ?: measurableLayout.remeasure()
+    internal fun remeasure(): Boolean = measurableLayout.remeasure()
 
     /** Places this layout node using the most recently provided pose. */
     internal fun replace() = outerCoordinator?.replace() ?: measurableLayout.replace()
@@ -394,6 +404,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         override fun measure(constraints: VolumeConstraints): SubspacePlaceable {
             layoutState = LayoutState.Measuring
             val placeable = nodes.measureChain(constraints, ::measureJustThis)
+            lastConstraints = constraints
             layoutState = LayoutState.Idle
             return placeable
         }
@@ -403,8 +414,6 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         }
 
         private fun measureJustThis(constraints: VolumeConstraints): SubspacePlaceable {
-            lastConstraints = constraints
-
             subspaceMeasureResult =
                 with(measurePolicy) {
                     LayoutSubspaceMeasureScope(this@SubspaceLayoutNode)

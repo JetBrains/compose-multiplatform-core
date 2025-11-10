@@ -59,15 +59,16 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     private val tickDrawable: Drawable? =
         ContextCompat.getDrawable(context, R.drawable.ic_check)?.mutate()
 
-    private val paletteItemSize = resources.getDimensionPixelSize(R.dimen.color_palette_item_size)
-    private val expandedWidth =
-        resources.getDimensionPixelSize(R.dimen.color_palette_expanded_item_width)
+    private val paletteItemContentSize =
+        resources.getDimensionPixelSize(R.dimen.color_palette_content_size)
+    private val paletteItemExpandedWidth =
+        resources.getDimensionPixelSize(R.dimen.color_palette_expanded_content_width)
     private val squareCornerRadius = resources.getDimension(R.dimen.corner_radius_8dp)
     // Setting corner radius to half will result in drawing a circle
-    private val circleCornerRadius = paletteItemSize.toFloat() / 2
+    private val circleCornerRadius = paletteItemContentSize.toFloat() / 2
     // Below 2 values will be frequently updated when animation is running.
-    private var currentCornerRadius = (paletteItemSize / 2).toFloat()
-    private var currentWidth = paletteItemSize
+    private var currentCornerRadius = circleCornerRadius
+    private var currentWidth = paletteItemContentSize
 
     // Bounds in which either a color or emoji will be drawn
     private val paletteDrawingBounds = RectF()
@@ -124,12 +125,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         } else {
             // No animation? Instantly set the final state.
             if (selected) {
-                currentWidth = paletteItemSize
+                currentWidth = paletteItemContentSize
                 currentCornerRadius = squareCornerRadius
                 tickAlpha = VISIBLE_ALPHA
             } else {
-                currentWidth = paletteItemSize
-                currentCornerRadius = (paletteItemSize / 2).toFloat()
+                currentWidth = paletteItemContentSize
+                currentCornerRadius = (paletteItemContentSize / 2).toFloat()
                 tickAlpha = INVISIBLE_ALPHA
             }
             invalidate()
@@ -140,16 +141,22 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     fun reset() {
         animatorSet?.cancel()
         isSelected = false
-        currentCornerRadius = (paletteItemSize / 2).toFloat()
-        currentWidth = paletteItemSize
+        currentCornerRadius = (paletteItemContentSize / 2).toFloat()
+        currentWidth = paletteItemContentSize
         tickAlpha = INVISIBLE_ALPHA
         invalidate()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        val desiredWidth = resolveSize(paletteItemSize, widthMeasureSpec)
-        val desiredHeight = resolveSize(paletteItemSize, heightMeasureSpec)
-        setMeasuredDimension(desiredWidth, desiredHeight)
+        // Raw item size with paddings
+        val colorPaletteItemSize = resources.getDimensionPixelSize(R.dimen.color_palette_item_size)
+
+        val desiredWidth = resolveSize(colorPaletteItemSize, widthMeasureSpec)
+        val desiredHeight = resolveSize(colorPaletteItemSize, heightMeasureSpec)
+        //  largest possible square that can fit in the space allocated by the parent
+        val finalSize = min(desiredWidth, desiredHeight)
+
+        setMeasuredDimension(finalSize, finalSize)
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -161,7 +168,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         // To achieve the "overshoot" width expansion animation while keeping the View's own
         // bounds fixed, we calculate a temporary, wider drawing area. `currentWidth` is animated
         // from a normal size (e.g., 32dp) to an expanded size (e.g., 40dp) and back.
-        val halfWidthDelta = (currentWidth - width) / 2
+        val halfWidthDelta = (currentWidth - paletteItemContentSize) / 2
 
         paletteDrawingBounds.set(
             paddingLeft.toFloat() - halfWidthDelta,
@@ -242,14 +249,19 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
         // Animate width from 32dp -> 40dp -> 32dp
         val widthAnimator =
-            ValueAnimator.ofInt(paletteItemSize, expandedWidth, paletteItemSize).apply {
-                duration = OVERSHOOT_ANIMATION_DURATION
-                interpolator = OvershootInterpolator(0.5f)
-                addUpdateListener {
-                    currentWidth = it.animatedValue as Int
-                    invalidate()
+            ValueAnimator.ofInt(
+                    paletteItemContentSize,
+                    paletteItemExpandedWidth,
+                    paletteItemContentSize,
+                )
+                .apply {
+                    duration = OVERSHOOT_ANIMATION_DURATION
+                    interpolator = OvershootInterpolator(1f)
+                    addUpdateListener {
+                        currentWidth = it.animatedValue as Int
+                        invalidate()
+                    }
                 }
-            }
 
         val tickAnimator =
             ValueAnimator.ofInt(tickAlpha, VISIBLE_ALPHA).apply {
@@ -299,9 +311,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     companion object {
         private const val INVISIBLE_ALPHA = 0
         private const val VISIBLE_ALPHA = 255
-        private const val OVERSHOOT_ANIMATION_DURATION = 700L
-        private const val CORNER_RADIUS_ANIMATION_DURATION = 400L
-        private const val TICK_ALPHA_ANIMATION_DURATION = 300L
+        private const val OVERSHOOT_ANIMATION_DURATION = 500L
+        private const val CORNER_RADIUS_ANIMATION_DURATION = 300L
+        private const val TICK_ALPHA_ANIMATION_DURATION = 200L
         private const val TICK_ANIMATION_INITIAL_DELAY = 300L
     }
 }

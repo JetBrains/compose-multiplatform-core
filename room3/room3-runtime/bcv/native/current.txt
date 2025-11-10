@@ -81,7 +81,7 @@ abstract class androidx.room3.migration/Migration { // androidx.room3.migration/
     final val startVersion // androidx.room3.migration/Migration.startVersion|{}startVersion[0]
         final fun <get-startVersion>(): kotlin/Int // androidx.room3.migration/Migration.startVersion.<get-startVersion>|<get-startVersion>(){}[0]
 
-    open fun migrate(androidx.sqlite/SQLiteConnection) // androidx.room3.migration/Migration.migrate|migrate(androidx.sqlite.SQLiteConnection){}[0]
+    abstract fun migrate(androidx.sqlite/SQLiteConnection) // androidx.room3.migration/Migration.migrate|migrate(androidx.sqlite.SQLiteConnection){}[0]
 }
 
 abstract class androidx.room3/BaseRoomConnectionManager { // androidx.room3/BaseRoomConnectionManager|null[0]
@@ -393,7 +393,7 @@ final class androidx.room3.util/ViewInfo { // androidx.room3.util/ViewInfo|null[
 }
 
 final class androidx.room3/DatabaseConfiguration { // androidx.room3/DatabaseConfiguration|null[0]
-    constructor <init>(kotlin/String?, androidx.room3/RoomDatabase.MigrationContainer, kotlin.collections/List<androidx.room3/RoomDatabase.Callback>?, androidx.room3/RoomDatabase.JournalMode, kotlin/Boolean, kotlin/Boolean, kotlin.collections/Set<kotlin/Int>?, kotlin.collections/List<kotlin/Any>, kotlin.collections/List<androidx.room3.migration/AutoMigrationSpec>, kotlin/Boolean, androidx.sqlite/SQLiteDriver?, kotlin.coroutines/CoroutineContext?) // androidx.room3/DatabaseConfiguration.<init>|<init>(kotlin.String?;androidx.room3.RoomDatabase.MigrationContainer;kotlin.collections.List<androidx.room3.RoomDatabase.Callback>?;androidx.room3.RoomDatabase.JournalMode;kotlin.Boolean;kotlin.Boolean;kotlin.collections.Set<kotlin.Int>?;kotlin.collections.List<kotlin.Any>;kotlin.collections.List<androidx.room3.migration.AutoMigrationSpec>;kotlin.Boolean;androidx.sqlite.SQLiteDriver?;kotlin.coroutines.CoroutineContext?){}[0]
+    constructor <init>(kotlin/String?, androidx.room3/RoomDatabase.MigrationContainer, kotlin.collections/List<androidx.room3/RoomDatabase.Callback>?, androidx.room3/RoomDatabase.JournalMode, kotlin/Boolean, kotlin/Boolean, kotlin.collections/Set<kotlin/Int>?, kotlin.collections/List<kotlin/Any>, kotlin.collections/List<androidx.room3.migration/AutoMigrationSpec>, kotlin/Boolean, androidx.sqlite/SQLiteDriver, kotlin.coroutines/CoroutineContext?) // androidx.room3/DatabaseConfiguration.<init>|<init>(kotlin.String?;androidx.room3.RoomDatabase.MigrationContainer;kotlin.collections.List<androidx.room3.RoomDatabase.Callback>?;androidx.room3.RoomDatabase.JournalMode;kotlin.Boolean;kotlin.Boolean;kotlin.collections.Set<kotlin.Int>?;kotlin.collections.List<kotlin.Any>;kotlin.collections.List<androidx.room3.migration.AutoMigrationSpec>;kotlin.Boolean;androidx.sqlite.SQLiteDriver;kotlin.coroutines.CoroutineContext?){}[0]
 
     final val allowDestructiveMigrationForAllTables // androidx.room3/DatabaseConfiguration.allowDestructiveMigrationForAllTables|{}allowDestructiveMigrationForAllTables[0]
         final fun <get-allowDestructiveMigrationForAllTables>(): kotlin/Boolean // androidx.room3/DatabaseConfiguration.allowDestructiveMigrationForAllTables.<get-allowDestructiveMigrationForAllTables>|<get-allowDestructiveMigrationForAllTables>(){}[0]
@@ -414,7 +414,7 @@ final class androidx.room3/DatabaseConfiguration { // androidx.room3/DatabaseCon
     final val requireMigration // androidx.room3/DatabaseConfiguration.requireMigration|{}requireMigration[0]
         final fun <get-requireMigration>(): kotlin/Boolean // androidx.room3/DatabaseConfiguration.requireMigration.<get-requireMigration>|<get-requireMigration>(){}[0]
     final val sqliteDriver // androidx.room3/DatabaseConfiguration.sqliteDriver|{}sqliteDriver[0]
-        final fun <get-sqliteDriver>(): androidx.sqlite/SQLiteDriver? // androidx.room3/DatabaseConfiguration.sqliteDriver.<get-sqliteDriver>|<get-sqliteDriver>(){}[0]
+        final fun <get-sqliteDriver>(): androidx.sqlite/SQLiteDriver // androidx.room3/DatabaseConfiguration.sqliteDriver.<get-sqliteDriver>|<get-sqliteDriver>(){}[0]
     final val typeConverters // androidx.room3/DatabaseConfiguration.typeConverters|{}typeConverters[0]
         final fun <get-typeConverters>(): kotlin.collections/List<kotlin/Any> // androidx.room3/DatabaseConfiguration.typeConverters.<get-typeConverters>|<get-typeConverters>(){}[0]
 }

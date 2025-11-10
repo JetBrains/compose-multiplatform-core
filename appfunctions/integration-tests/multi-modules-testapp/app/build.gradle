@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import com.google.devtools.ksp.gradle.KspAATask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
@@ -83,4 +86,12 @@ kotlin.target.compilations.configureEach { compilation ->
             }
         }
     }
+}
+
+// TODO(b/456071824): Remove this workaround
+tasks.withType(KotlinCompile).configureEach {
+    incremental = false
+}
+tasks.withType(KspAATask).configureEach {
+    it.kspConfig.incremental.set(false)
 }

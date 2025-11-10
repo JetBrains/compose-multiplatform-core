@@ -19,6 +19,7 @@ package androidx.xr.scenecore.testapp
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.ViewGroup
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +30,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.FloatSize2d
+import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.accessibilitytest.AccessibilityTestActivity
 import androidx.xr.scenecore.testapp.activitypanel.ActivityPanelActivity
@@ -74,6 +76,7 @@ class MainActivity : AppCompatActivity() {
 
         session = createSession(this)
         if (session == null) this.finish()
+        setUpMainPanelMovable()
 
         // Top bar
         createTopToolBarView()
@@ -83,6 +86,15 @@ class MainActivity : AppCompatActivity() {
 
         // Test cases & bottom bar
         createTestCasesRecyclerView()
+    }
+
+    private fun setUpMainPanelMovable() {
+        val movableComponent = MovableComponent.createSystemMovable(session!!)
+        session!!.scene.mainPanelEntity.addComponent(movableComponent)
+        val contentViewRoot = findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
+        contentViewRoot.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            movableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
+        }
     }
 
     private fun createTopToolBarView() {

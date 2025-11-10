@@ -44,7 +44,6 @@ import androidx.camera.camera2.impl.UseCaseCameraRequestControlImpl
 import androidx.camera.camera2.impl.UseCaseCameraState
 import androidx.camera.camera2.impl.UseCaseSurfaceManager
 import androidx.camera.camera2.impl.UseCaseThreads
-import androidx.camera.camera2.impl.toMap
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraGraph.OperatingMode
 import androidx.camera.camera2.pipe.CameraId
@@ -172,26 +171,8 @@ class TestUseCaseCamera(
                 threads = threads,
             )
             .apply {
-                SessionConfigAdapter(useCases).getValidSessionConfigOrNull()?.let { sessionConfig ->
-                    setConfigAsync(
-                        type = UseCaseCameraRequestControl.Type.SESSION_CONFIG,
-                        config = sessionConfig.implementationOptions,
-                        tags = sessionConfig.repeatingCaptureConfig.tagBundle.toMap(),
-                        listeners =
-                            setOf(
-                                CameraCallbackMap.createFor(
-                                    sessionConfig.repeatingCameraCaptureCallbacks,
-                                    threads.backgroundExecutor,
-                                )
-                            ),
-                        template =
-                            RequestTemplate(sessionConfig.repeatingCaptureConfig.templateType),
-                        streams =
-                            useCaseCameraGraphConfig.getStreamIdsFromSurfaces(
-                                sessionConfig.repeatingCaptureConfig.surfaces
-                            ),
-                        sessionConfig = sessionConfig,
-                    )
+                if (SessionConfigAdapter(useCases).isSessionConfigValid()) {
+                    updateRepeatingRequestAsync(isPrimary = true, runningUseCases = useCases)
                 }
             }
 
@@ -223,6 +204,13 @@ class TestUseCaseCamera(
         flashMode: Int,
         flashType: Int,
     ): CameraCapturePipeline = FakeCameraCapturePipeline()
+
+    override fun updateRepeatingRequestAsync(
+        isPrimary: Boolean,
+        runningUseCases: Collection<UseCase>,
+    ): Job {
+        throw UnsupportedOperationException("Not yet implemented.")
+    }
 
     override fun close(): Job {
         return threads.scope.launch {

@@ -55,7 +55,7 @@ import com.google.devtools.ksp.symbol.KSValueParameter
 
 /**
  * A helper class that provides methods to construct
- * [androidx.appfunctions.compiler.core.metadata.AppFunctionMetadata] related class.
+ * [androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata] related class.
  */
 class AppFunctionMetadataCreatorHelper(
     private val sharedDataTypeDescriptionMap: Map<String, String> = mapOf()
@@ -272,7 +272,7 @@ class AppFunctionMetadataCreatorHelper(
                     annotatedAppFunctionSerializable,
                     annotatedAppFunctionSerializable
                         .getProperties(sharedDataTypeDescriptionMap)
-                        .associateBy { checkNotNull(it.name).toString() }
+                        .associateBy { checkNotNull(it.name) }
                         .toMutableMap(),
                     sharedDataTypeMap,
                     seenDataTypeQualifiers,
@@ -296,7 +296,7 @@ class AppFunctionMetadataCreatorHelper(
                     annotatedAppFunctionSerializable,
                     annotatedAppFunctionSerializable
                         .getProperties(sharedDataTypeDescriptionMap)
-                        .associateBy { checkNotNull(it.name).toString() }
+                        .associateBy { checkNotNull(it.name) }
                         .toMutableMap(),
                     sharedDataTypeMap,
                     seenDataTypeQualifiers,
@@ -325,7 +325,7 @@ class AppFunctionMetadataCreatorHelper(
                     targetSerializableProxy,
                     targetSerializableProxy
                         .getProperties(sharedDataTypeDescriptionMap)
-                        .associateBy { checkNotNull(it.name).toString() }
+                        .associateBy { checkNotNull(it.name) }
                         .toMutableMap(),
                     sharedDataTypeMap,
                     seenDataTypeQualifiers,
@@ -351,7 +351,7 @@ class AppFunctionMetadataCreatorHelper(
                     targetSerializableProxy,
                     targetSerializableProxy
                         .getProperties(sharedDataTypeDescriptionMap)
-                        .associateBy { checkNotNull(it.name).toString() }
+                        .associateBy { checkNotNull(it.name) }
                         .toMutableMap(),
                     sharedDataTypeMap,
                     seenDataTypeQualifiers,
@@ -413,7 +413,7 @@ class AppFunctionMetadataCreatorHelper(
                         putAll(
                             oneOfSerializable
                                 .getProperties(sharedDataTypeDescriptionMap)
-                                .associateBy { checkNotNull(it.name).toString() }
+                                .associateBy { checkNotNull(it.name) }
                                 .toMutableMap()
                         )
                     },

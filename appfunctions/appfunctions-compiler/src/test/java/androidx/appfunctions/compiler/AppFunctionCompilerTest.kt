@@ -1066,4 +1066,29 @@ class AppFunctionCompilerTest {
             goldenFileName = "oneofserializable/oneOfFunctions_app_function_dynamic_schema.xml",
         )
     }
+
+    @Test
+    fun testDeprecatedFunction_generatedClass_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("DeprecatedFunction.KT"),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}DeprecatedFunction_AppFunctionInvoker.kt",
+            goldenFileName = "${'$'}DeprecatedFunction_AppFunctionInvoker.KT",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}DeprecatedFunction_AppFunctionInventory.kt",
+            goldenFileName = "${'$'}DeprecatedFunction_AppFunctionInventory.KT",
+        )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "deprecated_app_function_dynamic_schema.xml",
+        )
+    }
 }

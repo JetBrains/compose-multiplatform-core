@@ -29,8 +29,9 @@ import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.room3.migration.Migration
 import androidx.room3.useReaderConnection
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.sqlite.execSQL
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -71,8 +72,10 @@ class AlteredTableColumnOrderTest {
                 .setDriver(AndroidSQLiteDriver())
                 .addMigrations(
                     object : Migration(1, 2) {
-                        override fun migrate(db: SupportSQLiteDatabase) {
-                            db.execSQL("ALTER TABLE Foo ADD COLUMN X TEXT NOT NULL DEFAULT 'X';")
+                        override fun migrate(connection: SQLiteConnection) {
+                            connection.execSQL(
+                                "ALTER TABLE Foo ADD COLUMN X TEXT NOT NULL DEFAULT 'X';"
+                            )
                         }
                     }
                 )

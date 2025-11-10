@@ -22,13 +22,14 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
 import androidx.room3.InvalidationTracker
 import androidx.room3.Room
+import androidx.room3.RoomRawQuery
 import androidx.room3.integration.kotlintestapp.testutil.ItemStore
 import androidx.room3.integration.kotlintestapp.testutil.MainThreadCheckSQLiteDriver
 import androidx.room3.integration.kotlintestapp.testutil.PagingDb
 import androidx.room3.integration.kotlintestapp.testutil.PagingEntity
 import androidx.room3.integration.kotlintestapp.testutil.PagingEntityDao
 import androidx.room3.paging.LimitOffsetPagingSource
-import androidx.sqlite.db.SimpleSQLiteQuery
+import androidx.room3.useWriterConnection
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
@@ -448,12 +449,11 @@ class MultiTypedPagingSourceTest(
     }
 
     private fun simple_emptyStart_thenAddAnItem(preOpenDb: Boolean) {
-        if (preOpenDb) {
-            // trigger db open
-            db.openHelper.writableDatabase
-        }
-
         runTest {
+            if (preOpenDb) {
+                // trigger db open
+                db.useWriterConnection {}
+            }
             itemStore.awaitGeneration(1)
             itemStore.awaitInitialLoad()
             assertThat(itemStore.peekItems()).isEmpty()
@@ -497,7 +497,7 @@ class MultiTypedPagingSourceTest(
 @SmallTest
 class MultiTypedPagingSourceTestWithRawQuery(
     private val pagingSourceFactoryRaw:
-        (PagingEntityDao, SimpleSQLiteQuery) -> PagingSource<Int, PagingEntity>
+        (PagingEntityDao, RoomRawQuery) -> PagingSource<Int, PagingEntity>
 ) {
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var db: PagingDb
@@ -531,7 +531,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         // open db
         val items = createItems(startId = 15, count = 50)
         db.getDao().insert(items)
-        val query = SimpleSQLiteQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
+        val query = RoomRawQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
         runTest(query) {
             val initialLoad = itemStore.awaitInitialLoad()
             assertThat(initialLoad)
@@ -558,7 +558,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         // open db
         val items = createItems(startId = 0, count = 100)
         db.getDao().insert(items)
-        val query = SimpleSQLiteQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
+        val query = RoomRawQuery("SELECT * FROM PagingEntity ORDER BY id ASC")
         val pager =
             Pager(config = CONFIG, initialKey = 98) { pagingSourceFactoryRaw(db.getDao(), query) }
         runTest(query, pager) {
@@ -592,8 +592,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         val items = createItems(startId = 15, count = 70)
         db.getDao().insert(items)
 
-        val query =
-            SimpleSQLiteQuery("SELECT * FROM PagingEntity ORDER BY id ASC LIMIT 30 OFFSET 5")
+        val query = RoomRawQuery("SELECT * FROM PagingEntity ORDER BY id ASC LIMIT 30 OFFSET 5")
         runTest(query) {
             val initialLoad = itemStore.awaitInitialLoad()
             assertThat(initialLoad)
@@ -628,7 +627,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
         val items = createItems(startId = 0, count = 80)
         db.getDao().insert(items)
         val query =
-            SimpleSQLiteQuery(
+            RoomRawQuery(
                 "SELECT * " +
                     "FROM PagingEntity " +
                     "WHERE id > 49 AND id < 76 " +
@@ -664,7 +663,7 @@ class MultiTypedPagingSourceTestWithRawQuery(
     }
 
     private fun runTest(
-        query: SimpleSQLiteQuery,
+        query: RoomRawQuery,
         pager: Pager<Int, PagingEntity> =
             Pager(
                 config = CONFIG,

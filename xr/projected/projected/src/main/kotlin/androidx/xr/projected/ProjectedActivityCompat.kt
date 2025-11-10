@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
  *
  * Use [create] to create an instance of this class. Use [close] to clear the instance.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class ProjectedActivityCompat
 private constructor(
     private val connection: ProjectedServiceConnection,

@@ -22,6 +22,7 @@ import androidx.kruth.assertThat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.testing.TestLifecycleOwner
+import androidx.room3.RoomRawQuery
 import androidx.room3.integration.kotlintestapp.dao.MusicDao
 import androidx.room3.integration.kotlintestapp.vo.Album
 import androidx.room3.integration.kotlintestapp.vo.AlbumNameAndBandName
@@ -31,7 +32,6 @@ import androidx.room3.integration.kotlintestapp.vo.Image
 import androidx.room3.integration.kotlintestapp.vo.ImageFormat
 import androidx.room3.integration.kotlintestapp.vo.ReleasedAlbum
 import androidx.room3.integration.kotlintestapp.vo.Song
-import androidx.sqlite.db.SimpleSQLiteQuery
 import androidx.test.filters.MediumTest
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableListMultimap
@@ -114,12 +114,6 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
             ImageFormat.MPEG,
         )
 
-    private open inner class MyTestObserver<T> : TestObserver<T>() {
-        override fun drain() {
-            this@MultimapQueryTest.drain()
-        }
-    }
-
     @Before
     fun createDb() {
         musicDao = database.musicDao()
@@ -178,9 +172,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         val artistToSongsMap: Map<Artist, Song> =
             musicDao.getAllArtistAndTheirSongsRawQuery(
-                SimpleSQLiteQuery(
-                    "SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist"
-                )
+                RoomRawQuery("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
             )
         assertThat(artistToSongsMap[acdc]).isEqualTo(acdcSong1)
     }
@@ -191,9 +183,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         val artistToSongsMap: Map<Artist, List<Song>> =
             musicDao.getAllArtistAndTheirSongsRawQueryList(
-                SimpleSQLiteQuery(
-                    "SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist"
-                )
+                RoomRawQuery("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
             )
         assertContentsOfResultMapWithList(artistToSongsMap)
     }
@@ -204,9 +194,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         val artistToSongsMap: Map<Artist, Set<Song>> =
             musicDao.getAllArtistAndTheirSongsRawQuerySet(
-                SimpleSQLiteQuery(
-                    "SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist"
-                )
+                RoomRawQuery("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
             )
         assertContentsOfResultMapWithSet(artistToSongsMap)
     }
@@ -220,7 +208,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val artistToSongsMapLiveData: LiveData<Map<Artist, Song>> =
             musicDao.getAllArtistAndTheirSongsAsLiveData()
         val testOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
-        val observer: TestObserver<Map<Artist, Song>> = MyTestObserver()
+        val observer = LiveDataTestObserver<Map<Artist, Song>>()
         TestUtil.observeOnMainThread(artistToSongsMapLiveData, testOwner, observer)
         assertThat(observer.hasValue()).isFalse()
         observer.reset()
@@ -237,7 +225,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val artistToSongsMapLiveData: LiveData<Map<Artist, List<Song>>> =
             musicDao.getAllArtistAndTheirSongsAsLiveDataList()
         val testOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
-        val observer: TestObserver<Map<Artist, List<Song>>> = MyTestObserver()
+        val observer = LiveDataTestObserver<Map<Artist, List<Song>>>()
         TestUtil.observeOnMainThread(artistToSongsMapLiveData, testOwner, observer)
         assertThat(observer.hasValue()).isFalse()
         observer.reset()
@@ -254,7 +242,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val artistToSongsMapLiveData: LiveData<Map<Artist, Set<Song>>> =
             musicDao.allArtistAndTheirSongsAsLiveDataSet()
         val testOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
-        val observer: TestObserver<Map<Artist, Set<Song>>> = MyTestObserver()
+        val observer = LiveDataTestObserver<Map<Artist, Set<Song>>>()
         TestUtil.observeOnMainThread(artistToSongsMapLiveData, testOwner, observer)
         assertThat(observer.hasValue()).isFalse()
         observer.reset()
@@ -419,7 +407,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         val artistToSongsMap: ImmutableListMultimap<Artist, Song> =
             musicDao.getAllArtistAndTheirSongsRawQueryGuavaImmutableListMultimap(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song" + ".mArtist"
                 )
             )
@@ -432,7 +420,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         val artistToSongsMap: ImmutableSetMultimap<Artist, Song> =
             musicDao.getAllArtistAndTheirSongsRawQueryGuavaImmutableSetMultimap(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song" + ".mArtist"
                 )
             )
@@ -447,7 +435,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val artistToSongsMapLiveData: LiveData<ImmutableListMultimap<Artist, Song>> =
             musicDao.allArtistAndTheirSongsAsLiveDataGuavaImmutableListMultimap()
         val testOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
-        val observer: TestObserver<ImmutableListMultimap<Artist, Song>> = MyTestObserver()
+        val observer = LiveDataTestObserver<ImmutableListMultimap<Artist, Song>>()
         TestUtil.observeOnMainThread(artistToSongsMapLiveData, testOwner, observer)
         assertThat(observer.hasValue()).isFalse()
         observer.reset()
@@ -464,7 +452,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val artistToSongsMapLiveData: LiveData<ImmutableSetMultimap<Artist, Song>> =
             musicDao.allArtistAndTheirSongsAsLiveDataGuavaImmutableSetMultimap()
         val testOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
-        val observer: TestObserver<ImmutableSetMultimap<Artist, Song>> = MyTestObserver()
+        val observer = LiveDataTestObserver<ImmutableSetMultimap<Artist, Song>>()
         TestUtil.observeOnMainThread(artistToSongsMapLiveData, testOwner, observer)
         assertThat(observer.hasValue()).isFalse()
         observer.reset()
@@ -549,7 +537,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         val artistToSongsMap: ImmutableMap<Artist, List<Song>> =
             musicDao.getAllArtistAndTheirSongsRawQueryImmutableMap(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song" + ".mArtist"
                 )
             )
@@ -564,7 +552,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         val artistToSongsMapLiveData: LiveData<ImmutableMap<Artist, Set<Song>>> =
             musicDao.allArtistAndTheirSongsAsLiveDataImmutableMap()
         val testOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
-        val observer: TestObserver<ImmutableMap<Artist, Set<Song>>> = MyTestObserver()
+        val observer = LiveDataTestObserver<ImmutableMap<Artist, Set<Song>>>()
         TestUtil.observeOnMainThread(artistToSongsMapLiveData, testOwner, observer)
         assertThat(observer.hasValue()).isFalse()
         observer.reset()
@@ -610,9 +598,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         val artistNameToSongsMap: Map<String, List<Song>> =
             musicDao.getArtistNameToSongsRawQuery(
-                SimpleSQLiteQuery(
-                    "SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist"
-                )
+                RoomRawQuery("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
             )
         assertThat(artistNameToSongsMap.containsKey("Pink Floyd")).isTrue()
         assertThat(artistNameToSongsMap["Red Hot Chili Peppers"])
@@ -625,7 +611,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addAlbums(stadiumArcadium, californication, theDarkSideOfTheMoon, highwayToHell)
         val releaseYearToAlbumsMap: Map<Int, List<Song>> =
             musicDao.getReleaseYearToAlbumsRawQuery(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Album JOIN Song ON Song.mReleasedYear = Album" +
                         ".mAlbumReleaseYear"
                 )
@@ -642,7 +628,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addAlbums(stadiumArcadium, californication, theDarkSideOfTheMoon, highwayToHell)
         val releaseYearToAlbumNameMap: Map<Int, List<String>> =
             musicDao.getReleaseYearToSongNamesRawQuery(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Album JOIN Song ON Song.mReleasedYear = Album" +
                         ".mAlbumReleaseYear"
                 )
@@ -667,7 +653,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         val artistNameToSongsMap: Map<Artist, Int> =
             musicDao.getArtistAndSongCountMapRawQuery(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT *, COUNT(mSongId) as songCount FROM Artist JOIN Song ON Artist" +
                         ".mArtistName = Song.mArtist GROUP BY mArtistName"
                 )
@@ -693,7 +679,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addImages(pinkFloydAlbumCover, rhcpAlbumCover)
         val artistNameToImagesMap: ImmutableMap<Artist, ByteBuffer> =
             musicDao.getAllArtistsWithAlbumCoversRawQuery(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image" +
                         ".mArtistInImage"
                 )
@@ -718,7 +704,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addImages(pinkFloydAlbumCover, rhcpAlbumCover)
         val imageToArtistsMap: ImmutableMap<Long, Artist> =
             musicDao.getAllAlbumCoverYearToArtistsWithRawQuery(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image" +
                         ".mArtistInImage"
                 )
@@ -745,7 +731,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addImages(pinkFloydAlbumCover, rhcpAlbumCover)
         val imageToArtistsMap: ImmutableMap<ByteBuffer, Boolean> =
             musicDao.getAlbumCoversWithBandActivityRawQuery(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image" +
                         ".mArtistInImage"
                 )
@@ -771,7 +757,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addImages(pinkFloydAlbumCover, rhcpAlbumCover)
         val imageToArtistsMap: ImmutableMap<Date, Boolean> =
             musicDao.getAlbumDateWithBandActivityRawQuery(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image" +
                         ".mArtistInImage"
                 )
@@ -796,7 +782,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addImages(pinkFloydAlbumCover, rhcpAlbumCover)
         val imageToArtistsMap: ImmutableMap<ImageFormat, Boolean> =
             musicDao.getImageFormatWithBandActivityRawQuery(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image" +
                         ".mArtistInImage"
                 )
@@ -811,7 +797,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         try {
             musicDao.getMapWithInvalidColumnRawQuery(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT *, COUNT(mSongId) as songCount FROM Artist JOIN Song ON Artist" +
                         ".mArtistName = Song.mArtist GROUP BY mArtistName"
                 )
@@ -907,7 +893,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addImages(pinkFloydAlbumCover, rhcpAlbumCover)
         val imageToArtistsMap: ArrayMap<Long, Artist> =
             musicDao.getAllAlbumCoverYearToArtistsWithRawQueryArrayMap(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     "SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image" +
                         ".mArtistInImage"
                 )
@@ -1161,7 +1147,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
 
         val doubleNestedMap =
             musicDao.getImageYearToArtistToAlbumsToSongsMultiMapColumn(
-                SimpleSQLiteQuery(
+                RoomRawQuery(
                     """
                 SELECT * FROM Image
                 LEFT JOIN Artist ON Image.mArtistInImage = Artist.mArtistName

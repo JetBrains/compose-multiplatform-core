@@ -77,13 +77,12 @@ class SyncTriggersConcurrencyTest(val useDriver: UseDriver) {
         dispatcher = newFixedThreadPoolContext(Int.MAX_VALUE, "invalidation_tracker_test_thread_")
         database =
             Room.databaseBuilder<SampleDatabase>(applicationContext, DB_NAME)
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .setQueryCoroutineContext(dispatcher)
                 .build()
         terminationSignal = AtomicBoolean(false)

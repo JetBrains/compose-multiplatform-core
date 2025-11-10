@@ -23,10 +23,7 @@ import androidx.camera.camera2.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.config.UseCaseGraphConfig
 import androidx.camera.camera2.interop.setCamera2CaptureRequestConfigurator
-import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameNumber
-import androidx.camera.camera2.pipe.Request
-import androidx.camera.camera2.pipe.RequestMetadata
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.testing.FakeFrameInfo
@@ -41,6 +38,7 @@ import androidx.camera.core.impl.CameraCaptureResult
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.SessionConfig
 import androidx.camera.core.impl.TagBundle
+import androidx.camera.testing.impl.fakes.FakeUseCase
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -121,10 +119,7 @@ class UseCaseCameraRequestControlTest {
             )
             .await()
         requestControl
-            .setConfigAsync(
-                type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
-                config = camera2CameraControlConfig,
-            )
+            .updateCamera2ConfigAsync(config = camera2CameraControlConfig, tags = emptyMap())
             .await()
 
         // Assert
@@ -178,9 +173,9 @@ class UseCaseCameraRequestControlTest {
                 .build()
 
         // Act
-        requestControl.setConfigAsync(
-            type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
+        requestControl.updateCamera2ConfigAsync(
             config = camera2CameraControlConfig,
+            tags = emptyMap(),
         )
         requestControl.setParametersAsync(
             values = mapOf(CaptureRequest.CONTROL_AE_MODE to CaptureRequest.CONTROL_AE_MODE_OFF)
@@ -212,8 +207,7 @@ class UseCaseCameraRequestControlTest {
             }
 
         // Act
-        requestControl.setConfigAsync(
-            type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
+        requestControl.updateCamera2ConfigAsync(
             config =
                 Camera2ImplConfig.Builder()
                     .setCaptureRequestOption(
@@ -236,7 +230,6 @@ class UseCaseCameraRequestControlTest {
     @Test
     fun testMergeListener(): Unit = runBlocking {
         // Arrange
-        val testRequestListener = TestRequestListener()
         val testCaptureCallback =
             object : CameraCaptureCallback() {
                 val latch = CountDownLatch(1)
@@ -256,16 +249,14 @@ class UseCaseCameraRequestControlTest {
             }
 
         // Act
-        requestControl.setConfigAsync(
-            type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
+        requestControl.updateCamera2ConfigAsync(
             config =
                 Camera2ImplConfig.Builder()
                     .setCaptureRequestOption(
                         CaptureRequest.CONTROL_AE_MODE,
                         CaptureRequest.CONTROL_AE_MODE_ON_ALWAYS_FLASH,
                     )
-                    .build(),
-            listeners = setOf(testRequestListener),
+                    .build()
         )
         requestControl.setSessionConfigAsync(sessionConfigBuilder.build()).await()
 
@@ -275,7 +266,6 @@ class UseCaseCameraRequestControlTest {
         }
 
         // Assert. All the listeners should receive the onComplete signal.
-        assertThat(testRequestListener.latch.await(1, TimeUnit.SECONDS)).isTrue()
         assertThat(testCaptureCallback.latch.await(1, TimeUnit.SECONDS)).isTrue()
     }
 
@@ -330,10 +320,7 @@ class UseCaseCameraRequestControlTest {
             )
             .await()
         requestControl
-            .setConfigAsync(
-                type = UseCaseCameraRequestControl.Type.CAMERA2_CAMERA_CONTROL,
-                config = camera2CameraControlConfig,
-            )
+            .updateCamera2ConfigAsync(config = camera2CameraControlConfig, tags = emptyMap())
             .await()
 
         // Assert
@@ -352,6 +339,7 @@ class UseCaseCameraRequestControlTest {
             SessionConfig.Builder().also { sessionConfigBuilder ->
                 sessionConfigBuilder.setExpectedFrameRateRange(expectedFrameRateRange)
                 sessionConfigBuilder.addSurface(surface)
+                sessionConfigBuilder.setTemplateType(CameraDevice.TEMPLATE_PREVIEW)
             }
 
         // Act
@@ -428,6 +416,8 @@ class UseCaseCameraRequestControlTest {
 
         val sessionConfigBuilder =
             SessionConfig.Builder().also { sessionConfigBuilder ->
+                sessionConfigBuilder.setTemplateType(CameraDevice.TEMPLATE_PREVIEW)
+                sessionConfigBuilder.addSurface(surface)
                 sessionConfigBuilder.setExpectedFrameRateRange(fpsRange)
             }
 
@@ -440,35 +430,9 @@ class UseCaseCameraRequestControlTest {
 
     private fun UseCaseCameraRequestControl.setSessionConfigAsync(
         sessionConfig: SessionConfig
-    ): Deferred<Unit> =
-        setConfigAsync(
-            type = UseCaseCameraRequestControl.Type.SESSION_CONFIG,
-            config = sessionConfig.implementationOptions,
-            tags = sessionConfig.repeatingCaptureConfig.tagBundle.toMap(),
-            listeners =
-                setOf(
-                    CameraCallbackMap.createFor(
-                        sessionConfig.repeatingCameraCaptureCallbacks,
-                        useCaseThreads.backgroundExecutor,
-                    )
-                ),
-            template = RequestTemplate(sessionConfig.repeatingCaptureConfig.templateType),
-            streams =
-                fakeUseCaseGraphConfig.getStreamIdsFromSurfaces(
-                    sessionConfig.repeatingCaptureConfig.surfaces
-                ),
-            sessionConfig = sessionConfig,
-        )
-}
-
-private class TestRequestListener : Request.Listener {
-    val latch = CountDownLatch(1)
-
-    override fun onComplete(
-        requestMetadata: RequestMetadata,
-        frameNumber: FrameNumber,
-        result: FrameInfo,
-    ) {
-        latch.countDown()
+    ): Deferred<Unit> {
+        val fakeUseCase = FakeUseCase()
+        fakeUseCase.updateSessionConfigForTesting(sessionConfig)
+        return updateRepeatingRequestAsync(isPrimary = true, runningUseCases = listOf(fakeUseCase))
     }
 }

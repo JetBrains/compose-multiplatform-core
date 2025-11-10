@@ -6,9 +6,28 @@ package androidx.xr.projected {
     method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static android.app.ActivityOptions createProjectedActivityOptions(android.content.Context context);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createProjectedDeviceContext(android.content.Context context);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static String? getProjectedDeviceName(android.content.Context context);
-    method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static kotlinx.coroutines.flow.Flow<java.lang.Boolean> isProjectedDeviceConnected(android.content.Context context, kotlin.coroutines.CoroutineContext coroutineContext);
+    method @RequiresApi(android.os.Build.VERSION_CODES.BAKLAVA) public static kotlinx.coroutines.flow.Flow<java.lang.Boolean> isProjectedDeviceConnected(android.content.Context context, kotlin.coroutines.CoroutineContext coroutineContext);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static boolean isProjectedDeviceContext(android.content.Context context);
     field public static final androidx.xr.projected.ProjectedContext INSTANCE;
+  }
+
+  public final class ProjectedController implements java.lang.AutoCloseable {
+    method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void addLayoutParamsFlags(int flags);
+    method public void close();
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedController>);
+    method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void removeLayoutParamsFlags(int flags);
+    field public static final androidx.xr.projected.ProjectedController.Companion Companion;
+  }
+
+  public static final class ProjectedController.Companion {
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedController>);
+  }
+
+}
+
+package @SuppressCompatibility androidx.xr.projected.experimental {
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalProjectedApi {
   }
 
 }

@@ -16,29 +16,26 @@
 
 package androidx.xr.runtime
 
-import androidx.annotation.RestrictTo
-
-/** Capability APIs related to the current XR device. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class XrDevice {
+/** Provides hardware capabilities of the device. */
+public class XrDevice private constructor(private val session: Session) {
 
     /** A device capability that determines how virtual content is added to the real world. */
     public class DisplayBlendMode private constructor(private val value: Int) {
 
         public companion object {
             /** Blending is not supported. */
-            public val NO_DISPLAY: DisplayBlendMode = DisplayBlendMode(0)
+            @JvmField public val NO_DISPLAY: DisplayBlendMode = DisplayBlendMode(0)
             /**
              * Virtual content is added to the real world by adding the pixel values for each of
              * Red, Green, and Blue components. Alpha is ignored. Black pixels will appear
              * transparent.
              */
-            public val ADDITIVE: DisplayBlendMode = DisplayBlendMode(1)
+            @JvmField public val ADDITIVE: DisplayBlendMode = DisplayBlendMode(1)
             /**
              * Virtual content is added to the real world by alpha blending the pixel values based
              * on the Alpha component.
              */
-            public val ALPHA_BLEND: DisplayBlendMode = DisplayBlendMode(2)
+            @JvmField public val ALPHA_BLEND: DisplayBlendMode = DisplayBlendMode(2)
         }
 
         public override fun toString(): String =
@@ -51,22 +48,28 @@ public class XrDevice {
     }
 
     public companion object {
+
         /**
-         * Returns the preferred blend mode for this session.
+         * Get the current [XrDevice] for the provided [Session].
          *
-         * @param session the [Session] to query the blend mode for.
-         * @return The [DisplayBlendMode] that is preferred by [session] for rendering.
-         *   [DisplayBlendMode.NO_DISPLAY] will be returned if there are no supported blend modes
-         *   available.
-         * @throws IllegalStateException if the [session] has been destroyed.
+         * @param session the [Session] connected to the device.
          */
-        @JvmStatic
-        public fun getPreferredBlendMode(session: Session): DisplayBlendMode {
-            return if (session.runtimes.isEmpty()) {
-                DisplayBlendMode.NO_DISPLAY
-            } else {
-                session.runtimes.firstNotNullOf { it.getPreferredDisplayBlendMode() }
-            }
+        @JvmStatic public fun getCurrentDevice(session: Session): XrDevice = XrDevice(session)
+    }
+
+    /**
+     * Returns the preferred blend mode for this session.
+     *
+     * @return The [DisplayBlendMode] that is preferred by the [Session] for rendering.
+     *   [DisplayBlendMode.NO_DISPLAY] will be returned if there are no supported blend modes
+     *   available.
+     * @throws IllegalStateException if the [Session] has been destroyed.
+     */
+    public fun getPreferredBlendMode(): DisplayBlendMode {
+        return if (session.runtimes.isEmpty()) {
+            DisplayBlendMode.NO_DISPLAY
+        } else {
+            session.runtimes.firstNotNullOf { it.getPreferredDisplayBlendMode() }
         }
     }
 }

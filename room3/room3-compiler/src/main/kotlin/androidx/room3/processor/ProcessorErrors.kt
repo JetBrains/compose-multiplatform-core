@@ -370,7 +370,7 @@ object ProcessorErrors {
                     if (dataClassTypeNames.size > 1) {
                         "any of [${dataClassTypeNames.joinToString(", ")}]"
                     } else {
-                        dataClassTypeNames.single().toString()
+                        dataClassTypeNames.single()
                     }
                 """
                 The query returns some columns [${unusedColumns.joinToString(", ")}] which are not

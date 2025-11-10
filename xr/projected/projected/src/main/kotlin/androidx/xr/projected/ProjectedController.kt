@@ -20,6 +20,8 @@ import android.app.Activity
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
+import androidx.xr.projected.ProjectedController.Companion.create
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IProjectedService
 
 /**
@@ -27,11 +29,11 @@ import androidx.xr.projected.platform.IProjectedService
  *
  * Use [create] to create an instance of this class. Use [close] to clear the instance.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ProjectedController
-private constructor(private val connection: ProjectedServiceConnection) : AutoCloseable {
-
-    private lateinit var projectedService: IProjectedService
+private constructor(
+    private val connection: ProjectedServiceConnection,
+    private val projectedService: IProjectedService,
+) : AutoCloseable {
 
     /**
      * Convenience function to set the flag bits as as per the
@@ -43,12 +45,13 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
      *
      * If an unsupported flag is passed, this method does nothing.
      */
+    @ExperimentalProjectedApi
     public fun addLayoutParamsFlags(flags: Int) {
         projectedService.addWindowFlags(flags)
     }
 
     /**
-     * Convenience function to clear the flag bits as as per the
+     * Convenience function to remove the flag bits as as per the
      * [android.view.WindowManager.LayoutParams] flags.
      *
      * Supported flags:
@@ -56,7 +59,8 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
      *
      * If an unsupported flag is passed, this method does nothing.
      */
-    public fun clearLayoutParamsFlags(flags: Int) {
+    @ExperimentalProjectedApi
+    public fun removeLayoutParamsFlags(flags: Int) {
         projectedService.clearWindowFlags(flags)
     }
 
@@ -66,6 +70,7 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
      *
      * This method does not provide any more details on what type of display it is.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun isDisplayCapable(): Boolean = projectedService.isDisplayCapable()
 
     /**
@@ -76,10 +81,6 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
      */
     override fun close() {
         connection.disconnect()
-    }
-
-    private suspend fun initialize() {
-        projectedService = connection.connect()
     }
 
     public companion object {
@@ -100,8 +101,12 @@ private constructor(private val connection: ProjectedServiceConnection) : AutoCl
                 ProjectedContext.isProjectedDeviceContext(activity),
                 { "Provided Activity is not running on a Projected device." },
             )
+            val serviceConnection = ProjectedServiceConnection(activity)
 
-            return ProjectedController(ProjectedServiceConnection(activity)).apply { initialize() }
+            return ProjectedController(
+                serviceConnection,
+                projectedService = serviceConnection.connect(),
+            )
         }
     }
 }

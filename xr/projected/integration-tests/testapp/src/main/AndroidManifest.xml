@@ -54,6 +54,12 @@
             android:exported="true"
             android:label="Audio Activity">
         </activity>
+        <activity
+            android:name="androidx.xr.projected.testapp.input.ProjectedInputActivity"
+            android:exported="true"
+            android:label="Projected Input Activity"
+            android:requiredDisplayCategory="@string/display_category_xr_projected">
+        </activity>
     </application>
 
     <uses-feature android:name="android.hardware.camera" />

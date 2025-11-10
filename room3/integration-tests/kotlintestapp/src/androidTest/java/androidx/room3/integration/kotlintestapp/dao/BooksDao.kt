@@ -237,7 +237,7 @@ interface BooksDao {
     fun getBooksMultiLineQueryWithComment(bookIds: List<String>): List<Book>
 
     @Query("SELECT * FROM book WHERE bookId = :bookId")
-    fun getBookLiveData(bookId: String): LiveData<Book>
+    fun getBookLiveData(bookId: String): LiveData<Book?>
 
     @Query("SELECT * FROM book WHERE bookId = :bookId")
     fun getBookFlowable(bookId: String): Flowable<Book>

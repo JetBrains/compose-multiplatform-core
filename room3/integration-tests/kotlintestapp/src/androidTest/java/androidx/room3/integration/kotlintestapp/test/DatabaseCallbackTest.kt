@@ -52,13 +52,12 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         with(TestDatabaseCallback()) {
             val db =
                 Room.databaseBuilder<TestDatabase>(context, "test")
-                    .apply {
-                        if (useDriver == UseDriver.ANDROID) {
-                            setDriver(AndroidSQLiteDriver())
-                        } else if (useDriver == UseDriver.BUNDLED) {
-                            setDriver(BundledSQLiteDriver())
+                    .setDriver(
+                        when (useDriver) {
+                            UseDriver.ANDROID -> AndroidSQLiteDriver()
+                            UseDriver.BUNDLED -> BundledSQLiteDriver()
                         }
-                    }
+                    )
                     .addCallback(this)
                     .build()
             assertThat(created).isFalse()
@@ -74,13 +73,12 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         with(TestDatabaseCallback()) {
             val db =
                 Room.databaseBuilder<TestDatabase>(context, "test")
-                    .apply {
-                        if (useDriver == UseDriver.ANDROID) {
-                            setDriver(AndroidSQLiteDriver())
-                        } else if (useDriver == UseDriver.BUNDLED) {
-                            setDriver(BundledSQLiteDriver())
+                    .setDriver(
+                        when (useDriver) {
+                            UseDriver.ANDROID -> AndroidSQLiteDriver()
+                            UseDriver.BUNDLED -> BundledSQLiteDriver()
                         }
-                    }
+                    )
                     .addCallback(this)
                     .build()
             assertThat(created).isFalse()
@@ -98,13 +96,12 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db =
             Room.inMemoryDatabaseBuilder<TestDatabase>(context)
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .addCallback(
                     object : RoomDatabase.Callback() {
                         override fun onCreate(connection: SQLiteConnection) {
@@ -124,13 +121,12 @@ class DatabaseCallbackTest(private val useDriver: UseDriver) {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val db =
             Room.inMemoryDatabaseBuilder<TestDatabase>(context)
-                .apply {
-                    if (useDriver == UseDriver.ANDROID) {
-                        setDriver(AndroidSQLiteDriver())
-                    } else if (useDriver == UseDriver.BUNDLED) {
-                        setDriver(BundledSQLiteDriver())
+                .setDriver(
+                    when (useDriver) {
+                        UseDriver.ANDROID -> AndroidSQLiteDriver()
+                        UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
-                }
+                )
                 .addCallback(
                     object : RoomDatabase.Callback() {
                         var isBadInsertDone = false

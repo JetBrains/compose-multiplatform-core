@@ -164,9 +164,9 @@ class UpsertTest(driver: UseDriver) : TestDatabaseTest(driver) {
         booksDao.addAuthors(TestUtil.AUTHOR_1)
         booksDao.addPublishers(TestUtil.PUBLISHER)
 
-        val bookLiveData: LiveData<Book> = booksDao.getBookLiveData(TestUtil.BOOK_1.bookId)
+        val bookLiveData: LiveData<Book?> = booksDao.getBookLiveData(TestUtil.BOOK_1.bookId)
         val testOwner = TestLifecycleOwner(Lifecycle.State.CREATED)
-        val observer = LiveDataTestObserver<Book>()
+        val observer = LiveDataTestObserver<Book?>()
 
         TestUtil.observeOnMainThread(bookLiveData, testOwner, observer)
 

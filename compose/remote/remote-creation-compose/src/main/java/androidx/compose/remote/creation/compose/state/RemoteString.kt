@@ -774,11 +774,6 @@ internal constructor(
     public override fun computeRequiredCodePointSet(
         creationState: RemoteComposeCreationState
     ): Set<String>? = lazyRemoteString.computeRequiredCodePointSet(creationState)
-
-    public override val value: String
-        get() {
-            return content.value
-        }
 }
 
 /**

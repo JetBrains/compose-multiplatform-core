@@ -25,7 +25,6 @@ import androidx.room3.test.createDefaultConfiguration
 import androidx.room3.useReaderConnection
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -36,18 +35,6 @@ import kotlinx.coroutines.test.runTest
 class PassthroughConnectionPoolTest {
 
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
-
-    @Test
-    fun usePassthrough_support() {
-        val connectionManager =
-            TestDatabase_Impl()
-                .createConnectionManager(
-                    createDefaultConfiguration(instrumentation)
-                        .copy(sqliteOpenHelperFactory = FrameworkSQLiteOpenHelperFactory()),
-                    TestOpenDelegate(),
-                )
-        assertThat(connectionManager.connectionPool).isInstanceOf<PassthroughConnectionPool>()
-    }
 
     @Test
     fun usePassthrough_AndroidDriver() {

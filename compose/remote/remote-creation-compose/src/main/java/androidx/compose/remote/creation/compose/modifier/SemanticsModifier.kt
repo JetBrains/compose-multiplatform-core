@@ -62,10 +62,10 @@ public data class SemanticsModifier(val mergeMode: Mode, val semantics: Accessib
     @Composable
     override fun Modifier.toComposeUi(): Modifier {
         val properties: SemanticsPropertyReceiver.() -> Unit = {
-            semantics.text?.value?.let { text = AnnotatedString(it) }
+            semantics.text?.constantValue?.let { text = AnnotatedString(it) }
             semantics.role?.let { role = it }
-            semantics.stateDescription?.value?.let { stateDescription = it }
-            semantics.contentDescription?.value?.let { contentDescription = it }
+            semantics.stateDescription?.constantValue?.let { stateDescription = it }
+            semantics.contentDescription?.constantValue?.let { contentDescription = it }
         }
 
         return if (mergeMode == CLEAR_AND_SET) {

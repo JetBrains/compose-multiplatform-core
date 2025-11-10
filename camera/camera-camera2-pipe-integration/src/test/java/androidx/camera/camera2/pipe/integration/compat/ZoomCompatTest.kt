@@ -30,6 +30,7 @@ import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTes
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraProperties
 import androidx.camera.camera2.pipe.integration.testing.FakeUseCaseCameraRequestControl
+import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import kotlin.reflect.KClass
@@ -58,7 +59,12 @@ class ZoomCompatTest {
     @Config(maxSdk = 29)
     fun reset_CropRegionZoomCompat_removeParameters() {
         val fakeRequestControl = FakeUseCaseCameraRequestControl()
-        val zoomCompat = CropRegionZoomCompat(FakeCameraProperties())
+        val fakeCameraMetadata =
+            FakeCameraMetadata(
+                characteristics =
+                    mapOf(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE to Rect(0, 0, 10, 10))
+            )
+        val zoomCompat = CropRegionZoomCompat(FakeCameraProperties(fakeCameraMetadata))
         zoomCompat.resetAsync(fakeRequestControl)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {

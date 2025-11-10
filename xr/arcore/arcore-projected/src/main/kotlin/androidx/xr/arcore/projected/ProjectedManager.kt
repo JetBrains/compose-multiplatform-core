@@ -31,6 +31,7 @@ import androidx.xr.runtime.internal.LifecycleManager
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -39,8 +40,6 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 /**
  * Manages the lifecycle of a Projected session.
@@ -65,10 +64,8 @@ internal constructor(
         get() = perceptionManager.xrResources.config
 
     // TODO(b/411154789): Remove once Session runtime invocations are forced to run sequentially.
-    @Volatile internal var running: Boolean = false
-    // create and configure are called from a different thread then resume, stop, pause, and update.
-    // This lock ensures the service is started and stopped correctly.
-    private val lock = Mutex()
+    internal val running = AtomicBoolean(false)
+
     private lateinit var serviceConnection: ServiceConnection
 
     /**
@@ -79,13 +76,11 @@ internal constructor(
      */
     override fun create() {
         runBlocking {
-            lock.withLock {
-                checkProjectedSupportedAndUpToDate(activity)
-                if (testPerceptionService != null) {
-                    perceptionManager.xrResources.service = testPerceptionService
-                } else {
-                    bindPerceptionService(activity)
-                }
+            checkProjectedSupportedAndUpToDate(activity)
+            if (testPerceptionService != null) {
+                perceptionManager.xrResources.service = testPerceptionService
+            } else {
+                bindPerceptionService(activity)
             }
         }
     }
@@ -106,18 +101,14 @@ internal constructor(
                 "Geospatial mode is not supported when device tracking is disabled."
             )
         }
-        runBlocking {
-            lock.withLock {
-                perceptionManager.xrResources.config = config
-                if (serviceRequired(config)) {
-                    // Re-configure the running service.
-                    startServiceInternal()
-                } else if (running) {
-                    // Stop the service as it's no longer needed.
-                    stopServiceInternal()
-                }
-            }
+        if (serviceRequired(config)) {
+            // Re-configure the running service.
+            startServiceInternal(config)
+        } else if (running.get()) {
+            // Stop the service as it's no longer needed.
+            stopServiceInternal()
         }
+        perceptionManager.xrResources.config = config
     }
 
     override fun resume() {}
@@ -144,39 +135,29 @@ internal constructor(
 
     override suspend fun update(): ComparableTimeMark {
         delay(30.milliseconds)
-        return lock.withLock {
-            if (!running) {
-                return@withLock timeSource.markNow()
-            }
-            val service = perceptionManager.xrResources.service
-            val result = service.update()
-            updateTrackingStates(
-                result.deviceTrackingState.toInt(),
-                result.earthTrackingState.toInt(),
-            )
-            perceptionManager.xrResources.arDevice.update(
-                toTrackingState(result.deviceTrackingState.toInt()),
-                toPose(result.devicePose),
-            )
-            timeSource.update(result.currentTimeNanos)
-            return@withLock timeSource.markNow()
+        if (!running.get()) {
+            return timeSource.markNow()
         }
+        val result = perceptionManager.xrResources.service.update()
+        updateTrackingStates(result.deviceTrackingState.toInt(), result.earthTrackingState.toInt())
+        perceptionManager.xrResources.arDevice.update(
+            toTrackingState(result.deviceTrackingState.toInt()),
+            toPose(result.devicePose),
+        )
+        timeSource.update(result.currentTimeNanos)
+        return timeSource.markNow()
     }
 
     override fun pause() {}
 
     override fun stop() {
-        runBlocking {
-            lock.withLock {
-                if (!running) {
-                    return@withLock
-                }
-                stopServiceInternal()
-            }
+        if (!running.get()) {
+            return
         }
+        stopServiceInternal()
     }
 
-    private fun startServiceInternal() {
+    private fun startServiceInternal(config: Config) {
         val service = perceptionManager.xrResources.service ?: return
         val serviceConfig = ProjectedConfig()
         // TODO: b/452091636 - Remove hardcoded config" so we remember to address this.
@@ -189,12 +170,12 @@ internal constructor(
             serviceConfig.trackingMode = ProjectedTrackingMode.PROJECTED_TRACKING_3DOF
         }
         service.startWithConfiguration(serviceConfig)
-        running = true
+        running.set(true)
     }
 
     private fun stopServiceInternal() {
         perceptionManager.xrResources.service?.stop()
-        running = false
+        running.set(false)
     }
 
     internal suspend fun bindPerceptionService(context: Context): IBinder {
@@ -213,12 +194,12 @@ internal constructor(
                     }
 
                     override fun onServiceDisconnected(name: ComponentName?) {
-                        running = false
+                        running.set(false)
                         // TODO: b/444521361 - Handle glassescore service disconnect
                     }
 
                     override fun onBindingDied(name: ComponentName?) {
-                        running = false
+                        running.set(false)
                         if (continuation.isActive) {
                             continuation.resumeWithException(
                                 IllegalStateException("Binding died for $name")

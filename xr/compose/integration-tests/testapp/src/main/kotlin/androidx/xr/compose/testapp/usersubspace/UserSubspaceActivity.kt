@@ -164,7 +164,7 @@ class UserSubspaceActivity : ComponentActivity() {
                     isTranslationYTracked = true,
                     isTranslationZTracked = true,
                 ),
-            behavior = LockingBehavior.lazy(durationMs = lazyLockDuration.toInt()),
+            behavior = LockingBehavior.lazy(durationMs = lazyLockDuration),
         ) {
             SpatialCurvedRow(SubspaceModifier.width(1000.dp).height(300.dp), curveRadius = 500.dp) {
                 // To-Do List Card

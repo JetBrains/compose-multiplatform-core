@@ -233,9 +233,9 @@ public fun RemoteText(
     if (captureMode is NoRemoteCompose) {
         @Suppress("DEPRECATION", "COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
         Text(
-            text = text.value,
+            text = text.constantValue!!,
             modifier = modifier.toComposeUi(),
-            Color(color.value.toArgb()),
+            Color(color.constantValue!!.toArgb()),
             fontSize,
             fontStyle,
             fontWeight,
@@ -332,7 +332,7 @@ public fun RemoteText(
         Text(
             text = "XX",
             modifier = modifier.toComposeUi(),
-            Color(color.value.toArgb()),
+            Color(color.constantValue!!.toArgb()),
             fontSize,
             fontStyle,
             fontWeight,

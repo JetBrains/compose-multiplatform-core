@@ -17,6 +17,7 @@
 package androidx.pdf.ink.view
 
 import PALETTE_COLOR_ITEM_SELECTED
+import PALETTE_COLOR_ITEM_SELECTED_INVERSE_COLOR_TICK
 import PALETTE_COLOR_ITEM_UNSELECTED
 import PALETTE_EMOJI_ITEM_SELECTED
 import PALETTE_EMOJI_ITEM_UNSELECTED
@@ -65,6 +66,21 @@ class ColorPaletteItemViewTest {
         }
 
         assertScreenshot(PALETTE_ITEM_VIEW_ID, screenshotRule, PALETTE_COLOR_ITEM_SELECTED)
+    }
+
+    @Test
+    fun test_palette_item_set_to_color_selected_inverseColorTick() {
+        setupPaletteItemView { item ->
+            val color = getPenPaletteItems(item.context)[10]
+            item.setPaletteItem(color)
+            item.setSelected(selected = true, animate = false)
+        }
+
+        assertScreenshot(
+            PALETTE_ITEM_VIEW_ID,
+            screenshotRule,
+            PALETTE_COLOR_ITEM_SELECTED_INVERSE_COLOR_TICK,
+        )
     }
 
     @Test

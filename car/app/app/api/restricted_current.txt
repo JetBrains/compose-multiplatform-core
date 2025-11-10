@@ -1674,6 +1674,7 @@ package androidx.car.app.model {
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol public final class Row implements androidx.car.app.model.Item {
     method @androidx.car.app.annotations.RequiresCarApi(6) public java.util.List<androidx.car.app.model.Action!> getActions();
+    method @androidx.car.app.annotations.RequiresCarApi(8) public androidx.car.app.model.CarIcon? getEndImage();
     method public androidx.car.app.model.CarIcon? getImage();
     method public androidx.car.app.model.Metadata? getMetadata();
     method @androidx.car.app.annotations.RequiresCarApi(6) public int getNumericDecoration();
@@ -1702,6 +1703,7 @@ package androidx.car.app.model {
     method public androidx.car.app.model.Row build();
     method public androidx.car.app.model.Row.Builder setBrowsable(boolean);
     method @androidx.car.app.annotations.RequiresCarApi(5) public androidx.car.app.model.Row.Builder setEnabled(boolean);
+    method @androidx.car.app.annotations.RequiresCarApi(8) public androidx.car.app.model.Row.Builder setEndImage(androidx.car.app.model.CarIcon);
     method public androidx.car.app.model.Row.Builder setImage(androidx.car.app.model.CarIcon);
     method public androidx.car.app.model.Row.Builder setImage(androidx.car.app.model.CarIcon, int);
     method @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public androidx.car.app.model.Row.Builder setIndexable(boolean);

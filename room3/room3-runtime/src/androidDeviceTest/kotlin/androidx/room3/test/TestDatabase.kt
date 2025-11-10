@@ -22,6 +22,7 @@ import androidx.room3.DatabaseConfiguration
 import androidx.room3.Entity
 import androidx.room3.PrimaryKey
 import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 
@@ -34,7 +35,6 @@ fun createDefaultConfiguration(instrumentation: Instrumentation) =
     DatabaseConfiguration(
         context = instrumentation.targetContext,
         name = null,
-        sqliteOpenHelperFactory = null,
         migrationContainer = RoomDatabase.MigrationContainer(),
         callbacks = null,
         allowMainThreadQueries = true,
@@ -49,6 +49,6 @@ fun createDefaultConfiguration(instrumentation: Instrumentation) =
         typeConverters = emptyList(),
         autoMigrationSpecs = emptyList(),
         allowDestructiveMigrationForAllTables = true,
-        sqliteDriver = null,
+        sqliteDriver = AndroidSQLiteDriver(),
         queryCoroutineContext = Dispatchers.IO,
     )

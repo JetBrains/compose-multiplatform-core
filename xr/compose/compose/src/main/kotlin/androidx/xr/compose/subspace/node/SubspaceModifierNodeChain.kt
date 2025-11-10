@@ -173,6 +173,12 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
     internal inline fun <reified T> getLast(): T? =
         tail.traverseSelfThenAncestors().findInstance<T>()
 
+    internal fun invalidateCompositionLocals() {
+        getAll<CompositionLocalConsumerSubspaceModifierNode>().forEach {
+            autoInvalidateNode(it as SubspaceModifier.Node, Update)
+        }
+    }
+
     private fun createAndInsertNodeAsChild(
         element: SubspaceModifier,
         parent: SubspaceModifier.Node,
@@ -230,7 +236,11 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
         if (phase == Update && !node.shouldAutoInvalidate) return
 
         if (node is SubspaceLayoutModifierNode) {
-            subspaceLayoutNode.requestMeasure()
+            if (phase == Update) {
+                subspaceLayoutNode.requestMeasure()
+            } else {
+                subspaceLayoutNode.parent?.requestMeasure()
+            }
         }
 
         if (node is ParentLayoutParamsModifier) {

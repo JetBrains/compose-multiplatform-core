@@ -21,10 +21,9 @@ import androidx.kruth.assertThrows
 import androidx.room3.Room.databaseBuilder
 import androidx.room3.Room.inMemoryDatabaseBuilder
 import androidx.room3.migration.Migration
+import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.db.SupportSQLiteOpenHelper
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import instantiateImpl
 import java.io.File
 import java.util.concurrent.Executor
@@ -34,9 +33,7 @@ import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 
 @RunWith(JUnit4::class)
 class BuilderTest {
@@ -432,7 +429,6 @@ class BuilderTest {
         assertThat(config.name).isNull()
         assertThat(config.allowMainThreadQueries).isFalse()
         assertThat(config.journalMode).isEqualTo(RoomDatabase.JournalMode.TRUNCATE)
-        assertThat(config.sqliteOpenHelperFactory).isInstanceOf<FrameworkSQLiteOpenHelperFactory>()
     }
 
     @Test
@@ -456,21 +452,6 @@ class BuilderTest {
         assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
         val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
         assertThat(config.journalMode).isEqualTo(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-    }
-
-    @Test
-    fun createWithFactoryAndVersion() {
-        val context: Context = mock()
-        val factory: SupportSQLiteOpenHelper.Factory = mock()
-        whenever(factory.create(any())).thenReturn(mock())
-        val db =
-            inMemoryDatabaseBuilder(context, TestDatabase::class.java)
-                .openHelperFactory(factory)
-                .build()
-        assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
-        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
-        assertThat(config).isNotNull()
-        assertThat(config.sqliteOpenHelperFactory).isEqualTo(factory)
     }
 
     @Test
@@ -537,36 +518,14 @@ class BuilderTest {
         assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
         val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
         assertThat(config.sqliteDriver).isEqualTo(driver)
-        assertThat(config.sqliteOpenHelperFactory).isNull()
     }
 
     @Test
-    fun bothDriverAndFactoryProvided() {
-        try {
-            inMemoryDatabaseBuilder(mock(), RoomDatabase::class.java)
-                .setDriver(mock())
-                .openHelperFactory(mock())
-                .build()
-        } catch (e: IllegalArgumentException) {
-            assertThat(e.message)
-                .isEqualTo(
-                    "A RoomDatabase cannot be configured with both a SQLiteDriver and a " +
-                        "SupportOpenHelper.Factory."
-                )
-        }
-    }
-
-    @OptIn(ExperimentalRoomApi::class)
-    @Test
-    fun driverProvidedQueryCallback() {
-        assertThrows<IllegalArgumentException> {
-                inMemoryDatabaseBuilder(mock(), TestDatabase::class.java)
-                    .setQueryCallback(Dispatchers.IO) { _, _ -> }
-                    .setDriver(mock())
-                    .build()
-            }
-            .hasMessageThat()
-            .isEqualTo("Query Callback is not supported when an SQLiteDriver is configured.")
+    fun driverDefaultsToAndroid() {
+        val db = inMemoryDatabaseBuilder(mock(), TestDatabase::class.java).build()
+        assertThat(db).isInstanceOf<BuilderTest_TestDatabase_Impl>()
+        val config: DatabaseConfiguration = (db as BuilderTest_TestDatabase_Impl).mConfig
+        assertThat(config.sqliteDriver).isInstanceOf<AndroidSQLiteDriver>()
     }
 
     internal abstract class TestDatabase : RoomDatabase() {
@@ -579,6 +538,6 @@ class BuilderTest {
     }
 
     internal class EmptyMigration(start: Int, end: Int) : Migration(start, end) {
-        override fun migrate(db: SupportSQLiteDatabase) {}
+        override fun migrate(connection: SQLiteConnection) {}
     }
 }

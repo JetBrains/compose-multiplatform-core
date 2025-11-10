@@ -134,12 +134,7 @@ object Transformations {
                     alignment = alignment,
                 )
             }
-        return RectF(
-                0f,
-                0f,
-                rotatedViewportSize.width.toFloat(),
-                rotatedViewportSize.height.toFloat(),
-            )
+        return RectF(0f, 0f, rotatedViewportSize.width, rotatedViewportSize.height)
             .also(matrix::mapRect)
     }
 

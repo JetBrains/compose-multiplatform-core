@@ -20,15 +20,17 @@ import android.content.Intent
 import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.asLiveData
 import androidx.room3.InvalidationTracker.Observer
 import androidx.room3.autoclose.AutoCloser
 import androidx.room3.concurrent.ReentrantLock
 import androidx.room3.concurrent.withLock
 import androidx.room3.coroutines.runBlockingUninterruptible
+import androidx.room3.util.performSuspending
 import androidx.sqlite.SQLiteConnection
 import java.lang.ref.WeakReference
-import java.util.concurrent.Callable
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 
 /**
@@ -79,9 +81,6 @@ actual constructor(
 
     private val onRefreshCompleted: () -> Unit = { autoCloser?.decrementCount() }
 
-    private val invalidationLiveDataContainer: InvalidationLiveDataContainer =
-        InvalidationLiveDataContainer(database)
-
     /** The intent for restarting invalidation after auto-close. */
     private var multiInstanceInvalidationIntent: Intent? = null
 
@@ -91,12 +90,9 @@ actual constructor(
     private val trackerLock = Any()
 
     init {
-        // TODO(b/316944352): Figure out auto-close with driver APIs
-        // Setup a callback to disallow invalidation refresh when underlying compat database
+        // Setup a callback to disallow invalidation refresh when underlying database
         // is closed. This is done to support auto-close feature.
-        implementation.onAllowRefresh = {
-            !database.inCompatibilityMode() || database.isOpenInternal
-        }
+        implementation.onAllowRefresh = { database.isOpenInternal }
     }
 
     /**
@@ -135,9 +131,6 @@ actual constructor(
     internal actual suspend fun sync() {
         implementation.syncTriggers()
     }
-
-    // TODO(b/309990302): Needed for compatibility with internalBeginTransaction(), not great.
-    @WorkerThread internal fun syncBlocking(): Unit = runBlockingUninterruptible { sync() }
 
     /**
      * Refresh subscribed [Observer]s and [Flow]s asynchronously, invoking [Observer.onInvalidated]
@@ -309,30 +302,6 @@ actual constructor(
 
     private fun getAllObservers() = observerMapLock.withLock { observerMap.keys.toList() }
 
-    /**
-     * Enqueues a task to refresh the list of updated tables.
-     *
-     * This method is automatically called when [RoomDatabase.endTransaction] is called but if you
-     * have another connection to the database or directly use
-     * [androidx.sqlite.db.SupportSQLiteDatabase], you may need to call this manually.
-     *
-     * @see refreshAsync
-     */
-    public open fun refreshVersionsAsync() {
-        implementation.refreshInvalidationAsync(onRefreshScheduled, onRefreshCompleted)
-    }
-
-    /**
-     * Check versions for tables, and run observers synchronously if tables have been updated.
-     *
-     * @see refresh
-     */
-    @WorkerThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public open fun refreshVersionsSync(): Unit = runBlockingUninterruptible {
-        implementation.refreshInvalidation(emptyArray(), onRefreshScheduled, onRefreshCompleted)
-    }
-
     private fun notifyInvalidatedObservers(tableIds: Set<Int>) {
         observerMapLock
             .withLock { observerMap.values.toList() }
@@ -342,34 +311,6 @@ actual constructor(
     /**
      * Creates a LiveData that computes the given function once and for every other invalidation of
      * the database.
-     *
-     * Holds a strong reference to the created LiveData as long as it is active.
-     *
-     * @param tableNames The list of tables to observe
-     * @param inTransaction True if the computeFunction will be done in a transaction, false
-     *   otherwise.
-     * @param computeFunction The function that calculates the value
-     * @param T The return type
-     * @return A new LiveData that computes the given function when the given list of tables
-     *   invalidates.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-    public open fun <T> createLiveData(
-        tableNames: Array<out String>,
-        inTransaction: Boolean,
-        computeFunction: Callable<T?>,
-    ): LiveData<T> {
-        // Validate names early to fail fast as actual observer subscription is done once LiveData
-        // is observed.
-        implementation.validateTableNames(tableNames)
-        return invalidationLiveDataContainer.create(tableNames, inTransaction, computeFunction)
-    }
-
-    /**
-     * Creates a LiveData that computes the given function once and for every other invalidation of
-     * the database.
-     *
-     * Holds a strong reference to the created LiveData as long as it is active.
      *
      * @param tableNames The list of tables to observe
      * @param inTransaction True if the computeFunction will be done in a transaction, false
@@ -383,13 +324,11 @@ actual constructor(
     public fun <T> createLiveData(
         tableNames: Array<out String>,
         inTransaction: Boolean,
-        computeFunction: (SQLiteConnection) -> T?,
+        computeFunction: (SQLiteConnection) -> T,
     ): LiveData<T> {
-        // Validate names early to fail fast as actual observer subscription is done once LiveData
-        // is observed.
-        implementation.validateTableNames(tableNames)
-        // TODO(329315924): Could we use createFlow(...).asLiveData() ?
-        return invalidationLiveDataContainer.create(tableNames, inTransaction, computeFunction)
+        return createFlow(*tableNames, emitInitialState = true)
+            .map { performSuspending(database, true, inTransaction, computeFunction) }
+            .asLiveData(database.getQueryContext())
     }
 
     internal fun initMultiInstanceInvalidation(
@@ -438,9 +377,6 @@ actual constructor(
         internal open val isRemote: Boolean
             get() = false
     }
-
-    // Kept for binary compatibility even if empty. :(
-    public companion object
 }
 
 /**

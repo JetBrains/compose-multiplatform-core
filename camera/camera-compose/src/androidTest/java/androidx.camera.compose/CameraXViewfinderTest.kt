@@ -70,6 +70,7 @@ import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -89,7 +90,7 @@ class CameraXViewfinderTest(private val implName: String, private val cameraConf
     val useCamera =
         CameraUtil.grantCameraPermissionAndPreTestAndPostTest(PreTestCameraIdList(cameraConfig))
 
-    @get:Rule val composeTest = createComposeRule()
+    @get:Rule val composeTest = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun viewfinderIsDisplayed_withValidSurfaceRequest() = runViewfinderTest {

@@ -42,7 +42,7 @@ public actual class DatabaseConfiguration(
     /* Whether Room will delete all tables or only known tables during destructive migrations. */
     public actual val allowDestructiveMigrationForAllTables: Boolean,
     /* The SQLite Driver for the database. */
-    public actual val sqliteDriver: SQLiteDriver?,
+    public actual val sqliteDriver: SQLiteDriver,
     /* The Coroutine context for the database. */
     public actual val queryCoroutineContext: CoroutineContext?,
 )

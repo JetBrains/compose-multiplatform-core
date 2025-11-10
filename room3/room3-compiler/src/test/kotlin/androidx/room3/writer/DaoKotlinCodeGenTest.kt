@@ -1203,22 +1203,13 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             @Dao
             interface MyDao {
                 @RawQuery
-                fun getEntitySupport(sql: SupportSQLiteQuery): MyEntity
+                fun getEntitySupport(sql: RoomRawQuery): MyEntity
 
                 @RawQuery
-                fun getNullableEntitySupport(sql: SupportSQLiteQuery): MyEntity?
+                fun getNullableEntitySupport(sql: RoomRawQuery): MyEntity?
 
                 @RawQuery(observedEntities = [MyEntity::class])
-                fun getEntitySupportFlow(sql: SupportSQLiteQuery): Flow<MyEntity>
-
-                @RawQuery
-                fun getEntity(query: RoomRawQuery): MyEntity
-
-                @RawQuery
-                fun getNullableEntity(query: RoomRawQuery): MyEntity?
-
-                @RawQuery(observedEntities = [MyEntity::class])
-                fun getEntityFlow(query: RoomRawQuery): Flow<MyEntity>
+                fun getEntitySupportFlow(sql: RoomRawQuery): Flow<MyEntity>
             }
 
             @Entity
@@ -1249,10 +1240,7 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
             @Dao
             public interface MyDao {
                 @RawQuery
-                MyEntity getEntitySupport(SupportSQLiteQuery sql);
-
-                @RawQuery
-                MyEntity getEntity(RoomRawQuery query);
+                MyEntity getEntitySupport(RoomRawQuery sql);
             }
             """
                     .trimIndent(),

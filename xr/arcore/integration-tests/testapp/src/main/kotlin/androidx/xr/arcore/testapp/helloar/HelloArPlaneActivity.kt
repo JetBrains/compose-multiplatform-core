@@ -106,7 +106,7 @@ class HelloArPlaneActivity : ComponentActivity() {
         val perceptionState = state.perceptionState
         var title = intent.getStringExtra("TITLE")
         if (title == null) title = "Hello AR Plane"
-        val blendMode = XrDevice.getPreferredBlendMode(session)
+        val blendMode = XrDevice.getCurrentDevice(session).getPreferredBlendMode()
         Scaffold(
             modifier = Modifier.fillMaxSize().padding(0.dp),
             topBar = {

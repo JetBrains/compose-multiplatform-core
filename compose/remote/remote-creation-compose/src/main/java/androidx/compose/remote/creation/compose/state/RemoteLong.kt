@@ -116,11 +116,6 @@ public class MutableRemoteLong(
             return getIdForCreationState(FallbackCreationState.state)
         }
 
-    public override val value: Long
-        get() {
-            return content.longValue
-        }
-
     public override fun toString(): String {
         return "MutableRemoteLong@${this.hashCode()} =" + content.longValue
     }
@@ -145,7 +140,7 @@ public fun rememberRemoteLongValue(
         val initial = value()
         MutableRemoteLong(mutableLongStateOf(initial), constantValue = null) { creationState ->
             val id = creationState.document.addNamedLong(name, initial)
-            creationState.document.setStringName(id.toInt(), "$domain:$name")
+            creationState.document.setStringName(id, "$domain:$name")
             id
         }
     }

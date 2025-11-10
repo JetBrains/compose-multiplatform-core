@@ -37,6 +37,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.projected.ProjectedContext.PROJECTED_DEVICE_NAME
 import androidx.xr.projected.ProjectedServiceBinding.ACTION_BIND
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IProjectedService
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
@@ -114,6 +115,7 @@ class ProjectedControllerTest {
         }
 
     @Test
+    @OptIn(ExperimentalProjectedApi::class)
     fun addFlags_callsService() = launchTestProjectedDeviceActivity { projectedDeviceActivity ->
         runBlocking { projectedController = ProjectedController.create(projectedDeviceActivity) }
         val flags = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
@@ -124,11 +126,12 @@ class ProjectedControllerTest {
     }
 
     @Test
-    fun clearFlags_callsService() = launchTestProjectedDeviceActivity { projectedDeviceActivity ->
+    @OptIn(ExperimentalProjectedApi::class)
+    fun removeFlags_callsService() = launchTestProjectedDeviceActivity { projectedDeviceActivity ->
         runBlocking { projectedController = ProjectedController.create(projectedDeviceActivity) }
         val flags = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
 
-        projectedController.clearLayoutParamsFlags(flags)
+        projectedController.removeLayoutParamsFlags(flags)
         verify(mockProjectedService).clearWindowFlags(flags)
     }
 

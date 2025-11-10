@@ -77,7 +77,6 @@ class InvalidationTrackerTest {
             DatabaseConfiguration(
                 context = mock(),
                 name = null,
-                sqliteOpenHelperFactory = null,
                 migrationContainer = RoomDatabase.MigrationContainer(),
                 callbacks = null,
                 allowMainThreadQueries = true,

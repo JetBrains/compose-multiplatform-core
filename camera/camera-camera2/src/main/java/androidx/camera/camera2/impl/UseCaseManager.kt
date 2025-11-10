@@ -45,7 +45,6 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsLowLightBoo
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.OutputStream
-import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.core.CameraXConfig
@@ -70,7 +69,6 @@ import androidx.camera.core.streamsharing.StreamSharing
 import androidx.camera.core.streamsharing.StreamSharingConfig
 import javax.inject.Inject
 import javax.inject.Provider
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.joinAll
 import org.jetbrains.annotations.TestOnly
@@ -360,7 +358,7 @@ constructor(
             shouldRemoveRepeatingUseCase(runningUseCases) -> removeRepeatingUseCase()
             else -> {
                 camera?.let {
-                    it.updateRepeatingRequests(isPrimary, runningUseCases)
+                    it.updateRepeatingRequestAsync(isPrimary, runningUseCases)
                     for (control in allControls) {
                         if (control is RunningUseCasesChangeListener) {
                             control.onRunningUseCasesChanged(runningUseCases)
@@ -370,45 +368,6 @@ constructor(
             }
         }
     }
-
-    private fun UseCaseCamera.updateRepeatingRequests(
-        isPrimary: Boolean,
-        runningUseCases: Set<UseCase>,
-    ) {
-        // Note: This may be called with the same set of values that was previously set. This
-        // is used as a signal to indicate the properties of the UseCase may have changed.
-        SessionConfigAdapter(runningUseCases, isPrimary = isPrimary)
-            .getValidSessionConfigOrNull()
-            ?.let { requestControl.setSessionConfigAsync(it) }
-            ?: run {
-                Camera2Logger.debug { "Unable to reset the session due to invalid config" }
-                requestControl.setSessionConfigAsync(
-                    SessionConfig.Builder().apply { setTemplateType(defaultTemplate) }.build()
-                )
-            }
-    }
-
-    private fun UseCaseCameraRequestControl.setSessionConfigAsync(
-        sessionConfig: SessionConfig
-    ): Deferred<Unit> =
-        setConfigAsync(
-            type = UseCaseCameraRequestControl.Type.SESSION_CONFIG,
-            config = sessionConfig.implementationOptions,
-            tags = sessionConfig.repeatingCaptureConfig.tagBundle.toMap(),
-            listeners =
-                setOf(
-                    CameraCallbackMap.createFor(
-                        sessionConfig.repeatingCameraCaptureCallbacks,
-                        useCaseThreads.get().sequentialExecutor,
-                    )
-                ),
-            template = RequestTemplate(sessionConfig.repeatingCaptureConfig.templateType),
-            streams =
-                useCaseGraphConfig?.getStreamIdsFromSurfaces(
-                    sessionConfig.repeatingCaptureConfig.surfaces
-                ),
-            sessionConfig = sessionConfig,
-        )
 
     @GuardedBy("lock")
     private fun refreshAttachedUseCases(newUseCases: Set<UseCase>) {

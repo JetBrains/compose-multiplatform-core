@@ -29,6 +29,7 @@ import androidx.room3.RoomRawQuery
 import androidx.room3.paging.util.getClippedRefreshKey
 import androidx.room3.util.getColumnIndexOrThrow
 import androidx.room3.util.performSuspending
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
@@ -40,7 +41,6 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -68,10 +68,10 @@ class LimitOffsetPagingSourceTest {
     @Before
     fun init() {
         database =
-            Room.inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    LimitOffsetTestDb::class.java,
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
+                    ApplicationProvider.getApplicationContext()
                 )
+                .setDriver(AndroidSQLiteDriver())
                 .build()
         dao = database.getDao()
     }
@@ -102,10 +102,10 @@ class LimitOffsetPagingSourceTest {
         val queryExecutor = TestExecutor()
         val transactionExecutor = TestExecutor()
         database =
-            Room.inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    LimitOffsetTestDb::class.java,
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
+                    ApplicationProvider.getApplicationContext()
                 )
+                .setDriver(AndroidSQLiteDriver())
                 .setQueryExecutor(queryExecutor)
                 .setTransactionExecutor(transactionExecutor)
                 .build()
@@ -711,28 +711,13 @@ class LimitOffsetPagingSourceTestWithFilteringCoroutineDispatcher {
     private val queryExecutor: FilteringExecutor
         get() = queryContext.executor
 
-    private val mainThreadQueries = mutableListOf<Pair<String, String>>()
-
     @Before
     fun init() {
-        val mainThread: Thread = runBlocking(Dispatchers.Main) { Thread.currentThread() }
         db =
-            Room.inMemoryDatabaseBuilder(
-                    ApplicationProvider.getApplicationContext(),
-                    LimitOffsetTestDb::class.java,
+            Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
+                    ApplicationProvider.getApplicationContext()
                 )
-                .setQueryCallback(
-                    object : RoomDatabase.QueryCallback {
-                        override fun onQuery(sqlQuery: String, bindArgs: List<Any?>) {
-                            if (Thread.currentThread() === mainThread) {
-                                mainThreadQueries.add(sqlQuery to Throwable().stackTraceToString())
-                            }
-                        }
-                    }
-                ) {
-                    // instantly execute the log callback so that we can check the thread.
-                    it.run()
-                }
+                .setDriver(AndroidSQLiteDriver())
                 .setQueryCoroutineContext(queryContext)
                 .build()
         dao = db.getDao()
@@ -740,8 +725,6 @@ class LimitOffsetPagingSourceTestWithFilteringCoroutineDispatcher {
 
     @After
     fun tearDown() {
-        // Check no mainThread queries happened.
-        assertThat(mainThreadQueries).isEmpty()
         db.close()
     }
 

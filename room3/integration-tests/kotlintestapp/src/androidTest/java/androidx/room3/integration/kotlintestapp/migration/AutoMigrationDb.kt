@@ -34,7 +34,6 @@ import androidx.room3.RenameColumn
 import androidx.room3.RenameTable
 import androidx.room3.RoomDatabase
 import androidx.room3.migration.AutoMigrationSpec
-import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     version = AutoMigrationDb.LATEST_VERSION,
@@ -455,11 +454,7 @@ abstract class AutoMigrationDb : RoomDatabase() {
     )
     @DeleteColumn(tableName = "Entity15", columnName = "addedInV1")
     @RenameColumn(tableName = "Entity25", fromColumnName = "entity7Id", toColumnName = "entity1Id")
-    internal class SimpleAutoMigration1 : AutoMigrationSpec {
-        override fun onPostMigrate(db: SupportSQLiteDatabase) {
-            // Do something
-        }
-    }
+    internal class SimpleAutoMigration1 : AutoMigrationSpec
 
     @RenameColumn(
         tableName = "Entity21",
@@ -471,11 +466,7 @@ abstract class AutoMigrationDb : RoomDatabase() {
         fromColumnName = "addedInV1",
         toColumnName = "renamedInV4",
     )
-    internal class SimpleAutoMigration2 : AutoMigrationSpec {
-        override fun onPostMigrate(db: SupportSQLiteDatabase) {
-            // Do something
-        }
-    }
+    internal class SimpleAutoMigration2 : AutoMigrationSpec
 
     companion object {
         const val LATEST_VERSION = 5

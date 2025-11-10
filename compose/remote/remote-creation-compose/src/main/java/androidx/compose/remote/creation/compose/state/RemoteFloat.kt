@@ -882,11 +882,6 @@ public class MutableRemoteFloat(
     public override val arrayProvider: (creationState: RemoteComposeCreationState) -> FloatArray
         get() = { creationState -> floatArrayOf(idProvider(creationState)) }
 
-    public override val value: Float
-        get() {
-            return content.floatValue
-        }
-
     public override fun writeToDocument(creationState: RemoteComposeCreationState): Int =
         Utils.idFromNan(idProvider(creationState))
 }
@@ -930,9 +925,6 @@ internal constructor(
             return Utils.idFromNan(creationState.document.floatExpression(*array))
         }
     }
-
-    public override val value: Float
-        get() = TODO("Implement expression evaluation")
 
     public override val id: Float
         get(): Float {
@@ -988,9 +980,6 @@ public class AnimatedRemoteFloat(public val input: RemoteFloat, public val anim:
             return Utils.idFromNan(creationState.document.floatExpression(array, anim))
         }
     }
-
-    public override val value: Float
-        get() = TODO("Not yet implemented")
 
     public fun getAnimationTime(): Float {
         return (System.nanoTime() - start) * 1E-9f

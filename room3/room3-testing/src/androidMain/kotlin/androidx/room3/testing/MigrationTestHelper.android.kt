@@ -267,13 +267,12 @@ private sealed class AndroidMigrationTestHelper(
 
     protected fun createDatabaseConfiguration(
         container: RoomDatabase.MigrationContainer,
-        sqliteDriver: SQLiteDriver?,
+        sqliteDriver: SQLiteDriver,
         databaseFileName: String?,
     ) =
         DatabaseConfiguration(
             context = instrumentation.targetContext,
             name = databaseFileName,
-            sqliteOpenHelperFactory = null,
             migrationContainer = container,
             callbacks = null,
             allowMainThreadQueries = true,

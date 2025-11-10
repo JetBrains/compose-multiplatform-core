@@ -64,7 +64,6 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
     enum class Driver {
         BUNDLED,
         ANDROID,
-        NONE,
     }
 
     private val context = InstrumentationRegistry.getInstrumentation().context
@@ -79,13 +78,12 @@ class SupportSQLiteDatabaseWrapperTest(private val driver: Driver) {
         database =
             Room.databaseBuilder(context, TestDatabase::class.java, "test.db")
                 .setQueryCoroutineContext(Dispatchers.IO)
-                .apply {
+                .setDriver(
                     when (driver) {
                         Driver.BUNDLED -> BundledSQLiteDriver()
                         Driver.ANDROID -> AndroidSQLiteDriver()
-                        Driver.NONE -> null
-                    }?.let { setDriver(it) }
-                }
+                    }
+                )
                 .build()
         wrapper = database.getSupportWrapper()
     }

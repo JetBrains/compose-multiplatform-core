@@ -1056,7 +1056,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private fun isContentAtHorizontalEdges(): Boolean {
         val leftContentEdgePx = -scrollX
         val rightContentEdgePx =
-            toViewCoord(contentWidth.toFloat(), zoom, scrollX).toInt() - paddingRight - paddingLeft
+            toViewCoord(contentWidth, zoom, scrollX).toInt() - paddingRight - paddingLeft
 
         return leftContentEdgePx == 0 || rightContentEdgePx == viewportWidth
     }
@@ -1353,7 +1353,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     override fun computeHorizontalScrollRange(): Int {
         // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
         // to compute the maximum scroll position. Scroll position is absolute, not relative
-        val contentWidthPx = toViewCoord(contentWidth.toFloat(), zoom, scroll = 0)
+        val contentWidthPx = toViewCoord(contentWidth, zoom, scroll = 0)
         return if (contentWidthPx < width) 0 else (contentWidthPx - width).roundToInt()
     }
 
@@ -1361,7 +1361,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         get() {
             // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
             // to compute the maximum scroll position. Scroll position is absolute, not relative
-            val contentHeightPx = toViewCoord(contentHeight.toFloat(), zoom, scroll = 0)
+            val contentHeightPx = toViewCoord(contentHeight, zoom, scroll = 0)
             return if (verticalAlignment == VERTICAL_ALIGNMENT_TOP || contentHeightPx > height) {
                 0
             } else {
@@ -1373,7 +1373,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     override fun computeVerticalScrollRange(): Int {
         // Note we provide scroll = 0 here, as we shouldn't consider the current scroll position
         // to compute the maximum scroll position. Scroll position is absolute, not relative
-        val contentHeightPx = toViewCoord(contentHeight.toFloat(), zoom, scroll = 0)
+        val contentHeightPx = toViewCoord(contentHeight, zoom, scroll = 0)
         return if (contentHeightPx < height && verticalAlignment == VERTICAL_ALIGNMENT_TOP) {
             0
         } else if (contentHeightPx < height) {

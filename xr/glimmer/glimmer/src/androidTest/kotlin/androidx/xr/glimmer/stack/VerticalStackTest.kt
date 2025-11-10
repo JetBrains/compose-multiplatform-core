@@ -679,7 +679,7 @@ class VerticalStackTest {
     }
 
     @Test
-    fun itemDecoration_setsSizeAndShapeOnItemScope() {
+    fun itemDecoration_setsSizeAndShapeOnItemScope() = runTest {
         val state = StackState()
         val triangleShape = GenericShape { size, _ ->
             lineTo(size.width, 0f)
@@ -689,27 +689,61 @@ class VerticalStackTest {
         var itemScope0: StackItemScopeImpl? = null
         var itemScope1: StackItemScopeImpl? = null
         var itemScope2: StackItemScopeImpl? = null
-        rule.setContent {
+        rule.setContentWithInitialFocus {
             VerticalStack(state = state) {
-                item {
-                    itemScope0 = this as StackItemScopeImpl
-                    StackItem("Item 0", Modifier.height(10.dp).itemDecoration(RectangleShape))
-                }
-                item {
-                    itemScope1 = this as StackItemScopeImpl
-                    StackItem(
-                        "Item 1",
-                        Modifier.height(20.dp).itemDecoration(RoundedCornerShape(2.dp)),
-                    )
-                }
-                item {
-                    itemScope2 = this as StackItemScopeImpl
-                    StackItem("Item 2", Modifier.height(30.dp).itemDecoration(triangleShape))
+                repeat(10) { index ->
+                    item {
+                        itemScope0 = this as StackItemScopeImpl
+                        StackItem(
+                            "Item ${index * 3}",
+                            Modifier.height(10.dp).itemDecoration(RectangleShape),
+                        )
+                    }
+                    item {
+                        itemScope1 = this as StackItemScopeImpl
+                        StackItem(
+                            "Item ${index * 3 + 1}",
+                            Modifier.height(20.dp).itemDecoration(RoundedCornerShape(2.dp)),
+                        )
+                    }
+                    item {
+                        itemScope2 = this as StackItemScopeImpl
+                        StackItem(
+                            "Item ${index * 3 + 2}",
+                            Modifier.height(30.dp).itemDecoration(triangleShape),
+                        )
+                    }
                 }
             }
         }
+        val initialItemScope0 = itemScope0
+        val initialItemScope1 = itemScope1
+        val initialItemScope2 = itemScope2
 
         rule.runOnIdle {
+            val itemDecoration0 = itemScope0?.firstDecoration()
+            val itemDecoration1 = itemScope1?.firstDecoration()
+            val itemDecoration2 = itemScope2?.firstDecoration()
+
+            with(rule.density) {
+                assertThat(itemDecoration0?.size?.height).isEqualTo(10.dp.roundToPx())
+                assertThat(itemDecoration1?.size?.height).isEqualTo(20.dp.roundToPx())
+                assertThat(itemDecoration2?.size?.height).isEqualTo(30.dp.roundToPx())
+            }
+
+            assertThat(itemDecoration0?.shape).isEqualTo(RectangleShape)
+            assertThat(itemDecoration1?.shape).isEqualTo(RoundedCornerShape(2.dp))
+            assertThat(itemDecoration2?.shape).isSameInstanceAs(triangleShape)
+        }
+
+        repeat(30) { index -> runOnUiThread { state.scrollToItem(index) } }
+
+        rule.runOnIdle {
+            assertThat(state.topItem).isEqualTo(29)
+            assertThat(itemScope0).isNotSameInstanceAs(initialItemScope0)
+            assertThat(itemScope1).isNotSameInstanceAs(initialItemScope1)
+            assertThat(itemScope2).isNotSameInstanceAs(initialItemScope2)
+
             val itemDecoration0 = itemScope0?.firstDecoration()
             val itemDecoration1 = itemScope1?.firstDecoration()
             val itemDecoration2 = itemScope2?.firstDecoration()

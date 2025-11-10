@@ -288,6 +288,14 @@ internal class SavedStateEncoder(
             stringListDescriptor -> savedState.write { putStringList(key, value as List<String>) }
             booleanListDescriptor ->
                 savedState.write { putBooleanArray(key, (value as List<Boolean>).toBooleanArray()) }
+            longListDescriptor ->
+                savedState.write { putLongArray(key, (value as List<Long>).toLongArray()) }
+            floatListDescriptor ->
+                savedState.write { putFloatArray(key, (value as List<Float>).toFloatArray()) }
+            doubleListDescriptor ->
+                savedState.write { putDoubleArray(key, (value as List<Double>).toDoubleArray()) }
+            charListDescriptor ->
+                savedState.write { putCharArray(key, (value as List<Char>).toCharArray()) }
             booleanArrayDescriptor ->
                 savedState.write { putBooleanArray(key, value as BooleanArray) }
             charArrayDescriptor -> savedState.write { putCharArray(key, value as CharArray) }
