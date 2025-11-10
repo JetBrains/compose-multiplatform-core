@@ -311,7 +311,7 @@ internal class ComposeHostingViewController(
         }
 
         architectureComponentsOwner.initSavedStateController(savedState)
-        lifecycleDelegate.lifecycleListener = architectureComponentsOwner::setLifecycleState
+        lifecycleDelegate.onLifecycleStateUpdated = architectureComponentsOwner::setLifecycleState
         mediator = ComposeSceneMediator(
             onFocusBehavior = configuration.onFocusBehavior,
             focusedViewsList = focusedViewsList,
@@ -358,7 +358,7 @@ internal class ComposeHostingViewController(
         // provide the saved state to the next compose scene when the view controller re-enters
         // the window hierarchy.
         savedState = architectureComponentsOwner.saveState()
-        lifecycleDelegate.lifecycleListener = null
+        lifecycleDelegate.onLifecycleStateUpdated = null
 
         rootView.updateMetalView(metalView = null)
         navigationEventInput.onDidMoveToWindow(null, rootView)

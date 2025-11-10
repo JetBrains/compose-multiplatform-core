@@ -33,7 +33,7 @@ class ViewControllerBasedLifecycleOwnerTest {
         val notificationCenter = NSNotificationCenter()
         val lifecycleOwner = DefaultArchitectureComponentsOwner()
         val lifecycleDelegate = ViewControllerLifecycleDelegate(notificationCenter)
-        lifecycleDelegate.lifecycleListener = lifecycleOwner::setLifecycleState
+        lifecycleDelegate.onLifecycleStateUpdated = lifecycleOwner::setLifecycleState
         val scene = UIWindowScene()
         lifecycleDelegate.windowScene = scene
         assertEquals(Lifecycle.State.CREATED, lifecycleOwner.lifecycle.currentState)
@@ -73,7 +73,7 @@ class ViewControllerBasedLifecycleOwnerTest {
         val notificationCenter = NSNotificationCenter()
         val lifecycleOwner = DefaultArchitectureComponentsOwner()
         val lifecycleDelegate = ViewControllerLifecycleDelegate(notificationCenter)
-        lifecycleDelegate.lifecycleListener = lifecycleOwner::setLifecycleState
+        lifecycleDelegate.onLifecycleStateUpdated = lifecycleOwner::setLifecycleState
         val scene = UIWindowScene()
         lifecycleDelegate.windowScene = scene
 
@@ -90,7 +90,7 @@ class ViewControllerBasedLifecycleOwnerTest {
         val notificationCenter = NSNotificationCenter()
         val lifecycleOwner = DefaultArchitectureComponentsOwner()
         val lifecycleDelegate = ViewControllerLifecycleDelegate(notificationCenter)
-        lifecycleDelegate.lifecycleListener = lifecycleOwner::setLifecycleState
+        lifecycleDelegate.onLifecycleStateUpdated = lifecycleOwner::setLifecycleState
         val scene = UIWindowScene()
         lifecycleDelegate.windowScene = scene
         lifecycleDelegate.viewControllerWillAppear()

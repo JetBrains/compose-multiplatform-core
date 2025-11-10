@@ -47,7 +47,7 @@ internal class ViewControllerLifecycleDelegate(
             updateLifecycleState()
         }
 
-    var lifecycleListener: ((Lifecycle.State) -> Unit)? = null
+    var onLifecycleStateUpdated: ((Lifecycle.State) -> Unit)? = null
         set(value) {
             field = value
             updateLifecycleState()
@@ -89,7 +89,7 @@ internal class ViewControllerLifecycleDelegate(
     }
 
     private fun updateLifecycleState() {
-        lifecycleListener?.invoke(
+        onLifecycleStateUpdated?.invoke(
             when {
                 isDisposed -> Lifecycle.State.DESTROYED
                 isViewAppeared && isSceneInForeground && isSceneActive -> Lifecycle.State.RESUMED
