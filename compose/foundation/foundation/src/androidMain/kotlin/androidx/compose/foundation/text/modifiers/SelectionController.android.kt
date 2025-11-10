@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package androidx.compose.runtime.retain
+package androidx.compose.foundation.text.modifiers
 
-/**
- * Returns a hash for the given type [T]. Implementors should go out of their way to make this as
- * efficient if possible. Ideally, calls to this function are optimized into a constant.
- */
-@PublishedApi internal expect inline fun <reified T> classHash(): Int
+import androidx.compose.foundation.text.selection.SelectionRegistrar
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.LayoutCoordinates
+
+@Suppress(names = ["ModifierFactoryExtensionFunction"])
+internal actual fun SelectionRegistrar.makeSelectionModifier(
+    selectableId: Long,
+    layoutCoordinates: () -> LayoutCoordinates?,
+): Modifier = makeDefaultSelectionModifier(selectableId, layoutCoordinates)

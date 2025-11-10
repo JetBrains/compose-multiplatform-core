@@ -2449,8 +2449,8 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
                 motionEvent.isFromSource(InputDevice.SOURCE_TOUCHPAD)
         if (isDown && isFromMouseOrTouchpad) {
             if (
-                (parent as? AbstractComposeView)?.autoClearFocusBehavior ==
-                    AutoClearFocusBehavior.CursorBased
+                ((parent as? View)?.getTag(R.id.auto_clear_focus_behavior_tag)
+                    ?: AutoClearFocusBehavior.Default) == AutoClearFocusBehavior.CursorBased
             ) {
                 val activeFocusTargetNode = focusOwner.activeFocusTargetNode
                 if (activeFocusTargetNode != null) {
