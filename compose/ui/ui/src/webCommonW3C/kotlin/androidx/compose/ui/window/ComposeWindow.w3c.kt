@@ -97,6 +97,7 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLStyleElement
 import org.w3c.dom.HTMLTitleElement
 import org.w3c.dom.MediaQueryListEvent
+import org.w3c.dom.Node
 import org.w3c.dom.OPEN
 import org.w3c.dom.ShadowRootInit
 import org.w3c.dom.ShadowRootMode
@@ -183,6 +184,7 @@ internal class DefaultWindowState(private val viewportContainer: Element) : Comp
 @OptIn(InternalComposeApi::class)
 internal class ComposeWindow(
     private val canvas: HTMLCanvasElement,
+    private val rootNode: Node,
     private val interopContainerElement: HTMLDivElement,
     private val a11yContainerElement: HTMLDivElement?,
     private val configuration: ComposeViewportConfiguration,
@@ -211,12 +213,12 @@ internal class ComposeWindow(
     // Used in WebTextInputService. Also see https://youtrack.jetbrains.com/issue/CMP-8611
     private var activeTouchOffset: Offset? = null
 
-    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty {
+    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty() {
         override val windowInfo get() = _windowInfo
         override val architectureComponentsOwner get() = archComponentsOwner
         override val inputModeManager: InputModeManager = DefaultInputModeManager()
 
-        override val dragAndDropManager: PlatformDragAndDropManager = object : WebDragAndDropManager(canvasEvents, state.globalEvents, density) {
+        override val dragAndDropManager: PlatformDragAndDropManager = object : WebDragAndDropManager(rootNode, canvasEvents, state.globalEvents, density) {
             override val rootDragAndDropNode: ComposeSceneDragAndDropNode
                 get() = scene.rootDragAndDropNode
         }
@@ -288,7 +290,7 @@ internal class ComposeWindow(
         }
 
         override val viewConfiguration =
-            object : ViewConfiguration by PlatformContext.Empty.viewConfiguration {
+            object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
                 override val touchSlop: Float get() = with(density) { 18.dp.toPx() }
             }
 
@@ -685,6 +687,7 @@ fun CanvasBasedWindow(
 
     ComposeWindow(
         canvas = canvas,
+        rootNode = canvas.getRootNode(),
         // a detached container
         interopContainerElement = document.createElement("div") as HTMLDivElement,
         a11yContainerElement = document.createElement("div") as HTMLDivElement,
@@ -745,7 +748,18 @@ fun ComposeViewport(
     }
 
     val shadowRoot = viewportContainer.attachShadow(ShadowRootInit(ShadowRootMode.OPEN))
-    shadowRoot.appendChild(layerRoot)
+    val shadowRootStyle = document.createElement("style")
+    shadowRootStyle.textContent = """
+        :host {
+            -webkit-touch-callout: none; 
+            -webkit-user-select: none; 
+            user-select: none;
+            
+            position: relative;
+        }
+    """.trimIndent()
+
+    shadowRoot.append(shadowRootStyle, layerRoot)
     layerRoot.appendChild(canvas)
 
     val interopContainerElement = document.createElement("div") as HTMLDivElement
@@ -774,6 +788,7 @@ fun ComposeViewport(
 
     ComposeWindow(
         canvas = canvas,
+        rootNode = shadowRoot,
         interopContainerElement = interopContainerElement,
         a11yContainerElement = a11yContainerElement,
         content = content,

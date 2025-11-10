@@ -59,8 +59,7 @@ internal class UIKitComposeSceneLayer(
     private val hostCompositionLocals: @Composable (@Composable () -> Unit) -> Unit,
 
     private val layersViewController: ComposeLayersViewController,
-    private val initDensity: Density,
-    private val initLayoutDirection: LayoutDirection,
+    private val initialLayoutDirection: LayoutDirection,
     private val onAccessibilityChanged: () -> Unit,
     onFocusBehavior: OnFocusBehavior,
     private var focusedViewsList: FocusedViewsList?,
@@ -114,8 +113,8 @@ internal class UIKitComposeSceneLayer(
         platformContext: PlatformContext
     ): ComposeScene =
         PlatformLayersComposeScene(
-            density = initDensity, // We should use the local density already set for the current layer.
-            layoutDirection = initLayoutDirection,
+            density = mediator.screenDensity,
+            layoutDirection = initialLayoutDirection,
             coroutineContext = coroutineContext,
             composeSceneContext = createComposeSceneContext(platformContext),
             invalidate = invalidate,
@@ -125,7 +124,11 @@ internal class UIKitComposeSceneLayer(
 
     var isAccessibilityEnabled by mediator::isAccessibilityEnabled
 
-    override var density by mediator::density
+    override var density: Density
+        get() = mediator.composeSceneDensity
+        set(_) {
+            // density of the layer cannot be customized
+        }
 
     override var layoutDirection by mediator::layoutDirection
 
@@ -154,6 +157,7 @@ internal class UIKitComposeSceneLayer(
 
     fun render(canvas: Canvas, nanoTime: Long) {
         if (scrimColor != null) {
+            val density = layersViewController.metalView.density
             val rect = layersViewController.metalView.bounds.asDpRect().toRect(density)
 
             canvas.drawRect(rect, scrimPaint)

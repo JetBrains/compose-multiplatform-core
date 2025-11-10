@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.Button
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Tab
@@ -38,17 +40,21 @@ import androidx.compose.ui.platform.a11y.ComposeSceneAccessible
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.isContainer
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.SkikoComposeUiTest
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performTextInputSelection
 import androidx.compose.ui.test.runInternalSkikoComposeUiTest
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
@@ -324,6 +330,142 @@ class AccessibilityTest {
         }
     }
 
+    private fun ComposeA11yTestScope.verifyTextFieldA11y(node: SemanticsNodeInteraction) {
+        fun AccessibleText.asString() = buildString {
+            for (i in 0 until charCount) {
+                append(getAtIndex(AccessibleText.CHARACTER, i))
+            }
+        }
+
+        fun SemanticsNodeInteraction.accessibleText() =
+            fetchAccessible().accessibleContext?.accessibleText
+
+        with(node) {
+            // Check role and states
+            assertHasAccessibleRole(AccessibleRole.TEXT)
+            assertHasAccessibleState(AccessibleState.EDITABLE)
+
+            // Check text
+            accessibleText().let { accessibleText ->
+                assertNotNull(accessibleText, "AccessibleText is null")
+                assertThat(accessibleText.asString()).isEqualTo("Hello world")
+                assertThat(accessibleText.getAtIndex(AccessibleText.WORD, 0)).isEqualTo("Hello")
+                assertThat(accessibleText.getAtIndex(AccessibleText.WORD, 6)).isEqualTo("world")
+                assertThat(accessibleText.selectedText).isEqualTo(null)
+            }
+
+            // Check selection change events
+            var caretChanged = false
+            var selectionChanged = false
+            fetchAccessible().accessibleContext!!.addPropertyChangeListener { evt ->
+                when (evt.propertyName) {
+                    AccessibleContext.ACCESSIBLE_CARET_PROPERTY -> caretChanged = true
+                    AccessibleContext.ACCESSIBLE_SELECTION_PROPERTY -> selectionChanged = true
+                }
+            }
+            performTextInputSelection(TextRange(5, 0))
+            test.waitForIdle()
+            assertTrue(caretChanged)
+            assertTrue(selectionChanged)
+            // Check new selection
+            accessibleText().let { accessibleText ->
+                assertNotNull(accessibleText, "AccessibleText is null")
+                assertThat(accessibleText.selectedText).isEqualTo("Hello")
+            }
+
+            // Check empty selection
+            performTextInputSelection(TextRange(3, 3))
+            test.waitForIdle()
+            accessibleText().let { accessibleText ->
+                assertNotNull(accessibleText, "AccessibleText is null")
+                assertThat(accessibleText.selectedText).isEqualTo(null)
+            }
+        }
+    }
+
+    @Test
+    fun verifyTextField1A11y() = runDesktopA11yTest {
+        test.setContent {
+            BasicTextField(
+                value = "Hello world",
+                onValueChange = { },
+                modifier = Modifier.testTag("textField")
+            )
+        }
+
+        verifyTextFieldA11y(test.onNodeWithTag("textField"))
+    }
+
+    @Test
+    fun verifyTextField2A11y() = runDesktopA11yTest {
+        test.setContent {
+            BasicTextField(
+                state = rememberTextFieldState("Hello world"),
+                modifier = Modifier.testTag("textField")
+            )
+        }
+
+        verifyTextFieldA11y(test.onNodeWithTag("textField"))
+    }
+
+    @Test
+    fun traversalIndexIsRespected() = runDesktopA11yTest {
+        test.setContent {
+            Column(Modifier
+                .testTag("container")
+                .semantics {
+                    isTraversalGroup = true
+                }
+            ) {
+                Text("Item 1",
+                    Modifier
+                        .semantics {
+                            traversalIndex = 0f
+                            contentDescription = "Item 1"
+                        }
+                        .testTag("item1")
+                )
+                Text("Item 2",
+                    Modifier
+                        .semantics {
+                            traversalIndex = 2f
+                            contentDescription = "Item 2"
+                        }
+                        .testTag("item2")
+                )
+                Text("Item 3",
+                    Modifier
+                        .semantics {
+                            traversalIndex = 1f
+                            contentDescription = "Item 3"
+                        }
+                        .testTag("item3")
+                )
+            }
+        }
+
+        test.onNodeWithTag("container").fetchAccessible().accessibleContext.let { context ->
+            assertNotNull(context)
+
+            fun assertDescriptionAtIndexIs(index: Int, expectedDescription: String) {
+                assertThat(context.getAccessibleChild(index).accessibleContext.accessibleDescription)
+                    .isEqualTo(expectedDescription)
+            }
+
+            assertThat(context.accessibleChildrenCount).isEqualTo(3)
+            assertDescriptionAtIndexIs(0, "Item 1")
+            assertDescriptionAtIndexIs(1, "Item 3")
+            assertDescriptionAtIndexIs(2, "Item 2")
+        }
+
+        fun assertNodeWithTagIndexInParentIs(tag: String, expectedIndex: Int) {
+            assertThat(test.onNodeWithTag(tag).fetchAccessible().accessibleContext?.accessibleIndexInParent)
+                .isEqualTo(expectedIndex)
+        }
+        assertNodeWithTagIndexInParentIs("item1", 0)
+        assertNodeWithTagIndexInParentIs("item2", 2)
+        assertNodeWithTagIndexInParentIs("item3", 1)
+    }
 }
 
 

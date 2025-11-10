@@ -461,8 +461,7 @@ internal class ComposeHostingViewController(
                     createComposeSceneContext = { createComposeSceneContext(it, layersHolder) },
                     hostCompositionLocals = { ProvideContainerCompositionLocals(it) },
                     layersViewController = layersHolder.getLayersViewController(),
-                    initDensity = density,
-                    initLayoutDirection = layoutDirection,
+                    initialLayoutDirection = layoutDirection,
                     onFocusBehavior = configuration.onFocusBehavior,
                     onAccessibilityChanged = ::onAccessibilityChanged,
                     focusedViewsList = if (focusable) focusedViewsList?.childFocusedViewsList() else null,
@@ -524,7 +523,7 @@ internal class ComposeHostingViewController(
         )
 
     private fun ComposeSceneMediator.updateInteractionRect() {
-        interactionBounds = with(density) {
+        interactionBounds = with(view.density) {
             view.bounds.asDpRect().toRect().roundToIntRect()
         }
     }

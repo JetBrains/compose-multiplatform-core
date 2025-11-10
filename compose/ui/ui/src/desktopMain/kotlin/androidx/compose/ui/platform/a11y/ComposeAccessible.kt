@@ -112,10 +112,14 @@ internal class ComposeAccessible(
 
     val composeAccessibleContext: ComposeAccessibleComponent by lazy { ComposeAccessibleComponent() }
 
-    var removed = false
+    private var disposed = false
+
+    fun dispose() {
+        disposed = true
+    }
 
     override fun getAccessibleContext(): AccessibleContext? {
-        if (removed) {
+        if (disposed) {
             // The accessibility system keeps calling functions on the context even after the node
             // has been removed. We return null so it doesn't do that.
             return null
@@ -179,10 +183,10 @@ internal class ComposeAccessible(
         val auxiliaryChildren
             get() = buildList {
                 horizontalScroll?.let {
-                    add(makeScrollbarChild(false))
+                    add(makeScrollbarChild(vertical = false))
                 }
                 verticalScroll?.let {
-                    add(makeScrollbarChild(true))
+                    add(makeScrollbarChild(vertical = true))
                 }
             }
 
@@ -319,21 +323,21 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleIndexInParent(): Int {
-            val parentChildren = semanticsNode.parent?.replacedChildren
-            return parentChildren?.indexOfFirst { it.id == semanticsNode.id } ?: -1
+            val parentChildren = semanticsNode.parent?.traversalOrderedChildren()
+            return (parentChildren?.indexOfFirst { it.id == semanticsNode.id } ?: -1)
         }
 
         override fun getAccessibleChildrenCount(): Int {
             return semanticsNode.replacedChildren.size + auxiliaryChildren.size
         }
 
-        override fun getAccessibleChild(i: Int): Accessible? {
-            val replacedChildren = semanticsNode.replacedChildren
-            val replacedChildrenSize = replacedChildren.size
-            return if (i < replacedChildrenSize) {
-                controller.accessibleByNodeId(replacedChildren[i].id)
+        override fun getAccessibleChild(index: Int): Accessible? {
+            val regularChildren = semanticsNode.traversalOrderedChildren()
+            val childrenSize = regularChildren.size
+            return if (index < childrenSize) {
+                controller.accessibleByNodeId(regularChildren[index].id)
             } else {
-                auxiliaryChildren[i - replacedChildrenSize]
+                auxiliaryChildren[index - childrenSize]
             }
         }
 
@@ -369,12 +373,23 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleAt(p: Point): Accessible? {
-            for (i in 0 until accessibleChildrenCount) {
-                val child = (getAccessibleChild(i)?.accessibleContext as? AccessibleComponent)
-                child?.getAccessibleAt(p)?.let {
+            val accessibleChildren = semanticsNode.traversalOrderedChildren()
+            for (child in accessibleChildren) {
+                val accessible = controller.accessibleByNodeId(child.id) as? Accessible ?: continue
+                val accessibleComponent = (accessible.accessibleContext as? AccessibleComponent) ?: continue
+                accessibleComponent.getAccessibleAt(p)?.let {
                     return it
                 }
             }
+
+            for (accessibleChild in auxiliaryChildren) {
+                val accessibleComponent =
+                    accessibleChild.accessibleContext as? AccessibleComponent ?: continue
+                accessibleComponent.getAccessibleAt(p)?.let {
+                    return it
+                }
+            }
+
             if (contains(p)) {
                 return this@ComposeAccessible
             }
@@ -419,8 +434,8 @@ internal class ComposeAccessible(
             return when {
                 fromSemanticRole != null -> fromSemanticRole
                 isPassword -> AccessibleRole.PASSWORD_TEXT
-                scrollBy != null -> AccessibleRole.SCROLL_PANE
                 setText != null -> AccessibleRole.TEXT
+                scrollBy != null -> AccessibleRole.SCROLL_PANE
                 text != null -> AccessibleRole.LABEL
                 progressBarRangeInfo != null -> {
                     if (semanticsConfig.getOrNull(SemanticsActions.SetProgress) != null)
@@ -442,6 +457,8 @@ internal class ComposeAccessible(
 
                 if (isEnabled)
                     add(AccessibleState.ENABLED)
+                if (semanticsConfig.getOrNull(SemanticsProperties.IsEditable) == true)
+                    add(AccessibleState.EDITABLE)
                 if (isShowing)
                     add(AccessibleState.SHOWING)
                 if (isVisible)
@@ -588,18 +605,19 @@ internal class ComposeAccessible(
             }
 
             override fun getSelectionStart(): Int {
-                return textSelectionRange?.start ?: 0
+                return textSelectionRange?.min ?: 0
             }
 
             override fun getSelectionEnd(): Int {
-                return textSelectionRange?.end ?: 0
+                return textSelectionRange?.max ?: 0
             }
 
-            override fun getSelectedText(): String {
-                return textSelectionRange?.let { selection ->
-                    // could be end less than start here?
-                    text!!.subSequence(selection.start, selection.end).toString()
-                } ?: ""
+            override fun getSelectedText(): String? {
+                val selection = textSelectionRange ?: return null
+                val start = selection.min
+                val end = selection.max
+                return if (start == end) null
+                else text!!.subSequence(start, end).toString()
             }
 
             override fun getTextRange(startIndex: Int, endIndex: Int): String {
@@ -688,16 +706,11 @@ internal class ComposeAccessible(
         }
 
         private val accessibleText by lazy {
+            // Technically it's wrong to cache this because `setText` or `text` may change
             when {
-                setText != null -> {
-                    ComposeAccessibleEditableText()
-                }
-                text != null -> {
-                    ComposeAccessibleText()
-                }
-                else -> {
-                    null
-                }
+                setText != null -> ComposeAccessibleEditableText()
+                text != null -> ComposeAccessibleText()
+                else -> null
             }
         }
 
@@ -932,5 +945,13 @@ private class ProgressBarAccessibleValue(
 
     override fun getMaximumAccessibleValue(): Number {
         return rangeInfo?.range?.endInclusive ?: 1f
+    }
+}
+
+private fun SemanticsNode.traversalOrderedChildren(): List<SemanticsNode> {
+    val children = replacedChildren
+    return if (config.getOrNull(SemanticsProperties.IsTraversalGroup) != true) children
+    else children.sortedBy {
+        it.config.getOrNull(SemanticsProperties.TraversalIndex) ?: 0f
     }
 }
