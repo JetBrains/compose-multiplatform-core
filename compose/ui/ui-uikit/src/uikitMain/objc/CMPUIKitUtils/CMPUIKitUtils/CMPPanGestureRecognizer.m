@@ -34,6 +34,10 @@
     [super touchesCancelled:touches withEvent:event];
 }
 
+- (BOOL)shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    return [super shouldBeRequiredToFailByGestureRecognizer:otherGestureRecognizer];
+}
+
 - (BOOL)shouldReceiveEvent:(UIEvent *)event {
     return [super shouldReceiveEvent:event];
 }

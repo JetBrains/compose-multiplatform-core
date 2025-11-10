@@ -28,6 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event;
 
+- (BOOL)shouldBeRequiredToFailByGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer;
+
 - (BOOL)shouldReceiveEvent:(UIEvent *)event;
 
 @end

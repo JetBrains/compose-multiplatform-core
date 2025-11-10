@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.window
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.navigationevent.UIKitBackGestureRecognizer
 import androidx.compose.ui.scene.PointerEventResult
 import androidx.compose.ui.uikit.utils.CMPGestureRecognizer
@@ -43,10 +44,14 @@ import org.jetbrains.skiko.available
 import platform.CoreGraphics.CGPoint
 import platform.CoreGraphics.CGRectIsEmpty
 import platform.CoreGraphics.CGRectZero
+import platform.Foundation.NSDate
 import platform.Foundation.NSSelectorFromString
+import platform.Foundation.now
+import platform.Foundation.timeIntervalSinceNow
 import platform.UIKit.UIEvent
 import platform.UIKit.UIEventTypeTouches
 import platform.UIKit.UIGestureRecognizer
+import platform.UIKit.UIGestureRecognizerDelegateProtocol
 import platform.UIKit.UIGestureRecognizerState
 import platform.UIKit.UIGestureRecognizerStateBegan
 import platform.UIKit.UIGestureRecognizerStateCancelled
@@ -59,6 +64,7 @@ import platform.UIKit.UIPressesEvent
 import platform.UIKit.UIScreenEdgePanGestureRecognizer
 import platform.UIKit.UIScrollTypeMaskAll
 import platform.UIKit.UIScrollView
+import platform.UIKit.UITapGestureRecognizer
 import platform.UIKit.UITouch
 import platform.UIKit.UIView
 import platform.UIKit.endEditing
@@ -339,18 +345,6 @@ private class TouchesGestureRecognizer(
         return endOfHorizontal && endOfVertical
     }
 
-    private fun isInChildHierarchy(child: UIView?): Boolean {
-        val view = view ?: return false
-        var iteratingView = child
-        while (iteratingView != null) {
-            if (view == iteratingView) {
-                return true
-            }
-            iteratingView = iteratingView.superview
-        }
-        return false
-    }
-
     /**
      * Intentionally clean up all dependencies to prevent retain cycles that
      * can be caused by implicit capture of the view by UIKit objects (such as [UIEvent]) in
@@ -490,6 +484,106 @@ private class ScrollGestureRecognizer(
     }
 }
 
+private class FlingGestureRecognizer() : CMPPanGestureRecognizer(target = null, action = null),
+    UIGestureRecognizerDelegateProtocol {
+    init {
+        setDelaysTouchesBegan(false)
+        setDelaysTouchesEnded(false)
+        setCancelsTouchesInView(false)
+        setAllowedScrollTypesMask(UIScrollTypeMaskAll)
+        addTarget(this, NSSelectorFromString(::onPan.name + ":"))
+        setDelegate(this)
+    }
+
+    private data class FlingRecord(
+        val scrollStart: NSDate,
+        val scrollEnd: NSDate,
+        val maxVelocity: Offset = Offset(0f, 0f),
+    )
+
+    private var lastRecord: FlingRecord? = null
+    private var currentRecord: FlingRecord? = null
+
+    @ObjCAction
+    fun onPan(gestureRecognizer: UIPanGestureRecognizer) {
+        when (gestureRecognizer.state) {
+            UIGestureRecognizerStateBegan -> {
+                currentRecord = FlingRecord(NSDate.now, NSDate.now)
+                cancelTapFailure()
+            }
+            UIGestureRecognizerStateChanged -> {
+                val changed = gestureRecognizer.velocityInView(gestureRecognizer.view)
+                    .useContents { Offset(x.toFloat(), y.toFloat()) }
+                currentRecord = currentRecord?.let {
+                    it.copy(maxVelocity = Offset(
+                        if (abs(changed.x) > abs(it.maxVelocity.x)) changed.x else it.maxVelocity.x,
+                        if (abs(changed.y) > abs(it.maxVelocity.y)) changed.y else it.maxVelocity.y,
+                    ))
+                }
+            }
+            UIGestureRecognizerStateEnded -> {
+                lastRecord = currentRecord?.copy(scrollEnd = NSDate.now)
+                currentRecord = null
+            }
+            UIGestureRecognizerStateCancelled, UIGestureRecognizerStateFailed -> {
+                currentRecord = null
+                lastRecord = null
+            }
+
+            else -> {}
+        }
+    }
+
+    fun dispose() {
+        removeTarget(this, null)
+    }
+
+    override fun gestureRecognizer(
+        gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWithGestureRecognizer: UIGestureRecognizer
+    ): Boolean {
+        // enable simultaneously with [TouchesGestureRecognizer]
+        return true
+    }
+
+    private var tapRecognizerProvider: (() -> UITapGestureRecognizer)? = null
+
+    override fun shouldBeRequiredToFailByGestureRecognizer(
+        otherGestureRecognizer: UIGestureRecognizer
+    ): Boolean {
+        if (isInChildHierarchy(otherGestureRecognizer.view) && otherGestureRecognizer is UITapGestureRecognizer) {
+            tapRecognizerProvider = { otherGestureRecognizer }
+            return true
+        }
+        return super.shouldBeRequiredToFailByGestureRecognizer(otherGestureRecognizer)
+    }
+
+    private fun cancelTapFailure() {
+        tapRecognizerProvider = null
+    }
+
+    override fun touchesEnded(touches: Set<*>, withEvent: UIEvent) {
+        val recentFling = lastRecord?.let { record ->
+            val recent = abs(record.scrollEnd.timeIntervalSinceNow) < 5.0 /*second*/
+            val fling = abs(record.maxVelocity.y) > 1000 /*pt*/
+            recent && fling
+        } ?: false
+
+        if (currentRecord == null) {
+            if (recentFling) {
+                // last touch was fling && current not scroll. This touch means to stop fling
+                // disable UITapGestureRecognizer from [isInChildHierarchy]
+                tapRecognizerProvider?.invoke()?.setState(UIGestureRecognizerStateFailed)
+            }
+            // current not scroll, clear record
+            lastRecord = null
+        }
+        cancelTapFailure()
+
+        super.touchesEnded(touches, withEvent)
+    }
+}
+
 /**
  * The application can place interop views above and below the rendering canvas which is implemented
  * by using [OverlayInputView] and [BackgroundInputView].
@@ -533,6 +627,14 @@ internal class OverlayInputView(
         }
     }
 
+    private val flingGestureRecognizer: FlingGestureRecognizer? by lazy {
+        if (available(OS.Ios to OSVersion(major = 13, minor = 4))) {
+            FlingGestureRecognizer()
+        } else {
+            null
+        }
+    }
+
     private val hoverGestureHandler by lazy {
         CMPHoverGestureHandler(this, NSSelectorFromString(::onHover.name + ":"))
     }
@@ -547,6 +649,9 @@ internal class OverlayInputView(
 
         addGestureRecognizer(touchesGestureRecognizer)
         scrollGestureRecognizer?.let {
+            addGestureRecognizer(it)
+        }
+        flingGestureRecognizer?.let {
             addGestureRecognizer(it)
         }
         hoverGestureHandler.attachToView(this)
@@ -619,6 +724,10 @@ internal class OverlayInputView(
         removeGestureRecognizer(touchesGestureRecognizer)
         touchesGestureRecognizer.dispose()
         scrollGestureRecognizer?.let {
+            removeGestureRecognizer(it)
+            it.dispose()
+        }
+        flingGestureRecognizer?.let {
             removeGestureRecognizer(it)
             it.dispose()
         }
@@ -754,6 +863,18 @@ private fun UIView?.hasTrackingUIScrollView(): Boolean {
             }
         }
         view = view.superview
+    }
+    return false
+}
+
+private fun UIGestureRecognizer.isInChildHierarchy(child: UIView?): Boolean {
+    val view = view ?: return false
+    var iteratingView = child
+    while (iteratingView != null) {
+        if (view == iteratingView) {
+            return true
+        }
+        iteratingView = iteratingView.superview
     }
     return false
 }
