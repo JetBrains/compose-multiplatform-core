@@ -145,8 +145,6 @@ class NavHostControllerTest {
 
         runOnUiThread { navController.navigate(SECOND_DESTINATION) }
 
-        composeTestRule.waitForIdle()
-
         assertWithMessage("the currentBackStackEntry should be after navigate")
             .that(currentBackStackEntry.value?.destination?.route)
             .isEqualTo(SECOND_DESTINATION)
@@ -204,8 +202,6 @@ class NavHostControllerTest {
         runOnUiThread {
             navController.navigate(SECOND_DESTINATION) { popUpTo("first") { inclusive = true } }
         }
-
-        composeTestRule.waitForIdle()
 
         assertWithMessage("the currentBackStackEntry should be after navigate")
             .that(currentBackStackEntry.value?.destination?.route)

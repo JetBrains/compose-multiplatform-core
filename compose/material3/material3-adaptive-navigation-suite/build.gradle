@@ -105,6 +105,10 @@ androidXMultiplatform {
 
         skikoTest {
             dependsOn(commonTest)
+            dependencies {
+                implementation(project(":kruth:kruth"))
+                implementation(libs.kotlinTest)
+            }
         }
 
         desktopMain {

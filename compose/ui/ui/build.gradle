@@ -557,3 +557,7 @@ tasks.register("updateTranslationsIos", UpdateTranslationsTask.class) {
             "vi", // Vietnamese
     ]
 }
+
+tasks.findByName("desktopTest").configure {
+    systemProperties["GOLDEN_PATH"] = project.rootDir.absolutePath + "/golden"
+}

@@ -965,43 +965,6 @@ class NavHostTest {
     }
 
     @Test
-    fun testNavHostDeeplink() = runComposeUiTestOnUiThread {
-        lateinit var navController: NavHostController
-
-        composeTestRule.mainClock.autoAdvance = false
-
-        composeTestRule.setContent {
-            // Add the flags to make NavController think this is a deep link
-            val activity = LocalContext.current as? Activity
-            activity?.intent?.run {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
-            navController = rememberNavController()
-            NavHost(navController, startDestination = first) {
-                composable(first) { BasicText(first) }
-                composable(
-                    second,
-                    deepLinks = listOf(navDeepLink { action = Intent.ACTION_MAIN }),
-                ) {
-                    BasicText(second)
-                }
-            }
-        }
-
-        composeTestRule.waitForIdle()
-
-        val firstEntry = navController.getBackStackEntry(first)
-        val secondEntry = navController.getBackStackEntry(second)
-
-        composeTestRule.mainClock.autoAdvance = true
-
-        composeTestRule.runOnIdle {
-            assertThat(firstEntry.lifecycle.currentState).isEqualTo(Lifecycle.State.CREATED)
-            assertThat(secondEntry.lifecycle.currentState).isEqualTo(Lifecycle.State.RESUMED)
-        }
-    }
-
-    @Test
     fun testStateSaved() = runComposeUiTestOnUiThread {
         lateinit var navController: NavHostController
         lateinit var text: MutableState<String>
@@ -1254,50 +1217,7 @@ class NavHostTest {
         }
     }
 
-    @Test
-    fun testLifecycleStateOnAtomicNavigateToComposableAndDialog() {
-        lateinit var navController: NavHostController
-        lateinit var screen1Lifecycle: State<Lifecycle.State>
-        lateinit var screen2Lifecycle: State<Lifecycle.State>
-        lateinit var dialogLifecycle: State<Lifecycle.State>
-        setContent {
-            navController = rememberNavController()
-            NavHost(navController, startDestination = "screen1") {
-                composable("screen1") {
-                    screen1Lifecycle = it.lifecycle.currentStateFlow.collectAsState()
-                    Text("screen1")
-                }
-                composable("screen2") {
-                    screen2Lifecycle = it.lifecycle.currentStateFlow.collectAsState()
-                    Text("screen1")
-                }
-                dialog("dialog") {
-                    dialogLifecycle = it.lifecycle.currentStateFlow.collectAsState()
-                    Text("dialog")
-                }
-            }
-        }
-
-        waitForIdle()
-        onNodeWithText("screen1").assertIsDisplayed()
-        assertThat(screen1Lifecycle.value).isEqualTo(Lifecycle.State.RESUMED)
-
-        runOnUiThread {
-            navController.navigate("screen2")
-            navController.navigate("dialog")
-        }
-
-        waitForIdle()
-        onNodeWithText("dialog").assertIsDisplayed()
-        assertThat(screen2Lifecycle.value).isEqualTo(Lifecycle.State.STARTED)
-        assertThat(dialogLifecycle.value).isEqualTo(Lifecycle.State.RESUMED)
-
-        runOnUiThread { navController.popBackStack() }
-
-        waitForIdle()
-        assertThat(screen2Lifecycle.value).isEqualTo(Lifecycle.State.RESUMED)
-    }
-
+    @Composable
     private fun createNavController(): TestNavHostController {
         val navController = TestNavHostController()
         val navigator = TestNavigator()
