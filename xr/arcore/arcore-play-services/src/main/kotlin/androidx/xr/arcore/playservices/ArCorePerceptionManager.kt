@@ -29,13 +29,6 @@ import androidx.xr.arcore.runtime.PerceptionManager
 import androidx.xr.arcore.runtime.RenderViewpoint
 import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.VpsAvailabilityAvailable
-import androidx.xr.runtime.VpsAvailabilityErrorInternal
-import androidx.xr.runtime.VpsAvailabilityNetworkError
-import androidx.xr.runtime.VpsAvailabilityNotAuthorized
-import androidx.xr.runtime.VpsAvailabilityResourceExhausted
-import androidx.xr.runtime.VpsAvailabilityResult
-import androidx.xr.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
@@ -45,16 +38,12 @@ import com.google.ar.core.CameraConfigFilter
 import com.google.ar.core.Frame
 import com.google.ar.core.Plane as ARCore1xPlane
 import com.google.ar.core.Session
-import com.google.ar.core.VpsAvailability as ARCore1xVpsAvailability
-import com.google.ar.core.VpsAvailabilityFuture
 import com.google.ar.core.exceptions.NotTrackingException
 import java.util.UUID
-import kotlin.coroutines.resume
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.TimeSource
 import kotlin.time.TimeSource.Monotonic
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * Implementation of the perception capabilities of a runtime using ARCore.
@@ -166,39 +155,6 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
         throw NotImplementedError("Anchor persistence is currently not supported by ARCore.")
     }
 
-    /** Gets the VPS availability at the given location. */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override suspend fun checkVpsAvailability(
-        latitude: Double,
-        longitude: Double,
-    ): VpsAvailabilityResult {
-        return suspendCancellableCoroutine { continuation ->
-            val future: VpsAvailabilityFuture =
-                session.checkVpsAvailabilityAsync(latitude, longitude) {
-                    arCoreVpsAvailability: ARCore1xVpsAvailability? ->
-                    val vpsResult =
-                        when (arCoreVpsAvailability) {
-                            ARCore1xVpsAvailability.AVAILABLE -> VpsAvailabilityAvailable()
-                            ARCore1xVpsAvailability.ERROR_INTERNAL -> VpsAvailabilityErrorInternal()
-                            ARCore1xVpsAvailability.ERROR_NETWORK_CONNECTION ->
-                                VpsAvailabilityNetworkError()
-                            ARCore1xVpsAvailability.ERROR_NOT_AUTHORIZED ->
-                                VpsAvailabilityNotAuthorized()
-                            ARCore1xVpsAvailability.ERROR_RESOURCE_EXHAUSTED ->
-                                VpsAvailabilityResourceExhausted()
-                            ARCore1xVpsAvailability.UNAVAILABLE -> VpsAvailabilityUnavailable()
-                            else -> VpsAvailabilityErrorInternal()
-                        }
-                    continuation.resume(vpsResult)
-                }
-
-            continuation.invokeOnCancellation {
-                // No cleanup is necessary, so we don't care if it is completed or not.
-                val unused = future.cancel()
-            }
-        }
-    }
-
     override val trackables: Collection<Trackable> = xrResources.trackables.values
 
     /**
@@ -236,9 +192,9 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) override val userFace: Face? = null
 
-    /** Returns the [Earth] instance. */
+    /** Returns the [Geospatial] instance. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override val earth: ArCoreEarth = xrResources.earth
+    override val geospatial: ArCoreEarth = xrResources.geospatial
 
     /** Returns the [ArDevice] instance. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -330,7 +286,7 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
             xrResources.depthMap.update(_latestFrame)
         }
 
-        earth.update(session)
+        geospatial.update(session)
     }
 
     /**

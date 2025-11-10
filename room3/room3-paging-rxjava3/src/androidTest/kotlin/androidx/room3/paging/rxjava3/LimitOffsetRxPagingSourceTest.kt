@@ -16,6 +16,7 @@
 
 package androidx.room3.paging.rxjava3
 
+import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
 import androidx.kruth.assertWithMessage
@@ -46,6 +47,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -375,7 +377,7 @@ class LimitOffsetRxPagingSourceTest {
                     ApplicationProvider.getApplicationContext()
                 )
                 .setDriver(AndroidSQLiteDriver())
-                .setQueryExecutor(queryExecutor)
+                .setQueryCoroutineContext(queryExecutor.asCoroutineDispatcher())
                 .build()
 
         testDb.getDao().addAllItems(ITEMS_LIST)
@@ -456,6 +458,9 @@ class LimitOffsetRxPagingSourceTest {
                     ApplicationProvider.getApplicationContext()
                 )
                 .setDriver(AndroidSQLiteDriver())
+                .setQueryCoroutineContext(
+                    ArchTaskExecutor.getIOThreadExecutor().asCoroutineDispatcher()
+                )
                 .build()
 
         runTest { test(db) }

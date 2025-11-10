@@ -26,6 +26,8 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import kotlin.reflect.KClass
 import kotlin.reflect.cast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import okio.FileSystem
 import okio.Path.Companion.toPath
 
@@ -186,6 +188,6 @@ public actual class MigrationTestHelper(
             autoMigrationSpecs = emptyList(),
             allowDestructiveMigrationForAllTables = false,
             sqliteDriver = driver,
-            queryCoroutineContext = null,
+            queryCoroutineContext = Dispatchers.IO,
         )
 }

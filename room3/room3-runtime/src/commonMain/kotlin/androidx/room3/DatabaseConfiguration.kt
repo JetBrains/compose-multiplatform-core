@@ -44,5 +44,5 @@ public expect class DatabaseConfiguration {
     /* The SQLite Driver for the database. */
     public val sqliteDriver: SQLiteDriver
     /* The Coroutine context for the database. */
-    public val queryCoroutineContext: CoroutineContext?
+    public val queryCoroutineContext: CoroutineContext
 }

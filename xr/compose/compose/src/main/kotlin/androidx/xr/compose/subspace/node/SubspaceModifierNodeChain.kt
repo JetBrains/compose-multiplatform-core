@@ -45,6 +45,9 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
     internal var head: SubspaceModifier.Node = tail
     private var inMeasurePass: Boolean = false
 
+    private val logger: Logger?
+        get() = subspaceLayoutNode.owner?.logger
+
     private fun padChain(): SubspaceModifier.Node {
         val currentHead = head
         currentHead.parent = SentinelHead
@@ -72,13 +75,14 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
             while (i < after.size) {
                 val next = after[i]
                 val parent = node
-                node = createAndInsertNodeAsChild(next, parent)
+                node = createAndInsertNodeAsChild(next, parent, i)
                 i++
             }
         } else if (after.size == 0) {
             // Common case where we are removing all the modifiers.
             var node = paddedHead.child
             while (node != null && i < beforeSize) {
+                logger?.nodeRemoved(node, subspaceLayoutNode, i)
                 node = removeNode(node).child
                 i++
             }
@@ -91,6 +95,7 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
             while (i < beforeSize && i < after.size && before[i]::class == after[i]::class) {
                 node = checkNotNull(node.child) { "child should not be null" }
                 if (before[i] != after[i]) {
+                    logger?.nodeUpdated(node, subspaceLayoutNode, i)
                     updateNode(node, after[i])
                 }
                 i++
@@ -182,9 +187,11 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
     private fun createAndInsertNodeAsChild(
         element: SubspaceModifier,
         parent: SubspaceModifier.Node,
+        index: Int,
     ): SubspaceModifier.Node {
         val node = (element as SubspaceModifierNodeElement<*>).create()
         node.layoutNode = subspaceLayoutNode
+        logger?.nodeInserted(node, subspaceLayoutNode, index)
         return insertChild(node, parent)
     }
 
@@ -313,10 +320,11 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
         }
 
         override fun insert(newIndex: Int) {
-            node = createAndInsertNodeAsChild(after[offset + newIndex], node)
+            node = createAndInsertNodeAsChild(after[offset + newIndex], node, offset + newIndex)
         }
 
         override fun remove(atIndex: Int, oldIndex: Int) {
+            logger?.nodeRemoved(node, subspaceLayoutNode, atIndex)
             node = removeNode(node.child!!)
         }
 
@@ -324,7 +332,11 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
             node = node.child!!
             val prev = before[offset + oldIndex]
             val next = after[offset + newIndex]
+            if (oldIndex != newIndex) {
+                logger?.nodeMoved(node, subspaceLayoutNode, oldIndex, newIndex)
+            }
             if (prev != next) {
+                logger?.nodeUpdated(node, subspaceLayoutNode, newIndex)
                 updateNode(node, next)
             }
         }

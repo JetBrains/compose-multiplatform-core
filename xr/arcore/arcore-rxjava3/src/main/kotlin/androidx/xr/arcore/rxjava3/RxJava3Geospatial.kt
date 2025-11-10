@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-@file:JvmName("RxJava3Earth")
+@file:JvmName("RxJava3Geospatial")
 
 package androidx.xr.arcore.rxjava3
 
-import androidx.xr.arcore.Earth
+import androidx.xr.arcore.Geospatial
 import io.reactivex.rxjava3.core.Flowable
 import kotlinx.coroutines.rx3.asFlowable
 
-/** The current [State] of the [Earth]. */
-public val Earth.stateAsFlowable: Flowable<Earth.State>
+/** The current [State] of [Geospatial]. */
+public val Geospatial.stateAsFlowable: Flowable<Geospatial.State>
     get() = state.asFlowable()

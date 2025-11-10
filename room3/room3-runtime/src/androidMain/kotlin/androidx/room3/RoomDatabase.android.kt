@@ -28,13 +28,14 @@ import androidx.annotation.CallSuper
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
-import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.room3.Room.LOG_TAG
 import androidx.room3.autoclose.AutoCloser
 import androidx.room3.autoclose.AutoCloserConfig
 import androidx.room3.autoclose.AutoClosingSQLiteDriver
 import androidx.room3.concurrent.CloseBarrier
+import androidx.room3.coroutines.TransactionElement
 import androidx.room3.coroutines.runBlockingUninterruptible
+import androidx.room3.coroutines.withTransactionContext
 import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.migration.Migration
 import androidx.room3.prepackage.CopyFromAssetPath
@@ -52,24 +53,17 @@ import java.io.InputStream
 import java.util.TreeMap
 import java.util.concurrent.Callable
 import java.util.concurrent.Executor
-import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
-import kotlin.coroutines.resume
 import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asContextElement
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 
 /**
  * Base class for all Room databases. All classes that are annotated with [Database] must extend
@@ -88,23 +82,21 @@ actual constructor() {
 
     private lateinit var configuration: DatabaseConfiguration
     private lateinit var coroutineScope: CoroutineScope
-    private lateinit var transactionContext: CoroutineContext
 
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val path: String?
         get() = configuration.name?.let { configuration.context.getDatabasePath(it).path }
 
-    /** The Executor in use by this database for async queries. */
-    public open val queryExecutor: Executor
-        get() = internalQueryExecutor
+    /**
+     * The executor for thread-confined transactions, such as those from the [AndroidSQLiteDriver]
+     * or any driver that report to have an internal pool via [SQLiteDriver.hasConnectionPool].
+     *
+     * @see androidx.room3.coroutines.startTransactionCoroutine
+     */
+    internal val transactionLimitedExecutor: Executor
+        get() = internalTransactionLimitedExecutor
 
-    private lateinit var internalQueryExecutor: Executor
-
-    /** The Executor in use by this database for async transactions. */
-    public open val transactionExecutor: Executor
-        get() = internalTransactionExecutor
-
-    private lateinit var internalTransactionExecutor: Executor
+    private lateinit var internalTransactionLimitedExecutor: Executor
 
     private lateinit var connectionManager: RoomConnectionManager
 
@@ -143,9 +135,6 @@ actual constructor() {
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public val suspendingTransactionContext: ThreadLocal<CoroutineContext> =
         ThreadLocal<CoroutineContext>()
-
-    private val isThreadInSuspendingTransaction: Boolean
-        get() = suspendingTransactionContext.get()?.get(TransactionElement) != null
 
     private val typeConverters: MutableMap<KClass<*>, Any> = mutableMapOf()
 
@@ -199,30 +188,14 @@ actual constructor() {
         validateAutoMigrations(configuration)
         validateTypeConverters(configuration)
 
-        if (configuration.queryCoroutineContext != null) {
-            // For backwards compatibility with internals not converted to Coroutines, use the
-            // provided dispatcher as executor.
-            val dispatcher =
-                configuration.queryCoroutineContext[ContinuationInterceptor] as CoroutineDispatcher
-            internalQueryExecutor = dispatcher.asExecutor()
-            internalTransactionExecutor = TransactionExecutor(internalQueryExecutor)
-            // For Room's coroutine scope, we use the provided context but add a SupervisorJob that
-            // is tied to the given Job (if any).
-            val parentJob = configuration.queryCoroutineContext[Job]
-            coroutineScope =
-                CoroutineScope(configuration.queryCoroutineContext + SupervisorJob(parentJob))
-            transactionContext = coroutineScope.coroutineContext
-        } else {
-            internalQueryExecutor = configuration.queryExecutor
-            internalTransactionExecutor = TransactionExecutor(configuration.transactionExecutor)
-            // For Room's coroutine scope, we use the provided executor as dispatcher along with a
-            // SupervisorJob.
-            coroutineScope =
-                CoroutineScope(internalQueryExecutor.asCoroutineDispatcher() + SupervisorJob())
-            transactionContext =
-                coroutineScope.coroutineContext +
-                    internalTransactionExecutor.asCoroutineDispatcher()
-        }
+        // For Room's coroutine scope, we use the provided context but add a SupervisorJob that
+        // is tied to the given Job (if any).
+        val parentJob = configuration.queryCoroutineContext[Job]
+        coroutineScope =
+            CoroutineScope(configuration.queryCoroutineContext + SupervisorJob(parentJob))
+        val dispatcher =
+            configuration.queryCoroutineContext[ContinuationInterceptor] as CoroutineDispatcher
+        internalTransactionLimitedExecutor = dispatcher.asExecutor()
 
         allowMainThreadQueries = configuration.allowMainThreadQueries
         autoCloser?.initCoroutineScope(coroutineScope)
@@ -284,7 +257,7 @@ actual constructor() {
         return RoomConnectionManager(
             config = configuration,
             openDelegate = openDelegate,
-            transactionWrapper = ::compatTransactionCoroutineExecute,
+            transactionWrapper = ::withTransactionContext,
         )
     }
 
@@ -322,10 +295,6 @@ actual constructor() {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun getQueryContext(): CoroutineContext {
         return coroutineScope.coroutineContext.minusKey(Job)
-    }
-
-    internal fun getTransactionContext(): CoroutineContext {
-        return transactionContext.minusKey(Job)
     }
 
     /**
@@ -553,8 +522,6 @@ actual constructor() {
         private val callbacks: MutableList<Callback> = mutableListOf()
         private var prepackagedDatabaseCallback: PrepackagedDatabaseCallback? = null
         private val typeConverters: MutableList<Any> = mutableListOf()
-        private var queryExecutor: Executor? = null
-        private var transactionExecutor: Executor? = null
 
         private var allowMainThreadQueries = false
         private var journalMode: JournalMode = JournalMode.AUTOMATIC
@@ -716,10 +683,10 @@ actual constructor() {
          * This method is not supported for an in memory database [Builder].
          *
          * @param inputStreamCallable A callable that returns an InputStream from which to copy the
-         *   database. The callable will be invoked in a thread from the Executor set via
-         *   [setQueryExecutor]. The callable is only invoked if Room needs to create and open the
-         *   database from the pre-package database, usually the first time it is created or during
-         *   a destructive migration.
+         *   database. The callable will be invoked in a thread from the dispatcher set via
+         *   [setQueryCoroutineContext]. The callable is only invoked if Room needs to create and
+         *   open the database from the pre-package database, usually the first time it is created
+         *   or during a destructive migration.
          * @return This builder instance.
          */
         @SuppressLint("BuilderSetStyle") // To keep naming consistency.
@@ -745,10 +712,10 @@ actual constructor() {
          * This method is not supported for an in memory database [Builder].
          *
          * @param inputStreamCallable A callable that returns an InputStream from which to copy the
-         *   database. The callable will be invoked in a thread from the Executor set via
-         *   [setQueryExecutor]. The callable is only invoked if Room needs to create and open the
-         *   database from the pre-package database, usually the first time it is created or during
-         *   a destructive migration.
+         *   database. The callable will be invoked in a thread from the dispatcher set via
+         *   [setQueryCoroutineContext]. The callable is only invoked if Room needs to create and
+         *   open the database from the pre-package database, usually the first time it is created
+         *   or during a destructive migration.
          * @param callback The pre-packaged callback.
          * @return This builder instance.
          */
@@ -826,70 +793,6 @@ actual constructor() {
          */
         public actual open fun setJournalMode(journalMode: JournalMode): Builder<T> = apply {
             this.journalMode = journalMode
-        }
-
-        /**
-         * Sets the [Executor] that will be used to execute all non-blocking asynchronous queries
-         * and tasks, including `LiveData` invalidation, `Flowable` scheduling and
-         * `ListenableFuture` tasks.
-         *
-         * When both the query executor and transaction executor are unset, then a default
-         * `Executor` will be used. The default `Executor` allocates and shares threads amongst
-         * Architecture Components libraries. If the query executor is unset but a transaction
-         * executor was set via [setTransactionExecutor], then the same `Executor` will be used for
-         * queries.
-         *
-         * For best performance the given `Executor` should be bounded (max number of threads is
-         * limited).
-         *
-         * The input `Executor` cannot run tasks on the UI thread.
-         *
-         * If either [setQueryCoroutineContext] has been called, then this function will throw an
-         * [IllegalArgumentException].
-         *
-         * @return This builder instance.
-         * @throws IllegalArgumentException if this builder was already configured with a
-         *   [CoroutineContext].
-         */
-        public open fun setQueryExecutor(executor: Executor): Builder<T> = apply {
-            require(queryCoroutineContext == null) {
-                "This builder has already been configured with a CoroutineContext. A RoomDatabase" +
-                    "can only be configured with either an Executor or a CoroutineContext."
-            }
-            this.queryExecutor = executor
-        }
-
-        /**
-         * Sets the [Executor] that will be used to execute all non-blocking asynchronous
-         * transaction queries and tasks, including `LiveData` invalidation, `Flowable` scheduling
-         * and `ListenableFuture` tasks.
-         *
-         * When both the transaction executor and query executor are unset, then a default
-         * `Executor` will be used. The default `Executor` allocates and shares threads amongst
-         * Architecture Components libraries. If the transaction executor is unset but a query
-         * executor was set using [setQueryExecutor], then the same `Executor` will be used for
-         * transactions.
-         *
-         * If the given `Executor` is shared then it should be unbounded to avoid the possibility of
-         * a deadlock. Room will not use more than one thread at a time from this executor since
-         * only one transaction at a time can be executed, other transactions will be queued on a
-         * first come, first serve order.
-         *
-         * The input `Executor` cannot run tasks on the UI thread.
-         *
-         * If either [setQueryCoroutineContext] has been called, then this function will throw an
-         * [IllegalArgumentException].
-         *
-         * @return This builder instance.
-         * @throws IllegalArgumentException if this builder was already configured with a
-         *   [CoroutineContext].
-         */
-        public open fun setTransactionExecutor(executor: Executor): Builder<T> = apply {
-            require(queryCoroutineContext == null) {
-                "This builder has already been configured with a CoroutineContext. A RoomDatabase" +
-                    "can only be configured with either an Executor or a CoroutineContext."
-            }
-            this.transactionExecutor = executor
         }
 
         /**
@@ -1112,11 +1015,7 @@ actual constructor() {
          * If no [CoroutineDispatcher] is present in the [context] then this function will throw an
          * [IllegalArgumentException]
          *
-         * If no context is provided, then Room wil default to using the [Executor] set via
-         * [setQueryExecutor] as the context via the conversion function [asCoroutineDispatcher].
-         *
-         * If either [setQueryExecutor] or [setTransactionExecutor] has been called, then this
-         * function will throw an [IllegalArgumentException].
+         * If no context is provided, then Room will default to `Dispatchers.IO`.
          *
          * @param context The context
          * @return This [Builder] instance
@@ -1125,10 +1024,6 @@ actual constructor() {
          */
         @Suppress("MissingGetterMatchingBuilder")
         public actual fun setQueryCoroutineContext(context: CoroutineContext): Builder<T> = apply {
-            require(queryExecutor == null && transactionExecutor == null) {
-                "This builder has already been configured with an Executor. A RoomDatabase can" +
-                    "only be configured with either an Executor or a CoroutineContext."
-            }
             require(context[ContinuationInterceptor] != null) {
                 "It is required that the coroutine context contain a dispatcher."
             }
@@ -1161,15 +1056,6 @@ actual constructor() {
          * @throws IllegalArgumentException if the builder was misconfigured.
          */
         public actual open fun build(): T {
-            if (queryExecutor == null && transactionExecutor == null) {
-                transactionExecutor = ArchTaskExecutor.getIOThreadExecutor()
-                queryExecutor = transactionExecutor
-            } else if (queryExecutor != null && transactionExecutor == null) {
-                transactionExecutor = queryExecutor
-            } else if (queryExecutor == null) {
-                queryExecutor = transactionExecutor
-            }
-
             validateMigrationsNotRequired(migrationStartAndEndVersions, migrationsNotRequiredFrom)
 
             if (driver == null) {
@@ -1214,8 +1100,6 @@ actual constructor() {
                         callbacks = callbacks,
                         allowMainThreadQueries = allowMainThreadQueries,
                         journalMode = journalMode.resolve(context),
-                        queryExecutor = requireNotNull(queryExecutor),
-                        transactionExecutor = requireNotNull(transactionExecutor),
                         multiInstanceInvalidationServiceIntent = multiInstanceInvalidationIntent,
                         requireMigration = requireMigration,
                         allowDestructiveMigrationOnDowngrade = allowDestructiveMigrationOnDowngrade,
@@ -1226,7 +1110,7 @@ actual constructor() {
                         allowDestructiveMigrationForAllTables =
                             allowDestructiveMigrationForAllTables,
                         sqliteDriver = requireNotNull(driver),
-                        queryCoroutineContext = queryCoroutineContext,
+                        queryCoroutineContext = queryCoroutineContext ?: Dispatchers.IO,
                     )
                     .apply {
                         this.useTempTrackingTable = inMemoryTrackingTableMode
@@ -1387,109 +1271,4 @@ actual constructor() {
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
         public const val MAX_BIND_PARAMETER_CNT: Int = 999
     }
-}
-
-/** Calls the specified suspending [block] with Room's transaction context. */
-internal suspend fun <R> RoomDatabase.withTransactionContext(block: suspend () -> R): R {
-    val transactionBlock: suspend CoroutineScope.() -> R = transaction@{
-        checkNotNull(coroutineContext[TransactionElement]) {
-            "Expected a TransactionElement in the CoroutineContext but none was found."
-        }
-        return@transaction block.invoke()
-    }
-    // Use inherited transaction context if available, this allows nested suspending transactions.
-    val transactionDispatcher = coroutineContext[TransactionElement]?.transactionDispatcher
-    return if (transactionDispatcher != null) {
-        withContext(transactionDispatcher, transactionBlock)
-    } else {
-        startTransactionCoroutine(transactionBlock)
-    }
-}
-
-/**
- * Suspend caller coroutine and start the transaction coroutine in a thread from the
- * [RoomDatabase.transactionExecutor], resuming the caller coroutine with the result once done. The
- * caller's `context` will be a parent of the started coroutine to propagating cancellation and
- * release the thread when cancelled.
- */
-private suspend fun <R> RoomDatabase.startTransactionCoroutine(
-    transactionBlock: suspend CoroutineScope.() -> R
-): R = suspendCancellableCoroutine { continuation ->
-    try {
-        transactionExecutor.execute {
-            try {
-                // Thread acquired, start the transaction coroutine using the parent context.
-                // The started coroutine will have an event loop dispatcher that we'll use for the
-                // transaction context.
-                runBlocking(continuation.context.minusKey(ContinuationInterceptor)) {
-                    val dispatcher = coroutineContext[ContinuationInterceptor]!!
-                    val transactionContext = createTransactionContext(dispatcher)
-                    continuation.resume(withContext(transactionContext, transactionBlock))
-                }
-            } catch (ex: Throwable) {
-                // If anything goes wrong, propagate exception to the calling coroutine.
-                continuation.cancel(ex)
-            }
-        }
-    } catch (ex: RejectedExecutionException) {
-        // Couldn't acquire a thread, cancel coroutine.
-        continuation.cancel(
-            IllegalStateException(
-                "Unable to acquire a thread to perform the database transaction.",
-                ex,
-            )
-        )
-    }
-}
-
-/**
- * Creates a [CoroutineContext] for performing database operations within a coroutine transaction.
- *
- * The context is a combination of a dispatcher, a [TransactionElement] and a thread local element.
- * * The dispatcher will dispatch coroutines to a single thread that is taken over from the Room
- *   transaction executor. If the coroutine context is switched, suspending DAO functions will be
- *   able to dispatch to the transaction thread. In reality the dispatcher is the event loop of a
- *   [runBlocking] started on the dedicated thread.
- * * The [TransactionElement] serves as an indicator for inherited context, meaning, if there is a
- *   switch of context, suspending DAO methods will be able to use the indicator to dispatch the
- *   database operation to the transaction thread.
- * * The thread local element serves as a second indicator and marks threads that are used to
- *   execute coroutines within the coroutine transaction, more specifically it allows us to identify
- *   if a blocking DAO method is invoked within the transaction coroutine.
- */
-private fun RoomDatabase.createTransactionContext(
-    dispatcher: ContinuationInterceptor
-): CoroutineContext {
-    val baseContext = dispatcher + TransactionElement(dispatcher)
-    val threadLocalElement = suspendingTransactionContext.asContextElement(baseContext)
-    return baseContext + threadLocalElement
-}
-
-/**
- * A [CoroutineContext.Element] that indicates there is an on-going database transaction.
- *
- * Even though all this element contains is a [ContinuationInterceptor], it is required since its
- * key will be unique which prevents the interceptor to be overridden during a context folding.
- */
-internal class TransactionElement(internal val transactionDispatcher: ContinuationInterceptor) :
-    CoroutineContext.Element {
-
-    companion object Key : CoroutineContext.Key<TransactionElement>
-
-    override val key: CoroutineContext.Key<TransactionElement>
-        get() = TransactionElement
-}
-
-/**
- * Compatibility suspend transaction execution with driver usage. This will maintain the dispatcher
- * behaviour in `withTransaction` (now deleted API) when Room is in compatibility mode executing
- * driver transactions and maintains compatibility with suspend DAO usages.
- *
- * TODO: Check if this still needed even if SupportSQLite is removed with AndroidSQLiteDriver
- */
-internal suspend fun <R> RoomDatabase.compatTransactionCoroutineExecute(block: suspend () -> R): R {
-    if (coroutineContext[RoomExternalOperationElement] == null) {
-        return block.invoke()
-    }
-    return withTransactionContext(block)
 }

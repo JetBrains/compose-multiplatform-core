@@ -60,6 +60,11 @@ constructor(
     public val components: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(),
     /** A description of the AppFunction and its intended use. */
     public val description: String = "",
+    /**
+     * Deprecation details about the function, if the AppFunction is deprecated. This will be `null`
+     * if the function is not deprecated.
+     */
+    public val deprecation: AppFunctionDeprecationMetadata? = null,
 ) {
 
     override fun equals(other: Any?): Boolean {
@@ -76,6 +81,7 @@ constructor(
         if (response != other.response) return false
         if (components != other.components) return false
         if (description != other.description) return false
+        if (deprecation != other.deprecation) return false
 
         return true
     }
@@ -90,6 +96,7 @@ constructor(
             response,
             components,
             description,
+            deprecation,
         )
     }
 
@@ -103,6 +110,7 @@ constructor(
         append("response=$response, ")
         append("components=$components")
         append("description=$description")
+        append("deprecation=$deprecation")
         append(")")
     }
 
@@ -115,6 +123,7 @@ constructor(
         response: AppFunctionResponseMetadata = this.response,
         components: AppFunctionComponentsMetadata = this.components,
         description: String = this.description,
+        deprecation: AppFunctionDeprecationMetadata? = this.deprecation,
     ): AppFunctionMetadata {
         return AppFunctionMetadata(
             id = id,
@@ -125,6 +134,7 @@ constructor(
             response = response,
             components = components,
             description = description,
+            deprecation = deprecation,
         )
     }
 }
@@ -164,6 +174,11 @@ public data class CompileTimeAppFunctionMetadata(
     public val components: AppFunctionComponentsMetadata = AppFunctionComponentsMetadata(),
     /** A description of the AppFunction and its intended use. */
     public val description: String = "",
+    /**
+     * Deprecation details about the function, if the AppFunction is deprecated. This will be `null`
+     * if the function is not deprecated.
+     */
+    public val deprecation: AppFunctionDeprecationMetadata? = null,
 ) {
 
     internal fun copy(
@@ -174,6 +189,7 @@ public data class CompileTimeAppFunctionMetadata(
         response: AppFunctionResponseMetadata? = null,
         components: AppFunctionComponentsMetadata? = null,
         description: String? = null,
+        deprecation: AppFunctionDeprecationMetadata? = null,
     ): CompileTimeAppFunctionMetadata {
         return CompileTimeAppFunctionMetadata(
             id = id ?: this.id,
@@ -183,6 +199,7 @@ public data class CompileTimeAppFunctionMetadata(
             response = response ?: this.response,
             components = components ?: this.components,
             description = description ?: this.description,
+            deprecation = deprecation ?: this.deprecation,
         )
     }
 
@@ -201,6 +218,7 @@ public data class CompileTimeAppFunctionMetadata(
             parameters = parameters.map { it.toAppFunctionParameterMetadataDocument() },
             response = response.toAppFunctionResponseMetadataDocument(),
             description = description,
+            deprecation = deprecation?.toAppFunctionDeprecationMetadataDocument(),
         )
     }
 }
@@ -232,4 +250,6 @@ internal data class AppFunctionMetadataDocument(
     @Document.DocumentProperty val response: AppFunctionResponseMetadataDocument?,
     /** A description of the AppFunction and its intended use. */
     @Document.StringProperty val description: String? = null,
+    /** Indicates whether the function is deprecated or not. */
+    @Document.DocumentProperty val deprecation: AppFunctionDeprecationMetadataDocument? = null,
 )

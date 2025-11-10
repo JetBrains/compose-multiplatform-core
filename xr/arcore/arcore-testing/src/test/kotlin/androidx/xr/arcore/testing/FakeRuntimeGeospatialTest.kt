@@ -18,8 +18,10 @@ package androidx.xr.arcore.testing
 
 import androidx.kruth.assertThat
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
-import androidx.xr.arcore.runtime.Earth as RuntimeEarth
+import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
+import androidx.xr.runtime.VpsAvailabilityErrorInternal
+import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -34,9 +36,9 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
-class FakeRuntimeEarthTest {
+class FakeRuntimeGeospatialTest {
 
-    private lateinit var underTest: FakeRuntimeEarth
+    private lateinit var underTest: FakeRuntimeGeospatial
 
     private fun doBlocking(block: suspend CoroutineScope.() -> Unit) {
         runBlocking(block = block)
@@ -44,7 +46,7 @@ class FakeRuntimeEarthTest {
 
     @Before
     fun setUp() {
-        underTest = FakeRuntimeEarth()
+        underTest = FakeRuntimeGeospatial()
     }
 
     @Ignore("Test fails with AnchorResourcesExhaustedException when run with presubmits")
@@ -99,31 +101,6 @@ class FakeRuntimeEarthTest {
 
     @Ignore("Test fails with AnchorResourcesExhaustedException when run with presubmits")
     @Test
-    fun createGeospatialPoseFromDevicePose_withNextResult_returnsResultAndClearsIt() {
-        underTest.nextGeospatialPoseResult = GEOSPATIAL_POSE_RESULT
-
-        val result = underTest.createGeospatialPoseFromDevicePose()
-
-        assertThat(result).isEqualTo(GEOSPATIAL_POSE_RESULT)
-        assertThat(underTest.nextGeospatialPoseResult).isNull()
-    }
-
-    @Ignore("Test fails with AnchorResourcesExhaustedException when run with presubmits")
-    @Test
-    fun createGeospatialPoseFromDevicePose_withNextException_throwsExceptionAndClearsIt() {
-        underTest.nextException = EXCEPTION
-
-        val thrown =
-            assertFailsWith<GeospatialPoseNotTrackingException> {
-                underTest.createGeospatialPoseFromDevicePose()
-            }
-
-        assertThat(thrown).isEqualTo(EXCEPTION)
-        assertThat(underTest.nextException).isNull()
-    }
-
-    @Ignore("Test fails with AnchorResourcesExhaustedException when run with presubmits")
-    @Test
     fun createAnchor_withNextAnchor_returnsAnchorAndClearsIt() {
         underTest.nextAnchor = ANCHOR
 
@@ -169,7 +146,7 @@ class FakeRuntimeEarthTest {
                 GEOSPATIAL_POSE.longitude,
                 GEOSPATIAL_POSE.altitude,
                 GEOSPATIAL_POSE.eastUpSouthQuaternion,
-                RuntimeEarth.Surface.TERRAIN,
+                RuntimeGeospatial.Surface.TERRAIN,
             )
 
         assertThat(result).isEqualTo(ANCHOR)
@@ -188,7 +165,7 @@ class FakeRuntimeEarthTest {
                     GEOSPATIAL_POSE.longitude,
                     GEOSPATIAL_POSE.altitude,
                     GEOSPATIAL_POSE.eastUpSouthQuaternion,
-                    RuntimeEarth.Surface.TERRAIN,
+                    RuntimeGeospatial.Surface.TERRAIN,
                 )
             }
 
@@ -196,11 +173,21 @@ class FakeRuntimeEarthTest {
         assertThat(underTest.nextException).isNull()
     }
 
+    @Test
+    fun checkVpsAvailability_withNextResult_returnsResult() = doBlocking {
+        val expectedResult: VpsAvailabilityResult = VpsAvailabilityErrorInternal()
+        underTest.nextVpsAvailabilityResult = expectedResult
+
+        val result = underTest.checkVpsAvailability(1.0, 2.0)
+
+        assertThat(result).isEqualTo(expectedResult)
+    }
+
     private companion object {
         val POSE = Pose(Vector3(1f, 2f, 3f), Quaternion(4f, 5f, 6f, 7f))
         val GEOSPATIAL_POSE = GeospatialPose(1.0, 2.0, 3.0, Quaternion(8f, 9f, 10f, 11f))
         val GEOSPATIAL_POSE_RESULT =
-            RuntimeEarth.GeospatialPoseResult(
+            RuntimeGeospatial.GeospatialPoseResult(
                 GEOSPATIAL_POSE,
                 horizontalAccuracy = 10.0,
                 verticalAccuracy = 20.0,

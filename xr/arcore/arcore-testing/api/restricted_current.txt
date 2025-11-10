@@ -56,14 +56,13 @@ package androidx.xr.arcore.testing {
     ctor public FakePerceptionManager();
     method public void addHitResult(androidx.xr.arcore.runtime.HitResult hitResult);
     method public void addTrackable(androidx.xr.arcore.runtime.Trackable trackable);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public void clearHitResults();
     method public void clearTrackables();
     method public androidx.xr.arcore.runtime.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method public void detachAnchor(androidx.xr.arcore.runtime.Anchor anchor);
     method @InaccessibleFromKotlin public java.util.List<androidx.xr.arcore.runtime.Anchor> getAnchors();
     method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeArDevice getArDevice();
-    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Earth getEarth();
+    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Geospatial getGeospatial();
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.DepthMap? getLeftDepthMap();
     method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Eye? getLeftEye();
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Hand? getLeftHand();
@@ -85,7 +84,7 @@ package androidx.xr.arcore.testing {
     method public void unpersistAnchor(java.util.UUID uuid);
     property public java.util.List<androidx.xr.arcore.runtime.Anchor> anchors;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.testing.FakeRuntimeArDevice arDevice;
-    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Earth earth;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Geospatial geospatial;
     property public boolean isTrackingAvailable;
     property public androidx.xr.arcore.runtime.DepthMap? leftDepthMap;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.arcore.runtime.Eye? leftEye;
@@ -231,32 +230,6 @@ package androidx.xr.arcore.testing {
     property public int width;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeEarth implements androidx.xr.arcore.runtime.Earth {
-    ctor public FakeRuntimeEarth();
-    ctor public FakeRuntimeEarth(optional androidx.xr.arcore.runtime.Earth.State state);
-    ctor @BytecodeOnly public FakeRuntimeEarth(androidx.xr.arcore.runtime.Earth.State!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
-    method public androidx.xr.arcore.runtime.Anchor createAnchor(double latitude, double longitude, double altitude, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
-    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.runtime.Earth.Surface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.runtime.Anchor>);
-    method public androidx.xr.arcore.runtime.Earth.GeospatialPoseResult createGeospatialPoseFromDevicePose();
-    method public androidx.xr.arcore.runtime.Earth.GeospatialPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.runtime.math.Pose createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
-    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Anchor? getNextAnchor();
-    method @InaccessibleFromKotlin public Exception? getNextException();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Earth.GeospatialPoseResult? getNextGeospatialPoseResult();
-    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getNextPose();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Earth.State getState();
-    method @InaccessibleFromKotlin public void setNextAnchor(androidx.xr.arcore.runtime.Anchor?);
-    method @InaccessibleFromKotlin public void setNextException(Exception?);
-    method @InaccessibleFromKotlin public void setNextGeospatialPoseResult(androidx.xr.arcore.runtime.Earth.GeospatialPoseResult?);
-    method @InaccessibleFromKotlin public void setNextPose(androidx.xr.runtime.math.Pose?);
-    method @InaccessibleFromKotlin public void setState(androidx.xr.arcore.runtime.Earth.State);
-    property public androidx.xr.arcore.runtime.Anchor? nextAnchor;
-    property public Exception? nextException;
-    property public androidx.xr.arcore.runtime.Earth.GeospatialPoseResult? nextGeospatialPoseResult;
-    property public androidx.xr.runtime.math.Pose? nextPose;
-    property public androidx.xr.arcore.runtime.Earth.State state;
-  }
-
   public final class FakeRuntimeEye implements androidx.xr.arcore.runtime.Eye {
     ctor public FakeRuntimeEye();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
@@ -292,6 +265,35 @@ package androidx.xr.arcore.testing {
     property public float[] confidenceValues;
     property public boolean isValid;
     property public androidx.xr.runtime.TrackingState trackingState;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeRuntimeGeospatial implements androidx.xr.arcore.runtime.Geospatial {
+    ctor public FakeRuntimeGeospatial();
+    ctor public FakeRuntimeGeospatial(optional androidx.xr.arcore.runtime.Geospatial.State state);
+    ctor @BytecodeOnly public FakeRuntimeGeospatial(androidx.xr.arcore.runtime.Geospatial.State!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
+    method public androidx.xr.arcore.runtime.Anchor createAnchor(double latitude, double longitude, double altitude, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
+    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.runtime.Geospatial.Surface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.runtime.Anchor>);
+    method public androidx.xr.arcore.runtime.Geospatial.GeospatialPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
+    method public androidx.xr.runtime.math.Pose createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
+    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Anchor? getNextAnchor();
+    method @InaccessibleFromKotlin public Exception? getNextException();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Geospatial.GeospatialPoseResult? getNextGeospatialPoseResult();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getNextPose();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.VpsAvailabilityResult getNextVpsAvailabilityResult();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Geospatial.State getState();
+    method @InaccessibleFromKotlin public void setNextAnchor(androidx.xr.arcore.runtime.Anchor?);
+    method @InaccessibleFromKotlin public void setNextException(Exception?);
+    method @InaccessibleFromKotlin public void setNextGeospatialPoseResult(androidx.xr.arcore.runtime.Geospatial.GeospatialPoseResult?);
+    method @InaccessibleFromKotlin public void setNextPose(androidx.xr.runtime.math.Pose?);
+    method @InaccessibleFromKotlin public void setNextVpsAvailabilityResult(androidx.xr.runtime.VpsAvailabilityResult);
+    method @InaccessibleFromKotlin public void setState(androidx.xr.arcore.runtime.Geospatial.State);
+    property public androidx.xr.arcore.runtime.Anchor? nextAnchor;
+    property public Exception? nextException;
+    property public androidx.xr.arcore.runtime.Geospatial.GeospatialPoseResult? nextGeospatialPoseResult;
+    property public androidx.xr.runtime.math.Pose? nextPose;
+    property public androidx.xr.runtime.VpsAvailabilityResult nextVpsAvailabilityResult;
+    property public androidx.xr.arcore.runtime.Geospatial.State state;
   }
 
   public final class FakeRuntimeHand implements androidx.xr.arcore.runtime.Hand {

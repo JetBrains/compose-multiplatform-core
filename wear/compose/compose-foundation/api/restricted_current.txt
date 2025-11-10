@@ -822,8 +822,6 @@ package androidx.wear.compose.foundation.lazy {
   }
 
   public final class TransformingLazyColumnStateKt {
-    method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnState rememberTransformingLazyColumnState();
-    method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnState rememberTransformingLazyColumnState(androidx.compose.runtime.Composer?, int);
     method @KotlinOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnState rememberTransformingLazyColumnState(optional int initialAnchorItemIndex, optional int initialAnchorItemScrollOffset);
     method @BytecodeOnly @androidx.compose.runtime.Composable public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnState rememberTransformingLazyColumnState(int, int, androidx.compose.runtime.Composer?, int, int);
   }

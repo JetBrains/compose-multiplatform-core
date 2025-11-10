@@ -48,6 +48,7 @@ import androidx.appfunctions.metadata.AppFunctionAllOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionArrayTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionDeprecationMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
@@ -142,7 +143,7 @@ class IntegrationTest {
                 it.appFunctions
             }
 
-        assertThat(appFunctions).hasSize(22)
+        assertThat(appFunctions).hasSize(23)
     }
 
     @Test
@@ -1610,7 +1611,17 @@ class IntegrationTest {
         val oneOfList =
             listOf(
                 OneOfFunctions.ASubclass(interfaceProperty = "interfacePropertyA", str = "strA"),
-                OneOfFunctions.BSubclass(interfaceProperty = "interfacePropertyB", integer = 10),
+                OneOfFunctions.BSubclass(
+                    interfaceProperty = "interfacePropertyB",
+                    integer = 10,
+                    resources =
+                        listOf(
+                            AppFunctionTextResource(
+                                mimeType = "text/plain",
+                                content = "Hello World!",
+                            )
+                        ),
+                ),
             )
         val request =
             ExecuteAppFunctionRequest(
@@ -1726,6 +1737,30 @@ class IntegrationTest {
                     AppFunctionTextResource(mimeType = "text/plain", content = "Hello World!")
                 )
         }
+
+    @Test
+    fun nonDeprecatedFunction_shouldNotHaveDeprecatedMetadata() {
+        doBlocking {
+            assumeTrue(isDynamicIndexerAvailable(context))
+            val addFunctionMetadata = findAppFunctionMetadata(TestFunctionsIds.ADD_ID)
+
+            assertThat(addFunctionMetadata.deprecation).isNull()
+        }
+    }
+
+    @Test
+    fun deprecatedFunction_shouldHaveDeprecatedMetadata() {
+        doBlocking {
+            assumeTrue(isDynamicIndexerAvailable(context))
+            val deprecatedFunctionMetadata =
+                findAppFunctionMetadata(TestFunctionsIds.DEPRECATED_FUNCTION_ID)
+
+            assertThat(deprecatedFunctionMetadata.deprecation)
+                .isEqualTo(
+                    AppFunctionDeprecationMetadata(message = "deprecatedFunction is deprecated")
+                )
+        }
+    }
 
     @Test
     fun serializeAppFunctionSerializable_failsForInvalidValues() {

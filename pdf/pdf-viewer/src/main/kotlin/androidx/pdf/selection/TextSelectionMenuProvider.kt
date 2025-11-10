@@ -79,7 +79,7 @@ internal class TextSelectionMenuProvider(private val context: Context) :
                                 // TODO(b/431669141): Propagate Exception to Host App.
                             } finally {
                                 close()
-                                pdfView.clearSelection()
+                                pdfView.clearCurrentSelection()
                             }
                         },
                     )

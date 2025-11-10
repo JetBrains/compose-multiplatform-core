@@ -28,6 +28,9 @@ internal interface SubspaceOwner {
     /** The root layout node in the component tree. */
     public val root: SubspaceLayoutNode
 
+    /** Optional logger for debugging and testing. */
+    public var logger: Logger?
+
     /**
      * Called by [SubspaceLayoutNode] when the node is attached to this owner's element system.
      *

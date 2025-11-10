@@ -110,8 +110,8 @@ private fun DrawScope.eraseTick(
     val startXOffsetPx = startXOffset.toPx()
 
     // Animate the stick of the tick, drawing down the stick from the top.
-    val stickStartX = 16.1f.dp.toPx() + startXOffsetPx
-    val stickStartY = 9.5f.dp.toPx()
+    val stickStartX = 16.5f.dp.toPx() + startXOffsetPx
+    val stickStartY = 9.0f.dp.toPx()
     val tickStickProgress = min(tickProgressPx, tickStickLength)
 
     val path = Path()

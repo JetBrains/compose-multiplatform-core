@@ -16,11 +16,17 @@
 
 package androidx.xr.arcore.playservices
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.arcore.runtime.AnchorNotAuthorizedException
 import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException
-import androidx.xr.arcore.runtime.Earth
+import androidx.xr.arcore.runtime.Geospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
+import androidx.xr.runtime.VpsAvailabilityAvailable
+import androidx.xr.runtime.VpsAvailabilityErrorInternal
+import androidx.xr.runtime.VpsAvailabilityNetworkError
+import androidx.xr.runtime.VpsAvailabilityNotAuthorized
+import androidx.xr.runtime.VpsAvailabilityResourceExhausted
+import androidx.xr.runtime.VpsAvailabilityResult
+import androidx.xr.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -35,14 +41,21 @@ import com.google.ar.core.ResolveAnchorOnRooftopFuture as ARCore1xRooftopAnchorF
 import com.google.ar.core.ResolveAnchorOnTerrainFuture as ARCore1xTerrainAnchorFuture
 import com.google.ar.core.Session
 import com.google.ar.core.TrackingState as ARCore1xTrackingState
+import com.google.ar.core.VpsAvailability as ARCore1xVpsAvailability
+import com.google.ar.core.VpsAvailabilityFuture
 import com.google.ar.core.exceptions.NotTrackingException
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import java.util.function.BiConsumer
+import java.util.function.Consumer
+import kotlin.reflect.KClass
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,8 +68,8 @@ import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
-@RunWith(AndroidJUnit4::class)
-class ArCoreEarthTest {
+@RunWith(TestParameterInjector::class)
+class ArCoreGeospatialTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private var mockArCoreEarth: ARCore1xEarth = mock<ARCore1xEarth>()
@@ -80,25 +93,27 @@ class ArCoreEarthTest {
 
     @Before
     fun setUp() {
-        check(underTest.state == Earth.State.STOPPED) { "Earth should initially be stopped." }
+        check(underTest.state == Geospatial.State.NOT_RUNNING) {
+            "Geospatial should initially be NotRunning."
+        }
     }
 
-    private fun setupEarthTracking() {
+    private fun setupGeospatialTracking() {
         whenever(mockArCoreEarth.earthState).thenReturn(ARCore1xEarth.EarthState.ENABLED)
         whenever(mockArCoreEarth.trackingState).thenReturn(ARCore1xTrackingState.TRACKING)
         underTest.update(mockSession)
-        check(underTest.state == Earth.State.RUNNING)
+        check(underTest.state == Geospatial.State.RUNNING)
     }
 
     // --- State Tests ---
 
     @Test
-    fun update_whenArCoreEarthIsNull_setsStateToStopped() {
+    fun update_whenArCoreEarthIsNull_setsStateToNotRunning() {
         whenever(mockSession.earth).thenReturn(null)
 
         underTest.update(mockSession)
 
-        assertThat(underTest.state).isEqualTo(Earth.State.STOPPED)
+        assertThat(underTest.state).isEqualTo(Geospatial.State.NOT_RUNNING)
     }
 
     @Test
@@ -107,7 +122,7 @@ class ArCoreEarthTest {
 
         underTest.update(mockSession)
 
-        assertThat(underTest.state).isEqualTo(Earth.State.RUNNING)
+        assertThat(underTest.state).isEqualTo(Geospatial.State.RUNNING)
     }
 
     @Test
@@ -117,17 +132,17 @@ class ArCoreEarthTest {
 
         underTest.update(mockSession)
 
-        assertThat(underTest.state).isEqualTo(Earth.State.ERROR_APK_VERSION_TOO_OLD)
+        assertThat(underTest.state).isEqualTo(Geospatial.State.ERROR_INTERNAL)
     }
 
     @Test
-    fun update_whenEarthStateErrorGeospatialModeDisabled_setsStateToStoppedAndNullsArCoreEarth() {
+    fun update_whenEarthStateErrorGeospatialModeDisabled_setsStateToNotRunningAndNullsArCoreEarth() {
         whenever(mockArCoreEarth.earthState)
             .thenReturn(ARCore1xEarth.EarthState.ERROR_GEOSPATIAL_MODE_DISABLED)
 
         underTest.update(mockSession)
 
-        assertThat(underTest.state).isEqualTo(Earth.State.STOPPED)
+        assertThat(underTest.state).isEqualTo(Geospatial.State.NOT_RUNNING)
         assertThat(underTest.arCoreEarth).isNull()
     }
 
@@ -137,7 +152,7 @@ class ArCoreEarthTest {
 
         underTest.update(mockSession)
 
-        assertThat(underTest.state).isEqualTo(Earth.State.ERROR_INTERNAL)
+        assertThat(underTest.state).isEqualTo(Geospatial.State.ERROR_INTERNAL)
     }
 
     @Test
@@ -147,7 +162,7 @@ class ArCoreEarthTest {
 
         underTest.update(mockSession)
 
-        assertThat(underTest.state).isEqualTo(Earth.State.ERROR_NOT_AUTHORIZED)
+        assertThat(underTest.state).isEqualTo(Geospatial.State.ERROR_NOT_AUTHORIZED)
     }
 
     @Test
@@ -157,14 +172,14 @@ class ArCoreEarthTest {
 
         underTest.update(mockSession)
 
-        assertThat(underTest.state).isEqualTo(Earth.State.ERROR_RESOURCES_EXHAUSTED)
+        assertThat(underTest.state).isEqualTo(Geospatial.State.ERROR_RESOURCE_EXHAUSTED)
     }
 
     // --- createPoseFromGeospatialPose Tests ---
 
     @Test
     fun createPoseFromGeospatialPose_whenTracking_returnsPose() {
-        setupEarthTracking()
+        setupGeospatialTracking()
         whenever(
                 mockArCoreEarth.getPose(
                     LATITUDE,
@@ -231,7 +246,7 @@ class ArCoreEarthTest {
 
     @Test
     fun createPoseFromGeospatialPose_whenGetPoseThrowsNotTracking_throwsGeospatialPoseNotTrackingException() {
-        setupEarthTracking()
+        setupGeospatialTracking()
         whenever(
                 mockArCoreEarth.getPose(
                     LATITUDE,
@@ -254,7 +269,7 @@ class ArCoreEarthTest {
 
     @Test
     fun createGeospatialPoseFromPose_whenTracking_returnsResult() {
-        setupEarthTracking()
+        setupGeospatialTracking()
         // ARCore Pose doesn't override equals, so we have to use any().
         whenever(mockArCoreEarth.getGeospatialPose(any())).thenReturn(mockArCoreGeospatialPose)
 
@@ -300,7 +315,7 @@ class ArCoreEarthTest {
 
     @Test
     fun createGeospatialPoseFromPose_whenGetGeospatialPoseThrowsNotTracking_throwsGeospatialPoseNotTrackingException() {
-        setupEarthTracking()
+        setupGeospatialTracking()
         // ARCore Pose doesn't override equals, so we have to use any().
         whenever(mockArCoreEarth.getGeospatialPose(any())).doThrow(NotTrackingException())
 
@@ -309,69 +324,11 @@ class ArCoreEarthTest {
         }
     }
 
-    // --- createGeospatialPoseFromDevicePose Tests ---
-
-    @Test
-    fun createGeospatialPoseFromDevicePose_whenTracking_returnsResult() {
-        setupEarthTracking()
-        whenever(mockArCoreEarth.cameraGeospatialPose).thenReturn(mockArCoreGeospatialPose)
-
-        val result = underTest.createGeospatialPoseFromDevicePose()
-
-        assertThat(result.geospatialPose).isEqualTo(GEOSPATIAL_POSE)
-        assertThat(result.horizontalAccuracy).isEqualTo(HORIZONTAL_ACCURACY)
-        assertThat(result.verticalAccuracy).isEqualTo(VERTICAL_ACCURACY)
-        assertThat(result.orientationYawAccuracy).isEqualTo(ORIENTATION_YAW_ACCURACY)
-        verify(mockArCoreEarth).cameraGeospatialPose
-    }
-
-    @Test
-    fun createGeospatialPoseFromDevicePose_whenNotEnabled_throwsIllegalStateException() {
-        whenever(mockArCoreEarth.earthState).thenReturn(ARCore1xEarth.EarthState.ERROR_INTERNAL)
-
-        underTest.update(mockSession)
-
-        assertFailsWith<IllegalStateException> { underTest.createGeospatialPoseFromDevicePose() }
-        verify(mockArCoreEarth, never()).cameraGeospatialPose
-    }
-
-    @Test
-    fun createGeospatialPoseFromDevicePose_whenArCoreEarthNull_throwsIllegalStateException() {
-        whenever(mockSession.earth).thenReturn(null)
-
-        underTest.update(mockSession)
-
-        assertFailsWith<IllegalStateException> { underTest.createGeospatialPoseFromDevicePose() }
-    }
-
-    @Test
-    fun createGeospatialPoseFromDevicePose_whenNotTracking_throwsGeospatialPoseNotTrackingException() {
-        whenever(mockArCoreEarth.earthState).thenReturn(ARCore1xEarth.EarthState.ENABLED)
-        whenever(mockArCoreEarth.trackingState).thenReturn(ARCore1xTrackingState.PAUSED)
-
-        underTest.update(mockSession)
-
-        assertFailsWith<GeospatialPoseNotTrackingException> {
-            underTest.createGeospatialPoseFromDevicePose()
-        }
-        verify(mockArCoreEarth, never()).cameraGeospatialPose
-    }
-
-    @Test
-    fun createGeospatialPoseFromDevicePose_whenCameraGeospatialPoseThrowsNotTracking_throwsGeospatialPoseNotTrackingException() {
-        setupEarthTracking()
-        whenever(mockArCoreEarth.cameraGeospatialPose).doThrow(NotTrackingException())
-
-        assertFailsWith<GeospatialPoseNotTrackingException> {
-            underTest.createGeospatialPoseFromDevicePose()
-        }
-    }
-
     // --- createAnchor Tests ---
 
     @Test
     fun createAnchor_whenTracking_returnsAnchor() {
-        setupEarthTracking()
+        setupGeospatialTracking()
         val mockArCoreAnchor = mock<ARCore1xAnchor>()
         whenever(mockArCoreAnchor.pose).thenReturn(POSE.toARCorePose())
         whenever(
@@ -430,7 +387,7 @@ class ArCoreEarthTest {
     @Test
     fun createAnchorOnSurface_terrainSuccess_returnsAnchor(): Unit =
         runBlocking(testDispatcher.scheduler) {
-            setupEarthTracking()
+            setupGeospatialTracking()
             whenever(mockArCoreAnchor.pose).thenReturn(POSE.toARCorePose())
             whenever(
                     mockArCoreEarth.resolveAnchorOnTerrainAsync(
@@ -461,7 +418,7 @@ class ArCoreEarthTest {
                     LONGITUDE,
                     ALTITUDE_ABOVE_SURFACE,
                     QUATERNION,
-                    Earth.Surface.TERRAIN,
+                    Geospatial.Surface.TERRAIN,
                 )
 
             assertIs<ArCoreAnchor>(resultAnchor)
@@ -473,7 +430,7 @@ class ArCoreEarthTest {
     @Test
     fun createAnchorOnSurface_rooftopSuccess_returnsAnchor(): Unit =
         runBlocking(testDispatcher.scheduler) {
-            setupEarthTracking()
+            setupGeospatialTracking()
             whenever(mockArCoreAnchor.pose).thenReturn(POSE.toARCorePose())
             whenever(
                     mockArCoreEarth.resolveAnchorOnRooftopAsync(
@@ -504,7 +461,7 @@ class ArCoreEarthTest {
                     LONGITUDE,
                     ALTITUDE_ABOVE_SURFACE,
                     QUATERNION,
-                    Earth.Surface.ROOFTOP,
+                    Geospatial.Surface.ROOFTOP,
                 )
 
             assertIs<ArCoreAnchor>(resultAnchor)
@@ -516,7 +473,7 @@ class ArCoreEarthTest {
     @Test
     fun createAnchorOnSurface_terrainErrorNotAuthorized_throwsAnchorNotAuthorizedException(): Unit =
         runBlocking(testDispatcher.scheduler) {
-            setupEarthTracking()
+            setupGeospatialTracking()
             whenever(
                     mockArCoreEarth.resolveAnchorOnTerrainAsync(
                         any(),
@@ -549,7 +506,7 @@ class ArCoreEarthTest {
                     LONGITUDE,
                     ALTITUDE_ABOVE_SURFACE,
                     QUATERNION,
-                    Earth.Surface.TERRAIN,
+                    Geospatial.Surface.TERRAIN,
                 )
             }
             verify(mockArCoreEarth)
@@ -560,7 +517,7 @@ class ArCoreEarthTest {
     fun createAnchorOnSurface_terrainErrorUnsupportedLocation_throwsAnchorUnsupportedLocationException():
         Unit =
         runBlocking(testDispatcher.scheduler) {
-            setupEarthTracking()
+            setupGeospatialTracking()
             whenever(
                     mockArCoreEarth.resolveAnchorOnTerrainAsync(
                         any(),
@@ -593,7 +550,7 @@ class ArCoreEarthTest {
                     LONGITUDE,
                     ALTITUDE_ABOVE_SURFACE,
                     QUATERNION,
-                    Earth.Surface.TERRAIN,
+                    Geospatial.Surface.TERRAIN,
                 )
             }
             verify(mockArCoreEarth)
@@ -603,7 +560,7 @@ class ArCoreEarthTest {
     @Test
     fun createAnchorOnSurface_terrainErrorInternal_throwsIllegalStateException(): Unit =
         runBlocking(testDispatcher.scheduler) {
-            setupEarthTracking()
+            setupGeospatialTracking()
             whenever(
                     mockArCoreEarth.resolveAnchorOnTerrainAsync(
                         any(),
@@ -633,7 +590,7 @@ class ArCoreEarthTest {
                     LONGITUDE,
                     ALTITUDE_ABOVE_SURFACE,
                     QUATERNION,
-                    Earth.Surface.TERRAIN,
+                    Geospatial.Surface.TERRAIN,
                 )
             }
             verify(mockArCoreEarth)
@@ -652,7 +609,7 @@ class ArCoreEarthTest {
                     LONGITUDE,
                     ALTITUDE_ABOVE_SURFACE,
                     QUATERNION,
-                    Earth.Surface.TERRAIN,
+                    Geospatial.Surface.TERRAIN,
                 )
             }
             verify(mockArCoreEarth, never())
@@ -662,7 +619,7 @@ class ArCoreEarthTest {
     @Test
     fun createAnchorOnSurface_cancellationBeforeCompletion_callsCancelAndNotDetach(): Unit =
         runBlocking(testDispatcher.scheduler) {
-            setupEarthTracking()
+            setupGeospatialTracking()
             whenever(mockTerrainFuture.cancel()).thenReturn(true)
             whenever(
                     mockArCoreEarth.resolveAnchorOnTerrainAsync(
@@ -685,7 +642,7 @@ class ArCoreEarthTest {
                         LONGITUDE,
                         ALTITUDE_ABOVE_SURFACE,
                         QUATERNION,
-                        Earth.Surface.TERRAIN,
+                        Geospatial.Surface.TERRAIN,
                     )
                 }
             testDispatcher.scheduler.runCurrent() // Set the future in the coroutine
@@ -701,7 +658,7 @@ class ArCoreEarthTest {
     @Test
     fun createAnchorOnSurface_cancellationAfterCompletion_callsCancelAndDetach(): Unit =
         runBlocking(testDispatcher.scheduler) {
-            setupEarthTracking()
+            setupGeospatialTracking()
             whenever(mockTerrainFuture.cancel())
                 .thenReturn(false) // Simulate failed cancellation (already complete)
             whenever(mockTerrainFuture.resultAnchor).thenReturn(mockArCoreAnchor)
@@ -727,7 +684,7 @@ class ArCoreEarthTest {
                         LONGITUDE,
                         ALTITUDE_ABOVE_SURFACE,
                         QUATERNION,
-                        Earth.Surface.TERRAIN,
+                        Geospatial.Surface.TERRAIN,
                     )
                 }
             testDispatcher.scheduler.runCurrent() // Set the future in the coroutine
@@ -738,6 +695,51 @@ class ArCoreEarthTest {
             verify(mockTerrainFuture).cancel()
             verify(mockTerrainFuture).resultAnchor
             verify(mockArCoreAnchor).detach()
+        }
+
+    enum class VpsAvailabilityTestCase(
+        val arCoreVpsAvailability: ARCore1xVpsAvailability,
+        val expectedXrVpsAvailability: KClass<out VpsAvailabilityResult>,
+    ) {
+        AVAILABLE(ARCore1xVpsAvailability.AVAILABLE, VpsAvailabilityAvailable::class),
+        ERROR_INTERNAL(ARCore1xVpsAvailability.ERROR_INTERNAL, VpsAvailabilityErrorInternal::class),
+        ERROR_NETWORK_CONNECTION(
+            ARCore1xVpsAvailability.ERROR_NETWORK_CONNECTION,
+            VpsAvailabilityNetworkError::class,
+        ),
+        ERROR_NOT_AUTHORIZED(
+            ARCore1xVpsAvailability.ERROR_NOT_AUTHORIZED,
+            VpsAvailabilityNotAuthorized::class,
+        ),
+        ERROR_RESOURCE_EXHAUSTED(
+            ARCore1xVpsAvailability.ERROR_RESOURCE_EXHAUSTED,
+            VpsAvailabilityResourceExhausted::class,
+        ),
+        UNAVAILABLE(ARCore1xVpsAvailability.UNAVAILABLE, VpsAvailabilityUnavailable::class),
+        UNKNOWN(ARCore1xVpsAvailability.UNKNOWN, VpsAvailabilityErrorInternal::class),
+    }
+
+    @Test
+    fun checkVpsAvailability_returnsCorrectType(@TestParameter testCase: VpsAvailabilityTestCase) =
+        runTest {
+            underTest.update(mockSession)
+            val mockFuture = mock<VpsAvailabilityFuture>()
+            whenever(
+                    mockSession.checkVpsAvailabilityAsync(
+                        any(),
+                        any(),
+                        any<Consumer<ARCore1xVpsAvailability?>>(),
+                    )
+                )
+                .thenAnswer { invocation ->
+                    val callback = invocation.getArgument<Consumer<ARCore1xVpsAvailability?>>(2)
+                    callback.accept(testCase.arCoreVpsAvailability)
+                    mockFuture
+                }
+
+            val result = underTest.checkVpsAvailability(0.0, 0.0)
+
+            assertThat(result::class).isEqualTo(testCase.expectedXrVpsAvailability)
         }
 
     private companion object {

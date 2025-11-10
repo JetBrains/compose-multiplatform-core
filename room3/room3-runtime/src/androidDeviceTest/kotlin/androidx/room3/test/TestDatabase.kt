@@ -24,7 +24,6 @@ import androidx.room3.PrimaryKey
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
 
 @Database(entities = [TestEntity::class], version = 1, exportSchema = false)
 abstract class TestDatabase : RoomDatabase()
@@ -39,8 +38,6 @@ fun createDefaultConfiguration(instrumentation: Instrumentation) =
         callbacks = null,
         allowMainThreadQueries = true,
         journalMode = RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING,
-        queryExecutor = Dispatchers.IO.asExecutor(),
-        transactionExecutor = Dispatchers.IO.asExecutor(),
         multiInstanceInvalidationServiceIntent = null,
         requireMigration = false,
         allowDestructiveMigrationOnDowngrade = false,

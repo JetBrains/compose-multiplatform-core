@@ -16,7 +16,8 @@
 
 package androidx.xr.arcore.guava;
 
-import static androidx.xr.arcore.guava.GuavaEarth.createAnchorOnSurfaceAsync;
+import static androidx.xr.arcore.guava.GuavaGeospatial.checkVpsAvailabilityAsync;
+import static androidx.xr.arcore.guava.GuavaGeospatial.createAnchorOnSurfaceAsync;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -34,17 +35,19 @@ import androidx.xr.arcore.AnchorCreateResourcesExhausted;
 import androidx.xr.arcore.AnchorCreateResult;
 import androidx.xr.arcore.AnchorCreateSuccess;
 import androidx.xr.arcore.AnchorCreateUnsupportedLocation;
-import androidx.xr.arcore.Earth;
+import androidx.xr.arcore.Geospatial;
 import androidx.xr.arcore.SessionExtKt;
 import androidx.xr.arcore.XrResourcesManager;
 import androidx.xr.arcore.runtime.AnchorNotAuthorizedException;
 import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException;
 import androidx.xr.arcore.runtime.AnchorUnsupportedLocationException;
 import androidx.xr.arcore.testing.FakePerceptionManager;
-import androidx.xr.arcore.testing.FakeRuntimeEarth;
+import androidx.xr.arcore.testing.FakeRuntimeGeospatial;
 import androidx.xr.runtime.Config;
 import androidx.xr.runtime.Session;
 import androidx.xr.runtime.SessionCreateSuccess;
+import androidx.xr.runtime.VpsAvailabilityAvailable;
+import androidx.xr.runtime.VpsAvailabilityResult;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
 
@@ -59,7 +62,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ExecutionException;
 
 @RunWith(AndroidJUnit4.class)
-public class EarthGuavaTest {
+public class GeospatialGuavaTest {
     private static final double LATITUDE = 10.0;
     private static final double LONGITUDE = 20.0;
     private static final double ALTITUDE_ABOVE_SURFACE = 5.0;
@@ -67,23 +70,24 @@ public class EarthGuavaTest {
     private Session mSession;
     private TestDispatcher mTestDispatcher;
     private XrResourcesManager mXrResourcesManager;
-    private FakeRuntimeEarth mRuntimeEarth;
+    private FakeRuntimeGeospatial mRuntimeGeospatial;
 
     @Before
     public void setUp() {
         mXrResourcesManager = new XrResourcesManager();
-        mRuntimeEarth = new FakeRuntimeEarth(androidx.xr.arcore.runtime.Earth.State.STOPPED);
+        mRuntimeGeospatial =
+                new FakeRuntimeGeospatial(androidx.xr.arcore.runtime.Geospatial.State.NOT_RUNNING);
     }
 
     @Test
     public void createAnchorOnSurface_success_returnsSuccessResultWithAnchor() {
         createTestSessionAndRunTest(
                 () -> {
-                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
+                    Geospatial underTest = new Geospatial(mRuntimeGeospatial, mXrResourcesManager);
                     FakePerceptionManager fakePerceptionManager = getFakePerceptionManager();
                     androidx.xr.arcore.runtime.Anchor fakeAnchor =
                             fakePerceptionManager.createAnchor(Pose.Identity);
-                    mRuntimeEarth.setNextAnchor(fakeAnchor);
+                    mRuntimeGeospatial.setNextAnchor(fakeAnchor);
 
                     ListenableFuture<AnchorCreateResult> resultFuture =
                             createAnchorOnSurfaceAsync(
@@ -93,7 +97,7 @@ public class EarthGuavaTest {
                                     LONGITUDE,
                                     ALTITUDE_ABOVE_SURFACE,
                                     EUS_QUATERNION,
-                                    Earth.Surface.TERRAIN);
+                                    Geospatial.Surface.TERRAIN);
                     mTestDispatcher.getScheduler().advanceUntilIdle();
                     try {
                         AnchorCreateResult result = resultFuture.get();
@@ -115,7 +119,7 @@ public class EarthGuavaTest {
     public void createAnchorOnSurfaceAsync_illegalState_returnsIllegalStateResult() {
         createTestSessionAndRunTest(
                 () -> {
-                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
+                    Geospatial underTest = new Geospatial(mRuntimeGeospatial, mXrResourcesManager);
 
                     ListenableFuture<AnchorCreateResult> resultFuture =
                             createAnchorOnSurfaceAsync(
@@ -125,7 +129,7 @@ public class EarthGuavaTest {
                                     LONGITUDE,
                                     ALTITUDE_ABOVE_SURFACE,
                                     EUS_QUATERNION,
-                                    Earth.Surface.TERRAIN);
+                                    Geospatial.Surface.TERRAIN);
                     mTestDispatcher.getScheduler().advanceUntilIdle();
                     try {
                         AnchorCreateResult result = resultFuture.get();
@@ -141,8 +145,8 @@ public class EarthGuavaTest {
     public void createAnchorOnSurfaceAsync_resourceExhausted_returnsResourcesExhaustedResult() {
         createTestSessionAndRunTest(
                 () -> {
-                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
-                    mRuntimeEarth.setNextException(new AnchorResourcesExhaustedException());
+                    Geospatial underTest = new Geospatial(mRuntimeGeospatial, mXrResourcesManager);
+                    mRuntimeGeospatial.setNextException(new AnchorResourcesExhaustedException());
 
                     ListenableFuture<AnchorCreateResult> resultFuture =
                             createAnchorOnSurfaceAsync(
@@ -152,7 +156,7 @@ public class EarthGuavaTest {
                                     LONGITUDE,
                                     ALTITUDE_ABOVE_SURFACE,
                                     EUS_QUATERNION,
-                                    Earth.Surface.TERRAIN);
+                                    Geospatial.Surface.TERRAIN);
                     mTestDispatcher.getScheduler().advanceUntilIdle();
                     try {
                         AnchorCreateResult result = resultFuture.get();
@@ -168,8 +172,8 @@ public class EarthGuavaTest {
     public void createAnchorOnSurfaceAsync_notAuthorized_returnsNotAuthorizedResult() {
         createTestSessionAndRunTest(
                 () -> {
-                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
-                    mRuntimeEarth.setNextException(new AnchorNotAuthorizedException());
+                    Geospatial underTest = new Geospatial(mRuntimeGeospatial, mXrResourcesManager);
+                    mRuntimeGeospatial.setNextException(new AnchorNotAuthorizedException());
 
                     ListenableFuture<AnchorCreateResult> resultFuture =
                             createAnchorOnSurfaceAsync(
@@ -179,7 +183,7 @@ public class EarthGuavaTest {
                                     LONGITUDE,
                                     ALTITUDE_ABOVE_SURFACE,
                                     EUS_QUATERNION,
-                                    Earth.Surface.TERRAIN);
+                                    Geospatial.Surface.TERRAIN);
                     mTestDispatcher.getScheduler().advanceUntilIdle();
                     try {
                         AnchorCreateResult result = resultFuture.get();
@@ -195,8 +199,8 @@ public class EarthGuavaTest {
     public void createAnchorOnSurfaceAsync_unsupportedLocation_returnsUnsupportedLocationResult() {
         createTestSessionAndRunTest(
                 () -> {
-                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
-                    mRuntimeEarth.setNextException(new AnchorUnsupportedLocationException());
+                    Geospatial underTest = new Geospatial(mRuntimeGeospatial, mXrResourcesManager);
+                    mRuntimeGeospatial.setNextException(new AnchorUnsupportedLocationException());
 
                     ListenableFuture<AnchorCreateResult> resultFuture =
                             createAnchorOnSurfaceAsync(
@@ -206,7 +210,7 @@ public class EarthGuavaTest {
                                     LONGITUDE,
                                     ALTITUDE_ABOVE_SURFACE,
                                     EUS_QUATERNION,
-                                    Earth.Surface.TERRAIN);
+                                    Geospatial.Surface.TERRAIN);
                     mTestDispatcher.getScheduler().advanceUntilIdle();
                     try {
                         AnchorCreateResult result = resultFuture.get();
@@ -222,8 +226,8 @@ public class EarthGuavaTest {
     public void createAnchorOnSurfaceAsync_invalidLatitude_throwsIllegalArgumentException() {
         createTestSessionAndRunTest(
                 () -> {
-                    Earth underTest = new Earth(mRuntimeEarth, mXrResourcesManager);
-                    mRuntimeEarth.setNextException(
+                    Geospatial underTest = new Geospatial(mRuntimeGeospatial, mXrResourcesManager);
+                    mRuntimeGeospatial.setNextException(
                             new IllegalArgumentException("Invalid latitude provided."));
 
                     ExecutionException outerException = null;
@@ -236,7 +240,7 @@ public class EarthGuavaTest {
                                         LONGITUDE,
                                         ALTITUDE_ABOVE_SURFACE,
                                         EUS_QUATERNION,
-                                        Earth.Surface.TERRAIN);
+                                        Geospatial.Surface.TERRAIN);
                         mTestDispatcher.getScheduler().advanceUntilIdle();
                         resultFuture.get();
                         fail("Invalid latitude provided.");
@@ -273,7 +277,7 @@ public class EarthGuavaTest {
                                         Config.DepthEstimationMode.DISABLED,
                                         Config.AnchorPersistenceMode.DISABLED,
                                         Config.FaceTrackingMode.DISABLED,
-                                        Config.GeospatialMode.EARTH,
+                                        Config.GeospatialMode.VPS_AND_GPS,
                                         Config.EyeTrackingMode.DISABLED,
                                         Config.CameraFacingDirection.WORLD));
 
@@ -289,5 +293,24 @@ public class EarthGuavaTest {
     private FakePerceptionManager getFakePerceptionManager() {
         return (FakePerceptionManager)
                 SessionExtKt.getPerceptionRuntime(mSession).getPerceptionManager();
+    }
+
+    @Test
+    public void checkVpsAvailabilityAsync_available_returnsAvailable() {
+        createTestSessionAndRunTest(
+                () -> {
+                    Geospatial underTest = new Geospatial(mRuntimeGeospatial, mXrResourcesManager);
+
+                    ListenableFuture<VpsAvailabilityResult> resultFuture =
+                            checkVpsAvailabilityAsync(underTest, mSession, LATITUDE, LONGITUDE);
+                    mTestDispatcher.getScheduler().advanceUntilIdle();
+
+                    try {
+                        VpsAvailabilityResult result = resultFuture.get();
+                        assertThat(result).isInstanceOf(VpsAvailabilityAvailable.class);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
     }
 }

@@ -18,35 +18,50 @@ package androidx.xr.arcore.projected
 
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.VpsAvailabilityAvailable
+import androidx.xr.runtime.VpsAvailabilityErrorInternal
+import androidx.xr.runtime.VpsAvailabilityNetworkError
+import androidx.xr.runtime.VpsAvailabilityNotAuthorized
+import androidx.xr.runtime.VpsAvailabilityResourceExhausted
+import androidx.xr.runtime.VpsAvailabilityResult
+import androidx.xr.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import kotlin.reflect.KClass
 import kotlin.test.assertFailsWith
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mock
+import org.mockito.Mockito.doAnswer
+import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
-class ProjectedEarthTest {
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(TestParameterInjector::class)
+class ProjectedGeospatialTest {
     @Mock private lateinit var service: IProjectedPerceptionService
     private lateinit var xrResources: XrResources
-    private lateinit var projectedEarth: ProjectedEarth
+    private lateinit var projectedGeospatial: ProjectedGeospatial
 
     @Before
     fun setUp() {
         MockitoAnnotations.initMocks(this)
         xrResources = XrResources()
         xrResources.service = service
-        projectedEarth = xrResources.earth
+        projectedGeospatial = xrResources.geospatial
         xrResources.deviceTrackingState = TrackingState.TRACKING
-        xrResources.earthTrackingState = TrackingState.TRACKING
+        xrResources.geospatialTrackingState = TrackingState.TRACKING
     }
 
     @Test
@@ -71,7 +86,7 @@ class ProjectedEarthTest {
         `when`(service.createPoseFromGeospatialPose(any(ProjectedEarthPose::class.java)))
             .thenReturn(expectedPose)
 
-        val resultPose = projectedEarth.createPoseFromGeospatialPose(geospatialPose)
+        val resultPose = projectedGeospatial.createPoseFromGeospatialPose(geospatialPose)
 
         val expectedResultPose =
             Pose(
@@ -104,54 +119,7 @@ class ProjectedEarthTest {
         `when`(service.createGeospatialPoseFromPose(any(ProjectedPose::class.java)))
             .thenReturn(expectedEarthPose)
 
-        val result = projectedEarth.createGeospatialPoseFromPose(pose)
-
-        val expectedNormalizedQuaternion =
-            Quaternion(
-                expectedEarthPose.eus.x,
-                expectedEarthPose.eus.y,
-                expectedEarthPose.eus.z,
-                expectedEarthPose.eus.w,
-            )
-        assertThat(result.geospatialPose.latitude).isEqualTo(expectedEarthPose.latitude)
-        assertThat(result.geospatialPose.longitude).isEqualTo(expectedEarthPose.longitude)
-        assertThat(result.geospatialPose.altitude).isEqualTo(expectedEarthPose.altitude)
-        assertThat(result.geospatialPose.eastUpSouthQuaternion.x)
-            .isEqualTo(expectedNormalizedQuaternion.x)
-        assertThat(result.geospatialPose.eastUpSouthQuaternion.y)
-            .isEqualTo(expectedNormalizedQuaternion.y)
-        assertThat(result.geospatialPose.eastUpSouthQuaternion.z)
-            .isEqualTo(expectedNormalizedQuaternion.z)
-        assertThat(result.geospatialPose.eastUpSouthQuaternion.w)
-            .isEqualTo(expectedNormalizedQuaternion.w)
-        assertThat(result.horizontalAccuracy).isEqualTo(expectedEarthPose.locationAccuracyMeters)
-        assertThat(result.verticalAccuracy).isEqualTo(expectedEarthPose.altitudeAccuracyMeters)
-        assertThat(result.orientationYawAccuracy)
-            .isEqualTo(expectedEarthPose.orientationYawAccuracyDegrees)
-    }
-
-    @Test
-    fun createGeospatialPoseFromDevicePose_returnsCorrectGeospatialPoseResult() {
-        val expectedEarthPose =
-            ProjectedEarthPose().apply {
-                latitude = 10.0
-                longitude = 20.0
-                altitude = 30.0
-                eus =
-                    ProjectedQuarternion().apply {
-                        x = 0.5f
-                        y = 0.6f
-                        z = 0.7f
-                        w = 0.8f
-                    }
-                locationAccuracyMeters = 1.0
-                altitudeAccuracyMeters = 2.0
-                orientationYawAccuracyDegrees = 3.0
-            }
-
-        `when`(service.createGeospatialPoseFromDevicePose()).thenReturn(expectedEarthPose)
-
-        val result = projectedEarth.createGeospatialPoseFromDevicePose()
+        val result = projectedGeospatial.createGeospatialPoseFromPose(pose)
 
         val expectedNormalizedQuaternion =
             Quaternion(
@@ -180,9 +148,9 @@ class ProjectedEarthTest {
     @Test
     fun createPoseFromGeospatialPose_notTracking_throwsException() {
         xrResources.deviceTrackingState = TrackingState.STOPPED
-        xrResources.earthTrackingState = TrackingState.STOPPED
+        xrResources.geospatialTrackingState = TrackingState.STOPPED
         assertFailsWith<GeospatialPoseNotTrackingException> {
-            projectedEarth.createPoseFromGeospatialPose(GeospatialPose())
+            projectedGeospatial.createPoseFromGeospatialPose(GeospatialPose())
         }
     }
 
@@ -190,16 +158,59 @@ class ProjectedEarthTest {
     fun createPoseFromGeospatialPose_partiallyTracking_throwsException() {
         // This should throw
         xrResources.deviceTrackingState = TrackingState.STOPPED
-        xrResources.earthTrackingState = TrackingState.TRACKING
+        xrResources.geospatialTrackingState = TrackingState.TRACKING
         assertFailsWith<GeospatialPoseNotTrackingException> {
-            projectedEarth.createPoseFromGeospatialPose(GeospatialPose())
+            projectedGeospatial.createPoseFromGeospatialPose(GeospatialPose())
         }
 
         // This should also throw
         xrResources.deviceTrackingState = TrackingState.TRACKING
-        xrResources.earthTrackingState = TrackingState.STOPPED
+        xrResources.geospatialTrackingState = TrackingState.STOPPED
         assertFailsWith<GeospatialPoseNotTrackingException> {
-            projectedEarth.createPoseFromGeospatialPose(GeospatialPose())
+            projectedGeospatial.createPoseFromGeospatialPose(GeospatialPose())
         }
+    }
+
+    // vpsState is the enum VpsAvailability, see the code in
+    // third_party/arcore/java/com/google/ar/core/VpsAvailability.java
+    // and the onVpsAvailabilityChanged callback call in
+    // java/com/google/android/projection/core/modules/perception/PerceptionManagerService.java.
+    enum class VpsAvailabilityTestCase(
+        val vpsState: Int,
+        val expectedResult: KClass<out VpsAvailabilityResult>,
+    ) {
+        // VpsAvailability.AVAILABLE
+        AVAILABLE(1, VpsAvailabilityAvailable::class),
+        // VpsAvailability.UNAVAILABLE
+        UNAVAILABLE(2, VpsAvailabilityUnavailable::class),
+        // VpsAvailability.ERROR_NETWORK_CONNECTION
+        NETWORK_ERROR(-2, VpsAvailabilityNetworkError::class),
+        // VpsAvailability.ERROR_NOT_AUTHORIZED
+        NOT_AUTHORIZED(-3, VpsAvailabilityNotAuthorized::class),
+        // VpsAvailability.ERROR_RESOURCE_EXHAUSTED
+        RESOURCE_EXHAUSTED(-4, VpsAvailabilityResourceExhausted::class),
+        // VpsAvailability.ERROR_INTERNAL
+        INTERNAL_ERROR(-1, VpsAvailabilityErrorInternal::class),
+        // VpsAvailability.UNKNOWN
+        UNKNOWN(0, VpsAvailabilityErrorInternal::class),
+    }
+
+    @Test
+    fun checkVpsAvailability_returnsCorrectResult(
+        @TestParameter testCase: VpsAvailabilityTestCase
+    ) = runTest {
+        doAnswer { invocation ->
+                val callback = invocation.getArgument<IVpsAvailabilityCallback>(2)
+                callback.onVpsAvailabilityChanged(testCase.vpsState)
+                null
+            }
+            .`when`(service)
+            .checkVpsAvailability(eq(1.0), eq(2.0), any(IVpsAvailabilityCallback::class.java))
+
+        val result = projectedGeospatial.checkVpsAvailability(1.0, 2.0)
+
+        assertThat(result).isInstanceOf(testCase.expectedResult.java)
+        verify(service)
+            .checkVpsAvailability(eq(1.0), eq(2.0), any(IVpsAvailabilityCallback::class.java))
     }
 }

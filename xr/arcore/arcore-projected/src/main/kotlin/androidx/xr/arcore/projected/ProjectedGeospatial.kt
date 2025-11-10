@@ -18,18 +18,31 @@ package androidx.xr.arcore.projected
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
-import androidx.xr.arcore.runtime.Earth
+import androidx.xr.arcore.runtime.Geospatial
 import androidx.xr.arcore.runtime.GeospatialPoseNotTrackingException
 import androidx.xr.runtime.TrackingState
+import androidx.xr.runtime.VpsAvailabilityAvailable
+import androidx.xr.runtime.VpsAvailabilityErrorInternal
+import androidx.xr.runtime.VpsAvailabilityNetworkError
+import androidx.xr.runtime.VpsAvailabilityNotAuthorized
+import androidx.xr.runtime.VpsAvailabilityResourceExhausted
+import androidx.xr.runtime.VpsAvailabilityResult
+import androidx.xr.runtime.VpsAvailabilityUnavailable
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.suspendCancellableCoroutine
 
-/** Currently unimplemented implementation of [androidx.xr.arcore.runtime.Earth] on Projected. */
+/**
+ * Currently unimplemented implementation of [androidx.xr.arcore.runtime.Geospatial] on Projected.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class ProjectedEarth internal constructor(private val xrResources: XrResources) : Earth {
-    public override var state: Earth.State = Earth.State.STOPPED
+public class ProjectedGeospatial internal constructor(private val xrResources: XrResources) :
+    Geospatial {
+    public override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
         private set
 
     private val service: IProjectedPerceptionService
@@ -38,7 +51,7 @@ public class ProjectedEarth internal constructor(private val xrResources: XrReso
     private fun checkTrackingState() {
         if (
             xrResources.deviceTrackingState == TrackingState.STOPPED ||
-                xrResources.earthTrackingState == TrackingState.STOPPED
+                xrResources.geospatialTrackingState == TrackingState.STOPPED
         ) {
             throw GeospatialPoseNotTrackingException()
         }
@@ -71,7 +84,7 @@ public class ProjectedEarth internal constructor(private val xrResources: XrReso
         )
     }
 
-    override public fun createGeospatialPoseFromPose(pose: Pose): Earth.GeospatialPoseResult {
+    override public fun createGeospatialPoseFromPose(pose: Pose): Geospatial.GeospatialPoseResult {
         checkTrackingState()
         val projectedVector =
             ProjectedVector3().apply {
@@ -94,7 +107,7 @@ public class ProjectedEarth internal constructor(private val xrResources: XrReso
         val projectedEarthPose = service.createGeospatialPoseFromPose(projectedPose)
         // TODO: b/446185235 - maybe we need better error handling or in service?
         if (projectedEarthPose == null) {
-            return Earth.GeospatialPoseResult(
+            return Geospatial.GeospatialPoseResult(
                 geospatialPose = GeospatialPose(0.0, 0.0, 0.0, Quaternion()),
                 horizontalAccuracy = 0.0,
                 verticalAccuracy = 0.0,
@@ -114,40 +127,7 @@ public class ProjectedEarth internal constructor(private val xrResources: XrReso
                         projectedEarthPose.eus.w,
                     ),
             )
-        return Earth.GeospatialPoseResult(
-            geospatialPose = geospatialPose,
-            horizontalAccuracy = projectedEarthPose.locationAccuracyMeters,
-            verticalAccuracy = projectedEarthPose.altitudeAccuracyMeters,
-            orientationYawAccuracy = projectedEarthPose.orientationYawAccuracyDegrees,
-        )
-    }
-
-    override public fun createGeospatialPoseFromDevicePose(): Earth.GeospatialPoseResult {
-        checkTrackingState()
-        val projectedEarthPose = service.createGeospatialPoseFromDevicePose()
-        // TODO: b/446185235 - maybe we need better error handling or in service?
-        if (projectedEarthPose == null) {
-            return Earth.GeospatialPoseResult(
-                geospatialPose = GeospatialPose(0.0, 0.0, 0.0, Quaternion()),
-                horizontalAccuracy = 0.0,
-                verticalAccuracy = 0.0,
-                orientationYawAccuracy = 0.0,
-            )
-        }
-        val geospatialPose =
-            GeospatialPose(
-                latitude = projectedEarthPose.latitude,
-                longitude = projectedEarthPose.longitude,
-                altitude = projectedEarthPose.altitude,
-                eastUpSouthQuaternion =
-                    Quaternion(
-                        projectedEarthPose.eus.x,
-                        projectedEarthPose.eus.y,
-                        projectedEarthPose.eus.z,
-                        projectedEarthPose.eus.w,
-                    ),
-            )
-        return Earth.GeospatialPoseResult(
+        return Geospatial.GeospatialPoseResult(
             geospatialPose = geospatialPose,
             horizontalAccuracy = projectedEarthPose.locationAccuracyMeters,
             verticalAccuracy = projectedEarthPose.altitudeAccuracyMeters,
@@ -169,8 +149,44 @@ public class ProjectedEarth internal constructor(private val xrResources: XrReso
         longitude: Double,
         altitudeAboveSurface: Double,
         eastUpSouthQuaternion: Quaternion,
-        surface: Earth.Surface,
+        surface: Geospatial.Surface,
     ): Anchor {
         throw NotImplementedError("Not implemented yet.")
+    }
+
+    override suspend fun checkVpsAvailability(
+        latitude: Double,
+        longitude: Double,
+    ): VpsAvailabilityResult = suspendCancellableCoroutine { continuation ->
+        val callback =
+            object : IVpsAvailabilityCallback.Stub() {
+                override fun onVpsAvailabilityChanged(vpsState: Int) {
+                    val vpsResult =
+                        // vpsState is the enum VpsAvailability, see the code in
+                        // third_party/arcore/java/com/google/ar/core/VpsAvailability.java
+                        // and the onVpsAvailabilityChanged callback call in
+                        // java/com/google/android/projection/core/modules/perception/PerceptionManagerService.java.
+                        when (vpsState) {
+                            // VpsAvailability.AVAILABLE
+                            1 -> VpsAvailabilityAvailable()
+                            // VpsAvailability.UNAVAILABLE
+                            2 -> VpsAvailabilityUnavailable()
+                            // VpsAvailability.ERROR_NETWORK_CONNECTION
+                            -2 -> VpsAvailabilityNetworkError()
+                            // VpsAvailability.ERROR_NOT_AUTHORIZED
+                            -3 -> VpsAvailabilityNotAuthorized()
+                            // VpsAvailability.ERROR_RESOURCE_EXHAUSTED
+                            -4 -> VpsAvailabilityResourceExhausted()
+                            // VpsAvailability.UNKNOWN or VpsAvailability.ERROR_INTERNAL
+                            else -> VpsAvailabilityErrorInternal()
+                        }
+                    continuation.resume(vpsResult)
+                }
+            }
+        try {
+            xrResources.service.checkVpsAvailability(latitude, longitude, callback)
+        } catch (e: Exception) {
+            continuation.resumeWithException(e)
+        }
     }
 }

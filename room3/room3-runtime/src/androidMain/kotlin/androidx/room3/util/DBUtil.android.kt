@@ -21,8 +21,8 @@ package androidx.room3.util
 
 import androidx.annotation.RestrictTo
 import androidx.room3.RoomDatabase
-import androidx.room3.TransactionElement
 import androidx.room3.coroutines.RawConnectionAccessor
+import androidx.room3.coroutines.TransactionElement
 import androidx.room3.coroutines.runBlockingUninterruptible
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase

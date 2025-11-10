@@ -85,7 +85,7 @@ internal constructor(
                 Config.AnchorPersistenceMode.DISABLED,
                 Config.FaceTrackingMode.DISABLED,
                 Config.GeospatialMode.DISABLED,
-                Config.GeospatialMode.EARTH,
+                Config.GeospatialMode.VPS_AND_GPS,
                 Config.EyeTrackingMode.DISABLED,
             )
     }

@@ -16,7 +16,7 @@
 
 package androidx.xr.arcore.rxjava3;
 
-import static androidx.xr.arcore.rxjava3.RxJava3Earth.getStateAsFlowable;
+import static androidx.xr.arcore.rxjava3.RxJava3Geospatial.getStateAsFlowable;
 
 import static com.google.common.truth.Truth.assertThat;
 
@@ -25,7 +25,7 @@ import static kotlinx.coroutines.test.TestCoroutineDispatchersKt.StandardTestDis
 import androidx.activity.ComponentActivity;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.xr.arcore.Earth;
+import androidx.xr.arcore.Geospatial;
 import androidx.xr.arcore.SessionExtKt;
 import androidx.xr.arcore.XrResourcesManager;
 import androidx.xr.runtime.Session;
@@ -40,7 +40,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
-public class RxJava3EarthTest {
+public class RxJava3GeospatialTest {
     private Session mSession;
     private TestDispatcher mTestDispatcher;
     private XrResourcesManager mXrResourcesManager;
@@ -51,15 +51,16 @@ public class RxJava3EarthTest {
     }
 
     @Test
-    public void earth_stateAsFlowable_returnsEarthState() {
+    public void geospatial_stateAsFlowable_returnsGeospatialState() {
         createTestSessionAndRunTest(
                 () -> {
-                    Earth underTest = Earth.getInstance(mSession);
-                    TestSubscriber<Earth.State> testSubscriber = new TestSubscriber<>();
+                    Geospatial underTest = Geospatial.getInstance(mSession);
+                    TestSubscriber<Geospatial.State> testSubscriber = new TestSubscriber<>();
 
                     getStateAsFlowable(underTest).subscribe(testSubscriber);
 
-                    assertThat(testSubscriber.values().get(0)).isEqualTo(Earth.State.STOPPED);
+                    assertThat(testSubscriber.values().get(0))
+                            .isEqualTo(Geospatial.State.NOT_RUNNING);
                 });
     }
 

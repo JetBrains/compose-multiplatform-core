@@ -11,12 +11,6 @@ package androidx.xr.compose.platform {
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.xr.runtime.Session?> LocalSession;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Logger {
-    method public void init(android.content.Context context);
-    method public void log(String tag, kotlin.jvm.functions.Function0<java.lang.String> messageGenerator);
-    field public static final androidx.xr.compose.platform.Logger INSTANCE;
-  }
-
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class SceneManager {
     method public java.util.List<androidx.xr.compose.subspace.node.SubspaceSemanticsInfo> getAllRootSubspaceSemanticsNodes(android.content.Context context);
     method public int getSceneCount(android.content.Context context);

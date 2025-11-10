@@ -26,9 +26,7 @@ import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import instantiateImpl
 import java.io.File
-import java.util.concurrent.Executor
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlinx.coroutines.Dispatchers
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,80 +85,6 @@ class BuilderTest {
                         "to create an in memory database, use Room.inMemoryDatabaseBuilder"
                 )
         }
-    }
-
-    @Test
-    fun executors_setQueryExecutor() {
-        val executor: Executor = mock()
-        val db =
-            databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                .setQueryExecutor(executor)
-                .build()
-
-        assertThat(db.databaseConfiguration.queryExecutor).isEqualTo(executor)
-        assertThat(db.databaseConfiguration.transactionExecutor).isEqualTo(executor)
-    }
-
-    @Test
-    fun executors_setTransactionExecutor() {
-        val executor: Executor = mock()
-        val db =
-            databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                .setTransactionExecutor(executor)
-                .build()
-
-        assertThat(db.databaseConfiguration.queryExecutor).isEqualTo(executor)
-        assertThat(db.databaseConfiguration.transactionExecutor).isEqualTo(executor)
-    }
-
-    @Test
-    fun executors_setBothExecutors() {
-        val executor1: Executor = mock()
-        val executor2: Executor = mock()
-        val db =
-            databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                .setQueryExecutor(executor1)
-                .setTransactionExecutor(executor2)
-                .build()
-
-        assertThat(db.databaseConfiguration.queryExecutor).isEqualTo(executor1)
-        assertThat(db.databaseConfiguration.transactionExecutor).isEqualTo(executor2)
-    }
-
-    @Test
-    fun executors_setCoroutineContext() {
-        assertThrows<IllegalArgumentException> {
-                databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                    .setQueryCoroutineContext(Dispatchers.IO)
-                    .setTransactionExecutor(mock())
-                    .build()
-            }
-            .hasMessageThat()
-            .contains("This builder has already been configured with a CoroutineContext.")
-    }
-
-    @Test
-    fun coroutineContext_setQueryExecutor() {
-        assertThrows<IllegalArgumentException> {
-                databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                    .setQueryExecutor(mock())
-                    .setQueryCoroutineContext(Dispatchers.IO)
-                    .build()
-            }
-            .hasMessageThat()
-            .contains("This builder has already been configured with an Executor.")
-    }
-
-    @Test
-    fun coroutineContext_setTransactionExecutor() {
-        assertThrows<IllegalArgumentException> {
-                databaseBuilder(mock(), TestDatabase::class.java, "foo")
-                    .setTransactionExecutor(mock())
-                    .setQueryCoroutineContext(Dispatchers.IO)
-                    .build()
-            }
-            .hasMessageThat()
-            .contains("This builder has already been configured with an Executor.")
     }
 
     @Test

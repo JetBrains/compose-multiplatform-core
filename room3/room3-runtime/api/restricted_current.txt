@@ -2,7 +2,7 @@
 package androidx.room3 {
 
   public class DatabaseConfiguration {
-    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public DatabaseConfiguration(android.content.Context context, String? name, androidx.room3.RoomDatabase.MigrationContainer migrationContainer, java.util.List<? extends androidx.room3.RoomDatabase.Callback>? callbacks, boolean allowMainThreadQueries, androidx.room3.RoomDatabase.JournalMode journalMode, java.util.concurrent.Executor queryExecutor, java.util.concurrent.Executor transactionExecutor, android.content.Intent? multiInstanceInvalidationServiceIntent, boolean requireMigration, boolean allowDestructiveMigrationOnDowngrade, java.util.Set<java.lang.Integer>? migrationNotRequiredFrom, androidx.room3.RoomDatabase.PrepackagedDatabaseCallback? prepackagedDatabaseCallback, java.util.List<?> typeConverters, java.util.List<? extends androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs, boolean allowDestructiveMigrationForAllTables, androidx.sqlite.SQLiteDriver sqliteDriver, kotlin.coroutines.CoroutineContext? queryCoroutineContext);
+    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public DatabaseConfiguration(android.content.Context context, String? name, androidx.room3.RoomDatabase.MigrationContainer migrationContainer, java.util.List<? extends androidx.room3.RoomDatabase.Callback>? callbacks, boolean allowMainThreadQueries, androidx.room3.RoomDatabase.JournalMode journalMode, android.content.Intent? multiInstanceInvalidationServiceIntent, boolean requireMigration, boolean allowDestructiveMigrationOnDowngrade, java.util.Set<java.lang.Integer>? migrationNotRequiredFrom, androidx.room3.RoomDatabase.PrepackagedDatabaseCallback? prepackagedDatabaseCallback, java.util.List<?> typeConverters, java.util.List<? extends androidx.room3.migration.AutoMigrationSpec> autoMigrationSpecs, boolean allowDestructiveMigrationForAllTables, androidx.sqlite.SQLiteDriver sqliteDriver, kotlin.coroutines.CoroutineContext queryCoroutineContext);
     method public boolean isMigrationRequired(int fromVersion, int toVersion);
     property public final boolean allowDestructiveMigrationForAllTables;
     property public final boolean allowDestructiveMigrationOnDowngrade;
@@ -16,11 +16,9 @@ package androidx.room3 {
     property public final android.content.Intent? multiInstanceInvalidationServiceIntent;
     property public final String? name;
     property public final androidx.room3.RoomDatabase.PrepackagedDatabaseCallback? prepackagedDatabaseCallback;
-    property public final kotlin.coroutines.CoroutineContext? queryCoroutineContext;
-    property public final java.util.concurrent.Executor queryExecutor;
+    property public final kotlin.coroutines.CoroutineContext queryCoroutineContext;
     property public final boolean requireMigration;
     property public final androidx.sqlite.SQLiteDriver sqliteDriver;
-    property public final java.util.concurrent.Executor transactionExecutor;
     property public final java.util.List<java.lang.Object> typeConverters;
     field public final boolean allowDestructiveMigrationForAllTables;
     field public final boolean allowDestructiveMigrationOnDowngrade;
@@ -34,11 +32,9 @@ package androidx.room3 {
     field @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final android.content.Intent? multiInstanceInvalidationServiceIntent;
     field public final String? name;
     field public final androidx.room3.RoomDatabase.PrepackagedDatabaseCallback? prepackagedDatabaseCallback;
-    field public final kotlin.coroutines.CoroutineContext? queryCoroutineContext;
-    field public final java.util.concurrent.Executor queryExecutor;
+    field public final kotlin.coroutines.CoroutineContext queryCoroutineContext;
     field public final boolean requireMigration;
     field public final androidx.sqlite.SQLiteDriver sqliteDriver;
-    field public final java.util.concurrent.Executor transactionExecutor;
     field public final java.util.List<java.lang.Object> typeConverters;
   }
 
@@ -134,17 +130,13 @@ package androidx.room3 {
     method protected abstract androidx.room3.InvalidationTracker createInvalidationTracker();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected abstract androidx.room3.RoomOpenDelegateMarker createOpenDelegate();
     method @InaccessibleFromKotlin public androidx.room3.InvalidationTracker getInvalidationTracker();
-    method @InaccessibleFromKotlin public java.util.concurrent.Executor getQueryExecutor();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract java.util.Set<kotlin.reflect.KClass<? extends androidx.room3.migration.AutoMigrationSpec>> getRequiredAutoMigrationSpecClasses();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected abstract java.util.Map<kotlin.reflect.KClass<? extends java.lang.Object?>,java.util.List<kotlin.reflect.KClass<? extends java.lang.Object?>>> getRequiredTypeConverterClasses();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected java.util.Map<java.lang.Class<? extends java.lang.Object?>,java.util.List<java.lang.Class<? extends java.lang.Object?>>> getRequiredTypeConverters();
-    method @InaccessibleFromKotlin public java.util.concurrent.Executor getTransactionExecutor();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final <T> T getTypeConverter(kotlin.reflect.KClass<T> klass);
     method @CallSuper public void init(androidx.room3.DatabaseConfiguration configuration);
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) protected final void internalInitInvalidationTracker(androidx.sqlite.SQLiteConnection connection);
     property public androidx.room3.InvalidationTracker invalidationTracker;
-    property public java.util.concurrent.Executor queryExecutor;
-    property public java.util.concurrent.Executor transactionExecutor;
     field public static final androidx.room3.RoomDatabase.Companion Companion;
     field @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final int MAX_BIND_PARAMETER_CNT = 999; // 0x3e7
   }
@@ -173,8 +165,6 @@ package androidx.room3 {
     method public androidx.room3.RoomDatabase.Builder<T> setJournalMode(androidx.room3.RoomDatabase.JournalMode journalMode);
     method @SuppressCompatibility @androidx.room3.ExperimentalRoomApi public androidx.room3.RoomDatabase.Builder<T> setMultiInstanceInvalidationServiceIntent(android.content.Intent invalidationServiceIntent);
     method public final androidx.room3.RoomDatabase.Builder<T> setQueryCoroutineContext(kotlin.coroutines.CoroutineContext context);
-    method public androidx.room3.RoomDatabase.Builder<T> setQueryExecutor(java.util.concurrent.Executor executor);
-    method public androidx.room3.RoomDatabase.Builder<T> setTransactionExecutor(java.util.concurrent.Executor executor);
   }
 
   public abstract static class RoomDatabase.Callback {

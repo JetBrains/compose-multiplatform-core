@@ -178,6 +178,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         children.add(index, instance)
 
         owner?.let { instance.attach(it) }
+
+        owner?.logger?.nodeInserted(instance, this, index)
     }
 
     /**
@@ -200,6 +202,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             val child = children.removeAt(fromIndex)
 
             children.add(toIndex, child)
+
+            owner?.logger?.nodeMoved(child, this, fromIndex, toIndex)
         }
 
         requestMeasure()
@@ -210,7 +214,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         require(count >= 0) { "count ($count) must be greater than 0." }
 
         for (i in index + count - 1 downTo index) {
-            onChildRemoved(children[i])
+            onChildRemoved(children[i], i)
         }
 
         children.removeAll(children.subList(index, index + count))
@@ -218,15 +222,18 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
     /** Removes all children nodes. */
     internal fun removeAll() {
-        children.reversed().forEach { child -> onChildRemoved(child) }
+        children.reversed().forEachIndexed { i, child ->
+            onChildRemoved(child, children.size - i - 1)
+        }
 
         children.clear()
     }
 
     /** Called when the [child] node is removed from this [SubspaceLayoutNode] hierarchy. */
-    private fun onChildRemoved(child: SubspaceLayoutNode) {
+    private fun onChildRemoved(child: SubspaceLayoutNode, index: Int) {
         owner?.let { child.detach() }
         child.parent = null
+        owner?.logger?.nodeRemoved(child, this, index)
     }
 
     /**
@@ -427,6 +434,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             measuredHeight = subspaceMeasureResult!!.height
             measuredDepth = subspaceMeasureResult!!.depth
 
+            owner?.logger?.nodeMeasured(this, constraints, size)
+
             return this
         }
 
@@ -453,6 +462,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             layoutState = LayoutState.LayingOut
 
             layoutPose = pose
+
+            owner?.logger?.nodePlaced(this, pose)
 
             coreEntity?.applyCoreEntityNodes(nodes.getAll<CoreEntityNode>())
             coreEntity?.updatePoseFromLayout()

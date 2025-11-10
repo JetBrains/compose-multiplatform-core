@@ -461,7 +461,7 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
                         UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
                 )
-                .setTransactionExecutor(executorService)
+                .setQueryCoroutineContext(executorService.asCoroutineDispatcher())
                 .build()
 
         // Simulate a busy executor, no thread to acquire for transaction.
@@ -707,7 +707,7 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
                         UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
                 )
-                .setTransactionExecutor(executor)
+                .setQueryCoroutineContext(executor.asCoroutineDispatcher())
                 .build()
 
         withContext(executor.asCoroutineDispatcher()) {
@@ -737,7 +737,7 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
                         UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
                 )
-                .setTransactionExecutor(executor)
+                .setQueryCoroutineContext(executor.asCoroutineDispatcher())
                 .build()
 
         withContext(executor.asCoroutineDispatcher()) {
@@ -771,7 +771,7 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
                         UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
                 )
-                .setTransactionExecutor(executor)
+                .setQueryCoroutineContext(executor.asCoroutineDispatcher())
                 .build()
         withContext(executor.asCoroutineDispatcher()) {
             localDatabase.withWriteTransaction {
@@ -806,7 +806,7 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
                         UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
                 )
-                .setTransactionExecutor(executor)
+                .setQueryCoroutineContext(executor.asCoroutineDispatcher())
                 .build()
 
         withContext(executor.asCoroutineDispatcher()) {
