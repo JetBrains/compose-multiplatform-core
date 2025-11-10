@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-@file:JvmName("GuavaEarth")
+@file:JvmName("GuavaGeospatial")
 
 package androidx.xr.arcore.guava
 
+import androidx.annotation.RestrictTo
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import androidx.xr.arcore.Anchor
 import androidx.xr.arcore.AnchorCreateIllegalState
 import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateResult
-import androidx.xr.arcore.Earth
-import androidx.xr.arcore.Earth.Surface
+import androidx.xr.arcore.Geospatial
+import androidx.xr.arcore.Geospatial.Surface
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.Quaternion
 import com.google.common.util.concurrent.ListenableFuture
 
@@ -47,12 +49,12 @@ import com.google.common.util.concurrent.ListenableFuture
  * surface anchors at time. Attempting to resolve more than 100 surface anchors will return an
  * [AnchorCreateResourcesExhausted] result.
  *
- * Creating a Terrain anchor requires an active Earth which is [State.RUNNING]. If it is not, then
- * this function returns an [AnchorCreateIllegalState] result. This call also requires a working
- * internet connection to communicate with the ARCore API on Google Cloud. ARCore will continue to
- * retry if it is unable to establish a connection to the ARCore service.
+ * Creating a Terrain anchor requires an active Geospatial which is [State.RUNNING]. If it is not,
+ * then this function returns an [AnchorCreateIllegalState] result. This call also requires a
+ * working internet connection to communicate with the ARCore API on Google Cloud. ARCore will
+ * continue to retry if it is unable to establish a connection to the ARCore service.
  *
- * A Terrain anchor's tracking state will be [TrackingState.PAUSED] if the Earth is not actively
+ * A Terrain anchor's tracking state will be [TrackingState.PAUSED] if Geospatial is not actively
  * tracking. Its tracking state will permanently become [TrackingState.STOPPED] if
  * [Config.GeospatialMode] is disabled, or if another full-space app uses Geospatial.
  *
@@ -72,7 +74,8 @@ import com.google.common.util.concurrent.ListenableFuture
  * @param surface the [Surface] the anchor is attached to.
  * @throws IllegalArgumentException if the latitude is outside the allowable range.
  */
-public fun Earth.createAnchorOnSurfaceAsync(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun Geospatial.createAnchorOnSurfaceAsync(
     session: Session,
     latitude: Double,
     longitude: Double,
@@ -91,4 +94,32 @@ public fun Earth.createAnchorOnSurfaceAsync(
             eastUpSouthQuaternion,
             surface,
         )
+    }
+
+/**
+ * Gets the availability of the Visual Positioning System (VPS) at a specified horizontal position.
+ * The availability of VPS in a given location helps to improve the quality of Geospatial
+ * localization and tracking accuracy.
+ *
+ * This launches an asynchronous operation used to query the Google Cloud ARCore API. It may be
+ * called without calling [Session.configure].
+ *
+ * Your app must be properly set up to communicate with the Google Cloud ARCore API in order to
+ * obtain a result from this call, otherwise the result will be [VpsAvailabilityNotAuthorized].
+ *
+ * @param latitude The latitude in degrees.
+ * @param longitude The longitude in degrees.
+ * @param session The current [Session].
+ * @return the result of the VPS availability check.
+ */
+public fun Geospatial.checkVpsAvailabilityAsync(
+    session: Session,
+    latitude: Double,
+    longitude: Double,
+): ListenableFuture<VpsAvailabilityResult> =
+    SuspendToFutureAdapter.launchFuture(
+        context = session.coroutineScope.coroutineContext,
+        launchUndispatched = true,
+    ) {
+        checkVpsAvailability(latitude, longitude)
     }

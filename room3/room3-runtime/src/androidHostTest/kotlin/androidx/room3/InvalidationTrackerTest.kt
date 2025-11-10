@@ -81,8 +81,6 @@ class InvalidationTrackerTest {
                 callbacks = null,
                 allowMainThreadQueries = true,
                 journalMode = RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING,
-                queryExecutor = { error("Should never be called") },
-                transactionExecutor = { error("Should never be called") },
                 multiInstanceInvalidationServiceIntent = null,
                 requireMigration = true,
                 allowDestructiveMigrationOnDowngrade = false,

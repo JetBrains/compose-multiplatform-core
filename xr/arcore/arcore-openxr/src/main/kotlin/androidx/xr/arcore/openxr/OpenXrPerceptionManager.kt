@@ -30,7 +30,6 @@ import androidx.xr.arcore.runtime.Plane
 import androidx.xr.arcore.runtime.RenderViewpoint
 import androidx.xr.arcore.runtime.Trackable
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
@@ -123,7 +122,7 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
     override val userFace: Face?
         get() = xrResources.userFace
 
-    override val earth: OpenXrEarth = xrResources.earth
+    override val geospatial: OpenXrGeospatial = xrResources.geospatial
 
     override val leftDepthMap: DepthMap?
         get() = xrResources.leftDepthMap
@@ -165,13 +164,6 @@ internal constructor(private val timeSource: OpenXrTimeSource) : PerceptionManag
         }
 
         lastUpdateXrTime = xrTime
-    }
-
-    override suspend fun checkVpsAvailability(
-        latitude: Double,
-        longitude: Double,
-    ): VpsAvailabilityResult {
-        throw NotImplementedError("Not implemented on OpenXR runtime.")
     }
 
     internal fun updateAugmentedObjects(xrTime: Long) {

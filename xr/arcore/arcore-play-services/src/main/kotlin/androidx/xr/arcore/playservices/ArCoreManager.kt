@@ -145,7 +145,7 @@ internal constructor(
             }
 
         arConfig.geospatialMode =
-            if (config.geospatial == Config.GeospatialMode.EARTH) {
+            if (config.geospatial == Config.GeospatialMode.VPS_AND_GPS) {
                 GeospatialMode.ENABLED
             } else {
                 GeospatialMode.DISABLED

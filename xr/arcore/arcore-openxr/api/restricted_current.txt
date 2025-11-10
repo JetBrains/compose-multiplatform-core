@@ -89,17 +89,6 @@ package androidx.xr.arcore.openxr {
     property public androidx.xr.runtime.math.Pose devicePose;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrEarth implements androidx.xr.arcore.runtime.Earth {
-    method public androidx.xr.arcore.runtime.Anchor createAnchor(double latitude, double longitude, double altitude, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
-    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.runtime.Earth.Surface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.runtime.Anchor>);
-    method public androidx.xr.arcore.runtime.Earth.GeospatialPoseResult createGeospatialPoseFromDevicePose();
-    method public androidx.xr.arcore.runtime.Earth.GeospatialPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.runtime.math.Pose createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
-    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Earth.State getState();
-    method public void update(long xrTime);
-    property public androidx.xr.arcore.runtime.Earth.State state;
-  }
-
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrEye implements androidx.xr.arcore.runtime.Eye {
     ctor public OpenXrEye();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();
@@ -135,6 +124,17 @@ package androidx.xr.arcore.openxr {
     property public androidx.xr.runtime.TrackingState trackingState;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrGeospatial implements androidx.xr.arcore.runtime.Geospatial {
+    method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
+    method public androidx.xr.arcore.runtime.Anchor createAnchor(double latitude, double longitude, double altitude, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion);
+    method public suspend Object? createAnchorOnSurface(double latitude, double longitude, double altitudeAboveSurface, androidx.xr.runtime.math.Quaternion eastUpSouthQuaternion, androidx.xr.arcore.runtime.Geospatial.Surface surface, kotlin.coroutines.Continuation<? super androidx.xr.arcore.runtime.Anchor>);
+    method public androidx.xr.arcore.runtime.Geospatial.GeospatialPoseResult createGeospatialPoseFromPose(androidx.xr.runtime.math.Pose pose);
+    method public androidx.xr.runtime.math.Pose createPoseFromGeospatialPose(androidx.xr.runtime.math.GeospatialPose geospatialPose);
+    method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Geospatial.State getState();
+    method public void update(long xrTime);
+    property public androidx.xr.arcore.runtime.Geospatial.State state;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrHand implements androidx.xr.arcore.runtime.Hand {
     method @InaccessibleFromKotlin public java.nio.FloatBuffer getHandJointsBuffer();
     method @InaccessibleFromKotlin public androidx.xr.runtime.TrackingState getTrackingState();
@@ -155,10 +155,9 @@ package androidx.xr.arcore.openxr {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class OpenXrPerceptionManager implements androidx.xr.arcore.runtime.PerceptionManager {
-    method public suspend Object? checkVpsAvailability(double latitude, double longitude, kotlin.coroutines.Continuation<? super androidx.xr.runtime.VpsAvailabilityResult>);
     method public androidx.xr.arcore.runtime.Anchor createAnchor(androidx.xr.runtime.math.Pose pose);
     method @InaccessibleFromKotlin public androidx.xr.arcore.openxr.OpenXrDevice getArDevice();
-    method @InaccessibleFromKotlin public androidx.xr.arcore.openxr.OpenXrEarth getEarth();
+    method @InaccessibleFromKotlin public androidx.xr.arcore.openxr.OpenXrGeospatial getGeospatial();
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.DepthMap? getLeftDepthMap();
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Eye getLeftEye();
     method @InaccessibleFromKotlin public androidx.xr.arcore.runtime.Hand getLeftHand();
@@ -177,7 +176,7 @@ package androidx.xr.arcore.openxr {
     method public void unpersistAnchor(java.util.UUID uuid);
     method public void update(long xrTime);
     property public androidx.xr.arcore.openxr.OpenXrDevice arDevice;
-    property public androidx.xr.arcore.openxr.OpenXrEarth earth;
+    property public androidx.xr.arcore.openxr.OpenXrGeospatial geospatial;
     property public androidx.xr.arcore.runtime.DepthMap? leftDepthMap;
     property public androidx.xr.arcore.runtime.Eye leftEye;
     property public androidx.xr.arcore.runtime.Hand leftHand;

@@ -50,49 +50,38 @@ import kotlinx.coroutines.launch
 /**
  * Creates a [TransformingLazyColumnState] that is remembered across compositions.
  *
- * This overload initializes the list with no scroll offset, so you cannot scroll down the screen
- * for a normal layout or up the screen for a reverse layout.
- *
- * If the items all fit on the screen after content padding is applied, then the items are laid out
- * respecting the content padding, the layout direction and also the vertical arrangement. However,
- * if the items do not fit on the screen, then content padding and reverse layout are respected and
- * the vertical arrangement is ignored - so the first item is pinned to the start of the viewport
- * (top in a normal layout, bottom in a reverse layout) after content padding.
- *
- * The behavior of this special case is identical to that for the parameterized overload of
- * rememberTransformingLazyColumnState, unless very large content padding is provided (such as when
- * using TransformingLazyColumn with reversed layout and EdgeButton within a ScreenScaffold), in
- * which case the parameterized overload will try to center the initialAnchorItemIndex.
- */
-@Composable
-public fun rememberTransformingLazyColumnState(): TransformingLazyColumnState =
-    rememberSaveable(saver = TransformingLazyColumnState.Saver) {
-        TransformingLazyColumnState(
-            initialAnchorItemIndex = 0,
-            initialAnchorItemScrollOffset = OffsetToTriggerInitialPin,
-        )
-    }
-
-/**
- * Creates a [TransformingLazyColumnState] that is remembered across compositions.
- *
- * @param initialAnchorItemIndex the index of an item that is going to be placed in the center of
- *   the screen (if sufficient content padding is available for that item to be centered). This
- *   correlates with [TransformingLazyColumnState.anchorItemIndex].
- * @param initialAnchorItemScrollOffset the offset of an item to be used when placing the item in
- *   the center of the screen (if possible - see above). This correlates with
- *   [TransformingLazyColumnState.anchorItemScrollOffset].
+ * @param initialAnchorItemIndex The index of the item to be used as the anchor. If a non-negative
+ *   index is provided, the state will attempt to center this item in the viewport. If a negative
+ *   index is provided then the list will be initialized with the first item (index 0) pinned to the
+ *   start of the viewport, respecting any content padding. This is the default behavior.
+ * @param initialAnchorItemScrollOffset The offset to be applied to the anchor item. Defaults to 0.
+ *   This offset is ONLY used when a non-negative `initialAnchorItemIndex` is provided (i.e., when
+ *   the item is being centered). It is ignored if `initialAnchorItemIndex` is less than 0. The
+ *   offset is used when placing the item in the center of the screen; a positive value scrolls the
+ *   item towards the end of the list, and a negative value scrolls it towards the start. This
+ *   correlates with [TransformingLazyColumnState.anchorItemScrollOffset].
  */
 @Composable
 public fun rememberTransformingLazyColumnState(
-    initialAnchorItemIndex: Int = 0,
+    initialAnchorItemIndex: Int = -1,
     initialAnchorItemScrollOffset: Int = 0,
 ): TransformingLazyColumnState =
     rememberSaveable(saver = TransformingLazyColumnState.Saver) {
-        TransformingLazyColumnState(
-            initialAnchorItemIndex = initialAnchorItemIndex,
-            initialAnchorItemScrollOffset = initialAnchorItemScrollOffset,
-        )
+        // Determine if we should use the special "pin to start" behavior.
+        // This is triggered whenever initialAnchorItemIndex is negative.
+        if (initialAnchorItemIndex < 0) {
+            // Default behavior: Pin the first item (index 0) to the start of the viewport.
+            TransformingLazyColumnState(
+                initialAnchorItemIndex = 0,
+                initialAnchorItemScrollOffset = OffsetToTriggerInitialPin,
+            )
+        } else {
+            // Explicit non-negative index provided: Use the centering logic.
+            TransformingLazyColumnState(
+                initialAnchorItemIndex = initialAnchorItemIndex,
+                initialAnchorItemScrollOffset = initialAnchorItemScrollOffset,
+            )
+        }
     }
 
 /**

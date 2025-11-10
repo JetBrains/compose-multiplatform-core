@@ -18,28 +18,25 @@ package androidx.xr.arcore.openxr
 
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.Anchor
-import androidx.xr.arcore.runtime.Earth
+import androidx.xr.arcore.runtime.Geospatial
+import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 
-/** Currently unimplemented implementation of [androidx.xr.arcore.runtime.Earth] on OpenXR. */
+/** Currently unimplemented implementation of [androidx.xr.arcore.runtime.Geospatial] on OpenXR. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class OpenXrEarth internal constructor(private val xrResources: XrResources) :
-    Earth, Updatable {
+public class OpenXrGeospatial internal constructor(private val xrResources: XrResources) :
+    Geospatial, Updatable {
 
-    public override var state: Earth.State = Earth.State.STOPPED
+    public override var state: Geospatial.State = Geospatial.State.NOT_RUNNING
         private set
 
     override public fun createPoseFromGeospatialPose(geospatialPose: GeospatialPose): Pose {
         throw NotImplementedError("Not implemented yet.")
     }
 
-    override public fun createGeospatialPoseFromPose(pose: Pose): Earth.GeospatialPoseResult {
-        throw NotImplementedError("Not implemented yet.")
-    }
-
-    override public fun createGeospatialPoseFromDevicePose(): Earth.GeospatialPoseResult {
+    override public fun createGeospatialPoseFromPose(pose: Pose): Geospatial.GeospatialPoseResult {
         throw NotImplementedError("Not implemented yet.")
     }
 
@@ -57,9 +54,16 @@ public class OpenXrEarth internal constructor(private val xrResources: XrResourc
         longitude: Double,
         altitudeAboveSurface: Double,
         eastUpSouthQuaternion: Quaternion,
-        surface: Earth.Surface,
+        surface: Geospatial.Surface,
     ): Anchor {
         throw NotImplementedError("Not implemented yet.")
+    }
+
+    override suspend fun checkVpsAvailability(
+        latitude: Double,
+        longitude: Double,
+    ): VpsAvailabilityResult {
+        throw NotImplementedError("Not implemented on OpenXR runtime.")
     }
 
     override fun update(xrTime: Long) {}

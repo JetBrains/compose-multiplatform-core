@@ -452,7 +452,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         selectionMenuItemPreparers.remove(selectionMenuItemPreparer)
     }
 
-    /** The currently selected PDF content, as [Selection] */
+    /**
+     * The currently selected PDF content, as [Selection], or 'null' if no content is currently
+     * selected.
+     */
     public val currentSelection: Selection?
         get() {
             return selectionStateManager?.selectionModel?.value?.documentSelection?.selection
@@ -922,8 +925,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     }
 
     /** Clears the current selection, if one exists. No-op if there is no current [Selection] */
-    public fun clearSelection() {
-        selectionStateManager?.clearSelection()
+    public fun clearCurrentSelection() {
+        selectionStateManager?.clearCurrentSelection()
     }
 
     override fun dispatchHoverEvent(event: MotionEvent?): Boolean {
@@ -2368,7 +2371,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
         override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
             commitFormFillingEditText()
-            selectionStateManager?.clearSelection()
+            selectionStateManager?.clearCurrentSelection()
             val localPageLayoutManager = pageLayoutManager ?: return super.onSingleTapConfirmed(e)
             val touchPoint =
                 localPageLayoutManager.getPdfPointAt(

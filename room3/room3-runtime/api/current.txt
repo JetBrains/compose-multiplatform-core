@@ -14,11 +14,9 @@ package androidx.room3 {
     property public final boolean multiInstanceInvalidation;
     property public final String? name;
     property public final androidx.room3.RoomDatabase.PrepackagedDatabaseCallback? prepackagedDatabaseCallback;
-    property public final kotlin.coroutines.CoroutineContext? queryCoroutineContext;
-    property public final java.util.concurrent.Executor queryExecutor;
+    property public final kotlin.coroutines.CoroutineContext queryCoroutineContext;
     property public final boolean requireMigration;
     property public final androidx.sqlite.SQLiteDriver sqliteDriver;
-    property public final java.util.concurrent.Executor transactionExecutor;
     property public final java.util.List<java.lang.Object> typeConverters;
     field public final boolean allowDestructiveMigrationForAllTables;
     field public final boolean allowDestructiveMigrationOnDowngrade;
@@ -31,11 +29,9 @@ package androidx.room3 {
     field public final boolean multiInstanceInvalidation;
     field public final String? name;
     field public final androidx.room3.RoomDatabase.PrepackagedDatabaseCallback? prepackagedDatabaseCallback;
-    field public final kotlin.coroutines.CoroutineContext? queryCoroutineContext;
-    field public final java.util.concurrent.Executor queryExecutor;
+    field public final kotlin.coroutines.CoroutineContext queryCoroutineContext;
     field public final boolean requireMigration;
     field public final androidx.sqlite.SQLiteDriver sqliteDriver;
-    field public final java.util.concurrent.Executor transactionExecutor;
     field public final java.util.List<java.lang.Object> typeConverters;
   }
 
@@ -81,12 +77,8 @@ package androidx.room3 {
     method public void close();
     method protected abstract androidx.room3.InvalidationTracker createInvalidationTracker();
     method @InaccessibleFromKotlin public androidx.room3.InvalidationTracker getInvalidationTracker();
-    method @InaccessibleFromKotlin public java.util.concurrent.Executor getQueryExecutor();
-    method @InaccessibleFromKotlin public java.util.concurrent.Executor getTransactionExecutor();
     method @CallSuper public void init(androidx.room3.DatabaseConfiguration configuration);
     property public androidx.room3.InvalidationTracker invalidationTracker;
-    property public java.util.concurrent.Executor queryExecutor;
-    property public java.util.concurrent.Executor transactionExecutor;
     field public static final androidx.room3.RoomDatabase.Companion Companion;
   }
 
@@ -113,8 +105,6 @@ package androidx.room3 {
     method public androidx.room3.RoomDatabase.Builder<T> setJournalMode(androidx.room3.RoomDatabase.JournalMode journalMode);
     method @SuppressCompatibility @androidx.room3.ExperimentalRoomApi public androidx.room3.RoomDatabase.Builder<T> setMultiInstanceInvalidationServiceIntent(android.content.Intent invalidationServiceIntent);
     method public final androidx.room3.RoomDatabase.Builder<T> setQueryCoroutineContext(kotlin.coroutines.CoroutineContext context);
-    method public androidx.room3.RoomDatabase.Builder<T> setQueryExecutor(java.util.concurrent.Executor executor);
-    method public androidx.room3.RoomDatabase.Builder<T> setTransactionExecutor(java.util.concurrent.Executor executor);
   }
 
   public abstract static class RoomDatabase.Callback {

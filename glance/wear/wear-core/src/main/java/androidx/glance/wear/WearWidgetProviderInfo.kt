@@ -111,6 +111,14 @@ public constructor(
             "androidx.glance.wear.action.BIND_WIDGET_PROVIDER"
 
         /**
+         * Extra boolean in the intent to signal support for
+         * [androidx.glance.wear.parcel.IWearWidgetProvider] interface.
+         */
+        @RestrictTo(LIBRARY_GROUP)
+        public const val EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED: String =
+            "androidx.glance.wear.extra.WEAR_WIDGET_PROVIDER_SUPPORTED"
+
+        /**
          * Parses a [WearWidgetProviderInfo] from the metadata of a service.
          *
          * The metadata with name `androidx.glance.wear.widget.provider` should reference an XML

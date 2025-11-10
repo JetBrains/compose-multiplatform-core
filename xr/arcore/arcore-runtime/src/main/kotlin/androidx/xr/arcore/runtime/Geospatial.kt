@@ -17,29 +17,34 @@
 package androidx.xr.arcore.runtime
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.VpsAvailabilityResult
 import androidx.xr.runtime.math.GeospatialPose
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 
-/** Describes the Earth interface for Geospatial localization and tracking. */
+/** Describes the interface for Geospatial localization and tracking. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public interface Earth {
+public interface Geospatial {
 
     /**
-     * Describes the state of the [Earth]. The State must be Running to use the Earth functionality.
-     * If the [Earth] has entered an error state other than [ERROR_APP_PREEMPTED], Geospatial must
-     * be re-enabled to use the Earth again.
+     * Describes the state of Geospatial. The State must be [Running] to use Geospatial
+     * functionality. If Geospatial has entered an error state other than [ERROR_APP_PREEMPTED],
+     * Geospatial must be disabled and re-enabled to use Geospatial again.
      */
     public class State private constructor(private val value: Int) {
         public companion object {
             /**
-             * The [Earth] is enabled and has not encountered an error. Functions to create anchors
-             * or convert poses may still fail if the Earth is not tracking.
+             * Geospatial is running and has not encountered an error. Functions to create anchors
+             * or convert poses may still fail if Geospatial is not tracking.
              */
             @JvmField public val RUNNING: State = State(1)
 
-            /** The [Earth] is stopped. The Geospatial config must be enabled to use the Earth. */
-            @JvmField public val STOPPED: State = State(0)
+            /**
+             * Geospatial is not running. The Geospatial config must be enabled to use the
+             * Geospatial APIs. After enablement, Geospatial will not immediately enter the RUNNING
+             * state.
+             */
+            @JvmField public val NOT_RUNNING: State = State(0)
 
             /**
              * Earth localization has encountered an internal error. The app should not attempt to
@@ -57,29 +62,27 @@ public interface Earth {
              *   created, or when the signing key and package name combination does not match the
              *   values used in the Google Cloud project. It may also fail if Google Play Services
              *   isn't installed, is too old, or is malfunctioning for some reason (e.g. killed due
-             *   to memory pressure). </ul>
+             *   to memory pressure).
              */
             @JvmField public val ERROR_NOT_AUTHORIZED: State = State(-2)
 
             /**
-             * The application has exhausted the quota allotted to the given Google Cloud project.
-             * The developer should
+             * The application has hit the rate limit for created Geospatial Sessions. The developer
+             * should
              * [request additional quota](https://cloud.google.com/docs/quota#requesting_higher_quota)
              * for the ARCore API for their project from the Google Cloud Console.
+             *
+             * Sessions are limited per-minute [link TBD] and enabling may succeed if retried. The
+             * application can disable and re-enable Geospatial to try again.
              */
-            @JvmField public val ERROR_RESOURCES_EXHAUSTED: State = State(-3)
+            @JvmField public val ERROR_RESOURCE_EXHAUSTED: State = State(-3)
 
             /**
-             * The APK is older than the current supported version. This error is only possible on
-             * an ARCore runtime.
+             * The geospatial connection has been paused. The connection may resume, and does not
+             * require action from the app. Tracked entities will enter the STOPPED state and must
+             * be destroyed.
              */
-            @JvmField public val ERROR_APK_VERSION_TOO_OLD: State = State(-4)
-
-            /**
-             * The app is no longer in full-space mode and has been disconnected from the Geospatial
-             * Session. This is only possible on an OpenXR runtime.
-             */
-            @JvmField public val ERROR_APP_PREEMPTED: State = State(-5)
+            @JvmField public val PAUSED: State = State(2)
         }
     }
 
@@ -118,7 +121,7 @@ public interface Earth {
         }
     }
 
-    /** The current state of the Earth. */
+    /** The current state of Geospatial. */
     public val state: State
 
     /**
@@ -133,11 +136,9 @@ public interface Earth {
      */
     public fun createGeospatialPoseFromPose(pose: Pose): GeospatialPoseResult
 
-    /** Returns the [androidx.xr.runtime.math.GeospatialPose] for the latest device pose. */
-    public fun createGeospatialPoseFromDevicePose(): GeospatialPoseResult
-
     /**
-     * Creates an anchor at the specified geospatial location and orientation relative to the Earth.
+     * Creates an anchor at the specified geospatial location and orientation relative to
+     * Geospatial.
      */
     public fun createAnchor(
         latitude: Double,
@@ -157,4 +158,14 @@ public interface Earth {
         eastUpSouthQuaternion: Quaternion,
         surface: Surface,
     ): Anchor
+
+    /**
+     * Gets the availability of the Visual Positioning System (VPS) at a specified horizontal
+     * position. The availability of VPS in a given location helps to improve the quality of
+     * Geospatial localization and tracking accuracy.
+     */
+    public suspend fun checkVpsAvailability(
+        latitude: Double,
+        longitude: Double,
+    ): VpsAvailabilityResult
 }

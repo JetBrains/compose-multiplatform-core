@@ -49,8 +49,8 @@ internal class XrResources {
     /** The data of face */
     val userFace: OpenXrFace
 
-    /** The data of the Earth */
-    val earth: OpenXrEarth = OpenXrEarth(this)
+    /** The data of Geospatial */
+    val geospatial: OpenXrGeospatial = OpenXrGeospatial(this)
 
     val leftDepthMap: OpenXrDepthMap
     val rightDepthMap: OpenXrDepthMap

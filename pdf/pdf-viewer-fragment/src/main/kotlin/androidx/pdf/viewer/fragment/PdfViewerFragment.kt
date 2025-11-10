@@ -665,7 +665,7 @@ public open class PdfViewerFragment constructor() : Fragment() {
                 /** Clear selection when we start a search session. Also hide the fast scroller. */
                 if (uiState !is SearchViewUiState.Closed) {
                     _pdfView.apply {
-                        clearSelection()
+                        clearCurrentSelection()
                         fastScrollVisibility = PdfView.FastScrollVisibility.ALWAYS_HIDE
                     }
                 } else {

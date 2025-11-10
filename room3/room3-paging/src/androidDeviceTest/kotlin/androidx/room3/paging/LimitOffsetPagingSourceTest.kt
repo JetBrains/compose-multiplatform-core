@@ -16,6 +16,7 @@
 
 package androidx.room3.paging
 
+import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.kruth.assertThat
 import androidx.paging.PagingConfig
@@ -43,6 +44,7 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -72,6 +74,9 @@ class LimitOffsetPagingSourceTest {
                     ApplicationProvider.getApplicationContext()
                 )
                 .setDriver(AndroidSQLiteDriver())
+                .setQueryCoroutineContext(
+                    ArchTaskExecutor.getIOThreadExecutor().asCoroutineDispatcher()
+                )
                 .build()
         dao = database.getDao()
     }
@@ -99,20 +104,17 @@ class LimitOffsetPagingSourceTest {
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun load_usesQueryExecutor() = runTest {
-        val queryExecutor = TestExecutor()
-        val transactionExecutor = TestExecutor()
+        val testExecutor = TestExecutor()
         database =
             Room.inMemoryDatabaseBuilder<LimitOffsetTestDb>(
                     ApplicationProvider.getApplicationContext()
                 )
                 .setDriver(AndroidSQLiteDriver())
-                .setQueryExecutor(queryExecutor)
-                .setTransactionExecutor(transactionExecutor)
+                .setQueryCoroutineContext(testExecutor.asCoroutineDispatcher())
                 .build()
 
         // Ensure there are no init tasks enqueued on queryExecutor before we call .load().
-        assertThat(queryExecutor.executeAll()).isFalse()
-        assertThat(transactionExecutor.executeAll()).isFalse()
+        assertThat(testExecutor.executeAll()).isFalse()
 
         val job = Job()
         launch(job) {
@@ -129,10 +131,8 @@ class LimitOffsetPagingSourceTest {
         // Let the launched job start and proceed as far as possible.
         advanceUntilIdle()
 
-        // Check that .load() dispatches on queryExecutor before jumping into a transaction for
-        // initial load.
-        assertThat(transactionExecutor.executeAll()).isFalse()
-        assertThat(queryExecutor.executeAll()).isTrue()
+        // Check that .load() dispatches on the executor
+        assertThat(testExecutor.executeAll()).isTrue()
 
         job.cancel()
     }

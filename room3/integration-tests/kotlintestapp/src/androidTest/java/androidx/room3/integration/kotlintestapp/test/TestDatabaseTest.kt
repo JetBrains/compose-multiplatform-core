@@ -17,6 +17,7 @@
 package androidx.room3.integration.kotlintestapp.test
 
 import android.content.Context
+import androidx.arch.core.executor.ArchTaskExecutor
 import androidx.arch.core.executor.testing.CountingTaskExecutorRule
 import androidx.room3.Room
 import androidx.room3.integration.kotlintestapp.TestDatabase
@@ -28,6 +29,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.asCoroutineDispatcher
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -59,6 +61,9 @@ abstract class TestDatabaseTest(
                         UseDriver.ANDROID -> AndroidSQLiteDriver()
                         UseDriver.BUNDLED -> BundledSQLiteDriver()
                     }
+                )
+                .setQueryCoroutineContext(
+                    ArchTaskExecutor.getIOThreadExecutor().asCoroutineDispatcher()
                 )
                 .build()
 

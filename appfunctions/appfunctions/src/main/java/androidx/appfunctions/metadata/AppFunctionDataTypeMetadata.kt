@@ -309,7 +309,7 @@ constructor(
         return AppFunctionObjectTypeMetadata(
             properties = allProperties,
             required = allRequired.toList(),
-            qualifiedName = null,
+            qualifiedName = qualifiedName,
             isNullable = false,
             description = "",
         )
@@ -440,6 +440,7 @@ constructor(
             when (it) {
                 is AppFunctionObjectTypeMetadata -> it.qualifiedName == qualifiedName
                 is AppFunctionReferenceTypeMetadata -> it.referenceDataType == qualifiedName
+                is AppFunctionAllOfTypeMetadata -> it.qualifiedName == qualifiedName
                 else -> throw IllegalArgumentException("Unexpected data type $it for one of type")
             }
         } ?: throw IllegalArgumentException("No object metadata found for $qualifiedName")

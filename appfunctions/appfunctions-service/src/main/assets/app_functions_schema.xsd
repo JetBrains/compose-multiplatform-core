@@ -73,6 +73,11 @@
         <xs:element name="description" cardinality="2" type="xs:string" />
     </xs:documentType>
 
+    <!-- Definition for AppFunctionDeprecationMetadataDocument -->
+    <xs:documentType name="AppFunctionDeprecationMetadataDocument">
+        <xs:element name="message" cardinality="2" type="xs:string" />
+    </xs:documentType>
+
     <!-- Definition for AppFunctionComponentMetadataDocument -->
     <xs:documentType name="AppFunctionComponentMetadataDocument">
         <xs:element name="dataTypes" cardinality="1"
@@ -109,5 +114,7 @@
             type="appfn:AppFunctionParameterMetadataDocument" />
         <xs:element name="response" cardinality="2"
             type="appfn:AppFunctionResponseMetadataDocument" />
+        <xs:element name="deprecation" cardinality="2"
+            type="appfn:AppFunctionDeprecationMetadataDocument" />
     </xs:documentType>
 </xs:schema>

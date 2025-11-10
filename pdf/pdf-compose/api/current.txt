@@ -24,7 +24,7 @@ package androidx.pdf.compose {
 
   public final class PdfViewerState {
     ctor public PdfViewerState();
-    method public void clearSelection();
+    method public void clearCurrentSelection();
     method @InaccessibleFromKotlin public androidx.pdf.selection.Selection? getCurrentSelection();
     method @InaccessibleFromKotlin public int getFirstVisiblePage();
     method @BytecodeOnly @androidx.compose.runtime.annotation.FrequentlyChangingValue public long getFirstVisiblePageOffset-F1C5BW0();

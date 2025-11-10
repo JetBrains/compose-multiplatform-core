@@ -50,7 +50,7 @@ internal class PerceptionStateExtender : StateExtender {
             perceptionManager.rightRenderViewpoint,
             perceptionManager.monoRenderViewpoint,
         )
-        xrResourcesManager.initiateEarth(perceptionManager.earth)
+        xrResourcesManager.initiateGeospatial(perceptionManager.geospatial)
         xrResourcesManager.initiateDepthMaps(
             perceptionManager.leftDepthMap,
             perceptionManager.rightDepthMap,
