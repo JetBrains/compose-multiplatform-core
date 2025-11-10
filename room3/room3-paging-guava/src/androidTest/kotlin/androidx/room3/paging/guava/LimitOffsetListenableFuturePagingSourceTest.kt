@@ -53,6 +53,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
@@ -559,6 +560,8 @@ class LimitOffsetListenableFuturePagingSourceTest {
             }
             val listenableFuture = pagingSource.append(key = 20)
 
+            countingTaskExecutorRule.drainTasks(1, TimeUnit.SECONDS)
+
             // run this async separately from queryExecutor
             run { db.getDao().addItem(TestItem(101)) }
 
@@ -609,6 +612,9 @@ class LimitOffsetListenableFuturePagingSourceTest {
                     ApplicationProvider.getApplicationContext()
                 )
                 .setDriver(AndroidSQLiteDriver())
+                .setQueryCoroutineContext(
+                    ArchTaskExecutor.getIOThreadExecutor().asCoroutineDispatcher()
+                )
                 .build()
 
         runTest { test(db) }

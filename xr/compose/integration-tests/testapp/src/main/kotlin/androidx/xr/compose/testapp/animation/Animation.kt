@@ -41,9 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
@@ -77,7 +77,7 @@ class Animation : ComponentActivity() {
     private fun ValueBasedAnimationsApp() {
         MainPanelContent()
 
-        ApplicationSubspace {
+        Subspace {
             val (showSidePanel, updateShowSidePanel) = remember { mutableStateOf(false) }
             val toggleSidePanel: () -> Unit = { updateShowSidePanel(!showSidePanel) }
             val desiredWidth = 300.dp

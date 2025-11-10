@@ -108,11 +108,6 @@ internal abstract class AuthenticationResultDispatcher(
 
     /** Sends an unrecoverable error result to the client callback. */
     fun sendErrorToClient(errorCode: Int, errorString: CharSequence) {
-        if (viewModel.isConfirmingDeviceCredential) {
-            Log.v(TAG, "Error not sent to client. User is confirming their device credential.")
-            return
-        }
-
         if (!viewModel.isAwaitingResult) {
             Log.w(TAG, "Error not sent to client. Client is not awaiting a result.")
             return

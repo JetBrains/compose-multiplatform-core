@@ -60,8 +60,14 @@ import java.util.concurrent.Executor
  * - Avoid using non-groupable APIs for any feature that is groupable (see [GroupableFeature] to
  *   know which features are groupable). Doing so can lead to conflicting configurations.
  * - [CameraEffect] or [ImageAnalysis] use case is currently not supported with these
- *   `GroupableFeature`s. Not complying with these constraints will lead to an
- *   [IllegalArgumentException]. The following code sample explains this further.
+ *   `GroupableFeature`s.
+ * - Avoid setting multiple `GroupableFeature`s with the same [GroupableFeature.featureType] as
+ *   required, as they conflict with each other. If they are set as preferred, only one will be
+ *   selected according to the feature priorities, which are defined by the ordering in the
+ *   `preferredFeatureGroup` list.
+ *
+ * Not complying with these constraints will lead to an [IllegalArgumentException]. The following
+ * code sample explains this further.
  *
  * @sample androidx.camera.core.samples.configureSessionConfigWithFeatureGroups
  * @property useCases The list of [UseCase] to be attached to the camera and receive camera data.
@@ -84,9 +90,10 @@ import java.util.concurrent.Executor
  *       brighter, less noisy images.
  *     - Conversely, a **fixed range** (e.g., `[30, 30]`) ensures a stable frame rate crucial for
  *       **video recording**, though it can lead to darker, noisier video in low light due to
- *       shorter exposure times. * @throws IllegalArgumentException If the combination of config
- *       options are conflicting or unsupported, or if the `useCases` list is empty.
+ *       shorter exposure times.
  *
+ * @throws IllegalArgumentException If the combination of config options are conflicting or
+ *   unsupported, or if the `useCases` list is empty.
  * @see androidx.camera.lifecycle.ProcessCameraProvider.bindToLifecycle
  */
 public open class SessionConfig
@@ -340,10 +347,12 @@ constructor(
          * Alternatively, the [CameraInfo.isSessionConfigSupported] API can be used before binding
          * to check if the features are supported or not.
          *
+         * Unlike the [setPreferredFeatureGroup] API, the order of the features doesn't matter for
+         * this API since each and every one of these features must be configured.
+         *
          * Note that [CameraEffect] or [ImageAnalysis] use case is currently not supported when a
-         * feature is set to a session config. Furthermore, unlike the [setPreferredFeatureGroup]
-         * API, the order of the features doesn't matter for this API since each and every one of
-         * these features must be configured.
+         * feature is set to a session config. See the [SessionConfig] documentation for all such
+         * constraints.
          *
          * @param features The vararg of `GroupableFeature` objects to add to the required features.
          * @return The [Builder] instance, allowing for method chaining.
@@ -381,7 +390,8 @@ constructor(
          * [SessionConfig.setFeatureSelectionListener] API.
          *
          * Note that [CameraEffect] or [ImageAnalysis] use case is currently not supported when a
-         * feature is set to a session config.
+         * feature is set to a session config. See the [SessionConfig] documentation for all such
+         * constraints.
          *
          * @param features The list of preferred features, ordered by preference.
          * @return The [Builder] instance, allowing for method chaining.

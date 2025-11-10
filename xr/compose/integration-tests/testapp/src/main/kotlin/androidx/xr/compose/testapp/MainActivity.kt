@@ -60,7 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.ResizePolicy
 import androidx.xr.compose.subspace.SpatialPanel
@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         obtainUserPermissions()
         setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     modifier = SubspaceModifier.width(800.dp).height(750.dp),
                     dragPolicy = MovePolicy(),

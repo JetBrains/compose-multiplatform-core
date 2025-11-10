@@ -23,8 +23,39 @@ import androidx.compose.ui.unit.isUnspecified
 import androidx.xr.compose.unit.DpVolumeSize
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.Entity
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import kotlin.math.abs
+
+/**
+ * Asserts that the Entity associated with the current Subspace layout node is a direct descendant
+ * of the [expectedAncestor] Entity.
+ *
+ * @param expectedAncestor the ancestor entity that is expected to be found in the current
+ *   hierarchy.
+ * @throws AssertionError if no entity is found or the expected ancestor is not in the current
+ *   entities' hierarchy.
+ */
+@CanIgnoreReturnValue
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+public fun SubspaceSemanticsNodeInteraction.assertEntityIsDescendantOf(
+    expectedAncestor: Entity
+): SubspaceSemanticsNodeInteraction {
+    val entity =
+        fetchSemanticsNode().semanticsEntity
+            ?: throw AssertionError("Did not find an associated entity for $this.")
+
+    var current: Entity? = entity
+    while (current != null) {
+        if (current == expectedAncestor) {
+            return this // Found the ancestor
+        }
+        current = current.parent
+    }
+    throw AssertionError(
+        "Entity $entity of $this is not a descendant of the expected ancestor $expectedAncestor."
+    )
+}
 
 /**
  * Asserts that the layout of this node has width equal to [expectedWidth].

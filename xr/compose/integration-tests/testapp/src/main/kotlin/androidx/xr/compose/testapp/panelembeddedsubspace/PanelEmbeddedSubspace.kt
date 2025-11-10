@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
+import androidx.xr.compose.spatial.PlanarEmbeddedSubspace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.ResizePolicy
@@ -135,7 +136,7 @@ class PanelEmbeddedSubspace : ComponentActivity() {
                             Box(Modifier.background(Color.Yellow).fillMaxHeight().weight(1.0f)) {
                                 // Here we have a PanelEmbeddedSubspace that is capable of rendering
                                 // a 3D layout within the scope of this 2D panel.
-                                Subspace {
+                                PlanarEmbeddedSubspace {
                                     var count by remember { mutableIntStateOf(0) }
                                     SpatialRow(
                                         modifier = SubspaceModifier.fillMaxSize(),
@@ -180,7 +181,7 @@ class PanelEmbeddedSubspace : ComponentActivity() {
                         dragPolicy = MovePolicy(),
                     ) {
                         Box(Modifier.border(30.dp, Color.White, RoundedCornerShape(10.dp))) {
-                            Subspace {
+                            PlanarEmbeddedSubspace {
                                 SpatialPanel(SubspaceModifier.offset(z = (-200).dp)) {
                                     Box(Modifier.fillMaxSize().background(Color.Black))
                                 }
@@ -203,7 +204,7 @@ class PanelEmbeddedSubspace : ComponentActivity() {
                                                     )
                                                     .aspectRatio(1f),
                                         ) {
-                                            Subspace {
+                                            PlanarEmbeddedSubspace {
                                                 XyzArrows(
                                                     modifier =
                                                         SubspaceModifier.scale(0.05f)

@@ -71,6 +71,7 @@ import androidx.camera.video.GroupableFeatures.FHD_RECORDING
 import androidx.camera.video.GroupableFeatures.HD_RECORDING
 import androidx.camera.video.GroupableFeatures.SD_RECORDING
 import androidx.camera.video.GroupableFeatures.UHD_RECORDING
+import androidx.camera.video.GroupableFeatures.VIDEO_STABILIZATION
 import androidx.camera.video.Recorder
 import androidx.camera.video.VideoCapture
 import androidx.test.core.app.ApplicationProvider
@@ -382,13 +383,21 @@ open class FeatureGroupTestBase(
             )
 
         val allHighQualityFeatures =
-            setOf(HDR_HLG10, FPS_60, PREVIEW_STABILIZATION, IMAGE_ULTRA_HDR, UHD_RECORDING)
+            setOf(
+                HDR_HLG10,
+                FPS_60,
+                PREVIEW_STABILIZATION,
+                VIDEO_STABILIZATION,
+                IMAGE_ULTRA_HDR,
+                UHD_RECORDING,
+            )
 
         val allFeatures =
             setOf(
                 HDR_HLG10,
                 FPS_60,
                 PREVIEW_STABILIZATION,
+                VIDEO_STABILIZATION,
                 IMAGE_ULTRA_HDR,
                 UHD_RECORDING,
                 FHD_RECORDING,

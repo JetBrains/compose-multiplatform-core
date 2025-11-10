@@ -24,7 +24,6 @@ import androidx.room3.migration.AutoMigrationSpec
 import androidx.room3.prepackage.PrePackagedCopyConfig
 import androidx.room3.util.isMigrationRequired as isMigrationRequiredExt
 import androidx.sqlite.SQLiteDriver
-import java.util.concurrent.Executor
 import kotlin.coroutines.CoroutineContext
 
 /** Configuration class for a [RoomDatabase]. */
@@ -50,12 +49,6 @@ constructor(
 
     /* The journal mode for this database. */
     @JvmField public actual val journalMode: RoomDatabase.JournalMode,
-
-    /* The Executor used to execute asynchronous queries. */
-    @JvmField public val queryExecutor: Executor,
-
-    /* The Executor used to execute asynchronous transactions. */
-    @JvmField public val transactionExecutor: Executor,
 
     /**
      * Intent that should be bound to acquire the invalidation service or `null` if not used.
@@ -89,7 +82,7 @@ constructor(
     @JvmField public actual val sqliteDriver: SQLiteDriver,
 
     /* The Coroutine context for the database. */
-    @JvmField public actual val queryCoroutineContext: CoroutineContext?,
+    @JvmField public actual val queryCoroutineContext: CoroutineContext,
 ) {
     /**
      * If true, table invalidation in an instance of [RoomDatabase] is broadcast and synchronized
@@ -126,8 +119,6 @@ constructor(
         callbacks: List<RoomDatabase.Callback>? = this.callbacks,
         allowMainThreadQueries: Boolean = this.allowMainThreadQueries,
         journalMode: RoomDatabase.JournalMode = this.journalMode,
-        queryExecutor: Executor = this.queryExecutor,
-        transactionExecutor: Executor = this.transactionExecutor,
         multiInstanceInvalidationServiceIntent: Intent? =
             this.multiInstanceInvalidationServiceIntent,
         requireMigration: Boolean = this.requireMigration,
@@ -139,26 +130,29 @@ constructor(
         autoMigrationSpecs: List<AutoMigrationSpec> = this.autoMigrationSpecs,
         allowDestructiveMigrationForAllTables: Boolean = this.allowDestructiveMigrationForAllTables,
         sqliteDriver: SQLiteDriver = this.sqliteDriver,
-        queryCoroutineContext: CoroutineContext? = this.queryCoroutineContext,
+        queryCoroutineContext: CoroutineContext = this.queryCoroutineContext,
     ): DatabaseConfiguration =
         DatabaseConfiguration(
-            context,
-            name,
-            migrationContainer,
-            callbacks,
-            allowMainThreadQueries,
-            journalMode,
-            queryExecutor,
-            transactionExecutor,
-            multiInstanceInvalidationServiceIntent,
-            requireMigration,
-            allowDestructiveMigrationOnDowngrade,
-            migrationNotRequiredFrom,
-            prepackagedDatabaseCallback,
-            typeConverters,
-            autoMigrationSpecs,
-            allowDestructiveMigrationForAllTables,
-            sqliteDriver,
-            queryCoroutineContext,
-        )
+                context,
+                name,
+                migrationContainer,
+                callbacks,
+                allowMainThreadQueries,
+                journalMode,
+                multiInstanceInvalidationServiceIntent,
+                requireMigration,
+                allowDestructiveMigrationOnDowngrade,
+                migrationNotRequiredFrom,
+                prepackagedDatabaseCallback,
+                typeConverters,
+                autoMigrationSpecs,
+                allowDestructiveMigrationForAllTables,
+                sqliteDriver,
+                queryCoroutineContext,
+            )
+            .also {
+                it.useTempTrackingTable = this.useTempTrackingTable
+                it.copyFromConfig = this.copyFromConfig
+                it.autoCloseConfig = this.autoCloseConfig
+            }
 }

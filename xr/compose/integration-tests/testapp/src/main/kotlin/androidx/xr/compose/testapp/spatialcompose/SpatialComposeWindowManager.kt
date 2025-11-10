@@ -49,7 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
@@ -77,7 +77,7 @@ class SpatialComposeWindowManager : ComponentActivity() {
             // 2D Content rendered to the MainPanel
             MainPanelContent()
 
-            ApplicationSubspace(allowUnboundedSubspace = true) { SpatialLayout() }
+            Subspace(allowUnboundedSubspace = true) { SpatialLayout() }
         }
     }
 

@@ -134,6 +134,7 @@ public constructor() {
          * stabilization mode that applies to the preview as well.
          *
          * @see Preview.Builder.setPreviewStabilizationEnabled
+         * @see androidx.camera.video.GroupableFeatures.VIDEO_STABILIZATION
          */
         @JvmField
         public val PREVIEW_STABILIZATION: GroupableFeature =

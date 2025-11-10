@@ -43,7 +43,7 @@ internal class PdfViewKeyboardActionHandler(pdfView: PdfView) :
     fun copySelection() {
         val text = (pdfView.currentSelection as? TextSelection)?.text ?: return
         ClipboardUtils.copyToClipboard(pdfView.context, text.toString())
-        pdfView.clearSelection()
+        pdfView.clearCurrentSelection()
     }
 
     fun scrollLeftOrScrollToPreviousPage(): Boolean {

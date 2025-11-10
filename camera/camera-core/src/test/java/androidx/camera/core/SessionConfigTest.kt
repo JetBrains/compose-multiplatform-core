@@ -298,7 +298,7 @@ class SessionConfigTest {
     }
 
     @Test
-    fun sessionConfig_conflictingReqFeatures_throwsIllegalArgumentExceptionWithCorrectMessage() {
+    fun sessionConfig_reqFeaturesConflictingForSameType_throwsIllegalArgExceptionWithCorrectMsg() {
         // Arrange
         val requiredFeatures =
             setOf(

@@ -31,6 +31,9 @@
 
     <queries>
         <intent>
+            <action android:name="androidx.xr.projected.ACTION_ENGAGEMENT_BIND" />
+        </intent>
+        <intent>
             <action android:name="androidx.xr.projected.ACTION_BIND" />
         </intent>
     </queries>

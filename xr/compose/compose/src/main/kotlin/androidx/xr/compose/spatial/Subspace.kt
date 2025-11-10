@@ -17,24 +17,21 @@ package androidx.xr.compose.spatial
 
 import android.annotation.SuppressLint
 import android.view.View
-import androidx.activity.ComponentActivity
-import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ComposableOpenTarget
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalWithComputedDefaultOf
-import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.UiComposable
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
@@ -63,7 +60,6 @@ import androidx.xr.compose.subspace.layout.SubspaceLayout
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.offset
 import androidx.xr.compose.subspace.layout.recommendedSizeIfUnbounded
-import androidx.xr.compose.subspace.node.SubspaceNodeApplier
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.Meter.Companion.meters
@@ -76,11 +72,6 @@ import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 
-private val LocalIsInApplicationSubspace: ProvidableCompositionLocal<Boolean> =
-    compositionLocalWithComputedDefaultOf {
-        LocalCoreEntity.currentValue != null
-    }
-
 internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
     compositionLocalWithComputedDefaultOf {
         LocalComposeXrOwners.currentValue?.subspaceRootNode
@@ -89,17 +80,26 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
 /**
  * Create a 3D area that the app can render spatial content into.
  *
- * If this is the topmost Subspace in the compose hierarchy, its size will be determined by the
- * system's recommended content box. This provides a device-specific volume that represents a
- * comfortable, human-scale viewing area, making it the recommended way to create responsive spatial
- * layouts. See [ApplicationSubspace] for more detailed information and customization options for
- * this top-level behavior.
+ * Subspace creates a Compose for XR Spatial UI hierarchy (3D Scene Graph) in your application's
+ * regular Compose UI tree. In this Subspace, You can use a `@SubspaceComposable` annotated
+ * composable functions to create 3D UI elements.
  *
- * If this is nested within another Subspace then it will lay out its content in the X and Y
- * directions according to the layout logic of its parent in 2D space. It will be constrained in the
- * Z direction according to the constraints imposed by its containing Subspace.
+ * Each call to Subspace creates a new, independent Spatial UI hierarchy. It does **not** inherit
+ * the spatial position, orientation, or scale of any parent Subspace it is nested within. Its
+ * position and scale are solely decided by the system's recommended position and scale. To create
+ * an embedded Subspace within a SpatialPanel, Orbiter, SpatialPopup and etc, use the
+ * [PlanarEmbeddedSubspace] instead.
  *
- * This is a no-op and does not render anything in non-XR environments (i.e. Phone and Tablet).
+ * By default, this Subspace is automatically bounded by the system's recommended content box. This
+ * box represents a comfortable, human-scale area in front of the user, sized to occupy a
+ * significant portion of their view on any given device. Using this default is the suggested way to
+ * create responsive spatial layouts that look great without hardcoding dimensions.
+ * SubspaceModifiers like `SubspaceModifier.fillMaxSize` will expand to fill this recommended box.
+ * This default can be overridden by applying a custom size-based modifier. For unbounded behavior,
+ * set `allowUnboundedSubspace = true`.
+ *
+ * This composable is a no-op and does not render anything in non-XR environments (i.e., Phone and
+ * Tablet).
  *
  * On XR devices that cannot currently render spatial UI, the Subspace will still create its scene
  * and all of its internal state, even though nothing may be rendered. This is to ensure that the
@@ -108,23 +108,26 @@ internal val LocalSubspaceRootNode: ProvidableCompositionLocal<Entity?> =
  * compose runtime to lose state (app process killed or configuration change) will also cause the
  * Subspace to lose its state.
  *
+ * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
+ * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
+ *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
+ *   space.
  * @param content The 3D content to render within this Subspace.
  */
 @Composable
 @ComposableOpenTarget(index = -1)
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit) {
-    // If not in XR, do nothing
-    if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
-
-    if (currentComposer.applier is SubspaceNodeApplier) {
-        // We are already in a Subspace, so we can just render the content directly
-        SpatialBox(content = content)
-    } else if (LocalIsInApplicationSubspace.current) {
-        PanelEmbeddedSubspace(content)
-    } else {
-        ApplicationSubspace(content = content)
-    }
+public fun Subspace(
+    modifier: SubspaceModifier = SubspaceModifier,
+    allowUnboundedSubspace: Boolean = false,
+    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
+) {
+    Subspace(
+        modifier = modifier,
+        allowUnboundedSubspace = allowUnboundedSubspace,
+        subspaceRootNode = LocalSubspaceRootNode.current,
+        content = content,
+    )
 }
 
 /**
@@ -166,16 +169,19 @@ public fun Subspace(content: @Composable @SubspaceComposable SpatialBoxScope.() 
  */
 @Composable
 @ComposableOpenTarget(index = -1)
+@Deprecated(
+    "Use the Subspace API instead.",
+    ReplaceWith(
+        "Subspace(modifier = modifier, allowUnboundedSubspace = allowUnboundedSubspace, content = content)"
+    ),
+)
 @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
 public fun ApplicationSubspace(
     modifier: SubspaceModifier = SubspaceModifier,
     allowUnboundedSubspace: Boolean = false,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
-    // If not in XR, do nothing
-    if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
-
-    ApplicationSubspace(
+    Subspace(
         modifier = modifier,
         allowUnboundedSubspace = allowUnboundedSubspace,
         subspaceRootNode = LocalSubspaceRootNode.current,
@@ -196,12 +202,16 @@ public fun ApplicationSubspace(
  * TODO(b/419369273) Add test cases for activity to activity transitions and switching applications.
  */
 @Composable
-private fun ApplicationSubspace(
+@ComposableOpenTarget(index = -1)
+private fun Subspace(
     modifier: SubspaceModifier,
     allowUnboundedSubspace: Boolean,
     subspaceRootNode: Entity? = LocalSubspaceRootNode.current,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
+    // If not in XR, do nothing
+    if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
+
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
@@ -238,24 +248,44 @@ private fun ApplicationSubspace(
     scene.rootVolumeConstraints = remember { VolumeConstraints() }
 
     scene.setContent {
-        CompositionLocalProvider(LocalIsInApplicationSubspace provides true) {
-            val finalModifier =
-                if (allowUnboundedSubspace) {
-                    modifier
-                } else {
-                    modifier.then(SubspaceModifier.recommendedSizeIfUnbounded())
-                }
-            SpatialBox(modifier = finalModifier, content = content)
-        }
+        val finalModifier =
+            if (allowUnboundedSubspace) {
+                modifier
+            } else {
+                modifier.then(SubspaceModifier.recommendedSizeIfUnbounded())
+            }
+        SpatialBox(modifier = finalModifier, content = content)
     }
 }
 
-/*
- * Embedded Subspace whose parent is SpatialPanel.
- * This Subspace is constrained by the parent's constraints in width and height.
+/**
+ * Creates a 3D space for spatial content that is embedded within and positioned by a 2D container.
+ *
+ * A `PlanarEmbeddedSubspace` acts as a bridge between a 2D layout context and a 3D spatial scene.
+ * It must be placed within a composable that provides a 2D surface in the 3D world, such as
+ * `SpatialPanel`, [Orbiter], or a custom component built on similar principles.
+ *
+ * The `PlanarEmbeddedSubspace` itself is laid out like a regular 2D composable, respecting the
+ * constraints and positioning of its parent. The 3D content placed inside it is then positioned
+ * relative to this 2D-defined area.
+ *
+ * Key behaviors:
+ * - **Layout:** The width and height are determined by the parent 2D layout. The depth (Z-axis)
+ *   constraints are inherited from the surrounding spatial environment, allowing content to extend
+ *   forwards and backwards from the 2D surface.
+ * - **Content:** The `content` lambda is a `@SubspaceComposable` scope, where you can place 3D
+ *   elements like [SpatialBox].
+ * - **Environment:** This composable is a no-op and renders nothing in non-XR environments (e.g.,
+ *   phones and tablets).
+ *
+ * @sample androidx.xr.compose.samples.PlanarEmbeddedSubspaceSample
+ * @param content The `@SubspaceComposable` 3D content to render within this subspace.
+ * @see Subspace For creating a top-level, application-anchored spatial scene.
  */
 @Composable
-private fun PanelEmbeddedSubspace(
+@UiComposable
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+public fun PlanarEmbeddedSubspace(
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit
 ) {
     // If not in XR, do nothing
@@ -398,14 +428,14 @@ public annotation class ExperimentalUserSubspaceApi
  * body part with configurable following behaviors.
  *
  * Each call to `UserSubspace` creates a new, independent spatial UI hierarchy. It does **not**
- * inherit the spatial position, orientation, or scale of any parent `ApplicationSubspace` it is
- * nested within. Its position in the world is determined solely by its `lockTo` parameter.
+ * inherit the spatial position, orientation, or scale of any parent `Subspace` it is nested within.
+ * Its position in the world is determined solely by its `lockTo` parameter.
  *
  * By default, this Subspace is automatically bounded by the system's recommended content box,
- * similar to [ApplicationSubspace]. When using BodyPart.Head as the lockTo target, this API
- * requires headtracking to not be disabled in the session configuration. If it is disabled, this
- * API will not return anything. The session configuration should resemble `session.configure(
- * config = session.config.copy(headTracking = Config.HeadTrackingMode.LAST_KNOWN) )`
+ * similar to [Subspace]. When using BodyPart.Head as the lockTo target, this API requires
+ * headtracking to not be disabled in the session configuration. If it is disabled, this API will
+ * not return anything. The session configuration should resemble `session.configure( config =
+ * session.config.copy(headTracking = Config.HeadTrackingMode.LAST_KNOWN) )`
  *
  * This composable is a no-op in non-XR environments (i.e., Phone and Tablet).
  *
@@ -491,7 +521,7 @@ public fun UserSubspace(
     // The content is wrapped in a SpatialBox and we move it slightly ahead of the `lockTo` body
     // part instead of the user being in the middle of it. But the user is still centered in the
     // Subspace.
-    ApplicationSubspace(
+    Subspace(
         modifier = modifier,
         allowUnboundedSubspace = allowUnboundedSubspace,
         subspaceRootNode = userSubspaceRoot,
@@ -501,65 +531,6 @@ public fun UserSubspace(
                 "No offset found for lockTo target."
             }
         SpatialBox(modifier = SubspaceModifier.offset(z = subspaceOffset.toDp()), content = content)
-    }
-}
-
-/**
- * A Subspace that does not match the scaling, alignment, and placement suggested by the system.
- * Instead it will align itself to gravity (perpendicular to the floor) and have a scale value equal
- * to the scale of the [androidx.xr.scenecore.ActivitySpace] of the application (1:1 with OpenXR
- * Unbounded Reference Space).
- *
- * [GravityAlignedSubspace] should be used to create a topmost Subspace in your application's
- * spatial UI hierarchy.
- *
- * By default, this Subspace is automatically bounded by the system's recommended content box. This
- * box represents a comfortable, human-scale area in front of the user, sized to occupy a
- * significant portion of their view on any given device. Using this default is the suggested way to
- * create responsive spatial layouts that look great without hardcoding dimensions.
- * SubspaceModifiers like SubspaceModifier.fillMaxSize will expand to fill this recommended box.
- * This default can be overridden by applying a custom size-based modifier. For unbounded behavior,
- * set `[allowUnboundedSubspace] = true`.
- *
- * @param modifier The [SubspaceModifier] to be applied to the content of this Subspace.
- * @param allowUnboundedSubspace If true, the default recommended content box constraints will not
- *   be applied, allowing the Subspace to be infinite. Defaults to false, providing a safe, bounded
- *   space.
- * @param content The 3D content to render within this Subspace.
- * @throws [IllegalStateException] - If the activity in which it is hosted is not a
- *   [ComponentActivity]
- *
- * A composable that performs no operation and renders nothing in non-XR environments (e.g., phones
- * and tablets).
- *
- * For conditionally rendering content based on the environment, see
- * [androidx.xr.compose.platform.SpatialConfiguration].
- *
- * TODO(b/431767697): Constraints should be a SubspaceModifier
- */
-@Composable
-@ComposableOpenTarget(index = -1)
-@Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public fun GravityAlignedSubspace(
-    modifier: SubspaceModifier = SubspaceModifier,
-    allowUnboundedSubspace: Boolean = false,
-    content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
-) {
-    // If we are not in XR, do nothing
-    if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
-
-    if (LocalIsInApplicationSubspace.current) {
-        throw IllegalStateException(
-            "GravityAlignedSubspace cannot be nested within another Subspace."
-        )
-    } else {
-        ApplicationSubspace(
-            modifier = modifier,
-            allowUnboundedSubspace = allowUnboundedSubspace,
-            subspaceRootNode = null,
-            content = content,
-        )
     }
 }
 
@@ -616,10 +587,7 @@ public fun AnchoredSubspace(
     allowUnboundedSubspace: Boolean = false,
     content: @Composable @SubspaceComposable SpatialBoxScope.() -> Unit,
 ) {
-
-    if (!LocalSpatialConfiguration.current.hasXrSpatialFeature) return
-
-    ApplicationSubspace(
+    Subspace(
         modifier = modifier,
         subspaceRootNode = lockTo,
         content = content,

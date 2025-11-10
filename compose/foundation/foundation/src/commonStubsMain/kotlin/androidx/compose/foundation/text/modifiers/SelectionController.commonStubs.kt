@@ -21,8 +21,10 @@ import androidx.compose.foundation.text.selection.SelectionRegistrar
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 
+@Suppress(names = ["ModifierFactoryExtensionFunction"])
 internal actual fun SelectionRegistrar.makeSelectionModifier(
     selectableId: Long,
-    layoutCoordinates: () -> LayoutCoordinates?
-): Modifier = implementedInJetBrainsFork()
-
+    layoutCoordinates: () -> LayoutCoordinates?,
+): Modifier {
+    implementedInJetBrainsFork()
+}

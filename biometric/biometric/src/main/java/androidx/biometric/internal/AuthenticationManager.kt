@@ -18,8 +18,6 @@ package androidx.biometric.internal
 
 import android.content.Context
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.AuthenticationCallback
@@ -34,6 +32,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import java.util.concurrent.Executor
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -81,12 +80,6 @@ internal class AuthenticationManager(
 
     /** A container to manage lifecycle event observers, ensuring they are properly cleaned up. */
     val lifecycleContainer = BiometricPrompt.LifecycleContainer(lifecycleOwner.lifecycle)
-
-    /**
-     * A [Handler] associated with the main application looper, used for UI-related tasks or for
-     * delaying operations.
-     */
-    val mainHandler = Handler(Looper.getMainLooper())
 
     /** A flag to ensure the class is initialized only once. */
     private var isInitialized: Boolean = false
@@ -190,10 +183,10 @@ internal class AuthenticationManager(
 
         // Check if we should delay showing the authentication prompt.
         if (viewModel.isDelayingPrompt) {
-            mainHandler.postDelayed(
-                { showPromptForAuthentication(showAuthentication) },
-                SHOW_PROMPT_DELAY_MS.toLong(),
-            )
+            lifecycleOwner.lifecycleScope.launch {
+                delay(SHOW_PROMPT_DELAY_MS.toLong())
+                showPromptForAuthentication(showAuthentication)
+            }
         } else {
             showPromptForAuthentication(showAuthentication)
         }

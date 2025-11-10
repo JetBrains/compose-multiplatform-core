@@ -236,6 +236,8 @@ public class SupportedSurfaceCombination(
 
                         if (featureSettings.videoStabilization == VideoStabilization.PREVIEW) {
                             setPreviewStabilization(StabilizationMode.ON)
+                        } else if (featureSettings.videoStabilization == VideoStabilization.ON) {
+                            setVideoStabilization(StabilizationMode.ON)
                         }
                     }
 

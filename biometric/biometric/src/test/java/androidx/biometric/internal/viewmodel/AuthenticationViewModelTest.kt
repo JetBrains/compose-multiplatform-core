@@ -20,6 +20,7 @@ import androidx.biometric.BiometricPrompt
 import androidx.biometric.internal.data.FakeAuthenticationStateRepository
 import androidx.biometric.internal.data.FakePromptConfigRepository
 import androidx.biometric.utils.BiometricErrorData
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -28,9 +29,8 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthenticationViewModelTest {
     private val promptRepository = FakePromptConfigRepository()

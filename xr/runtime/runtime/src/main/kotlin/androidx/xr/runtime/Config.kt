@@ -32,6 +32,8 @@ import androidx.annotation.RestrictTo
  *   meshes. See [Config.DepthEstimationMode].
  * @property anchorPersistence Feature that allows anchors to be persisted through sessions. See
  *   [Config.AnchorPersistenceMode].
+ * @property geospatial Feature that allows geospatial localization and tracking. See
+ *   [Config.GeospatialMode].
  */
 public class Config
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -45,7 +47,6 @@ constructor(
     public val depthEstimation: DepthEstimationMode = DepthEstimationMode.DISABLED,
     public val anchorPersistence: AnchorPersistenceMode = AnchorPersistenceMode.DISABLED,
     public val faceTracking: FaceTrackingMode = FaceTrackingMode.DISABLED,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val geospatial: GeospatialMode = GeospatialMode.DISABLED,
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public val eyeTracking: EyeTrackingMode = EyeTrackingMode.DISABLED,
@@ -72,6 +73,8 @@ constructor(
      *   [Config.AnchorPersistenceMode].
      * @param faceTracking Feature that allows tracking of human faces. See
      *   [Config.FaceTrackingMode].
+     * @param geospatial Feature that allows geospatial localization and tracking. See
+     *   [Config.GeospatialMode].
      */
     @JvmOverloads
     public constructor(
@@ -81,6 +84,7 @@ constructor(
         depthEstimation: DepthEstimationMode = DepthEstimationMode.DISABLED,
         anchorPersistence: AnchorPersistenceMode = AnchorPersistenceMode.DISABLED,
         faceTracking: FaceTrackingMode = FaceTrackingMode.DISABLED,
+        geospatial: GeospatialMode = GeospatialMode.DISABLED,
     ) : this(
         planeTracking,
         /* augmentedObjectCategories= */ listOf(),
@@ -89,7 +93,7 @@ constructor(
         depthEstimation,
         anchorPersistence,
         faceTracking,
-        geospatial = GeospatialMode.DISABLED,
+        geospatial,
         eyeTracking = EyeTrackingMode.DISABLED,
     )
 
@@ -417,16 +421,13 @@ constructor(
      *   This can work even where GPS accuracy is low, such as dense urban environments. Under
      *   typical conditions, VPS can be expected to provide positional accuracy typically better
      *   than 5 meters and often around 1 meter, and a rotational accuracy of better than 5 degrees.
-     *   Use [Earth.checkVpsAvailability] to determine if a given location has VPS coverage.
+     *   Use [Geospatial.checkVpsAvailability] to determine if a given location has VPS coverage.
      * - In outdoor environments with few or no overhead obstructions, GPS may be sufficient to
      *   generate high accuracy poses. GPS accuracy may be low in dense urban environments and
      *   indoors.
      *
-     * Setting this feature to [GeospatialMode.EARTH] requires TODO: b/393500151 - permissions.
-     *
      * Note that setting this mode will consume additional runtime resources.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @SuppressWarnings("HiddenSuperclass")
     public class GeospatialMode
     private constructor(
@@ -435,50 +436,47 @@ constructor(
         public companion object {
             /**
              * The Geospatial API is disabled. When GeospatialMode is disabled, current [Anchor]
-             * objects created from [Earth] will stop updating, and have their [TrackingState] set
-             * to [TrackingState.STOPPED].
+             * objects created from [Geospatial] will stop updating, and have their [TrackingState]
+             * set to [TrackingState.STOPPED].
              */
             @JvmField public val DISABLED: GeospatialMode = GeospatialMode(0)
 
             /**
-             * The Geospatial API is enabled. [Earth] should enter the running state shortly after
-             * this mode is set.
+             * The Geospatial API is enabled. [Geospatial] should enter the running state shortly
+             * after this mode is set.
              *
              * Using this mode requires your app do the following, depending on the Runtime:
              *
-             * On Mobile:
+             * On mobile and projected devices:
              * - Include the
              *   [ACCESS_INTERNET](https://developer.android.com/training/basics/network-ops/connecting)
              *   permission to the app's AndroidManifest
-             * - Include the Google Play Services Location Library as a dependency for your app. See
-             *   [dependencies for Google Play services](https://developers.google.com/android/guides/setup#declare-dependencies)
-             *   for instructions on how to include this library in your app. If this library is not
-             *   linked, [Session.configure] returns
-             *   [SessionResultGooglePlayServicesLocationLibraryNotLinked]
              * - Request and be granted the
              *   [ACCESS_FINE_LOCATION permission](https://developer.android.com/training/location/permissions);
              *   otherwise, [Session.configure] throws [SecurityException].
              *
+             * On mobile devices:
+             * - Include the Google Play Services Location Library as a dependency for your app. See
+             *   [dependencies for Google Play services](https://developers.google.com/android/guides/setup#declare-dependencies)
+             *   for instructions on how to include this library in your app. If this library is not
+             *   linked, [Session.configure] returns
+             *   [SessionResultGooglePlayServicesLocationLibraryNotLinked].
+             *
              * Location is tracked only while the [Session] is resumed.
              *
-             * For more information, see documentation on
-             * [the Geospatial API on Google Developers](https://developers.google.com/ar/develop/java/geospatial/developer-guide).
+             * On mobile devices, when the Geospatial API and the Depth API are enabled, output
+             * images from the Depth API will include terrain and building geometry when in a
+             * location with VPS coverage.
              *
-             * On Mobile, when the Geospatial API and the Depth API are enabled, output images from
-             * the Depth API will include terrain and building geometry when in a location with VPS
-             * coverage. See the
-             * [Geospatial Depth Developer Guide](https://developers.google.com/ar/develop/java/depth/geospatial-depth)
-             * for more information.
-             *
-             * On mobile, this mode is not compatible with the front-facing (selfie) camera. If
-             * Config.GeospatialMode is Enabled on a session using the front-facing (selfie) camera,
-             * [Session.configure] will return [SessionConfigureConfigurationNotSupported].
-             *
-             * Not all devices support GeospatialMode.Enabled, use [Earth.isGeospatialModeSupported]
-             * to check if the current device and selected camera support enabling this mode. These
+             * Not all devices support GeospatialMode.VPS_AND_GPS, use [ConfigMode.isSupported] to
+             * check if the current device and selected camera support enabling this mode. These
              * checks are done in the call to [Session.configure].
              */
-            @JvmField public val EARTH: GeospatialMode = GeospatialMode(1)
+            @JvmField public val VPS_AND_GPS: GeospatialMode = GeospatialMode(1)
+        }
+
+        override fun toString(): String {
+            return "Geospatial_" + if (mode == 0) "DISABLED" else "VPS_AND_GPS"
         }
     }
 

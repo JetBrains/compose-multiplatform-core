@@ -21,12 +21,10 @@ package androidx.room3.util
 
 import androidx.annotation.RestrictTo
 import androidx.room3.RoomDatabase
-import androidx.room3.TransactionElement
 import androidx.room3.coroutines.RawConnectionAccessor
+import androidx.room3.coroutines.TransactionElement
 import androidx.room3.coroutines.runBlockingUninterruptible
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.driver.SupportSQLiteConnection
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -134,9 +132,4 @@ internal fun readVersion(databaseFile: File): Int {
         buffer.rewind()
         return buffer.int // ByteBuffer is big-endian by default
     }
-}
-
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
-public fun toSQLiteConnection(db: SupportSQLiteDatabase): SQLiteConnection {
-    return SupportSQLiteConnection(db)
 }

@@ -89,13 +89,13 @@ internal constructor(
         // The service is required if tracking or geospatial are enabled.
         // I.E. if no features are needed from the service we don't require it.
         return config.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN ||
-            config.geospatial == Config.GeospatialMode.EARTH
+            config.geospatial == Config.GeospatialMode.VPS_AND_GPS
     }
 
     override fun configure(config: Config) {
         if (
             config.deviceTracking == Config.DeviceTrackingMode.DISABLED &&
-                config.geospatial == Config.GeospatialMode.EARTH
+                config.geospatial == Config.GeospatialMode.VPS_AND_GPS
         ) {
             throw UnsupportedOperationException(
                 "Geospatial mode is not supported when device tracking is disabled."
@@ -113,9 +113,10 @@ internal constructor(
 
     override fun resume() {}
 
-    internal fun updateTrackingStates(deviceTrackingState: Int, earthTrackingState: Int) {
+    internal fun updateTrackingStates(deviceTrackingState: Int, geospatialTrackingState: Int) {
         perceptionManager.xrResources.deviceTrackingState = toTrackingState(deviceTrackingState)
-        perceptionManager.xrResources.earthTrackingState = toTrackingState(earthTrackingState)
+        perceptionManager.xrResources.geospatialTrackingState =
+            toTrackingState(geospatialTrackingState)
     }
 
     private fun toTrackingState(value: Int): TrackingState {
@@ -162,7 +163,7 @@ internal constructor(
         val serviceConfig = ProjectedConfig()
         // TODO: b/452091636 - Remove hardcoded config" so we remember to address this.
         // TODO: b/455872882 - Currently, Geo is not compatible with 3DoF tracking stack.
-        if (config.geospatial == Config.GeospatialMode.EARTH) {
+        if (config.geospatial == Config.GeospatialMode.VPS_AND_GPS) {
             serviceConfig.geospatialMode = ProjectedGeospatialMode.ENABLED
             serviceConfig.trackingMode = ProjectedTrackingMode.PROJECTED_TRACKING_6DOF
         } else {

@@ -17,6 +17,9 @@
 package androidx.xr.compose.spatial
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -62,6 +65,7 @@ import androidx.xr.compose.testing.TestSceneRuntime
 import androidx.xr.compose.testing.assertDepthIsAtLeast
 import androidx.xr.compose.testing.assertDepthIsEqualTo
 import androidx.xr.compose.testing.assertDepthIsNotEqualTo
+import androidx.xr.compose.testing.assertEntityIsDescendantOf
 import androidx.xr.compose.testing.assertHeightIsAtLeast
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertHeightIsNotEqualTo
@@ -95,7 +99,6 @@ import androidx.xr.scenecore.PlaneSemanticType
 import androidx.xr.scenecore.Space
 import androidx.xr.scenecore.scene
 import com.google.common.truth.Truth.assertThat
-import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlinx.coroutines.runBlocking
@@ -104,6 +107,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
+@Suppress("COMPOSE_APPLIER_CALL_MISMATCH")
 class SubspaceTest {
 
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
@@ -140,8 +144,11 @@ class SubspaceTest {
         }
     }
 
+    // ---------------------------------------------------------------------------------------------
+    //                                    Subspace Tests
+    // ---------------------------------------------------------------------------------------------
     @Test
-    fun subspace_directlyParentedToSubspace_justRendersContentDirectly() {
+    fun subspace_whenDirectlyParented_rendersContent() {
         composeTestRule.setContent {
             Subspace {
                 Subspace {
@@ -160,32 +167,11 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_directlyParentedToApplicationSubspace_justRendersContentDirectly() {
-        composeTestRule.setContent {
-            ApplicationSubspace {
-                ApplicationSubspace {
-                    SpatialPanel(
-                        SubspaceModifier.width(100.dp).height(100.dp).testTag("innerPanel")
-                    ) {}
-                }
-            }
-        }
-
-        composeTestRule
-            .onSubspaceNodeWithTag("innerPanel")
-            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(100.toDp())
-            .assertHeightIsEqualTo(100.toDp())
-    }
-
-    @Test
-    fun applicationSubspace_nestedInSubspace_rendersContentDirectlyAndRespectsOffsets() {
+    fun subspace_whenNested_respectsOffsets() {
         composeTestRule.setContent {
             Subspace {
                 SpatialBox(modifier = SubspaceModifier.offset(x = 10.dp, y = 20.dp, z = 30.dp)) {
-                    ApplicationSubspace(
-                        modifier = SubspaceModifier.offset(x = 40.dp, y = 50.dp, z = 60.dp)
-                    ) {
+                    Subspace(modifier = SubspaceModifier.offset(x = 40.dp, y = 50.dp, z = 60.dp)) {
                         SpatialPanel(SubspaceModifier.size(100.dp).testTag("innerPanel")) {}
                     }
                 }
@@ -201,29 +187,7 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_nestedInApplicationSubspace_rendersContentAndRespectsOffsets() {
-        composeTestRule.setContent {
-            ApplicationSubspace {
-                SpatialBox(modifier = SubspaceModifier.offset(x = 10.dp, y = 20.dp, z = 30.dp)) {
-                    ApplicationSubspace(
-                        modifier = SubspaceModifier.offset(x = 40.dp, y = 50.dp, z = 60.dp)
-                    ) {
-                        SpatialPanel(SubspaceModifier.size(100.dp).testTag("innerPanel")) {}
-                    }
-                }
-            }
-        }
-
-        composeTestRule
-            .onSubspaceNodeWithTag("innerPanel")
-            .assertExists()
-            .assertWidthIsEqualTo(100.dp)
-            .assertHeightIsEqualTo(100.dp)
-            .assertPositionInRootIsEqualTo(40.dp, 50.dp, 60.dp)
-    }
-
-    @Test
-    fun subspace_xrEnabled_contentIsCreated() {
+    fun subspace_whenXrIsEnabled_createsContent() {
         composeTestRule.setContent {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
         }
@@ -234,186 +198,29 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_xrEnabled_contentIsCreated() {
+    fun subspace_whenXrIsDisabled_doesNotCreateContent() {
+        composeTestRule.disableXr()
+
         composeTestRule.setContent {
-            ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+            Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
+    }
+
+    @Test
+    fun subspace_whenCreated_isParentedToKeyEntity() {
+        composeTestRule.setContent {
+            Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
         }
 
         composeTestRule
             .onSubspaceNodeWithTag("panel")
-            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertEntityIsDescendantOf(assertNotNull(composeTestRule.session?.scene?.keyEntity))
     }
 
     @Test
-    fun subspace_nonXr_contentIsNotCreated() {
-        composeTestRule.disableXr()
-
-        composeTestRule.setContent {
-            Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-    }
-
-    @Test
-    fun applicationSubspace_recommendedBoxed_nonXr_contentIsNotCreated() {
-        composeTestRule.disableXr()
-
-        composeTestRule.setContent {
-            ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-    }
-
-    @Test
-    fun subspace_contentIsParentedToTheKeyEntity() {
-        composeTestRule.setContent {
-            Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-        }
-
-        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panel = node.semanticsEntity
-        val subspaceBox = panel?.parent
-        val session = assertNotNull(composeTestRule.session)
-        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
-        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
-        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.keyEntity)
-    }
-
-    @Test
-    fun applicationSubspace_recommendedBoxed_contentIsParentedToTheKeyEntity() {
-        composeTestRule.setContent {
-            ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-        }
-
-        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panel = node.semanticsEntity
-        val subspaceBox = panel?.parent
-        val session = assertNotNull(composeTestRule.session)
-        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
-        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
-        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.keyEntity)
-    }
-
-    @Test
-    fun subspace_panelEmbedded_contentIsParentedToContainingPanel() {
-        composeTestRule.setContent {
-            Subspace {
-                SpatialPanel(SubspaceModifier.testTag("panel")) {
-                    Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
-                }
-            }
-        }
-
-        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val outerPanelEntity = outerPanelNode.semanticsEntity
-        val innerPanelNode =
-            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
-        val innerPanelEntity = innerPanelNode.semanticsEntity
-        val subspaceBoxEntity = innerPanelEntity?.parent
-        val subspaceLayoutEntity = subspaceBoxEntity?.parent
-        val subspaceRootEntity = subspaceLayoutEntity?.parent
-        val subspaceRootContainerEntity = subspaceRootEntity?.parent
-        val parentPanel = subspaceRootContainerEntity?.parent
-        assertNotNull(parentPanel)
-        assertThat(parentPanel).isEqualTo(outerPanelEntity)
-    }
-
-    @Test
-    fun subspace_panelEmbedded_contentIsEnabledWhenContentSizeMatchesParentSize() {
-        composeTestRule.setContent {
-            Subspace {
-                SpatialPanel(SubspaceModifier.size(100.dp).testTag("panel")) {
-                    Subspace {
-                        SpatialPanel(SubspaceModifier.testTag("innerPanel")) {
-                            Box(Modifier.size(100.dp))
-                        }
-                    }
-                }
-            }
-        }
-
-        val innerPanelNode =
-            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
-        val innerPanelEntity = innerPanelNode.semanticsEntity
-        assertThat(innerPanelEntity?.isEnabled(true)).isTrue()
-    }
-
-    @Test
-    fun subspace_panelEmbedded_depthConstraint() {
-        composeTestRule.setContent {
-            Subspace {
-                SpatialPanel(SubspaceModifier.depth(10.dp).testTag("panel")) {
-                    Subspace {
-                        SpatialPanel(SubspaceModifier.depth(20.dp).testTag("innerPanel")) {}
-                    }
-                }
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDepthIsEqualTo(10.dp)
-    }
-
-    @Test
-    fun subspace_panelEmbedded_fillMaxDepth() {
-        composeTestRule.setContent {
-            Subspace {
-                SpatialPanel(SubspaceModifier.depth(10.dp).testTag("panel")) {
-                    Subspace {
-                        SpatialPanel(SubspaceModifier.fillMaxDepth().testTag("innerPanel")) {}
-                    }
-                }
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDepthIsEqualTo(10.dp)
-    }
-
-    @Test
-    fun subspace_panelEmbedded_unboundedDepth() {
-        composeTestRule.setContent {
-            Subspace {
-                SpatialPanel(
-                    SubspaceModifier.sizeIn(maxDepth = VolumeConstraints.INFINITY.dp)
-                        .testTag("panel")
-                ) {
-                    Subspace {
-                        SpatialPanel(SubspaceModifier.depth(20.dp).testTag("innerPanel")) {}
-                    }
-                }
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDepthIsEqualTo(20.dp)
-    }
-
-    @Test
-    fun applicationSubspace_recommendedBoxed_panelEmbedded_contentIsParentedToContainingPanel() {
-        composeTestRule.setContent {
-            ApplicationSubspace {
-                SpatialPanel(SubspaceModifier.testTag("panel")) {
-                    Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
-                }
-            }
-        }
-
-        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val outerPanelEntity = outerPanelNode.semanticsEntity
-        val innerPanelNode =
-            composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
-        val innerPanelEntity = innerPanelNode.semanticsEntity
-        val subspaceBoxEntity = innerPanelEntity?.parent
-        val subspaceLayoutEntity = subspaceBoxEntity?.parent
-        val subspaceRootEntity = subspaceLayoutEntity?.parent
-        val subspaceRootContainerEntity = subspaceRootEntity?.parent
-        val parentPanel = subspaceRootContainerEntity?.parent
-        assertNotNull(parentPanel)
-        assertThat(parentPanel).isEqualTo(outerPanelEntity)
-    }
-
-    @Test
-    fun subspace_isDisposed() {
+    fun subspace_whenRemovedFromComposition_isDisposed() {
         var showSubspace by mutableStateOf(true)
 
         composeTestRule.setContent {
@@ -432,30 +239,7 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_isDisposed() {
-        var showSubspace by mutableStateOf(true)
-
-        composeTestRule.setContent {
-            if (showSubspace) {
-                ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
-
-        showSubspace = false
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(0)
-    }
-
-    @Test
-    fun subspace_onlyOneSceneExists_afterSpaceModeChanges() {
-        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        val testSceneRuntime = TestSceneRuntime.create(fakeRuntime)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
-
+    fun subspace_whenSpaceModeChanges_onlyOneSceneExists() {
         composeTestRule.setContent {
             Subspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
         }
@@ -463,42 +247,43 @@ class SubspaceTest {
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
 
-        testSceneRuntime.requestHomeSpaceMode()
+        composeTestRule.session?.scene?.requestHomeSpaceMode()
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
 
-        testSceneRuntime.requestFullSpaceMode()
+        composeTestRule.session?.scene?.requestFullSpaceMode()
 
         composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
         assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
     }
 
     @Test
-    fun applicationSubspace_recommendedBoxed_onlyOneSceneExists_afterSpaceModeChanges() {
-        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, fakeRuntime)
-
+    fun subspace_withFillMaxSizeAndHigherDensity_respectsConstraints() {
+        var density: Density? = null
+        val runtime = createAdapterWithRecommendedBox()
+        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
         composeTestRule.setContent {
-            ApplicationSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
+            CompositionLocalProvider(LocalDensity provides Density(2f)) {
+                density = LocalDensity.current
+                Subspace { SpatialBox(SubspaceModifier.fillMaxSize(1.0f).testTag("box")) {} }
+            }
         }
 
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
-
-        fakeRuntime.requestHomeSpaceMode()
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
-
-        fakeRuntime.requestFullSpaceMode()
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
+        assertNotNull(density)
+        assertThat(density.density).isEqualTo(2f)
+        val expectedWidthPx = Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(density)
+        val expectedHeightPx = Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(density)
+        val expectedDepthPx = Meter(DefaultTestRecommendedBoxSize.DEPTH_METERS).roundToPx(density)
+        composeTestRule
+            .onSubspaceNodeWithTag("box")
+            .assertWidthIsEqualTo(expectedWidthPx.toDp())
+            .assertHeightIsEqualTo(expectedHeightPx.toDp())
+            .assertDepthIsEqualTo(expectedDepthPx.toDp())
     }
 
     @Test
-    fun subspace_fillMaxSize_returnsRecommendedContentBoxSizeConstraints() {
+    fun subspace_withFillMaxSize_respectsRecommendedBoxConstraints() {
         var density: Density? = null
         val runtime = createAdapterWithRecommendedBox()
         composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
@@ -523,61 +308,9 @@ class SubspaceTest {
     }
 
     @Test
-    fun subspace_fillMaxSize_higherDensity_returnsCorrectConstraints() {
-        var density: Density? = null
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+    fun subspace_whenUnbounded_withFillMaxSize_doesNotRespectConstraints() {
         composeTestRule.setContent {
-            CompositionLocalProvider(LocalDensity provides Density(2f)) {
-                density = LocalDensity.current
-                Subspace { SpatialBox(SubspaceModifier.fillMaxSize(1.0f).testTag("box")) {} }
-            }
-        }
-
-        assertNotNull(density)
-        assertThat(density.density).isEqualTo(2f)
-        val expectedWidthPx =
-            with(density) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
-        val expectedHeightPx =
-            with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
-        val expectedDepthPx =
-            with(density) { Meter(DefaultTestRecommendedBoxSize.DEPTH_METERS).roundToPx(this) }
-        composeTestRule
-            .onSubspaceNodeWithTag("box")
-            .assertWidthIsEqualTo(expectedWidthPx.toDp())
-            .assertHeightIsEqualTo(expectedHeightPx.toDp())
-            .assertDepthIsEqualTo(expectedDepthPx.toDp())
-    }
-
-    @Test
-    fun applicationSubspace_fillMaxSize_returnsRecommendedContentBoxSizeConstraints() {
-        var density: Density? = null
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
-        composeTestRule.setContent {
-            density = LocalDensity.current
-            ApplicationSubspace { SpatialBox(SubspaceModifier.fillMaxSize(1.0f).testTag("box")) {} }
-        }
-
-        assertNotNull(density)
-        val expectedWidthPx =
-            with(density) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
-        val expectedHeightPx =
-            with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
-        val expectedDepthPx =
-            with(density) { Meter(DefaultTestRecommendedBoxSize.DEPTH_METERS).roundToPx(this) }
-        composeTestRule
-            .onSubspaceNodeWithTag("box")
-            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(expectedWidthPx.toDp())
-            .assertHeightIsEqualTo(expectedHeightPx.toDp())
-            .assertDepthIsEqualTo(expectedDepthPx.toDp())
-    }
-
-    @Test
-    fun applicationSubspace_unbounded_fillMaxSize_doesNotReturnCorrectWidthAndHeight() {
-        composeTestRule.setContent {
-            ApplicationSubspace(allowUnboundedSubspace = true) {
+            Subspace(allowUnboundedSubspace = true) {
                 SpatialBox(
                     SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
                 ) {}
@@ -593,9 +326,9 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_customBounded_fillMaxSize_returnsCorrectWidthAndHeight() {
+    fun subspace_whenCustomBounded_withFillMaxSize_respectsConstraints() {
         composeTestRule.setContent {
-            ApplicationSubspace(modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)) {
+            Subspace(modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)) {
                 SpatialBox(SubspaceModifier.fillMaxSize(1.0f).testTag("box")) {}
             }
         }
@@ -608,7 +341,7 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_allowUnboundedSubspaceIsTrue_isUnbounded() {
+    fun subspace_whenAllowUnbounded_isUnbounded() {
         var density: Density? = null
         val runtime = createAdapterWithRecommendedBox()
         composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
@@ -633,7 +366,7 @@ class SubspaceTest {
                         .roundToPx(this)
                         .toDp()
                 }
-            ApplicationSubspace(allowUnboundedSubspace = true) {
+            Subspace(allowUnboundedSubspace = true) {
                 SpatialPanel(
                     SubspaceModifier.width(widthLargerThanRecommendedBox)
                         .height(heightLargerThanRecommendedBox)
@@ -644,7 +377,9 @@ class SubspaceTest {
         }
 
         val recommendedWidthPx =
-            with(density!!) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
+            with(assertNotNull(density)) {
+                Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this)
+            }
         val recommendedHeightPx =
             with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
         val recommendedDepthPx =
@@ -658,13 +393,13 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_userProvidedModifierBiggerThanDefault_isRespected() {
+    fun subspace_withLargerThanDefaultModifier_respectsModifier() {
         val largeSize = 500000000.dp
         val runtime = createAdapterWithRecommendedBox()
         composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
         composeTestRule.setContent {
             // The user provides a modifier bigger than the recommended box.
-            ApplicationSubspace(modifier = SubspaceModifier.size(largeSize)) {
+            Subspace(modifier = SubspaceModifier.size(largeSize)) {
                 SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
             }
         }
@@ -675,13 +410,13 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_userProvidedModifierSmallerThanDefault_isRespected() {
+    fun subspace_withSmallerThanDefaultModifier_respectsModifier() {
         val smallSize = 2.dp
         val runtime = createAdapterWithRecommendedBox()
         composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
         composeTestRule.setContent {
             // The user provides a modifier smaller than the recommended box.
-            ApplicationSubspace(modifier = SubspaceModifier.size(smallSize)) {
+            Subspace(modifier = SubspaceModifier.size(smallSize)) {
                 SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
             }
         }
@@ -692,7 +427,7 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_constraintsChange_shouldRecomposeAndChangeConstraints() {
+    fun subspace_whenConstraintsChange_recomposesWithNewConstraints() {
         val initialConstraints =
             SubspaceModifier.sizeIn(
                 minWidth = 0.dp,
@@ -714,7 +449,7 @@ class SubspaceTest {
         val constraintsState = mutableStateOf(initialConstraints)
 
         composeTestRule.setContent {
-            ApplicationSubspace(modifier = constraintsState.value) {
+            Subspace(modifier = constraintsState.value) {
                 SpatialBox(
                     modifier = SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
                 ) {}
@@ -735,12 +470,12 @@ class SubspaceTest {
     }
 
     @Test
-    fun privateApplicationSubspace_mainPanelEntityDisabled_whenSubspaceLeavesComposition() {
+    fun subspace_whenItLeavesComposition_disablesMainPanelEntity() {
         var showSubspace by mutableStateOf(true)
 
         composeTestRule.setContent {
             if (showSubspace) {
-                ApplicationSubspace {}
+                Subspace {}
             }
         }
 
@@ -756,12 +491,12 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_retainsState_whenSwitchingModes() {
+    fun subspace_whenSwitchingModes_retainsState() {
         val testSceneRuntime = createFakeRuntime(composeTestRule.activity)
         composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel {
                     var state by remember { mutableStateOf(0) }
                     Button(onClick = { state++ }) { Text("Increment") }
@@ -787,13 +522,13 @@ class SubspaceTest {
     }
 
     @Test
-    fun applicationSubspace_retainsState_whenSwitchingModesStartingFromHomeSpace() {
+    fun subspace_whenSwitchingModesFromHomeSpace_retainsState() {
         composeTestRule.session =
             createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
 
         composeTestRule.setContent {
             CompositionLocalProvider {
-                ApplicationSubspace {
+                Subspace {
                     SpatialPanel {
                         var state by remember { mutableStateOf(0) }
                         Button(
@@ -840,515 +575,298 @@ class SubspaceTest {
         clickIncrement(2)
         assertStateIs(5)
 
-        // Switch to home space one last time and verify the final state.
+        // Switch to home space one last time and.
         composeTestRule.session!!.scene.requestHomeSpaceMode()
         assertStateIs(5)
     }
 
     @Test
-    fun applicationSubspace_usesProvidedRootContainer() {
+    fun subspace_withProvidedRootContainer_usesIt() {
         var testNode: Entity? = null
 
         composeTestRule.setContent {
             testNode = GroupEntity.create(LocalSession.current!!, "TestRoot")
             CompositionLocalProvider(LocalSubspaceRootNode provides testNode) {
-                ApplicationSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box")) {} }
+                Subspace { SpatialBox(modifier = SubspaceModifier.testTag("Box")) {} }
             }
         }
 
-        val boxNode = composeTestRule.onSubspaceNodeWithTag("Box").fetchSemanticsNode()
-        val boxEntity = assertNotNull(boxNode.semanticsEntity)
-        val layoutRootEntity = assertNotNull(boxEntity.parent)
-        val subspaceRootEntity = assertNotNull(layoutRootEntity.parent)
-        val subspaceRootContainer = assertNotNull(subspaceRootEntity.parent)
-
-        assertThat(testNode).isEqualTo(subspaceRootContainer)
+        composeTestRule
+            .onSubspaceNodeWithTag("Box")
+            .assertEntityIsDescendantOf(assertNotNull(testNode))
     }
 
     @Test
-    fun applicationSubspace_multipleApplicationSubspaces_haveTheSameRootContainer() {
+    fun subspace_withMultipleSubspaces_shareTheSameRootContainer() {
         composeTestRule.setContent {
-            ApplicationSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box")) {} }
-            ApplicationSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box2")) {} }
+            Subspace { SpatialBox(modifier = SubspaceModifier.testTag("Box")) {} }
+            Subspace { SpatialBox(modifier = SubspaceModifier.testTag("Box2")) {} }
         }
 
-        val boxNode = composeTestRule.onSubspaceNodeWithTag("Box").fetchSemanticsNode()
-        val boxEntity = assertNotNull(boxNode.semanticsEntity)
-        val layoutRootEntity = assertNotNull(boxEntity.parent)
-        val subspaceRootEntity = assertNotNull(layoutRootEntity.parent)
-        val subspaceRootContainer = assertNotNull(subspaceRootEntity.parent)
-        val boxNode2 = composeTestRule.onSubspaceNodeWithTag("Box2").fetchSemanticsNode()
-        val boxEntity2 = assertNotNull(boxNode2.semanticsEntity)
-        val layoutRootEntity2 = assertNotNull(boxEntity2.parent)
-        val subspaceRootEntity2 = assertNotNull(layoutRootEntity2.parent)
-        val subspaceRootContainer2 = assertNotNull(subspaceRootEntity2.parent)
-
-        assertThat(subspaceRootContainer).isEqualTo(subspaceRootContainer2)
+        composeTestRule
+            .onSubspaceNodeWithTag("Box")
+            .assertEntityIsDescendantOf(assertNotNull(composeTestRule.session?.scene?.keyEntity))
+        composeTestRule
+            .onSubspaceNodeWithTag("Box2")
+            .assertEntityIsDescendantOf(assertNotNull(composeTestRule.session?.scene?.keyEntity))
     }
 
+    // ---------------------------------------------------------------------------------------------
+    //                                PlanarEmbeddedSubspace Tests
+    // ---------------------------------------------------------------------------------------------
     @Test
-    fun gravityAlignedSubspace_alreadyInGravityAlignedSubspace_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContent {
-                GravityAlignedSubspace {
-                    GravityAlignedSubspace {
-                        SpatialPanel(
-                            SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("innerPanel")
-                        ) {}
+    fun planarEmbeddedSubspace_whenInContainingPanel_isParented() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel")) {
+                    PlanarEmbeddedSubspace {
+                        SpatialPanel(SubspaceModifier.testTag("innerPanel")) {}
                     }
                 }
             }
         }
-    }
-
-    @Test
-    fun gravityAlignedSubspace_recommendedBoxed_xrEnabled_contentIsCreated() {
-        composeTestRule.setContent {
-            GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-        }
 
         composeTestRule
-            .onSubspaceNodeWithTag("panel")
-            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .onSubspaceNodeWithTag("innerPanel")
+            .assertEntityIsDescendantOf(
+                assertNotNull(
+                    composeTestRule
+                        .onSubspaceNodeWithTag("panel")
+                        .fetchSemanticsNode()
+                        .semanticsEntity
+                )
+            )
     }
 
     @Test
-    fun gravityAlignedSubspace_recommendedBoxed_nonXr_contentIsNotCreated() {
-        composeTestRule.disableXr()
-
+    fun planarEmbeddedSubspace_whenContentSizeMatchesParent_isEnabled() {
         composeTestRule.setContent {
-            GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-    }
-
-    @Test
-    fun gravityAlignedSubspace_recommendedBoxed_contentIsParentedToActivitySpace() {
-        composeTestRule.setContent {
-            GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-        }
-
-        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panel = node.semanticsEntity
-        val subspaceBox = panel?.parent
-        val session = assertNotNull(composeTestRule.session)
-        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
-        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
-        assertThat(subspaceRootContainerEntity).isEqualTo(session.scene.activitySpace)
-    }
-
-    @Test
-    fun gravityAlignedSubspace_panelEmbedded_contentIsParentedToContainingPanel() {
-        composeTestRule.setContent {
-            GravityAlignedSubspace {
-                SpatialPanel(SubspaceModifier.testTag("panel")) {
-                    Subspace { SpatialPanel(SubspaceModifier.testTag("innerPanel")) {} }
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp).testTag("panel")) {
+                    PlanarEmbeddedSubspace {
+                        SpatialPanel(SubspaceModifier.testTag("innerPanel")) {
+                            Box(Modifier.size(100.dp))
+                        }
+                    }
                 }
             }
         }
 
-        val outerPanelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val outerPanelEntity = outerPanelNode.semanticsEntity
         val innerPanelNode =
             composeTestRule.onSubspaceNodeWithTag("innerPanel").fetchSemanticsNode()
         val innerPanelEntity = innerPanelNode.semanticsEntity
-        val subspaceBoxEntity = innerPanelEntity?.parent
-        val subspaceLayoutEntity = subspaceBoxEntity?.parent
-        val subspaceRootEntity = subspaceLayoutEntity?.parent
-        val subspaceRootContainerEntity = subspaceRootEntity?.parent
-        val parentPanel = subspaceRootContainerEntity?.parent
-        assertNotNull(parentPanel)
-        assertThat(parentPanel).isEqualTo(outerPanelEntity)
+        assertThat(innerPanelEntity?.isEnabled(true)).isTrue()
     }
 
     @Test
-    fun gravityAlignedSubspace_recommendedBoxed_isDisposed() {
-        var showSubspace by mutableStateOf(true)
-
+    fun planarEmbeddedSubspace_withDepthConstraint_respectsConstraint() {
         composeTestRule.setContent {
-            if (showSubspace) {
-                GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
-
-        showSubspace = false
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertDoesNotExist()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(0)
-    }
-
-    @Test
-    fun gravityAlignedSubspace_recommendedBoxed_onlyOneSceneExists_afterSpaceModeChanges() {
-        val fakeRuntime = createFakeRuntime(composeTestRule.activity)
-        composeTestRule.session = createFakeSession(composeTestRule.activity, fakeRuntime)
-
-        composeTestRule.setContent {
-            GravityAlignedSubspace { SpatialPanel(SubspaceModifier.testTag("panel")) {} }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
-
-        fakeRuntime.requestHomeSpaceMode()
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
-
-        fakeRuntime.requestFullSpaceMode()
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertExists()
-        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
-    }
-
-    @Test
-    fun gravityAlignedSubspace_unbounded_asNestedInSubspace_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContent {
-                Subspace {
-                    SpatialPanel { GravityAlignedSubspace(allowUnboundedSubspace = true) {} }
-                }
-            }
-        }
-    }
-
-    @Test
-    fun gravityAlignedSubspace_customBounded_asNestedInSubspace_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContent {
-                Subspace {
-                    SpatialPanel {
-                        GravityAlignedSubspace(
-                            modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
-                        ) {}
+            Subspace {
+                SpatialPanel(SubspaceModifier.depth(10.dp).testTag("panel")) {
+                    PlanarEmbeddedSubspace {
+                        SpatialPanel(SubspaceModifier.depth(20.dp).testTag("innerPanel")) {}
                     }
                 }
             }
         }
+
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDepthIsEqualTo(10.dp)
     }
 
     @Test
-    fun gravityAlignedSubspace_unbounded_asNestedInUnboundedApplicationSubspace_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContent {
-                GravityAlignedSubspace(allowUnboundedSubspace = true) {
-                    SpatialPanel() { GravityAlignedSubspace(allowUnboundedSubspace = true) {} }
-                }
-            }
-        }
-    }
-
-    @Test
-    fun gravityAlignedSubspace_customBounded_asNestedinCustomBoundedApplicationSubspace_throwsError() {
-        assertFailsWith<IllegalStateException>(
-            message = "Gravity Aligned Subspace cannot be nested within another Subspace."
-        ) {
-            composeTestRule.setContent {
-                GravityAlignedSubspace(
-                    modifier = SubspaceModifier.sizeIn(0.dp, 50.dp, 0.dp, 50.dp)
-                ) {
-                    SpatialPanel {
-                        GravityAlignedSubspace(
-                            modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
-                        ) {}
+    fun planarEmbeddedSubspace_withFillMaxDepth_respectsConstraint() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.depth(10.dp).testTag("panel")) {
+                    PlanarEmbeddedSubspace {
+                        SpatialPanel(SubspaceModifier.fillMaxDepth().testTag("innerPanel")) {}
                     }
                 }
             }
         }
+
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDepthIsEqualTo(10.dp)
     }
 
     @Test
-    fun gravityAlignedSubspace_fillMaxSize_higherDensity_returnsCorrectConstraints() {
-        var density: Density? = null
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+    fun planarEmbeddedSubspace_withUnboundedDepth_respectsDepth() {
         composeTestRule.setContent {
-            CompositionLocalProvider(LocalDensity provides Density(2f)) {
-                density = LocalDensity.current
-                GravityAlignedSubspace {
-                    SpatialBox(
-                        SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
-                    ) {}
-                }
-            }
-        }
-
-        assertNotNull(density)
-        assertThat(density.density).isEqualTo(2f)
-        val expectedWidthPx =
-            with(density) { Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this) }
-        val expectedHeightPx =
-            with(density) { Meter(DefaultTestRecommendedBoxSize.HEIGHT_METERS).roundToPx(this) }
-        composeTestRule
-            .onSubspaceNodeWithTag("box")
-            .assertWidthIsEqualTo(expectedWidthPx.toDp())
-            .assertHeightIsEqualTo(expectedHeightPx.toDp())
-    }
-
-    @Test
-    fun gravityAlignedSubspace_unbounded_fillMaxSize_doesNotReturnCorrectWidthAndHeight() {
-        composeTestRule.setContent {
-            GravityAlignedSubspace(allowUnboundedSubspace = true) {
-                SpatialBox(
-                    SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
-                ) {}
-            }
-        }
-
-        composeTestRule
-            .onSubspaceNodeWithTag("box")
-            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsNotEqualTo(VolumeConstraints().maxWidth.toDp())
-            .assertHeightIsNotEqualTo(VolumeConstraints().maxHeight.toDp())
-    }
-
-    @Test
-    fun gravityAlignedSubspace_customBounded_fillMaxSize_returnsCorrectWidthAndHeight() {
-        SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)
-
-        composeTestRule.setContent {
-            GravityAlignedSubspace(modifier = SubspaceModifier.sizeIn(0.dp, 100.dp, 0.dp, 100.dp)) {
-                SpatialBox(
-                    SubspaceModifier.fillMaxWidth(1.0f).fillMaxHeight(1.0f).testTag("box")
-                ) {}
-            }
-        }
-
-        composeTestRule
-            .onSubspaceNodeWithTag("box")
-            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(100.toDp())
-            .assertHeightIsEqualTo(100.toDp())
-    }
-
-    @Test
-    fun gravityAlignedSubspace_allowUnboundedSubspaceIsTrue_isUnbounded() {
-        var density: Density? = null
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
-        composeTestRule.setContent {
-            density = LocalDensity.current
-            // This large width is explicitly bigger than the recommended box width.
-            val widthLargerThanRecommendedBox =
-                with(LocalDensity.current) {
-                    Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS + 1000000.0f)
-                        .roundToPx(this)
-                        .toDp()
-                }
-            GravityAlignedSubspace(allowUnboundedSubspace = true) {
+            Subspace {
                 SpatialPanel(
-                    SubspaceModifier.size(widthLargerThanRecommendedBox).testTag("panel")
-                ) {}
+                    SubspaceModifier.sizeIn(maxDepth = VolumeConstraints.INFINITY.dp)
+                        .testTag("panel")
+                ) {
+                    PlanarEmbeddedSubspace {
+                        SpatialPanel(SubspaceModifier.depth(20.dp).testTag("innerPanel")) {}
+                    }
+                }
             }
         }
 
-        val recommendedWidthDp =
-            with(density!!) {
-                Meter(DefaultTestRecommendedBoxSize.WIDTH_METERS).roundToPx(this).toDp()
-            }
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsAtLeast(recommendedWidthDp)
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDepthIsEqualTo(20.dp)
     }
 
     @Test
-    fun gravityAlignedSubspace_userProvidedModifierBiggerThanDefault_isRespected() {
-        val largeWidth = 500000000.dp
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+    fun planarEmbeddedSubspace_whenXrIsEnabled_createsContent() {
         composeTestRule.setContent {
-            // The user provides a modifier bigger than the recommended box.
-            GravityAlignedSubspace(modifier = SubspaceModifier.size(largeWidth)) {
-                SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+            Subspace {
+                SpatialPanel {
+                    PlanarEmbeddedSubspace {
+                        SpatialPanel(SubspaceModifier.testTag("innerPanel")) {}
+                    }
+                }
             }
         }
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(largeWidth)
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertExists()
     }
 
     @Test
-    fun gravityAlignedSubspace_userProvidedModifierSmallerThanDefault_isRespected() {
-        val smallWidth = 2.dp
-        val runtime = createAdapterWithRecommendedBox()
-        composeTestRule.session = createFakeSession(composeTestRule.activity, runtime)
+    fun planarEmbeddedSubspace_whenXrIsDisabled_doesNotCreateContent() {
+        composeTestRule.disableXr()
         composeTestRule.setContent {
-            // The user provides a modifier smaller than the recommended box.
-            GravityAlignedSubspace(modifier = SubspaceModifier.size(smallWidth)) {
-                SpatialPanel(SubspaceModifier.fillMaxSize().testTag("panel")) {}
+            Subspace {
+                SpatialPanel {
+                    PlanarEmbeddedSubspace {
+                        SpatialPanel(SubspaceModifier.testTag("innerPanel")) {}
+                    }
+                }
             }
         }
-
-        composeTestRule.onSubspaceNodeWithTag("panel").assertWidthIsEqualTo(smallWidth)
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDoesNotExist()
     }
 
     @Test
-    fun gravityAlignedSubspace_constraintsChange_shouldRecomposeAndChangeConstraints() {
-        val initialConstraints =
-            SubspaceModifier.sizeIn(
-                minWidth = 0.dp,
-                maxWidth = 100.dp,
-                minHeight = 0.dp,
-                maxHeight = 100.dp,
-                minDepth = 0.dp,
-                maxDepth = VolumeConstraints.INFINITY.dp,
-            )
-        val updatedConstraints =
-            SubspaceModifier.sizeIn(
-                minWidth = 50.dp,
-                maxWidth = 150.dp,
-                minHeight = 50.dp,
-                maxHeight = 150.dp,
-                minDepth = 0.dp,
-                maxDepth = VolumeConstraints.INFINITY.dp,
-            )
-        val constraintsState = mutableStateOf<SubspaceModifier>(initialConstraints)
-
-        composeTestRule.setContent {
-            GravityAlignedSubspace(modifier = constraintsState.value) {
-                SpatialBox(
-                    modifier = SubspaceModifier.fillMaxWidth().fillMaxHeight().testTag("testBox")
-                ) {}
-            }
-        }
-
-        composeTestRule
-            .onSubspaceNodeWithTag("testBox")
-            .assertWidthIsEqualTo(100.toDp())
-            .assertHeightIsEqualTo(100.toDp())
-
-        constraintsState.value = updatedConstraints
-
-        composeTestRule
-            .onSubspaceNodeWithTag("testBox")
-            .assertWidthIsEqualTo(150.toDp())
-            .assertHeightIsEqualTo(150.toDp())
-    }
-
-    @Test
-    fun privateGravityAlignedSubspace_mainPanelEntityDisabled_whenSubspaceLeavesComposition() {
+    fun planarEmbeddedSubspace_whenRemovedFromComposition_disposesScene() {
         var showSubspace by mutableStateOf(true)
 
         composeTestRule.setContent {
-            if (showSubspace) {
-                GravityAlignedSubspace {}
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(100.dp)) {
+                    if (showSubspace) {
+                        PlanarEmbeddedSubspace {
+                            SpatialPanel(SubspaceModifier.testTag("innerPanel")) {}
+                        }
+                    }
+                }
             }
         }
 
-        val session = composeTestRule.session
-        assertNotNull(session)
-        val mainPanelEntity = session.scene.mainPanelEntity
-        assertThat(mainPanelEntity.isEnabled()).isEqualTo(false)
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertExists()
+        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(2)
 
         showSubspace = false
         composeTestRule.waitForIdle()
 
-        assertThat(mainPanelEntity.isEnabled()).isEqualTo(true)
+        composeTestRule.onSubspaceNodeWithTag("innerPanel").assertDoesNotExist()
+        assertThat(SceneManager.getSceneCount(composeTestRule.activity)).isEqualTo(1)
     }
 
     @Test
-    fun gravityAlignedSubspace_retainsState_whenSwitchingModes() {
-        composeTestRule.session = createFakeSession(composeTestRule.activity)
-
+    fun planarEmbeddedSubspace_whenPlacedBelow2DView_hasCorrectPose() {
         composeTestRule.setContent {
-            GravityAlignedSubspace {
-                SpatialPanel {
-                    var state by remember { mutableStateOf(0) }
-                    Button(onClick = { state++ }) { Text("Increment") }
-                    Text("$state", modifier = Modifier.testTag("state"))
-                }
-            }
-        }
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("0")
-
-        composeTestRule.onNodeWithText("Increment").performClick().performClick().performClick()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("3")
-
-        composeTestRule.session!!.scene.requestHomeSpaceMode()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("3")
-
-        composeTestRule.session!!.scene.requestFullSpaceMode()
-        composeTestRule.onNodeWithText("Increment").performClick().performClick()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("5")
-    }
-
-    @Test
-    fun gravityAlignedSubspace_retainsState_whenSwitchingModesStartingFromHomeSpace() {
-        composeTestRule.session =
-            createFakeSession(composeTestRule.activity).apply { scene.requestHomeSpaceMode() }
-
-        composeTestRule.setContent {
-            CompositionLocalProvider {
-                GravityAlignedSubspace {
-                    SpatialPanel {
-                        var state by remember { mutableStateOf(0) }
-                        Button(onClick = { state++ }) { Text("Increment") }
-                        Text("$state", modifier = Modifier.testTag("state"))
+            Subspace {
+                SpatialPanel(SubspaceModifier.size(200.dp).testTag("panel")) {
+                    Row {
+                        Spacer(Modifier.size(100.dp))
+                        Column {
+                            Spacer(Modifier.size(25.dp))
+                            PlanarEmbeddedSubspace {
+                                SpatialPanel(SubspaceModifier.size(100.dp).testTag("innerPanel")) {}
+                            }
+                        }
                     }
                 }
             }
         }
 
-        composeTestRule.onNodeWithTag("state").assertTextContains("0")
+        // The outer panel should have only a single child and it should be to root node of the
+        // PlanarEmbeddedSubspace.
+        val subspaceRootContainerEntity =
+            assertNotNull(
+                composeTestRule
+                    .onSubspaceNodeWithTag("panel")
+                    .fetchSemanticsNode()
+                    .semanticsEntity
+                    ?.children
+                    ?.single()
+            )
+        composeTestRule
+            .onSubspaceNodeWithTag("innerPanel")
+            .assertEntityIsDescendantOf(subspaceRootContainerEntity)
 
-        composeTestRule.session!!.scene.requestFullSpaceMode()
+        /*
+         * (0,0)
+         * 1-----------------------
+         * |          |           |
+         * |          |[         ]|
+         * |          |[    4    ]|
+         * -----------2[---------]-
+         * |          |           |
+         * |          |           |
+         * |          |           |
+         * -----------------------3
+         *                         (200,200)
+         *
+         * 1 is the origin (0, 0) of the 2D layout of the parent panel
+         * 2 is the center of the parent panel (100, 100) this is also the origin (0, 0, 0) in
+         *    3D space.
+         * 3 is the bottom right corner of the parent panel, it is (200, 200) in the parent layout
+         * 4 is the center of the inner panel (150, 100)
+         *
+         * The expected offset is 4 relative to 2 which is +50 dp in x and +25 dp in y directions
+         *  in 3D space.
+         */
+        val expectedXOffset = 50.dp
+        val expectedYOffset = 25.dp
+        val expectedZOffset = 0.dp
 
-        composeTestRule.onNodeWithTag("state").assertTextContains("0")
+        val actualXOffsetMeters = subspaceRootContainerEntity.getPose().translation.x
+        val actualXOffsetDp = Meter(actualXOffsetMeters).toDp()
+        val actualYOffsetMeters = subspaceRootContainerEntity.getPose().translation.y
+        val actualYOffsetDp = Meter(actualYOffsetMeters).toDp()
+        val actualZOffsetMeters = subspaceRootContainerEntity.getPose().translation.z
+        val actualZOffsetDp = Meter(actualZOffsetMeters).toDp()
 
-        composeTestRule.onNodeWithText("Increment").performClick().performClick().performClick()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("3")
-
-        composeTestRule.session!!.scene.requestHomeSpaceMode()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("3")
-
-        composeTestRule.session!!.scene.requestFullSpaceMode()
-        composeTestRule.onNodeWithText("Increment").performClick().performClick()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("5")
-
-        composeTestRule.session!!.scene.requestHomeSpaceMode()
-
-        composeTestRule.onNodeWithTag("state").assertTextContains("5")
+        assertThat(actualXOffsetDp).isEqualTo(expectedXOffset)
+        assertThat(actualYOffsetDp).isEqualTo(expectedYOffset)
+        assertThat(actualZOffsetDp).isEqualTo(expectedZOffset)
     }
 
     @Test
-    fun gravityAlignedSubspace_multipleApplicationSubspaces_haveTheSameRootContainer() {
+    fun planarEmbeddedSubspace_withFixedSizeParent_isConstrainedByParent() {
         composeTestRule.setContent {
-            GravityAlignedSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box")) {} }
-            GravityAlignedSubspace { SpatialBox(modifier = SubspaceModifier.testTag("Box2")) {} }
+            Subspace {
+                SpatialPanel(SubspaceModifier.width(300.dp).height(300.dp).depth(10.dp)) {
+                    PlanarEmbeddedSubspace {
+                        // Child requests a larger size, constrained to parent's size.
+                        SpatialBox(
+                            SubspaceModifier.width(500.dp)
+                                .height(500.dp)
+                                .depth(20.dp)
+                                .testTag("constrainedChild")
+                        ) {}
+                        // Child fills max size is equal to parent's size.
+                        SpatialBox(SubspaceModifier.fillMaxSize().testTag("fillMaxSizeChild")) {}
+                    }
+                }
+            }
         }
 
-        val boxNode = composeTestRule.onSubspaceNodeWithTag("Box").fetchSemanticsNode()
-        val boxEntity = assertNotNull(boxNode.semanticsEntity)
-        val layoutRootEntity = assertNotNull(boxEntity.parent)
-        val subspaceRootEntity = assertNotNull(layoutRootEntity.parent)
-        val subspaceRootContainer = assertNotNull(subspaceRootEntity.parent)
-        val boxNode2 = composeTestRule.onSubspaceNodeWithTag("Box2").fetchSemanticsNode()
-        val boxEntity2 = assertNotNull(boxNode2.semanticsEntity)
-        val layoutRootEntity2 = assertNotNull(boxEntity2.parent)
-        val subspaceRootEntity2 = assertNotNull(layoutRootEntity2.parent)
-        val subspaceRootContainer2 = assertNotNull(subspaceRootEntity2.parent)
-
-        assertThat(subspaceRootContainer).isEqualTo(subspaceRootContainer2)
+        composeTestRule.onSubspaceNodeWithTag("constrainedChild").assertWidthIsEqualTo(300.dp)
+        composeTestRule.onSubspaceNodeWithTag("constrainedChild").assertHeightIsEqualTo(300.dp)
+        composeTestRule.onSubspaceNodeWithTag("constrainedChild").assertDepthIsEqualTo(10.dp)
+        composeTestRule.onSubspaceNodeWithTag("fillMaxSizeChild").assertWidthIsEqualTo(300.dp)
+        composeTestRule.onSubspaceNodeWithTag("fillMaxSizeChild").assertHeightIsEqualTo(300.dp)
+        composeTestRule.onSubspaceNodeWithTag("fillMaxSizeChild").assertDepthIsEqualTo(10.dp)
     }
 
+    // TODO(b/449821552) Improve unit testing for PlanarEmbeddedSubspace.
+
+    // ---------------------------------------------------------------------------------------------
+    //                                    AnchoredSubspace Tests
+    // ---------------------------------------------------------------------------------------------
     @Test
-    fun anchoredSubspace_whenCreated_isParentedToProvidedAnchorEntity() {
+    fun anchoredSubspace_whenCreated_isParentedToAnchor() {
         composeTestRule.session = createFakeSession(composeTestRule.activity)
         val session = assertNotNull(composeTestRule.session)
 
@@ -1362,16 +880,11 @@ class SubspaceTest {
             }
         }
 
-        val node = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
-        val panel = node.semanticsEntity
-        val subspaceBox = panel?.parent
-        val subspaceRootEntity = assertNotNull(subspaceBox?.parent)
-        val subspaceRootContainerEntity = assertNotNull(subspaceRootEntity.parent)
-        assertThat(subspaceRootContainerEntity).isEqualTo(anchorEntity)
+        composeTestRule.onSubspaceNodeWithTag("panel").assertEntityIsDescendantOf(anchorEntity)
     }
 
     @Test
-    fun anchoredSubspace_withContent_positionsContentAtOrigin() {
+    fun anchoredSubspace_withContent_positionsAtOrigin() {
         composeTestRule.session = createFakeSession(composeTestRule.activity)
         val session = assertNotNull(composeTestRule.session)
 
@@ -1392,7 +905,7 @@ class SubspaceTest {
     }
 
     @Test
-    fun anchoredSubspace_whenNested_positionsContentRelativeToAnchor() {
+    fun anchoredSubspace_whenNested_positionsRelativeToAnchor() {
         composeTestRule.session = createFakeSession(composeTestRule.activity)
         val session = assertNotNull(composeTestRule.session)
 
@@ -1401,9 +914,7 @@ class SubspaceTest {
             AnchorEntity.create(session, FloatSize2d(), PlaneOrientation.ANY, PlaneSemanticType.ANY)
 
         composeTestRule.setContent {
-            ApplicationSubspace(
-                modifier = SubspaceModifier.offset(x = 40.dp, y = 50.dp, z = 60.dp)
-            ) {
+            Subspace(modifier = SubspaceModifier.offset(x = 40.dp, y = 50.dp, z = 60.dp)) {
                 SpatialPanel(SubspaceModifier.fillMaxSize().testTag("subspacePanel")) {}
                 AnchoredSubspace(lockTo = anchorEntity) {
                     SpatialPanel(SubspaceModifier.fillMaxSize().testTag("anchoredSubspacePanel")) {}
@@ -1425,8 +936,8 @@ class SubspaceTest {
     }
 
     @Test
-    fun anchoredSubspace_contentIsAnchoredToIdentityPosition() {
-        var session = assertIs<SessionCreateSuccess>(Session.create(composeTestRule.activity))
+    fun anchoredSubspace_whenAnchoredToIdentity_positionsAtOrigin() {
+        val session = assertIs<SessionCreateSuccess>(Session.create(composeTestRule.activity))
         composeTestRule.session = session.session
 
         val anchorResult = Anchor.create(session.session, Pose.Identity)
@@ -1446,7 +957,7 @@ class SubspaceTest {
     }
 
     @Test
-    fun anchoredSubspace_whenLocked_contentIsWorldPositionedCorrectly() {
+    fun anchoredSubspace_whenLocked_isPositionedCorrectly() {
         val session = assertIs<SessionCreateSuccess>(Session.create(composeTestRule.activity))
         composeTestRule.session = session.session
 
@@ -1476,8 +987,8 @@ class SubspaceTest {
     }
 
     @Test
-    fun anchoredSubspace_whenAnchorChanges_anchorsToNewAnchor() {
-        var session = assertIs<SessionCreateSuccess>(Session.create(composeTestRule.activity))
+    fun anchoredSubspace_whenAnchorChanges_repositions() {
+        val session = assertIs<SessionCreateSuccess>(Session.create(composeTestRule.activity))
         composeTestRule.session = session.session
 
         val initialPose = Pose(Vector3(10f, 20f, 30f), Quaternion(10f, 20f, 30f, 40f))
@@ -1519,16 +1030,16 @@ class SubspaceTest {
     }
 
     @Test
-    fun anchoredSubspace_whenAnchorPoseChanges_anchorsToNewPose() {
+    fun anchoredSubspace_whenAnchorPoseChanges_repositions() {
         runBlocking {
-            var session = assertIs<SessionCreateSuccess>(Session.create(composeTestRule.activity))
+            val session = assertIs<SessionCreateSuccess>(Session.create(composeTestRule.activity))
             composeTestRule.session = session.session
 
             val initialPose = Pose(Vector3(10f, 20f, 30f), Quaternion(10f, 20f, 30f, 40f))
 
-            var fakeRuntime =
+            val fakeRuntime =
                 session.session.runtimes.filterIsInstance<FakePerceptionRuntime>().first()
-            var fakePerceptionManager = fakeRuntime.perceptionManager
+            val fakePerceptionManager = fakeRuntime.perceptionManager
 
             val runtimeAnchor = fakePerceptionManager.createAnchor(initialPose) as FakeRuntimeAnchor
             val underTest = Anchor(runtimeAnchor)

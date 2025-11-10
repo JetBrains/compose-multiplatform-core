@@ -41,10 +41,10 @@ import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.ContentEdge
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.OrbiterOffsetType
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.MovePolicy
 import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
@@ -73,7 +73,7 @@ class SpatialComposeStateTest : ComponentActivity() {
             if (useMainPanel) {
                 MainPanelContent("Main Panel", isInitialLaunch = isInitialLaunch)
             }
-            ApplicationSubspace {
+            Subspace {
                 SpatialRow {
                     if (useMainPanel) {
                         SpatialMainPanel(
@@ -106,7 +106,7 @@ class SpatialComposeStateTest : ComponentActivity() {
                     }
                 }
             }
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     modifier = SubspaceModifier.size(200.dp).offset(x = 500.dp),
                     dragPolicy = MovePolicy(),

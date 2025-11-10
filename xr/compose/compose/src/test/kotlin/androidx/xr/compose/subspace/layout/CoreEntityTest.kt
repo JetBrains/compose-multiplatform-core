@@ -32,7 +32,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialActivityPanel
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialMainPanel
@@ -131,7 +131,7 @@ class CoreEntityTest {
     fun coreBasePanelEntity_androidViewPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialAndroidViewPanel(
                     factory = { View(it) },
                     SubspaceModifier.width(size).height(size).testTag("panel"),
@@ -159,9 +159,7 @@ class CoreEntityTest {
     fun coreBasePanelEntity_spatialPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
         composeTestRule.setContent {
-            ApplicationSubspace {
-                SpatialPanel(SubspaceModifier.width(size).height(size).testTag("panel")) {}
-            }
+            Subspace { SpatialPanel(SubspaceModifier.width(size).height(size).testTag("panel")) {} }
         }
 
         val panelNode = composeTestRule.onSubspaceNodeWithTag("panel").fetchSemanticsNode()
@@ -181,7 +179,7 @@ class CoreEntityTest {
     fun coreBasePanelEntity_mainPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialMainPanel(SubspaceModifier.width(size).height(size).testTag("panel"))
             }
         }
@@ -203,7 +201,7 @@ class CoreEntityTest {
     fun coreBasePanelEntity_activityPanel_enabledStateFollowsSizeChanges() {
         var size by mutableStateOf(100.dp)
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialActivityPanel(
                     intent = Intent(composeTestRule.activity, SpatialPanelActivity::class.java),
                     SubspaceModifier.width(size).height(size).testTag("panel"),

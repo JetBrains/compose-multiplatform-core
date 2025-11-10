@@ -17,8 +17,6 @@ package androidx.room3.util
 
 import androidx.annotation.RestrictTo
 import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.db.SupportSQLiteDatabase
-import androidx.sqlite.driver.SupportSQLiteConnection
 
 /** A data class that holds the information about an FTS table. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) // used in generated code
@@ -48,18 +46,6 @@ public actual class FtsTableInfo(
     override fun toString(): String = toStringCommon()
 
     public actual companion object {
-
-        /**
-         * Reads the table information from the given database.
-         *
-         * @param database The database to read the information from.
-         * @param tableName The table name.
-         * @return A FtsTableInfo containing the columns and options for the provided table name.
-         */
-        @JvmStatic
-        public fun read(database: SupportSQLiteDatabase, tableName: String): FtsTableInfo {
-            return read(SupportSQLiteConnection(database), tableName)
-        }
 
         /**
          * Reads the table information from the given database.

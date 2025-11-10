@@ -29,6 +29,7 @@ import androidx.camera.integration.featurecombo.FeatureGroupQueryBindAlignmentTe
 import androidx.camera.integration.featurecombo.FeatureGroupQueryBindAlignmentTest.VerificationScenario.REQUIRED_FEATURES
 import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase
 import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.LabTestRule.Companion.isInLabTest
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
@@ -190,7 +191,7 @@ class FeatureGroupQueryBindAlignmentTest(
                     // Generates all non-empty subsets of the features to test all combinations
                     allHighQualityFeatures.toPowerSet().filter {
                             // Do not test more than 3 features at once to save time
-                            Range(1, 3).contains(it.size)
+                            Range(1, 3).contains(it.size) && !it.containsSameTypeFeatures()
                         }) {
                         useCaseCombinationsToTest.forEach { useCases ->
                             add(
@@ -205,17 +206,22 @@ class FeatureGroupQueryBindAlignmentTest(
                                 )
                             )
 
-                            add(
-                                arrayOf(
-                                    "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}" +
-                                        " featureGroup={$featureGroup} useCases = {$useCases}",
-                                    selector,
-                                    CameraPipeConfig::class.simpleName,
-                                    CameraPipeConfig.defaultConfig(),
-                                    featureGroup,
-                                    useCases,
+                            // CameraPipeConfig will be removed soon, so running these tests in lab
+                            // env only to save testing time and resources.
+                            if (isInLabTest()) {
+                                add(
+                                    arrayOf(
+                                        "config=${CameraPipeConfig::class.simpleName}" +
+                                            " lensFacing={$lens} featureGroup={$featureGroup}" +
+                                            " useCases = {$useCases}",
+                                        selector,
+                                        CameraPipeConfig::class.simpleName,
+                                        CameraPipeConfig.defaultConfig(),
+                                        featureGroup,
+                                        useCases,
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
 
@@ -237,17 +243,21 @@ class FeatureGroupQueryBindAlignmentTest(
                                 )
                             )
 
-                            add(
-                                arrayOf(
-                                    "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}" +
-                                        " featureGroup={$featureGroup} useCases = {$useCases}",
-                                    selector,
-                                    CameraPipeConfig::class.simpleName,
-                                    CameraPipeConfig.defaultConfig(),
-                                    featureGroup,
-                                    useCases,
+                            // CameraPipeConfig will be removed soon, so running these tests in lab
+                            // env only to save testing time and resources.
+                            if (isInLabTest()) {
+                                add(
+                                    arrayOf(
+                                        "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}" +
+                                            " featureGroup={$featureGroup} useCases = {$useCases}",
+                                        selector,
+                                        CameraPipeConfig::class.simpleName,
+                                        CameraPipeConfig.defaultConfig(),
+                                        featureGroup,
+                                        useCases,
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }
@@ -272,6 +282,20 @@ class FeatureGroupQueryBindAlignmentTest(
                 sets.addAll(sets.map { it + element })
             }
             return sets
+        }
+
+        private fun Set<GroupableFeature>.containsSameTypeFeatures(): Boolean {
+            val featureTypes = map { it.featureTypeInternal }.distinct()
+
+            featureTypes.forEach { featureType ->
+                val distinctFeaturesPerType = filter { it.featureTypeInternal == featureType }
+
+                if (distinctFeaturesPerType.size > 1) {
+                    return true
+                }
+            }
+
+            return false
         }
     }
 }

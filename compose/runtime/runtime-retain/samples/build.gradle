@@ -36,6 +36,7 @@ dependencies {
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:runtime:runtime-retain"))
     implementation("androidx.compose.material:material:1.9.1")
+    implementation("androidx.compose.material:material-icons-core:1.7.8")
 }
 
 androidx {

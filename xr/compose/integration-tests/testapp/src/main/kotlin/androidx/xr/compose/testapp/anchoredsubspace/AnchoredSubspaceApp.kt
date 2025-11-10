@@ -49,7 +49,7 @@ import androidx.xr.arcore.AnchorCreateResourcesExhausted
 import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.Plane
 import androidx.xr.compose.spatial.AnchoredSubspace
-import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
@@ -231,7 +231,7 @@ class AnchoredSubspaceApp : ComponentActivity() {
             }
         }
 
-        ApplicationSubspace {
+        Subspace {
             SpatialRow {
                 CustomSpatialPanel {
                     Text("NOT Anchored (row)", fontSize = 30.sp, color = Color.Red)

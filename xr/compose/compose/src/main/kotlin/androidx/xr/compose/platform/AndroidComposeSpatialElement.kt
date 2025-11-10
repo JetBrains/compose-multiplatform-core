@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.AndroidUiDispatcher
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
+import androidx.xr.compose.subspace.node.Logger
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceMeasureAndLayoutDelegate
 import androidx.xr.compose.subspace.node.SubspaceOwner
@@ -45,6 +46,9 @@ import kotlinx.coroutines.launch
 internal class AndroidComposeSpatialElement :
     SpatialElement(), SubspaceOwner, DefaultLifecycleObserver {
     override val root: SubspaceLayoutNode = SubspaceLayoutNode()
+
+    // For debug output set this to androidx.xr.compose.subspace.node.DebugLogger().
+    override var logger: Logger? = null
 
     // This coroutine scope will launch tasks to the Choreographer on the main thread.
     private val uiCoroutineScope = CoroutineScope(AndroidUiDispatcher.Main)
@@ -139,6 +143,8 @@ internal class AndroidComposeSpatialElement :
     }
 
     override fun requestMeasure(node: SubspaceLayoutNode, forceRequest: Boolean) {
+        logger?.measureRequested(node)
+
         if (!root.isPlaced) return
 
         if (measureAndLayoutDelegate.requestMeasure(node, forceRequest)) {
@@ -147,6 +153,8 @@ internal class AndroidComposeSpatialElement :
     }
 
     override fun requestLayout(node: SubspaceLayoutNode, forceRequest: Boolean) {
+        logger?.layoutRequested(node)
+
         if (!root.isPlaced) return
 
         if (measureAndLayoutDelegate.requestLayout(node, forceRequest)) {

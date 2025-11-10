@@ -22,7 +22,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialAndroidViewPanel
 import androidx.xr.compose.subspace.SpatialBox
@@ -71,7 +70,7 @@ class CoreEntityNodeTest {
     @Test
     fun coreEntityNode_alpha_shouldBeApplied() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialAndroidViewPanel(
                     factory = { View(it) },
                     SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }.testTag("panel"),
@@ -88,7 +87,7 @@ class CoreEntityNodeTest {
     @Test
     fun coreEntityNode_alpha_shouldAppendExisting() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialAndroidViewPanel(
                     factory = { View(it) },
                     SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
@@ -107,7 +106,7 @@ class CoreEntityNodeTest {
     @Test
     fun coreEntityNode_alpha_shouldAppendExistingWithGap() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialAndroidViewPanel(
                     factory = { View(it) },
                     SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
@@ -127,7 +126,7 @@ class CoreEntityNodeTest {
     @Test
     fun coreEntityNode_alpha_shouldClampAppendedResult() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialAndroidViewPanel(
                     factory = { View(it) },
                     SubspaceModifier.modifyCoreEntity { setOrAppendAlpha(0.5f) }
@@ -146,7 +145,7 @@ class CoreEntityNodeTest {
     @Test
     fun coreEntityNode_scale_shouldBeApplied() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialAndroidViewPanel(
                     factory = { View(it) },
                     SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }.testTag("panel"),
@@ -163,7 +162,7 @@ class CoreEntityNodeTest {
     @Test
     fun coreEntityNode_scale_shouldAppendExisting() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialAndroidViewPanel(
                     factory = { View(it) },
                     SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }
@@ -182,7 +181,7 @@ class CoreEntityNodeTest {
     @Test
     fun coreEntityNode_scale_shouldAppendExistingWithGap() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialAndroidViewPanel(
                     factory = { View(it) },
                     SubspaceModifier.modifyCoreEntity { setOrAppendScale(4f) }

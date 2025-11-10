@@ -309,6 +309,8 @@ public class LifecycleCameraTest {
         mLifecycleOwner.start();
         ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setSupportedDynamicRanges(
                 Collections.singleton(DynamicRange.HLG_10_BIT));
+        ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setIsPreviewStabilizationSupported(
+                true);
         Preview preview = new Preview.Builder().build();
 
         SessionConfig sessionConfig =
@@ -337,6 +339,8 @@ public class LifecycleCameraTest {
         mLifecycleOwner.start();
         ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setSupportedDynamicRanges(
                 Collections.singleton(DynamicRange.HLG_10_BIT));
+        ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setIsPreviewStabilizationSupported(
+                true);
         Preview preview = new Preview.Builder().build();
 
         SessionConfig sessionConfig =
@@ -368,6 +372,8 @@ public class LifecycleCameraTest {
         mLifecycleOwner.start();
         ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setSupportedDynamicRanges(
                 Collections.singleton(DynamicRange.HLG_10_BIT));
+        ((FakeCameraInfoInternal) mFakeCamera.getCameraInfo()).setIsPreviewStabilizationSupported(
+                true);
         Preview preview = new Preview.Builder().build();
 
         SessionConfig sessionConfig =

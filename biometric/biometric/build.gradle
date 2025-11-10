@@ -57,6 +57,7 @@ dependencies {
     testImplementation(libs.mockitoKotlin4)
     testImplementation(libs.truth)
     testImplementation(libs.espressoIntents)
+    testImplementation(libs.testExtJunit)
     testImplementation("androidx.fragment:fragment-testing:1.4.1")
 
     androidTestImplementation(libs.guavaAndroid)

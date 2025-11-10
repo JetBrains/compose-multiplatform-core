@@ -46,7 +46,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.xr.compose.platform.DefaultDialogManager
 import androidx.xr.compose.platform.LocalDialogManager
-import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.SpatialDialog
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
@@ -135,7 +134,7 @@ class SpatialPanelTest {
     @Test
     fun spatialPanel_composePanel_sizesItselfWithLazyContent() {
         composeTestRule.setContent {
-            ApplicationSubspace(modifier = SubspaceModifier.sizeIn(0.dp, 2000.dp, 0.dp, 2000.dp)) {
+            Subspace(modifier = SubspaceModifier.sizeIn(0.dp, 2000.dp, 0.dp, 2000.dp)) {
                 SpatialPanel(SubspaceModifier.testTag("panel")) {
                     LazyColumn { items(50) { Box(Modifier.size(100.dp)) } }
                 }
@@ -208,7 +207,7 @@ class SpatialPanelTest {
         val panelTag = "mainPanel"
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 if (showPanel.value) {
                     SpatialMainPanel(SubspaceModifier.testTag(panelTag).size(100.dp))
                 }

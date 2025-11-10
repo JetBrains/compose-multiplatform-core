@@ -18,6 +18,7 @@ package androidx.biometric.internal.data
 
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.utils.BiometricErrorData
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -26,9 +27,8 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthenticationStateRepositoryTest {
     private val repository: AuthenticationStateRepository = AuthenticationStateRepositoryImpl()

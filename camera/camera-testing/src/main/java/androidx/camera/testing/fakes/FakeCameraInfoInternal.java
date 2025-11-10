@@ -112,6 +112,7 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
 
     private boolean mIsFocusMeteringSupported = false;
     private boolean mIsHighSpeedSupported = false;
+    private boolean mIsPreviewStabilizationSupported = false;
 
     private ExposureState mExposureState = new FakeExposureState();
     private final @NonNull List<Quirk> mCameraQuirks = new ArrayList<>();
@@ -217,6 +218,14 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
      */
     public void setIsFocusMeteringSupported(boolean supported) {
         mIsFocusMeteringSupported = supported;
+    }
+
+    /**
+     * Sets the return value for {@link #isPreviewStabilizationSupported()}.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void setIsPreviewStabilizationSupported(boolean supported) {
+        mIsPreviewStabilizationSupported = supported;
     }
 
     @Override
@@ -445,7 +454,7 @@ public final class FakeCameraInfoInternal implements CameraInfoInternal {
 
     @Override
     public boolean isPreviewStabilizationSupported() {
-        return false;
+        return mIsPreviewStabilizationSupported;
     }
 
     @Override

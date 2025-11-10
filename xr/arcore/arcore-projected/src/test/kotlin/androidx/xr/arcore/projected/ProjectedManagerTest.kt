@@ -24,9 +24,6 @@ import androidx.xr.runtime.math.Vector3
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -35,7 +32,6 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.anyString
-import org.mockito.ArgumentMatchers.eq
 import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.never
@@ -50,8 +46,6 @@ import org.robolectric.RobolectricTestRunner
 class ProjectedManagerTest {
     @Mock private lateinit var mockActivity: Activity
     @Mock private lateinit var mockPerceptionService: IProjectedPerceptionService.Stub
-    @Captor
-    private lateinit var vpsAvailabilityCallbackCaptor: ArgumentCaptor<IVpsAvailabilityCallback>
     @Captor private lateinit var projectedConfigCaptor: ArgumentCaptor<ProjectedConfig>
     private lateinit var perceptionManager: ProjectedPerceptionManager
     private lateinit var underTest: ProjectedManager
@@ -71,18 +65,6 @@ class ProjectedManagerTest {
                 Dispatchers.IO,
                 testPerceptionService = mockPerceptionService,
             )
-    }
-
-    @Test
-    fun create_always_bindsToPerceptionService() = runTest {
-        underTest.create()
-        launch { perceptionManager.checkVpsAvailability(1.0, 2.0) }
-        runCurrent()
-
-        verify(mockPerceptionService)
-            .checkVpsAvailability(eq(1.0), eq(2.0), vpsAvailabilityCallbackCaptor.capture())
-        vpsAvailabilityCallbackCaptor.value.onVpsAvailabilityChanged(0)
-        advanceUntilIdle()
     }
 
     @Test
@@ -115,7 +97,7 @@ class ProjectedManagerTest {
         underTest.update()
         assertThat(perceptionManager.xrResources.deviceTrackingState)
             .isEqualTo(TrackingState.TRACKING)
-        assertThat(perceptionManager.xrResources.earthTrackingState)
+        assertThat(perceptionManager.xrResources.geospatialTrackingState)
             .isEqualTo(TrackingState.STOPPED)
         assertThat(perceptionManager.arDevice.devicePose).isEqualTo(expectedPose)
     }
@@ -126,7 +108,7 @@ class ProjectedManagerTest {
         val config =
             Config(
                 deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
-                geospatial = Config.GeospatialMode.EARTH,
+                geospatial = Config.GeospatialMode.VPS_AND_GPS,
             )
 
         underTest.configure(config)
@@ -154,7 +136,7 @@ class ProjectedManagerTest {
         val config =
             Config(
                 deviceTracking = Config.DeviceTrackingMode.DISABLED,
-                geospatial = Config.GeospatialMode.EARTH,
+                geospatial = Config.GeospatialMode.VPS_AND_GPS,
             )
         assertThrows(UnsupportedOperationException::class.java) { underTest.configure(config) }
     }
@@ -166,7 +148,7 @@ class ProjectedManagerTest {
         val configWithGeospatial =
             Config(
                 deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
-                geospatial = Config.GeospatialMode.EARTH,
+                geospatial = Config.GeospatialMode.VPS_AND_GPS,
             )
 
         underTest.configure(configWithGeospatial)

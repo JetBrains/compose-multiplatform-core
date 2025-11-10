@@ -25,7 +25,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.CreatePoseFromGeospatialPoseSuccess
-import androidx.xr.arcore.Earth
+import androidx.xr.arcore.Geospatial
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
@@ -49,7 +49,7 @@ import kotlinx.coroutines.launch
 /** Test app which tests projected perception API surface. */
 class ProjectedTestAppActivity : ComponentActivity() {
     private lateinit var session: Session
-    private lateinit var earth: Earth
+    private lateinit var geospatial: Geospatial
     private lateinit var textView: TextView
     private var initialGeospatialPose: GeospatialPose? = null
     private var vpsStatusMessage: String = "VPS status: checking..."
@@ -60,7 +60,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
         listOf(
             "Geospatial On, 3DoF On" to
                 Config(
-                    geospatial = Config.GeospatialMode.EARTH,
+                    geospatial = Config.GeospatialMode.VPS_AND_GPS,
                     deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
                 ),
             "Geospatial Off, 3DoF On" to
@@ -75,7 +75,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 ),
             "Geospatial On, 3DoF Off" to
                 Config(
-                    geospatial = Config.GeospatialMode.EARTH,
+                    geospatial = Config.GeospatialMode.VPS_AND_GPS,
                     deviceTracking = Config.DeviceTrackingMode.DISABLED,
                 ),
         )
@@ -101,7 +101,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 Log.i(TAG, "before sessionInitialized.await()")
                 sessionInitialized.await()
                 Log.i(TAG, "sessionInitialized.await()")
-                earth = Earth.getInstance(session)
+                geospatial = Geospatial.getInstance(session)
                 // Check VPS availability
                 checkVpsAvailability(37.422, -122.084) // Googleplex coordinates
                 while (true) {
@@ -141,7 +141,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
             return
         }
 
-        val geoOn = currentConfig.geospatial == Config.GeospatialMode.EARTH
+        val geoOn = currentConfig.geospatial == Config.GeospatialMode.VPS_AND_GPS
         val trackingOn = currentConfig.deviceTracking == Config.DeviceTrackingMode.LAST_KNOWN
 
         if (geoOn && trackingOn) {
@@ -162,7 +162,8 @@ class ProjectedTestAppActivity : ComponentActivity() {
     }
 
     private fun getGeospatialPoseText(): String {
-        when (val geospatialPoseResult = earth.createGeospatialPoseFromDevicePose()) {
+        val devicePose = ArDevice.getInstance(session).state.value.devicePose
+        when (val geospatialPoseResult = geospatial.createGeospatialPoseFromPose(devicePose)) {
             is CreateGeospatialPoseFromPoseSuccess -> {
                 val currentGeospatialPose = geospatialPoseResult.pose
                 val isCurrentPoseValid =
@@ -200,7 +201,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
     private fun checkVpsAvailability(latitude: Double, longitude: Double) {
         Log.i(TAG, "checkVpsAvailability latitude: $latitude, longitude: $longitude")
         lifecycleScope.launch {
-            val vpsAvailabilityResult = Earth.checkVpsAvailability(session, latitude, longitude)
+            val vpsAvailabilityResult = geospatial.checkVpsAvailability(latitude, longitude)
             vpsStatusMessage = getVpsMessage(vpsAvailabilityResult)
             Log.i(TAG, "VPS availability: $vpsStatusMessage ($vpsAvailabilityResult)")
         }
@@ -225,8 +226,8 @@ class ProjectedTestAppActivity : ComponentActivity() {
     private fun testGeospatialConversions(currentGeospatialPose: GeospatialPose): String {
         val initialPose = initialGeospatialPose ?: return "Initial pose not set"
 
-        val initialNonGeoResult = earth.createPoseFromGeospatialPose(initialPose)
-        val currentNonGeoResult = earth.createPoseFromGeospatialPose(currentGeospatialPose)
+        val initialNonGeoResult = geospatial.createPoseFromGeospatialPose(initialPose)
+        val currentNonGeoResult = geospatial.createPoseFromGeospatialPose(currentGeospatialPose)
 
         if (
             initialNonGeoResult is CreatePoseFromGeospatialPoseSuccess &&
@@ -236,8 +237,10 @@ class ProjectedTestAppActivity : ComponentActivity() {
             val currentNonGeoPose = currentNonGeoResult.pose
 
             // Round trip the non-geo poses back to geospatial poses
-            val initialGeoRoundtripResult = earth.createGeospatialPoseFromPose(initialNonGeoPose)
-            val currentGeoRoundtripResult = earth.createGeospatialPoseFromPose(currentNonGeoPose)
+            val initialGeoRoundtripResult =
+                geospatial.createGeospatialPoseFromPose(initialNonGeoPose)
+            val currentGeoRoundtripResult =
+                geospatial.createGeospatialPoseFromPose(currentNonGeoPose)
 
             if (
                 initialGeoRoundtripResult is CreateGeospatialPoseFromPoseSuccess &&

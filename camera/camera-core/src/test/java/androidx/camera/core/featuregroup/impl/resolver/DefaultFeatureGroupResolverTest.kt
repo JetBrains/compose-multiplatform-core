@@ -25,11 +25,13 @@ import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
+import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FPS_60
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.HDR_HLG10
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.IMAGE_ULTRA_HDR
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.PREVIEW_STABILIZATION
 import androidx.camera.core.featuregroup.impl.feature.DynamicRangeFeature
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
 import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.Supported
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.Unsupported
@@ -94,6 +96,8 @@ class DefaultFeatureGroupResolverTest {
             )
 
             supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG_10_BIT)
+
+            setIsPreviewStabilizationSupported(true)
         }
 
     private val defaultResolver = DefaultFeatureGroupResolver(fakeCameraInfo)
@@ -648,6 +652,46 @@ class DefaultFeatureGroupResolverTest {
     }
 
     @Test
+    fun resolve_twoSameTypeFeaturesSupportedAndPreferred_returnsSupportedWithCorrectFeature() {
+        // Arrange: Support both HDR_HLG10 and SDR and create a sdrFeature which has same type as
+        // HDR_HLG10.
+        fakeStreamSpecsCalculator.addSupportedStreamSpecs(
+            defaultPrivStreamSpec.copy(dynamicRange = DynamicRange.SDR),
+            defaultPrivStreamSpec.copy(dynamicRange = DynamicRange.HLG_10_BIT),
+        )
+        val sdrFeature = FakeDynamicRangeFeature(DynamicRange.SDR)
+        assertThat(sdrFeature.featureType).isEqualTo(HDR_HLG10.featureType)
+
+        // Act 1: HDR_HLG10 is prioritized higher than DynamicRange.SDR feature
+        val result1 =
+            defaultResolver.resolveFeatureGroup(
+                SessionConfig(
+                    listOf(preview),
+                    preferredFeatureGroup = listOf(HDR_HLG10, sdrFeature),
+                )
+            )
+
+        // Assert 1: Returns Supported with HDR_HLG10 as resolved feature.
+        assertThat(result1).isInstanceOf(Supported::class.java)
+        val resolvedFeatureCombination1 = (result1 as Supported).resolvedFeatureGroup
+        assertThat(resolvedFeatureCombination1.features).containsExactly(HDR_HLG10)
+
+        // Act 2: HDR_HLG10 is prioritized lower than DynamicRange.SDR feature
+        val result2 =
+            defaultResolver.resolveFeatureGroup(
+                SessionConfig(
+                    listOf(preview),
+                    preferredFeatureGroup = listOf(sdrFeature, HDR_HLG10),
+                )
+            )
+
+        // Assert 2: Returns Supported with SDR as resolved feature.
+        assertThat(result2).isInstanceOf(Supported::class.java)
+        val resolvedFeatureCombination2 = (result2 as Supported).resolvedFeatureGroup
+        assertThat(resolvedFeatureCombination2.features).containsExactly(sdrFeature)
+    }
+
+    @Test
     fun resolve_highestPriorityPreferredIsUnsupportedWithRequired_returnsSupportedCorrectly() {
         // Arrange: Support HDR + UltraHDR + Stabilization and 60FPS + UltraHDR + Stabilization
         fakeStreamSpecsCalculator.addSupportedStreamSpecs(
@@ -754,5 +798,10 @@ class DefaultFeatureGroupResolverTest {
             VideoStabilization.ON -> OFF
             VideoStabilization.PREVIEW -> ON
         }
+    }
+
+    data class FakeDynamicRangeFeature(private val dynamicRange: DynamicRange) :
+        GroupableFeature() {
+        override val featureTypeInternal: FeatureTypeInternal = FeatureTypeInternal.DYNAMIC_RANGE
     }
 }

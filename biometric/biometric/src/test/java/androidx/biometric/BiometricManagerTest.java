@@ -37,6 +37,7 @@ import android.os.Build;
 import androidx.biometric.BiometricManager.AuthenticatorTypes;
 import androidx.biometric.BiometricManager.Authenticators;
 import androidx.test.core.app.ApplicationProvider;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.SdkSuppress;
 
 import org.jspecify.annotations.NonNull;
@@ -48,17 +49,17 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 @SuppressWarnings("deprecation")
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 @DoNotInstrument
 public class BiometricManagerTest {
     @Rule
     public final MockitoRule mocks = MockitoJUnit.rule();
-    @Mock private androidx.core.hardware.fingerprint.FingerprintManagerCompat mFingerprintManager;
+    @Mock
+    private androidx.core.hardware.fingerprint.FingerprintManagerCompat mFingerprintManager;
 
     private Context mContext;
 

@@ -44,5 +44,5 @@ public actual class DatabaseConfiguration(
     /* The SQLite Driver for the database. */
     public actual val sqliteDriver: SQLiteDriver,
     /* The Coroutine context for the database. */
-    public actual val queryCoroutineContext: CoroutineContext?,
+    public actual val queryCoroutineContext: CoroutineContext,
 )

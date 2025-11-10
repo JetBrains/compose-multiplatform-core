@@ -40,10 +40,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.spatial.ContentEdge
-import androidx.xr.compose.spatial.GravityAlignedSubspace
 import androidx.xr.compose.spatial.Orbiter
 import androidx.xr.compose.spatial.SpatialElevation
 import androidx.xr.compose.spatial.SpatialElevationLevel
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.testapp.R
 import androidx.xr.compose.testapp.ui.components.CommonTestPanel
@@ -83,8 +83,7 @@ class ModeChange : ComponentActivity() {
 
     @Composable
     private fun FullSpaceMainPanel(renderingSession: Session) {
-
-        GravityAlignedSubspace {
+        Subspace {
             SpatialRow {
                 CommonTestPanel(
                     size = DpVolumeSize(320.dp, 240.dp, 0.dp),

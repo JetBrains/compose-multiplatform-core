@@ -99,26 +99,26 @@ final class FeaturesImpl implements Features {
                         >= AppSearchVersionUtil.TExtensionVersions.M2023_11;
 
             // SDK extension V Base features
+            case Features.ENTERPRISE_GLOBAL_SEARCH_SESSION:
+                // fall through
             case Features.LIST_FILTER_HAS_PROPERTY_FUNCTION:
                 // fall through
             case Features.SCHEMA_GET_INDEXABLE_NESTED_PROPERTIES:
+                // fall through
+            case Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES:
+                // fall through
+            case Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA:
+                // fall through
+            case Features.SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG:
+                // fall through
+            case Features.SET_SCHEMA_REQUEST_ADD_SCHEMA_TYPE_VISIBLE_TO_CONFIG:
+                // fall through
+            case Features.SET_SCHEMA_REQUEST_SET_PUBLICLY_VISIBLE:
                 return BuildCompat.T_EXTENSION_INT
                         >= AppSearchVersionUtil.TExtensionVersions.V_BASE;
 
             // Android V features
-            case Features.SEARCH_SPEC_GROUPING_TYPE_PER_SCHEMA:
-                // fall through
             case Features.SCHEMA_ADD_PARENT_TYPE:
-                // fall through
-            case Features.SEARCH_SPEC_ADD_FILTER_PROPERTIES:
-                // fall through
-            case Features.SEARCH_SPEC_SET_SEARCH_SOURCE_LOG_TAG:
-                // fall through
-            case Features.SET_SCHEMA_REQUEST_SET_PUBLICLY_VISIBLE:
-                // fall through
-            case Features.SET_SCHEMA_REQUEST_ADD_SCHEMA_TYPE_VISIBLE_TO_CONFIG:
-                // fall through
-            case Features.ENTERPRISE_GLOBAL_SEARCH_SESSION:
                 return Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM;
 
             // M-2024-08 Features

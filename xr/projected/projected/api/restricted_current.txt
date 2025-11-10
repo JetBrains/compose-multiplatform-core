@@ -23,16 +23,16 @@ package androidx.xr.projected {
     field public static final androidx.xr.projected.ProjectedContext INSTANCE;
   }
 
-  public final class ProjectedController implements java.lang.AutoCloseable {
+  public final class ProjectedDisplayController implements java.lang.AutoCloseable {
     method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void addLayoutParamsFlags(int flags);
     method public void close();
-    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedController>);
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
     method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void removeLayoutParamsFlags(int flags);
-    field public static final androidx.xr.projected.ProjectedController.Companion Companion;
+    field public static final androidx.xr.projected.ProjectedDisplayController.Companion Companion;
   }
 
-  public static final class ProjectedController.Companion {
-    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedController>);
+  public static final class ProjectedDisplayController.Companion {
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ProjectedInputEvent {

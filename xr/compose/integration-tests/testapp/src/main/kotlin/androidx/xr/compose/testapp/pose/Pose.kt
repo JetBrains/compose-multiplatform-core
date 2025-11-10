@@ -37,7 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.compose.platform.LocalSession
-import androidx.xr.compose.spatial.ApplicationSubspace
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SceneCoreEntity
 import androidx.xr.compose.subspace.SpatialBox
 import androidx.xr.compose.subspace.SpatialColumn
@@ -85,7 +85,7 @@ class Pose : ComponentActivity() {
 
         setContent {
             IntegrationTestsAppTheme {
-                ApplicationSubspace(
+                Subspace(
                     modifier =
                         SubspaceModifier.sizeIn(
                             maxWidth = 20.meters.toDp(),

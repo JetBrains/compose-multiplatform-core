@@ -285,7 +285,7 @@ class OrbiterTest {
         composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(SubspaceModifier.width(200.dp).height(200.dp).testTag("panel")) {
                     Orbiter(ContentEdge.Top) {
                         // The content of the Orbiter. We'll use its size, which is constrained
@@ -312,7 +312,7 @@ class OrbiterTest {
         var panelHeightDp by mutableStateOf(200.dp)
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialPanel(
                     modifier =
                         SubspaceModifier.width(panelWidthDp)
@@ -351,7 +351,7 @@ class OrbiterTest {
         composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialMainPanel(SubspaceModifier.width(200.dp).height(200.dp).testTag("panel"))
                 Orbiter(ContentEdge.Top) {
                     // The content of the Orbiter. We'll use its size, which is constrained
@@ -375,7 +375,7 @@ class OrbiterTest {
         var panelHeightDp by mutableStateOf(200.dp)
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 SpatialMainPanel(
                     modifier =
                         SubspaceModifier.width(panelWidthDp)
@@ -407,7 +407,7 @@ class OrbiterTest {
     @Test
     fun orbiter_contentLargerThanParent_isConstrainedBySpatialPanel() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 // Parent panel with a fixed size
                 SpatialPanel(SubspaceModifier.size(200.dp)) {
                     Orbiter(ContentEdge.Top) {
@@ -428,7 +428,7 @@ class OrbiterTest {
     @Test
     fun orbiter_contentLargerThanParent_isConstrainedByMainPanel() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 // Main panel with a fixed size
                 SpatialMainPanel(SubspaceModifier.size(200.dp))
                 Orbiter(ContentEdge.Top) {
@@ -475,7 +475,7 @@ class OrbiterTest {
     @Test
     fun orbiter_inSubspace_noMainPanel_isSizeZero() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 Orbiter(ContentEdge.Top) {
                     // The content of the Orbiter. We'll use its size, which is constrained
                     // by the parent's panel size, to verify the change.
@@ -493,7 +493,7 @@ class OrbiterTest {
     @Test
     fun orbiter_inSubspace_noSpatialCapabilities_doesNotThrow() {
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 CompositionLocalProvider(
                     LocalSpatialCapabilities provides SpatialCapabilities.NoCapabilities
                 ) {

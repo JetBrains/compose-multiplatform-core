@@ -25,7 +25,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.compose.spatial.ApplicationSubspace
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.alpha
@@ -410,7 +409,7 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(defaultDpPerMeter = 1000f)
 
         composeTestRule.setContent {
-            ApplicationSubspace(allowUnboundedSubspace = true) {
+            Subspace(allowUnboundedSubspace = true) {
                 SpatialGltfModel(
                     source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")),
                     modifier = SubspaceModifier.testTag("model"),
@@ -447,7 +446,7 @@ class SpatialGltfModelTest {
         )
 
         composeTestRule.setContent {
-            ApplicationSubspace(allowUnboundedSubspace = true) {
+            Subspace(allowUnboundedSubspace = true) {
                 SpatialGltfModel(
                     source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")),
                     modifier = SubspaceModifier.testTag("model"),
@@ -482,7 +481,7 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(defaultDpPerMeter = 1000f)
 
         composeTestRule.setContent {
-            ApplicationSubspace(allowUnboundedSubspace = true) {
+            Subspace(allowUnboundedSubspace = true) {
                 SpatialGltfModel(
                     source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")),
                     modifier = SubspaceModifier.testTag("model").size(200.dp),
@@ -510,7 +509,7 @@ class SpatialGltfModelTest {
         composeTestRule.configureFakeSession(defaultDpPerMeter = 1000f)
 
         composeTestRule.setContent {
-            ApplicationSubspace(allowUnboundedSubspace = true) {
+            Subspace(allowUnboundedSubspace = true) {
                 SpatialBox(SubspaceModifier.size(200.dp)) {
                     SpatialGltfModel(
                         source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")),
@@ -560,7 +559,7 @@ class SpatialGltfModelTest {
         )
 
         composeTestRule.setContent {
-            ApplicationSubspace(allowUnboundedSubspace = true) {
+            Subspace(allowUnboundedSubspace = true) {
                 SpatialGltfModel(
                     source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")),
                     modifier =
@@ -619,7 +618,7 @@ class SpatialGltfModelTest {
         )
 
         composeTestRule.setContent {
-            ApplicationSubspace(allowUnboundedSubspace = true) {
+            Subspace(allowUnboundedSubspace = true) {
                 // Parent provides the constraints
                 SpatialBox(SubspaceModifier.size(1000.dp)) {
                     SpatialGltfModel(
@@ -676,7 +675,7 @@ class SpatialGltfModelTest {
         )
 
         composeTestRule.setContent {
-            ApplicationSubspace(allowUnboundedSubspace = true) {
+            Subspace(allowUnboundedSubspace = true) {
                 SpatialGltfModel(
                     source = SpatialGltfModelSource.fromPath(Paths.get("asset.glb")),
                     modifier =
@@ -732,7 +731,7 @@ class SpatialGltfModelTest {
         )
 
         composeTestRule.setContent {
-            ApplicationSubspace {
+            Subspace {
                 // Provide non-zero min constraints
                 SpatialBox(
                     modifier =
