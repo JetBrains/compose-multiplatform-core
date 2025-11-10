@@ -116,10 +116,9 @@ private fun Project.configureComponentPublishing(
     val androidLibrariesSetProvider: Provider<Set<String>> = provider {
         val androidxAndroidProjects = mutableSetOf<String>()
         // Check every project is the project map to see if they are an Android Library
-        // TODO mavenCoordinatesToProjectPathMap doesn't have jetbrains groups
-        val projectModules = extension.mavenCoordinatesToProjectPathMap
-        for ((mavenCoordinates, projectPath) in projectModules) {
+        for (projectPath in JetBrainsPublication.projectPathToLibrary.keys) {
             project.findProject(projectPath)?.let { project ->
+                val mavenCoordinates = "${project.group}:${project.name}"
                 if (project.plugins.hasPlugin(LibraryPlugin::class.java)) {
                     androidxAndroidProjects.add(mavenCoordinates)
                 }
