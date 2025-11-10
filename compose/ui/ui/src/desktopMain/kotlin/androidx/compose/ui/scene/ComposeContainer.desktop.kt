@@ -57,6 +57,7 @@ import javax.swing.SwingUtilities
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineExceptionHandler
+import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.skia.Canvas
 import org.jetbrains.skiko.MainUIDispatcher
 import org.jetbrains.skiko.SkiaLayerAnalytics
@@ -120,6 +121,7 @@ internal class ComposeContainer(
             onWindowContainerPositionChanged()
         }
 
+    @VisibleForTesting
     val architectureComponentsOwner = DefaultArchitectureComponentsOwner(savedState)
 
     private val coroutineExceptionHandler = DesktopCoroutineExceptionHandler()

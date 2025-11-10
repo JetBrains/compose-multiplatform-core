@@ -204,7 +204,7 @@ internal class ComposeWindow(
         isWindowFocused = true
     }
     @VisibleForTesting
-    internal val archComponentsOwner = DefaultArchitectureComponentsOwner(null)
+    internal val archComponentsOwner = DefaultArchitectureComponentsOwner()
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -421,7 +421,6 @@ internal class ComposeWindow(
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
-        archComponentsOwner.enableSavedStateHandles()
         scene.setContent {
             CompositionLocalProvider(
                 LocalSystemTheme provides systemThemeObserver.currentSystemTheme.value,
@@ -445,6 +444,7 @@ internal class ComposeWindow(
             )
         }
 
+        archComponentsOwner.enableSavedStateHandles()
         archComponentsOwner.lifecycle.handleLifecycleEvent(
             if (document.hasFocus()) Lifecycle.Event.ON_RESUME
             else Lifecycle.Event.ON_START

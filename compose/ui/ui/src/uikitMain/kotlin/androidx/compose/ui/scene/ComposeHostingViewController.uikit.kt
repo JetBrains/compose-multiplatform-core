@@ -544,8 +544,7 @@ internal class ComposeHostingViewController(
     }
 
     private val windowScene: UIWindowScene?
-        get() =
-            view.window?.windowScene
+        get() = view.window?.windowScene
 }
 
 private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {

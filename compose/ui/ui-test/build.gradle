@@ -183,6 +183,7 @@ if (AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             skikoTest.dependencies {
                 api(project(":compose:foundation:foundation"))
                 api(project(":compose:material:material"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-compose"))
                 implementation(libs.kotlinTest)
                 implementation(libs.atomicFu)
                 implementation(project(":kruth:kruth"))
