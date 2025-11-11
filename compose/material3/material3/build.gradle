@@ -183,6 +183,10 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
             skikoTest.dependencies {
                 implementation(libs.kotlinTest)
+                // Test against project dependencies
+                implementation(project(":compose:foundation:foundation"))
+                implementation(project(":compose:ui:ui"))
+                implementation(project(":compose:runtime:runtime"))
                 implementation(project(":compose:ui:ui-test"))
                 def navigationEventVersion = project.findProperty('artifactRedirection.version.androidx.navigationevent')
                 implementation("androidx.navigationevent:navigationevent-testing:$navigationEventVersion")
