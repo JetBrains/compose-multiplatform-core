@@ -179,7 +179,6 @@ internal class OnVisibilityChangedNode(
     var handle: DelegatableNode.RegistrationHandle? = null
     var job: Job? = null
     var lastResult = false
-    var firedOnce = false
     var lastBounds: RelativeLayoutBounds? = null
     var lastViewport: RelativeLayoutBounds? = null
         set(value) {
@@ -210,9 +209,8 @@ internal class OnVisibilityChangedNode(
             if (viewport != null) bounds.fractionVisibleIn(viewport)
             else bounds.fractionVisibleInWindow()
         val newResult = fractionVisible > minFractionVisible || fractionVisible == 1f
-        if (!firedOnce || newResult != lastResult) {
+        if (newResult != lastResult) {
             lastResult = newResult
-            firedOnce = true
             startTimer()
         }
     }
@@ -243,7 +241,7 @@ internal class OnVisibilityChangedNode(
     }
 
     fun fireExitIfNeeded() {
-        if (lastResult && firedOnce) {
+        if (lastResult) {
             job?.cancel()
             lastResult = false
             callback(false)
@@ -257,7 +255,6 @@ internal class OnVisibilityChangedNode(
         lastResult = false
         lastBounds = null
         lastViewport = null
-        firedOnce = false
     }
 
     fun updateViewport() {
