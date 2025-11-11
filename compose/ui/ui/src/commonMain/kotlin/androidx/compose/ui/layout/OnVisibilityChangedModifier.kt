@@ -179,6 +179,7 @@ internal class OnVisibilityChangedNode(
     var handle: DelegatableNode.RegistrationHandle? = null
     var job: Job? = null
     var lastResult = false
+    var lastReportedResult = false
     var lastBounds: RelativeLayoutBounds? = null
     var lastViewport: RelativeLayoutBounds? = null
 
@@ -208,26 +209,29 @@ internal class OnVisibilityChangedNode(
         val newResult = fractionVisible > minFractionVisible || fractionVisible == 1f
         if (newResult != lastResult) {
             lastResult = newResult
-            startTimer()
-        }
-    }
-
-    fun startTimer() {
-        val minDurationMs = minDurationMs
-        if (minDurationMs == 0L) triggerCallback()
-        else {
             job?.cancel()
-            job =
-                coroutineScope.launch {
-                    delay(minDurationMs)
+            job = null
+            if (newResult != lastReportedResult) {
+                // only wait for minDurationMs if the result is visible, not visible events are
+                // always reported immediately
+                if (newResult && minDurationMs > 0) {
+                    job =
+                        coroutineScope.launch {
+                            delay(minDurationMs)
+                            triggerCallback()
+                        }
+                } else {
                     triggerCallback()
                 }
+            }
         }
     }
 
     fun triggerCallback() {
         job?.cancel()
+        job = null
         callback(lastResult)
+        lastReportedResult = lastResult
     }
 
     fun forceUpdate() {
@@ -238,10 +242,13 @@ internal class OnVisibilityChangedNode(
     }
 
     fun fireExitIfNeeded() {
-        if (lastResult) {
-            job?.cancel()
-            lastResult = false
-            callback(false)
+        job?.cancel()
+        job = null
+        lastResult = false
+        // lastReportedResult is different from lastResult if we have a non zero minDurationMs,
+        // it might be that we are visible (lastResult == true), but we didn't yet report it
+        if (lastReportedResult) {
+            triggerCallback()
         }
     }
 

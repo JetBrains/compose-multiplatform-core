@@ -476,6 +476,78 @@ class OnVisibilityChangedTest(private val useDelegation: Boolean) {
         }
     }
 
+    @Test
+    fun testNotVisibleCalledWhenDisposed_nonZeroMinDurationMs() {
+        val calls = mutableListOf<Boolean>()
+        var shouldCompose by mutableStateOf(true)
+        rule.setContent {
+            Box {
+                if (shouldCompose) {
+                    Box(
+                        Modifier.onVisibilityChangedTestImpl(minDurationMs = 500) { visible ->
+                                calls.add(visible)
+                            }
+                            .size(100.dp)
+                    )
+                }
+            }
+        }
+        rule.waitUntil(1000) { !calls.isEmpty() }
+        rule.runOnIdle {
+            assertThat(calls).isEqualTo(listOf(true))
+            shouldCompose = false
+        }
+        rule.runOnIdle { assertThat(calls).isEqualTo(listOf(true, false)) }
+    }
+
+    @Test
+    fun testNoCallbacksCalledWhenDisposedBeforeMinDurationMsPassed() {
+        val calls = mutableListOf<Boolean>()
+        var shouldCompose by mutableStateOf(true)
+        rule.setContent {
+            Box {
+                if (shouldCompose) {
+                    Box(
+                        Modifier.onVisibilityChangedTestImpl(minDurationMs = 1_000_000) { visible ->
+                                calls.add(visible)
+                            }
+                            .size(100.dp)
+                    )
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertThat(calls).isEmpty()
+            shouldCompose = false
+        }
+        rule.runOnIdle { assertThat(calls).isEmpty() }
+    }
+
+    @Test
+    fun testNotVisibleNotCalledWhenWasVisibleForLessThanMinDuration() {
+        var called = 0
+        var parentSize by mutableStateOf(100.dp)
+        val callback: (Boolean) -> Unit = { visible: Boolean -> called++ }
+        rule.setContent {
+            Column {
+                Column(Modifier.size(parentSize)) {
+                    Box(
+                        Modifier.requiredSize(100.dp)
+                            .onVisibilityChangedTestImpl(
+                                minDurationMs = 1_000_000,
+                                callback = callback,
+                            )
+                    )
+                }
+            }
+        }
+        rule.runOnIdle {
+            assertEquals(0, called)
+            parentSize = 50.dp
+        }
+        rule.runOnIdle { assertEquals(0, called) }
+    }
+
     fun Modifier.onVisibilityChangedTestImpl(
         @IntRange(from = 0) minDurationMs: Long = 0,
         @FloatRange(from = 0.0, to = 1.0) minFractionVisible: Float = 1f,
