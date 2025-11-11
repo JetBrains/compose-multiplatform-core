@@ -61,17 +61,17 @@ abstract class JetBrainsVerifyDependencyVersionsTask : DefaultTask() {
     }
 
     private fun verifyDependencyVersion(dependency: AndroidXDependency) {
-        val projectVersionExtra = Version(version.get()).extra ?: ""
-        val dependencyVersionExtra = Version(dependency.version).extra ?: ""
-        val projectReleasePhase = releasePhase(projectVersionExtra)
+        val projectVersion = Version(version.get())
+        val dependencyVersion = Version(dependency.version)
+        val projectReleasePhase = releasePhase(projectVersion)
         if (projectReleasePhase < 0) {
-            throw GradleException("Project has unexpected release phase $projectVersionExtra")
+            throw GradleException("Project has unexpected release phase $projectVersion")
         }
-        val dependencyReleasePhase = releasePhase(dependencyVersionExtra)
+        val dependencyReleasePhase = releasePhase(dependencyVersion)
         if (dependencyReleasePhase < 0) {
             throw GradleException(
                 "Dependency ${dependency.group}:${dependency.name}" +
-                    ":${dependency.version} has unexpected release phase $dependencyVersionExtra"
+                    ":${dependency.version} has unexpected release phase $dependencyVersion"
             )
         }
         if (dependencyReleasePhase < projectReleasePhase) {
@@ -85,13 +85,14 @@ abstract class JetBrainsVerifyDependencyVersionsTask : DefaultTask() {
         }
     }
 
-    private fun releasePhase(versionExtra: String): Int {
+    private fun releasePhase(version: Version): Int {
         return when {
-            versionExtra == "" -> 4
-            versionExtra.startsWith("-rc") -> 3
-            versionExtra.startsWith("-beta") -> 2
-            versionExtra.startsWith("-alpha") -> 1
-            versionExtra.startsWith("-SNAPSHOT") -> 0
+            version.isStable() -> 5
+            version.isRC() -> 4
+            version.isBeta() -> 3
+            version.isAlpha() -> 2
+            version.isDev() -> 1
+            version.isSnapshot() -> 0
             else -> -1
         }
     }

@@ -257,7 +257,7 @@ abstract class AndroidXExtension(val project: Project) : ExtensionAware {
         if (group != null) {
             project.group = group
         }
-        project.version = if (isSnapshotBuild()) version.copy(extra = "-SNAPSHOT") else version
+        project.version = if (isSnapshotBuild()) version.copy(preRelease = "-SNAPSHOT", build = null) else version
         versionIsSet = true
     }
 
