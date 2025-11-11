@@ -17,7 +17,6 @@
 package org.jetbrains.androidx.build
 
 import androidx.build.AndroidXDependency
-import androidx.build.AndroidXExtension
 import androidx.build.Version
 import androidx.build.multiplatformExtension
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
@@ -62,21 +61,8 @@ abstract class JetBrainsVerifyDependencyVersionsTask : DefaultTask() {
     }
 
     private fun verifyDependencyVersion(dependency: AndroidXDependency) {
-        // If the version is unspecified then treat as an alpha version. If the depending project's
-        // version is unspecified then it won't matter, and if the dependency's version is
-        // unspecified then any non alpha project won't be able to depend on it to ensure safety.
-        val projectVersionExtra =
-            if (version.get() == AndroidXExtension.DEFAULT_UNSPECIFIED_VERSION) {
-                "-alpha01"
-            } else {
-                Version(version.get()).extra ?: ""
-            }
-        val dependencyVersionExtra =
-            if (dependency.version == AndroidXExtension.DEFAULT_UNSPECIFIED_VERSION) {
-                "-alpha01"
-            } else {
-                Version(dependency.version).extra ?: ""
-            }
+        val projectVersionExtra = Version(version.get()).extra ?: ""
+        val dependencyVersionExtra = Version(dependency.version).extra ?: ""
         val projectReleasePhase = releasePhase(projectVersionExtra)
         if (projectReleasePhase < 0) {
             throw GradleException("Project has unexpected release phase $projectVersionExtra")
