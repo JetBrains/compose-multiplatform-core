@@ -28,7 +28,7 @@ jobs:
         with:
           simulator-name: ${{ matrix.device }}
           simulator-version: '16.1'
-          xcode-app: Xcode_14.1.app
+          xcode-app: Xcode_15.2.app
 
   # List of available Xcode versions and devices:
   # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md#xcode
