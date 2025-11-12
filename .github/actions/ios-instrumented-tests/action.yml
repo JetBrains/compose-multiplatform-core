@@ -34,6 +34,7 @@ runs:
       id: get-simulator-udid
       shell: bash
       run: |
+        echo "::group::HELLO GROUP"
         DEVICE_NAME="${{ inputs.simulator-name }}"
         DEVICE_VERSION="${{ inputs.simulator-version }}"
         
@@ -65,6 +66,7 @@ runs:
         # make available to later steps and other jobs if needed
         echo "SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
         echo "simulator-id=$SIMULATOR_ID" >> "$GITHUB_OUTPUT"
+        echo "::endgroup::"
 
     - name: Configure Simulator
       shell: bash
