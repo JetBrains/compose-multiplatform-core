@@ -288,7 +288,7 @@ class BasicInteractionTest {
             // Because on iOS < 16 the context menu is shown in a separate window,
             // it's not fully interactive with the default Tap action.
             findNodeWithLabel(label)
-                .touchDown(forceNodeWindow = true)
+                .touchDown(useNodeWindow = true)
                 .hold()
                 .also { delay(100) }
                 .up()

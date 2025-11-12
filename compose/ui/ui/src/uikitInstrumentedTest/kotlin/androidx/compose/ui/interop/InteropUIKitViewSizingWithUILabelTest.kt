@@ -361,8 +361,8 @@ class InteropUIKitViewSizingWithUILabelTest {
 
     @Test
     fun testUILabelMultiLineLongTextFixedHeight() = runUIKitInstrumentedTestWithInterop { overlay ->
-        var unboundedTextRect = DpSize.Zero
-        var boundedHeightTextRect = DpSize.Zero
+        var unboundedTextSize = DpSize.Zero
+        var boundedHeightTextSize = DpSize.Zero
 
         setContent {
             Column {
@@ -374,7 +374,7 @@ class InteropUIKitViewSizingWithUILabelTest {
                         }
                     },
                     modifier = Modifier.onGloballyPositioned {
-                        unboundedTextRect = it.boundsInRoot().size.toDpSize(density)
+                        unboundedTextSize = it.boundsInRoot().size.toDpSize(density)
                     },
                     properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
@@ -388,16 +388,16 @@ class InteropUIKitViewSizingWithUILabelTest {
                     modifier = Modifier
                         .height(100.dp)
                         .onGloballyPositioned {
-                            boundedHeightTextRect = it.boundsInRoot().size.toDpSize(density)
+                            boundedHeightTextSize = it.boundsInRoot().size.toDpSize(density)
                         },
                     properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
 
-        assertEquals(100.dp, boundedHeightTextRect.height)
-        assertEquals(unboundedTextRect.width, boundedHeightTextRect.width)
-        assertTrue(boundedHeightTextRect.height < unboundedTextRect.height)
+        assertEquals(100.dp, boundedHeightTextSize.height)
+        assertEquals(unboundedTextSize.width, boundedHeightTextSize.width)
+        assertTrue(boundedHeightTextSize.height < unboundedTextSize.height)
     }
 
     @Test

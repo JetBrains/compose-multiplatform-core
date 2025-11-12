@@ -223,16 +223,17 @@ internal class UIKitInstrumentedTest {
      * Simulates a touch-down event at the specified position on the screen.
      *
      * @param position The position on the root hosting controller.
-     * @param forceWindow If true, the window hosting the view will be used to send the touch event.
+     * @param window will be used to handle touches; otherwise,
+     * the window hosting the view will be used.
      * @return A UITouch object representing the touch interaction.
      */
-    fun touchDown(position: DpOffset, forceWindow: UIWindow? = null): UITouch {
+    fun touchDown(position: DpOffset, window: UIWindow? = null): UITouch {
         val positionOnWindow = hostingViewController.view.convertPoint(
             point = position.toCGPoint(),
             toView = appDelegate.window()
         )
 
-        val window = forceWindow ?: appDelegate.window()!!
+        val targetWindow = window ?: appDelegate.window()!!
             .windowScene!!
             .windows
             .findLast {
@@ -240,7 +241,7 @@ internal class UIKitInstrumentedTest {
                 it.hitTest(position.toCGPoint(), it.getTouchesEvent()) != null
             } as UIWindow
 
-        return window.touchDown(positionOnWindow.asDpOffset())
+        return targetWindow.touchDown(positionOnWindow.asDpOffset())
     }
 
     /**
@@ -270,9 +271,9 @@ internal class UIKitInstrumentedTest {
     /**
      * Simulates a touch-down event at the center of a given AccessibilityTestNode.
      */
-    fun AccessibilityTestNode.touchDown(forceNodeWindow: Boolean = false): UITouch {
+    fun AccessibilityTestNode.touchDown(useNodeWindow: Boolean = false): UITouch {
         val frame = frame ?: error("Internal error. Frame is missing.")
-        val window = (element as? UIView)?.window?.takeIf { forceNodeWindow }
+        val window = (element as? UIView)?.window?.takeIf { useNodeWindow }
         return touchDown(frame.center(), window)
     }
 
