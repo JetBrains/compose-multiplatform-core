@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.size
 import androidx.compose.ui.unit.toDpRect
+import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.width
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -360,8 +361,8 @@ class InteropUIKitViewSizingWithUILabelTest {
 
     @Test
     fun testUILabelMultiLineLongTextFixedHeight() = runUIKitInstrumentedTestWithInterop { overlay ->
-        var unboundedTextRect = DpRectZero()
-        var boundedHeightTextRect = DpRectZero()
+        var unboundedTextRect = DpSize.Zero
+        var boundedHeightTextRect = DpSize.Zero
 
         setContent {
             Column {
@@ -372,7 +373,9 @@ class InteropUIKitViewSizingWithUILabelTest {
                             text = LONG_TEXT
                         }
                     },
-                    modifier = Modifier.onGloballyPositioned { unboundedTextRect = it.boundsInRoot().toDpRect(density) },
+                    modifier = Modifier.onGloballyPositioned {
+                        unboundedTextRect = it.boundsInRoot().size.toDpSize(density)
+                    },
                     properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
                 UIKitView(
@@ -384,14 +387,16 @@ class InteropUIKitViewSizingWithUILabelTest {
                     },
                     modifier = Modifier
                         .height(100.dp)
-                        .onGloballyPositioned { boundedHeightTextRect = it.boundsInRoot().toDpRect(density) },
+                        .onGloballyPositioned {
+                            boundedHeightTextRect = it.boundsInRoot().size.toDpSize(density)
+                        },
                     properties = UIKitInteropProperties(placedAsOverlay = overlay)
                 )
             }
         }
 
         assertEquals(100.dp, boundedHeightTextRect.height)
-        assertEquals(unboundedTextRect.width, boundedHeightTextRect.width, )
+        assertEquals(unboundedTextRect.width, boundedHeightTextRect.width)
         assertTrue(boundedHeightTextRect.height < unboundedTextRect.height)
     }
 

@@ -93,6 +93,26 @@ internal fun runUIKitInstrumentedTest(
 }
 
 /**
+ * Sets up the test environment for iOS instrumented tests, runs the given [test][testBlock]
+ * and then tears down the test environment. Use the methods on [UIKitInstrumentedTest]
+ * in the test to find compose content and make assertions on it.
+ * @param [ignoreIf] Condition to ignore the test.
+ * @param [ignoreNotes] A description of why the test is ignored if it doesn't run.
+ * @param [testBlock] The test function.
+ */
+internal fun runUIKitInstrumentedTest(
+    ignoreIf: Boolean,
+    ignoreNotes: String,
+    testBlock: UIKitInstrumentedTest.() -> Unit
+) {
+    if (ignoreIf) {
+        println("Ignored test: $ignoreNotes")
+        return
+    }
+    runUIKitInstrumentedTest(testBlock)
+}
+
+/**
  * A class designed for instrumented testing of UIKit-related functionality. It provides methods for setting
  * content, simulating user interactions, and managing application lifecycle during testing scenarios.
  *
@@ -203,15 +223,16 @@ internal class UIKitInstrumentedTest {
      * Simulates a touch-down event at the specified position on the screen.
      *
      * @param position The position on the root hosting controller.
+     * @param forceWindow If true, the window hosting the view will be used to send the touch event.
      * @return A UITouch object representing the touch interaction.
      */
-    fun touchDown(position: DpOffset): UITouch {
+    fun touchDown(position: DpOffset, forceWindow: UIWindow? = null): UITouch {
         val positionOnWindow = hostingViewController.view.convertPoint(
             point = position.toCGPoint(),
             toView = appDelegate.window()
         )
 
-        val window = appDelegate.window()!!
+        val window = forceWindow ?: appDelegate.window()!!
             .windowScene!!
             .windows
             .findLast {
@@ -249,9 +270,10 @@ internal class UIKitInstrumentedTest {
     /**
      * Simulates a touch-down event at the center of a given AccessibilityTestNode.
      */
-    fun AccessibilityTestNode.touchDown(): UITouch {
+    fun AccessibilityTestNode.touchDown(forceNodeWindow: Boolean = false): UITouch {
         val frame = frame ?: error("Internal error. Frame is missing.")
-        return touchDown(frame.center())
+        val window = (element as? UIView)?.window?.takeIf { forceNodeWindow }
+        return touchDown(frame.center(), window)
     }
 
     /**
