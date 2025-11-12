@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.toDpSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.enableSavedStateHandles
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
 import kotlinx.coroutines.Dispatchers
@@ -96,7 +97,7 @@ private class ComposeWindow(
     }
     private val archComponentsOwner = DefaultArchitectureComponentsOwner()
     private val platformContext: PlatformContext =
-        object : PlatformContext by PlatformContext.Empty {
+        object : PlatformContext by PlatformContext.Empty() {
             override val windowInfo get() = _windowInfo
             override val architectureComponentsOwner get() = archComponentsOwner
             override val textInputService get() = macosTextInputService
@@ -109,7 +110,7 @@ private class ComposeWindow(
     private val scene = CanvasLayersComposeScene(
         coroutineContext = Dispatchers.Main,
         platformContext = platformContext,
-        invalidate = skiaLayer::needRedraw,
+        invalidate = skiaLayer::needRender,
     )
     private val renderDelegate = object : SkikoRenderDelegate {
         override fun onRender(canvas: Canvas, width: Int, height: Int, nanoTime: Long) {
@@ -220,6 +221,7 @@ private class ComposeWindow(
             content()
         }
 
+        archComponentsOwner.enableSavedStateHandles()
         // TODO: Properly handle lifecycle events
         archComponentsOwner.lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }

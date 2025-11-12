@@ -72,6 +72,7 @@ import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.enableSavedStateHandles
 import kotlin.coroutines.coroutineContext
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
@@ -107,7 +108,6 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
-import org.w3c.dom.pointerevents.PointerEventInit
 
 private val actualDensity
     get() = window.devicePixelRatio
@@ -214,7 +214,7 @@ internal class ComposeWindow(
     // Used in WebTextInputService. Also see https://youtrack.jetbrains.com/issue/CMP-8611
     private var activeTouchOffset: Offset? = null
 
-    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty {
+    private val platformContext: PlatformContext = object : PlatformContext by PlatformContext.Empty() {
         override val windowInfo get() = _windowInfo
         override val architectureComponentsOwner get() = archComponentsOwner
         override val inputModeManager: InputModeManager = DefaultInputModeManager()
@@ -285,7 +285,7 @@ internal class ComposeWindow(
         }
 
         override val viewConfiguration =
-            object : ViewConfiguration by PlatformContext.Empty.viewConfiguration {
+            object : ViewConfiguration by PlatformContext.DefaultViewConfiguration {
                 override val touchSlop: Float get() = with(density) { 18.dp.toPx() }
             }
 
@@ -443,6 +443,7 @@ internal class ComposeWindow(
             )
         }
 
+        archComponentsOwner.enableSavedStateHandles()
         archComponentsOwner.lifecycle.handleLifecycleEvent(
             if (document.hasFocus()) Lifecycle.Event.ON_RESUME
             else Lifecycle.Event.ON_START

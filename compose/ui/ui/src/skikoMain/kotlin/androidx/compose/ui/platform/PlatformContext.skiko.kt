@@ -44,6 +44,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.enableSavedStateHandles
 import kotlin.reflect.KProperty
 import kotlinx.coroutines.awaitCancellation
 
@@ -68,7 +69,7 @@ interface PlatformContext {
     val architectureComponentsOwner: PlatformArchitectureComponentsOwner get() = EmptyArchitectureComponentsOwner
 
     /**
-     * Indicates if the compose view is positioned in a transparent window.
+     * Indicates if the Compose view is positioned in a transparent window.
      * This is used when rendering the scrim of a dialog - if set to true, a special blending mode
      * will be used to take into account the existing alpha-channel values.
      *
@@ -127,12 +128,12 @@ interface PlatformContext {
     /**
      * Determines if [OwnedLayer] should measure bounds for all drawings.
      * It's required to determine bounds of any graphics even if it was drawn out of measured
-     * layout bounds (for example shadows). It might be used to resize platform views based on
+     * layout bounds (for example, shadows). It might be used to resize platform views based on
      * such bounds.
      */
     val measureDrawLayerBounds: Boolean get() = false
 
-    val viewConfiguration: ViewConfiguration get() = EmptyViewConfiguration
+    val viewConfiguration: ViewConfiguration get() = DefaultViewConfiguration
     val inputModeManager: InputModeManager
     val textInputService: PlatformTextInputService get() = EmptyPlatformTextInputService
 
@@ -155,7 +156,7 @@ interface PlatformContext {
 
     var isKeepScreenOnEnabled: Boolean
         get() = false
-        set(value) {}
+        set(_) {}
 
     /**
      * Votes for a specific frame rate to be used for rendering.
@@ -217,17 +218,34 @@ interface PlatformContext {
         fun onLayoutChange(semanticsOwner: SemanticsOwner, semanticsNodeId: Int)
     }
 
-    companion object {
-        val Empty = object : PlatformContext {
-            override val windowInfo: WindowInfo = WindowInfoImpl().apply {
-                // true is a better default if platform doesn't provide WindowInfo.
-                // otherwise UI will be rendered always in unfocused mode
-                // (hidden textfield cursor, gray titlebar, etc)
-                isWindowFocused = true
-            }
-
-            override val inputModeManager = DefaultInputModeManager()
+    @InternalComposeUiApi
+    open class Empty : PlatformContext {
+        override val windowInfo: WindowInfo = WindowInfoImpl().apply {
+            // true is a better default if the platform doesn't provide WindowInfo.
+            // otherwise UI will always be rendered in unfocused mode
+            // (hidden text field cursor, gray title bar, etc.)
+            isWindowFocused = true
         }
+
+        override val inputModeManager: InputModeManager = DefaultInputModeManager()
+    }
+
+    // This object must be immutable because it is used as a delegate in other ViewConfiguration
+    // implementations
+    @InternalComposeUiApi
+    object DefaultViewConfiguration : ViewConfiguration {
+        override val longPressTimeoutMillis: Long = 500
+        override val doubleTapTimeoutMillis: Long = 300
+        override val doubleTapMinTimeMillis: Long = 40
+        override val touchSlop: Float = 18f
+    }
+
+    // This object must be immutable because it is used directly in several PlatformContext
+    // implementations
+    @InternalComposeUiApi
+    object EmptyFocusManager : FocusManager {
+        override fun clearFocus(force: Boolean) = Unit
+        override fun moveFocus(focusDirection: FocusDirection) = false
     }
 }
 
@@ -235,12 +253,11 @@ private object EmptyPlatformScreenReader : PlatformScreenReader {
     override val isActive: Boolean = false
 }
 
-private object EmptyArchitectureComponentsOwner : DefaultArchitectureComponentsOwner(
+private val EmptyArchitectureComponentsOwner = DefaultArchitectureComponentsOwner(
     enforceMainThread = false
-) {
-    init {
-        lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    }
+).apply {
+    enableSavedStateHandles()
+    setLifecycleState(Lifecycle.State.RESUMED)
 }
 
 internal class DefaultInputModeManager(
@@ -256,13 +273,6 @@ internal class DefaultInputModeManager(
         } else {
             false
         }
-}
-
-internal object EmptyViewConfiguration : ViewConfiguration {
-    override val longPressTimeoutMillis: Long = 500
-    override val doubleTapTimeoutMillis: Long = 300
-    override val doubleTapMinTimeMillis: Long = 40
-    override val touchSlop: Float = 18f
 }
 
 private object EmptyPlatformTextInputService : PlatformTextInputService {
@@ -291,11 +301,6 @@ private object EmptyTextToolbar : TextToolbar {
     ) = Unit
 }
 
-private object EmptyFocusManager : FocusManager {
-    override fun clearFocus(force: Boolean) = Unit
-    override fun moveFocus(focusDirection: FocusDirection) = false
-}
-
 private object EmptyDragAndDropManager : PlatformDragAndDropManager
 private object EmptyPlatformWindowInsets : PlatformWindowInsets
 
@@ -317,11 +322,18 @@ internal class DelegateRootForTestListener : PlatformContext.RootForTestListener
     }
 
     @Suppress("RedundantNullableReturnType")
-    operator fun getValue(thisRef: Any?, property: KProperty<*>): PlatformContext.RootForTestListener? {
+    operator fun getValue(
+        thisRef: Any?,
+        property: KProperty<*>
+    ): PlatformContext.RootForTestListener? {
         return this
     }
 
-    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: PlatformContext.RootForTestListener?) {
+    operator fun setValue(
+        thisRef: Any?,
+        property: KProperty<*>,
+        value: PlatformContext.RootForTestListener?
+    ) {
         listener = value
         sendMissingEvents()
     }
