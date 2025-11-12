@@ -6,6 +6,9 @@ inputs:
   simulator-version:
     description: "Version of the iOS Simulator (example: '16.1')"
     required: true
+  xcode:
+    description: "XCode application name (example: Xcode_16.app)"
+    required: true
 runs:
   using: "composite"
   steps:

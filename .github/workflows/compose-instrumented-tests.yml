@@ -9,7 +9,7 @@ on:
 jobs:
   compose-ios-instrumented-tests-iphone-14-16-0:
     runs-on: macos-13-xlarge
-    name: Compose iOS Instrumented Tests - iPhone 14 (16.0)
+    name: Compose iOS Instrumented Tests - iPhone 14 (16.1)
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
@@ -21,11 +21,12 @@ jobs:
         uses: ./.github/actions/ios-instrumented-tests
         with:
           simulator-name: 'iPhone 14'
-          simulator-version: '16.0'
+          simulator-version: '16.1'
+          xcode: 'Xcode_14.1.app'
 
   compose-ios-instrumented-tests-ipad-16-0:
     runs-on: macos-13-xlarge
-    name: Compose iOS Instrumented Tests - iPad Pro (16.0)
+    name: Compose iOS Instrumented Tests - iPad Pro (16.1)
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
@@ -37,5 +38,5 @@ jobs:
         uses: ./.github/actions/ios-instrumented-tests
         with:
           simulator-name: 'iPad Pro (11-inch) (4th generation)'
-          simulator-version: '16.0'
-
+          simulator-version: '16.1'
+          xcode: 'Xcode_14.1.app'
