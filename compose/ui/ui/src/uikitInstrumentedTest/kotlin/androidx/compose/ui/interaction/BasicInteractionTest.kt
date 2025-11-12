@@ -285,7 +285,7 @@ class BasicInteractionTest {
         if (available(OS.Ios to OSVersion(16))) {
             findNodeWithLabel(label).tap()
         } else {
-            // Because on iOS <= 16 the context menu is shown in a separate window,
+            // Because on iOS < 16 the context menu is shown in a separate window,
             // it's not fully interactive with the default Tap action.
             findNodeWithLabel(label)
                 .touchDown(forceNodeWindow = true)
