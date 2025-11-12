@@ -34,6 +34,10 @@ jobs:
   # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md#xcode
   compose-ios-instrumented-tests-ios-18-6:
     runs-on: macos-15-xlarge
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [ 'iPhone SE (3rd generation)', 'iPhone 14', 'iPad Pro 11-inch (M4)' ]
     name: Compose iOS Instrumented Tests - iOS 18.6
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
@@ -56,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        device: [ 'iPhone SE (3rd generation)', 'iPhone 17', 'iPad Pro 11-inch (M5)' ]
+        device: [ 'iPhone 17', 'iPad Pro 11-inch (M5)' ]
     name: Compose iOS Instrumented Tests - iOS 26.1
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
