@@ -81,7 +81,7 @@ class WindowInsetsPaddingTest {
     @Test
     fun testDisplayCutoutPadding_InterfaceOrientationLandscapeLeft() = runUIKitInstrumentedTest(
         ignoreIf = !available(OS.Ios to OSVersion(16)) || UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad,
-        ignoreNotes = "Device rotation does not work for iOS <= 15 and iPad"
+        ignoreNotes = "Device rotation does not work for iOS < 16 and iPad"
     ) {
         var boxRect = DpRectZero()
 
@@ -112,7 +112,7 @@ class WindowInsetsPaddingTest {
     @Test
     fun testDisplayCutoutPadding_InterfaceOrientationLandscapeRight() = runUIKitInstrumentedTest(
         ignoreIf = !available(OS.Ios to OSVersion(16)) || UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad,
-        ignoreNotes = "Device rotation does not work for iOS <= 15 and iPad"
+        ignoreNotes = "Device rotation does not work for iOS < 16 and iPad"
     ) {
         var boxRect = DpRectZero()
 

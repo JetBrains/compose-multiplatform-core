@@ -58,7 +58,7 @@ class WindowInsetsRulersTest {
     @Test
     fun testDisplayCutoutsForPortrait() = runUIKitInstrumentedTest(
         ignoreIf = !available(OS.Ios to OSVersion(16)) || UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad,
-        ignoreNotes = "Device rotation does not work for iOS <= 16 and iPad"
+        ignoreNotes = "Device rotation does not work for iOS < 16 and iPad"
     ) {
         setContent(interfaceOrientation = UIInterfaceOrientationMaskPortrait) {
             SimpleRulerContent(rulerState = mutableStateOf(DisplayCutout))
