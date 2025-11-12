@@ -9,9 +9,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v5
-
     - name: Setup Prerequisites
       uses: ./.github/actions/setup-prerequisites
 

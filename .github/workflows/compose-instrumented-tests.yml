@@ -13,6 +13,9 @@ jobs:
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
       - name: Run iOS Instrumented Tests
         uses: ./.github/actions/ios-instrumented-tests
         with:
@@ -25,6 +28,9 @@ jobs:
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
       - name: Run iOS Instrumented Tests
         uses: ./.github/actions/ios-instrumented-tests
         with:
