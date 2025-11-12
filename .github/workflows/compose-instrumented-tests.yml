@@ -45,7 +45,7 @@ jobs:
       - name: Configure Simulator
         run: |
           # Boot a test simulator
-          xcrun simctl boot "${{ steps.get-simulator-udid.outputs.simulator-id }}"
+          xcrun simctl boot "$SIMULATOR_ID"
 
           # Write the accessibility flags inside the Simulator:
           xcrun simctl spawn booted defaults write com.apple.Accessibility AccessibilityEnabled -bool true
@@ -64,7 +64,7 @@ jobs:
           xcodebuild test \
             -scheme Launcher \
             -project Launcher.xcodeproj \
-            -destination 'platform=iOS Simulator,id=${{ steps.get-simulator-udid.outputs.simulator-id }}'
+            -destination 'platform=iOS Simulator,id="$SIMULATOR_ID"'
 
       - name: Test Summary
         uses: test-summary/action@v2
