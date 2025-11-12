@@ -7,36 +7,71 @@ on:
       - jb-main
 
 jobs:
-  compose-ios-instrumented-tests-iphone-14-16-0:
-    runs-on: macos-13-xlarge
-    name: Compose iOS Instrumented Tests - iPhone 14 (16.1)
+  # List of available Xcode versions and devices:
+  # https://github.com/actions/runner-images/blob/main/images/macos/macos-13-Readme.md#xcode
+  compose-ios-instrumented-tests-ios-16-1:
+    runs-on: macos-13-arm64-xlarge
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [ 'iPhone SE (3rd generation)', 'iPhone 14', 'iPad Pro (11-inch) (4th generation)' ]
+    name: Compose iOS Instrumented Tests - iOS 16.1
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
 
-      - name: Run iOS Instrumented Tests
+      - name: Run iOS Instrumented Tests - ${{ matrix.device }} (16.1)
         timeout-minutes: 30
         uses: ./.github/actions/ios-instrumented-tests
         with:
-          simulator-name: 'iPhone 14'
+          simulator-name: ${{ matrix.device }}
           simulator-version: '16.1'
           xcode: 'Xcode_14.1.app'
 
-  compose-ios-instrumented-tests-ipad-16-0:
-    runs-on: macos-13-xlarge
-    name: Compose iOS Instrumented Tests - iPad Pro (16.1)
+  # List of available Xcode versions and devices:
+  # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md#xcode
+  compose-ios-instrumented-tests-ios-18-6:
+    runs-on: macos-15-arm64-xlarge
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [ 'iPhone SE (3rd generation)', 'iPhone 16', 'iPad Pro 11-inch (M4)' ]
+    name: Compose iOS Instrumented Tests - iOS 18.6
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
 
-      - name: Run iOS Instrumented Tests
+      - name: Run iOS Instrumented Tests - ${{ matrix.device }} (18.6)
         timeout-minutes: 30
         uses: ./.github/actions/ios-instrumented-tests
         with:
-          simulator-name: 'iPad Pro (11-inch) (4th generation)'
-          simulator-version: '16.1'
-          xcode: 'Xcode_14.1.app'
+          simulator-name: ${{ matrix.device }}
+          simulator-version: '18.6'
+          xcode: 'Xcode_16.4.app'
+
+  # List of available Xcode versions and devices:
+  # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md#xcode
+  compose-ios-instrumented-tests-ios-26-1:
+    runs-on: macos-26-arm64-xlarge
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [ 'iPhone SE (3rd generation)', 'iPhone 17', 'iPad Pro 11-inch (M5)' ]
+    name: Compose iOS Instrumented Tests - iOS 26.1
+    env:
+      GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
+
+      - name: Run iOS Instrumented Tests - ${{ matrix.device }} (26.1)
+        timeout-minutes: 30
+        uses: ./.github/actions/ios-instrumented-tests
+        with:
+          simulator-name: ${{ matrix.device }}
+          simulator-version: '26.1'
+          xcode: 'Xcode_26.0.1.app'
