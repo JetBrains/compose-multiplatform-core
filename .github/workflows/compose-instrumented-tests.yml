@@ -10,7 +10,7 @@ jobs:
   # List of available Xcode versions and devices:
   # https://github.com/actions/runner-images/blob/main/images/macos/macos-13-Readme.md#xcode
   compose-ios-instrumented-tests-ios-16-1:
-    runs-on: macos-13-arm64-xlarge
+    runs-on: macos-13-xlarge
     strategy:
       fail-fast: false
       matrix:
@@ -33,7 +33,7 @@ jobs:
   # List of available Xcode versions and devices:
   # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md#xcode
   compose-ios-instrumented-tests-ios-18-6:
-    runs-on: macos-15-arm64-xlarge
+    runs-on: macos-15-xlarge
     strategy:
       fail-fast: false
       matrix:
@@ -56,7 +56,7 @@ jobs:
   # List of available Xcode versions and devices:
   # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md#xcode
   compose-ios-instrumented-tests-ios-26-1:
-    runs-on: macos-26-arm64-xlarge
+    runs-on: macos-26-xlarge
     strategy:
       fail-fast: false
       matrix:
