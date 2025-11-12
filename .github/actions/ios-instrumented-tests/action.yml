@@ -81,14 +81,14 @@ runs:
         xcrun simctl spawn booted launchctl stop com.apple.SpringBoard
         xcrun simctl shutdown all
 
-#    - name: Run iOS Instrumented Tests
-#      shell: bash
-#      working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
-#      run: |
-#        xcodebuild test \
-#          -scheme Launcher \
-#          -project Launcher.xcodeproj \
-#          -destination 'platform=iOS Simulator,id=${{ steps.get-simulator-udid.outputs.simulator-id }}'
+    - name: Run iOS Instrumented Tests
+      shell: bash
+      working-directory: compose/ui/ui/src/uikitInstrumentedTest/launcher
+      run: |
+        xcodebuild test \
+          -scheme Launcher \
+          -project Launcher.xcodeproj \
+          -destination 'platform=iOS Simulator,id=${{ steps.get-simulator-udid.outputs.simulator-id }}'
 
     - name: Test Summary
       uses: test-summary/action@v2
