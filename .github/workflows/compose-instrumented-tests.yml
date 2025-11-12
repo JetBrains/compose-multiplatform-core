@@ -28,16 +28,12 @@ jobs:
         with:
           simulator-name: ${{ matrix.device }}
           simulator-version: '16.1'
-          xcode: 'Xcode_14.1.app'
+          xcode-app: Xcode_14.1.app
 
   # List of available Xcode versions and devices:
   # https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md#xcode
   compose-ios-instrumented-tests-ios-18-6:
     runs-on: macos-15-xlarge
-    strategy:
-      fail-fast: false
-      matrix:
-        device: [ 'iPhone SE (3rd generation)', 'iPhone 16', 'iPad Pro 11-inch (M4)' ]
     name: Compose iOS Instrumented Tests - iOS 18.6
     env:
       GRADLE_OPTS: -Xmx12g -Dorg.gradle.daemon=false
@@ -51,7 +47,7 @@ jobs:
         with:
           simulator-name: ${{ matrix.device }}
           simulator-version: '18.6'
-          xcode: 'Xcode_16.4.app'
+          xcode-app: Xcode_16.4.app
 
   # List of available Xcode versions and devices:
   # https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md#xcode
@@ -74,4 +70,4 @@ jobs:
         with:
           simulator-name: ${{ matrix.device }}
           simulator-version: '26.1'
-          xcode: 'Xcode_26.0.1.app'
+          xcode-app: Xcode_26.0.1.app

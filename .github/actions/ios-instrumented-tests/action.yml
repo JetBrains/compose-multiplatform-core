@@ -6,7 +6,7 @@ inputs:
   simulator-version:
     description: "Version of the iOS Simulator (example: '16.1')"
     required: true
-  xcode:
+  xcode-app:
     description: "XCode application name (example: Xcode_16.app)"
     required: true
 runs:
@@ -18,7 +18,7 @@ runs:
     - name: Setup Xcode version
       shell: bash
       run: |
-        sudo xcode-select -s /Applications/Xcode_14.1.app
+        sudo xcode-select -s /Applications/${{ inputs.xcode-app }}
         /usr/bin/xcodebuild -version
 
     - name: Cache Xcode DerivedData
