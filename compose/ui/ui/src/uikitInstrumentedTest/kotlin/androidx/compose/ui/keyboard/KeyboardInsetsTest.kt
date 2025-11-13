@@ -712,7 +712,7 @@ internal class KeyboardInsetsTest {
                     onDismissRequest = {},
                     properties = DialogProperties(
                         usePlatformInsets = false,
-                        useSoftwareKeyboardInset = true,
+                        useSoftwareKeyboardInset = false,
                         usePlatformDefaultWidth = false
                     ),
                     content = {
