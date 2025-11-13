@@ -125,7 +125,7 @@ jobs:
         id: get-simulator-udid
         shell: bash
         run: |
-          DEVICE_NAME="${{ inputs.simulator-name }}"
+          DEVICE_NAME="${{ matrix.device }}"
           DEVICE_VERSION="18.6"
           
           DEVICE_DASH="${DEVICE_VERSION//./-}"   # 16.0 -> 16-0
