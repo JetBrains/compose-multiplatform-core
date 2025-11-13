@@ -87,7 +87,7 @@ actual val WindowInsets.Companion.safeContent: WindowInsets
     @Composable
     get() = LocalPlatformWindowInsets.current.safeContent.toWindowInsets()
 
-private fun PlatformInsets.toWindowInsets(): WindowInsets = object : WindowInsets {
+internal fun PlatformInsets.toWindowInsets(): WindowInsets = object : WindowInsets {
     override fun getLeft(density: Density, layoutDirection: LayoutDirection): Int = left
     override fun getTop(density: Density): Int = top
     override fun getRight(density: Density, layoutDirection: LayoutDirection): Int = right
