@@ -76,10 +76,8 @@ internal fun PlatformWindowInsets.exclude(
     ime: Boolean,
     content: @Composable () -> Unit
 ) {
-    val windowInsets = LocalPlatformWindowInsets.current.excluding(safeInsets, ime)
-
-    return CompositionLocalProvider(
-        LocalPlatformWindowInsets provides windowInsets,
+    CompositionLocalProvider(
+        LocalPlatformWindowInsets provides excluding(safeInsets, ime),
         content = content
     )
 }
