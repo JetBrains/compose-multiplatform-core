@@ -30,53 +30,125 @@ import androidx.compose.ui.platform.safeContent
 import androidx.compose.ui.platform.safeDrawing
 import androidx.compose.ui.platform.safeGestures
 
-actual fun Modifier.safeDrawingPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "safeDrawingPadding" }, safeDrawingPaddingLambda)
+actual fun Modifier.safeDrawingPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "safeDrawingPadding" },
+        safeDrawingPaddingLambda
+    )
 
-private val safeDrawingPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { safeDrawing.toWindowInsets() }
+private val safeDrawingPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    safeDrawing.toWindowInsets()
+}
 
-actual fun Modifier.safeGesturesPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "safeGesturesPadding" }, safeGesturesPaddingLambda)
+actual fun Modifier.safeGesturesPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "safeGesturesPadding" },
+        safeGesturesPaddingLambda
+    )
 
-private val safeGesturesPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { safeGestures.toWindowInsets() }
+private val safeGesturesPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    safeGestures.toWindowInsets()
+}
 
-actual fun Modifier.safeContentPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "safeContentPadding" }, safeContentPaddingLambda)
+actual fun Modifier.safeContentPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "safeContentPadding" },
+        safeContentPaddingLambda
+    )
 
-private val safeContentPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { safeContent.toWindowInsets() }
+private val safeContentPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    safeContent.toWindowInsets()
+}
 
-actual fun Modifier.systemBarsPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "systemBarsPadding" }, systemBarsPaddingLambda)
+actual fun Modifier.systemBarsPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "systemBarsPadding" },
+        systemBarsPaddingLambda
+    )
 
-private val systemBarsPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { systemBars.toWindowInsets() }
+private val systemBarsPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    systemBars.toWindowInsets()
+}
 
-actual fun Modifier.displayCutoutPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "displayCutoutPadding" }, displayCutoutPaddingLambda)
+actual fun Modifier.displayCutoutPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "displayCutoutPadding" },
+        displayCutoutPaddingLambda
+    )
 
-private val displayCutoutPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { displayCutout.toWindowInsets() }
+private val displayCutoutPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    displayCutout.toWindowInsets()
+}
 
-actual fun Modifier.statusBarsPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "statusBarsPadding" }, statusBarsPaddingLambda)
+actual fun Modifier.statusBarsPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "statusBarsPadding" },
+        statusBarsPaddingLambda
+    )
 
-private val statusBarsPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { statusBars.toWindowInsets() }
+private val statusBarsPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    statusBars.toWindowInsets()
+}
 
-actual fun Modifier.imePadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "imePadding" }, imePaddingLambda)
+actual fun Modifier.imePadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "imePadding" },
+        imePaddingLambda
+    )
 
-private val imePaddingLambda: PlatformWindowInsets.() -> WindowInsets = { ime.toWindowInsets() }
+private val imePaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    ime.toWindowInsets()
+}
 
-actual fun Modifier.navigationBarsPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "navigationBarsPadding" }, navigationBarsPaddingLambda)
+actual fun Modifier.navigationBarsPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "navigationBarsPadding" },
+        navigationBarsPaddingLambda
+    )
 
-private val navigationBarsPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { navigationBars.toWindowInsets() }
+private val navigationBarsPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    navigationBars.toWindowInsets()
+}
 
-actual fun Modifier.captionBarPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "captionBarPadding" }, captionBarPaddingLambda)
+actual fun Modifier.captionBarPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "captionBarPadding" },
+        captionBarPaddingLambda
+    )
 
-private val captionBarPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { captionBar.toWindowInsets() }
+private val captionBarPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    captionBar.toWindowInsets()
+}
 
-actual fun Modifier.waterfallPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "waterfallPadding" }, waterfallPaddingLambda)
+actual fun Modifier.waterfallPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "waterfallPadding" },
+        waterfallPaddingLambda
+    )
 
-private val waterfallPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { waterfall.toWindowInsets() }
+private val waterfallPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    waterfall.toWindowInsets()
+}
 
-actual fun Modifier.systemGesturesPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "systemGesturesPadding" }, systemGesturesPaddingLambda)
+actual fun Modifier.systemGesturesPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "systemGesturesPadding" },
+        systemGesturesPaddingLambda
+    )
 
-private val systemGesturesPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { systemGestures.toWindowInsets() }
+private val systemGesturesPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    systemGestures.toWindowInsets()
+}
 
-actual fun Modifier.mandatorySystemGesturesPadding(): Modifier = windowInsetsPadding(debugInspectorInfo { name = "mandatorySystemGesturesPadding" }, mandatorySystemGesturesPaddingLambda)
+actual fun Modifier.mandatorySystemGesturesPadding(): Modifier =
+    windowInsetsPadding(
+        debugInspectorInfo { name = "mandatorySystemGesturesPadding" },
+        mandatorySystemGesturesPaddingLambda
+    )
 
-private val mandatorySystemGesturesPaddingLambda: PlatformWindowInsets.() -> WindowInsets = { mandatorySystemGestures.toWindowInsets() }
+private val mandatorySystemGesturesPaddingLambda: PlatformWindowInsets.() -> WindowInsets = {
+    mandatorySystemGestures.toWindowInsets()
+}
 
 @Stable
 private fun Modifier.windowInsetsPadding(
