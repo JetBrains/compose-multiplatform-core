@@ -18,11 +18,11 @@ package androidx.compose.ui.node
 
 import androidx.collection.MutableIntObjectMap
 import androidx.collection.mutableIntObjectMapOf
-import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.retain.ForgetfulRetainedValuesStore
+import androidx.compose.runtime.retain.RetainedValuesStore
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.Snapshot
@@ -61,6 +61,7 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
+import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
@@ -68,13 +69,14 @@ import androidx.compose.ui.platform.DefaultAccessibilityManager
 import androidx.compose.ui.platform.DefaultHapticFeedback
 import androidx.compose.ui.platform.DelegatingSoftwareKeyboardController
 import androidx.compose.ui.platform.GraphicsLayerOwnerLayer
+import androidx.compose.ui.platform.LegacyRenderNodeLayer
 import androidx.compose.ui.platform.OwnedLayerManager
 import androidx.compose.ui.platform.PlatformClipboardManager
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
-import androidx.compose.ui.platform.LegacyRenderNodeLayer
+import androidx.compose.ui.platform.PlatformWindowInsets
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.setLightingInfo
 import androidx.compose.ui.scene.ComposeScene
@@ -396,11 +398,15 @@ internal class RootNodeOwner(
 
         override val focusOwner: FocusOwner = FocusOwnerImpl(platformFocusOwner, this)
 
-        val rootModifier = if (ComposeUiFlags.areWindowInsetsRulersEnabled) {
-                RulerProviderModifierElement(platformContext.windowInsets)
-            } else {
-                Modifier
-            }
+        val rootModifier = Modifier
+            .then(WindowInsetsProviderModifierElement(platformContext.windowInsets))
+            .then(
+                if (ComposeUiFlags.areWindowInsetsRulersEnabled) {
+                    RulerProviderModifierElement(platformContext.windowInsets)
+                } else {
+                    Modifier
+                }
+            )
             .then(EmptySemanticsElement(rootSemanticsNode))
             .focusProperties {
                 onExit = {
@@ -998,3 +1004,49 @@ private object IdentityPositionCalculator: PositionCalculator {
     override fun screenToLocal(positionOnScreen: Offset): Offset = positionOnScreen
     override fun localToScreen(localPosition: Offset): Offset = localPosition
 }
+
+private class WindowInsetsProviderModifierElement(
+    val windowInsets: PlatformWindowInsets,
+): ModifierNodeElement<WindowInsetsProviderModifierNode>() {
+    override fun create(): WindowInsetsProviderModifierNode = WindowInsetsProviderModifierNode(windowInsets)
+
+    override fun update(node: WindowInsetsProviderModifierNode) {
+        if (node.windowInsets !== windowInsets) {
+            node.windowInsets = windowInsets
+        }
+    }
+
+    override fun hashCode(): Int = windowInsets.hashCode()
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is WindowInsetsProviderModifierElement) return false
+        return windowInsets == other.windowInsets
+    }
+}
+
+private class WindowInsetsProviderModifierNode(
+    var windowInsets: PlatformWindowInsets
+): Modifier.Node(), TraversableNode {
+    override val traverseKey: Any = TraverseKey
+
+    companion object TraverseKey
+}
+
+@OptIn(InternalComposeUiApi::class)
+fun DelegatableNode.requireWindowInsets(): PlatformWindowInsets {
+    var windowInsets: PlatformWindowInsets? = null
+    traverseAncestors(WindowInsetsProviderModifierNode.TraverseKey) { node ->
+        when(node) {
+            is WindowInsetsProviderModifierNode -> windowInsets = node.windowInsets
+            else -> throw IllegalStateException(
+                "WindowInsetsProviderModifierNode.TraverseKey key must only be attached" +
+                    " to instances of WindowInsetsProviderModifierNode.")
+        }
+        false
+    }
+    return checkPreconditionNotNull(windowInsets) {
+        "WindowInsetsProviderModifierNode is not attached to any node"
+    }
+}
+
