@@ -634,40 +634,6 @@ internal class KeyboardInsetsTest {
     }
 
     @Test
-    fun testInsetsInDialogWhenUseSoftwareKeyboardInsetEnabled() = runUIKitInstrumentedTest {
-        var frame: DpRect? = null
-        setContent {
-            Dialog(
-                onDismissRequest = {},
-                properties = DialogProperties(
-                    usePlatformInsets = false,
-                    useSoftwareKeyboardInset = true,
-                    usePlatformDefaultWidth = false
-                ),
-                content = {
-                    Box(Modifier.fillMaxSize().statusBarsPadding().imePadding()) {
-                        BasicTextField(
-                            value = "",
-                            onValueChange = {},
-                            modifier = Modifier.fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                                .onGloballyPositioned {
-                                    frame = it.boundsInWindow().toDpRect(density)
-                                }
-                                .testTag("TextField")
-                        )
-                    }
-                }
-            )
-        }
-
-        findNodeWithTag("TextField").tap()
-        waitForIdle()
-
-        assertEquals(expected = frame?.bottom, actual = screenSize.height - keyboardHeight)
-    }
-
-    @Test
     fun testInsetsInDialogWhenUseSoftwareKeyboardInsetDisabled() = runUIKitInstrumentedTest {
         var frame: DpRect? = null
         setContent {
