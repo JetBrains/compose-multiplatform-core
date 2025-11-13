@@ -1046,7 +1046,7 @@ fun DelegatableNode.requireWindowInsets(): PlatformWindowInsets {
         false
     }
     return checkPreconditionNotNull(windowInsets) {
-        "WindowInsetsProviderModifierNode is not attached to any node"
+        "WindowInsetsProviderModifierNode is not attached to any of ancestor nodes"
     }
 }
 
