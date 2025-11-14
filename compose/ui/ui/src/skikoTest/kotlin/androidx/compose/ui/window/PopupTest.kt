@@ -55,12 +55,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.scene.CanvasLayersComposeScene
 import androidx.compose.ui.scene.ComposeScene
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.InternalTestApi
 import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.runInternalSkikoComposeUiTest
 import androidx.compose.ui.test.runSkikoComposeUiTest
 import androidx.compose.ui.touch
 import androidx.compose.ui.unit.Density
@@ -645,34 +647,33 @@ class PopupTest {
     }
 
     // https://github.com/JetBrains/compose-multiplatform-core/pull/847
+    @OptIn(InternalTestApi::class)
     @Test
-    fun popupBoundsWithPlatformInsets() = runSkikoComposeUiTest(
-        size = Size(200f, 200f)
-    ) {
-        val config = with(density) {
+    fun popupBoundsWithPlatformInsets() = runInternalSkikoComposeUiTest(
+        width = 200,
+        height = 200,
+        windowInsets = with(Density(1f)) {
             WindowInsetsConfigSystemBars(
                 insets = PlatformInsets(left = 5.dp, top = 50.dp, right = 5.dp, bottom = 10.dp)
             )
         }
-
+    ) {
         setContent {
-            CompositionLocalProvider(LocalPlatformWindowInsets provides config) {
-                Popup(
-                    popupPositionProvider = object : PopupPositionProvider {
-                        override fun calculatePosition(
-                            anchorBounds: IntRect,
-                            windowSize: IntSize,
-                            layoutDirection: LayoutDirection,
-                            popupContentSize: IntSize
-                        ): IntOffset = IntOffset.Zero
-                    }
-                ) {
-                    Box(Modifier.fillMaxSize().testTag("box1"))
+            Popup(
+                popupPositionProvider = object : PopupPositionProvider {
+                    override fun calculatePosition(
+                        anchorBounds: IntRect,
+                        windowSize: IntSize,
+                        layoutDirection: LayoutDirection,
+                        popupContentSize: IntSize
+                    ): IntOffset = IntOffset.Zero
                 }
-                Box(Modifier.offset(30.dp, 100.dp)) {
-                    Popup {
-                        Box(Modifier.size(50.dp).testTag("box2"))
-                    }
+            ) {
+                Box(Modifier.fillMaxSize().testTag("box1"))
+            }
+            Box(Modifier.offset(30.dp, 100.dp)) {
+                Popup {
+                    Box(Modifier.size(50.dp).testTag("box2"))
                 }
             }
         }
@@ -681,7 +682,10 @@ class PopupTest {
             .assertWidthIsEqualTo(190.dp)
             .assertHeightIsEqualTo(140.dp)
         onNodeWithTag("box2")
-            .assertPositionInRootIsEqualTo(30.dp, 100.dp) // Matches parent position (if inside bounds)
+            .assertPositionInRootIsEqualTo(
+                30.dp,
+                100.dp
+            ) // Matches parent position (if inside bounds)
     }
 
     @Test
