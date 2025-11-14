@@ -76,7 +76,6 @@ internal actual fun ModalBottomSheetDialog(
             dismissOnClickOutside = properties.shouldDismissOnClickOutside,
             usePlatformDefaultWidth = false,
             usePlatformInsets = false,
-            useSoftwareKeyboardInset = false,
             scrimColor = Color.Transparent,
         ),
         content = content
