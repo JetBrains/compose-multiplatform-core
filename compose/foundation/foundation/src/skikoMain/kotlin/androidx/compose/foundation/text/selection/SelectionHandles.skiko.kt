@@ -29,9 +29,11 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSpecified
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.ResolvedTextDirection
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -113,6 +115,7 @@ internal fun SelectionHandleIcon(
     isLeft: Boolean,
 ) {
     val density = LocalDensity.current
+    val handleColor = LocalTextSelectionColors.current.handleColor
     val lineHeightDp = with(density) { lineHeight.toDp() }
     Spacer(
         modifier
@@ -120,21 +123,20 @@ internal fun SelectionHandleIcon(
                 width = (PADDING + RADIUS) * 2,
                 height = RADIUS * 2 + PADDING + lineHeightDp
             )
-            .drawSelectionHandle(iconVisible, lineHeight, isLeft)
+            .drawSelectionHandle(iconVisible, lineHeight, isLeft, handleColor, density)
     )
 }
 
 internal fun Modifier.drawSelectionHandle(
     iconVisible: () -> Boolean,
     lineHeight: Float,
-    isLeft: Boolean
-): Modifier = composed {
-    val density = LocalDensity.current
+    isLeft: Boolean,
+    handleColor: Color,
+    density: Density
+): Modifier = drawWithCache {
     val paddingPx = with(density) { PADDING.toPx() }
     val radiusPx = with(density) { RADIUS.toPx() }
     val thicknessPx = with(density) { THICKNESS.toPx() }
-    val handleColor = LocalTextSelectionColors.current.handleColor
-    this.drawWithCache {
         onDrawWithContent {
             drawContent()
             if (!iconVisible()) return@onDrawWithContent
@@ -158,7 +160,6 @@ internal fun Modifier.drawSelectionHandle(
             )
         }
     }
-}
 
 @Composable
 internal fun HandlePopup(
