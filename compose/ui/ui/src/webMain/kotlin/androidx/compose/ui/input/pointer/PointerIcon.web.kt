@@ -53,3 +53,4 @@ internal actual val pointerIconNSResize: PointerIcon = BrowserCursor("ns-resize"
 internal actual val pointerIconEWResize: PointerIcon = BrowserCursor("ew-resize")
 internal actual val pointerIconNeSwResize: PointerIcon = BrowserCursor("nesw-resize")
 internal actual val pointerIconNwSeResize: PointerIcon = BrowserCursor("nwse-resize")
+internal actual val pointerIconNone: PointerIcon = BrowserCursor("none")

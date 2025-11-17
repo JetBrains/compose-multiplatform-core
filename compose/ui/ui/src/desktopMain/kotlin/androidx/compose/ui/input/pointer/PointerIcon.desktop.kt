@@ -17,6 +17,9 @@
 package androidx.compose.ui.input.pointer
 
 import java.awt.Cursor
+import java.awt.Point
+import java.awt.Toolkit
+import java.awt.image.BufferedImage
 
 internal class AwtCursor(val cursor: Cursor) : PointerIcon {
     override fun equals(other: Any?): Boolean {
@@ -77,3 +80,11 @@ internal actual val pointerIconNSResize: PointerIcon = AwtCursor(Cursor(Cursor.N
 internal actual val pointerIconEWResize: PointerIcon = AwtCursor(Cursor(Cursor.E_RESIZE_CURSOR))
 internal actual val pointerIconNeSwResize: PointerIcon = AwtCursor(Cursor(Cursor.NE_RESIZE_CURSOR))
 internal actual val pointerIconNwSeResize: PointerIcon = AwtCursor(Cursor(Cursor.SE_RESIZE_CURSOR))
+
+internal actual val pointerIconNone: PointerIcon = PointerIcon(
+    Toolkit.getDefaultToolkit().createCustomCursor(
+        BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB),
+        Point(0, 0),
+        "Empty Cursor",
+    ),
+)
