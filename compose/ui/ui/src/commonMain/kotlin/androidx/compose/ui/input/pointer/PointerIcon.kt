@@ -91,6 +91,8 @@ interface PointerIcon {
         @NoriaOnly val NeSwResize = pointerIconNeSwResize
 
         @NoriaOnly val NwSeResize = pointerIconNwSeResize
+
+        @NoriaOnly val None = pointerIconNone
     }
 }
 
@@ -115,6 +117,7 @@ internal expect val pointerIconNSResize: PointerIcon
 internal expect val pointerIconEWResize: PointerIcon
 internal expect val pointerIconNeSwResize: PointerIcon
 internal expect val pointerIconNwSeResize: PointerIcon
+internal expect val pointerIconNone: PointerIcon
 
 internal interface PointerIconService {
     fun getIcon(): PointerIcon
