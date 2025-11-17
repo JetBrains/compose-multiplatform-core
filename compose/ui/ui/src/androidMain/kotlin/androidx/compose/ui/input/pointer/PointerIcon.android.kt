@@ -86,3 +86,4 @@ internal actual val pointerIconNSResize: PointerIcon = AndroidPointerIconType(An
 internal actual val pointerIconEWResize: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_HORIZONTAL_DOUBLE_ARROW)
 internal actual val pointerIconNeSwResize: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_TOP_RIGHT_DIAGONAL_DOUBLE_ARROW)
 internal actual val pointerIconNwSeResize: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_TOP_LEFT_DIAGONAL_DOUBLE_ARROW)
+internal actual val pointerIconNone: PointerIcon = AndroidPointerIconType(AndroidViewPointerIcon.TYPE_NULL)
