@@ -3903,6 +3903,17 @@ public final class androidx/compose/ui/semantics/CustomAccessibilityAction {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class androidx/compose/ui/semantics/DesktopSemanticsProperties {
+	public static final field $stable I
+	public static final field INSTANCE Landroidx/compose/ui/semantics/DesktopSemanticsProperties;
+	public final fun getAwtRole ()Landroidx/compose/ui/semantics/SemanticsPropertyKey;
+}
+
+public final class androidx/compose/ui/semantics/DesktopSemanticsPropertiesKt {
+	public static final fun getAwtRole (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;)Ljavax/accessibility/AccessibleRole;
+	public static final fun setAwtRole (Landroidx/compose/ui/semantics/SemanticsPropertyReceiver;Ljavax/accessibility/AccessibleRole;)V
+}
+
 public final class androidx/compose/ui/semantics/LiveRegionMode {
 	public static final field Companion Landroidx/compose/ui/semantics/LiveRegionMode$Companion;
 	public static final synthetic fun box-impl (I)Landroidx/compose/ui/semantics/LiveRegionMode;
