@@ -16,13 +16,14 @@
 
 package androidx.compose.ui.semantics
 
+import androidx.compose.ui.ExperimentalComposeUiApi
 import javax.accessibility.AccessibleRole
 
 
 /**
  * Extra semantics properties specific to the desktop.
  */
-object DesktopSemanticsProperties {
+internal object DesktopSemanticsProperties {
 
     /** @see SemanticsPropertyReceiver.awtRole */
     val AwtRole = AccessibilityKey<AccessibleRole>("AwtRole") { parentValue, _ -> parentValue }
@@ -37,4 +38,5 @@ object DesktopSemanticsProperties {
  *
  * @see SemanticsPropertyReceiver.role
  */
+@ExperimentalComposeUiApi
 var SemanticsPropertyReceiver.awtRole by DesktopSemanticsProperties.AwtRole
