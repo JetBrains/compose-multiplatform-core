@@ -51,6 +51,7 @@ import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDepen
 import org.gradle.api.internal.artifacts.dependencies.DefaultProjectDependencyConstraint
 import org.gradle.api.internal.artifacts.ivyservice.projectmodule.ProjectComponentPublication
 import org.gradle.api.internal.component.SoftwareComponentInternal
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
@@ -64,6 +65,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.configure
 import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
+import org.gradle.plugin.devel.plugins.JavaGradlePluginPlugin
 import org.gradle.work.DisableCachingByDefault
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinSingleTargetExtension
@@ -454,26 +456,7 @@ private fun Project.createBuildInfoTask(
 ): TaskProvider<CreateLibraryBuildInfoFileTask> {
     val kmpTaskSuffix = computeTaskSuffix(variantName, isKmp)
 
-    val runtimeConfigurationNames: List<String> =
-        when (val kotlinExt = project.kotlinExtensionOrNull) {
-            is KotlinSingleTargetExtension<*> -> {
-                kotlinExt.target.compilations.classpathConfigs()
-            }
-            is KotlinMultiplatformExtension -> {
-                kotlinExt.targets.findByName(variantName)?.compilations?.classpathConfigs()
-                    // We are in the "root" of the KMP project
-                    ?: emptyList()
-            }
-            else -> {
-                // Java-only Android project
-                if (project.extensions.findByType(AndroidComponentsExtension::class.java) != null) {
-                    listOf("releaseRuntimeClasspath")
-                } else {
-                    // Java-only project
-                    listOf("runtimeClasspath")
-                }
-            }
-        }
+    val runtimeConfigs = resolveRuntimeConfigurationNames(variantName)
 
     return CreateLibraryBuildInfoFileTask.setup(
         project = project,
@@ -493,9 +476,7 @@ private fun Project.createBuildInfoTask(
                         component.usages.orEmpty().flatMap { it.dependencyConstraints }
                     },
                 runtimeConfigurationNames =
-                    project.objects
-                        .listProperty(String::class.java)
-                        .convention(runtimeConfigurationNames),
+                    objects.listProperty(String::class.java).value(runtimeConfigs),
             ),
         shaProvider = shaProvider,
         // There's a build_info file for each KMP platform, but only the artifact without a platform
@@ -512,6 +493,34 @@ private fun Project.createBuildInfoTask(
                 ?.map { it.id }
                 ?.toSet() ?: emptySet(),
     )
+}
+
+private fun Project.resolveRuntimeConfigurationNames(variantName: String): List<String> {
+    val kotlinExt = kotlinExtensionOrNull
+    return when {
+        // Kotlin-only or Kotlin-enabled Android project
+        kotlinExt is KotlinSingleTargetExtension<*> -> {
+            kotlinExt.target.compilations.classpathConfigs()
+        }
+        // KMP Project
+        kotlinExt is KotlinMultiplatformExtension -> {
+            kotlinExt.targets.findByName(variantName)?.compilations?.classpathConfigs().orEmpty()
+        }
+        // Java-only Android project
+        extensions.findByType(AndroidComponentsExtension::class.java) != null -> {
+            listOf("releaseRuntimeClasspath")
+        }
+        // Standard Java or Gradle Java plugin project
+        plugins.hasPlugin(JavaPlugin::class.java) ||
+            plugins.hasPlugin(JavaGradlePluginPlugin::class.java) -> {
+            listOf("runtimeClasspath")
+        }
+        else -> {
+            throw IllegalStateException(
+                "Project $path is not a known project type to get runtime dependencies from."
+            )
+        }
+    }
 }
 
 private fun Iterable<KotlinCompilation<*>>.classpathConfigs(): List<String> =
