@@ -18,6 +18,7 @@ package androidx.camera.integration.core
 
 import android.content.Context
 import android.graphics.ImageFormat
+import android.graphics.Rect
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.camera2.CameraMetadata
@@ -334,6 +335,7 @@ class CameraAvailabilityTest(private val testConfig: CameraTestConfig) {
         val cameraCharacteristics = ShadowCameraCharacteristics.newCameraCharacteristics()
         shadowOf(cameraCharacteristics).apply {
             set(CameraCharacteristics.LENS_FACING, lensFacing)
+            set(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE, Rect(0, 0, 10, 10))
             set(CameraCharacteristics.SENSOR_ORIENTATION, 0)
             set(CameraCharacteristics.FLASH_INFO_AVAILABLE, false)
             set(

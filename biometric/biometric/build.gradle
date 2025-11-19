@@ -72,6 +72,7 @@ dependencies {
     androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.testRules)
+    androidTestImplementation(project(":internal-testutils-lifecycle"))
     androidTestImplementation("androidx.fragment:fragment-testing:1.4.1")
 }
 

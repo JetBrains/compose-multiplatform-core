@@ -264,7 +264,6 @@ package androidx.pdf.selection.model {
     ctor public TextSelection(CharSequence text, java.util.List<androidx.pdf.PdfRect> bounds);
     method @InaccessibleFromKotlin public java.util.List<androidx.pdf.PdfRect> getBounds();
     method @InaccessibleFromKotlin public CharSequence getText();
-    method public String textAsString();
     property public java.util.List<androidx.pdf.PdfRect> bounds;
     property public CharSequence text;
   }

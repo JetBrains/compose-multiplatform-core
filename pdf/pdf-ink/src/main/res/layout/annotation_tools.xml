@@ -58,6 +58,7 @@
         app:icon="@drawable/color_palette_icon_drawable"/>
 
     <LinearLayout
+        android:id="@+id/undo_redo_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"

@@ -100,6 +100,9 @@ constructor(
     /* Config for auto-close or null if not used. */
     internal var autoCloseConfig: AutoCloserConfig? = null
 
+    /* Size of the prepared statement cache. 25 to match Android Framework cache size. 0 if cache is to be unused. */
+    internal var preparedStatementCacheSize = 25
+
     /**
      * Returns whether a migration is required between two versions.
      *
@@ -154,5 +157,6 @@ constructor(
                 it.useTempTrackingTable = this.useTempTrackingTable
                 it.copyFromConfig = this.copyFromConfig
                 it.autoCloseConfig = this.autoCloseConfig
+                it.preparedStatementCacheSize = this.preparedStatementCacheSize
             }
 }

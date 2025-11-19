@@ -353,7 +353,7 @@ internal class RectManager(
             layoutNode.lastOffsetFromParent = offsetFromParent
         } else {
             // If unset is returned then that means there is a rotation/skew/scale
-            insertOrUpdateTransformedNode(layoutNode)
+            insertOrUpdateTransformedNodeSubhierarchy(layoutNode)
         }
     }
 
@@ -384,9 +384,11 @@ internal class RectManager(
     }
 
     private fun insertOrUpdateTransformedNodeSubhierarchy(layoutNode: LayoutNode) {
+        insertOrUpdateTransformedNode(layoutNode)
         layoutNode.forEachChild {
-            insertOrUpdateTransformedNode(it)
-            insertOrUpdateTransformedNodeSubhierarchy(it)
+            if (it.isPlaced) {
+                insertOrUpdateTransformedNodeSubhierarchy(it)
+            }
         }
     }
 
@@ -433,9 +435,20 @@ internal class RectManager(
     }
 
     private fun NodeCoordinator.boundingRectInRoot(rect: MutableRect) {
-        // TODO: can we use offsetFromRoot here to speed up calculation?
         var coordinator: NodeCoordinator? = this
         while (coordinator != null) {
+            val layoutNode = coordinator.layoutNode
+            if (
+                coordinator === layoutNode.outerCoordinator &&
+                    !layoutNode.hasPositionalLayerTransformationsInOffsetFromRoot
+            ) {
+                val offset = getOffsetFromRectListFor(layoutNode)
+                if (offset != IntOffset.Max) {
+                    rect.translate(offset.toOffset())
+                    return
+                }
+            }
+
             val layer = coordinator.layer
             if (layer != null) {
                 val matrix = layer.underlyingMatrix

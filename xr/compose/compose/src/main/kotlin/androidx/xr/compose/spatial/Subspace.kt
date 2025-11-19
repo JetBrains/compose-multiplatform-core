@@ -245,8 +245,6 @@ private fun Subspace(
     }
     LaunchedEffect(subspaceRootNode) { subspaceRootNode?.let { subspaceRoot.parent = it } }
 
-    scene.rootVolumeConstraints = remember { VolumeConstraints() }
-
     scene.setContent {
         val finalModifier =
             if (allowUnboundedSubspace) {

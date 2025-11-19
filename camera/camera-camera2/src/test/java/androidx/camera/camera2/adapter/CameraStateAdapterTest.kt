@@ -34,11 +34,13 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 internal class CameraStateAdapterTest {
     private val cameraStateAdapter = CameraStateAdapter()
     private val cameraGraph1 = FakeCameraGraph()

@@ -204,7 +204,7 @@ object ComposeUiFlags {
      */
     @Suppress("MutableBareField")
     @JvmField
-    var isRectManagerOffsetUsageFromLayoutCoordinatesEnabled: Boolean = true
+    var isRectManagerOffsetUsageFromLayoutCoordinatesEnabled: Boolean = false
 
     /**
      * Enables automatic pinning of interop AndroidViews when they are focused inside lazy

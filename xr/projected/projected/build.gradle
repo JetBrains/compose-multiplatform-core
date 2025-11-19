@@ -63,6 +63,9 @@ android {
             version = 1
         }
     }
+    defaultConfig {
+        minSdk = 24
+    }
 }
 
 androidx {

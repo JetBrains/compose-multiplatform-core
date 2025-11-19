@@ -21,14 +21,12 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.RemoteException
 import android.util.ArrayMap
 import android.util.Log
 import androidx.annotation.GuardedBy
-import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.xr.projected.platform.IEngagementModeCallback
 import androidx.xr.projected.platform.IEngagementModeService
@@ -54,11 +52,10 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
 
     @GuardedBy("mLock") private var mReconnectDelayMs: Long = INITIAL_RECONNECT_DELAY_MS
 
-    @GuardedBy("mLock")
-    private var mCurrentEngagementModeFlags: Int = EngagementModeClient.DEFAULT_ENGAGEMENT_MODE
+    @GuardedBy("mLock") private var mCurrentEngagementModeFlags: Int? = null
 
     /** Returns the current engagement mode flags. */
-    fun getEngagementModeFlags(): Int {
+    fun getEngagementModeFlags(): Int? {
         synchronized(mLock) {
             return mCurrentEngagementModeFlags
         }
@@ -72,15 +69,23 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
      */
     fun addUpdateCallback(executor: Executor, callback: Consumer<Int>) {
         var shouldConnect = false
+        var currentFlags: Int? = null
         synchronized(mLock) {
             val wasEmpty = mUpdateCallbacks.isEmpty()
             if (mUpdateCallbacks.put(callback, executor) == null && wasEmpty) {
                 shouldConnect = true
+            } else {
+                mCurrentEngagementModeFlags?.let {
+                    // If the service was already called update the current engagement mode for the
+                    // new callback.
+                    currentFlags = it
+                }
             }
         }
         if (shouldConnect) {
             connectToService() // Connect to service outside of lock to prevent deadlock
         }
+        currentFlags?.let { executor.execute { callback.accept(it) } }
     }
 
     /**
@@ -99,9 +104,9 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
                     mService = null
                     mIsBound = false
                 }
-                // Reset to the default state. This prevents new listeners from getting a stale
-                // value when they first register.
-                mCurrentEngagementModeFlags = EngagementModeClient.DEFAULT_ENGAGEMENT_MODE
+                // Revert to the null on disconnect to ensure that no stale value is reported while
+                // the service is down.
+                mCurrentEngagementModeFlags = null
             }
         }
     }
@@ -160,21 +165,15 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
                 }
             }
 
-            @RequiresApi(Build.VERSION_CODES.N)
             override fun onServiceDisconnected(className: ComponentName?) {
                 var callbacksToNotify: MutableMap<Consumer<Int>, Executor>? = null
                 synchronized(mLock) {
                     mService = null
                     mIsBound = false
 
-                    // Revert to the default state on disconnect to ensure a safe, known value
-                    // is reported while the service is down.
-                    if (
-                        mCurrentEngagementModeFlags != EngagementModeClient.DEFAULT_ENGAGEMENT_MODE
-                    ) {
-                        mCurrentEngagementModeFlags = EngagementModeClient.DEFAULT_ENGAGEMENT_MODE
-                        callbacksToNotify = ArrayMap(mUpdateCallbacks)
-                    }
+                    // Revert to the null on disconnect to ensure that no stale value is reported
+                    // while the service is down.
+                    mCurrentEngagementModeFlags = null
 
                     // Only attempt to reconnect if there are still active listeners. This
                     // prevents zombie reconnects if all listeners have unregistered while the
@@ -187,17 +186,11 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
                             min(mReconnectDelayMs * RECONNECT_MULTIPLIER, MAX_RECONNECT_DELAY_MS)
                     }
                 }
-                callbacksToNotify?.forEach { (callback: Consumer<Int>, executor: Executor) ->
-                    executor.execute {
-                        callback.accept(EngagementModeClient.DEFAULT_ENGAGEMENT_MODE)
-                    }
-                }
             }
         }
 
     private val mCallback: IEngagementModeCallback.Stub =
         object : IEngagementModeCallback.Stub() {
-            @RequiresApi(Build.VERSION_CODES.N)
             override fun onEngagementModeChanged(engagementModeFlags: Int) {
                 val callbacksToNotify: MutableMap<Consumer<Int>, Executor>?
                 // Check if the engagement mode flag has been updated. If it has copy the callbacks
@@ -245,13 +238,6 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
         const val ENGAGEMENT_MODE_FLAG_AUDIO_ON: Int =
             IEngagementModeService.ENGAGEMENT_STATE_FLAG_AUDIO_ON
 
-        /**
-         * The default engagement mode, indicating that both visual and audio presentations are
-         * active. This is the fallback value used when the engagement mode service is not available
-         * or the feature is disabled.
-         */
-        const val DEFAULT_ENGAGEMENT_MODE: Int =
-            ENGAGEMENT_MODE_FLAG_VISUALS_ON or ENGAGEMENT_MODE_FLAG_AUDIO_ON
         private const val TAG = "EngagementModeClient"
         @VisibleForTesting const val INITIAL_RECONNECT_DELAY_MS: Long = 10L
         private const val MAX_RECONNECT_DELAY_MS = 5000L

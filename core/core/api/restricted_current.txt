@@ -845,6 +845,14 @@ package androidx.core.app {
     method public androidx.core.app.NotificationCompat.ProgressStyle.Segment setId(int);
   }
 
+  public static final class NotificationCompat.ProjectedExtender implements androidx.core.app.NotificationCompat.Extender {
+    ctor public NotificationCompat.ProjectedExtender();
+    ctor public NotificationCompat.ProjectedExtender(android.app.Notification);
+    method public androidx.core.app.NotificationCompat.Builder extend(androidx.core.app.NotificationCompat.Builder);
+    method public android.app.PendingIntent? getContentIntent();
+    method public androidx.core.app.NotificationCompat.ProjectedExtender setContentIntent(android.app.PendingIntent?);
+  }
+
   @IntDef({androidx.core.app.NotificationCompat.FOREGROUND_SERVICE_DEFAULT, androidx.core.app.NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE, androidx.core.app.NotificationCompat.FOREGROUND_SERVICE_DEFERRED}) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface NotificationCompat.ServiceNotificationBehavior {
   }
 

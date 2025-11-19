@@ -16,7 +16,7 @@
 
 package androidx.room3.coroutines
 
-import androidx.collection.CircularArray
+import androidx.collection.LruCache
 import androidx.room3.TransactionScope
 import androidx.room3.Transactor
 import androidx.room3.Transactor.SQLiteTransactionType
@@ -67,9 +67,14 @@ internal class ConnectionPoolImpl : ConnectionPool {
     internal var timeout = 30.seconds
     internal var onTimeout = LOG_TIMEOUT_EXCEPTION
 
-    constructor(driver: SQLiteDriver, fileName: String) {
+    constructor(driver: SQLiteDriver, fileName: String, preparedStatementCacheSize: Int) {
         this.driver = driver
-        this.readers = Pool(capacity = 1, connectionFactory = { driver.open(fileName) })
+        this.readers =
+            Pool(
+                capacity = 1,
+                connectionFactory = { driver.open(fileName) },
+                preparedStatementCacheSize = preparedStatementCacheSize,
+            )
         this.writers = readers
     }
 
@@ -78,6 +83,7 @@ internal class ConnectionPoolImpl : ConnectionPool {
         fileName: String,
         maxNumOfReaders: Int,
         maxNumOfWriters: Int,
+        preparedStatementCacheSize: Int,
     ) {
         require(maxNumOfReaders > 0) { "Maximum number of readers must be greater than 0" }
         require(maxNumOfWriters > 0) { "Maximum number of writers must be greater than 0" }
@@ -88,12 +94,19 @@ internal class ConnectionPoolImpl : ConnectionPool {
                 connectionFactory = {
                     driver.open(fileName).also { newConnection ->
                         // Enforce to be read only (might be disabled by a YOLO developer)
+                        // This is called before the connection is delivered to the pool and is not
+                        // cached
                         newConnection.execSQL("PRAGMA query_only = 1")
                     }
                 },
+                preparedStatementCacheSize = preparedStatementCacheSize,
             )
         this.writers =
-            Pool(capacity = maxNumOfWriters, connectionFactory = { driver.open(fileName) })
+            Pool(
+                capacity = maxNumOfWriters,
+                connectionFactory = { driver.open(fileName) },
+                preparedStatementCacheSize = preparedStatementCacheSize,
+            )
     }
 
     override suspend fun <R> useConnection(
@@ -197,13 +210,18 @@ internal class ConnectionPoolImpl : ConnectionPool {
     }
 }
 
-private class Pool(val capacity: Int, val connectionFactory: () -> SQLiteConnection) {
+private class Pool(
+    val capacity: Int,
+    val connectionFactory: () -> SQLiteConnection,
+    val preparedStatementCacheSize: Int,
+) {
     private val lock = ReentrantLock()
     private var size = 0
     private var isClosed = false
     private val connections = arrayOfNulls<ConnectionWithLock>(capacity)
     private val connectionPermits = Semaphore(permits = capacity)
-    private val availableConnections = CircularArray<ConnectionWithLock>(capacity)
+    // The available connections as a stack to maximize cache hits.
+    private val availableConnections = ArrayDeque<ConnectionWithLock>(capacity)
 
     suspend fun acquireWithTimeout(timeout: Duration, onTimeout: () -> Unit): ConnectionWithLock {
         while (true) {
@@ -243,7 +261,7 @@ private class Pool(val capacity: Int, val connectionFactory: () -> SQLiteConnect
                 if (availableConnections.isEmpty()) {
                     tryOpenNewConnectionLocked()
                 }
-                availableConnections.popFirst()
+                availableConnections.removeLast()
             }
         } catch (ex: Throwable) {
             connectionPermits.release()
@@ -256,7 +274,11 @@ private class Pool(val capacity: Int, val connectionFactory: () -> SQLiteConnect
             // Capacity reached
             return
         }
-        val newConnection = ConnectionWithLock(connectionFactory.invoke())
+        val newConnection =
+            ConnectionWithLock(
+                connectionFactory.invoke(),
+                preparedStatementCacheSize = preparedStatementCacheSize,
+            )
         connections[size++] = newConnection
         availableConnections.addLast(newConnection)
     }
@@ -277,7 +299,7 @@ private class Pool(val capacity: Int, val connectionFactory: () -> SQLiteConnect
     fun dump(builder: StringBuilder) =
         lock.withLock {
             val availableQueue = buildList {
-                for (i in 0 until availableConnections.size()) {
+                for (i in 0 until availableConnections.size) {
                     add(availableConnections[i])
                 }
             }
@@ -296,10 +318,29 @@ private class Pool(val capacity: Int, val connectionFactory: () -> SQLiteConnect
 private class ConnectionWithLock(
     private val delegate: SQLiteConnection,
     private val lock: Mutex = Mutex(),
+    preparedStatementCacheSize: Int,
 ) : SQLiteConnection by delegate, Mutex by lock {
 
     private var acquireCoroutineContext: CoroutineContext? = null
     private var acquireThrowable: Throwable? = null
+    private val preparedStatementCache: PreparedStatementCache? =
+        if (preparedStatementCacheSize > 0) {
+            PreparedStatementCache(maxSize = preparedStatementCacheSize)
+        } else {
+            null
+        }
+
+    override fun prepare(sql: String): SQLiteStatement {
+        if (preparedStatementCache != null) {
+            return CachedStatement(preparedStatementCache[sql]!!)
+        }
+        return delegate.prepare(sql)
+    }
+
+    override fun close() {
+        preparedStatementCache?.evictAll()
+        delegate.close()
+    }
 
     fun markAcquired(context: CoroutineContext) = apply {
         acquireCoroutineContext = context
@@ -325,10 +366,43 @@ private class ConnectionWithLock(
         } else {
             builder.appendLine("\t\tStatus: Free connection")
         }
+        if (preparedStatementCache != null) {
+            builder.appendLine(
+                "\t\tPrepared Statement Cache Size: ${preparedStatementCache.size()}"
+            )
+        }
     }
 
     override fun toString(): String {
         return delegate.toString()
+    }
+
+    private inner class PreparedStatementCache(maxSize: Int = 25) :
+        LruCache<String, SQLiteStatement>(maxSize) {
+
+        override fun create(key: String): SQLiteStatement {
+            return delegate.prepare(key)
+        }
+
+        override fun entryRemoved(
+            evicted: Boolean,
+            key: String,
+            oldValue: SQLiteStatement,
+            newValue: SQLiteStatement?,
+        ) {
+            // Statement was removed from cache, we need to close it now so it can't be reused.
+            oldValue.close()
+            super.entryRemoved(evicted, key, oldValue, newValue)
+        }
+    }
+
+    private class CachedStatement(val delegate: SQLiteStatement) : SQLiteStatement by delegate {
+        override fun close() {
+            // Reset the statement now that we have finished using it so that the cache can
+            // reuse it
+            delegate.reset()
+            delegate.clearBindings()
+        }
     }
 }
 

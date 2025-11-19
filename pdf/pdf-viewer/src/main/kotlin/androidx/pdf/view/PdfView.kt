@@ -352,6 +352,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * The current state of the PDF view with respect to external inputs, e.g. user touch. Returns
      * one of [GESTURE_STATE_IDLE], [GESTURE_STATE_INTERACTING], or [GESTURE_STATE_SETTLING]
      */
+    @GestureState
     public var gestureState: Int = GESTURE_STATE_IDLE
         @MainThread private set
 
@@ -371,7 +372,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          * touch. [newState] will be one of [GESTURE_STATE_IDLE], [GESTURE_STATE_INTERACTING], or
          * [GESTURE_STATE_SETTLING]
          */
-        public fun onGestureStateChanged(newState: Int)
+        public fun onGestureStateChanged(@GestureState newState: Int)
     }
 
     private val onGestureStateChangedListeners = mutableListOf<OnGestureStateChangedListener>()
@@ -814,13 +815,13 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
      * i.e. to avoid noise from spurious non-fast-scroll gestures detected during a fast scroll
      * sequence.
      */
-    private fun dispatchGestureStateChangedUnlessFastScroll(newState: Int) {
+    private fun dispatchGestureStateChangedUnlessFastScroll(@GestureState newState: Int) {
         if (fastScrollGestureDetector?.trackingFastScrollGesture == false) {
             dispatchGestureStateChanged(newState)
         }
     }
 
-    private fun dispatchGestureStateChanged(newState: Int) {
+    private fun dispatchGestureStateChanged(@GestureState newState: Int) {
         require(newState in VALID_GESTURE_STATES) {
             "Invalid state change from $gestureState to $newState"
         }
@@ -2152,6 +2153,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(VERTICAL_ALIGNMENT_TOP, VERTICAL_ALIGNMENT_CENTER)
     public annotation class VerticalAlignment
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @Retention(AnnotationRetention.SOURCE)
+    @IntDef(GESTURE_STATE_IDLE, GESTURE_STATE_INTERACTING, GESTURE_STATE_SETTLING)
+    public annotation class GestureState
 
     /** Defines the allowed values for the number of pages displayed per row in the [PdfView]. */
     @IntDef(SINGLE_PAGE, TWO_PAGE) internal annotation class PagesPerRow

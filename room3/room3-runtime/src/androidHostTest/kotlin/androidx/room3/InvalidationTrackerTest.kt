@@ -75,23 +75,24 @@ class InvalidationTrackerTest {
         roomDatabase = FakeRoomDatabase(shadowTables, viewTables, tableNames)
         roomDatabase.init(
             DatabaseConfiguration(
-                context = mock(),
-                name = null,
-                migrationContainer = RoomDatabase.MigrationContainer(),
-                callbacks = null,
-                allowMainThreadQueries = true,
-                journalMode = RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING,
-                multiInstanceInvalidationServiceIntent = null,
-                requireMigration = true,
-                allowDestructiveMigrationOnDowngrade = false,
-                migrationNotRequiredFrom = null,
-                prepackagedDatabaseCallback = null,
-                typeConverters = emptyList(),
-                autoMigrationSpecs = emptyList(),
-                allowDestructiveMigrationForAllTables = false,
-                sqliteDriver = sqliteDriver,
-                queryCoroutineContext = testCoroutineScope.coroutineContext,
-            )
+                    context = mock(),
+                    name = null,
+                    migrationContainer = RoomDatabase.MigrationContainer(),
+                    callbacks = null,
+                    allowMainThreadQueries = true,
+                    journalMode = RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING,
+                    multiInstanceInvalidationServiceIntent = null,
+                    requireMigration = true,
+                    allowDestructiveMigrationOnDowngrade = false,
+                    migrationNotRequiredFrom = null,
+                    prepackagedDatabaseCallback = null,
+                    typeConverters = emptyList(),
+                    autoMigrationSpecs = emptyList(),
+                    allowDestructiveMigrationForAllTables = false,
+                    sqliteDriver = sqliteDriver,
+                    queryCoroutineContext = testCoroutineScope.coroutineContext,
+                )
+                .apply { this.preparedStatementCacheSize = 0 }
         )
         tracker = roomDatabase.invalidationTracker
     }

@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.projected.ProjectedContext
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.testapp.audio.AudioActivity
 import androidx.xr.projected.testapp.componentpermissions.PermissionsComponentActivity
 import androidx.xr.projected.testapp.input.ProjectedInputActivity
@@ -45,6 +46,7 @@ import androidx.xr.projected.testapp.permissions.PermissionsActivity
 import androidx.xr.projected.testapp.projectedcontext.ProjectedContextActivity
 
 /** The MainActivity is used to launch the various projected test activities. */
+@OptIn(ExperimentalProjectedApi::class)
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -84,11 +84,10 @@ class EngagementModeClientTest {
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
     @Test
-    fun testClient_startsUnbound_withDefaultFlags() {
+    fun testClient_startsUnbound_hasNullValue() {
         mClient = EngagementModeClient(mMockContext, mMockHandler)
         mClient!!.addUpdateCallback(mDirectExecutor, mMockConsumer)
-        assertThat(mClient!!.getEngagementModeFlags())
-            .isEqualTo(EngagementModeClient.DEFAULT_ENGAGEMENT_MODE)
+        assertThat(mClient!!.getEngagementModeFlags()).isNull()
         verify(mMockConsumer, never()).accept(any<Int>())
     }
 
@@ -136,7 +135,7 @@ class EngagementModeClientTest {
         callback.onEngagementModeChanged(initialFlags)
         // Client gets the initial state and the update callback is called
         assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(initialFlags)
-        verify(mMockConsumer, times(1)).accept(initialFlags)
+        verify(mMockConsumer).accept(initialFlags)
 
         // Simulate engagement mode update from service
         val newFlags = 0
@@ -144,7 +143,43 @@ class EngagementModeClientTest {
 
         // Client is updated and the update callback is called again
         assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(newFlags)
-        verify(mMockConsumer, times(1)).accept(newFlags)
+        verify(mMockConsumer).accept(newFlags)
+    }
+
+    @Test
+    fun testClient_addCallback_callsWithCurrentState() {
+        // Simulate that bindService succeeds and returns true
+        whenever(mMockContext.bindService(any(), mServiceConnectionCaptor!!.capture(), any<Int>()))
+            .thenReturn(true)
+        mClient = EngagementModeClient(mMockContext, mMockHandler)
+        val anotherMockConsumer = mock<Consumer<Int>>()
+        // Add the first listener.
+        mClient!!.addUpdateCallback(mDirectExecutor, mMockConsumer)
+        val connection = mServiceConnectionCaptor.firstValue
+        connection.onServiceConnected(ComponentName(FAKE_PACKAGE_NAME, "Test"), mMockBinder)
+        // Verify callback is registered
+        verify<IEngagementModeService>(mMockService).registerCallback(mCallbackCaptor!!.capture())
+        val callback = mCallbackCaptor.firstValue
+        // Simulate initial state from service
+        val initialFlags = EngagementModeClient.ENGAGEMENT_MODE_FLAG_VISUALS_ON
+        callback.onEngagementModeChanged(initialFlags)
+        // Client gets the initial state and the update callback is called
+        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(initialFlags)
+        verify(mMockConsumer).accept(initialFlags)
+
+        // Add the second listener.
+        mClient!!.addUpdateCallback(mDirectExecutor, anotherMockConsumer)
+        // Client gets the initial state and the update callback is called
+        verify(anotherMockConsumer).accept(initialFlags)
+
+        // Simulate engagement mode update from service
+        val newFlags = 0
+        callback.onEngagementModeChanged(newFlags)
+
+        // Client is updated and the both callbacks are called again
+        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(newFlags)
+        verify(mMockConsumer).accept(newFlags)
+        verify(anotherMockConsumer).accept(newFlags)
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
@@ -165,15 +200,13 @@ class EngagementModeClientTest {
         callback.onEngagementModeChanged(initialFlags)
         // Client gets the initial state and the update callback is called
         assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(initialFlags)
-        verify(mMockConsumer, times(1)).accept(initialFlags)
+        verify(mMockConsumer).accept(initialFlags)
 
         // Disconnect from service
         connection.onServiceDisconnected(ComponentName(FAKE_PACKAGE_NAME, "Test"))
 
-        // Verify that the flags are reset to the default value
-        assertThat(mClient!!.getEngagementModeFlags())
-            .isEqualTo(EngagementModeClient.DEFAULT_ENGAGEMENT_MODE)
-        verify(mMockConsumer, times(1)).accept(EngagementModeClient.DEFAULT_ENGAGEMENT_MODE)
+        // Verify that the flags are reset to the default value, but the callback isn't called.
+        assertThat(mClient!!.getEngagementModeFlags()).isNull()
     }
 
     @Test
@@ -221,7 +254,7 @@ class EngagementModeClientTest {
         mClient!!.addUpdateCallback(mDirectExecutor, Consumer { i: Int -> })
 
         // Verify bindService is only called once
-        verify<Context>(mMockContext, times(1)).bindService(any(), any(), any<Int>())
+        verify<Context>(mMockContext).bindService(any(), any(), any<Int>())
     }
 
     @Test

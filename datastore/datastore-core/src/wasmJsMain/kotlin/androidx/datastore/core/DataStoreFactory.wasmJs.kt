@@ -16,6 +16,8 @@
 
 package androidx.datastore.core
 
+import androidx.datastore.core.handlers.NoOpCorruptionHandler
+
 /** Public factory for creating DataStore instances. */
 actual object DataStoreFactory {
     actual fun <T> create(
@@ -24,6 +26,11 @@ actual object DataStoreFactory {
         migrations: List<DataMigration<T>>,
         scope: kotlinx.coroutines.CoroutineScope,
     ): DataStore<T> {
-        TODO("Not yet implemented")
+        return DataStoreImpl(
+            storage = storage,
+            corruptionHandler = corruptionHandler ?: NoOpCorruptionHandler(),
+            initTasksList = listOf(DataMigrationInitializer.getInitializer(migrations)),
+            scope = scope,
+        )
     }
 }

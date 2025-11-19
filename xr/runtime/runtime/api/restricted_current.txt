@@ -402,7 +402,7 @@ package androidx.xr.runtime {
 
   public final class XrDevice {
     method public static androidx.xr.runtime.XrDevice getCurrentDevice(androidx.xr.runtime.Session session);
-    method public androidx.xr.runtime.XrDevice.DisplayBlendMode getPreferredBlendMode();
+    method public androidx.xr.runtime.XrDevice.DisplayBlendMode getPreferredDisplayBlendMode();
     field public static final androidx.xr.runtime.XrDevice.Companion Companion;
   }
 

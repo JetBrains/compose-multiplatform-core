@@ -60,6 +60,10 @@ internal constructor(
         }
     }
 
+    override suspend fun requiresInstall(): Boolean {
+        return true
+    }
+
     @PublishedApi
     internal companion object {
         // Used to represent that the current slice has begun.

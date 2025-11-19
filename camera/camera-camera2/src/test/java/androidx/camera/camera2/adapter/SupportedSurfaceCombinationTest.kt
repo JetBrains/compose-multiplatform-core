@@ -166,7 +166,7 @@ import org.robolectric.util.ReflectionHelpers
 @Suppress("DEPRECATION")
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-// TOD: b/456628955 - Add @Config(sdk = [Config.ALL_SDKS]) when resolved
+@Config(sdk = [Config.ALL_SDKS])
 class SupportedSurfaceCombinationTest {
     private val streamUseCaseOption: androidx.camera.core.impl.Config.Option<Long> =
         androidx.camera.core.impl.Config.Option.create(
@@ -4670,6 +4670,7 @@ class SupportedSurfaceCombinationTest {
         }
     }
 
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forVideoStabilization() {
         val previewUseCase = createUseCase(CaptureType.PREVIEW)
@@ -4685,6 +4686,7 @@ class SupportedSurfaceCombinationTest {
         }
     }
 
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forUltraHdr() {
         val previewUseCase = createUseCase(CaptureType.PREVIEW)
@@ -4696,7 +4698,7 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
-    @Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forHlg10() {
         val previewUseCase = createUseCase(CaptureType.PREVIEW, dynamicRange = HLG_10_BIT)
@@ -4709,6 +4711,7 @@ class SupportedSurfaceCombinationTest {
         )
     }
 
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_for60Fps() {
         val previewUseCase = createUseCase(CaptureType.PREVIEW, targetFrameRate = Range(60, 60))
@@ -4931,6 +4934,7 @@ class SupportedSurfaceCombinationTest {
             .isFalse()
     }
 
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun checkSupported_returnsTrueForBaklavaFcqStreamCombo_whenVideoStabilizationIsOn() {
         // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true

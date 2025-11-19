@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.sdkruntime.provider.controller
 
@@ -50,6 +51,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
  *
  * @see [SdkSandboxController]
  */
+@Deprecated("This library is no longer supported.")
 public class SdkSandboxControllerCompat
 internal constructor(private val controllerImpl: SdkSandboxControllerBackend) {
 

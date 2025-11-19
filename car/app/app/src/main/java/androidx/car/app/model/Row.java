@@ -123,6 +123,8 @@ public final class Row implements Item {
     private final boolean mIsBrowsable;
     @RowImageType
     private final int mRowImageType;
+    @RowImageType
+    private final int mRowEndImageType;
     private final boolean mIndexable;
 
     /**
@@ -181,6 +183,13 @@ public final class Row implements Item {
     @RowImageType
     public int getRowImageType() {
         return mRowImageType;
+    }
+
+    /** Returns the type of the end image in the row. */
+    @RequiresCarApi(8)
+    @RowImageType
+    public int getRowEndImageType() {
+        return mRowEndImageType;
     }
 
     /**
@@ -301,6 +310,7 @@ public final class Row implements Item {
                 mMetadata,
                 mIsBrowsable,
                 mRowImageType,
+                mRowEndImageType,
                 mIsEnabled,
                 mIndexable);
     }
@@ -325,6 +335,7 @@ public final class Row implements Item {
                 && Objects.equals(mMetadata, otherRow.mMetadata)
                 && mIsBrowsable == otherRow.mIsBrowsable
                 && mRowImageType == otherRow.mRowImageType
+                && mRowEndImageType == otherRow.mRowEndImageType
                 && mIsEnabled == otherRow.isEnabled()
                 && mIndexable == otherRow.mIndexable;
     }
@@ -341,6 +352,7 @@ public final class Row implements Item {
         mMetadata = builder.mMetadata;
         mIsBrowsable = builder.mIsBrowsable;
         mRowImageType = builder.mRowImageType;
+        mRowEndImageType = builder.mRowEndImageType;
         mIsEnabled = builder.mIsEnabled;
         mIndexable = builder.mIndexable;
     }
@@ -358,6 +370,7 @@ public final class Row implements Item {
         mMetadata = EMPTY_METADATA;
         mIsBrowsable = false;
         mRowImageType = IMAGE_TYPE_SMALL;
+        mRowEndImageType = IMAGE_TYPE_SMALL;
         mIsEnabled = true;
         mIndexable = true;
     }
@@ -377,6 +390,8 @@ public final class Row implements Item {
         boolean mIsBrowsable;
         @RowImageType
         int mRowImageType = IMAGE_TYPE_SMALL;
+        @RowImageType
+        int mRowEndImageType = IMAGE_TYPE_SMALL;
         boolean mIndexable = true;
 
         /**
@@ -546,7 +561,18 @@ public final class Row implements Item {
         }
 
         /**
-         * Sets a fixed-sized image to show at the <strong>end</strong> of the row content, but
+         * Sets an image at the end of the row, with the default size {@link #IMAGE_TYPE_SMALL}.
+         *
+         * @throws NullPointerException if {@code endImage} is {@code null}
+         * @see #setEndImage(CarIcon, int)
+         */
+        @RequiresCarApi(8)
+        public @NonNull Builder setEndImage(@NonNull CarIcon image) {
+            return setEndImage(requireNonNull(image), IMAGE_TYPE_SMALL);
+        }
+
+        /**
+         * Sets an image to show at the <strong>end</strong> of the row content, but
          * <strong>before</strong> the <strong>secondary actions</strong> (if set via
          * {@link #addAction(Action)}), and is distinct from the primary image set via
          * {@link #setImage(CarIcon)}.
@@ -561,12 +587,16 @@ public final class Row implements Item {
          *
          * @param endImage The {@link CarIcon} to display at the end of the row, or {@code null} to
          * not display one.
+         * @param rowEndImageType one of {IMAGE_TYPE_SMALL, IMAGE_TYPE_ICON, IMAGE_TYPE_LARGE,
+         *                        IMAGE_TYPE_EXTRA_SMALL}
          * @throws NullPointerException if {@code endImage} is {@code null}
          */
         @RequiresCarApi(8)
-        public @NonNull Builder setEndImage(@NonNull CarIcon endImage) {
+        public @NonNull Builder setEndImage(@NonNull CarIcon endImage,
+        @RowImageType int rowEndImageType) {
             CarIconConstraints.UNCONSTRAINED.validateOrThrow(requireNonNull(endImage));
             mEndImage = endImage;
+            mRowEndImageType = rowEndImageType;
             return this;
         }
 

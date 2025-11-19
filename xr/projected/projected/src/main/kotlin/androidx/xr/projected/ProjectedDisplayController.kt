@@ -17,21 +17,17 @@
 package androidx.xr.projected
 
 import android.app.Activity
-import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
-import androidx.annotation.UiContext
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IProjectedService
+import java.util.concurrent.Executor
 import java.util.function.Consumer
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.asExecutor
 
 /**
  * Controller for the Projected device display.
@@ -44,6 +40,10 @@ private constructor(
     private val projectedService: IProjectedService,
     private val engagementModeClient: EngagementModeClient,
 ) : AutoCloseable {
+
+    /** Map to convert the provided listener to the one passed to the [EngagementModeClient]. */
+    private val engagementModeListeners =
+        mutableMapOf<Consumer<Set<EngagementMode>>, Consumer<Int>>()
 
     /**
      * Convenience function to set the flag bits as as per the
@@ -84,8 +84,68 @@ private constructor(
     public fun isDisplayCapable(): Boolean = projectedService.isDisplayCapable()
 
     /**
+     * An EngagementMode value.
+     *
+     * The EngagementMode represents how a user is interacting with a projected application (e.g.
+     * are visuals on)
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public class EngagementMode internal constructor(private val id: Int) {
+        override fun toString(): String =
+            when (id) {
+                0 -> "VISUALS_ON"
+                else -> "UNKNOWN($id)"
+            }
+
+        override fun equals(other: Any?): Boolean = (other is EngagementMode) && this.id == other.id
+
+        override fun hashCode(): Int = id.hashCode()
+
+        public companion object {
+            /**
+             * Indicates the engagement mode includes a visual presentation. When this mode is
+             * active, the user can visually see the app UI on a visible window.
+             */
+            @JvmField public val VISUALS_ON: EngagementMode = EngagementMode(0)
+        }
+    }
+
+    /**
+     * Adds a callback to listen for the EngagementMode.
+     *
+     * The EngagementMode represents how a user is interacting with a projected application (e.g.
+     * are visuals on). The callback will be called as soon as it is available.
+     */
+    // TODO: b/457550010 - Make EngagementMode calls thread safe.
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun addEngagementModeChangedListener(
+        executor: Executor = Dispatchers.Main.asExecutor(),
+        listener: Consumer<Set<EngagementMode>>,
+    ) {
+        val convertedListener = Consumer { engagementModeFlags: Int ->
+            listener.accept(convertToEngagementModeSet(engagementModeFlags))
+        }
+        engagementModeListeners[listener] = convertedListener
+        engagementModeClient.addUpdateCallback(executor, convertedListener)
+    }
+
+    /**
+     * Remove a listener to stop consuming [EngagementMode] values. If the listener has already been
+     * removed then this is a no-op.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun removeEngagementModeChangedListener(listener: Consumer<Set<EngagementMode>>) {
+        val convertedListener: Consumer<Int>? = this.engagementModeListeners[listener]
+        convertedListener?.let {
+            engagementModeClient.removeUpdateCallback(it)
+            engagementModeListeners.remove(listener)
+        }
+    }
+
+    /**
      * Disconnects from the service providing features for Projected devices. Methods from the
-     * [ProjectedDisplayController] shouldn't be called after this.
+     * [ProjectedDisplayController] shouldn't be called after this. All EngagementMode changed
+     * listeners will be removed when this is called.
      *
      * This method should be called in [android.app.Activity.onDestroy].
      */
@@ -93,30 +153,13 @@ private constructor(
         connection.disconnect()
     }
 
-    /**
-     * A [Flow] of [WindowLayoutInfo] that contains the Engagement mode.
-     *
-     * A [WindowLayoutInfo] value should be published when [WindowLayoutInfo.EngagementMode] has
-     * changed, but the behavior is ultimately decided by the hardware implementation. It is
-     * recommended to test the following scenarios:
-     * * Values are emitted immediately after subscribing to this function.
-     * * There is a long delay between subscribing and receiving the first value.
-     * * Never receiving a value after subscription.
-     *
-     * @param context a [UiContext] such as an [Activity], that listens to configuration changes.
-     * @throws IllegalArgumentException when [context] is not a [UiContext].
-     */
-    // TODO: b/456198269 - investigate if Dispatchers.Main is needed.
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun windowLayoutInfo(@UiContext context: Context): Flow<WindowLayoutInfo> =
-        callbackFlow {
-                val listener = Consumer { engagementModeFlags: Int ->
-                    trySend(WindowLayoutInfo(engagementModeFlags))
-                }
-                engagementModeClient.addUpdateCallback(Runnable::run, listener)
-                awaitClose { engagementModeClient.removeUpdateCallback(listener) }
-            }
-            .flowOn(Dispatchers.Main)
+    private fun convertToEngagementModeSet(engagementModes: Int): Set<EngagementMode> {
+        val engagementModeSet: MutableSet<EngagementMode> = mutableSetOf()
+        if (engagementModes and EngagementModeClient.ENGAGEMENT_MODE_FLAG_VISUALS_ON != 0) {
+            engagementModeSet.add(EngagementMode.VISUALS_ON)
+        }
+        return engagementModeSet
+    }
 
     public companion object {
         /**
@@ -131,6 +174,7 @@ private constructor(
          */
         @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
         @JvmStatic
+        @ExperimentalProjectedApi
         public suspend fun create(activity: Activity): ProjectedDisplayController {
             require(
                 ProjectedContext.isProjectedDeviceContext(activity),

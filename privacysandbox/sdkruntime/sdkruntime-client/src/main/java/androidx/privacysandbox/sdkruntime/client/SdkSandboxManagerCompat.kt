@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
+
 package androidx.privacysandbox.sdkruntime.client
 
 import android.app.Activity
@@ -76,6 +78,7 @@ import org.jetbrains.annotations.TestOnly
  *
  * @see [SdkSandboxManager]
  */
+@Deprecated("This library is no longer supported.")
 public class SdkSandboxManagerCompat
 private constructor(
     private val platformApi: PlatformApi,

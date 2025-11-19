@@ -45,6 +45,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.xr.projected.ProjectedContext
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import java.io.File
 import java.io.FileInputStream
 import kotlinx.coroutines.Dispatchers
@@ -52,6 +53,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 /** The AudioActivity records and plays back audio on a projected device. */
+@OptIn(ExperimentalProjectedApi::class)
 class AudioActivity : ComponentActivity() {
     lateinit var audioRecord: AudioRecord
     lateinit var audioTrack: AudioTrack

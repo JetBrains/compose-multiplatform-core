@@ -766,6 +766,14 @@ package androidx.core.app {
     method public androidx.core.app.NotificationCompat.ProgressStyle.Segment setId(int);
   }
 
+  public static final class NotificationCompat.ProjectedExtender implements androidx.core.app.NotificationCompat.Extender {
+    ctor public NotificationCompat.ProjectedExtender();
+    ctor public NotificationCompat.ProjectedExtender(android.app.Notification);
+    method public androidx.core.app.NotificationCompat.Builder extend(androidx.core.app.NotificationCompat.Builder);
+    method public android.app.PendingIntent? getContentIntent();
+    method public androidx.core.app.NotificationCompat.ProjectedExtender setContentIntent(android.app.PendingIntent?);
+  }
+
   public abstract static class NotificationCompat.Style {
     ctor public NotificationCompat.Style();
     method public android.app.Notification? build();

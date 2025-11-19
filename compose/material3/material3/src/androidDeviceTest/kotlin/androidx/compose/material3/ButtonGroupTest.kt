@@ -22,9 +22,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.testutils.assertIsEqualTo
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalConfiguration
@@ -44,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.math.roundToInt
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
@@ -66,7 +69,7 @@ class ButtonGroupTest {
     fun default_positioning() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}) {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
                     clickableItem(onClick = {}, label = "A")
                     clickableItem(onClick = {}, label = "B")
                     clickableItem(onClick = {}, label = "C")
@@ -92,7 +95,7 @@ class ButtonGroupTest {
     fun differentHorizontalSpacing_positioning() {
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}) {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
                     clickableItem(onClick = {}, label = "A")
                     clickableItem(onClick = {}, label = "B")
                     clickableItem(onClick = {}, label = "C")
@@ -124,7 +127,11 @@ class ButtonGroupTest {
 
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
+                ButtonGroup(
+                    overflowIndicator = {},
+                    expandedRatio = expandedRatio,
+                    verticalAlignment = Alignment.Top,
+                ) {
                     customItem(
                         buttonGroupContent = {
                             Button(
@@ -219,7 +226,11 @@ class ButtonGroupTest {
 
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
+                ButtonGroup(
+                    overflowIndicator = {},
+                    expandedRatio = expandedRatio,
+                    verticalAlignment = Alignment.Top,
+                ) {
                     customItem(
                         buttonGroupContent = {
                             Button(
@@ -314,7 +325,11 @@ class ButtonGroupTest {
 
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
+                ButtonGroup(
+                    overflowIndicator = {},
+                    expandedRatio = expandedRatio,
+                    verticalAlignment = Alignment.Top,
+                ) {
                     customItem(
                         buttonGroupContent = {
                             Button(
@@ -409,7 +424,11 @@ class ButtonGroupTest {
 
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
+                ButtonGroup(
+                    overflowIndicator = {},
+                    expandedRatio = expandedRatio,
+                    verticalAlignment = Alignment.Top,
+                ) {
                     customItem(
                         buttonGroupContent = {
                             Button(
@@ -504,7 +523,11 @@ class ButtonGroupTest {
 
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
+                ButtonGroup(
+                    overflowIndicator = {},
+                    expandedRatio = expandedRatio,
+                    verticalAlignment = Alignment.Top,
+                ) {
                     customItem(
                         buttonGroupContent = {
                             Button(
@@ -599,7 +622,11 @@ class ButtonGroupTest {
 
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
+                ButtonGroup(
+                    overflowIndicator = {},
+                    expandedRatio = expandedRatio,
+                    verticalAlignment = Alignment.Top,
+                ) {
                     customItem(
                         buttonGroupContent = {
                             Button(
@@ -694,7 +721,11 @@ class ButtonGroupTest {
 
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
+                ButtonGroup(
+                    overflowIndicator = {},
+                    expandedRatio = expandedRatio,
+                    verticalAlignment = Alignment.Top,
+                ) {
                     customItem(
                         buttonGroupContent = {
                             Button(
@@ -789,7 +820,11 @@ class ButtonGroupTest {
 
         rule.setMaterialContent(lightColorScheme()) {
             Box(Modifier.testTag(wrapperTestTag)) {
-                ButtonGroup(overflowIndicator = {}, expandedRatio = expandedRatio) {
+                ButtonGroup(
+                    overflowIndicator = {},
+                    expandedRatio = expandedRatio,
+                    verticalAlignment = Alignment.Top,
+                ) {
                     customItem(
                         buttonGroupContent = {
                             Button(
@@ -882,7 +917,8 @@ class ButtonGroupTest {
                 ButtonGroup(
                     overflowIndicator = {
                         IconButton(modifier = Modifier.testTag(overflowIndicator), onClick = {}) {}
-                    }
+                    },
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0 until numButtons) {
                         clickableItem(onClick = {}, label = "$i")
@@ -901,7 +937,8 @@ class ButtonGroupTest {
                 ButtonGroup(
                     overflowIndicator = {
                         IconButton(modifier = Modifier.testTag(overflowIndicator), onClick = {}) {}
-                    }
+                    },
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0 until numButtons) {
                         clickableItem(onClick = {}, label = "$i")
@@ -929,7 +966,8 @@ class ButtonGroupTest {
                                 }
                             },
                         ) {}
-                    }
+                    },
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0 until numButtons) {
                         customItem(
@@ -964,6 +1002,7 @@ class ButtonGroupTest {
                 ButtonGroup(
                     overflowIndicator = {},
                     modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0..interactionSources.lastIndex) {
                         clickableItem(onClick = {}, label = "$i")
@@ -998,6 +1037,7 @@ class ButtonGroupTest {
                     overflowIndicator = {},
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0..interactionSources.lastIndex) {
                         clickableItem(onClick = {}, label = "$i")
@@ -1025,6 +1065,7 @@ class ButtonGroupTest {
                     overflowIndicator = {},
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0..interactionSources.lastIndex) {
                         clickableItem(onClick = {}, label = "$i")
@@ -1052,6 +1093,7 @@ class ButtonGroupTest {
                     overflowIndicator = {},
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.Top,
                 ) {
                     for (i in 0..interactionSources.lastIndex) {
                         clickableItem(onClick = {}, label = "$i")
@@ -1064,5 +1106,127 @@ class ButtonGroupTest {
         val buttonRange = buttonOneBounds.left..buttonThreeBounds.right
         val expectedPositioning = screenWidth * 2 / 3
         assertThat(expectedPositioning in buttonRange).isTrue()
+    }
+
+    @Test
+    fun buttonGroup_verticalAlignment_isTop() {
+        val button1Tag = "button1"
+        val button2Tag = "button2"
+
+        rule.setContent {
+            Box {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Top) {
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.height(48.dp).testTag(button1Tag),
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.height(64.dp).testTag(button2Tag),
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                }
+            }
+        }
+
+        val button1Top = rule.onNodeWithTag(button1Tag).getUnclippedBoundsInRoot().top
+        val button2Top = rule.onNodeWithTag(button2Tag).getUnclippedBoundsInRoot().top
+        assertThat(button1Top).isEqualTo(button2Top)
+    }
+
+    @Test
+    fun buttonGroup_verticalAlignment_isCenter() {
+        val button1Tag = "button1"
+        val button2Tag = "button2"
+
+        rule.setContent {
+            Box {
+                ButtonGroup(
+                    overflowIndicator = {},
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.height(48.dp).testTag(button1Tag),
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.height(64.dp).testTag(button2Tag),
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                }
+            }
+        }
+
+        val button1Bounds = rule.onNodeWithTag(button1Tag).getUnclippedBoundsInRoot()
+        val button2Bounds = rule.onNodeWithTag(button2Tag).getUnclippedBoundsInRoot()
+        val button1Center = button1Bounds.top + (button1Bounds.bottom - button1Bounds.top) / 2
+        val button2Center = button2Bounds.top + (button2Bounds.bottom - button2Bounds.top) / 2
+        assertThat(button1Center.value.roundToInt()).isEqualTo(button2Center.value.roundToInt())
+    }
+
+    @Test
+    fun buttonGroup_verticalAlignment_isBottom() {
+        val button1Tag = "button1"
+        val button2Tag = "button2"
+
+        rule.setContent {
+            Box {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Bottom) {
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.height(48.dp).testTag(button1Tag),
+                            ) {
+                                Text("A")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.height(64.dp).testTag(button2Tag),
+                            ) {
+                                Text("B")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                }
+            }
+        }
+
+        val button1Bottom = rule.onNodeWithTag(button1Tag).getUnclippedBoundsInRoot().bottom
+        val button2Bottom = rule.onNodeWithTag(button2Tag).getUnclippedBoundsInRoot().bottom
+        assertThat(button1Bottom).isEqualTo(button2Bottom)
     }
 }

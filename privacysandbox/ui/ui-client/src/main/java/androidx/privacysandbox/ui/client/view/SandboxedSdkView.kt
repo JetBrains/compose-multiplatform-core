@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.client.view
 
@@ -37,6 +38,7 @@ import androidx.tracing.trace
 import kotlin.math.min
 
 /** A listener for events relating to the SandboxedSdkView UI presentation. */
+@Deprecated("This library is no longer supported.")
 public interface SandboxedSdkViewEventListener {
     /**
      * Called when the UI is committed to the display. The UI might still not be visible to the user
@@ -65,6 +67,7 @@ internal interface RefreshableSessionClient : SessionClient {
     fun onSessionRefreshRequested(callback: Consumer<Boolean>)
 }
 
+@Deprecated("This library is no longer supported.")
 public class SandboxedSdkView
 @JvmOverloads
 constructor(context: Context, attrs: AttributeSet? = null) : ViewGroup(context, attrs) {

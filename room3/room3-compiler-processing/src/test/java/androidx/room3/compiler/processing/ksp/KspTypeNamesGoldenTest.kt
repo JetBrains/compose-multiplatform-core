@@ -23,7 +23,6 @@ import androidx.room3.compiler.processing.XExecutableElement
 import androidx.room3.compiler.processing.XMethodElement
 import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.CompilationTestCapabilities
-import androidx.room3.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.compileFiles
@@ -70,32 +69,6 @@ class KspTypeNamesGoldenTest {
 
         // make sure none of the signatures contain duplicate names
         assertThat(kaptSignatures.map { it.name }).containsNoDuplicates()
-    }
-
-    @Test
-    fun ksp1SignatureTest() {
-        var kaptSignatures = listOf<MethodSignature>()
-        runKaptTest(sources = sources, classpath = classpath) { invocation ->
-            kaptSignatures = collectSignatures(invocation, subjects)
-        }
-
-        var ksp1Signatures = listOf<MethodSignature>()
-        runKspTest(
-            sources = sources,
-            classpath = classpath,
-            kotlincArguments = KOTLINC_LANGUAGE_1_9_ARGS,
-        ) { invocation ->
-            ksp1Signatures = collectSignatures(invocation, subjects)
-        }
-
-        // make sure none of the signatures contain duplicate names
-        assertThat(ksp1Signatures.map { it.name }).containsNoDuplicates()
-
-        // Check that the KSP1 signatures match KAPT
-        assertKspSignaturesMatchKapt(
-            kaptSignatures = kaptSignatures.associateBy { it.name },
-            kspSignatures = ksp1Signatures.associateBy { it.name },
-        )
     }
 
     @Test

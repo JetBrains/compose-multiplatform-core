@@ -46,5 +46,17 @@ package androidx.savedstate.compose.serialization.serializers {
     method @KotlinOnly public static inline <reified K, reified V> androidx.savedstate.compose.serialization.serializers.SnapshotStateMapSerializer<K,V> SnapshotStateMapSerializer();
   }
 
+  public final class SnapshotStateSetSerializer<T> implements kotlinx.serialization.KSerializer<androidx.compose.runtime.snapshots.SnapshotStateSet<T>> {
+    ctor public SnapshotStateSetSerializer(kotlinx.serialization.KSerializer<T> elementSerializer);
+    method public androidx.compose.runtime.snapshots.SnapshotStateSet<T> deserialize(kotlinx.serialization.encoding.Decoder decoder);
+    method @InaccessibleFromKotlin public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method public void serialize(kotlinx.serialization.encoding.Encoder encoder, androidx.compose.runtime.snapshots.SnapshotStateSet<T> value);
+    property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
+  }
+
+  public final class SnapshotStateSetSerializerKt {
+    method @KotlinOnly public static inline <reified T> androidx.savedstate.compose.serialization.serializers.SnapshotStateSetSerializer<T> SnapshotStateSetSerializer();
+  }
+
 }
 

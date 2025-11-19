@@ -58,14 +58,14 @@ public class XrDevice private constructor(private val session: Session) {
     }
 
     /**
-     * Returns the preferred blend mode for this session.
+     * Returns the preferred display blend mode for this session.
      *
      * @return The [DisplayBlendMode] that is preferred by the [Session] for rendering.
      *   [DisplayBlendMode.NO_DISPLAY] will be returned if there are no supported blend modes
      *   available.
      * @throws IllegalStateException if the [Session] has been destroyed.
      */
-    public fun getPreferredBlendMode(): DisplayBlendMode {
+    public fun getPreferredDisplayBlendMode(): DisplayBlendMode {
         return if (session.runtimes.isEmpty()) {
             DisplayBlendMode.NO_DISPLAY
         } else {

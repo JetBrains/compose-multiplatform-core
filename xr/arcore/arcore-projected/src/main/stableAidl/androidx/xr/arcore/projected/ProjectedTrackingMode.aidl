@@ -22,5 +22,7 @@ enum ProjectedTrackingMode {
   /** 6DoF tracking. */
   PROJECTED_TRACKING_6DOF,
   /** 3DoF tracking. */
-  PROJECTED_TRACKING_3DOF
+  PROJECTED_TRACKING_3DOF,
+  /** tracking disabled. */
+  PROJECTED_TRACKING_DISABLED
 }

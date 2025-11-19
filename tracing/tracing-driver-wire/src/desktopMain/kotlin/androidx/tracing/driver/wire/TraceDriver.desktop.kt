@@ -37,9 +37,9 @@ public fun TraceDriver(sink: TraceSink, isEnabled: Boolean = true): TraceDriver 
     val name = processHandle.info().command().getOrNull() ?: "Process pid($pid)"
 
     // Eagerly populate a process track
-    val process = driver.context.getOrCreateProcessTrack(id = pid.toInt(), name = name)
+    driver.context.createProcessTrack(id = pid.toInt(), name = name)
     // Eagerly populate the current thread track
     val thread = Thread.currentThread()
-    process.getOrCreateThreadTrack(id = thread.id.toInt(), name = thread.name)
+    driver.context.process.getOrCreateThreadTrack(id = thread.id.toInt(), name = thread.name)
     return driver
 }

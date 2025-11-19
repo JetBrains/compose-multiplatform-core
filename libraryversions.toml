@@ -293,7 +293,7 @@ RECOMMENDATION = { group = "androidx.recommendation", atomicGroupVersion = "vers
 RECYCLERVIEW = { group = "androidx.recyclerview" }
 REMOTECALLBACK = { group = "androidx.remotecallback", atomicGroupVersion = "versions.REMOTECALLBACK" }
 REMOTECOMPOSE = { group = "androidx.compose.remote", atomicGroupVersion = "versions.REMOTECOMPOSE" }
-REMOTECOMPOSE_WEAR = { group = "androidx.compose.remote.wear", atomicGroupVersion = "versions.REMOTECOMPOSE_WEAR" }
+REMOTECOMPOSE_WEAR = { group = "androidx.wear.compose.remote", atomicGroupVersion = "versions.REMOTECOMPOSE_WEAR" }
 RESOURCEINSPECTION = { group = "androidx.resourceinspection", atomicGroupVersion = "versions.RESOURCEINSPECTION" }
 ROOM3 = { group = "androidx.room3", atomicGroupVersion = "versions.ROOM3" }
 SAFEPARCEL = { group = "androidx.safeparcel", atomicGroupVersion = "versions.SAFEPARCEL" }

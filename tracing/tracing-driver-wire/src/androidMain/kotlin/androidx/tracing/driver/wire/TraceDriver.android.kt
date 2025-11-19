@@ -18,6 +18,8 @@
 
 package androidx.tracing.driver.wire
 
+import android.app.ActivityManager
+import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Process
@@ -35,22 +37,50 @@ import androidx.tracing.driver.TraceDriver
 public fun TraceDriver(context: Context, sink: TraceSink, isEnabled: Boolean = true): TraceDriver {
     val driver = TraceDriver(sink = sink, isEnabled = isEnabled)
     val pid = Process.myPid()
-    val processName =
-        if (Build.VERSION.SDK_INT >= 33) {
-            Process.myProcessName()
-        } else {
-            context.packageName
-        }
-
+    val processName = getProcessName(context = context)
     // Eagerly populate a process track
-    val process = driver.context.getOrCreateProcessTrack(id = pid, name = processName)
-    process.getOrCreateThreadTrack(id = pid, name = processName) // Main thread
+    driver.context.createProcessTrack(id = pid, name = processName)
+    // Eager populate the main thread track
+    // For the main thread on Android pid = tid
+    driver.context.process.getOrCreateThreadTrack(id = pid, name = processName) // Main thread
     // Thread Tracks
+    // There are multiple ways of obtaining tids.
+    // You can use android.Os.gettid(). This makes a JNI call under the hood (libcore) [SLOW].
+    // This method returns an `Int`.
+    // The fastest way of getting a `tid` is by relying on `Thread.currentThread().id`. Even
+    // though this method returns a `Long` type, given the underlying tid is an `Int` as defined
+    // in libcore - this downcast is safe.
     val thread = Thread.currentThread()
     val tid = thread.id.toInt()
+    // Populate additional thread tracks if necessary.
     if (tid != pid) {
         val thread = Thread.currentThread()
-        process.getOrCreateThreadTrack(id = tid, name = thread.name)
+        driver.context.process.getOrCreateThreadTrack(id = tid, name = thread.name)
     }
     return driver
+}
+
+internal fun getProcessName(context: Context): String {
+    if (Build.VERSION.SDK_INT >= 28) return Application.getProcessName()
+    @Suppress("PrivateApi")
+    try {
+        // Obtain the name of the current process from the ActivityThread.
+        val activityThread =
+            Class.forName(
+                /* name = */ "android.app.ActivityThread",
+                /* initialize = */ false,
+                /* loader = */ TraceDriver::class.java.classLoader,
+            )
+        val currentProcessName = activityThread.getDeclaredMethod(/* name= */ "currentProcessName")
+        currentProcessName.isAccessible = true
+        val processName = currentProcessName.invoke(null) as? String
+        if (processName != null) return processName
+    } catch (_: Throwable) {
+        // Do nothing
+    }
+    // Slow path
+    val pid = Process.myPid()
+    val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val processName = am.runningAppProcesses?.first { process -> process.pid == pid }?.processName
+    return processName ?: "${context.packageName}($pid)"
 }

@@ -60,7 +60,7 @@ class XrDeviceTest {
             .single()
             .xrDevicePreferredDisplayBlendMode = DisplayBlendMode.ADDITIVE
 
-        assertThat(XrDevice.getCurrentDevice(session).getPreferredBlendMode())
+        assertThat(XrDevice.getCurrentDevice(session).getPreferredDisplayBlendMode())
             .isEqualTo(DisplayBlendMode.ADDITIVE)
     }
 

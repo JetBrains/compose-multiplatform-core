@@ -36,9 +36,20 @@ final class <#A: kotlin/Any?> androidx.savedstate.compose.serialization.serializ
     final fun serialize(kotlinx.serialization.encoding/Encoder, androidx.compose.runtime.snapshots/SnapshotStateList<#A>) // androidx.savedstate.compose.serialization.serializers/SnapshotStateListSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;androidx.compose.runtime.snapshots.SnapshotStateList<1:0>){}[0]
 }
 
+final class <#A: kotlin/Any?> androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer : kotlinx.serialization/KSerializer<androidx.compose.runtime.snapshots/SnapshotStateSet<#A>> { // androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer|null[0]
+    constructor <init>(kotlinx.serialization/KSerializer<#A>) // androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer.<init>|<init>(kotlinx.serialization.KSerializer<1:0>){}[0]
+
+    final val descriptor // androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer.descriptor|{}descriptor[0]
+        final fun <get-descriptor>(): kotlinx.serialization.descriptors/SerialDescriptor // androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer.descriptor.<get-descriptor>|<get-descriptor>(){}[0]
+
+    final fun deserialize(kotlinx.serialization.encoding/Decoder): androidx.compose.runtime.snapshots/SnapshotStateSet<#A> // androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer.deserialize|deserialize(kotlinx.serialization.encoding.Decoder){}[0]
+    final fun serialize(kotlinx.serialization.encoding/Encoder, androidx.compose.runtime.snapshots/SnapshotStateSet<#A>) // androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer.serialize|serialize(kotlinx.serialization.encoding.Encoder;androidx.compose.runtime.snapshots.SnapshotStateSet<1:0>){}[0]
+}
+
 final val androidx.savedstate.compose/LocalSavedStateRegistryOwner // androidx.savedstate.compose/LocalSavedStateRegistryOwner|{}LocalSavedStateRegistryOwner[0]
     final fun <get-LocalSavedStateRegistryOwner>(): androidx.compose.runtime/ProvidableCompositionLocal<androidx.savedstate/SavedStateRegistryOwner> // androidx.savedstate.compose/LocalSavedStateRegistryOwner.<get-LocalSavedStateRegistryOwner>|<get-LocalSavedStateRegistryOwner>(){}[0]
 
 final inline fun <#A: reified kotlin/Any?, #B: reified kotlin/Any?> androidx.savedstate.compose.serialization.serializers/SnapshotStateMapSerializer(): androidx.savedstate.compose.serialization.serializers/SnapshotStateMapSerializer<#A, #B> // androidx.savedstate.compose.serialization.serializers/SnapshotStateMapSerializer|SnapshotStateMapSerializer(){0§<kotlin.Any?>;1§<kotlin.Any?>}[0]
 final inline fun <#A: reified kotlin/Any?> androidx.savedstate.compose.serialization.serializers/MutableStateSerializer(): androidx.savedstate.compose.serialization.serializers/MutableStateSerializer<#A> // androidx.savedstate.compose.serialization.serializers/MutableStateSerializer|MutableStateSerializer(){0§<kotlin.Any?>}[0]
 final inline fun <#A: reified kotlin/Any?> androidx.savedstate.compose.serialization.serializers/SnapshotStateListSerializer(): androidx.savedstate.compose.serialization.serializers/SnapshotStateListSerializer<#A> // androidx.savedstate.compose.serialization.serializers/SnapshotStateListSerializer|SnapshotStateListSerializer(){0§<kotlin.Any?>}[0]
+final inline fun <#A: reified kotlin/Any?> androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer(): androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer<#A> // androidx.savedstate.compose.serialization.serializers/SnapshotStateSetSerializer|SnapshotStateSetSerializer(){0§<kotlin.Any?>}[0]

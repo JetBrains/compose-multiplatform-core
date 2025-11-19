@@ -25,7 +25,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.xr.compose.subspace.SubspaceComposable
 import androidx.xr.compose.subspace.layout.CoreEntity
-import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Session
 
 /**
@@ -54,12 +53,6 @@ internal class SpatialComposeScene(
     /** Root of the spatial scene graph of this [SpatialComposeScene]. */
     internal val rootElement: SpatialComposeElement =
         SpatialComposeElement(this, parentCompositionContext, rootEntity)
-
-    var rootVolumeConstraints: VolumeConstraints
-        get() = rootElement.rootVolumeConstraints
-        set(value) {
-            rootElement.rootVolumeConstraints = value
-        }
 
     fun setContent(content: @Composable @SubspaceComposable () -> Unit) {
         rootElement.setContent(content)

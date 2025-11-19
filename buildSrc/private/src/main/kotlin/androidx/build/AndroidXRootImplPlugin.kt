@@ -48,6 +48,7 @@ import org.gradle.kotlin.dsl.extra
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinNpmInstallTask
+import org.jetbrains.kotlin.gradle.targets.js.npm.tasks.KotlinToolingSetupTask
 
 abstract class AndroidXRootImplPlugin : Plugin<Project> {
     @get:Inject abstract val registry: BuildEventsListenerRegistry
@@ -210,6 +211,11 @@ abstract class AndroidXRootImplPlugin : Plugin<Project> {
             }
 
         configureNode()
+
+        // ensure yarn install is complete before using it to install kotlin wasm tooling
+        tasks.withType<KotlinToolingSetupTask>().configureEach {
+            it.dependsOn(tasks.withType<KotlinNpmInstallTask>())
+        }
 
         tasks.withType<KotlinNpmInstallTask>().configureEach {
             when (it.name) {

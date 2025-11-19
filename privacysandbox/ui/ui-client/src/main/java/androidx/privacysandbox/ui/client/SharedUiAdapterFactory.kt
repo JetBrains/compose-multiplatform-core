@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.client
 
@@ -38,6 +39,7 @@ import java.util.concurrent.Executor
  * Provides an implementation of [SharedUiAdapter] created from a supplied Bundle which acts as a
  * proxy between the host app and the Binder provided by the UI provider.
  */
+@Deprecated("This library is no longer supported.")
 @ExperimentalFeatures.SharedUiPresentationApi
 public object SharedUiAdapterFactory {
 

@@ -33,4 +33,11 @@ import kotlin.coroutines.CoroutineContext
  * context propagation when using Kotlin Coroutines.
  */
 @DelicateTracingApi
-public interface CoroutinePropagationToken : PropagationToken, CoroutineContext.Element
+public interface CoroutinePropagationToken : PropagationToken, CoroutineContext.Element {
+    /**
+     * @return `true` if the [CoroutineContext.Element] needs to be installed in the
+     *   [kotlinx.coroutines.currentCoroutineContext] prior to dispatching the suspending block of
+     *   code being traced.
+     */
+    public suspend fun requiresInstall(): Boolean
+}

@@ -29,7 +29,10 @@ public data class FakePerceptionRuntime(
     override val lifecycleManager: FakeLifecycleManager,
     override val perceptionManager: FakePerceptionManager,
 ) : PerceptionRuntime {
-    /** The value that will be returned by [androidx.xr.runtime.XrDevice.getPreferredBlendMode] */
+    /**
+     * The value that will be returned by
+     * [androidx.xr.runtime.XrDevice.getPreferredDisplayBlendMode]
+     */
     public var xrDevicePreferredDisplayBlendMode: DisplayBlendMode = DisplayBlendMode.NO_DISPLAY
 
     override fun initialize() {

@@ -105,7 +105,7 @@ class ColorPaletteViewTests {
             colorToAssert = penItems[COLOR_ITEM_INDEX]
 
             view.setPaletteItemSelectedListener(
-                getPaletteItemSelectedListener { item -> selectedItem = item }
+                getPaletteItemSelectedListener { _, item -> selectedItem = item }
             )
         }
 
@@ -127,7 +127,7 @@ class ColorPaletteViewTests {
             colorToAssert = penItems[COLOR_ITEM_INDEX]
 
             view.setPaletteItemSelectedListener(
-                getPaletteItemSelectedListener { item ->
+                getPaletteItemSelectedListener { _, item ->
                     callbackTriggered++
                     selectedItem = item
                 }
@@ -145,11 +145,11 @@ class ColorPaletteViewTests {
     }
 
     private fun getPaletteItemSelectedListener(
-        action: (PaletteItem) -> Unit
+        action: (Int, PaletteItem) -> Unit
     ): ColorPaletteView.PaletteItemSelectedListener {
         return object : ColorPaletteView.PaletteItemSelectedListener {
-            override fun onItemSelected(paletteItem: PaletteItem) {
-                action(paletteItem)
+            override fun onItemSelected(index: Int, paletteItem: PaletteItem) {
+                action(index, paletteItem)
             }
         }
     }

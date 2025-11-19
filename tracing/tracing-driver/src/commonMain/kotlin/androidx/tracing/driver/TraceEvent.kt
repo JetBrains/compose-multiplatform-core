@@ -34,6 +34,8 @@ import androidx.annotation.RestrictTo
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val LAST_INDEX_WHEN_EMPTY: Int = -1
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val LAST_CATEGORY_INDEX: Int = 0
+
 /**
  * Mutable in-memory only representation a trace event, such as a slice start, slice end, or counter
  * update.
@@ -156,7 +158,7 @@ internal constructor(
             metadataEntries = MutableList(METADATA_ENTRIES_EXPECTED_SIZE) { MetadataEntry() },
             lastMetadataEntryIndex = LAST_INDEX_WHEN_EMPTY,
             categories = MutableList(size = CATEGORIES_EXPECTED_SIZE) { DEFAULT_STRING },
-            lastCategoryIndex = LAST_INDEX_WHEN_EMPTY,
+            lastCategoryIndex = LAST_CATEGORY_INDEX,
         )
 
     internal inline fun setPreamble(trackDescriptor: TrackDescriptor) {
@@ -239,13 +241,13 @@ internal constructor(
             }
             lastMetadataEntryIndex = LAST_INDEX_WHEN_EMPTY
         }
-        if (lastCategoryIndex >= 0) {
+        if (lastCategoryIndex > LAST_CATEGORY_INDEX) {
             // Reset categories and resize
             repeat(lastCategoryIndex + 1) { categories[it] = DEFAULT_STRING }
             if (lastCategoryIndex >= CATEGORIES_EXPECTED_SIZE) {
                 categories = categories.subList(0, CATEGORIES_EXPECTED_SIZE)
             }
-            lastCategoryIndex = LAST_INDEX_WHEN_EMPTY
+            lastCategoryIndex = LAST_CATEGORY_INDEX
         }
     }
 }

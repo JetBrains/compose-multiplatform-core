@@ -136,7 +136,19 @@ public class RowTest {
     public void setEndImage() {
         CarIcon endImage = ALERT;
         Row row = new Row.Builder().setTitle("Title").setEndImage(endImage).build();
-        assertThat(endImage).isEqualTo(row.getEndImage());
+        assertThat(row.getEndImage()).isEqualTo(endImage);
+        assertThat(row.getRowEndImageType()).isEqualTo(Row.IMAGE_TYPE_SMALL);
+    }
+
+    @Test
+    public void setEndImageWithSize() {
+        CarIcon endImage = ALERT;
+        Row row = new Row.Builder()
+                .setTitle("Title")
+                .setEndImage(endImage, Row.IMAGE_TYPE_ICON)
+                .build();
+        assertThat(row.getEndImage()).isEqualTo(endImage);
+        assertThat(row.getRowEndImageType()).isEqualTo(Row.IMAGE_TYPE_ICON);
     }
 
     @Test

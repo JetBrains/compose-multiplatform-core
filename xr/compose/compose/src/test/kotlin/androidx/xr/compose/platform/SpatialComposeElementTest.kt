@@ -25,7 +25,6 @@ import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.createFakeSession
-import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.runtime.SceneRuntime
 import com.google.common.truth.Truth.assertThat
@@ -64,8 +63,6 @@ class SpatialComposeElementTest {
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)
         assertThat(scene.rootElement.rootCoreEntity).isNull()
         assertThat(scene.rootElement.compositionContext).isNull()
-        assertThat(scene.rootElement.compositionOwner.rootVolumeConstraints)
-            .isEqualTo(VolumeConstraints())
     }
 
     @Test
@@ -73,7 +70,6 @@ class SpatialComposeElementTest {
         lateinit var scene: SpatialComposeScene
         lateinit var composition: androidx.compose.runtime.CompositionContext
         lateinit var coreEntity: CoreEntity
-        lateinit var testConstraints: VolumeConstraints
 
         composeTestRule.setContent {
             val fakeRuntime = createFakeRuntime(composeTestRule.activity)
@@ -83,7 +79,6 @@ class SpatialComposeElementTest {
             coreEntity = CoreGroupEntity(entity)
 
             composition = rememberCompositionContext()
-            testConstraints = VolumeConstraints(10, 20, 30, 40, 50, 60)
 
             scene =
                 SpatialComposeScene(
@@ -93,13 +88,10 @@ class SpatialComposeElementTest {
                     parentCompositionContext = composition,
                     rootEntity = coreEntity,
                 )
-            scene.rootVolumeConstraints = testConstraints
         }
 
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)
         assertThat(scene.rootElement.compositionContext).isEqualTo(composition)
         assertThat(scene.rootElement.rootCoreEntity).isEqualTo(coreEntity)
-        assertThat(scene.rootElement.compositionOwner.rootVolumeConstraints)
-            .isEqualTo(testConstraints)
     }
 }

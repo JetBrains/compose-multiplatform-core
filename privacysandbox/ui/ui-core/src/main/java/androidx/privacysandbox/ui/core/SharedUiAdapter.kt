@@ -23,6 +23,7 @@ import java.util.concurrent.Executor
  * the client is displaying shared UI, i.e. UI that can contain both client-owned and provider-owned
  * elements.
  */
+@Deprecated("This library is no longer supported.")
 @ExperimentalFeatures.SharedUiPresentationApi
 public interface SharedUiAdapter {
 

@@ -19,7 +19,7 @@ package androidx.tracing.driver.wire
 import androidx.tracing.driver.AtomicInteger
 import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.DEFAULT_STRING
-import androidx.tracing.driver.LAST_INDEX_WHEN_EMPTY
+import androidx.tracing.driver.LAST_CATEGORY_INDEX
 import androidx.tracing.driver.METADATA_ENTRIES_EXPECTED_SIZE
 import androidx.tracing.driver.METADATA_TYPE_BOOLEAN
 import androidx.tracing.driver.METADATA_TYPE_DOUBLE
@@ -178,22 +178,16 @@ internal class WireTraceEventSerializer(sequenceId: Int, val protoWriter: ProtoW
                 scratchTrackEvent.flow_ids = event.flowIds
                 // Categories
                 if (
-                    // Only has a primary category
                     event.primaryCategory.isNotEmpty() &&
-                        event.lastCategoryIndex <= LAST_INDEX_WHEN_EMPTY
+                        event.lastCategoryIndex <= LAST_CATEGORY_INDEX
                 ) {
+                    // Only has a primary category
                     event.categories[0] = event.primaryCategory
-                    event.lastCategoryIndex += 1
                     scratchTrackEvent.categories =
                         event.categories.subList(fromIndex = 0, toIndex = 1)
-                } else if (event.lastCategoryIndex > LAST_INDEX_WHEN_EMPTY) {
+                } else if (event.lastCategoryIndex > LAST_CATEGORY_INDEX) {
                     // Has primary and secondary categories
-                    // Add the primary category
-                    event.lastCategoryIndex += 1
-                    if (event.lastCategoryIndex >= event.categories.size) {
-                        event.categories += DEFAULT_STRING
-                    }
-                    event.categories[event.lastCategoryIndex] = event.primaryCategory
+                    event.categories[0] = event.primaryCategory
                     // Categories should only be set when we actually have incoming categories
                     scratchTrackEvent.categories =
                         event.categories.subList(

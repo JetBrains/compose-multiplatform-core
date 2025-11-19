@@ -21,7 +21,7 @@ import androidx.tracing.driver.DEFAULT_LONG
 import androidx.tracing.driver.PooledTracePacketArray
 import androidx.tracing.driver.TRACE_PACKET_BUFFER_SIZE
 import androidx.tracing.driver.TRACE_PACKET_POOL_ARRAY_POOL_SIZE
-import androidx.tracing.driver.TraceContext
+import androidx.tracing.driver.TraceDriver
 import androidx.tracing.driver.TraceSink
 import androidx.tracing.driver.Tracer
 import kotlin.test.Test
@@ -91,44 +91,44 @@ class TestSink : TraceSink() {
 
 class TracingTest {
     private val sink = TestSink()
-    lateinit var context: TraceContext
+    lateinit var driver: TraceDriver
     lateinit var tracer: Tracer
 
     @Before
     internal fun setUp() {
         sink.packets.clear()
-        context = TraceContext(sink = sink, isEnabled = true)
-        tracer = context.createTracer("TracingTest")
+        driver = TraceDriver(sink = sink, isEnabled = true)
+        tracer = driver.createTracer("TracingTest")
     }
 
     @Test
     internal fun testTrackEvents() {
-        context.use { tracer.trace(category = "category", name = "section") {} }
+        driver.use { tracer.trace(category = "category", name = "section") {} }
         // 2 packets for track descriptors (process + thread)
         // 2 packets for begin and end section.
         assertEquals(4, sink.packets.size)
         assertNotNull(sink.packets.find { it.track_descriptor?.process?.process_name != null })
         assertNotNull(sink.packets.find { it.track_descriptor?.thread?.thread_name != null })
-        sink.firstStartStopWithName("section") { start, end ->
+        sink.firstStartStopWithName("section") { start, _ ->
             // There should be only one category
-            assertTrue { start.track_event!!.categories.size == 1 }
+            assertEquals(1, start.track_event!!.categories.size)
         }
     }
 
     @Test
     internal fun testTrackEventsMultipleCategories() {
-        context.use {
+        driver.use {
             tracer.trace(
                 category = "category",
                 name = "section",
                 metadataBlock = { addCategory("category 1") },
             ) {}
         }
-        sink.firstStartStopWithName("section") { start, end ->
+        sink.firstStartStopWithName("section") { start, _ ->
             // There should be only one category
             assertTrue { start.track_event!!.categories.size == 2 }
             assertContentEquals(
-                expected = listOf("category 1", "category"),
+                expected = listOf("category", "category 1"),
                 actual = start.track_event!!.categories,
             )
         }
@@ -136,7 +136,7 @@ class TracingTest {
 
     @Test
     internal fun testTrackEventsWithMultipleSlices() {
-        context.use {
+        driver.use {
             tracer.trace(category = "category", name = "section") {}
             tracer.trace(category = "category", name = "section2") {}
         }
@@ -145,16 +145,16 @@ class TracingTest {
         assertEquals(6, sink.packets.size)
         assertNotNull(sink.packets.find { it.track_descriptor?.process?.process_name != null })
         listOf("section", "section2").forEach { name ->
-            sink.firstStartStopWithName(name) { start, end ->
+            sink.firstStartStopWithName(name) { start, _ ->
                 assertTrue { start.track_event!!.categories.contains("category") }
-                assertTrue { start.track_event!!.categories.size == 1 }
+                assertEquals(1, start.track_event!!.categories.size)
             }
         }
     }
 
     @Test
     internal fun testTrackEventsWithPropagation() = runTest {
-        context.use {
+        driver.use {
             tracer.traceCoroutine(category = "category", name = "service") {
                 coroutineScope {
                     async {
@@ -184,13 +184,13 @@ class TracingTest {
 
     @Test
     internal fun testCounterTrackEvents() {
-        context.use { tracer.counter("counter").setValue(10L) }
+        driver.use { tracer.counter("counter").setValue(10L) }
         assertEquals(3, sink.packets.size)
     }
 
     @Test
     internal fun testSuspendAndResume() = runTest {
-        context.use {
+        driver.use {
             tracer.traceCoroutine(category = "category", name = "service") {
                 coroutineScope {
                     async {
@@ -233,9 +233,9 @@ class TracingTest {
                         coroutineContext = dispatcher,
                     )
             )
-        val context = TraceContext(sink = sink, isEnabled = true)
+        val driver = TraceDriver(sink = sink, isEnabled = true)
         // Create the Tracer
-        val tracer = context.createTracer("tracer")
+        val tracer = driver.createTracer("tracer")
         // Warm up tracks
         tracer.trace(category = "category", name = "name") {}
         // Discount the preamble packets

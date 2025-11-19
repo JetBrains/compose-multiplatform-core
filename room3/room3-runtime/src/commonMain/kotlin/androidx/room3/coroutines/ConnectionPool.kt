@@ -78,8 +78,11 @@ internal interface ConnectionPool : AutoCloseable {
  * @return The newly created connection pool
  * @see newConnectionPool
  */
-internal fun newSingleConnectionPool(driver: SQLiteDriver, fileName: String): ConnectionPool =
-    ConnectionPoolImpl(driver, fileName)
+internal fun newSingleConnectionPool(
+    driver: SQLiteDriver,
+    fileName: String,
+    preparedStatementCacheSize: Int = 25,
+): ConnectionPool = ConnectionPoolImpl(driver, fileName, preparedStatementCacheSize)
 
 /**
  * Creates a new [ConnectionPool] with multiple connections separated by readers and writers.
@@ -100,7 +103,15 @@ internal fun newConnectionPool(
     fileName: String,
     maxNumOfReaders: Int,
     maxNumOfWriters: Int,
-): ConnectionPool = ConnectionPoolImpl(driver, fileName, maxNumOfReaders, maxNumOfWriters)
+    preparedStatementCacheSize: Int = 25,
+): ConnectionPool =
+    ConnectionPoolImpl(
+        driver,
+        fileName,
+        maxNumOfReaders,
+        maxNumOfWriters,
+        preparedStatementCacheSize,
+    )
 
 /** Defines an object that provides 'raw' access to a connection. */
 internal interface RawConnectionAccessor {

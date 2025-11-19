@@ -2214,6 +2214,46 @@ class OnGlobalRectChangedTest {
             }
         }
     }
+
+    @Test
+    fun testLayoutModifierPlacingWithScale_moveWithinScaledHierarchyAppliedForGrandChild() {
+        var actualPosition: IntOffset = IntOffset.Max
+        var actualPositionChild: IntOffset = IntOffset.Max
+        var offsetX by mutableStateOf(0)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box {
+                    Box(
+                        Modifier.layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                layout(constraints.maxWidth, constraints.maxHeight) {
+                                    placeable.placeWithLayer(0, 0) {
+                                        scaleX = 2f
+                                        scaleY = 2f
+                                    }
+                                }
+                            }
+                            .offset(x = offsetX.dp)
+                            .onLayoutRectChanged(0, 0) { actualPosition = it.positionInRoot }
+                    ) {
+                        Box {
+                            Box(
+                                Modifier.onLayoutRectChanged(0, 0) {
+                                        actualPositionChild = it.positionInRoot
+                                    }
+                                    .size(10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { offsetX = 10 }
+
+        rule.runOnIdle { assertThat(actualPosition).isEqualTo(IntOffset(15, -5)) }
+        rule.runOnIdle { assertThat(actualPositionChild).isEqualTo(IntOffset(15, -5)) }
+    }
 }
 
 @Stable

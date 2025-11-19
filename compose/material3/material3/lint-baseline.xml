@@ -472,6 +472,15 @@
     <issue
         id="ComposableLambdaParameterPosition"
         message="Composable lambda parameter should be the last parameter so it can be used as a trailing lambda"
+        errorLine1="    overflowIndicator: @Composable (ButtonGroupMenuState) -> Unit,"
+        errorLine2="    ~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/commonMain/kotlin/androidx/compose/material3/ButtonGroup.kt"/>
+    </issue>
+
+    <issue
+        id="ComposableLambdaParameterPosition"
+        message="Composable lambda parameter should be the last parameter so it can be used as a trailing lambda"
         errorLine1="        tooltipContent: @Composable () -> Unit = {},"
         errorLine2="        ~~~~~~~~~~~~~~">
         <location

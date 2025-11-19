@@ -67,11 +67,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
 @OptIn(ExperimentalCoroutinesApi::class)
+@Config(sdk = [Config.ALL_SDKS])
 class UseCaseCameraStateTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)

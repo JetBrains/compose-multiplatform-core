@@ -49,6 +49,7 @@ import com.google.androidxr.splitengine.SubspaceNode;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -127,7 +128,7 @@ public final class SurfaceFeatureImplTest {
         return cameraView;
     }
 
-    // @Ignore // b/428211243 this test currently leaks android.view.Surface
+    @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setShape_setsShape() {
         SurfaceEntity.Shape expectedShape = new SurfaceEntity.Shape.Quad(new FloatSize2d(12f, 12f));
@@ -161,7 +162,7 @@ public final class SurfaceFeatureImplTest {
                         mSurfaceFeature.getEntityImpressNode(), 10f);
     }
 
-    // @Ignore // b/428211243 this test currently leaks android.view.Surface
+    @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setStereoMode_setsStereoMode() {
         int expectedStereoMode = SurfaceEntity.StereoMode.MONO;
@@ -183,7 +184,7 @@ public final class SurfaceFeatureImplTest {
                         mSurfaceFeature.getEntityImpressNode(), expectedStereoMode);
     }
 
-    // @Ignore // b/428211243 this test currently leaks android.view.Surface
+    @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void dispose_supports_reentry() {
         Shape.Quad quadShape = new Shape.Quad(new FloatSize2d(1.0f, 1.0f)); // 1m x 1m local
@@ -195,6 +196,7 @@ public final class SurfaceFeatureImplTest {
         mSurfaceFeature.dispose(); // shouldn't crash
     }
 
+    @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setColliderEnabled_forwardsToImpress() {
         mSurfaceFeature.setColliderEnabled(true);
@@ -211,7 +213,7 @@ public final class SurfaceFeatureImplTest {
                         mSurfaceFeature.getEntityImpressNode(), false);
     }
 
-    // @Ignore // b/428211243 this test currently leaks android.view.Surface
+    @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setEdgeFeather_forwardsToImpress() {
         float kFeatherRadiusX = 0.14f;
@@ -236,6 +238,7 @@ public final class SurfaceFeatureImplTest {
                 .setFeatherRadiusForStereoSurface(mSurfaceFeature.getEntityImpressNode(), 0f, 0f);
     }
 
+    @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void createSurfaceEntity_returnsStereoSurface() {
         final float kTestWidth = 14.0f;
@@ -342,6 +345,7 @@ public final class SurfaceFeatureImplTest {
         assertThat(surface).isEqualTo(quadData.getSurface());
     }
 
+    @Ignore // b/428211243 this test currently leaks android.view.Surface
     @Test
     public void setPixelDimensions_forwardsToImpress() {
         int kTestWidth = 100;

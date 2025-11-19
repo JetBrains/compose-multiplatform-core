@@ -26,6 +26,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.projected.ProjectedContext.PROJECTED_DEVICE_NAME
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
 import kotlinx.coroutines.flow.first
@@ -41,6 +42,7 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter
 @Config(sdk = [Build.VERSION_CODES.BAKLAVA])
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@OptIn(ExperimentalProjectedApi::class)
 class ProjectedContextTest {
 
     private var virtualDisplay: VirtualDisplay? = null

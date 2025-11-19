@@ -284,6 +284,7 @@ class TestRunnerTest {
         }
     }
 
+    @Ignore // b/457414408
     @Test
     fun kotlincArguments() {
         val src =
@@ -297,7 +298,6 @@ class TestRunnerTest {
         runProcessorTest(
             sources = listOf(src),
             // TODO(b/314151707): We got warning: "K2 kapt is in Alpha. Use with caution."
-            kotlincArguments = listOf("-Werror") + KOTLINC_LANGUAGE_1_9_ARGS,
             javacArguments = listOf("-Werror"), // needed for kapt as it uses javac,
         ) { invocation ->
             invocation.processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "some warning")

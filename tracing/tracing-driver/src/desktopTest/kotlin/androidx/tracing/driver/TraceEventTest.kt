@@ -21,14 +21,30 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class TraceEventTest {
+
+    @Test
+    internal fun testTraceEventOnePrimaryCategory() {
+        val event = TraceEvent()
+        val scope = TraceEventScope()
+        scope.event = event
+        event.primaryCategory = "primary"
+        repeat(2) { scope.addCategory("category $it") }
+        assertEquals(CATEGORIES_EXPECTED_SIZE, event.categories.size)
+        assertEquals(EMPTY, event.categories[0]) // There is a hole
+        assertEquals(2, event.lastCategoryIndex)
+        event.reset()
+        assertEquals(EMPTY, event.categories[1])
+        assertEquals(EMPTY, event.categories[2])
+    }
+
     @Test
     internal fun testRecyclingOfTraceEventForCategories() {
         val event = TraceEvent()
         val scope = TraceEventScope()
         scope.event = event
         repeat(6) { scope.addCategory("category $it") }
-
-        assertTrue { event.categories.size == 6 }
+        // 0 slot is reserved for primaryCategory
+        assertEquals(expected = 7, event.categories.size)
         event.reset()
         // Make sure we resize correctly
         assertTrue { event.categories.size == CATEGORIES_EXPECTED_SIZE }

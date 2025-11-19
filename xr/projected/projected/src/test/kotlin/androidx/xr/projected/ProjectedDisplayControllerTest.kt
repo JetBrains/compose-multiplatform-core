@@ -42,15 +42,12 @@ import androidx.xr.projected.platform.IEngagementModeCallback
 import androidx.xr.projected.platform.IEngagementModeService
 import androidx.xr.projected.platform.IProjectedService
 import com.google.common.truth.Truth.assertThat
+import java.util.function.Consumer
 import kotlin.test.assertFailsWith
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -69,6 +66,7 @@ import org.robolectric.util.ReflectionHelpers.ClassParameter
 @Config(sdk = [Build.VERSION_CODES.UPSIDE_DOWN_CAKE])
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+@OptIn(ExperimentalProjectedApi::class)
 class ProjectedDisplayControllerTest {
 
     private val mockProjectedService = mock<IProjectedService>()
@@ -192,63 +190,149 @@ class ProjectedDisplayControllerTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun windowLayoutInfo_fromService_returnsEngagementMode() {
+    fun addEngagementModeChangedListener_callsService() {
         launchTestProjectedDeviceActivity { projectedDeviceActivity ->
-            // The windowLayoutInfo needs to be called from the main thread.
             val dispatcher = UnconfinedTestDispatcher()
             Dispatchers.setMain(dispatcher)
-            runTest {
-                val mockEngagementModeService = mock<IEngagementModeService>()
-                val mockEngagementModeServiceStub =
-                    mock<IEngagementModeService.Stub> {
-                        on { queryLocalInterface(any()) }.thenReturn(mockEngagementModeService)
-                    }
-                val engagementModeServiceComponent =
-                    ComponentName(SYSTEM_PACKAGE_NAME, ENGAGEMENT_MODE_SYSTEM_CLASS_NAME)
-                shadowOf(context.packageManager).apply {
-                    addServiceIfNotPresent(engagementModeServiceComponent)
-                    addOrUpdateService(
-                        ServiceInfo().apply {
-                            packageName = SYSTEM_PACKAGE_NAME
-                            name = ENGAGEMENT_MODE_SYSTEM_CLASS_NAME
-                        }
-                    )
-                    addIntentFilterForService(
-                        engagementModeServiceComponent,
-                        IntentFilter(EngagementModeClient.SERVICE_ACTION),
-                    )
-                }
-                shadowOf(context).apply {
-                    setComponentNameAndServiceForBindService(
-                        engagementModeServiceComponent,
-                        mockEngagementModeServiceStub,
-                    )
-                    setBindServiceCallsOnServiceConnectedDirectly(true)
-                }
+            runBlocking {
+                val mockEngagementModeService = setUpEngagementModeService()
                 projectedDisplayController =
                     ProjectedDisplayController.create(projectedDeviceActivity)
 
-                val layoutInfoFlow = projectedDisplayController.windowLayoutInfo(context)
-                var result: WindowLayoutInfo? = null
-                val job = launch { result = layoutInfoFlow.first() }
+                val listener = Consumer<Set<ProjectedDisplayController.EngagementMode>> {}
+                projectedDisplayController.addEngagementModeChangedListener(listener = listener)
 
-                advanceUntilIdle()
+                verify(mockEngagementModeService).registerCallback(any())
+
+                removeEngagementModeService()
+            }
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun addEngagementModeChangedListener_receivesUpdates() {
+        launchTestProjectedDeviceActivity { projectedDeviceActivity ->
+            val dispatcher = UnconfinedTestDispatcher()
+            Dispatchers.setMain(dispatcher)
+            runBlocking {
+                val mockEngagementModeService = setUpEngagementModeService()
+                projectedDisplayController =
+                    ProjectedDisplayController.create(projectedDeviceActivity)
+
+                val engagementModes = mutableSetOf<ProjectedDisplayController.EngagementMode>()
+
+                projectedDisplayController.addEngagementModeChangedListener { updatedModes ->
+                    engagementModes.addAll(updatedModes)
+                }
 
                 // Trigger the callback.
                 val callbackCaptor = argumentCaptor<IEngagementModeCallback>()
                 verify(mockEngagementModeService).registerCallback(callbackCaptor.capture())
                 callbackCaptor.firstValue.onEngagementModeChanged(
-                    EngagementModeClient.ENGAGEMENT_MODE_FLAG_AUDIO_ON
+                    EngagementModeClient.ENGAGEMENT_MODE_FLAG_VISUALS_ON
                 )
 
-                advanceUntilIdle()
-
-                assertThat(result)
-                    .isEqualTo(WindowLayoutInfo(EngagementModeClient.ENGAGEMENT_MODE_FLAG_AUDIO_ON))
-
-                job.cancel()
+                assertThat(engagementModes)
+                    .containsExactly(ProjectedDisplayController.EngagementMode.VISUALS_ON)
+                removeEngagementModeService()
             }
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun addMultipleEngagementModeChangedListener_receivesUpdates() {
+        launchTestProjectedDeviceActivity { projectedDeviceActivity ->
+            val dispatcher = UnconfinedTestDispatcher()
+            Dispatchers.setMain(dispatcher)
+            runBlocking {
+                val mockEngagementModeService = setUpEngagementModeService()
+                projectedDisplayController =
+                    ProjectedDisplayController.create(projectedDeviceActivity)
+
+                val engagementModes1 = mutableSetOf<ProjectedDisplayController.EngagementMode>()
+                var callCount1 = 0
+                val listener1 =
+                    Consumer<Set<ProjectedDisplayController.EngagementMode>> { updatedModes ->
+                        engagementModes1.clear()
+                        engagementModes1.addAll(updatedModes)
+                        ++callCount1
+                    }
+                val engagementModes2 = mutableSetOf<ProjectedDisplayController.EngagementMode>()
+                var callCount2 = 0
+                val listener2 =
+                    Consumer<Set<ProjectedDisplayController.EngagementMode>> { updatedModes ->
+                        engagementModes2.clear()
+                        engagementModes2.addAll(updatedModes)
+                        ++callCount2
+                    }
+                projectedDisplayController.addEngagementModeChangedListener(listener = listener1)
+                projectedDisplayController.addEngagementModeChangedListener(listener = listener2)
+
+                // Trigger the callback.
+                val callbackCaptor = argumentCaptor<IEngagementModeCallback>()
+                verify(mockEngagementModeService).registerCallback(callbackCaptor.capture())
+                callbackCaptor.firstValue.onEngagementModeChanged(
+                    EngagementModeClient.ENGAGEMENT_MODE_FLAG_VISUALS_ON
+                )
+
+                // Verify that both listeners were called once.
+                assertThat(callCount1).isEqualTo(1)
+                assertThat(engagementModes1)
+                    .containsExactly(ProjectedDisplayController.EngagementMode.VISUALS_ON)
+                assertThat(callCount2).isEqualTo(1)
+                assertThat(engagementModes2)
+                    .containsExactly(ProjectedDisplayController.EngagementMode.VISUALS_ON)
+
+                // Remove the second callback.
+                projectedDisplayController.removeEngagementModeChangedListener(listener2)
+
+                // Trigger another callback.
+                callbackCaptor.firstValue.onEngagementModeChanged(0)
+
+                // Verify that only the first listener was called again
+                assertThat(callCount1).isEqualTo(2)
+                assertThat(engagementModes1).isEmpty()
+                assertThat(callCount2).isEqualTo(1)
+                assertThat(engagementModes2)
+                    .containsExactly(ProjectedDisplayController.EngagementMode.VISUALS_ON)
+                removeEngagementModeService()
+            }
+        }
+    }
+
+    private fun setUpEngagementModeService(): IEngagementModeService {
+        val mockEngagementModeService = mock<IEngagementModeService>()
+        val mockEngagementModeServiceStub =
+            mock<IEngagementModeService.Stub> {
+                on { queryLocalInterface(any()) }.thenReturn(mockEngagementModeService)
+            }
+        shadowOf(context.packageManager).apply {
+            addServiceIfNotPresent(ENGAGEMENT_MODE_SERVICE_COMPONENT)
+            addOrUpdateService(
+                ServiceInfo().apply {
+                    packageName = SYSTEM_PACKAGE_NAME
+                    name = ENGAGEMENT_MODE_SYSTEM_CLASS_NAME
+                }
+            )
+            addIntentFilterForService(
+                ENGAGEMENT_MODE_SERVICE_COMPONENT,
+                IntentFilter(EngagementModeClient.SERVICE_ACTION),
+            )
+        }
+        shadowOf(context).apply {
+            setComponentNameAndServiceForBindService(
+                ENGAGEMENT_MODE_SERVICE_COMPONENT,
+                mockEngagementModeServiceStub,
+            )
+            setBindServiceCallsOnServiceConnectedDirectly(true)
+        }
+        return mockEngagementModeService
+    }
+
+    private fun removeEngagementModeService() {
+        shadowOf(context.packageManager).apply { removeService(ENGAGEMENT_MODE_SERVICE_COMPONENT) }
     }
 
     private fun launchTestProjectedDeviceActivity(block: (Activity) -> Unit) {
@@ -283,6 +367,9 @@ class ProjectedDisplayControllerTest {
         private const val ENGAGEMENT_MODE_SYSTEM_CLASS_NAME =
             "com.system.service.EngagementModeService"
         private val COMPONENT_NAME = ComponentName(SYSTEM_PACKAGE_NAME, SYSTEM_CLASS_NAME)
+
+        private val ENGAGEMENT_MODE_SERVICE_COMPONENT =
+            ComponentName(SYSTEM_PACKAGE_NAME, ENGAGEMENT_MODE_SYSTEM_CLASS_NAME)
         private val SERVICE_INFO =
             ServiceInfo().apply {
                 packageName = SYSTEM_PACKAGE_NAME
@@ -300,6 +387,7 @@ class ProjectedDisplayControllerTest {
 private class TestActivity : Activity()
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+@OptIn(ExperimentalProjectedApi::class)
 private class TestProjectedDeviceActivity : Activity() {
 
     private lateinit var virtualDeviceManager: VirtualDeviceManager

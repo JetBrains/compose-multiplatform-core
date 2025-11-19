@@ -21,16 +21,6 @@ import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 
 internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayoutNode) {
-    var rootVolumeConstraints: VolumeConstraints = VolumeConstraints()
-        set(value) {
-            if (field != value) {
-                field = value
-                if (root.isAttached && root.isPlaced) {
-                    requestMeasure(root)
-                }
-            }
-        }
-
     val snapshotStateObserver: SnapshotStateObserver = SnapshotStateObserver(::run)
 
     private val onCommitAffectingMeasure: (SubspaceLayoutNode) -> Unit = { layoutNode ->
@@ -86,7 +76,7 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
         isLayoutInProgress = true
 
         snapshotStateObserver.observeReads(root, onCommitAffectingMeasure) {
-            root.measurableLayout.measure(rootVolumeConstraints)
+            root.measurableLayout.measure(VolumeConstraints())
         }
 
         snapshotStateObserver.observeReads(root, onCommitAffectingLayout) {

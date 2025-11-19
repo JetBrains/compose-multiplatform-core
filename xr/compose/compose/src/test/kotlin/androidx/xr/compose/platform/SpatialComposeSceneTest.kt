@@ -25,7 +25,6 @@ import androidx.xr.compose.subspace.layout.CoreGroupEntity
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.createFakeRuntime
 import androidx.xr.compose.testing.createFakeSession
-import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -74,8 +73,6 @@ class SpatialComposeSceneTest {
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)
         assertThat(scene.rootElement.rootCoreEntity).isNull()
         assertThat(scene.rootElement.compositionContext).isNull()
-        assertThat(scene.rootElement.compositionOwner.rootVolumeConstraints)
-            .isEqualTo(VolumeConstraints())
         assertThat(scene.lifecycle).isEqualTo(composeTestRule.activity.lifecycle)
         assertThat(currentSession).isEqualTo(session)
     }
@@ -87,7 +84,6 @@ class SpatialComposeSceneTest {
         var currentSession: Session? = null
         lateinit var composition: androidx.compose.runtime.CompositionContext
         lateinit var coreEntity: CoreEntity
-        lateinit var testConstraints: VolumeConstraints
         lateinit var owner: AndroidComposeSpatialElement
 
         composeTestRule.setContent {
@@ -98,7 +94,6 @@ class SpatialComposeSceneTest {
             coreEntity = CoreGroupEntity(entity)
 
             composition = rememberCompositionContext()
-            testConstraints = VolumeConstraints(10, 20, 30, 40, 50, 60)
 
             scene =
                 SpatialComposeScene(
@@ -108,7 +103,6 @@ class SpatialComposeSceneTest {
                     parentCompositionContext = composition,
                     rootEntity = coreEntity,
                 )
-            scene.rootVolumeConstraints = testConstraints
 
             owner = AndroidComposeSpatialElement()
             owner.spatialComposeScene = scene
@@ -120,8 +114,6 @@ class SpatialComposeSceneTest {
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)
         assertThat(scene.rootElement.compositionContext).isEqualTo(composition)
         assertThat(scene.rootElement.rootCoreEntity).isEqualTo(coreEntity)
-        assertThat(scene.rootElement.compositionOwner.rootVolumeConstraints)
-            .isEqualTo(testConstraints)
         assertThat(scene.lifecycle).isEqualTo(composeTestRule.activity.lifecycle)
         assertThat(currentSession).isEqualTo(session)
     }

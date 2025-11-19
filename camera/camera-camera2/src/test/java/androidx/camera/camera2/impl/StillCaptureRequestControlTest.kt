@@ -59,11 +59,13 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class StillCaptureRequestControlTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)

@@ -52,8 +52,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 
     private var paletteItemSelectedListener: PaletteItemSelectedListener? = null
 
-    private val colorPaletteAdapter = ColorPaletteAdapter { paletteItem ->
-        paletteItemSelectedListener?.onItemSelected(paletteItem = paletteItem)
+    private val colorPaletteAdapter = ColorPaletteAdapter { index, paletteItem ->
+        paletteItemSelectedListener?.onItemSelected(index = index, paletteItem = paletteItem)
     }
 
     init {
@@ -64,9 +64,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * Updates the grid with a new list of palette items.
      *
      * @param paletteItems The new list of [PaletteItem]s to be displayed.
+     * @param currentSelectedIndex The index of the currently selected item in the palette.
      */
-    fun updatePaletteItems(paletteItems: List<PaletteItem>) {
+    fun updatePaletteItems(paletteItems: List<PaletteItem>, currentSelectedIndex: Int? = null) {
         colorPaletteAdapter.submitList(paletteItems) {
+            if (currentSelectedIndex != null) colorPaletteAdapter.setSelection(currentSelectedIndex)
             // Updating palette items may change the dimensions of the view
             requestLayout()
         }
@@ -136,9 +138,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
         /**
          * Called when a new item has been selected from the palette.
          *
+         * @param index The index of the newly selected item in the palette.
          * @param paletteItem The [PaletteItem] that was selected by the user.
          */
-        fun onItemSelected(paletteItem: PaletteItem)
+        fun onItemSelected(index: Int, paletteItem: PaletteItem)
     }
 
     /** An [ItemDecoration] to add equal spacing around all items in a [GridLayoutManager]. */

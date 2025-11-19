@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-@file:Suppress("FacadeClassJvmName") // TODO(b/444198856): add a jvmname
+@file:Suppress(
+    "FacadeClassJvmName",
+    "DEPRECATION",
+    "DEPRECATED_JAVA_ANNOTATION",
+) // TODO(b/444198856): add a jvmname
+@file:JvmDeprecated
 
 package androidx.privacysandbox.ui.client.compose
 
@@ -26,6 +31,7 @@ import androidx.privacysandbox.ui.client.view.SandboxedSdkView
 import androidx.privacysandbox.ui.client.view.SandboxedSdkViewEventListener
 import androidx.privacysandbox.ui.core.ExperimentalFeatures
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
+import java.lang.Deprecated as JvmDeprecated
 
 /**
  * Composable that can be used to remotely render UI from a SandboxedSdk to host app window.
@@ -75,7 +81,9 @@ public fun SandboxedSdkUi(
  *   part of a host app's window.
  * @param modifier the [Modifier] to be applied to this SandboxedSdkUiBelowHostWindow.
  * @param sandboxedSdkViewEventListener an event listener to the UI presentation.
+ * @deprecated This library is no longer supported.
  */
+@Deprecated("This library is no longer supported.")
 @Composable
 // No need for @JvmOverloads as this is Kotlin only API
 @Suppress("MissingJvmstatic")

@@ -65,7 +65,7 @@ public fun NavigationSuiteScaffold(
     content: @Composable () -> Unit = {},
 ) {
     Subspace {
-        // TODO(kmost): Expose DragPolicy and ResizePolicy params
+        // TODO(b/454025889): Expose DragPolicy and ResizePolicy params
         SpatialPanel(
             modifier = modifier.getPaddingForLayoutType(layoutType).fillMaxSize(),
             dragPolicy = MovePolicy(),

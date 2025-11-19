@@ -17,7 +17,6 @@
 package androidx.room3.writer
 
 import androidx.room3.DatabaseProcessingStep
-import androidx.room3.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.runKspTest
@@ -35,7 +34,6 @@ abstract class BaseDaoKotlinCodeGenTest {
         expectedFilePath: String,
         compiledFiles: List<File> = emptyList(),
         jvmDefaultMode: String = "disable",
-        withKsp2: Boolean = true,
         handler: (XTestInvocation) -> Unit = {},
     ) {
         val kotlincArguments = listOf("-jvm-target=11", "-Xjvm-default=${jvmDefaultMode}")
@@ -64,12 +62,7 @@ abstract class BaseDaoKotlinCodeGenTest {
         runKspTest(
             sources = sources,
             classpath = compiledFiles,
-            kotlincArguments =
-                if (!withKsp2) {
-                    KOTLINC_LANGUAGE_1_9_ARGS
-                } else {
-                    emptyList()
-                } + kotlincArguments,
+            kotlincArguments = kotlincArguments,
             handler = invocationHandler,
         )
     }

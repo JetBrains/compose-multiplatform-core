@@ -26,6 +26,7 @@ import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_REMOVED
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -47,6 +48,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * depending on which activity was most recently in the foreground. Prefer using the Activity
  * context to minimize the risk of running into this problem.
  */
+@ExperimentalProjectedApi
 public object ProjectedContext {
 
     private const val TAG = "ProjectedContext"

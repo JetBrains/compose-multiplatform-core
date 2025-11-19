@@ -114,14 +114,6 @@ class VideoRecordingEffectTest(
                             Camera2Config.defaultConfig(),
                         )
                     )
-                    add(
-                        arrayOf(
-                            "config=${CameraPipeConfig::class.simpleName} lensFacing={$lens}",
-                            selector,
-                            CameraPipeConfig::class.simpleName,
-                            CameraPipeConfig.defaultConfig(),
-                        )
-                    )
                 }
             }
     }

@@ -24,7 +24,6 @@ import androidx.xr.compose.subspace.node.Logger
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceMeasureAndLayoutDelegate
 import androidx.xr.compose.subspace.node.SubspaceOwner
-import androidx.xr.compose.unit.VolumeConstraints
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -66,12 +65,6 @@ internal class AndroidComposeSpatialElement :
     private val measureAndLayoutDelegate = SubspaceMeasureAndLayoutDelegate(root)
 
     private var isMeasureAndLayoutScheduled: Boolean = false
-
-    internal var rootVolumeConstraints: VolumeConstraints
-        get() = measureAndLayoutDelegate.rootVolumeConstraints
-        set(value) {
-            measureAndLayoutDelegate.rootVolumeConstraints = value
-        }
 
     init {
         root.attach(this)

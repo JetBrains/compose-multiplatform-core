@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
+
 package androidx.privacysandbox.sdkruntime.core
 
 import android.content.Context
@@ -28,6 +30,7 @@ import android.os.Bundle
  *
  * @see [android.app.sdksandbox.SandboxedSdkProvider]
  */
+@Deprecated("This library is no longer supported.")
 public abstract class SandboxedSdkProviderCompat {
     /**
      * Context previously set through [SandboxedSdkProviderCompat.attachContext]. This will return

@@ -47,6 +47,9 @@ internal class SubspaceLayoutModifierNodeCoordinator(
     internal val layoutNode: SubspaceLayoutNode?
         get() = baseNode.layoutNode
 
+    private val logger: Logger?
+        get() = layoutNode?.owner?.logger
+
     internal val parent: SubspaceLayoutModifierNodeCoordinator?
         get() =
             generateSequence(baseNode.parent) { it.parent }.firstNotNullOfOrNull { it.coordinator }
@@ -115,6 +118,7 @@ internal class SubspaceLayoutModifierNodeCoordinator(
 
     public override fun placeAt(pose: Pose) {
         layoutPose = pose
+        logger?.nodePlaced(layoutModifierNode, pose)
         subspaceMeasureResult?.placeChildren(
             object : SubspacePlacementScope() {
                 public override val coordinates = this@SubspaceLayoutModifierNodeCoordinator
@@ -146,6 +150,8 @@ internal class SubspaceLayoutModifierNodeCoordinator(
             measuredHeight = subspaceMeasureResult.height
             measuredDepth = subspaceMeasureResult.depth
         }
+
+        logger?.nodeMeasured(layoutModifierNode, constraints, size)
 
         return this
     }

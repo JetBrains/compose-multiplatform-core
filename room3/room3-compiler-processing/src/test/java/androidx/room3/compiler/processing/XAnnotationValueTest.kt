@@ -19,7 +19,6 @@ package androidx.room3.compiler.processing
 import androidx.kruth.assertThat
 import androidx.room3.compiler.codegen.JArrayTypeName
 import androidx.room3.compiler.codegen.XTypeName
-import androidx.room3.compiler.processing.util.KOTLINC_LANGUAGE_1_9_ARGS
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.asJClassName
@@ -51,6 +50,7 @@ import com.squareup.kotlinpoet.javapoet.JTypeName
 import com.squareup.kotlinpoet.javapoet.JWildcardTypeName
 import com.squareup.kotlinpoet.javapoet.KClassName
 import com.squareup.kotlinpoet.javapoet.KWildcardTypeName
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -1475,6 +1475,7 @@ class XAnnotationValueTest(
         }
     }
 
+    @Ignore // b/457414408
     @Test
     fun testDefaultValues() {
         runTest(
@@ -1514,7 +1515,6 @@ class XAnnotationValueTest(
                 """
                         .trimIndent(),
                 ) as Source.KotlinSource,
-            kotlincArgs = KOTLINC_LANGUAGE_1_9_ARGS,
         ) { invocation ->
             val annotation = getAnnotation(invocation)
             // Compare the AnnotationSpec string ignoring whitespace

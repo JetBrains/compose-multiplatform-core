@@ -20,10 +20,13 @@ import kotlin.jvm.optionals.getOrNull
 
 @Suppress("NOTHING_TO_INLINE")
 internal actual inline fun TraceContext.currentProcessTrack(): ProcessTrack {
-    val handle = ProcessHandle.current()
-    val key = handle.pid().toInt()
-    return processes.getOrElse(key) {
-        val name = handle.info().command().getOrNull() ?: "Process pid($key)"
-        getOrCreateProcessTrack(id = key, name = name)
+    return if (isProcessInitialized) {
+        process
+    } else {
+        val handle = ProcessHandle.current()
+        val id = handle.pid().toInt()
+        val name = handle.info().command().getOrNull() ?: "Process pid($id)"
+        createProcessTrack(id = id, name = name)
+        process
     }
 }

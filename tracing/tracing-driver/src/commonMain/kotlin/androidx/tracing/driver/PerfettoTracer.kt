@@ -110,7 +110,7 @@ public class PerfettoTracer(context: TraceContext, name: String) :
                             )
                     ) {
                         val result =
-                            contextElement.owner.beginSection(
+                            contextElement.owner.beginCoroutineSection(
                                 category = category,
                                 name = name,
                                 token = contextElement,
@@ -155,29 +155,59 @@ public class PerfettoTracer(context: TraceContext, name: String) :
     override fun beginSectionWithMetadata(
         category: String,
         name: String,
-        token: PropagationToken,
-    ): MetadataHandleCloseable {
-        return when (token) {
-            is PropagationUnsupportedToken -> {
-                val track = currentThreadTrack()
-                track.beginSection(category = category, name = name, token = token)
-            }
-            is PlatformThreadContextElement<*> -> {
-                token.name = name
-                token.category = category
-                val track = token.owner
-                track.beginSection(category = category, name = name, token = token)
-            }
-            else -> {
-                throw IllegalArgumentException("Unsupported token type $token")
-            }
+        token: PropagationToken?,
+        isRoot: Boolean,
+    ): EventMetadataCloseable {
+        val tokenElement = token ?: tokenFromThreadContext()
+        // Out of the box we don't support propagation at all outside of suspending contexts.
+        return if (tokenElement == PropagationUnsupportedToken) {
+            val track = currentThreadTrack()
+            track.beginSection(
+                category = category,
+                name = name,
+                token = PropagationUnsupportedToken,
+            )
+        } else {
+            throw IllegalArgumentException("Unsupported token type $token")
+        }
+    }
+
+    @DelicateTracingApi
+    override suspend fun beginCoroutineSectionWithMetadata(
+        category: String,
+        name: String,
+        token: CoroutinePropagationToken?,
+        isRoot: Boolean,
+    ): EventMetadataCloseable {
+        val tokenElement = token ?: tokenFromCoroutineContext()
+        return if (tokenElement == CoroutinePropagationUnsupportedToken) {
+            val eventMetadataCloseable =
+                beginSectionWithMetadata(
+                    category = category,
+                    name = name,
+                    token = PropagationUnsupportedToken,
+                    isRoot = isRoot,
+                )
+            eventMetadataCloseable
+        } else {
+            val platformContextElement =
+                tokenElement as? PlatformThreadContextElement<*>
+                    ?: throw IllegalArgumentException("Unsupported token type $token")
+            platformContextElement.name = name
+            platformContextElement.category = category
+            val track = tokenElement.owner
+            track.beginCoroutineSection(
+                category = category,
+                name = name,
+                token = platformContextElement,
+            )
         }
     }
 
     @DelicateTracingApi
     override fun counter(name: String): Counter {
-        // Intentionally not synchronized, given context.currentThreadTrack() will return
-        // the same instance of the underlying track.
+        // getOrCreateCounterTrack() is synchronized, so we get the same instance of the counter
+        // for the provided name.
         val counter = process.counters.getOrPut(name) { process.getOrCreateCounterTrack(name) }
         return PerfettoCounter(track = counter)
     }

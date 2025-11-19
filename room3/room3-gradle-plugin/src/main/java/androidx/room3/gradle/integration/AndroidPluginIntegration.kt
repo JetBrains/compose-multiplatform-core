@@ -22,14 +22,12 @@ import androidx.room3.gradle.RoomExtension.SchemaConfiguration
 import androidx.room3.gradle.RoomSimpleCopyTask
 import androidx.room3.gradle.util.capitalize
 import androidx.room3.gradle.util.check
-import androidx.room3.gradle.util.kspOneTaskClass
 import androidx.room3.gradle.util.kspTwoTaskClass
 import com.android.build.api.AndroidPluginVersion
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.HasUnitTest
 import com.google.devtools.ksp.gradle.KspAATask
-import com.google.devtools.ksp.gradle.KspTask
 import kotlin.reflect.KClass
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -222,9 +220,6 @@ internal class AndroidPluginIntegration(private val common: CommonIntegration) {
                         task.block(argProvider)
                     }
                 }
-            }
-            if (kspOneTaskClass != null) {
-                configureEach(KspTask::class) { commandLineArgumentProviders.add(it) }
             }
             if (kspTwoTaskClass != null) {
                 configureEach(KspAATask::class) { commandLineArgumentProviders.add(it) }

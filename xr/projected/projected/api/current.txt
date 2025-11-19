@@ -1,7 +1,7 @@
 // Signature format: 4.0
 package androidx.xr.projected {
 
-  public final class ProjectedContext {
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedContext {
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createHostDeviceContext(android.content.Context context);
     method @RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) public static android.app.ActivityOptions createProjectedActivityOptions(android.content.Context context);
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static android.content.Context createProjectedDeviceContext(android.content.Context context);
@@ -14,13 +14,13 @@ package androidx.xr.projected {
   public final class ProjectedDisplayController implements java.lang.AutoCloseable {
     method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void addLayoutParamsFlags(int flags);
     method public void close();
-    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) @androidx.xr.projected.experimental.ExperimentalProjectedApi public static suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
     method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void removeLayoutParamsFlags(int flags);
     field public static final androidx.xr.projected.ProjectedDisplayController.Companion Companion;
   }
 
   public static final class ProjectedDisplayController.Companion {
-    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) @androidx.xr.projected.experimental.ExperimentalProjectedApi public suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
   }
 
 }

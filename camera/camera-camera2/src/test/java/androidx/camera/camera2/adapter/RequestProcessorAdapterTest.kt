@@ -63,6 +63,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class RequestProcessorAdapterTest {
     private val context = ApplicationProvider.getApplicationContext() as Context
 

@@ -36,6 +36,8 @@ import kotlinx.coroutines.sync.withLock
  * One example use-case of these kind of UIAdapters is to support updating the provider of the UI
  * without the client's involvement.
  */
+@Deprecated("This library is no longer supported.")
+@Suppress("DEPRECATION")
 @ExperimentalFeatures.DelegatingAdapterApi
 public class DelegatingSandboxedUiAdapter(private var delegate: Bundle) : SandboxedUiAdapter {
 

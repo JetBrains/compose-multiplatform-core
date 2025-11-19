@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.core
 
@@ -21,6 +22,7 @@ package androidx.privacysandbox.ui.core
  * [SandboxedUiAdapter.Session]. Many [SessionObserver]s may be created for the same
  * [SandboxedUiAdapter.Session].
  */
+@Deprecated("This library is no longer supported.")
 public interface SessionObserverFactory {
     /**
      * The set of signals that should be collected for each [SandboxedUiAdapter.Session]. This set

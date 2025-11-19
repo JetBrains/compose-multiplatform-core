@@ -16,21 +16,25 @@
 
 package androidx.tracing.driver
 
+import android.app.Application
 import android.os.Build
 import android.os.Process
 
 @Suppress("NOTHING_TO_INLINE")
 internal actual inline fun TraceContext.currentProcessTrack(): ProcessTrack {
-    val id = Process.myPid()
-    return processes.getOrElse(id) {
+    return if (isProcessInitialized) {
+        process
+    } else {
+        val id = Process.myPid()
         val name =
-            if (Build.VERSION.SDK_INT >= 33) {
-                Process.myProcessName()
+            if (Build.VERSION.SDK_INT >= 28) {
+                Application.getProcessName()
             } else {
                 // Only used in the context of tests where the default process track is not already
                 // bootstrapped.
                 "Process pid($id)"
             }
-        getOrCreateProcessTrack(id = id, name = name)
+        createProcessTrack(id = id, name = name)
+        process
     }
 }

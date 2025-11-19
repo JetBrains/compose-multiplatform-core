@@ -19,8 +19,11 @@ package androidx.datastore.preferences.core
 import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataMigration
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.DataStoreFactory
 import androidx.datastore.core.Storage
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
+import androidx.datastore.core.okio.WebStorage
+import androidx.datastore.core.okio.WebStorageType
 import kotlinx.coroutines.CoroutineScope
 import okio.Path
 
@@ -50,7 +53,14 @@ actual object PreferenceDataStoreFactory {
         migrations: List<DataMigration<Preferences>>,
         scope: CoroutineScope,
     ): DataStore<Preferences> {
-        TODO("Not yet implemented")
+        return PreferenceDataStore(
+            DataStoreFactory.create(
+                storage = storage,
+                corruptionHandler = corruptionHandler,
+                migrations = migrations,
+                scope = scope,
+            )
+        )
     }
 
     /**
@@ -80,6 +90,20 @@ actual object PreferenceDataStoreFactory {
         scope: CoroutineScope,
         produceFile: () -> Path,
     ): DataStore<Preferences> {
-        TODO("Not yet implemented")
+        // For the web, the file path's name is used as the unique key.
+        val storageName = produceFile().name
+        val webStorage =
+            WebStorage(
+                serializer = PreferencesSerializer,
+                name = storageName,
+                // TODO(b/441511612): Support LocalStorage and OPFS.
+                storageType = WebStorageType.SESSION,
+            )
+        return create(
+            storage = webStorage,
+            corruptionHandler = corruptionHandler,
+            migrations = migrations,
+            scope = scope,
+        )
     }
 }

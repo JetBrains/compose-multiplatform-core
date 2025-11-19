@@ -69,6 +69,106 @@ abstract class BaseConnectionPoolTest {
     abstract val fileName: String
 
     @Test
+    fun preparedStatementIsEvictedOnConnectionClose() = runTest {
+        class CloseAwareStatement(val actual: SQLiteStatement) : SQLiteStatement by actual {
+            var isClosed = false
+
+            override fun close() {
+                actual.close()
+                isClosed = true
+            }
+        }
+        class PreparedCountingConnection(val actual: SQLiteConnection) :
+            SQLiteConnection by actual {
+            val preparedStatements = mutableMapOf<String, CloseAwareStatement>()
+
+            override fun prepare(sql: String): SQLiteStatement {
+                val result = CloseAwareStatement(actual.prepare(sql))
+                preparedStatements[sql] = result
+                return result
+            }
+        }
+        var connection: PreparedCountingConnection? = null
+        val actualDriver = setupDriver()
+        val driver =
+            object : SQLiteDriver by actualDriver {
+                override fun open(fileName: String): SQLiteConnection {
+                    return PreparedCountingConnection(actualDriver.open(fileName)).also {
+                        connection = it
+                    }
+                }
+            }
+        val pool = newSingleConnectionPool(driver, fileName)
+        val query = "SELECT * FROM Pet"
+
+        pool.useReaderConnection { connection -> connection.usePrepared(query) {} }
+        pool.useReaderConnection { connection -> connection.usePrepared(query) {} }
+
+        val statementMap = checkNotNull(connection).preparedStatements
+        assertThat(statementMap.keys).containsExactly(query)
+        assertThat(statementMap.values.none { it.isClosed }).isTrue()
+        pool.close()
+        assertThat(statementMap.values.all { it.isClosed }).isTrue()
+    }
+
+    @Test
+    fun preparedStatementIsCached() = runTest {
+        class PreparedCountingConnection(val actual: SQLiteConnection) :
+            SQLiteConnection by actual {
+            val preparedStatements = mutableListOf<String>()
+
+            override fun prepare(sql: String): SQLiteStatement {
+                preparedStatements.add(sql)
+                return actual.prepare(sql)
+            }
+        }
+        val connectionArrCount = AtomicInt(0)
+        val connectionsArr = arrayOfNulls<PreparedCountingConnection>(4)
+        val actualDriver = setupDriver()
+        val driver =
+            object : SQLiteDriver by actualDriver {
+                override fun open(fileName: String): SQLiteConnection {
+                    return PreparedCountingConnection(actualDriver.open(fileName)).also {
+                        connectionsArr[connectionArrCount.getAndIncrement()] = it
+                    }
+                }
+            }
+        val pool =
+            newConnectionPool(
+                driver = driver,
+                fileName = fileName,
+                maxNumOfReaders = 4,
+                maxNumOfWriters = 1,
+            )
+        // The query we expect to be cached
+        val query = "SELECT * FROM Pet WHERE name = ?"
+
+        // The same connection is expected to be retrieved twice, which should have the cached
+        // statement. Bindings are reset for another query
+        pool.useReaderConnection { connection ->
+            connection.usePrepared(query) {
+                it.bindText(1, "Tom_1")
+                it.step()
+                val name = it.getText(1)
+                assertThat(name).isEqualTo("Tom_1")
+            }
+        }
+        pool.useReaderConnection { connection ->
+            connection.usePrepared(query) {
+                it.bindText(1, "Tom_2")
+                it.step()
+                val name = it.getText(1)
+                assertThat(name).isEqualTo("Tom_2")
+            }
+        }
+
+        assertThat(connectionArrCount.get()).isEqualTo(1)
+        assertThat(connectionsArr.first()?.preparedStatements)
+            .containsExactly("PRAGMA query_only = 1", query)
+        pool.close()
+    }
+
+    @Test
     fun readerIsReadOnlyConnection() = runTest {
         val driver = setupDriver()
         val pool =

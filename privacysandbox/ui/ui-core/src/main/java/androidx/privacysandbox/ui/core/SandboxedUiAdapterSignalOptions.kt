@@ -20,6 +20,7 @@ package androidx.privacysandbox.ui.core
  * This class defines the set of signal options which can be set on a [SessionObserverFactory] which
  * is associated with a [SandboxedUiAdapter].
  */
+@Deprecated("This library is no longer supported.")
 public class SandboxedUiAdapterSignalOptions {
     public companion object {
         /**

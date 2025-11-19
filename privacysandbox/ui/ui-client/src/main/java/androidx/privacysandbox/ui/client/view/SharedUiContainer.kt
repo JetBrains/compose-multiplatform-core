@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION")
+
 package androidx.privacysandbox.ui.client.view
 
 import android.content.Context
@@ -55,6 +57,7 @@ import kotlin.math.max
  * __Asset registration__: Client-owned views and [SandboxedSdkView]s can be registered as assets
  * using [registerSharedUiAsset] and unregistered using [unregisterSharedUiAsset].
  */
+@Deprecated("This library is no longer supported.")
 // OptIn calling the experimental API SandboxedSdkView#orderProviderUiAboveClientUi
 @OptIn(ExperimentalFeatures.ChangingContentUiZOrderApi::class)
 @ExperimentalFeatures.SharedUiPresentationApi
