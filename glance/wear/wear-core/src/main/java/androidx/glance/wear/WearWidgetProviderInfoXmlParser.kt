@@ -35,8 +35,6 @@ internal object WearWidgetProviderInfoXmlParser {
     private const val ATTR_PREFERRED_TYPE = "preferredType"
     private const val ATTR_GROUP = "group"
     private const val ATTR_CONFIG_INTENT_ACTION = "configIntentAction"
-    private const val ATTR_MIN_SCHEMA_VERSION = "minSchemaVersion"
-    private const val ATTR_MAX_SCHEMA_VERSION = "maxSchemaVersion"
     private const val ATTR_TYPE = "type"
     private const val ATTR_PREVIEW_IMAGE = "previewImage"
 
@@ -92,18 +90,10 @@ internal object WearWidgetProviderInfoXmlParser {
             }
                 ?: serviceInfo.icon.takeIf { it != Resources.ID_NULL }
                 ?: serviceInfo.applicationInfo.icon
-        val preferredContainerType =
+        var preferredContainerType =
             parseContainerTypeAttr(resources, ATTR_PREFERRED_TYPE, defaultPreferredContainerType)
         val group = getAttributeValue(NAMESPACE_DISABLED, ATTR_GROUP) ?: defaultGroup
         val configIntentAction = getAttributeValue(NAMESPACE_DISABLED, ATTR_CONFIG_INTENT_ACTION)
-        val minSchemaVersion =
-            getAttributeValue(NAMESPACE_DISABLED, ATTR_MIN_SCHEMA_VERSION)?.let {
-                parseSchemaVersion(it)
-            }
-        val maxSchemaVersion =
-            getAttributeValue(NAMESPACE_DISABLED, ATTR_MAX_SCHEMA_VERSION)?.let {
-                parseSchemaVersion(it)
-            }
         val unrecognisedAttributes = mutableMapOf<String, String>()
         val knownAttributes =
             setOf(
@@ -113,8 +103,6 @@ internal object WearWidgetProviderInfoXmlParser {
                 ATTR_PREFERRED_TYPE,
                 ATTR_GROUP,
                 ATTR_CONFIG_INTENT_ACTION,
-                ATTR_MIN_SCHEMA_VERSION,
-                ATTR_MAX_SCHEMA_VERSION,
             )
         for (i in 0 until attributeCount) {
             val attrName = getAttributeName(i)
@@ -134,6 +122,13 @@ internal object WearWidgetProviderInfoXmlParser {
             }
         }
 
+        if (containers.none { it.type == preferredContainerType }) {
+            val firstType = containers.firstOrNull()?.type
+            if (firstType != null) {
+                preferredContainerType = firstType
+            }
+        }
+
         return WearWidgetProviderInfo(
             providerService = providerService,
             label = label,
@@ -143,13 +138,10 @@ internal object WearWidgetProviderInfoXmlParser {
             preferredContainerType = preferredContainerType,
             group = group,
             configIntentAction = configIntentAction,
-            minSchemaVersion = minSchemaVersion,
-            maxSchemaVersion = maxSchemaVersion,
             unrecognisedAttributes = unrecognisedAttributes,
         )
     }
 
-    @Throws(XmlPullParserException::class)
     private fun XmlResourceParser.parseContainerInfo(resources: Resources): ContainerInfo {
         val type = parseContainerTypeAttr(resources, ATTR_TYPE)
         val previewImage =
@@ -164,19 +156,6 @@ internal object WearWidgetProviderInfoXmlParser {
         )
     }
 
-    internal fun parseSchemaVersion(value: String): SchemaVersion {
-        val parts = value.split('.')
-        if (parts.size != 2) {
-            throw IllegalArgumentException("Invalid schema version format: $value")
-        }
-        return try {
-            val minor = parts[1].padEnd(3, '0').toInt()
-            SchemaVersion(parts[0].toInt(), minor)
-        } catch (e: NumberFormatException) {
-            throw IllegalArgumentException("Invalid schema version format: $value", e)
-        }
-    }
-
     @Throws(XmlPullParserException::class)
     private fun XmlResourceParser.parseContainerTypeAttr(
         resources: Resources,
@@ -184,16 +163,22 @@ internal object WearWidgetProviderInfoXmlParser {
         @ContainerInfo.ContainerType defaultValue: Int? = null,
     ): Int {
         val attrResId = getAttributeResourceValue(NAMESPACE_DISABLED, attrName, Resources.ID_NULL)
-        if (attrResId != Resources.ID_NULL) {
-            try {
-                return resources.getInteger(attrResId)
-            } catch (e: Resources.NotFoundException) {
-                throw XmlPullParserException("Invalid container type resource", this, e)
+        val type =
+            if (attrResId != Resources.ID_NULL) {
+                try {
+                    resources.getInteger(attrResId)
+                } catch (e: Resources.NotFoundException) {
+                    throw XmlPullParserException("Invalid container type resource", this, e)
+                }
+            } else {
+                getAttributeValue(NAMESPACE_DISABLED, attrName)?.toIntOrNull()
+                    ?: defaultValue
+                    ?: throw XmlPullParserException("Failed to parse Container Type for $attrName")
             }
+        if (type == ContainerInfo.CONTAINER_TYPE_FULLSCREEN) {
+            throw XmlPullParserException("Fullscreen container type is not supported for widgets")
         }
-        return getAttributeValue(NAMESPACE_DISABLED, attrName)?.toIntOrNull()
-            ?: defaultValue
-            ?: throw XmlPullParserException("Failed to parse Container Type for $attrName")
+        return type
     }
 
     /**
@@ -236,7 +221,7 @@ internal object WearWidgetProviderInfoXmlParser {
         try {
             return resources.getText(resId)
         } catch (e: Resources.NotFoundException) {
-            throw IllegalArgumentException("Invalid resource for attr $attrName", e)
+            throw XmlPullParserException("Invalid resource for attr $attrName")
         }
     }
 }

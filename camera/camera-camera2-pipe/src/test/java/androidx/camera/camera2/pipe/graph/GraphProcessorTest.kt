@@ -56,9 +56,11 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 internal class GraphProcessorTest {
     private val testScope = TestScope()
     private val fakeThreads = FakeThreads.fromTestScope(testScope)

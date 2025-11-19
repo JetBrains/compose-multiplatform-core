@@ -37,10 +37,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class CameraPresenceProviderTest {
 
     private val sourceObservable = MutableObservable<List<CameraIdentifier>>()

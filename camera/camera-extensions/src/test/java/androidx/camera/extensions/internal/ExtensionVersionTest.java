@@ -36,6 +36,7 @@ import org.robolectric.annotation.internal.DoNotInstrument;
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
 @Config(
+        sdk = {Config.ALL_SDKS},
         instrumentedPackages = {"androidx.camera.extensions.internal"} // to override CURRENT
 )
 public class ExtensionVersionTest {

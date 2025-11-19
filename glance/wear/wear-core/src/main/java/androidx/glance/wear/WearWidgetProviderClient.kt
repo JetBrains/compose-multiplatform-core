@@ -163,8 +163,8 @@ public class WearWidgetProviderClient(
         IExecutionCallback.Stub() {
         override fun onSuccess() = continuation.resume(Unit)
 
-        // This means the provider failed to handle the event.
-        override fun onError() = continuation.resume(Unit)
+        // This means the provider failed to handle the event. This client takes no action on error.
+        override fun onError(errorCode: Int, message: String?) = continuation.resume(Unit)
     }
 
     private companion object {

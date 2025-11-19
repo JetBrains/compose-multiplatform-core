@@ -26,10 +26,12 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class CaptureResultImageMatcherTest {
     private val matcher = CaptureResultImageMatcher()
 

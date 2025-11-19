@@ -57,8 +57,10 @@ import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class VirtualCameraStateTest {
     private val mainLooper = shadowOf(getMainLooper())
@@ -282,6 +284,7 @@ internal class VirtualCameraStateTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCoroutinesApi::class)
 internal class AndroidCameraDeviceTest {
     private val mainLooper = shadowOf(getMainLooper())

@@ -18,6 +18,8 @@ package androidx.xr.scenecore.runtime
 
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
+import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /** Interface for a XR Runtime [GltfEntity]. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -74,6 +76,12 @@ public interface GltfEntity : Entity {
      *   of the box is twice the half-extent. All values are in meters.
      */
     public fun getGltfModelBoundingBox(): BoundingBox
+
+    /** Adds a listener to be invoked when the [animationState] value changes. */
+    public fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>)
+
+    /** Removes an [animationState] listener. */
+    public fun removeAnimationStateListener(listener: Consumer<Int>)
 
     /** Specifies the current animation state of the [GltfEntity]. */
     public annotation class AnimationStateValue

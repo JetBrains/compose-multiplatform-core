@@ -166,6 +166,7 @@ import org.robolectric.util.ReflectionHelpers
 @Suppress("DEPRECATION")
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+// TOD: b/456628955 - Add @Config(sdk = [Config.ALL_SDKS]) when resolved
 class SupportedSurfaceCombinationTest {
     private val streamUseCaseOption: androidx.camera.core.impl.Config.Option<Long> =
         androidx.camera.core.impl.Config.Option.create(
@@ -4472,6 +4473,7 @@ class SupportedSurfaceCombinationTest {
             .isFalse()
     }
 
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun checkSupported_featureComboQueryReportsSupported_fcqSurfaceCombinationSupported() {
         // Arrange: Setup resources with a FeatureCombinationQuery impl. that always returns true
@@ -4593,6 +4595,7 @@ class SupportedSurfaceCombinationTest {
             .isFalse()
     }
 
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun checkSupported_returnsTrueForBaklavaFcqStreamCombo_whenQueryVersionIsBaklava() {
         // Arrange: Setup resources with a FeatureCombinationQuery impl. always returning true
@@ -4652,6 +4655,7 @@ class SupportedSurfaceCombinationTest {
             .isFalse()
     }
 
+    @Config(minSdk = 35) // TODO: b/406372518 - Remove when supporting FCQ GMS queries
     @Test
     fun getSuggestedStreamSpecs_fcqInvokedWithCorrectParameters_forPreviewStabilization() {
         val previewUseCase = createUseCase(CaptureType.PREVIEW)

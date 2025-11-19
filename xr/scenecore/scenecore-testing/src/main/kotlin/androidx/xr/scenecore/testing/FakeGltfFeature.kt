@@ -24,6 +24,7 @@ import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.MaterialResource
 import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.GltfFeature] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -62,6 +63,14 @@ public class FakeGltfFeature(nodeHolder: NodeHolder<*>) :
 
     override fun setColliderEnabled(enableCollider: Boolean) {
         mockGltfFeature?.setColliderEnabled(enableCollider)
+    }
+
+    override fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>) {
+        mockGltfFeature?.addAnimationStateListener(executor, listener)
+    }
+
+    override fun removeAnimationStateListener(listener: Consumer<Int>) {
+        mockGltfFeature?.removeAnimationStateListener(listener)
     }
 
     override fun dispose() {

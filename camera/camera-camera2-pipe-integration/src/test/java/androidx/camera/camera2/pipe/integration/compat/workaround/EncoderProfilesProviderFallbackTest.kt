@@ -51,6 +51,7 @@ import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 private const val CAMERA_ID_0 = "0"
@@ -60,6 +61,7 @@ private const val CAMERA_ID_EXTERNAL_1 = "101"
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class EncoderProfilesProviderFallbackTest {
 
     private lateinit var cameraDevices: CameraDevices

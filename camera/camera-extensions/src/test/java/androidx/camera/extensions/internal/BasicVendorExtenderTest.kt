@@ -37,6 +37,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowCameraCharacteristics
@@ -44,6 +45,7 @@ import org.robolectric.shadows.ShadowCameraManager
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class BasicVendorExtenderTest {
     val yuvSize = Size(1, 1)
     val jpegSize = Size(2, 2)

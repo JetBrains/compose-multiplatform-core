@@ -38,7 +38,10 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(instrumentedPackages = arrayOf("androidx.camera.extensions.internal"))
+@Config(
+    sdk = [Config.ALL_SDKS],
+    instrumentedPackages = arrayOf("androidx.camera.extensions.internal"),
+)
 class AvailableKeysRetrieverTest {
     private val context: Context = RuntimeEnvironment.getApplication()
     private val availableKeys =

@@ -44,7 +44,7 @@ import sqlite3.sqlite3_prepare16_v2
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // For actual typealias in unbundled
 public class NativeSQLiteConnection(private val dbPointer: CPointer<sqlite3>) : SQLiteConnection {
 
-    @OptIn(ExperimentalStdlibApi::class) @Volatile private var isClosed = false
+    @Volatile private var isClosed = false
 
     override fun inTransaction(): Boolean {
         if (isClosed) {
@@ -94,8 +94,8 @@ public class NativeSQLiteConnection(private val dbPointer: CPointer<sqlite3>) : 
 
     override fun close() {
         if (!isClosed) {
+            isClosed = true
             sqlite3_close_v2(dbPointer)
         }
-        isClosed = true
     }
 }

@@ -22,8 +22,6 @@
     preferredType="@integer/glance_wear_container_type_small"
     group="test.group"
     configIntentAction="test.action"
-    minSchemaVersion="1.2"
-    maxSchemaVersion="2.34"
     unrecognizedStr="some string"
     unrecognizedRef="@android:string/ok">
 

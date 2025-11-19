@@ -61,47 +61,38 @@ internal class WearWidgetProviderImpl(
     override fun onActivated(
         handleParcel: ActiveWearWidgetHandleParcel?,
         callback: IExecutionCallback?,
-    ) {
-        requireNotNull(handleParcel) { "Invalid widget handle parcel." }
-        mainScope.launch {
-            val handle =
-                try {
-                    ActiveWearWidgetHandle.fromParcel(handleParcel, providerName)
-                } catch (e: IllegalArgumentException) {
-                    Log.e(TAG, "Error deserializing ActiveWearWidgetHandleParcel", e)
-                    callback?.onError()
-                    return@launch
-                }
-
-            try {
-                widget.onActivated(context, handle)
-            } catch (e: Exception) {
-                callback?.onError()
-                throw e
-            }
-            callback?.onSuccess()
-        }
-    }
+    ) = onEvent(handleParcel, callback, widget::onActivated)
 
     override fun onDeactivated(
         handleParcel: ActiveWearWidgetHandleParcel?,
         callback: IExecutionCallback?,
+    ) = onEvent(handleParcel, callback, widget::onDeactivated)
+
+    private fun onEvent(
+        handleParcel: ActiveWearWidgetHandleParcel?,
+        callback: IExecutionCallback?,
+        eventHandler: suspend (Context, ActiveWearWidgetHandle) -> Unit,
     ) {
-        requireNotNull(handleParcel) { "Invalid widget handle parcel." }
         mainScope.launch {
+            if (handleParcel == null) {
+                val errMessage = "Null widget handle parcel."
+                Log.e(TAG, errMessage)
+                callback?.onError(ACTIVATION_ERROR_CODE_INVALID_ARGUMENT, errMessage)
+                return@launch
+            }
             val handle =
                 try {
                     ActiveWearWidgetHandle.fromParcel(handleParcel, providerName)
                 } catch (e: IllegalArgumentException) {
-                    Log.e(TAG, "Error deserializing ActiveWearWidgetHandleParcel", e)
-                    callback?.onError()
+                    val errMessage = "Error deserializing ActiveWearWidgetHandle"
+                    Log.e(TAG, errMessage, e)
+                    callback?.onError(ACTIVATION_ERROR_CODE_INVALID_ARGUMENT, errMessage)
                     return@launch
                 }
-
             try {
-                widget.onDeactivated(context, handle)
+                eventHandler.invoke(context, handle)
             } catch (e: Exception) {
-                callback?.onError()
+                callback?.onError(ACTIVATION_ERROR_CODE_INTERNAL_ERROR, e.message)
                 throw e
             }
             callback?.onSuccess()

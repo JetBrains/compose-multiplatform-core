@@ -106,7 +106,7 @@ constructor(
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         internal fun fromPlatformExtensionClass(
             request: com.android.extensions.appfunctions.ExecuteAppFunctionRequest,
-            functionMetadata: AppFunctionMetadata? = null,
+            functionMetadata: AppFunctionMetadata,
         ): ExecuteAppFunctionRequest =
             ExecuteAppFunctionRequest(
                 targetPackageName = request.targetPackageName,
@@ -126,7 +126,7 @@ constructor(
         @RequiresApi(Build.VERSION_CODES.BAKLAVA)
         internal fun fromPlatformClass(
             request: android.app.appfunctions.ExecuteAppFunctionRequest,
-            functionMetadata: AppFunctionMetadata? = null,
+            functionMetadata: AppFunctionMetadata,
         ): ExecuteAppFunctionRequest =
             ExecuteAppFunctionRequest(
                 targetPackageName = request.targetPackageName,
@@ -145,18 +145,10 @@ constructor(
 
         @RequiresApi(Build.VERSION_CODES.TIRAMISU)
         private fun createAppFunctionDataWithParameterSpec(
-            // TODO: b/445389498 - Make function metadata non null after fixing tests.
-            functionMetadata: AppFunctionMetadata? = null,
+            functionMetadata: AppFunctionMetadata,
             functionIdentifier: String,
             parametersAfd: AppFunctionData,
         ): AppFunctionData =
-            if (functionMetadata != null) {
-                parametersAfd.replaceSpecWith(
-                    functionMetadata.parameters,
-                    functionMetadata.components,
-                )
-            } else {
-                parametersAfd
-            }
+            parametersAfd.replaceSpecWith(functionMetadata.parameters, functionMetadata.components)
     }
 }

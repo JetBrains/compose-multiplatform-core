@@ -28,11 +28,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 internal class Camera2MetadataCacheTest {
     @Test
     fun metadataIsCachedAndShimmed() = runTest {

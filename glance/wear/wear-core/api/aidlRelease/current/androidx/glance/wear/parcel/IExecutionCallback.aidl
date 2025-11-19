@@ -35,5 +35,5 @@ package androidx.glance.wear.parcel;
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 interface IExecutionCallback {
   oneway void onSuccess() = 0;
-  oneway void onError() = 1;
+  oneway void onError(in int errorCode, in String message) = 1;
 }

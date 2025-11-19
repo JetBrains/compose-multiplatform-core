@@ -52,6 +52,7 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraGraphSimulatorTest {
     private val testScope = TestScope()
     private val metadata =

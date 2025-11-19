@@ -45,10 +45,12 @@ import kotlinx.coroutines.withTimeout
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class EvCompControlTest {
     private val fakeUseCaseThreads by lazy {
         val executor = Executors.newSingleThreadExecutor()

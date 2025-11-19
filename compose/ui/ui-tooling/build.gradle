@@ -35,8 +35,6 @@ androidXMultiplatform {
         compileSdk = 35
         namespace = "androidx.compose.ui.tooling"
         androidResources.enable = true
-        // TODO(b/345531033)
-        experimentalProperties["android.lint.useK2Uast"] = false
     }
     jvmStubs()
 

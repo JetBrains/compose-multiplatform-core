@@ -44,7 +44,10 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(instrumentedPackages = ["androidx.camera.camera2.pipe.integration.adapter"])
+@Config(
+    sdk = [Config.ALL_SDKS],
+    instrumentedPackages = ["androidx.camera.camera2.pipe.integration.adapter"],
+)
 class CameraCompatibilityFilterTest {
 
     private val originalFingerprint = Build.FINGERPRINT

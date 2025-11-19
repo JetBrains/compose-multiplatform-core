@@ -29,7 +29,9 @@ import com.android.extensions.xr.XrExtensions;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Consumer;
 
 /**
  * Implementation of a SceneCore GltfEntity.
@@ -92,5 +94,16 @@ class GltfEntityImpl extends BaseRenderingEntity implements GltfEntity {
 
     public void setColliderEnabled(boolean enableCollider) {
         mFeature.setColliderEnabled(enableCollider);
+    }
+
+    @Override
+    public void addAnimationStateListener(
+            @NonNull Executor executor, @NonNull Consumer<@NonNull Integer> listener) {
+        mFeature.addAnimationStateListener(executor, listener);
+    }
+
+    @Override
+    public void removeAnimationStateListener(@NonNull Consumer<@NonNull Integer> listener) {
+        mFeature.removeAnimationStateListener(listener);
     }
 }

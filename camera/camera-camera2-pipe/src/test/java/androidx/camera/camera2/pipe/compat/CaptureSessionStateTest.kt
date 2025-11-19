@@ -44,9 +44,11 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class CaptureSessionStateTest {
     private val fakeGraphListener: GraphListener = mock()
     private val fakeSurfaceListener: CameraSurfaceManager.SurfaceListener = mock()

@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /** Provide the rendering implementation for [GltfEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -92,4 +93,15 @@ public interface GltfFeature : RenderingFeature {
      * @param enableCollider Whether the collider is enabled.
      */
     @MainThread public fun setColliderEnabled(enableCollider: Boolean)
+
+    /**
+     * Adds a listener that will be called whenever the animation state of the glTF is updated.
+     *
+     * @param executor The executor to run the listener on.
+     * @param listener The listener that will be called when the animation state changes.
+     */
+    @MainThread public fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>)
+
+    /** Removes an animation state updated listener. */
+    @MainThread public fun removeAnimationStateListener(listener: Consumer<Int>)
 }

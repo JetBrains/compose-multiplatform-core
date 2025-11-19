@@ -28,7 +28,10 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(instrumentedPackages = arrayOf("androidx.camera.extensions.internal"))
+@Config(
+    sdk = [Config.ALL_SDKS],
+    instrumentedPackages = arrayOf("androidx.camera.extensions.internal"),
+)
 class RequestOptionConfigTest {
     @Test
     fun canBuildWithCaptureRequestOptions() {

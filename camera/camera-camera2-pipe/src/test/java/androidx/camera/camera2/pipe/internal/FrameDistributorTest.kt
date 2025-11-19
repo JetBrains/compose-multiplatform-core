@@ -43,6 +43,7 @@ import org.robolectric.annotation.Config
 
 /** Tests for [FrameDistributor] */
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class FrameDistributorTest {
 
     private val stream1Config =

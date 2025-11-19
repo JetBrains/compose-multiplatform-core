@@ -105,12 +105,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalCamera2Interop::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class CapturePipelineTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)
@@ -785,6 +787,7 @@ class CapturePipelineTest {
         assertThat(fakeCameraGraphSession.lock3AForCaptureSemaphore.tryAcquire(this)).isFalse()
     }
 
+    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslTemplate_templateZeroShutterLagSent(): Unit = runTest {
         // Arrange.
@@ -821,6 +824,7 @@ class CapturePipelineTest {
             .isEqualTo(RequestTemplate(CameraDevice.TEMPLATE_ZERO_SHUTTER_LAG))
     }
 
+    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withNoTemplate_templateStillPictureSent(): Unit = runTest {
         // Arrange.
@@ -854,6 +858,7 @@ class CapturePipelineTest {
         assertThat(request.template).isEqualTo(RequestTemplate(CameraDevice.TEMPLATE_STILL_CAPTURE))
     }
 
+    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslDisabledByUseCaseConfig_templateStillPictureSent(): Unit =
         runTest {
@@ -891,6 +896,7 @@ class CapturePipelineTest {
                 .isEqualTo(RequestTemplate(CameraDevice.TEMPLATE_STILL_CAPTURE))
         }
 
+    @Config(minSdk = 23)
     @Test
     fun submitZslCaptureRequests_withZslDisabledByFlashMode_templateStillPictureSent(): Unit =
         runTest {

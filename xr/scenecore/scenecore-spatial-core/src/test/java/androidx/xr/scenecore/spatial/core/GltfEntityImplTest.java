@@ -46,6 +46,9 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
 
+import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+
 @RunWith(RobolectricTestRunner.class)
 public class GltfEntityImplTest {
     private static final int OPEN_XR_REFERENCE_SPACE_TYPE = 1;
@@ -152,6 +155,25 @@ public class GltfEntityImplTest {
         mGltfEntity.clearMaterialOverride(nodeName, primitiveIndex);
 
         verify(mMockGltfFeature).clearMaterialOverride(nodeName, primitiveIndex);
+    }
+
+    @Test
+    public void addAnimationStateListener_addsListener() {
+        Executor executor = Runnable::run;
+        Consumer<Integer> listener = (value) -> assertThat(value).isNotNull();
+
+        mGltfEntity.addAnimationStateListener(executor, listener);
+
+        verify(mMockGltfFeature).addAnimationStateListener(executor, listener);
+    }
+
+    @Test
+    public void removeAnimationStateListener_removesListener() {
+        Consumer<Integer> listener = (value) -> assertThat(value).isNotNull();
+
+        mGltfEntity.removeAnimationStateListener(listener);
+
+        verify(mMockGltfFeature).removeAnimationStateListener(listener);
     }
 
     @Test

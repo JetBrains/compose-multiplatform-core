@@ -46,7 +46,10 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(instrumentedPackages = ["androidx.camera.camera2.pipe.integration.adapter"])
+@Config(
+    sdk = [Config.ALL_SDKS],
+    instrumentedPackages = ["androidx.camera.camera2.pipe.integration.adapter"],
+)
 class CameraSelectionOptimizerTest {
     private lateinit var cameraFactory: CameraFactory
 

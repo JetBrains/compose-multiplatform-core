@@ -545,12 +545,6 @@ package androidx.wear.compose.foundation {
     method @BytecodeOnly @Deprecated @SuppressCompatibility @androidx.compose.runtime.Composable @androidx.wear.compose.foundation.ExperimentalWearFoundationApi public static androidx.wear.compose.foundation.RevealState rememberRevealState-jPjcZH0(int, androidx.compose.animation.core.AnimationSpec<java.lang.Float!>?, kotlin.jvm.functions.Function1<? super androidx.wear.compose.foundation.RevealValue!,java.lang.Boolean!>?, kotlin.jvm.functions.Function1<? super java.lang.Float!,java.lang.Float!>?, java.util.Map<androidx.wear.compose.foundation.RevealValue!,java.lang.Float!>?, androidx.compose.runtime.Composer?, int, int);
   }
 
-  @SuppressCompatibility @androidx.wear.compose.foundation.ExperimentalWearFoundationApi public final class WearComposeFoundationFlags {
-    property public boolean isWarpingCurvedTextEnabled;
-    field public static final androidx.wear.compose.foundation.WearComposeFoundationFlags INSTANCE;
-    field public static boolean isWarpingCurvedTextEnabled;
-  }
-
 }
 
 package androidx.wear.compose.foundation.lazy {

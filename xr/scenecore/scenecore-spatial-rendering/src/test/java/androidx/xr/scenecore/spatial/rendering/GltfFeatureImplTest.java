@@ -55,6 +55,7 @@ import org.robolectric.RobolectricTestRunner;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(RobolectricTestRunner.class)
 public class GltfFeatureImplTest {
@@ -187,6 +188,24 @@ public class GltfFeatureImplTest {
                                 .filter(node -> node.getMaterialOverride() != null)
                                 .toArray())
                 .isEmpty();
+    }
+
+    @Test
+    public void animationStateListener_isTriggeredOnAnimationStateChanges() throws Exception {
+        String animationName = "test_animation";
+        when(mMockImpressApi.animateGltfModel(mModelImpressNode, animationName, true))
+                .thenReturn(
+                        mFakeImpressApi.animateGltfModel(mModelImpressNode, animationName, true));
+        AtomicReference<Integer> latestValue =
+                new AtomicReference<>(GltfEntity.AnimationState.STOPPED);
+        mGltfFeature.addAnimationStateListener(Runnable::run, latestValue::set);
+        mGltfFeature.startAnimation(/* looping= */ true, animationName, mExecutor);
+
+        assertThat(latestValue.get()).isEqualTo(GltfEntity.AnimationState.PLAYING);
+
+        mGltfFeature.stopAnimation();
+
+        assertThat(latestValue.get()).isEqualTo(GltfEntity.AnimationState.STOPPED);
     }
 
     @Test

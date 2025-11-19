@@ -35,7 +35,6 @@ import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
-import androidx.camera.core.impl.SessionConfig
 import javax.inject.Inject
 import kotlin.collections.removeFirst as removeFirstKt
 import kotlinx.atomicfu.atomic
@@ -156,14 +155,13 @@ constructor(
 
     @GuardedBy("lock")
     private inline fun updateState(
-        parameters: Map<CaptureRequest.Key<*>, Any>? = null,
-        appendParameters: Boolean = true,
-        internalParameters: Map<Metadata.Key<*>, Any>? = null,
-        appendInternalParameters: Boolean = true,
-        streams: Set<StreamId>? = null,
-        template: RequestTemplate? = null,
-        listeners: Set<Request.Listener>? = null,
-        sessionConfig: SessionConfig? = null,
+        parameters: Map<CaptureRequest.Key<*>, Any>?,
+        appendParameters: Boolean,
+        internalParameters: Map<Metadata.Key<*>, Any>?,
+        appendInternalParameters: Boolean,
+        streams: Set<StreamId>?,
+        template: RequestTemplate?,
+        listeners: Set<Request.Listener>?,
     ) {
         // TODO: Consider if this should detect changes and only invoke an update if state has
         //  actually changed.

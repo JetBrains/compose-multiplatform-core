@@ -24,6 +24,11 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.GltfEntity as RtGltfEntity
 import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
+import java.util.Collections
+import java.util.concurrent.Executor
+import java.util.function.Consumer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 
 /**
  * GltfModelEntity is a concrete implementation of Entity that hosts a glTF model.
@@ -35,6 +40,9 @@ public class GltfModelEntity
 private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     BaseEntity<RtGltfEntity>(rtEntity, entityManager) {
     // TODO: b/417750821 - Add an OnAnimationEvent() Listener interface
+
+    private val mAnimationStateListeners: MutableMap<Consumer<AnimationState>, Executor> =
+        Collections.synchronizedMap(mutableMapOf())
 
     /** Specifies the current animation state of the GltfModelEntity. */
     public class AnimationState private constructor(private val name: String) {
@@ -224,5 +232,65 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     public fun getGltfModelBoundingBox(): BoundingBox {
         checkNotDisposed()
         return rtEntity!!.getGltfModelBoundingBox()
+    }
+
+    /**
+     * Registers a listener to be invoked when the animation state of the GltfModelEntity changes.
+     *
+     * The only intended client is currently XR Compose. See b/457481325.
+     *
+     * @param executor The executor on which the listener will be invoked.
+     * @param listener The listener to be invoked.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public fun addAnimationStateListener(executor: Executor, listener: Consumer<AnimationState>) {
+        checkNotDisposed()
+        if (mAnimationStateListeners.isEmpty()) {
+            rtEntity!!.addAnimationStateListener(
+                executor = Dispatchers.Main.asExecutor(),
+                listener = this::onAnimationStateUpdated,
+            )
+        }
+        mAnimationStateListeners[listener] = executor
+    }
+
+    /**
+     * Registers a listener to be invoked on the main thread when the animation state of the
+     * GltfModelEntity changes.
+     *
+     * The only intended client is currently XR Compose. See b/457481325.
+     *
+     * @param listener The listener to be invoked.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public fun addAnimationStateListener(listener: Consumer<AnimationState>) {
+        addAnimationStateListener(executor = Dispatchers.Main.asExecutor(), listener = listener)
+    }
+
+    /**
+     * Unregisters a previously registered animation state update listener.
+     *
+     * The only intended client is currently XR Compose. See b/457481325.
+     *
+     * @param listener The listener to be removed.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public fun removeAnimationStateListener(listener: Consumer<AnimationState>) {
+        mAnimationStateListeners.remove(listener)
+        if (mAnimationStateListeners.isEmpty()) {
+            rtEntity?.removeAnimationStateListener(this::onAnimationStateUpdated)
+        }
+    }
+
+    private fun onAnimationStateUpdated(@RtGltfEntity.AnimationStateValue animationState: Int) {
+        val result =
+            when (animationState) {
+                RtGltfEntity.AnimationState.PLAYING -> AnimationState.PLAYING
+                RtGltfEntity.AnimationState.STOPPED -> AnimationState.STOPPED
+                else -> AnimationState.STOPPED
+            }
+        for ((listener, executor) in mAnimationStateListeners.entries) {
+            executor.execute { listener.accept(result) }
+        }
     }
 }

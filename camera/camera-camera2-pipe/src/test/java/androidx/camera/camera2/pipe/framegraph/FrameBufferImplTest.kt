@@ -67,6 +67,7 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class FrameBufferImplTest {
     private val testScope = TestScope()
     private val context = ApplicationProvider.getApplicationContext() as Context

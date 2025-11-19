@@ -23,6 +23,7 @@ import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.MaterialResource
 import java.util.concurrent.Executor
+import java.util.function.Consumer
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.GltfEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -38,8 +39,20 @@ public open class FakeGltfEntity(
 
     public val node: Node = Node()
 
+    private val _animationStateListeners = mutableMapOf<Consumer<Int>, Executor?>()
+
     @GltfEntity.AnimationStateValue
     private var _animationState: Int = GltfEntity.AnimationState.STOPPED
+        set(value) {
+            field = value
+            for ((listener, executor) in _animationStateListeners.entries) {
+                if (executor != null) {
+                    executor.execute { listener.accept(value) }
+                } else {
+                    listener.accept(value)
+                }
+            }
+        }
 
     /** Returns the current animation state of the glTF entity. */
     @GltfEntity.AnimationStateValue
@@ -126,5 +139,13 @@ public open class FakeGltfEntity(
             isLooping = false
             currentAnimationName = null
         }
+    }
+
+    override fun addAnimationStateListener(executor: Executor, listener: Consumer<Int>) {
+        _animationStateListeners.putIfAbsent(listener, executor)
+    }
+
+    override fun removeAnimationStateListener(listener: Consumer<Int>) {
+        _animationStateListeners.remove(listener)
     }
 }

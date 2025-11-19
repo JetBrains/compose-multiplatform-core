@@ -56,10 +56,6 @@ class WearWidgetProviderInfoTest {
         assertThat(info.preferredContainerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_SMALL)
         assertThat(info.group).isEqualTo("test.group")
         assertThat(info.configIntentAction).isEqualTo("test.action")
-        assertThat(info.minSchemaVersion?.major).isEqualTo(1)
-        assertThat(info.minSchemaVersion?.minor).isEqualTo(200)
-        assertThat(info.maxSchemaVersion?.major).isEqualTo(2)
-        assertThat(info.maxSchemaVersion?.minor).isEqualTo(340)
         assertThat(info.containers).hasSize(2)
         assertThat(info.containers)
             .containsExactlyElementsIn(
@@ -90,10 +86,6 @@ class WearWidgetProviderInfoTest {
         assertThat(info.preferredContainerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_SMALL)
         assertThat(info.group).isEqualTo("test.group")
         assertThat(info.configIntentAction).isEqualTo("test.action")
-        assertThat(info.minSchemaVersion?.major).isEqualTo(1)
-        assertThat(info.minSchemaVersion?.minor).isEqualTo(200)
-        assertThat(info.maxSchemaVersion?.major).isEqualTo(2)
-        assertThat(info.maxSchemaVersion?.minor).isEqualTo(340)
         assertThat(info.containers).hasSize(2)
         assertThat(info.containers)
             .containsExactlyElementsIn(
@@ -167,9 +159,16 @@ class WearWidgetProviderInfoTest {
         assertThat(info.preferredContainerType).isEqualTo(defaultPreferredContainerType)
         assertThat(info.group).isEqualTo(defaultGroup)
         assertThat(info.configIntentAction).isNull()
-        assertThat(info.minSchemaVersion).isNull()
-        assertThat(info.maxSchemaVersion).isNull()
-        assertThat(info.containers).isEmpty()
+        assertThat(info.containers).hasSize(1)
+        assertThat(info.containers)
+            .containsExactlyElementsIn(
+                listOf(
+                    ContainerInfo(
+                        ContainerInfo.CONTAINER_TYPE_SMALL,
+                        android.R.drawable.ic_dialog_alert,
+                    )
+                )
+            )
     }
 
     @Test
@@ -213,10 +212,6 @@ class WearWidgetProviderInfoTest {
         assertThat(info.preferredContainerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_SMALL)
         assertThat(info.group).isEqualTo("test.group")
         assertThat(info.configIntentAction).isEqualTo("test.action")
-        assertThat(info.minSchemaVersion?.major).isEqualTo(1)
-        assertThat(info.minSchemaVersion?.minor).isEqualTo(200)
-        assertThat(info.maxSchemaVersion?.major).isEqualTo(2)
-        assertThat(info.maxSchemaVersion?.minor).isEqualTo(340)
         assertThat(info.containers).hasSize(2)
         assertThat(info.containers)
             .containsExactlyElementsIn(
@@ -234,10 +229,70 @@ class WearWidgetProviderInfoTest {
             )
     }
 
+    @Test
+    fun parseWearWidgetProviderInfo_whenInvalidPreferredType_forcesFirstType() {
+        val serviceInfo = createServiceInfo(service)
+
+        val info =
+            getXml(R.xml.wear_widget_provider_info_forced_preferred_type)
+                .parseWearWidgetProviderInfo(
+                    context.resources,
+                    context.packageManager,
+                    service,
+                    serviceInfo,
+                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
+                    defaultGroup = "default.group",
+                )
+
+        assertThat(info.preferredContainerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_LARGE)
+    }
+
     @Test(expected = XmlPullParserException::class)
     fun parseWearWidgetProviderInfo_missingType() {
         val serviceInfo = createServiceInfo(service)
         getXml(R.xml.wear_widget_provider_info_missing_type)
+            .parseWearWidgetProviderInfo(
+                context.resources,
+                context.packageManager,
+                service,
+                serviceInfo,
+                defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
+                defaultGroup = "default.group",
+            )
+    }
+
+    @Test(expected = XmlPullParserException::class)
+    fun parseWearWidgetProviderInfo_withFullscreenContainer_failsValidation() {
+        val serviceInfo = createServiceInfo(service)
+        getXml(R.xml.wear_widget_provider_info_fullscreen_container)
+            .parseWearWidgetProviderInfo(
+                context.resources,
+                context.packageManager,
+                service,
+                serviceInfo,
+                defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
+                defaultGroup = "default.group",
+            )
+    }
+
+    @Test(expected = XmlPullParserException::class)
+    fun parseWearWidgetProviderInfo_withDuplicateContainers_failsValidation() {
+        val serviceInfo = createServiceInfo(service)
+        getXml(R.xml.wear_widget_provider_info_duplicate_containers)
+            .parseWearWidgetProviderInfo(
+                context.resources,
+                context.packageManager,
+                service,
+                serviceInfo,
+                defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
+                defaultGroup = "default.group",
+            )
+    }
+
+    @Test(expected = XmlPullParserException::class)
+    fun parseWearWidgetProviderInfo_withNoContainers_failsValidation() {
+        val serviceInfo = createServiceInfo(service)
+        getXml(R.xml.wear_widget_provider_info_no_containers)
             .parseWearWidgetProviderInfo(
                 context.resources,
                 context.packageManager,

@@ -54,7 +54,7 @@ class WearWidgetProviderImplTest {
                 isSuccess = true
             }
 
-            override fun onError() {
+            override fun onError(errorCode: Int, message: String) {
                 isFailure = true
             }
         }

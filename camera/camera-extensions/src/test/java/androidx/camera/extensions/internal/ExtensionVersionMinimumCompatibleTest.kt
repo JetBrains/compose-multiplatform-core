@@ -29,7 +29,10 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(instrumentedPackages = arrayOf("androidx.camera.extensions.internal"))
+@Config(
+    sdk = [Config.ALL_SDKS],
+    instrumentedPackages = arrayOf("androidx.camera.extensions.internal"),
+)
 class ExtensionVersionMinimumCompatibleTest(private val config: TestConfig) {
 
     @Before

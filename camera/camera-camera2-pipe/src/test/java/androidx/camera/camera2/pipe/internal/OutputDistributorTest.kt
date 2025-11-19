@@ -28,9 +28,11 @@ import kotlinx.atomicfu.atomic
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /** Tests for [OutputDistributor] */
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class OutputDistributorTest {
     private val fakeOutput1 = FakeOutput(101)
     private val fakeOutput2 = FakeOutput(102)

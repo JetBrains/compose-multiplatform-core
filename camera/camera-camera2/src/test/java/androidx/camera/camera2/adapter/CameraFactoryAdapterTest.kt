@@ -57,6 +57,7 @@ import org.robolectric.util.ReflectionHelpers
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
+// TOD: b/456085770 - Add @Config(sdk = [Config.ALL_SDKS]) when resolved
 class CameraFactoryAdapterTest {
     private val testScope = TestScope()
     private lateinit var threadConfig: CameraThreadConfig

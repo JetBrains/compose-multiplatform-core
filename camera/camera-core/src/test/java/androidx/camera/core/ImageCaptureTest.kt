@@ -101,6 +101,7 @@ import org.robolectric.shadows.ShadowLooper
 /** Unit tests for [ImageCapture]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class ImageCaptureTest {
     private val resolution = Size(640, 480)
 
@@ -623,6 +624,20 @@ class ImageCaptureTest {
             .isEqualTo(ImageFormat.JPEG_R)
     }
 
+    @Config(maxSdk = 22)
+    @Test
+    fun bindImageCaptureWithZslUnsupportedSdkVersion_notAddZslConfig() {
+        bindImageCapture(
+            ImageCapture.CAPTURE_MODE_ZERO_SHUTTER_LAG,
+            ViewPort.Builder(Rational(1, 1), Surface.ROTATION_0).build(),
+        )
+
+        assertThat(camera.cameraControlInternal).isInstanceOf(FakeCameraControl::class.java)
+        val cameraControl = camera.cameraControlInternal as FakeCameraControl
+        assertThat(cameraControl.isZslConfigAdded).isFalse()
+    }
+
+    @Config(minSdk = 23)
     @Test
     fun bindImageCaptureInRegularCaptureModeWithZslSupportedSdkVersion_notAddZslConfig() {
         bindImageCapture(
@@ -635,6 +650,7 @@ class ImageCaptureTest {
         assertThat(cameraControl.isZslConfigAdded).isFalse()
     }
 
+    @Config(minSdk = 23)
     @Test
     fun bindImageCaptureInZslCaptureModeWithZslSupportedSdkVersion_addZslConfig() {
         bindImageCapture(

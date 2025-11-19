@@ -17,7 +17,6 @@
 package androidx.room3.autoclose
 
 import androidx.annotation.GuardedBy
-import androidx.room3.concurrent.AtomicBoolean
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.SQLiteStatement
@@ -69,7 +68,7 @@ internal class AutoClosingSQLiteConnection(
     @GuardedBy("lock") private var liveStatements = 0
 
     /** Tracks explicit [close] calls and not auto close. */
-    private var isClosed = AtomicBoolean(false)
+    @Volatile private var isClosed = false
 
     init {
         autoCloser.register(this)
@@ -80,7 +79,7 @@ internal class AutoClosingSQLiteConnection(
     }
 
     override fun prepare(sql: String): SQLiteStatement {
-        if (isClosed.get()) {
+        if (isClosed) {
             throwSQLiteException(21, "connection is closed")
         }
         autoCloser.incrementCount()
@@ -98,7 +97,8 @@ internal class AutoClosingSQLiteConnection(
     }
 
     override fun close() {
-        if (isClosed.compareAndSet(false, true)) {
+        if (!isClosed) {
+            isClosed = true
             lock.withLock {
                 liveConnection?.close()
                 liveConnection = null
@@ -127,10 +127,11 @@ internal class AutoClosingSQLiteConnection(
     private inner class AutoClosingSQLiteStatement(private val delegateStatement: SQLiteStatement) :
         SQLiteStatement by delegateStatement {
 
-        private val isClosed = AtomicBoolean(false)
+        @Volatile private var isClosed = false
 
         override fun close() {
-            if (isClosed.compareAndSet(false, true)) {
+            if (!isClosed) {
+                isClosed = true
                 delegateStatement.close()
                 lock.withLock { liveStatements-- }
                 autoCloser.decrementCount()

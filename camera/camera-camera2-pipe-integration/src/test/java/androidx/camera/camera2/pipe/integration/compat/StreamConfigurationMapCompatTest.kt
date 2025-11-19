@@ -28,12 +28,14 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 /** Unit tests for [StreamConfigurationMapCompat]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 class StreamConfigurationMapCompatTest {
 
     companion object {
@@ -87,6 +89,7 @@ class StreamConfigurationMapCompatTest {
     }
 
     @Test
+    @Config(minSdk = 23)
     fun getHighResolutionOutputSizesTwice_whenReturnedArrayIsNull() {
         assumeTrue(
             streamConfigurationMapCompat.getHighResolutionOutputSizes(ImageFormat.JPEG) == null

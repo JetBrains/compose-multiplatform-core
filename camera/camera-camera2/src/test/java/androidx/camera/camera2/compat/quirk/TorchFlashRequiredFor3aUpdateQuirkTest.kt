@@ -26,6 +26,7 @@ import com.google.common.truth.Truth
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadow.api.Shadow
 import org.robolectric.shadows.ShadowBuild
@@ -34,7 +35,8 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-class TorchFlashRequiredFor3aUpdateQuirkTest(
+@Config(sdk = [Config.ALL_SDKS])
+class TorchFlashRequiredFor3AUpdateQuirkTest(
     private val model: String,
     private val lensFacing: Int,
     private val externalFlashAeModeSupported: Boolean,

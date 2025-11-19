@@ -26,6 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -79,7 +82,7 @@ public fun VerticalStack(
 
     VerticalPager(
         state = state.pagerState,
-        modifier = modifier,
+        modifier = modifier.onFocusChanged(state::onTopLevelFocusChanged),
         contentPadding = PaddingValues(bottom = RevealAreaSize),
         key = { page -> stackItemHolderState.value.getKey(page) },
         beyondViewportPageCount = MaxNextVisibleItemCount,
@@ -110,9 +113,15 @@ private fun StackItemLayout(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    val focusRequester = remember { FocusRequester() }
     Layout(
         content = content,
-        modifier = modifier.zIndex(-page.toFloat()).clipToItemAbove(page, state, stackItemHolder),
+        modifier =
+            modifier
+                .zIndex(-page.toFloat())
+                .clipToItemAbove(page, state, stackItemHolder)
+                .focusRequester(focusRequester)
+                .onFocusChanged { state.onItemFocusChanged(page, it) },
     ) { measurables, constraints ->
         var maxWidth = 0
         var maxHeight = 0
@@ -141,6 +150,8 @@ private fun StackItemLayout(
                                     topItemHeight = placeable.height,
                                 )
                                 .ifNonNaN { translationY = it }
+
+                            state.notifyAutoFocus(page, focusRequester)
                         }
 
                         page.isNextItem(topItem = topItem) -> {
@@ -154,6 +165,8 @@ private fun StackItemLayout(
                             val scale = state.nextItemScale()
                             scaleX = scale
                             scaleY = scale
+
+                            state.notifyAutoFocus(page, focusRequester)
                         }
 
                         page.isNextNextItem(topItem = topItem) -> {

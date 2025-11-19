@@ -35,7 +35,10 @@ private const val CAMERA_ID_2 = "2"
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(instrumentedPackages = ["androidx.camera.core"])
+@org.robolectric.annotation.Config(
+    sdk = [org.robolectric.annotation.Config.ALL_SDKS],
+    instrumentedPackages = ["androidx.camera.core"],
+)
 class CameraIdentifierTest {
 
     private lateinit var fakeCameraInfo0: FakeCameraInfoInternal

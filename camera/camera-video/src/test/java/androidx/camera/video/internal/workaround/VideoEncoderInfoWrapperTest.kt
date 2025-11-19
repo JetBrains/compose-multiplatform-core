@@ -29,11 +29,13 @@ import org.junit.experimental.runners.Enclosed
 import org.junit.runner.RunWith
 import org.robolectric.ParameterizedRobolectricTestRunner
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.util.ReflectionHelpers
 
 @RunWith(Enclosed::class)
 @DoNotInstrument
+@Config(sdk = [Config.ALL_SDKS])
 object VideoEncoderInfoWrapperTest {
 
     private const val WIDTH_ALIGNMENT = 2
@@ -59,6 +61,7 @@ object VideoEncoderInfoWrapperTest {
 
     @RunWith(ParameterizedRobolectricTestRunner::class)
     @DoNotInstrument
+    @Config(sdk = [Config.ALL_SDKS])
     class ModelWrappingTest(
         private val brand: String,
         private val model: String,
@@ -100,6 +103,7 @@ object VideoEncoderInfoWrapperTest {
 
     @RunWith(RobolectricTestRunner::class)
     @DoNotInstrument
+    @Config(sdk = [Config.ALL_SDKS])
     class WrappingMethodTest {
 
         @Test

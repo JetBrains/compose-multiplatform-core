@@ -29,6 +29,9 @@ import androidx.glance.wear.parcel.WearWidgetRequestParcel;
 interface IWearWidgetProvider {
     const int API_VERSION = 1;
 
+    const int ACTIVATION_ERROR_CODE_INTERNAL_ERROR = 1;
+    const int ACTIVATION_ERROR_CODE_INVALID_ARGUMENT = 2;
+
     /**
       * Gets the version of this WearWidgetProvider interface implemented by
       * this service.

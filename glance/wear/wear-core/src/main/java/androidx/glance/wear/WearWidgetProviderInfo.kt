@@ -80,14 +80,12 @@ import org.xmlpull.v1.XmlPullParserException
  *   service.
  * @property configIntentAction The intent action to launch an activity for configuring the widget.
  *   This can be null if no configuration is needed.
- * @property minSchemaVersion The minimum schema version supported by this widget provider.
- * @property maxSchemaVersion The maximum schema version supported by this widget provider.
  * @property unrecognisedAttributes Any unrecognised attributes during the XML parsing of the
  *   provider info.
  */
-// TODO: populate default min schema version for remote compose widgets.
 public class WearWidgetProviderInfo
 @RestrictTo(LIBRARY)
+@Throws(XmlPullParserException::class)
 public constructor(
     public val providerService: ComponentName,
     public val label: String,
@@ -97,10 +95,24 @@ public constructor(
     @ContainerInfo.ContainerType public val preferredContainerType: Int,
     public val group: String = providerService.className,
     public val configIntentAction: String? = null,
-    public val minSchemaVersion: SchemaVersion? = null,
-    public val maxSchemaVersion: SchemaVersion? = null,
     public val unrecognisedAttributes: Map<String, String> = emptyMap(),
 ) {
+    init {
+        // Validate the object and throw [XmlPullParserException] if it's invalid.
+        if (containers.isEmpty()) {
+            throw XmlPullParserException("At least one container must be defined")
+        }
+
+        val supportedContainerTypes = containers.map { it.type }
+        val duplicateTypes =
+            supportedContainerTypes.groupingBy { it }.eachCount().filter { it.value > 1 }.keys
+        if (duplicateTypes.isNotEmpty()) {
+            throw XmlPullParserException(
+                "Cannot have multiple containers with the same type: ${duplicateTypes.joinToString() }}"
+            )
+        }
+    }
+
     public companion object {
         /** Name for the `meta-data` tag for the provider info. */
         private const val META_DATA_WEAR_WIDGET_PROVIDER = "androidx.glance.wear.widget.provider"
@@ -131,8 +143,12 @@ public constructor(
          * @param providerService The [ComponentName] of the widget provider service.
          * @throws [PackageManager.NameNotFoundException] if the metadata is not found or the
          *   resource is invalid.
-         * @throws [XmlPullParserException] if there is an error parsing the XML resource.
-         * @throws [IllegalArgumentException] if the contents of the XML are invalid.
+         * @throws [XmlPullParserException] if there is an error parsing the XML resource or if this
+         *   is not a valid provider info, for example:
+         *     - No `<container>` tags are defined.
+         *     - Multiple `<container>` tags have the same `type`.
+         *     - Invalid resource IDs.
+         *     - Using `CONTAINER_TYPE_FULLSCREEN` which is not supported for widgets.
          */
         @Throws(XmlPullParserException::class)
         @JvmStatic
@@ -222,11 +238,3 @@ public constructor(
         public const val CONTAINER_TYPE_SMALL: Int = 2
     }
 }
-
-/**
- * The schema version of the widget renderer.
- *
- * @property major The major version of the schema.
- * @property minor The minor version of the schema.
- */
-public class SchemaVersion(public val major: Int, public val minor: Int)

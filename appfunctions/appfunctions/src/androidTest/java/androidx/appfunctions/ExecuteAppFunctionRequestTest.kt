@@ -21,8 +21,11 @@ import android.os.Bundle
 import androidx.appfunctions.ExecuteAppFunctionRequest.Companion.EXTRA_PARAMETERS
 import androidx.appfunctions.ExecuteAppFunctionRequest.Companion.EXTRA_USE_JETPACK_SCHEMA
 import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
+import androidx.appfunctions.metadata.AppFunctionResponseMetadata
 import androidx.appfunctions.metadata.AppFunctionStringTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionUnitTypeMetadata
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import org.junit.AssumptionViolatedException
@@ -95,7 +98,11 @@ class ExecuteAppFunctionRequestTest {
                 .setParameters(TEST_APP_FUNCTION_DATA.genericDocument)
                 .build()
 
-        val request = ExecuteAppFunctionRequest.fromPlatformExtensionClass(platformRequest)
+        val request =
+            ExecuteAppFunctionRequest.fromPlatformExtensionClass(
+                platformRequest,
+                TEST_APP_FUNCTION_METADATA,
+            )
 
         assertThat(request.targetPackageName).isEqualTo("pkg")
         assertThat(request.functionIdentifier).isEqualTo("method")
@@ -113,7 +120,8 @@ class ExecuteAppFunctionRequestTest {
                 .setParameters(TEST_APP_FUNCTION_DATA.genericDocument)
                 .build()
 
-        val request = ExecuteAppFunctionRequest.fromPlatformClass(platformRequest)
+        val request =
+            ExecuteAppFunctionRequest.fromPlatformClass(platformRequest, TEST_APP_FUNCTION_METADATA)
 
         assertThat(request.targetPackageName).isEqualTo("pkg")
         assertThat(request.functionIdentifier).isEqualTo("method")
@@ -133,7 +141,11 @@ class ExecuteAppFunctionRequestTest {
                 .setExtras(Bundle().apply { putBoolean(EXTRA_USE_JETPACK_SCHEMA, true) })
                 .build()
 
-        val request = ExecuteAppFunctionRequest.fromPlatformExtensionClass(platformRequest)
+        val request =
+            ExecuteAppFunctionRequest.fromPlatformExtensionClass(
+                platformRequest,
+                TEST_APP_FUNCTION_METADATA,
+            )
 
         assertThat(request.useJetpackSchema).isTrue()
     }
@@ -147,7 +159,8 @@ class ExecuteAppFunctionRequestTest {
                 .setExtras(Bundle().apply { putBoolean(EXTRA_USE_JETPACK_SCHEMA, true) })
                 .build()
 
-        val request = ExecuteAppFunctionRequest.fromPlatformClass(platformRequest)
+        val request =
+            ExecuteAppFunctionRequest.fromPlatformClass(platformRequest, TEST_APP_FUNCTION_METADATA)
 
         assertThat(request.useJetpackSchema).isTrue()
     }
@@ -162,19 +175,29 @@ class ExecuteAppFunctionRequestTest {
     }
 
     companion object {
+        val TEST_PARAMETERS =
+            listOf(
+                AppFunctionParameterMetadata(
+                    name = "testString",
+                    isRequired = true,
+                    dataType = AppFunctionStringTypeMetadata(isNullable = false),
+                )
+            )
         val TEST_APP_FUNCTION_DATA =
             @SdkSuppress(minSdkVersion = Build.VERSION_CODES.TIRAMISU)
-            AppFunctionData.Builder(
-                    listOf(
-                        AppFunctionParameterMetadata(
-                            name = "testString",
-                            isRequired = true,
-                            dataType = AppFunctionStringTypeMetadata(isNullable = false),
-                        )
-                    ),
-                    AppFunctionComponentsMetadata(),
-                )
+            AppFunctionData.Builder(TEST_PARAMETERS, AppFunctionComponentsMetadata())
                 .setString("testString", "value")
                 .build()
+
+        val TEST_APP_FUNCTION_METADATA =
+            AppFunctionMetadata(
+                id = "method",
+                packageName = "pkg",
+                isEnabled = true,
+                schema = null,
+                parameters = TEST_PARAMETERS,
+                response = AppFunctionResponseMetadata(valueType = AppFunctionUnitTypeMetadata()),
+                components = AppFunctionComponentsMetadata(),
+            )
     }
 }

@@ -84,7 +84,8 @@ import org.robolectric.shadows.ShadowSystemClock
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(
-    instrumentedPackages = ["androidx.camera.view"] // required for shadow clock to work
+    sdk = [Config.ALL_SDKS],
+    instrumentedPackages = ["androidx.camera.view"], // required for shadow clock to work
 )
 class CameraControllerTest {
     companion object {

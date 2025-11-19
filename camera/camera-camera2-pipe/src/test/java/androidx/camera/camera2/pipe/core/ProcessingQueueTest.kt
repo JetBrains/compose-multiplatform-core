@@ -32,9 +32,11 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(JUnit4::class)
+@Config(sdk = [Config.ALL_SDKS])
 class ProcessingQueueTest {
     private val testScope = TestScope()
     private val processingScope =

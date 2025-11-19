@@ -35,14 +35,6 @@ package androidx.glance.wear {
     property public static int CONTAINER_TYPE_SMALL;
   }
 
-  public final class SchemaVersion {
-    ctor public SchemaVersion(int major, int minor);
-    method @InaccessibleFromKotlin public int getMajor();
-    method @InaccessibleFromKotlin public int getMinor();
-    property public int major;
-    property public int minor;
-  }
-
   public final class WearWidgetProviderInfo {
     method @InaccessibleFromKotlin public String? getConfigIntentAction();
     method @InaccessibleFromKotlin public java.util.List<androidx.glance.wear.ContainerInfo> getContainers();
@@ -50,8 +42,6 @@ package androidx.glance.wear {
     method @InaccessibleFromKotlin public String getGroup();
     method @InaccessibleFromKotlin public int getIcon();
     method @InaccessibleFromKotlin public String getLabel();
-    method @InaccessibleFromKotlin public androidx.glance.wear.SchemaVersion? getMaxSchemaVersion();
-    method @InaccessibleFromKotlin public androidx.glance.wear.SchemaVersion? getMinSchemaVersion();
     method @InaccessibleFromKotlin public int getPreferredContainerType();
     method @InaccessibleFromKotlin public android.content.ComponentName getProviderService();
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.String> getUnrecognisedAttributes();
@@ -62,8 +52,6 @@ package androidx.glance.wear {
     property public String group;
     property public int icon;
     property public String label;
-    property public androidx.glance.wear.SchemaVersion? maxSchemaVersion;
-    property public androidx.glance.wear.SchemaVersion? minSchemaVersion;
     property public int preferredContainerType;
     property public android.content.ComponentName providerService;
     property public java.util.Map<java.lang.String,java.lang.String> unrecognisedAttributes;

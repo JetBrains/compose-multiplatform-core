@@ -36,9 +36,11 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 /**
  * Implementation of a SceneCore GltfEntity.
@@ -48,8 +50,12 @@ import java.util.concurrent.Executor;
 // TODO: b/375520647 - Add unit tests for this class.
 class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
     private final ImpressNode mModelImpressNode;
-    @GltfEntity.AnimationStateValue private int mAnimationState = GltfEntity.AnimationState.STOPPED;
+    @GltfEntity.AnimationStateValue
+    private int mAnimationState = GltfEntity.AnimationState.STOPPED;
     private final Map<String, Integer> meshOverrides = new HashMap<>();
+
+    private final Map<@NonNull Consumer<@NonNull Integer>, @NonNull Executor>
+            mAnimationStateListeners = Collections.synchronizedMap(new HashMap<>());
 
     GltfFeatureImpl(
             GltfModel gltfModel,
@@ -83,7 +89,7 @@ class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
 
         ListenableFuture<Void> future =
                 mImpressApi.animateGltfModel(mModelImpressNode, animationName, looping);
-        mAnimationState = GltfEntity.AnimationState.PLAYING;
+        setAnimationState(GltfEntity.AnimationState.PLAYING);
 
         // At the moment, we don't do anything interesting on failure except for logging. If we
         // didn't care about logging the failure, we could just not register a listener at all if
@@ -93,7 +99,6 @@ class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
                     try {
                         future.get();
                         // The animation played to completion and has stopped
-                        mAnimationState = GltfEntity.AnimationState.STOPPED;
                     } catch (Exception e) {
                         if (e instanceof InterruptedException) {
                             // If this happened, then it's likely Impress is shutting down and we
@@ -102,8 +107,9 @@ class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
                         } else {
                             // Some other error happened.  Log it and stop the animation.
                             Log.e("GltfEntityImpl", "Could not start animation: " + e);
-                            mAnimationState = GltfEntity.AnimationState.STOPPED;
                         }
+                    } finally {
+                        setAnimationState(GltfEntity.AnimationState.STOPPED);
                     }
                 },
                 executor);
@@ -113,7 +119,7 @@ class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
     public void stopAnimation() {
         if (mAnimationState == GltfEntity.AnimationState.PLAYING) {
             mImpressApi.stopGltfModelAnimation(mModelImpressNode);
-            mAnimationState = GltfEntity.AnimationState.STOPPED;
+            setAnimationState(GltfEntity.AnimationState.STOPPED);
         }
     }
 
@@ -121,6 +127,15 @@ class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
     @GltfEntity.AnimationStateValue
     public int getAnimationState() {
         return mAnimationState;
+    }
+
+    private void setAnimationState(@GltfEntity.AnimationStateValue int animationState) {
+        if (mAnimationState != animationState) {
+            mAnimationState = animationState;
+            mAnimationStateListeners.forEach(
+                    (listener, executor) -> executor.execute(
+                            () -> listener.accept(animationState)));
+        }
     }
 
     @Override
@@ -156,5 +171,16 @@ class GltfFeatureImpl extends BaseRenderingFeature implements GltfFeature {
         }
         meshOverrides.clear();
         super.dispose();
+    }
+
+    @Override
+    public void addAnimationStateListener(
+            @NonNull Executor executor, @NonNull Consumer<@NonNull Integer> listener) {
+        mAnimationStateListeners.putIfAbsent(listener, executor);
+    }
+
+    @Override
+    public void removeAnimationStateListener(@NonNull Consumer<@NonNull Integer> listener) {
+        mAnimationStateListeners.remove(listener);
     }
 }

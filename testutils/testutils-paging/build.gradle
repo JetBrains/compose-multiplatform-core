@@ -22,6 +22,7 @@
  * modifying its settings.
  */
 
+import androidx.build.KotlinTarget
 import androidx.build.PlatformIdentifier
 import androidx.build.SoftwareType
 
@@ -46,12 +47,13 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 implementation(project(":paging:paging-common"))
-                implementation("org.jetbrains.kotlin:kotlin-test:2.2.20")
+                implementation(libs.kotlinTest)
             }
         }
     }
 }
 
 androidx {
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
     type = SoftwareType.INTERNAL_TEST_LIBRARY
 }

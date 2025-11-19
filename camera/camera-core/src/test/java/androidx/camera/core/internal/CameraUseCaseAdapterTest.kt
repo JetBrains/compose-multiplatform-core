@@ -114,7 +114,10 @@ private const val SECONDARY_CAMERA_ID = "1"
 /** Unit tests for [CameraUseCaseAdapter]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(instrumentedPackages = ["androidx.camera.core"])
+@org.robolectric.annotation.Config(
+    sdk = [org.robolectric.annotation.Config.ALL_SDKS],
+    instrumentedPackages = ["androidx.camera.core"],
+)
 class CameraUseCaseAdapterTest {
     private lateinit var effects: List<CameraEffect>
     private lateinit var executor: ExecutorService

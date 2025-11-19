@@ -28,6 +28,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
+import org.robolectric.annotation.Config
 
 @RunWith(JUnit4::class)
 class MetadataTest {
@@ -44,6 +45,7 @@ class MetadataTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class CameraMetadataTest {
     @Test
     fun cameraMetadataIsNotEqual() {
@@ -78,6 +80,7 @@ class CameraMetadataTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class RequestMetadataTest {
 
     @Test
@@ -106,6 +109,7 @@ class RequestMetadataTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class FrameMetadataTest {
     @Test
     fun canRetrieveCaptureRequestOrCameraMetadataViaInterface() {
@@ -124,6 +128,7 @@ class FrameMetadataTest {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 class MetadataTransformTest {
     private val metadata =
         FakeCameraMetadata(

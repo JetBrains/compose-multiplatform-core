@@ -51,9 +51,11 @@ import org.junit.runners.JUnit4
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(JUnit4::class)
+@Config(sdk = [Config.ALL_SDKS])
 class GraphLoopTest {
     private val testScope = TestScope()
     private val testDispatcher = StandardTestDispatcher(testScope.testScheduler)

@@ -351,8 +351,6 @@ class StackStateTest {
         assertThat(state.lastScrolledBackward).isFalse()
         assertThat(state.lastScrolledForward).isTrue()
 
-        // TODO(b/413429531): remove once VerticalStack supports moving focus automatically.
-        requestFocus()
         performIndirectSwipe(-itemHeight)
         rule.waitForIdle()
 
@@ -641,11 +639,6 @@ class StackStateTest {
 
     private fun performIndirectSwipe(distancePx: Int) {
         rule.onRoot().performIndirectSwipe(rule, distancePx.toFloat())
-    }
-
-    private fun requestFocus() {
-        rule.runOnIdle { focusRequester.requestFocus() }
-        rule.waitForIdle()
     }
 
     suspend fun runOnUiThread(action: suspend () -> Unit) {

@@ -26,11 +26,13 @@ import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 import org.robolectric.shadows.StreamConfigurationMapBuilder
 import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.ALL_SDKS])
 @DoNotInstrument
 class AutoFlashAEModeDisablerTest {
     private val anyCameraId = "0"

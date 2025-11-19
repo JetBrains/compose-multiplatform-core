@@ -75,6 +75,7 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
+@org.robolectric.annotation.Config(sdk = {org.robolectric.annotation.Config.ALL_SDKS})
 public class LifecycleCameraTest {
     private LifecycleCamera mLifecycleCamera;
     private FakeLifecycleOwner mLifecycleOwner;
