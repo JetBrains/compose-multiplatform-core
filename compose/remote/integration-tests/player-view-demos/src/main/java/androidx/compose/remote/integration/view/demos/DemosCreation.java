@@ -45,8 +45,11 @@ public abstract class DemosCreation {
      */
     public static @NonNull ArrayList<RCDoc> getDemos() {
         return new ArrayList<>(Arrays.asList(
+                //getp("4/simplePlot/simplePlot", GraphKt::simplePlot),
+                getp("5/Server/serverClock", ServerSideKt::serverClock),
+
+                getp("Procedural/plotWave", PlotWaveKt::basicPlot),
                 getp("Procedural/plotWave", PlotWaveKt::plotWave),
-                getp("Server/serverClock", ServerSideKt::serverClock),
                 getp("Java/AttributeString", DemoAttributedString::demo),
                 getp("Java/pathTest", ExampleTimerKt::basicTimer),
                 getp("fancyClock2", DemoMetalClockKt::fancyClock2),

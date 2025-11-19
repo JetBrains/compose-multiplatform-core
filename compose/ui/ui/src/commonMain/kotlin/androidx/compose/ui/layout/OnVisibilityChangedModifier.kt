@@ -179,17 +179,13 @@ internal class OnVisibilityChangedNode(
     var handle: DelegatableNode.RegistrationHandle? = null
     var job: Job? = null
     var lastResult = false
-    var firedOnce = false
     var lastBounds: RelativeLayoutBounds? = null
     var lastViewport: RelativeLayoutBounds? = null
-        set(value) {
-            if (field != value) {
-                field = value
-                forceUpdate()
-            }
-        }
 
     val rectChanged = { bounds: RelativeLayoutBounds ->
+        // as the bounds of the provided viewportBounds might have changed within the same
+        // relayout pass, we should recalculate them without waiting for onObservedReadsChanged()
+        lastViewport = this.viewportBounds?.bounds
         checkVisibility(minFractionVisible, bounds, lastViewport)
     }
 
@@ -210,9 +206,8 @@ internal class OnVisibilityChangedNode(
             if (viewport != null) bounds.fractionVisibleIn(viewport)
             else bounds.fractionVisibleInWindow()
         val newResult = fractionVisible > minFractionVisible || fractionVisible == 1f
-        if (!firedOnce || newResult != lastResult) {
+        if (newResult != lastResult) {
             lastResult = newResult
-            firedOnce = true
             startTimer()
         }
     }
@@ -243,7 +238,7 @@ internal class OnVisibilityChangedNode(
     }
 
     fun fireExitIfNeeded() {
-        if (lastResult && firedOnce) {
+        if (lastResult) {
             job?.cancel()
             lastResult = false
             callback(false)
@@ -257,15 +252,23 @@ internal class OnVisibilityChangedNode(
         lastResult = false
         lastBounds = null
         lastViewport = null
-        firedOnce = false
     }
 
     fun updateViewport() {
         if (viewportBounds == null) {
-            lastViewport = null
+            if (lastViewport != null) {
+                lastViewport = null
+                forceUpdate()
+            }
             return
         }
-        observeReads { lastViewport = viewportBounds?.bounds }
+        observeReads {
+            val newViewport = viewportBounds?.bounds
+            if (lastViewport != newViewport) {
+                lastViewport = newViewport
+                forceUpdate()
+            }
+        }
     }
 
     override fun onAttach() {

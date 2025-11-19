@@ -44,11 +44,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.List;
 
 /** Unit tests for {@link PageMosaicView}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class PageMosaicViewTest {
     @Mock
     private MosaicView.BitmapSource mMockBitmapSource;

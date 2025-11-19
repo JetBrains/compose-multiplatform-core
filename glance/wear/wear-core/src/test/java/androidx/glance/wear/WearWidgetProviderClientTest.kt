@@ -40,6 +40,7 @@ import org.robolectric.Shadows.shadowOf
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class WearWidgetProviderClientTest {
     private lateinit var context: Context
     private val service = FakeWearWidgetProvider()

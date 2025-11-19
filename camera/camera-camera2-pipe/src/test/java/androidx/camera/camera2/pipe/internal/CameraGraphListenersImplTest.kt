@@ -50,9 +50,11 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 class CameraGraphListenersImplTest {
     private val testScope = TestScope()
     private val graphListener = FakeRequestListener()

@@ -40,6 +40,7 @@ import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class Controller3AReset3ATest {
     val testScope = TestScope()
     private val graphTestContext = GraphTestContext()

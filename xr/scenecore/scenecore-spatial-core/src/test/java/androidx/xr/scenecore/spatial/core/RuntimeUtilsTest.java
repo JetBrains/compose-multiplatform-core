@@ -75,11 +75,13 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 import org.robolectric.junit.rules.ExpectedLogMessagesRule;
 
 import java.util.Objects;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class RuntimeUtilsTest {
 
     @Rule

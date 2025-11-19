@@ -265,8 +265,8 @@ public class SpatialGltfModelState {
      * @param name The name of the animation to play, as defined in the glTF file.
      */
     public fun startAnimation(name: String? = null) {
-        coreEntityActionQueue.executeWhenAvailable {
-            startAnimation(name)
+        coreEntityActionQueue.executeWhenAvailable { coreEntity ->
+            coreEntity.startAnimation(name)
             shouldWatchForAnimationEndFlow.compareAndSet(expect = false, update = true)
         }
     }
@@ -278,16 +278,16 @@ public class SpatialGltfModelState {
      * @param name The name of the animation to play, as defined in the glTF file.
      */
     public fun loopAnimation(name: String? = null) {
-        coreEntityActionQueue.executeWhenAvailable {
-            loopAnimation(name)
+        coreEntityActionQueue.executeWhenAvailable { coreEntity ->
+            coreEntity.loopAnimation(name)
             _isAnimating.value = true
         }
     }
 
     /** Stops all currently playing animations. */
     public fun stopAllAnimations() {
-        coreEntityActionQueue.executeWhenAvailable {
-            stopAllAnimations()
+        coreEntityActionQueue.executeWhenAvailable { coreEntity ->
+            coreEntity.stopAllAnimations()
             _isAnimating.value = false
         }
     }

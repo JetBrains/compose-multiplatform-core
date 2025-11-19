@@ -1498,11 +1498,13 @@ public class WebViewCompat {
      * @throws UnsupportedOperationException if the
      *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
      *                                       feature is not supported.
+     * @deprecated Use {@link #addNavigationListener(WebView, NavigationListener)} instead.
      */
     @RequiresFeature(name = WebViewFeature.NAVIGATION_CALLBACK_BASIC,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @WebNavigationClient.ExperimentalNavigationCallback
+    @Deprecated
     public static void setWebNavigationClient(@NonNull WebView webView,
             @NonNull WebNavigationClient client) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_CALLBACK_BASIC;
@@ -1521,11 +1523,13 @@ public class WebViewCompat {
      * @throws UnsupportedOperationException if the
      *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
      *                                       feature is not supported.
+     * @deprecated This will not be part of the final API.
      */
     @RequiresFeature(name = WebViewFeature.NAVIGATION_CALLBACK_BASIC,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @WebNavigationClient.ExperimentalNavigationCallback
+    @Deprecated
     public static @NonNull WebNavigationClient getWebNavigationClient(@NonNull WebView webView) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_CALLBACK_BASIC;
         if (feature.isSupportedByWebView()) {
@@ -1544,8 +1548,8 @@ public class WebViewCompat {
      * @param webView  The {@link WebView} to set the client for.
      * @param executor {@link Executor} where callbacks to the {@code listener} will be executed.
      * @param listener The {@link NavigationListener} to add.
-     * @throws IllegalStateException if the {@code listener} has already been added to the
-     *                               {@code webView}.
+     * @throws IllegalStateException         if the {@code listener} has already been added to the
+     *                                       {@code webView}.
      * @throws UnsupportedOperationException if the
      *                                       {@link WebViewFeature#NAVIGATION_CALLBACK_BASIC}
      *                                       feature is not supported.
@@ -1554,7 +1558,6 @@ public class WebViewCompat {
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @WebNavigationClient.ExperimentalNavigationCallback
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static void addNavigationListener(@NonNull WebView webView, @NonNull Executor executor,
             @NonNull NavigationListener listener) {
         ApiFeature.NoFramework feature = WebViewFeatureInternal.NAVIGATION_LISTENER_V1;
@@ -1567,6 +1570,9 @@ public class WebViewCompat {
 
     /**
      * Adds a {@link NavigationListener} to the given {@link WebView}.
+     *
+     * <p>A listener can only be added to a WebView once. Attempting to add the same listener to the
+     * same WebView twice will result in an {@link IllegalStateException}.
      *
      * <p>The callback will be executed on the main thread using
      * {@link Looper#getMainLooper()}. To specify the execution thread, use
@@ -1583,7 +1589,6 @@ public class WebViewCompat {
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
     @WebNavigationClient.ExperimentalNavigationCallback
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static void addNavigationListener(@NonNull WebView webView,
             @NonNull NavigationListener listener) {
         addNavigationListener(webView, new Handler(Looper.getMainLooper())::post,
@@ -1607,7 +1612,6 @@ public class WebViewCompat {
     @RequiresFeature(name = WebViewFeature.NAVIGATION_LISTENER_V1,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
     @UiThread
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @WebNavigationClient.ExperimentalNavigationCallback
     public static void removeNavigationListener(@NonNull WebView webView,
             @NonNull NavigationListener listener) {

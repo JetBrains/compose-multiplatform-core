@@ -2643,6 +2643,8 @@ package androidx.collection {
   }
 
   public final class SieveCacheKt {
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal static inline int getNextNode(long);
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal static inline int getPreviousNode(long);
     property @kotlin.PublishedApi internal static int NodeInvalidLink;
     property @kotlin.PublishedApi internal static long NodeLinkMask;
     property @kotlin.PublishedApi internal static inline int long.nextNode;

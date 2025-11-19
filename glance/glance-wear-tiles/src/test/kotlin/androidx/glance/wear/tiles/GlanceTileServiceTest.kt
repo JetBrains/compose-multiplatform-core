@@ -60,6 +60,7 @@ import org.robolectric.android.util.concurrent.InlineExecutorService
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalStdlibApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class GlanceTileServiceTest {
     private lateinit var executor: InlineExecutorService
     private lateinit var fakeCoroutineScope: TestScope

@@ -43,6 +43,7 @@ import kotlin.metadata.isNullable
 import kotlin.metadata.jvm.KotlinClassMetadata
 
 /** Utilities for working with data structures representing parsed Java code. */
+@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // intentionally using java.* types
 @OptIn(ExperimentalProcessingApi::class)
 class IntrospectionHelper internal constructor(private val env: XProcessingEnv) {
     // Non-boxable objects

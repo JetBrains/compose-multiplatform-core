@@ -59,6 +59,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SceneTest {
     private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activityController = Robolectric.buildActivity(ComponentActivity::class.java)

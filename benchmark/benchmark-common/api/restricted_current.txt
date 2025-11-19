@@ -14,7 +14,7 @@ package androidx.benchmark {
   public static final class BenchmarkState.Companion {
   }
 
-  @SuppressCompatibility @androidx.benchmark.ExperimentalBlackHoleApi public final class BlackHole {
+  public final class BlackHole {
     method public static void consume(boolean value);
     method public static void consume(byte value);
     method public static void consume(char value);
@@ -31,9 +31,6 @@ package androidx.benchmark {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalBenchmarkStateApi {
-  }
-
-  @SuppressCompatibility @kotlin.RequiresOptIn @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalBlackHoleApi {
   }
 
   @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public final class ExperimentalConfig {

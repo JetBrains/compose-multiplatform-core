@@ -85,7 +85,7 @@ internal open class FakePdfDocument(
     override val formEditRecords: List<FormEditRecord>
         get() = editHistory.toList()
 
-    private val bitmapRequestsLock = Object()
+    private val bitmapRequestsLock = Any()
     private val _bitmapRequests = mutableMapOf<Int, SizeParams>()
     internal val bitmapRequests
         get() = _bitmapRequests

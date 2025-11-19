@@ -107,7 +107,7 @@ internal object WearWidgetProviderInfoXmlParser {
         for (i in 0 until attributeCount) {
             val attrName = getAttributeName(i)
             if (attrName !in knownAttributes) {
-                unrecognisedAttributes[attrName] = getAttributeValue(i)
+                unrecognisedAttributes[attrName.lowercase()] = getAttributeValue(i)
             }
         }
 

@@ -39,8 +39,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class SoundPoolExtensionsWrapperImplTest {
 
     private static final int TEST_SOUND_ID = 0;

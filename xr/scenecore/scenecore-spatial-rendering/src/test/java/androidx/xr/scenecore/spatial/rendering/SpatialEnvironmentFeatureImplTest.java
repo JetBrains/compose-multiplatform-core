@@ -54,6 +54,7 @@ import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 // with other Android XR impl tests in this directory.
 /** Unit tests for the AndroidXR implementation of JXRCore's SpatialEnvironment module. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class SpatialEnvironmentFeatureImplTest {
     private static final int SUBSPACE_ID = 5;
     private static final int INVALID_SPLIT_ENGINE_ID = -1;

@@ -71,13 +71,15 @@ public class SearchResultToPlatformConverter {
                 builder.addJoinedResult(toJetpackSearchResult(joinedResult));
             }
         }
-        if (AppSearchVersionUtil.isAtLeastB()) {
+        if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.B_BASE) {
             List<Double> informationalRankingSignals =
-                    ApiHelperForB.getInformationalRankingSignals(platformResult);
+                    ApiHelperForSdkExtensionBBase.getInformationalRankingSignals(platformResult);
             for (int i = 0; i < informationalRankingSignals.size(); i++) {
                 builder.addInformationalRankingSignal(informationalRankingSignals.get(i));
             }
+        }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             try {
                 // TODO(b/371610934): Ensure the parent type map is set for older devices receiving
                 //  mainline updates. AppSearch will relocate parent type information from
@@ -152,16 +154,23 @@ public class SearchResultToPlatformConverter {
         }
     }
 
-    @RequiresApi(36)
-    private static class ApiHelperForB {
-        private ApiHelperForB() {
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.B_BASE)
+    private static class ApiHelperForSdkExtensionBBase {
+        private ApiHelperForSdkExtensionBBase() {
+            // This class is not instantiable.
         }
 
         @DoNotInline
-        @SuppressLint("NewApi") // getInformationalRankingSignals() incorrectly flagged as 34-ext16
         static List<Double> getInformationalRankingSignals(
                 android.app.appsearch.@NonNull SearchResult result) {
             return result.getInformationalRankingSignals();
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    private static class ApiHelperForB {
+        private ApiHelperForB() {
         }
 
         @DoNotInline

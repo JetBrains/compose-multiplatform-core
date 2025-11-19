@@ -39,18 +39,12 @@ configurations {
 }
 
 dependencies {
-    // Pinned AGP and lint versions that use an older version of Kotlin (pre-2.1) to avoid bumping
-    // the Kotlin target of this project to 2.1. We may get a different version on the runtime
-    // classpath.
-    compileOnly("com.android.tools.build:gradle-api:8.8.0-alpha06")
-    compileOnly("com.android.tools:common:31.8.0-alpha06")
-    compileOnly("com.android.tools:sdk-common:31.8.0-alpha06")
-    compileOnly("com.android.tools:repository:31.8.0-alpha06")
     compileOnly(libs.kotlinGradlePlugin)
 
     api(libs.androidGradlePluginApi)
     api(libs.androidToolsCommon)
     api(libs.androidToolsSdkCommon)
+    api(libs.androidToolsRepository)
     api(libs.guava)
 
     implementation(libs.apacheCommonIo)
@@ -58,7 +52,7 @@ dependencies {
 
     testPlugin(libs.androidGradlePlugin)
 
-    testImplementation("com.android.tools.build:gradle:8.8.0-alpha06")
+    testImplementation(libs.androidGradlePlugin)
     testImplementation(gradleTestKit())
     testImplementation(project(":internal-testutils-gradle-plugin"))
     testImplementation(libs.androidToolsAnalyticsProtos)

@@ -18,7 +18,6 @@ package androidx.tracing.benchmark.driver
 
 import androidx.benchmark.BlackHole
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
-import androidx.benchmark.ExperimentalBlackHoleApi
 import androidx.benchmark.junit4.BenchmarkRule
 import androidx.benchmark.junit4.measureRepeated
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -108,7 +107,6 @@ class TracingDriverBenchmark {
     // This benchmark is a reference benchmark for `beginEndCoroutine_writeOnly`. The goal is to
     // get the numbers for `beginEndCoroutine_writeOnly` to get as close as possible to the
     // benchmark below.
-    @OptIn(ExperimentalBlackHoleApi::class)
     @Test
     fun referenceForBeginEndCoroutine() = runTest {
         benchmarkRule.measureRepeated {

@@ -16,15 +16,12 @@
 
 package androidx.room3.paging
 
-import android.database.Cursor
 import androidx.annotation.RestrictTo
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomRawQuery
-import androidx.room3.paging.CommonLimitOffsetImpl.Companion.BUG_LINK
 import androidx.room3.paging.util.getClippedRefreshKey
-import androidx.room3.util.performSuspending
 
 /**
  * An implementation of [PagingSource] to perform a LIMIT OFFSET query
@@ -55,22 +52,8 @@ actual constructor(
     actual override fun getRefreshKey(state: PagingState<Int, Value>): Int? =
         state.getClippedRefreshKey()
 
-    protected open fun convertRows(cursor: Cursor): List<Value> {
-        throw NotImplementedError(
-            "Unexpected call to a function with no implementation that Room is suppose to " +
-                "generate. Please file a bug at: $BUG_LINK."
-        )
-    }
-
-    protected actual open suspend fun convertRows(
+    protected actual abstract suspend fun convertRows(
         limitOffsetQuery: RoomRawQuery,
         itemCount: Int,
-    ): List<Value> {
-        return performSuspending(db, isReadOnly = true, inTransaction = false) { connection ->
-            connection.prepare(limitOffsetQuery.sql).use { statement ->
-                limitOffsetQuery.getBindingFunction().invoke(statement)
-                convertRows(SQLiteStatementCursor(statement, itemCount))
-            }
-        }
-    }
+    ): List<Value>
 }

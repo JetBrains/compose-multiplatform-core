@@ -30,8 +30,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 class FakeImpressApiImplTest {
     private lateinit var fakeImpressApi: FakeImpressApiImpl
     private lateinit var resourceManager: BindingsResourceManager

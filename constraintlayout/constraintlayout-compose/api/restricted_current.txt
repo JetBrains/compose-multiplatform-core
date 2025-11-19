@@ -244,11 +244,11 @@ package androidx.constraintlayout.compose {
     method @BytecodeOnly public static androidx.constraintlayout.compose.ConstraintLayoutBaseScope.HorizontalAnchor! createTopBarrier-3ABfNKs$default(androidx.constraintlayout.compose.ConstraintLayoutBaseScope!, androidx.constraintlayout.compose.LayoutReference![]!, float, int, Object!);
     method public final androidx.constraintlayout.compose.VerticalChainReference createVerticalChain(androidx.constraintlayout.compose.LayoutReference[] elements, optional androidx.constraintlayout.compose.ChainStyle chainStyle);
     method @BytecodeOnly public static androidx.constraintlayout.compose.VerticalChainReference! createVerticalChain$default(androidx.constraintlayout.compose.ConstraintLayoutBaseScope!, androidx.constraintlayout.compose.LayoutReference![]!, androidx.constraintlayout.compose.ChainStyle!, int, Object!);
-    method @BytecodeOnly @kotlin.PublishedApi internal final androidx.constraintlayout.core.parser.CLObject getContainerObject();
-    method @BytecodeOnly @kotlin.PublishedApi internal final int getHelpersHashCode();
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal final androidx.constraintlayout.core.parser.CLObject getContainerObject();
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal final int getHelpersHashCode();
     method @InaccessibleFromKotlin @Deprecated protected final java.util.List<kotlin.jvm.functions.Function1<androidx.constraintlayout.compose.State,kotlin.Unit>> getTasks();
     method public void reset();
-    method @BytecodeOnly @kotlin.PublishedApi internal final void setHelpersHashCode(int);
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal final void setHelpersHashCode(int);
     method @KotlinOnly public final androidx.constraintlayout.compose.LayoutReference withChainParams(androidx.constraintlayout.compose.LayoutReference, optional androidx.compose.ui.unit.Dp startMargin, optional androidx.compose.ui.unit.Dp topMargin, optional androidx.compose.ui.unit.Dp endMargin, optional androidx.compose.ui.unit.Dp bottomMargin, optional androidx.compose.ui.unit.Dp startGoneMargin, optional androidx.compose.ui.unit.Dp topGoneMargin, optional androidx.compose.ui.unit.Dp endGoneMargin, optional androidx.compose.ui.unit.Dp bottomGoneMargin, optional float weight);
     method @BytecodeOnly public final androidx.constraintlayout.compose.LayoutReference withChainParams-ouYQatA(androidx.constraintlayout.compose.LayoutReference, float, float, float, float, float, float, float, float, float);
     method @BytecodeOnly public static androidx.constraintlayout.compose.LayoutReference! withChainParams-ouYQatA$default(androidx.constraintlayout.compose.ConstraintLayoutBaseScope!, androidx.constraintlayout.compose.LayoutReference!, float, float, float, float, float, float, float, float, float, int, Object!);
@@ -261,8 +261,6 @@ package androidx.constraintlayout.compose {
     property @kotlin.PublishedApi internal final androidx.constraintlayout.core.parser.CLObject containerObject;
     property @kotlin.PublishedApi internal final int helpersHashCode;
     property @Deprecated protected final java.util.List<kotlin.jvm.functions.Function1<androidx.constraintlayout.compose.State,kotlin.Unit>> tasks;
-    field @kotlin.PublishedApi internal final androidx.constraintlayout.core.parser.CLObject containerObject;
-    field @kotlin.PublishedApi internal int helpersHashCode;
   }
 
   @androidx.compose.runtime.Stable public static final class ConstraintLayoutBaseScope.BaselineAnchor {
@@ -329,10 +327,9 @@ package androidx.constraintlayout.compose {
     method @androidx.compose.runtime.Stable public androidx.compose.ui.Modifier constrainAs(androidx.compose.ui.Modifier, androidx.constraintlayout.compose.ConstrainedLayoutReference ref, kotlin.jvm.functions.Function1<? super androidx.constraintlayout.compose.ConstrainScope,kotlin.Unit> constrainBlock);
     method public androidx.constraintlayout.compose.ConstrainedLayoutReference createRef();
     method @androidx.compose.runtime.Stable public androidx.constraintlayout.compose.ConstraintLayoutScope.ConstrainedLayoutReferences createRefs();
-    method @BytecodeOnly @kotlin.PublishedApi internal boolean isAnimateChanges();
-    method @BytecodeOnly @kotlin.PublishedApi internal void setAnimateChanges(boolean);
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal boolean isAnimateChanges();
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal void setAnimateChanges(boolean);
     property @kotlin.PublishedApi internal boolean isAnimateChanges;
-    field @kotlin.PublishedApi internal boolean isAnimateChanges;
   }
 
   public final class ConstraintLayoutScope.ConstrainedLayoutReferences {
@@ -1191,9 +1188,10 @@ package androidx.constraintlayout.compose {
 
   public final class ToolingUtilsKt {
     method @InaccessibleFromKotlin public static androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.constraintlayout.compose.DesignInfoProvider> getDesignInfoDataKey();
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal static androidx.constraintlayout.compose.DesignInfoProvider getDesignInfoProvider(androidx.compose.ui.semantics.SemanticsPropertyReceiver);
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal static void setDesignInfoProvider(androidx.compose.ui.semantics.SemanticsPropertyReceiver, androidx.constraintlayout.compose.DesignInfoProvider);
     property public static androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.constraintlayout.compose.DesignInfoProvider> DesignInfoDataKey;
     property @kotlin.PublishedApi internal static androidx.constraintlayout.compose.DesignInfoProvider androidx.compose.ui.semantics.SemanticsPropertyReceiver.designInfoProvider;
-    field @kotlin.PublishedApi internal static final androidx.compose.ui.semantics.SemanticsPropertyKey<androidx.constraintlayout.compose.DesignInfoProvider> designInfoProvider$delegate;
   }
 
   @SuppressCompatibility @androidx.compose.runtime.Immutable @androidx.constraintlayout.compose.ExperimentalMotionApi public interface Transition {

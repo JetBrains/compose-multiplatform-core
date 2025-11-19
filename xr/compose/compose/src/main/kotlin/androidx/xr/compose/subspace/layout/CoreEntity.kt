@@ -54,7 +54,8 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
      * If [entity] is null, this will contain the set of mutations that are queued to be applied to
      * the entity once it is attached.
      */
-    private val entityActionQueue = ActionQueue(initialValue = initialEntity)
+    private val entityActionQueue =
+        ActionQueue(initialValue = initialEntity, isValid = { !it.isDisposed })
 
     protected val entity: Entity?
         get() = entityActionQueue.value
@@ -76,21 +77,12 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
         get() = layout?.measurableLayout?.poseInParentEntity ?: Pose.Identity
 
     internal open var poseInMeters: Pose
-        // TODO: b/440426914 - Avoid eating the IllegalStateException silently.
-        get() {
-            return try {
-                entity?.getPose() ?: Pose.Identity
-            } catch (_: IllegalStateException) {
-                Pose.Identity
-            }
-        }
+        get() = entity?.getPose() ?: Pose.Identity
         set(value) {
-            entityActionQueue.executeWhenAvailable {
-                try {
-                    if (getPose() != value) {
-                        setPose(value)
-                    }
-                } catch (_: IllegalStateException) {}
+            entityActionQueue.executeWhenAvailable { entity ->
+                if (entity.getPose() != value) {
+                    entity.setPose(value)
+                }
             }
         }
 
@@ -126,9 +118,9 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
     open var enabled: Boolean
         get() = entity?.isEnabled(includeParents = true) ?: false
         set(value) {
-            entityActionQueue.executeWhenAvailable {
-                if (isEnabled(includeParents = false) != value) {
-                    setEnabled(value)
+            entityActionQueue.executeWhenAvailable { entity ->
+                if (entity.isEnabled(includeParents = false) != value) {
+                    entity.setEnabled(value)
                 }
             }
         }
@@ -142,7 +134,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
     internal open var scale = 1f
         set(value) {
             if (field != value) {
-                entityActionQueue.executeWhenAvailable { setScale(value) }
+                entityActionQueue.executeWhenAvailable { it.setScale(value) }
             }
             field = value
         }
@@ -154,7 +146,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
     internal var alpha = 1f
         set(value) {
             if (field != value) {
-                entityActionQueue.executeWhenAvailable { setAlpha(value) }
+                entityActionQueue.executeWhenAvailable { it.setAlpha(value) }
             }
             field = value
         }
@@ -170,7 +162,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
             field = value
             // When the Compose-level parent is set to null, restore the original parent
             // (saved during the initial creation)
-            entityActionQueue.executeWhenAvailable { parent = value?.entity ?: originalParent }
+            entityActionQueue.executeWhenAvailable { it.parent = value?.entity ?: originalParent }
         }
 
     fun updatePoseFromLayout() {
@@ -190,7 +182,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
      * @return true if the component was added successfully, false otherwise.
      */
     fun addComponent(component: Component): Boolean? {
-        return entityActionQueue.executeWhenAvailable { addComponent(component) }
+        return entityActionQueue.executeWhenAvailable { it.addComponent(component) }
     }
 
     /**
@@ -199,7 +191,7 @@ internal sealed class CoreEntity(initialEntity: Entity? = null) : OpaqueEntity {
      * @param component The [Component] to remove.
      */
     fun removeComponent(component: Component) {
-        entityActionQueue.executeWhenAvailable { removeComponent(component) }
+        entityActionQueue.executeWhenAvailable { it.removeComponent(component) }
     }
 
     fun onEntityAttached(onEntityAttached: (Entity) -> Unit) {
@@ -590,3 +582,17 @@ internal interface ResizableCoreEntity
 
 /** [CoreEntity] types that implement this interface may have the MovableComponent attached. */
 internal interface MovableCoreEntity
+
+/**
+ * Check if the current entity is disposed.
+ *
+ * TODO(b/458159392) This should be removed once isDisposed is surfaced from the SceneCore API.
+ */
+private val Entity.isDisposed
+    get() =
+        try {
+            contentDescription
+            false
+        } catch (e: IllegalStateException) {
+            e.message?.contains("disposed") == true
+        }

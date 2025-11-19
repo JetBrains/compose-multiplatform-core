@@ -51,10 +51,12 @@ import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 // Suppress warnings: windowManager's getDefaultDisplay and getRealMetrics.
 @SuppressWarnings("deprecation")
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class CameraViewScenePoseImplTest {
 
     private final AndroidXrEntity mActivitySpaceRoot = Mockito.mock(AndroidXrEntity.class);

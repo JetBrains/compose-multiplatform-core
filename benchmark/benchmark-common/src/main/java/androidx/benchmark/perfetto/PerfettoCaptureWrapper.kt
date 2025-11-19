@@ -49,7 +49,7 @@ class PerfettoCaptureWrapper {
     }
 
     companion object {
-        val inUseLock = Object()
+        val inUseLock = Any()
 
         /**
          * Prevents re-entrance of perfetto trace capture, as it doesn't handle this correctly

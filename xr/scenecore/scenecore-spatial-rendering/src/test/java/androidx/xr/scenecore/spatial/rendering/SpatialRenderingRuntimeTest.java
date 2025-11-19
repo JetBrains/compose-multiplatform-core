@@ -58,11 +58,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.Objects;
 
 /** Tests for {@link SpatialRenderingRuntime}. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 // TODO: b/441552980 - add unit tests for gltf animations
 public class SpatialRenderingRuntimeTest {
     private static final int OPEN_XR_REFERENCE_SPACE_TYPE = 1;

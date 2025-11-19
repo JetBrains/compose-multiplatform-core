@@ -61,6 +61,9 @@ internal object ArtifactResolver {
 
     internal val gradlePluginPortalRepo = "https://plugins.gradle.org/m2/"
 
+    // Mirror of MavenCentral, see go/airlock/howto_maven#maven-mirrors
+    internal val mavenCentralMirror = "https://maven-central.storage-download.googleapis.com/maven2/"
+
     internal fun createAndroidXRepo(buildId: Int) =
         "https://androidx.dev/snapshots/builds/$buildId/artifacts/repository"
 
@@ -248,6 +251,7 @@ ${
                 additionalPriorityRepositories +
                     listOf(
                         RepositoryHandler.GOOGLE_URL,
+                        mavenCentralMirror,
                         RepositoryHandler.MAVEN_CENTRAL_URL,
                         gradlePluginPortalRepo
                     )

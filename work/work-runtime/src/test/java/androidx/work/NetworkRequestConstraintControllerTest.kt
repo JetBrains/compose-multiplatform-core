@@ -63,6 +63,9 @@ import org.robolectric.shadows.ShadowNetworkCapabilities
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 class NetworkRequestConstraintControllerTest {
+    companion object {
+        private const val TEST_TIMEOUT_MS = 2000L
+    }
 
     // First implement your own ConnectivityManager, then test NetworkRequestConstraintController
     // against it. What could possibly go wrong?
@@ -208,6 +211,76 @@ class NetworkRequestConstraintControllerTest {
 
         val results = asyncResults.awaitAll()
         assertThat(results).containsExactly(ConstraintsMet, ConstraintsMet)
+    }
+
+    @Test
+    @Config(minSdk = 30)
+    fun testBlockedStatus() = runTest {
+        val connectivityManager =
+            getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val connManagerShadow =
+            Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+
+        val capabilities = ShadowNetworkCapabilities.newInstance()
+        shadowOf(capabilities).apply {
+            addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+        connManagerShadow.setNetworkCapabilities(connectivityManager.activeNetwork, capabilities)
+
+        val controller = NetworkRequestConstraintController(connectivityManager)
+        val request =
+            NetworkRequest.Builder()
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+        val constraints =
+            Constraints.Builder().setRequiredNetworkRequest(request, NetworkType.CONNECTED).build()
+
+        val results = mutableListOf<ConstraintsState>()
+        val deferredMet = CompletableDeferred<Unit>()
+        val deferredNotMet = CompletableDeferred<Unit>()
+        val deferredMetAgain = CompletableDeferred<Unit>()
+
+        val job = launch {
+            controller.track(constraints).distinctUntilChanged().collectIndexed { index, value ->
+                results.add(value)
+                when (index) {
+                    0 -> deferredMet.complete(Unit)
+                    1 -> deferredNotMet.complete(Unit)
+                    2 -> deferredMetAgain.complete(Unit)
+                }
+            }
+        }
+
+        withTimeout(TEST_TIMEOUT_MS) {
+            // 1. Await initial "ConstraintsMet" state
+            deferredMet.await()
+
+            // 2. Simulate network being blocked
+            connManagerShadow.networkCallbacks.forEach {
+                it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, true)
+            }
+            deferredNotMet.await()
+
+            // 3. Simulate network being unblocked
+            connManagerShadow.networkCallbacks.forEach {
+                it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, false)
+            }
+            deferredMetAgain.await()
+        }
+        job.cancel()
+
+        // 4. Assert the sequence of states was correct
+        assertThat(results)
+            .isEqualTo(
+                listOf(
+                    ConstraintsMet,
+                    ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY),
+                    ConstraintsMet,
+                )
+            )
     }
 
     @Test

@@ -43,7 +43,7 @@ internal class SpatialComposeScene(
     val lifecycleOwner: LifecycleOwner,
     val context: Context,
     @InternalSubspaceApi val jxrSession: Session,
-    parentCompositionContext: CompositionContext? = null,
+    parentCompositionContext: CompositionContext,
     rootEntity: CoreEntity? = null,
 ) : DefaultLifecycleObserver, LifecycleOwner {
     init {

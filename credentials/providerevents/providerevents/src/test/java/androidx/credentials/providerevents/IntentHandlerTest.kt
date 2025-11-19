@@ -35,6 +35,7 @@ import org.robolectric.annotation.Config
 
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.P)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class IntentHandlerTest {
     private val testRequestJson = "{\"credentials\":[\"data\"]}"
     private val testPackageName = "com.example.test.app"

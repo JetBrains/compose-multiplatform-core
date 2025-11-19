@@ -98,9 +98,13 @@ public sealed class KnownIssues {
             }
 
         /**
-         * [Auto Exposure Mode Low Light Boost (LLB)]
-         * (https://developer.android.com/reference/android/hardware/camera2/CameraMetadata#CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
+         * Auto Exposure Mode Low Light Boost (LLB) mode
+         * [CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY](https://developer.android.com/reference/android/hardware/camera2/CameraMetadata.html#CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
          * cannot be enabled for stream use cases such as VIDEO_CALL on Pixel 10 devices.
+         *
+         * Use
+         * [CONTROL_AE_MODE_ON](https://developer.android.com/reference/android/hardware/camera2/CameraMetadata.html#CONTROL_AE_MODE_ON)
+         * until this issue is resolved.
          *
          * @sample androidx.core.backported.fixes.samples.ki452390376
          *

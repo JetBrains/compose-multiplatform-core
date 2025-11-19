@@ -632,7 +632,7 @@ class ActivityResultContracts private constructor() {
              * Note: this should not be used directly, instead relying on the selection logic done
              * by [createIntent] to create the correct Intent for the current device.
              */
-            @Suppress("ActionValue") /* Don't include SYSTEM_FALLBACK in the action */
+            @field:Suppress("ActionValue") /* Don't include SYSTEM_FALLBACK in the action */
             const val ACTION_SYSTEM_FALLBACK_PICK_IMAGES =
                 "androidx.activity.result.contract.action.PICK_IMAGES"
 
@@ -651,7 +651,7 @@ class ActivityResultContracts private constructor() {
              * If this extra is present but equal to [Int.MAX_VALUE], then no limit should be
              * enforced.
              */
-            @Suppress("ActionValue") /* Don't include SYSTEM_FALLBACK in the extra */
+            @field:Suppress("ActionValue") /* Don't include SYSTEM_FALLBACK in the extra */
             const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_MAX =
                 "androidx.activity.result.contract.extra.PICK_IMAGES_MAX"
 
@@ -662,7 +662,7 @@ class ActivityResultContracts private constructor() {
              *
              * If this extra is not present, the default tab of the picker will be used.
              */
-            @Suppress("ActionValue")
+            @field:Suppress("ActionValue")
             /* Don't include SYSTEM_FALLBACK in the extra */
             const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_LAUNCH_TAB =
                 "androidx.activity.result.contract.extra.PICK_IMAGES_LAUNCH_TAB"
@@ -672,7 +672,7 @@ class ActivityResultContracts private constructor() {
              * [ACTION_SYSTEM_FALLBACK_PICK_IMAGES] that indicates allowing the user to control the
              * order in which images are returned to the calling app.
              */
-            @Suppress("ActionValue")
+            @field:Suppress("ActionValue")
             /* Don't include SYSTEM_FALLBACK in the extra */
             const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_IN_ORDER =
                 "androidx.activity.result.contract.extra.PICK_IMAGES_IN_ORDER"
@@ -684,7 +684,7 @@ class ActivityResultContracts private constructor() {
              *
              * If this extra is not present, the default accent color of the picker will be used.
              */
-            @Suppress("ActionValue")
+            @field:Suppress("ActionValue")
             /* Don't include SYSTEM_FALLBACK in the extra */
             const val EXTRA_SYSTEM_FALLBACK_PICK_IMAGES_ACCENT_COLOR =
                 "androidx.activity.result.contract.extra.PICK_IMAGES_ACCENT_COLOR"

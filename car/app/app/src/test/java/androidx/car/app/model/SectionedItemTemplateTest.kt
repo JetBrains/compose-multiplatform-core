@@ -24,6 +24,7 @@ import org.robolectric.RobolectricTestRunner
 
 @Suppress("DEPRECATION") // Tests must still test deprecated fields/methods.
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SectionedItemTemplateTest {
     class MyCustomSection : Section<Row>()
 

@@ -53,7 +53,7 @@ public class WebViewBuilderTest {
 
     @Test
     public void testConstructsWebView() {
-        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Baseline.LEGACY);
+        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Preset.LEGACY);
 
         try (ActivityScenario<WebViewTestActivity> scenario =
                 ActivityScenario.launch(WebViewTestActivity.class)) {
@@ -75,7 +75,7 @@ public class WebViewBuilderTest {
 
     @Test
     public void testConstructsWebViewTwice() {
-        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Baseline.LEGACY);
+        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Preset.LEGACY);
 
         try (ActivityScenario<WebViewTestActivity> scenario =
                 ActivityScenario.launch(WebViewTestActivity.class)) {
@@ -137,7 +137,7 @@ public class WebViewBuilderTest {
                             .javascriptInterface(new TestInterface(3), "jsInterface3")
                             .build();
 
-            WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Baseline.LEGACY)
+            WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Preset.LEGACY)
                     .restrictJavascriptInterface()
                     .addAllowlist(allowlist);
 
@@ -169,7 +169,7 @@ public class WebViewBuilderTest {
                         .javascriptInterface(jsInterface, "jsInterface")
                         .build();
 
-        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Baseline.LEGACY)
+        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Preset.LEGACY)
                 .addAllowlist(allowlist);
 
         // This builder did not call restrictJavascriptInterface before allowlisting

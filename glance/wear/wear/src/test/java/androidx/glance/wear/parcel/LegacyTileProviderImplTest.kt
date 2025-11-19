@@ -38,6 +38,7 @@ import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class LegacyTileProviderImplTest {
     private val context: Context = getApplicationContext()
     private val testScope = TestScope()

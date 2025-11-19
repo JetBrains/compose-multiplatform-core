@@ -143,14 +143,12 @@ package androidx.compose.ui {
     property public boolean areWindowInsetsRulersEnabled;
     property public boolean isAdaptiveRefreshRateEnabled;
     property public boolean isBypassUnfocusableComposeViewEnabled;
-    property public boolean isCanScrollUsingLastDownEventFixEnabled;
     property @Deprecated public boolean isClearFocusOnResetEnabled;
     property @Deprecated public boolean isFocusActionExitsTouchModeEnabled;
     property public boolean isGraphicsLayerShapeSemanticsEnabled;
     property public boolean isIgnoreInvalidPrevFocusRectEnabled;
     property public boolean isIndirectPointerNavigationGestureDetectorEnabled;
     property public boolean isInitialFocusOnFocusableAvailable;
-    property public boolean isNestedScrollInteropIntegerPropagationEnabled;
     property @Deprecated public boolean isNoPinningInFocusRestorationEnabled;
     property public boolean isOptimizedFocusEventDispatchEnabled;
     property public boolean isPinningFocusedAndroidViewsEnabled;
@@ -165,14 +163,12 @@ package androidx.compose.ui {
     field public static boolean areWindowInsetsRulersEnabled;
     field public static boolean isAdaptiveRefreshRateEnabled;
     field public static boolean isBypassUnfocusableComposeViewEnabled;
-    field public static boolean isCanScrollUsingLastDownEventFixEnabled;
     field @Deprecated public static boolean isClearFocusOnResetEnabled;
     field @Deprecated public static boolean isFocusActionExitsTouchModeEnabled;
     field public static boolean isGraphicsLayerShapeSemanticsEnabled;
     field public static boolean isIgnoreInvalidPrevFocusRectEnabled;
     field public static boolean isIndirectPointerNavigationGestureDetectorEnabled;
     field public static boolean isInitialFocusOnFocusableAvailable;
-    field public static boolean isNestedScrollInteropIntegerPropagationEnabled;
     field @Deprecated public static boolean isNoPinningInFocusRestorationEnabled;
     field public static boolean isOptimizedFocusEventDispatchEnabled;
     field public static boolean isPinningFocusedAndroidViewsEnabled;
@@ -3357,7 +3353,7 @@ package androidx.compose.ui.layout {
     method public boolean containsAll(java.util.Collection<? extends java.lang.Object?> elements);
     method public inline void fastForEach(kotlin.jvm.functions.Function1<java.lang.Object?,kotlin.Unit> block);
     method public void forEach(kotlin.jvm.functions.Function1<java.lang.Object?,kotlin.Unit> block);
-    method @BytecodeOnly @kotlin.PublishedApi internal androidx.collection.MutableOrderedScatterSet<java.lang.Object!> getSet();
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal androidx.collection.MutableOrderedScatterSet<java.lang.Object?> getSet();
     method @InaccessibleFromKotlin public int getSize();
     method public boolean isEmpty();
     method public java.util.Iterator<java.lang.Object?> iterator();

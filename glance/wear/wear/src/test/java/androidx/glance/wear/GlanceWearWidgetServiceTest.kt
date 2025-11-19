@@ -31,6 +31,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class GlanceWearWidgetServiceTest {
 
     private val mockWidgetCallback = mock<IWearWidgetCallback>()
@@ -50,7 +51,7 @@ class GlanceWearWidgetServiceTest {
         val service: TestService = Robolectric.setupService(TestService::class.java)
         val bindIntent =
             Intent(GlanceWearWidgetService.ACTION_BIND_TILE_PROVIDER).apply {
-                putExtra(GlanceWearWidgetService.EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED, true)
+                putExtra(WearWidgetProviderInfo.EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED, true)
             }
 
         val binder: IBinder? = service.onBind(bindIntent)
@@ -63,7 +64,7 @@ class GlanceWearWidgetServiceTest {
         val service: TestService = Robolectric.setupService(TestService::class.java)
         val bindIntent =
             Intent(GlanceWearWidgetService.ACTION_BIND_TILE_PROVIDER).apply {
-                putExtra(GlanceWearWidgetService.EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED, false)
+                putExtra(WearWidgetProviderInfo.EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED, false)
             }
 
         val binder: IBinder? = service.onBind(bindIntent)

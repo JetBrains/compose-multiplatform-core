@@ -56,11 +56,13 @@ class SpatialComposeSceneTest {
 
         composeTestRule.setContent {
             session = remember { createFakeSession(composeTestRule.activity) }
+            val context = rememberCompositionContext()
             scene =
                 SpatialComposeScene(
                     lifecycleOwner = composeTestRule.activity,
                     context = composeTestRule.activity,
                     jxrSession = session,
+                    parentCompositionContext = context,
                 )
 
             owner = AndroidComposeSpatialElement()
@@ -72,7 +74,6 @@ class SpatialComposeSceneTest {
         assertThat(scene.lifecycleOwner).isEqualTo(composeTestRule.activity)
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)
         assertThat(scene.rootElement.rootCoreEntity).isNull()
-        assertThat(scene.rootElement.compositionContext).isNull()
         assertThat(scene.lifecycle).isEqualTo(composeTestRule.activity.lifecycle)
         assertThat(currentSession).isEqualTo(session)
     }

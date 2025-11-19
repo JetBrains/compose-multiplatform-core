@@ -33,8 +33,10 @@ import com.android.extensions.xr.node.Node;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class MediaUtilsTest {
 
     @Test

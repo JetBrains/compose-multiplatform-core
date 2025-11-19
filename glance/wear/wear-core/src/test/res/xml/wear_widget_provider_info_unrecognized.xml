@@ -22,8 +22,8 @@
     preferredType="@integer/glance_wear_container_type_small"
     group="test.group"
     configIntentAction="test.action"
-    unrecognizedStr="some string"
-    unrecognizedRef="@android:string/ok">
+    unrecognisedStr="some string"
+    unrecognisedRef="@android:string/ok">
 
     <container
         type="@integer/glance_wear_container_type_small"

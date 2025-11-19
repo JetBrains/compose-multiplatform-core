@@ -19,7 +19,6 @@ package androidx.glance.wear
 import android.content.ComponentName
 import android.content.Intent
 import android.os.IBinder
-import androidx.annotation.RestrictTo
 import androidx.glance.wear.parcel.IWearWidgetProvider
 import androidx.glance.wear.parcel.LegacyTileProviderImpl
 import androidx.glance.wear.parcel.WearWidgetProviderImpl
@@ -60,8 +59,11 @@ public abstract class GlanceWearWidgetService() : LifecycleService() {
         return when (intent.action) {
             ACTION_BIND_WIDGET_PROVIDER -> provider
             ACTION_BIND_TILE_PROVIDER ->
-                if (intent.extras?.getBoolean(EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED) == true) {
-                    // TODO: b/444391060 - Add an SDK check also to allow R8 optimization.
+                if (
+                    intent.extras?.getBoolean(
+                        WearWidgetProviderInfo.EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED
+                    ) == true
+                ) {
                     provider
                 } else {
                     legacyProvider
@@ -74,11 +76,6 @@ public abstract class GlanceWearWidgetService() : LifecycleService() {
         /** Intent action for binding to a Widget Service. */
         public const val ACTION_BIND_WIDGET_PROVIDER: String =
             WearWidgetProviderInfo.ACTION_BIND_WIDGET_PROVIDER
-
-        /** Extra boolean in the intent to signal support for [IWearWidgetProvider] interface. */
-        @RestrictTo(RestrictTo.Scope.LIBRARY)
-        public const val EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED: String =
-            "androidx.glance.wear.extra.WEAR_WIDGET_PROVIDER_SUPPORTED"
 
         internal const val ACTION_BIND_TILE_PROVIDER: String =
             "androidx.wear.tiles.action.BIND_TILE_PROVIDER"

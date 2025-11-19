@@ -21,7 +21,6 @@ import androidx.compose.foundation.gestures.snapping.offsetOnMainAxis
 import androidx.compose.foundation.gestures.snapping.sizeOnMainAxis
 import androidx.compose.foundation.lazy.layout.CacheWindowLogic
 import androidx.compose.foundation.lazy.layout.CacheWindowScope
-import androidx.compose.foundation.lazy.layout.CachedItem
 import androidx.compose.foundation.lazy.layout.InvalidIndex
 import androidx.compose.foundation.lazy.layout.LazyLayoutCacheWindow
 import androidx.compose.foundation.lazy.layout.LazyLayoutPrefetchState.PrefetchHandle
@@ -136,15 +135,6 @@ private class LazyGridCacheWindowScope() : CacheWindowScope {
             }
 
         return tallestItemSize
-    }
-
-    override fun getVisibleLineKey(indexInVisibleLines: Int): Any {
-        // using the first item key to represent this line.
-        val laneIndex = indexInVisibleLines + firstVisibleLineIndex
-        return layoutInfo.visibleItemsInfo
-            .fastFilter { it.lineIndex == laneIndex }
-            .firstOrNull()
-            ?.key ?: CachedItem.NoKey
     }
 
     override fun getVisibleItemLine(indexInVisibleLines: Int): Int =

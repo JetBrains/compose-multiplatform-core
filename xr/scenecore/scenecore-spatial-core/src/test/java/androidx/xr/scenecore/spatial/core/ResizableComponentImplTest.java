@@ -74,10 +74,12 @@ import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 
 import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class ResizableComponentImplTest {
 
     private static final Dimensions MIN_DIMENSIONS = new Dimensions(0f, 0f, 0f);

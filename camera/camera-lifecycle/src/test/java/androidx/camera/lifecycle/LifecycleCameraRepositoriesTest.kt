@@ -42,6 +42,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [Config.TARGET_SDK])
 @DoNotInstrument
 class LifecycleCameraRepositoriesTest {
 

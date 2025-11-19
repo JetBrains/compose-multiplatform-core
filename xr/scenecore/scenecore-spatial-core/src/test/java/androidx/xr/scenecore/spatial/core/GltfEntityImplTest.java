@@ -45,11 +45,13 @@ import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class GltfEntityImplTest {
     private static final int OPEN_XR_REFERENCE_SPACE_TYPE = 1;
     private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();

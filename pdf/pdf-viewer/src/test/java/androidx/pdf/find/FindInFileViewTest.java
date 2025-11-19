@@ -41,11 +41,13 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 /**
  * Unit tests for {@link FindInFileView}
  */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class FindInFileViewTest extends TestCase {
     @Mock
     private PdfLoader mPdfLoader;

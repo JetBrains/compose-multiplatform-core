@@ -55,6 +55,16 @@ RemovedDeprecatedMethod: androidx.constraintlayout.compose.ConstraintLayoutKt#at
     Binary breaking change: Removed deprecated method androidx.constraintlayout.compose.ConstraintLayoutKt.atLeastWrapContent(androidx.constraintlayout.compose.Dimension.MinCoercible,float)
 
 
+RemovedField: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#containerObject:
+    Binary breaking change: Removed field androidx.constraintlayout.compose.ConstraintLayoutBaseScope.containerObject
+RemovedField: androidx.constraintlayout.compose.ConstraintLayoutBaseScope#helpersHashCode:
+    Binary breaking change: Removed field androidx.constraintlayout.compose.ConstraintLayoutBaseScope.helpersHashCode
+RemovedField: androidx.constraintlayout.compose.ConstraintLayoutScope#isAnimateChanges:
+    Binary breaking change: Removed field androidx.constraintlayout.compose.ConstraintLayoutScope.isAnimateChanges
+RemovedField: androidx.constraintlayout.compose.ToolingUtilsKt#designInfoProvider$delegate:
+    Binary breaking change: Removed field androidx.constraintlayout.compose.ToolingUtilsKt.designInfoProvider$delegate
+
+
 RemovedFromBytecode: androidx.constraintlayout.compose.ConstraintLayoutKt#ConstraintLayout(androidx.compose.ui.Modifier, int, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function1<? super androidx.constraintlayout.compose.ConstraintLayoutScope,kotlin.Unit>):
     Binary breaking change: method androidx.constraintlayout.compose.ConstraintLayoutKt.ConstraintLayout(androidx.compose.ui.Modifier,int,androidx.compose.animation.core.AnimationSpec<java.lang.Float>,kotlin.jvm.functions.Function0<kotlin.Unit>,kotlin.jvm.functions.Function1<androidx.constraintlayout.compose.ConstraintLayoutScope,kotlin.Unit>) has been removed from bytecode
 RemovedFromBytecode: androidx.constraintlayout.compose.ConstraintLayoutKt#ConstraintLayout(androidx.compose.ui.Modifier, int, boolean, androidx.compose.animation.core.AnimationSpec<java.lang.Float>, kotlin.jvm.functions.Function0<kotlin.Unit>, kotlin.jvm.functions.Function1<? super androidx.constraintlayout.compose.ConstraintLayoutScope,kotlin.Unit>):

@@ -292,7 +292,7 @@ class Camera2CameraControlDeviceTest {
         // Assert.
         registerListener()
             .verify({ requestMetadata: RequestMetadata, _ ->
-                requestMetadata.request[CONTROL_AF_REGIONS] == meteringRectangles
+                requestMetadata.request[CONTROL_AF_REGIONS].contentEquals(meteringRectangles)
             })
     }
 
@@ -309,7 +309,7 @@ class Camera2CameraControlDeviceTest {
         // Assert.
         registerListener()
             .verify({ requestMetadata: RequestMetadata, _ ->
-                requestMetadata.request[CONTROL_AE_REGIONS] == meteringRectangles
+                requestMetadata.request[CONTROL_AE_REGIONS].contentEquals(meteringRectangles)
             })
     }
 
@@ -326,7 +326,7 @@ class Camera2CameraControlDeviceTest {
         // Assert.
         registerListener()
             .verify({ requestMetadata: RequestMetadata, _ ->
-                requestMetadata.request[CONTROL_AWB_REGIONS] == meteringRectangles
+                requestMetadata.request[CONTROL_AWB_REGIONS].contentEquals(meteringRectangles)
             })
     }
 

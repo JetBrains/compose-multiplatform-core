@@ -55,6 +55,7 @@ import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class GlanceAppWidgetTest {
 
     private val context = ApplicationProvider.getApplicationContext<Context>()

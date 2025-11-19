@@ -273,12 +273,8 @@ package androidx.compose.runtime {
 
   public final class CompositionKt {
     method public static androidx.compose.runtime.Composition Composition(androidx.compose.runtime.Applier<? extends java.lang.Object?> applier, androidx.compose.runtime.CompositionContext parent);
-    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeApi public static androidx.compose.runtime.Composition Composition(androidx.compose.runtime.Applier<? extends java.lang.Object?> applier, androidx.compose.runtime.CompositionContext parent, kotlin.coroutines.CoroutineContext recomposeCoroutineContext);
     method @org.jetbrains.annotations.TestOnly public static androidx.compose.runtime.ControlledComposition ControlledComposition(androidx.compose.runtime.Applier<? extends java.lang.Object?> applier, androidx.compose.runtime.CompositionContext parent);
-    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeApi @org.jetbrains.annotations.TestOnly public static androidx.compose.runtime.ControlledComposition ControlledComposition(androidx.compose.runtime.Applier<? extends java.lang.Object?> applier, androidx.compose.runtime.CompositionContext parent, kotlin.coroutines.CoroutineContext recomposeCoroutineContext);
     method public static androidx.compose.runtime.ReusableComposition ReusableComposition(androidx.compose.runtime.Applier<? extends java.lang.Object?> applier, androidx.compose.runtime.CompositionContext parent);
-    method @InaccessibleFromKotlin @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeApi public static kotlin.coroutines.CoroutineContext getRecomposeCoroutineContext(androidx.compose.runtime.ControlledComposition);
-    property @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeApi public static kotlin.coroutines.CoroutineContext androidx.compose.runtime.ControlledComposition.recomposeCoroutineContext;
   }
 
   @androidx.compose.runtime.Stable public abstract sealed class CompositionLocal<T> {
@@ -626,7 +622,6 @@ package androidx.compose.runtime {
     method public void pauseCompositionFrameClock();
     method public void resumeCompositionFrameClock();
     method public suspend Object? runRecomposeAndApplyChanges(kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @SuppressCompatibility @androidx.compose.runtime.ExperimentalComposeApi public suspend Object? runRecomposeConcurrentlyAndApplyChanges(kotlin.coroutines.CoroutineContext recomposeCoroutineContext, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public androidx.compose.runtime.CancellationHandle scheduleFrameEndCallback(kotlin.jvm.functions.Function0<kotlin.Unit> action);
     property public long changeCount;
     property public kotlinx.coroutines.flow.StateFlow<androidx.compose.runtime.Recomposer.State> currentState;

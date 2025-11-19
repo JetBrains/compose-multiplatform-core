@@ -40,9 +40,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 @SuppressWarnings("unchecked")
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class PageViewFactoryTest {
     private final PdfLoader mMockPdfLoader = mock(PdfLoader.class);
 

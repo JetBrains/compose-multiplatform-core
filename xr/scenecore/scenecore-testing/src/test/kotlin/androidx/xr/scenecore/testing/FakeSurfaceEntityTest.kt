@@ -31,6 +31,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakeSurfaceEntityTest {
     val testCanvasShape = SurfaceEntity.Shape.Quad(FloatSize2d(1f, 1f))
 

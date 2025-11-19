@@ -51,13 +51,6 @@ class InspectionPlugin : Plugin<Project> {
                 it.setupInspectorAttribute()
             }
 
-        val publishNonDexedInspector =
-            project.configurations.create("publishNonDexedInspector") {
-                it.isCanBeConsumed = true
-                it.isCanBeResolved = false
-                it.setupNonDexedInspectorAttribute()
-            }
-
         project.configurations.create(EXPORT_INSPECTOR_DEPENDENCIES) {
             // to allow including these dependencies in an SBOM
             it.description = "Re-publishes dependencies of the inspector"
@@ -87,12 +80,6 @@ class InspectionPlugin : Plugin<Project> {
                             extension.name,
                             shadowJar,
                         )
-
-                    publishNonDexedInspector.outgoing.variants {
-                        val configVariant = it.create("inspectorNonDexedJar")
-                        configVariant.artifact(shadowJar)
-                    }
-
                     publishInspector.outgoing.variants {
                         val configVariant = it.create("inspectorJar")
                         configVariant.artifact(bundleTask)
@@ -195,18 +182,6 @@ fun Project.createConsumeInspectionConfiguration(): Configuration =
 
 private fun Configuration.setupInspectorAttribute() {
     attributes { it.attribute(Attribute.of("inspector", String::class.java), "inspectorJar") }
-}
-
-fun Project.createConsumeNonDexedInspectionConfiguration(): Configuration =
-    configurations.create("consumeNonDexedInspector") {
-        it.setupNonDexedInspectorAttribute()
-        it.isCanBeConsumed = false
-    }
-
-private fun Configuration.setupNonDexedInspectorAttribute() {
-    attributes {
-        it.attribute(Attribute.of("inspector-undexed", String::class.java), "inspectorUndexedJar")
-    }
 }
 
 private fun Configuration.setupReleaseAttribute() {

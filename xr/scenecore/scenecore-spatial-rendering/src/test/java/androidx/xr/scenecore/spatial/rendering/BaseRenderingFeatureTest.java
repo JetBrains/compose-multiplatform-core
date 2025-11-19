@@ -44,10 +44,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.Objects;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class BaseRenderingFeatureTest {
     private static final int OPEN_XR_REFERENCE_SPACE_TYPE = 1;
     private final NodeRepository mNodeRepository = NodeRepository.getInstance();

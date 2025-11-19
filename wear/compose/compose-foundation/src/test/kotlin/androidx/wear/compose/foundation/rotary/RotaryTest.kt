@@ -115,6 +115,7 @@ class ThresholdHandlerTest {
 
 @OptIn(ExperimentalFoundationApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RotaryFlingHandlerTest {
 
     val context = ApplicationProvider.getApplicationContext<Context>()
@@ -283,6 +284,7 @@ class RotaryFlingHandlerTest {
 
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RotaryFlingTest {
     @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
     private val focusRequester = FocusRequester()

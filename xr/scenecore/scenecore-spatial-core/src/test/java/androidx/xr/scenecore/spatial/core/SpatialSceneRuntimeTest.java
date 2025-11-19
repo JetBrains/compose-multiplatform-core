@@ -128,6 +128,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -137,6 +138,7 @@ import java.util.function.Consumer;
 /** Tests for {@link SpatialSceneRuntimeFactory}. */
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class SpatialSceneRuntimeTest {
     private static final int OPEN_XR_REFERENCE_SPACE_TYPE = 1;
     Activity mActivity;

@@ -78,6 +78,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ExerciseClientTest {
 
     private lateinit var client: ServiceBackedExerciseClient

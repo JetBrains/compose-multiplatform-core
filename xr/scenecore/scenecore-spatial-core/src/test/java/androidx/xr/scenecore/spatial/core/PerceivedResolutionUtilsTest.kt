@@ -35,6 +35,7 @@ import org.mockito.kotlin.whenever
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class PerceivedResolutionUtilsTest {
 
     private lateinit var mockCameraView: CameraViewScenePose

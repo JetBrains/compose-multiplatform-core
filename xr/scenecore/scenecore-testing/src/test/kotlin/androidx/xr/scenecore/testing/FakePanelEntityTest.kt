@@ -31,6 +31,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FakePanelEntityTest {
     private var view: View =
         View(Robolectric.buildActivity(Activity::class.java).create().start().get())

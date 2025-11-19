@@ -118,7 +118,7 @@ class GlobalSearchSessionImpl implements GlobalSearchSession {
     @Override
     public @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
-        if (!AppSearchVersionUtil.isAtLeastB()) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                     + " is not available on this AppSearch implementation.");
         }

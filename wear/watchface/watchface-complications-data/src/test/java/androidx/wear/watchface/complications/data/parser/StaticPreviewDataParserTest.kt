@@ -48,6 +48,7 @@ import org.mockito.kotlin.spy
 import org.mockito.kotlin.whenever
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 @SuppressLint("NewApi")
 class StaticPreviewDataParserTest {
     @Mock private lateinit var packageManager: PackageManager

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package androidx.compose.remote.creation;
 
-package androidx.benchmark
+import androidx.annotation.RestrictTo;
 
-/**
- * Annotation indicating experimental API for preventing dead code removal from compile-time
- * optimization passes, such as R8.
+import org.jspecify.annotations.NonNull;
+
+/** Provides an interface to a remote compose writer where callbacks have a RFloat argument
+ * Used by loop and rFunc methods
  */
-@RequiresOptIn
-@Retention(AnnotationRetention.BINARY)
-public annotation class ExperimentalBlackHoleApi
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public interface RcFloatArgumentCallback {
+    /** A lambda to execute */
+    void run(@NonNull RFloat variable);
+}

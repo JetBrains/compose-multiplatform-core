@@ -2982,10 +2982,6 @@ internal class ComposerImpl(
         override val effectCoroutineContext: CoroutineContext
             get() = parentContext.effectCoroutineContext
 
-        @OptIn(ExperimentalComposeApi::class)
-        override val recomposeCoroutineContext: CoroutineContext
-            get() = this@ComposerImpl.composition.recomposeCoroutineContext
-
         override fun composeInitial(
             composition: ControlledComposition,
             content: @Composable () -> Unit,

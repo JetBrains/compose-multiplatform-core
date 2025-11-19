@@ -51,6 +51,7 @@ import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FrameGraphImplTest {
     private val testScope = TestScope()
     private val context = ApplicationProvider.getApplicationContext() as Context

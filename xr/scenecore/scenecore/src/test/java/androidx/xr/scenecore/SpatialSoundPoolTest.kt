@@ -44,6 +44,7 @@ import org.robolectric.RobolectricTestRunner
 
 /** Unit tests for the JXRCore SDK SpatialSoundPool Interface. */
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class SpatialSoundPoolTest {
 
     private val fakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()

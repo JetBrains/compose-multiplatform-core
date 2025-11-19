@@ -64,7 +64,7 @@ import org.robolectric.shadows.ShadowApplication;
 
 /** Tests for {@link AppManager}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(instrumentedPackages = { "androidx.activity" })
+@Config(instrumentedPackages = { "androidx.activity" }, sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 @CarProtocol
 public final class AppManagerTest {

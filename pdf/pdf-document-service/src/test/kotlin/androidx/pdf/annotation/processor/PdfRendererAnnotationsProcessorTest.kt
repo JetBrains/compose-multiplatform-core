@@ -30,6 +30,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 18)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class PdfRendererAnnotationsProcessorTest {
     private lateinit var processor: PdfRendererAnnotationsProcessor
     private lateinit var pdfDocumentRenderer: PdfDocumentRenderer

@@ -51,10 +51,12 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 
 import java.util.concurrent.Executor;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class InteractableComponentImplTest {
     private final ActivityController<Activity> mActivityController =
             Robolectric.buildActivity(Activity.class);

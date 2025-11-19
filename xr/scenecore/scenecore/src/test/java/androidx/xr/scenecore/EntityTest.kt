@@ -82,6 +82,7 @@ import org.robolectric.RobolectricTestRunner
 // TODO: b/329902726 - Add a fake runtime and verify CPM integration.
 // TODO: b/369199417 - Update EntityTest once createGltfResourceAsync is default.
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class EntityTest {
     private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =

@@ -49,6 +49,7 @@ import org.robolectric.Shadows.shadowOf
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ProjectedActivityCompatTest {
 
     private val mockProjectedService = mock<IProjectedService>()

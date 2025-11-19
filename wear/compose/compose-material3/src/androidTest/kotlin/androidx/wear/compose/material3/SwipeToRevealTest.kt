@@ -17,6 +17,7 @@
 package androidx.wear.compose.material3
 
 import android.app.Activity
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -978,7 +979,7 @@ class SwipeToRevealTest {
         val swipeItemText = "SWIPE"
 
         val androidTestRule =
-            rule as AndroidComposeTestRule<ActivityScenarioRule<Activity>, Activity>
+            rule as AndroidComposeTestRule<ActivityScenarioRule<Activity>, ComponentActivity>
         lateinit var revealState: RevealState
         var density = 0f
         androidTestRule.activityRule.scenario.onActivity { activity ->

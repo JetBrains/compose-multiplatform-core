@@ -2,8 +2,8 @@
 package androidx.xr.compose.platform {
 
   public final class LocalCoreEntityKt {
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal static androidx.compose.runtime.ProvidableCompositionLocal<androidx.xr.compose.subspace.layout.OpaqueEntity?> getLocalOpaqueEntity();
     property @kotlin.PublishedApi internal static androidx.compose.runtime.ProvidableCompositionLocal<androidx.xr.compose.subspace.layout.OpaqueEntity?> LocalOpaqueEntity;
-    field @kotlin.PublishedApi internal static final androidx.compose.runtime.ProvidableCompositionLocal<androidx.xr.compose.subspace.layout.OpaqueEntity?> LocalOpaqueEntity;
   }
 
   public final class LocalSessionKt {
@@ -1301,7 +1301,7 @@ package androidx.xr.compose.unit {
     method @BytecodeOnly public float getCentimeters-zRPQRcA(double);
     method @BytecodeOnly public float getCentimeters-zRPQRcA(float);
     method @BytecodeOnly public float getCentimeters-zRPQRcA(int);
-    method @BytecodeOnly @kotlin.PublishedApi internal float getDP_PER_METER();
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal float getDP_PER_METER();
     method @BytecodeOnly public float getInfinity-sx7laI0();
     method @BytecodeOnly public float getMeters-zRPQRcA(double);
     method @BytecodeOnly public float getMeters-zRPQRcA(float);

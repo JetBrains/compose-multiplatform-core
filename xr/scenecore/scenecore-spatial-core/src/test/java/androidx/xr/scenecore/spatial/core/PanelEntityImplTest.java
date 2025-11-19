@@ -57,8 +57,10 @@ import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class PanelEntityImplTest {
     private static final Dimensions K_VGA_RESOLUTION_PX = new Dimensions(640f, 480f, 0f);
     private static final Dimensions K_HD_RESOLUTION_PX = new Dimensions(1280f, 720f, 0f);

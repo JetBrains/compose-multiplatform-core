@@ -36,6 +36,7 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class Track(
     /** The [TraceContext] instance. */
+    @field:Suppress("ShowingMemberInHiddenClass")
     @JvmField // avoid getter generation
     @PublishedApi
     internal val context: TraceContext,
@@ -45,6 +46,7 @@ public abstract class Track(
      * This ID must be unique within all [Track]s in a given trace produced by [TraceDriver] - it is
      * used to connect recorded trace events to the containing track.
      */
+    @field:Suppress("ShowingMemberInHiddenClass")
     @JvmField // avoid getter generation
     @PublishedApi
     internal val uuid: Long,

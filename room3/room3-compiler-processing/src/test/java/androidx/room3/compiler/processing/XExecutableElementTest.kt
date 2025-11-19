@@ -435,6 +435,7 @@ class XExecutableElementTest {
                     assertThat(cont.nullability).isEqualTo(XNullability.NONNULL)
                 }
             }
+            @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // intentionally using java.* types
             subject.getMethodByJvmName("intReturn").let { method ->
                 assertThat(method.parameters).hasSize(1)
                 method.parameters.last().let { cont ->

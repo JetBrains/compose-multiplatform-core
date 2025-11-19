@@ -86,7 +86,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ComposeUiFlags.isAdaptiveRefreshRateEnabled
-import androidx.compose.ui.ComposeUiFlags.isCanScrollUsingLastDownEventFixEnabled
 import androidx.compose.ui.ComposeUiFlags.isIndirectPointerNavigationGestureDetectorEnabled
 import androidx.compose.ui.ComposeUiFlags.isOptimizedFocusEventDispatchEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -2673,10 +2672,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
             // needs to be cached.
             pointerInputEvent.pointers
                 .fastLastOrNull {
-                    it.down &&
-                        (action == ACTION_DOWN ||
-                            action == ACTION_POINTER_DOWN ||
-                            !isCanScrollUsingLastDownEventFixEnabled)
+                    it.down && (action == ACTION_DOWN || action == ACTION_POINTER_DOWN)
                 }
                 ?.position
                 ?.let { lastDownPointerPosition = it }

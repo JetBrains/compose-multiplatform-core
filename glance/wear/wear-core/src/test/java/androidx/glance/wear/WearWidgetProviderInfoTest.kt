@@ -32,6 +32,7 @@ import org.robolectric.RobolectricTestRunner
 import org.xmlpull.v1.XmlPullParserException
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class WearWidgetProviderInfoTest {
     private val context: Context = getApplicationContext()
     private val service = ComponentName(context, "test.class")
@@ -186,9 +187,9 @@ class WearWidgetProviderInfoTest {
                 )
 
         assertThat(info.unrecognisedAttributes).hasSize(2)
-        assertThat(info.unrecognisedAttributes).containsEntry("unrecognizedStr", "some string")
+        assertThat(info.unrecognisedAttributes).containsEntry("unrecognisedstr", "some string")
         assertThat(info.unrecognisedAttributes)
-            .containsEntry("unrecognizedRef", "@${android.R.string.ok}")
+            .containsEntry("unrecognisedref", "@${android.R.string.ok}")
     }
 
     @Test

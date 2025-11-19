@@ -27,6 +27,7 @@ import org.mockito.Mockito.verify
 import org.mockito.kotlin.mock
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class GraphStateToCameraStateAdapterTest {
     private lateinit var fakeCameraStateAdapter: CameraStateAdapter
     private lateinit var fakeCameraGraph: FakeCameraGraph

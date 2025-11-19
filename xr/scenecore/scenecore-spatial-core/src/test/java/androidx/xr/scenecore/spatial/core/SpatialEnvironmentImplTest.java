@@ -53,6 +53,7 @@ import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -62,6 +63,7 @@ import java.util.function.Consumer;
 // with other Android XR impl tests in this directory.
 /** Unit tests for the AndroidXR implementation of JXRCore's SpatialEnvironment module. */
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class SpatialEnvironmentImplTest {
     private ActivityController<Activity> mActivityController;
     private Activity mActivity;

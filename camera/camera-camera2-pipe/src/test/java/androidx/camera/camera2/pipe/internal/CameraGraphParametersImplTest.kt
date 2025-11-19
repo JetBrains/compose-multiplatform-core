@@ -53,6 +53,7 @@ import org.junit.runner.RunWith
 /** Tests for [CameraGraphParametersImpl] */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class CameraGraphParametersImplTest {
     private val testScope = TestScope()
 

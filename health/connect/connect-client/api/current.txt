@@ -94,7 +94,7 @@ package androidx.health.connect.client {
     field public static final int FEATURE_ACTIVITY_INTENSITY = 7; // 0x7
     field public static final int FEATURE_EXTENDED_DEVICE_TYPES = 8; // 0x8
     field public static final int FEATURE_MINDFULNESS_SESSION = 5; // 0x5
-    field @SuppressCompatibility @androidx.health.connect.client.feature.ExperimentalPersonalHealthRecordApi public static final int FEATURE_PERSONAL_HEALTH_RECORD = 6; // 0x6
+    field public static final int FEATURE_PERSONAL_HEALTH_RECORD = 6; // 0x6
     field public static final int FEATURE_PLANNED_EXERCISE = 3; // 0x3
     field public static final int FEATURE_READ_HEALTH_DATA_HISTORY = 4; // 0x4
     field public static final int FEATURE_READ_HEALTH_DATA_IN_BACKGROUND = 1; // 0x1

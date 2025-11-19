@@ -67,8 +67,8 @@ package androidx.tracing.driver {
   }
 
   public final class EventMetadataCloseableKt {
+    method @InaccessibleFromKotlin @kotlin.PublishedApi internal static androidx.tracing.driver.EventMetadataCloseable getEmptyEventMetadataCloseable();
     property @kotlin.PublishedApi internal static androidx.tracing.driver.EventMetadataCloseable EmptyEventMetadataCloseable;
-    field @kotlin.PublishedApi internal static final androidx.tracing.driver.EventMetadataCloseable EmptyEventMetadataCloseable;
   }
 
   @SuppressCompatibility @androidx.tracing.driver.DelicateTracingApi public final class MetadataEntry {
@@ -118,7 +118,7 @@ package androidx.tracing.driver {
     method public void recycle();
     property public int fillCount;
     property public androidx.tracing.driver.TraceEvent[] packets;
-    field public volatile int fillCount;
+    field @kotlin.jvm.Volatile public volatile int fillCount;
     field public final androidx.tracing.driver.TraceEvent[] packets;
   }
 

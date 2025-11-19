@@ -43,6 +43,7 @@ import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ProjectedManagerTest {
     @Mock private lateinit var mockActivity: Activity
     @Mock private lateinit var mockPerceptionService: IProjectedPerceptionService.Stub

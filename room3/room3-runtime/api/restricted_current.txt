@@ -408,7 +408,7 @@ package androidx.room3.util {
     property public int primaryKeyPosition;
     property public String type;
     field public static final androidx.room3.util.TableInfo.Column.Companion Companion;
-    field @androidx.room3.ColumnInfo.SQLiteTypeAffinity public final int affinity;
+    field public final int affinity;
     field public final int createdFrom;
     field public final String? defaultValue;
     field public final String name;

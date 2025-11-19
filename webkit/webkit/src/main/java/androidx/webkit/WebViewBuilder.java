@@ -65,9 +65,9 @@ public final class WebViewBuilder {
      */
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({
-        Baseline.LEGACY,
+        Preset.LEGACY,
     })
-    public @interface Baseline {
+    public @interface Preset {
         /**
          * Matches the configuration of a WebView created via the WebView constructor.
          */
@@ -76,11 +76,11 @@ public final class WebViewBuilder {
 
     @Nullable WebViewBuilderBoundaryInterface mBuilderStateBoundary;
 
-    public WebViewBuilder(@Baseline int baseline) {
-        if (baseline != Baseline.LEGACY) {
-            throw new IllegalArgumentException("Invalid baseline: " + baseline);
+    public WebViewBuilder(@Preset int preset) {
+        if (preset != Preset.LEGACY) {
+            throw new IllegalArgumentException("Invalid preset: " + preset);
         }
-        // TODO(crbug.com/419726203): We only have the no-op LEGACY baseline right now, so no logic
+        // TODO(crbug.com/419726203): We only have the no-op LEGACY preset right now, so no logic
         // consumes this argument, yet.
     }
 

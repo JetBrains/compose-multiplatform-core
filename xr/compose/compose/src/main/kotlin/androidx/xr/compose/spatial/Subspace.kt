@@ -44,6 +44,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.xr.compose.R
 import androidx.xr.compose.platform.LocalComposeXrOwners
 import androidx.xr.compose.platform.LocalCoreEntity
+import androidx.xr.compose.platform.LocalCoreMainPanelEntity
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialConfiguration
 import androidx.xr.compose.platform.SpatialComposeScene
@@ -293,7 +294,10 @@ public fun PlanarEmbeddedSubspace(
     val context = LocalContext.current
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val compositionContext = rememberCompositionContext()
-    val coreEntity = checkNotNull(LocalCoreEntity.current) { "CoreEntity unavailable for subspace" }
+    val coreEntity =
+        checkNotNull(LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current) {
+            "CoreEntity unavailable for subspace"
+        }
     // The subspace root node will be owned and manipulated by the containing composition, we need a
     // container that we can manipulate at the Subspace level in order to position the entire
     // subspace properly.

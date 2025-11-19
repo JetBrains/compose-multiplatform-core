@@ -52,17 +52,18 @@ class SpatialComposeElementTest {
 
         composeTestRule.setContent {
             val session = remember { createFakeSession(composeTestRule.activity) }
+            val context = rememberCompositionContext()
             scene =
                 SpatialComposeScene(
                     lifecycleOwner = composeTestRule.activity,
                     context = composeTestRule.activity,
                     jxrSession = session,
+                    parentCompositionContext = context,
                 )
         }
 
         assertThat(scene.rootElement.spatialComposeScene).isEqualTo(scene)
         assertThat(scene.rootElement.rootCoreEntity).isNull()
-        assertThat(scene.rootElement.compositionContext).isNull()
     }
 
     @Test

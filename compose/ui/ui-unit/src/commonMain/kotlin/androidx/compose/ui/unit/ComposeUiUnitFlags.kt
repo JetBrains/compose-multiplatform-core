@@ -56,5 +56,5 @@ object ComposeUiUnitFlags {
      * When this flag is enabled, comparing [Dp] values with [Dp.Unspecified] using `>` and `<`
      * always returns false. However, [Dp.compareTo] with [Dp.Unspecified] always returns 0.
      */
-    @Suppress("MutableBareField") @JvmField var isDpCompareToChanged: Boolean = true
+    @field:Suppress("MutableBareField") @JvmField var isDpCompareToChanged: Boolean = true
 }

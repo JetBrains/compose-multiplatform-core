@@ -613,6 +613,7 @@ class XTypeElementTest(private val isPreCompiled: Boolean) {
             """
                     .trimIndent(),
             )
+        @Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN") // intentionally using java.* types
         runTest(sources = listOf(src)) { invocation ->
             val baseClass = invocation.processingEnv.requireTypeElement("BaseClass")
             assertThat(baseClass.getAllFieldNames()).containsExactly("value")

@@ -51,6 +51,7 @@ import java.util.Set;
 
 /** Unit tests for {@link TileBoard}. */
 @RunWith(RobolectricTestRunner.class)
+@org.robolectric.annotation.Config(sdk = {org.robolectric.annotation.Config.TARGET_SDK})
 public class TileBoardTest {
 
     private static final Dimensions TILE_SIZE = new Dimensions(800, 800);

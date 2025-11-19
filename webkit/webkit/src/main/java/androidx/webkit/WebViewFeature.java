@@ -585,6 +585,7 @@ public class WebViewFeature {
      * {@link UserAgentMetadata.Builder#setFormFactors(List)}, and
      * {@link UserAgentMetadata#getFormFactors()}.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String USER_AGENT_METADATA_FORM_FACTORS =
             "USER_AGENT_METADATA_FORM_FACTORS";
 
@@ -732,7 +733,6 @@ public class WebViewFeature {
     public static final String NAVIGATION_CALLBACK_BASIC = "WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE";
 
     @WebNavigationClient.ExperimentalNavigationCallback
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public static final String NAVIGATION_LISTENER_V1 = "NAVIGATION_LISTENER_V1";
 
     /**

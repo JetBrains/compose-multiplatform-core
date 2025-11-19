@@ -88,13 +88,6 @@ public class AppSearchVersionUtil {
         return sAppSearchVersionCode;
     }
 
-    // TODO(b/326656531): Remove this function once BuildCompat#isAtLeastB is available.
-    @ChecksSdkIntAtLeast(api = 36, codename = "Baklava")
-    public static boolean isAtLeastB() {
-        return Build.VERSION.SDK_INT >= 36
-                || (Build.VERSION.SDK_INT >= 35 && Build.VERSION.CODENAME.equals("Baklava"));
-    }
-
     @RequiresApi(Build.VERSION_CODES.Q)
     private static class ApiHelperForQ {
         @DoNotInline

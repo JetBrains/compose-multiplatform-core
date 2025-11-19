@@ -52,6 +52,7 @@ import androidx.test.espresso.matcher.ViewMatchers.hasChildCount
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
@@ -552,6 +553,7 @@ class SandboxedSdkUiTest {
             .isAtLeast(SHORTEST_TIME_BETWEEN_SIGNALS_MS)
     }
 
+    @SdkSuppress(minSdkVersion = 24) // b/456077102
     @Test
     fun signalsSentWhenHostActivityStateChangesTest() {
         addNodeToLayout()

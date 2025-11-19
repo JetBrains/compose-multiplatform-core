@@ -51,6 +51,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class InteractableComponentTest {
     private val mFakePerceptionRuntimeFactory = FakePerceptionRuntimeFactory()
     private val activity =

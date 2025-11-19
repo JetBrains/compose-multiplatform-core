@@ -32,7 +32,6 @@ import androidx.room3.paging.util.queryDatabase
 import androidx.room3.paging.util.queryItemCount
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -58,7 +57,7 @@ public expect abstract class LimitOffsetPagingSource<Value : Any>(
 
     override fun getRefreshKey(state: PagingState<Int, Value>): Int?
 
-    protected open suspend fun convertRows(
+    protected abstract suspend fun convertRows(
         limitOffsetQuery: RoomRawQuery,
         itemCount: Int,
     ): List<Value>

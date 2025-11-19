@@ -101,6 +101,10 @@ public class RFloat : Number {
         return id
     }
 
+    public fun flush() {
+        toFloat()
+    }
+
     override fun toInt(): Int {
         TODO("Not yet implemented")
     }
@@ -350,9 +354,14 @@ public fun cbrt(a: RFloat): RFloat {
     return RFloat(a.writer, floatArrayOf(*a.array, Rc.FloatExpression.CBRT))
 }
 
-/** if (a) b else c */
+/** if (c) b else c */
 public fun ifThenElse(a: RFloat, b: RFloat, c: RFloat): RFloat {
     return RFloat(a.writer, floatArrayOf(*a.array, *b.array, *c.array, Rc.FloatExpression.IFELSE))
+}
+
+/** if (a) b else c */
+public fun ifElse(a: RFloat, b: RFloat, c: RFloat): RFloat {
+    return RFloat(a.writer, floatArrayOf(*c.array, *b.array, *a.array, Rc.FloatExpression.IFELSE))
 }
 
 /** convert radians to degrees */

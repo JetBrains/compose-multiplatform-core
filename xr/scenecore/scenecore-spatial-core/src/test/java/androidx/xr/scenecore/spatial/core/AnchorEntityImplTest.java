@@ -71,11 +71,13 @@ import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 
 import java.util.Objects;
 import java.util.UUID;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 @SuppressLint("NewApi") // TODO: b/413661481 - Remove this suppression prior to JXR stable release.
 public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     private static class FakeExportableAnchor implements ExportableAnchor {

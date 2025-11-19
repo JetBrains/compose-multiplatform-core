@@ -26,7 +26,7 @@ import androidx.compose.ui.text.font.LoadedFontFamily
 import androidx.compose.ui.text.font.SystemFontFamily
 import androidx.compose.ui.text.font.Typeface
 
-private val cacheLock = Object()
+private val cacheLock = Any()
 
 /**
  * This cache is expected to be used for SystemFontFamily or LoadedFontFamily. FontFamily instance

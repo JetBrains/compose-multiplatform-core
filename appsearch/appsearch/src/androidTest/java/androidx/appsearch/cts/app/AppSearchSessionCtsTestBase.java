@@ -11708,10 +11708,61 @@ public abstract class AppSearchSessionCtsTestBase {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_INFORMATIONAL_RANKING_EXPRESSIONS)
+    public void testInformationalRankingExpressions() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(
+                Features.SEARCH_SPEC_ADD_INFORMATIONAL_RANKING_EXPRESSIONS));
+
+        // Schema registration
+        AppSearchSchema schema = new AppSearchSchema.Builder("Email").build();
+        mDb1.setSchemaAsync(new SetSchemaRequest.Builder().addSchemas(schema).build()).get();
+
+        // Index documents
+        final int doc0DocScore = 2;
+        GenericDocument doc0 =
+                new GenericDocument.Builder<>("namespace", "id0", "Email")
+                        .setScore(doc0DocScore)
+                        .setCreationTimestampMillis(1000)
+                        .build();
+        final int doc1DocScore = 3;
+        GenericDocument doc1 =
+                new GenericDocument.Builder<>("namespace", "id1", "Email")
+                        .setScore(doc1DocScore)
+                        .setCreationTimestampMillis(1001)
+                        .build();
+        checkIsBatchResultSuccess(mDb1.putAsync(
+                new PutDocumentsRequest.Builder().addGenericDocuments(doc0, doc1).build()));
+
+        // Make an embedding query that matches all documents.
+        SearchSpec searchSpec = new SearchSpec.Builder()
+                .setRankingStrategy("this.creationTimestamp()")
+                .addInformationalRankingExpressions("this.documentScore()")
+                .setListFilterQueryLanguageEnabled(true)
+                .build();
+        SearchResults searchResults = mDb1.search("", searchSpec);
+        List<SearchResult> results = retrieveAllSearchResults(searchResults);
+        assertThat(results).hasSize(2);
+
+        // doc1:
+        assertThat(results.get(0).getGenericDocument()).isEqualTo(doc1);
+        assertThat(results.get(0).getRankingSignal()).isEqualTo(1001);
+        // doc1 has a document score of 3.
+        assertThat(results.get(0).getInformationalRankingSignals())
+                .containsExactly((double) doc1DocScore);
+
+        // doc0:
+        assertThat(results.get(1).getGenericDocument()).isEqualTo(doc0);
+        assertThat(results.get(1).getRankingSignal()).isEqualTo(1000);
+        // doc0 has a document score of 2.
+        assertThat(results.get(1).getInformationalRankingSignals())
+                .containsExactly((double) doc0DocScore);
+    }
+
+    @Test
     @RequiresFlagsEnabled({
             Flags.FLAG_ENABLE_INFORMATIONAL_RANKING_EXPRESSIONS,
             Flags.FLAG_ENABLE_SCHEMA_EMBEDDING_PROPERTY_CONFIG})
-    public void testInformationalRankingExpressions() throws Exception {
+    public void testInformationalRankingExpressions_embeddingExpression() throws Exception {
         assumeTrue(
                 mDb1.getFeatures().isFeatureSupported(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG));
         assumeTrue(mDb1.getFeatures().isFeatureSupported(

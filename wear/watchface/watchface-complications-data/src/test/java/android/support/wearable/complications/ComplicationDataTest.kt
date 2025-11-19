@@ -36,6 +36,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 public class ComplicationDataTest {
     @get:Rule val expect = Expect.create()
 

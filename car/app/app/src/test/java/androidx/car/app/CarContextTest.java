@@ -73,7 +73,7 @@ import java.util.Locale;
 
 /** Tests for {@link CarContext}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(instrumentedPackages = {"androidx.activity"})
+@Config(instrumentedPackages = {"androidx.activity"}, sdk = {Config.TARGET_SDK})
 @DoNotInstrument
 public class CarContextTest {
     @Rule

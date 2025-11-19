@@ -55,10 +55,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.util.concurrent.ScheduledExecutorService;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class EntityTest {
     private XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
     private final EntityManager mEntityManager = new EntityManager();

@@ -74,8 +74,10 @@ import org.mockito.Mockito;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ActivityController;
+import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
     // TODO(b/329902726): Move this boilerplate for creating a TestSceneRuntime into a test util
     private final ActivityController<Activity> mActivityController =

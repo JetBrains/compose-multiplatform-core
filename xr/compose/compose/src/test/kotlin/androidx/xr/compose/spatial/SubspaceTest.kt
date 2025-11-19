@@ -860,6 +860,20 @@ class SubspaceTest {
         composeTestRule.onSubspaceNodeWithTag("fillMaxSizeChild").assertDepthIsEqualTo(10.dp)
     }
 
+    @Test
+    fun planarEmbeddedSubspace_inSetContent_isParentedToTheMainPanel() {
+        composeTestRule.setContent {
+            PlanarEmbeddedSubspace { SpatialBox(SubspaceModifier.testTag("embeddedBox")) {} }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("embeddedBox")
+            .assertExists()
+            .assertEntityIsDescendantOf(
+                checkNotNull(composeTestRule.session?.scene?.mainPanelEntity)
+            )
+    }
+
     // TODO(b/449821552) Improve unit testing for PlanarEmbeddedSubspace.
 
     // ---------------------------------------------------------------------------------------------

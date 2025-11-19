@@ -18,8 +18,8 @@ abstract class <#A: kotlin/Any> androidx.room3.paging/LimitOffsetPagingSource : 
     open val jumpingSupported // androidx.room3.paging/LimitOffsetPagingSource.jumpingSupported|{}jumpingSupported[0]
         open fun <get-jumpingSupported>(): kotlin/Boolean // androidx.room3.paging/LimitOffsetPagingSource.jumpingSupported.<get-jumpingSupported>|<get-jumpingSupported>(){}[0]
 
+    abstract suspend fun convertRows(androidx.room3/RoomRawQuery, kotlin/Int): kotlin.collections/List<#A> // androidx.room3.paging/LimitOffsetPagingSource.convertRows|convertRows(androidx.room3.RoomRawQuery;kotlin.Int){}[0]
     open fun getRefreshKey(androidx.paging/PagingState<kotlin/Int, #A>): kotlin/Int? // androidx.room3.paging/LimitOffsetPagingSource.getRefreshKey|getRefreshKey(androidx.paging.PagingState<kotlin.Int,1:0>){}[0]
-    open suspend fun convertRows(androidx.room3/RoomRawQuery, kotlin/Int): kotlin.collections/List<#A> // androidx.room3.paging/LimitOffsetPagingSource.convertRows|convertRows(androidx.room3.RoomRawQuery;kotlin.Int){}[0]
     open suspend fun load(androidx.paging/PagingSource.LoadParams<kotlin/Int>): androidx.paging/PagingSource.LoadResult<kotlin/Int, #A> // androidx.room3.paging/LimitOffsetPagingSource.load|load(androidx.paging.PagingSource.LoadParams<kotlin.Int>){}[0]
 }
 

@@ -56,6 +56,7 @@ import org.robolectric.util.ReflectionHelpers
 
 @ExperimentalCoroutinesApi
 @RunWith(RobolectricCameraPipeTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 @DoNotInstrument
 // TOD: b/456085770 - Add @Config(sdk = [Config.ALL_SDKS]) when resolved
 class CameraFactoryAdapterTest {

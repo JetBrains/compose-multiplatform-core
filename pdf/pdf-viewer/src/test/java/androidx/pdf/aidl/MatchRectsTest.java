@@ -27,6 +27,7 @@ import androidx.pdf.models.MatchRects;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(sdk = {Config.TARGET_SDK})
 public class MatchRectsTest {
 
     private MatchRects mMatchRects = createMatchRects(5, 0, 2, 3);

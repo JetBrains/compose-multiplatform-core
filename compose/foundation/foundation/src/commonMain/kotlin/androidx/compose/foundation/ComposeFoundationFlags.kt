@@ -58,7 +58,7 @@ object ComposeFoundationFlags {
      * Whether to use more immediate coroutine dispatching in [detectTapGestures] and
      * [detectTapAndPress], true by default.
      */
-    @Suppress("MutableBareField")
+    @field:Suppress("MutableBareField")
     @JvmField
     var isDetectTapGesturesImmediateCoroutineDispatchEnabled = true
 
@@ -68,14 +68,14 @@ object ComposeFoundationFlags {
      * [BasicTextField][androidx.compose.foundation.text.BasicTextField]s. If false, the previous
      * context menu that has no public APIs will be used instead.
      */
-    @Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = false
+    @field:Suppress("MutableBareField") @JvmField var isNewContextMenuEnabled = false
 
     /**
      * Whether to use the new smart selection feature in
      * [androidx.compose.foundation.text.selection.SelectionContainer] and all
      * [androidx.compose.foundation.text.BasicTextField]s.
      */
-    @Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
+    @field:Suppress("MutableBareField") @JvmField var isSmartSelectionEnabled = true
 
     /**
      * Selecting flag to enable the use of new PausableComposition in lazy layout prefetch. This
@@ -83,13 +83,15 @@ object ComposeFoundationFlags {
      * can only perform the composition for parts of the LazyColumn's next item during one ui frame,
      * and then continue composing the rest of it in the next frames.
      */
-    @Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = true
+    @field:Suppress("MutableBareField") @JvmField var isPausableCompositionInPrefetchEnabled = true
 
     /**
      * With this flag on we don't use suspend pointer input as part of Modifier.clickable
      * implementation as an optimization.
      */
-    @Suppress("MutableBareField") @JvmField var isNonSuspendingPointerInputInClickableEnabled = true
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isNonSuspendingPointerInputInClickableEnabled = true
 
     /**
      * With this flag on, the new BasicTextField and the other new TextFields that accept
@@ -99,7 +101,7 @@ object ComposeFoundationFlags {
      * the end of the text. Then the TextField allows to move the focus to the next focusable
      * element on the screen.
      */
-    @Suppress("MutableBareField") @JvmField var isTextFieldDpadNavigationEnabled = true
+    @field:Suppress("MutableBareField") @JvmField var isTextFieldDpadNavigationEnabled = true
 
     /**
      * Controls the behavior of any scrollable container in terms of how it operates to keep the
@@ -108,7 +110,7 @@ object ComposeFoundationFlags {
      * which should be kept in view. Otherwise, each focused child notifies the scrollable of its
      * focus area through [onFocusedBoundsChanged].
      */
-    @Suppress("MutableBareField")
+    @field:Suppress("MutableBareField")
     @JvmField
     var isKeepInViewFocusObservationChangeEnabled: Boolean = true
 
@@ -119,18 +121,22 @@ object ComposeFoundationFlags {
      * [androidx.compose.foundation.gestures.draggable2D] and
      * [androidx.compose.foundation.gestures.anchoredDraggable].
      */
-    @Suppress("MutableBareField") @JvmField var isNonSuspendingPointerInputInDraggableEnabled = true
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isNonSuspendingPointerInputInDraggableEnabled = true
 
     /**
      * Used to enable support for 2 dimensional mouse wheel event in scrollable modifier and
      * scrollable components
      */
-    @Suppress("MutableBareField") @JvmField var isMouseWheel1DAxisLockingEnabled: Boolean = true
+    @field:Suppress("MutableBareField")
+    @JvmField
+    var isMouseWheel1DAxisLockingEnabled: Boolean = true
 
     /**
      * With this flag on, Pager will use Cache Window as the default prefetching strategy, instead
      * of 1 item in the direction of the scroll. The window used will be 1 view port AFTER the
      * currently composed items, this includes visible and items composed through beyond bounds.
      */
-    @Suppress("MutableBareField") @JvmField var isCacheWindowForPagerEnabled = true
+    @field:Suppress("MutableBareField") @JvmField var isCacheWindowForPagerEnabled = true
 }

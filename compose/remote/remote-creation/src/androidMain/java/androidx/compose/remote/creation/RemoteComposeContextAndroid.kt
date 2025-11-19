@@ -20,6 +20,7 @@ package androidx.compose.remote.creation
 import android.graphics.Bitmap
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.RcPlatformServices
+import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 
@@ -172,5 +173,32 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
         flags: Int,
     ) {
         drawTextAnchored(id, x.toFloat(), y.toFloat(), panX.toFloat(), panY.toFloat(), flags)
+    }
+
+    public fun loop(from: Float, step: Float, until: Float, content: RcFloatArgumentCallback) {
+        val indexId = createID(0)
+        mRemoteWriter.startLoop(indexId, from, step, until)
+        content.run(rf(Utils.asNan(indexId)))
+        endLoop()
+    }
+
+    public fun loop(
+        fromN: Number,
+        stepN: Number,
+        untilN: Number,
+        content: RcFloatArgumentCallback,
+    ) {
+        val from = fromN as? Float ?: fromN.toFloat()
+        val step = stepN as? Float ?: stepN.toFloat()
+        val until = untilN as? Float ?: untilN.toFloat()
+
+        val indexId = createID(0)
+        mRemoteWriter.startLoop(indexId, from, step, until)
+        content.run(rf(Utils.asNan(indexId)))
+        endLoop()
+    }
+
+    public fun createTextFromFloat(value: RFloat, before: Int, after: Int, flags: Int): Int {
+        return mRemoteWriter.createTextFromFloat(value.toFloat(), before, after, flags)
     }
 }

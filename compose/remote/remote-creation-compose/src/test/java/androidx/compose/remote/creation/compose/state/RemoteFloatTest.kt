@@ -34,6 +34,7 @@ import org.robolectric.RobolectricTestRunner
 
 @SdkSuppress(minSdkVersion = 26)
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class RemoteFloatTest {
     val context =
         AndroidRemoteContext().apply {

@@ -16,8 +16,6 @@
 
 package androidx.webkit;
 
-import androidx.annotation.RestrictTo;
-
 import org.jspecify.annotations.NonNull;
 
 /**
@@ -44,7 +42,6 @@ import org.jspecify.annotations.NonNull;
  *   </li>
  * </ul>
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @WebNavigationClient.ExperimentalNavigationCallback
 public interface NavigationListener {
     /**

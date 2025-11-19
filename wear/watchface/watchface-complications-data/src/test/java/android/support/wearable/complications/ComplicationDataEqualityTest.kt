@@ -41,6 +41,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLog
 
 @RunWith(SharedRobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class ComplicationDataEqualityTest {
     @get:Rule val expect = Expect.create()
 

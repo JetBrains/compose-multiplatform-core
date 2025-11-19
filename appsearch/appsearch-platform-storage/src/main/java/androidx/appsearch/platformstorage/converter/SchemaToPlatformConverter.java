@@ -252,7 +252,7 @@ public final class SchemaToPlatformConverter {
             }
             return platformBuilder.build();
         } else if (jetpackProperty instanceof AppSearchSchema.EmbeddingPropertyConfig) {
-            if (!AppSearchVersionUtil.isAtLeastB()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                 throw new UnsupportedOperationException(Features.SCHEMA_EMBEDDING_PROPERTY_CONFIG
                         + " is not available on this AppSearch implementation.");
             }
@@ -260,7 +260,7 @@ public final class SchemaToPlatformConverter {
                     (AppSearchSchema.EmbeddingPropertyConfig) jetpackProperty;
             return ApiHelperForB.createPlatformEmbeddingPropertyConfig(embeddingProperty);
         } else if (jetpackProperty instanceof AppSearchSchema.BlobHandlePropertyConfig) {
-            if (!AppSearchVersionUtil.isAtLeastB()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
                 throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                         + " is not available on this AppSearch implementation.");
             }
@@ -369,13 +369,13 @@ public final class SchemaToPlatformConverter {
                 jetpackBuilder.addIndexableNestedProperties(indexableNestedProperties);
             }
             return jetpackBuilder.build();
-        } else if (AppSearchVersionUtil.isAtLeastB() && platformProperty
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA && platformProperty
                 instanceof android.app.appsearch.AppSearchSchema.EmbeddingPropertyConfig) {
             android.app.appsearch.AppSearchSchema.EmbeddingPropertyConfig embeddingProperty =
                     (android.app.appsearch.AppSearchSchema
                             .EmbeddingPropertyConfig) platformProperty;
             return ApiHelperForB.createJetpackEmbeddingPropertyConfig(embeddingProperty);
-        } else if (AppSearchVersionUtil.isAtLeastB() && platformProperty
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA && platformProperty
                 instanceof android.app.appsearch.AppSearchSchema.BlobHandlePropertyConfig) {
             android.app.appsearch.AppSearchSchema.BlobHandlePropertyConfig blobHandleProperty =
                     (android.app.appsearch.AppSearchSchema

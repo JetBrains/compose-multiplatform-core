@@ -161,11 +161,12 @@ class SearchSessionImpl implements AppSearchSession {
         return future;
     }
 
+    @SuppressLint("ObsoleteSdkInt")  // < Baklava check is retained to keep CTS tests compatible.
     @Override
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     public @NonNull ListenableFuture<OpenBlobForWriteResponse>
     openBlobForWriteAsync(@NonNull Set<AppSearchBlobHandle> handles) {
-        if (!AppSearchVersionUtil.isAtLeastB()) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                     + " is not available on this AppSearch implementation.");
         }
@@ -188,11 +189,12 @@ class SearchSessionImpl implements AppSearchSession {
         return future;
     }
 
+    @SuppressLint("ObsoleteSdkInt")  // < Baklava check is retained to keep CTS tests compatible.
     @Override
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     public @NonNull ListenableFuture<RemoveBlobResponse> removeBlobAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
-        if (!AppSearchVersionUtil.isAtLeastB()) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                     + " is not available on this AppSearch implementation.");
         }
@@ -215,11 +217,12 @@ class SearchSessionImpl implements AppSearchSession {
         return future;
     }
 
+    @SuppressLint("ObsoleteSdkInt")  // < Baklava check is retained to keep CTS tests compatible.
     @Override
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     public @NonNull ListenableFuture<CommitBlobResponse> commitBlobAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
-        if (!AppSearchVersionUtil.isAtLeastB()) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                     + " is not available on this AppSearch implementation.");
         }
@@ -242,11 +245,12 @@ class SearchSessionImpl implements AppSearchSession {
         return future;
     }
 
+    @SuppressLint("ObsoleteSdkInt")  // < Baklava check is retained to keep CTS tests compatible.
     @Override
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     public @NonNull ListenableFuture<OpenBlobForReadResponse> openBlobForReadAsync(
             @NonNull Set<AppSearchBlobHandle> handles) {
-        if (!AppSearchVersionUtil.isAtLeastB()) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                     + " is not available on this AppSearch implementation.");
         }
@@ -269,11 +273,12 @@ class SearchSessionImpl implements AppSearchSession {
         return future;
     }
 
+    @SuppressLint("ObsoleteSdkInt")  // < Baklava check is retained to keep CTS tests compatible.
     @Override
     @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     public @NonNull ListenableFuture<Void> setBlobVisibilityAsync(
             @NonNull SetBlobVisibilityRequest request) {
-        if (!AppSearchVersionUtil.isAtLeastB()) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) {
             throw new UnsupportedOperationException(Features.SCHEMA_BLOB_HANDLE
                     + " is not available on this AppSearch implementation.");
         }

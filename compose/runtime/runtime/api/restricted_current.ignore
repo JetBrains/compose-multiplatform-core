@@ -1,11 +1,17 @@
 // Baseline format: 1.0
-BecameUnchecked: androidx.compose.runtime.internal.LiveLiteralKt:
-    Removed class androidx.compose.runtime.internal.LiveLiteralKt from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.snapshots.tooling:
-    Removed package androidx.compose.runtime.snapshots.tooling from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.snapshots.tooling.SnapshotObserverKt:
-    Removed class androidx.compose.runtime.snapshots.tooling.SnapshotObserverKt from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.tooling.CompositionObserverKt:
-    Removed class androidx.compose.runtime.tooling.CompositionObserverKt from compatibility checked API surface
-BecameUnchecked: androidx.compose.runtime.tooling.SourceInformationKt:
-    Removed class androidx.compose.runtime.tooling.SourceInformationKt from compatibility checked API surface
+AddedMethod: androidx.compose.runtime.ComposerKt#getCompositionLocalMap():
+    Added method androidx.compose.runtime.ComposerKt.getCompositionLocalMap()
+AddedMethod: androidx.compose.runtime.ComposerKt#getInvocation():
+    Added method androidx.compose.runtime.ComposerKt.getInvocation()
+AddedMethod: androidx.compose.runtime.ComposerKt#getProvider():
+    Added method androidx.compose.runtime.ComposerKt.getProvider()
+AddedMethod: androidx.compose.runtime.ComposerKt#getProviderMaps():
+    Added method androidx.compose.runtime.ComposerKt.getProviderMaps()
+AddedMethod: androidx.compose.runtime.ComposerKt#getProviderValues():
+    Added method androidx.compose.runtime.ComposerKt.getProviderValues()
+AddedMethod: androidx.compose.runtime.ComposerKt#getReference():
+    Added method androidx.compose.runtime.ComposerKt.getReference()
+AddedMethod: androidx.compose.runtime.snapshots.SnapshotKt#getLock():
+    Added method androidx.compose.runtime.snapshots.SnapshotKt.getLock()
+AddedMethod: androidx.compose.runtime.snapshots.SnapshotKt#getSnapshotInitializer():
+    Added method androidx.compose.runtime.snapshots.SnapshotKt.getSnapshotInitializer()

@@ -31,6 +31,7 @@ import org.robolectric.shadows.ShadowCanvas
 import org.robolectric.shadows.ShadowPath
 
 @RunWith(RobolectricTestRunner::class)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class PathPdfObjectDrawerTest {
 
     private lateinit var canvas: Canvas
