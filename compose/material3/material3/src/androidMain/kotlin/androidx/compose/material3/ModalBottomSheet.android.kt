@@ -169,38 +169,6 @@ actual class ModalBottomSheetProperties {
         this.isAppearanceLightNavigationBars = isAppearanceLightNavigationBars
     }
 
-    @Deprecated(
-        level = DeprecationLevel.HIDDEN,
-        message = "Replaced with additional shouldDismissOnScrimClick param constructor.",
-    )
-    actual constructor(shouldDismissOnBackPress: Boolean) : this(shouldDismissOnBackPress, true)
-
-    @Deprecated(
-        message = "Use empty constructor or constructor including shouldDismissOnScrimClick param.",
-        level = DeprecationLevel.HIDDEN,
-    )
-    constructor(
-        securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
-        shouldDismissOnBackPress: Boolean = true,
-    ) : this(securePolicy, shouldDismissOnBackPress, true)
-
-    @Deprecated(
-        message = "Use empty constructor or constructor including shouldDismissOnScrimClick param.",
-        level = DeprecationLevel.HIDDEN,
-    )
-    constructor(
-        isAppearanceLightStatusBars: Boolean,
-        isAppearanceLightNavigationBars: Boolean,
-        securePolicy: SecureFlagPolicy = SecureFlagPolicy.Inherit,
-        shouldDismissOnBackPress: Boolean = true,
-    ) {
-        this.shouldDismissOnBackPress = shouldDismissOnBackPress
-        this.shouldDismissOnClickOutside = true
-        this.securePolicy = securePolicy
-        this.isAppearanceLightStatusBars = isAppearanceLightStatusBars
-        this.isAppearanceLightNavigationBars = isAppearanceLightNavigationBars
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ModalBottomSheetProperties) return false

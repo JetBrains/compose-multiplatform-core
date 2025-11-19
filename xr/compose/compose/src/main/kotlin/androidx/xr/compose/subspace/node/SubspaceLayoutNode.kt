@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastForEach
 import androidx.xr.compose.subspace.layout.CoreEntity
 import androidx.xr.compose.subspace.layout.CoreEntityNode
-import androidx.xr.compose.subspace.layout.CoreMainPanelEntity
 import androidx.xr.compose.subspace.layout.LayoutSubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.OpaqueEntity
 import androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable
@@ -68,6 +67,10 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     internal var layoutState: LayoutState = LayoutState.Idle
         private set
 
+    internal var measurePending: Boolean = false
+
+    internal var layoutPending: Boolean = false
+
     /**
      * The children of this [SubspaceLayoutNode], controlled by [insertAt], [move], and [removeAt].
      */
@@ -88,9 +91,6 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
     internal val isPlaced: Boolean
         get() = measurableLayout.isPlaced
-
-    internal val canMeasurementAffectOtherTrees: Boolean
-        get() = coreEntity is CoreMainPanelEntity
 
     internal val nodes: SubspaceModifierNodeChain = SubspaceModifierNodeChain(this)
 
@@ -413,6 +413,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             val placeable = nodes.measureChain(constraints, ::measureJustThis)
             lastConstraints = constraints
             layoutState = LayoutState.Idle
+            this@SubspaceLayoutNode.measurePending = false
             return placeable
         }
 
@@ -460,7 +461,6 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
          */
         public override fun placeAt(pose: Pose) {
             layoutState = LayoutState.LayingOut
-
             layoutPose = pose
 
             owner?.logger?.nodePlaced(this, pose)
@@ -480,6 +480,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
                 it.onLayoutCoordinates(this)
             }
 
+            this@SubspaceLayoutNode.layoutPending = false
             layoutState = LayoutState.Idle
         }
 

@@ -24,6 +24,7 @@ import androidx.xr.compose.subspace.node.Logger
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceMeasureAndLayoutDelegate
 import androidx.xr.compose.subspace.node.SubspaceOwner
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -51,6 +52,9 @@ internal class AndroidComposeSpatialElement :
 
     // This coroutine scope will launch tasks to the Choreographer on the main thread.
     private val uiCoroutineScope = CoroutineScope(AndroidUiDispatcher.Main)
+
+    override val coroutineContext: CoroutineContext
+        get() = uiCoroutineScope.coroutineContext
 
     internal var wrappedComposition: WrappedComposition? = null
 

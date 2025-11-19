@@ -18,12 +18,9 @@ package androidx.xr.scenecore
 
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
-import androidx.concurrent.futures.ResolvableFuture
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.MaterialResource as RtMaterial
 import androidx.xr.scenecore.runtime.RenderingRuntime
-import com.google.common.util.concurrent.ListenableFuture
-import java.util.concurrent.CancellationException
 
 /** A Material which implements a water effect. */
 // TODO(b/396201066): Add unit tests for this class if we end up making it public.
@@ -196,38 +193,13 @@ internal constructor(
     }
 
     public companion object {
-        // ResolvableFuture is marked as RestrictTo(LIBRARY_GROUP_PREFIX), which is intended for
-        // classes
-        // within AndroidX. We're in the process of migrating to AndroidX. Without suppressing this
-        // warning, however, we get a build error - go/bugpattern/RestrictTo.
-        @SuppressWarnings("RestrictTo")
-        internal fun createAsync(
+        internal suspend fun createAsync(
             renderingRuntime: RenderingRuntime,
             isAlphaMapVersion: Boolean,
             session: Session,
-        ): ListenableFuture<WaterMaterial> {
-            val materialResourceFuture = renderingRuntime.createWaterMaterial(isAlphaMapVersion)
-            val materialFuture = ResolvableFuture.create<WaterMaterial>()
-
-            materialResourceFuture.addListener(
-                {
-                    try {
-                        val material = materialResourceFuture.get()
-                        materialFuture.set(WaterMaterial(material, isAlphaMapVersion, session))
-                    } catch (e: Exception) {
-                        if (e is InterruptedException) {
-                            Thread.currentThread().interrupt()
-                        }
-                        if (e is CancellationException) {
-                            materialFuture.cancel(false)
-                        } else {
-                            materialFuture.setException(e)
-                        }
-                    }
-                },
-                Runnable::run,
-            )
-            return materialFuture
+        ): WaterMaterial {
+            val material = renderingRuntime.createWaterMaterialAsync(isAlphaMapVersion)
+            return WaterMaterial(material, isAlphaMapVersion, session)
         }
 
         /**
@@ -246,7 +218,6 @@ internal constructor(
         @Suppress("AsyncSuffixFuture")
         public suspend fun create(session: Session, isAlphaMapVersion: Boolean): WaterMaterial {
             return WaterMaterial.createAsync(session.renderingRuntime, isAlphaMapVersion, session)
-                .awaitSuspending()
         }
     }
 }

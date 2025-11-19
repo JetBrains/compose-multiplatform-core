@@ -34,7 +34,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -48,12 +47,12 @@ import okhttp3.mockwebserver.MockWebServer;
 public class WebViewBuilderTest {
     @Before
     public void setUp() {
-        WebkitUtils.checkFeature(WebViewFeature.WEBVIEW_BUILDER);
+        WebkitUtils.checkFeature(WebViewFeature.WEBVIEW_BUILDER_EXPERIMENTAL_V1);
     }
 
     @Test
     public void testConstructsWebView() {
-        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Preset.LEGACY);
+        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.PRESET_LEGACY);
 
         try (ActivityScenario<WebViewTestActivity> scenario =
                 ActivityScenario.launch(WebViewTestActivity.class)) {
@@ -75,7 +74,7 @@ public class WebViewBuilderTest {
 
     @Test
     public void testConstructsWebViewTwice() {
-        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Preset.LEGACY);
+        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.PRESET_LEGACY);
 
         try (ActivityScenario<WebViewTestActivity> scenario =
                 ActivityScenario.launch(WebViewTestActivity.class)) {
@@ -104,13 +103,13 @@ public class WebViewBuilderTest {
             server.start();
             nonEnabledServer.start();
 
-            server.enqueue(mockJavascriptInterfaceResponse());
-            nonEnabledServer.enqueue(mockJavascriptInterfaceResponse());
+            server.enqueue(mockJavaScriptInterfaceResponse());
+            nonEnabledServer.enqueue(mockJavaScriptInterfaceResponse());
 
             HttpUrl enabledUrl = server.url("");
 
-            List<String> originPatterns =
-                    List.of(
+            Set<String> originPatterns =
+                    Set.of(
                             enabledUrl.scheme()
                                     + "://"
                                     + enabledUrl.host()
@@ -132,13 +131,13 @@ public class WebViewBuilderTest {
 
             RestrictionAllowlist allowlist =
                     new RestrictionAllowlist.Builder(originPatterns)
-                            .javascriptInterface(new TestInterface(1), "jsInterface")
-                            .javascriptInterface(new TestInterface(2), "jsInterface2")
-                            .javascriptInterface(new TestInterface(3), "jsInterface3")
+                            .addJavaScriptInterface(new TestInterface(1), "jsInterface")
+                            .addJavaScriptInterface(new TestInterface(2), "jsInterface2")
+                            .addJavaScriptInterface(new TestInterface(3), "jsInterface3")
                             .build();
 
-            WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Preset.LEGACY)
-                    .restrictJavascriptInterface()
+            WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.PRESET_LEGACY)
+                    .restrictJavaScriptInterfaces()
                     .addAllowlist(allowlist);
 
             WebView webview = build(builder);
@@ -165,18 +164,18 @@ public class WebViewBuilderTest {
         Object jsInterface = new Object();
 
         RestrictionAllowlist allowlist =
-                new RestrictionAllowlist.Builder(List.of("https://somesite.com"))
-                        .javascriptInterface(jsInterface, "jsInterface")
+                new RestrictionAllowlist.Builder(Set.of("https://somesite.com"))
+                        .addJavaScriptInterface(jsInterface, "jsInterface")
                         .build();
 
-        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.Preset.LEGACY)
+        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.PRESET_LEGACY)
                 .addAllowlist(allowlist);
 
-        // This builder did not call restrictJavascriptInterface before allowlisting
+        // This builder did not call restrictJavaScriptInterfaces before allowlisting
         Assert.assertThrows(WebViewBuilderException.class, () -> build(builder));
 
         // After restricting JS, this should build fine:
-        builder.restrictJavascriptInterface();
+        builder.restrictJavaScriptInterfaces();
         WebView wv = build(builder);
         Assert.assertNotNull(wv);
 
@@ -194,13 +193,41 @@ public class WebViewBuilderTest {
         // If we try to build with the same javascript interface name,
         // we should also get a validation failure.
         builder.addAllowlist(
-                new RestrictionAllowlist.Builder(List.of("https://someothersite.com"))
-                        .javascriptInterface(jsInterface, "jsInterface")
+                new RestrictionAllowlist.Builder(Set.of("https://someothersite.com"))
+                        .addJavaScriptInterface(jsInterface, "jsInterface")
                         .build());
         Assert.assertThrows(WebViewBuilderException.class, () -> build(builder));
 
         // We then clean up this WebView to avoid leaking into the GC tests.
         WebViewOnUiThread.destroy(wv);
+    }
+
+    @Test
+    public void testSetNoProfileUsesDefault() throws WebViewBuilderException {
+        WebkitUtils.checkFeature(WebViewFeature.MULTI_PROFILE);
+
+        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.PRESET_LEGACY);
+        WebView webView = build(builder);
+        String profileName = WebkitUtils.onMainThreadSync(
+                () -> WebViewCompat.getProfile(webView).getName());
+        WebViewOnUiThread.destroy(webView);
+
+        Assert.assertEquals(Profile.DEFAULT_PROFILE_NAME, profileName);
+    }
+
+    @Test
+    public void testSetProfileName() throws WebViewBuilderException {
+        WebkitUtils.checkFeature(WebViewFeature.MULTI_PROFILE);
+
+        String profileName = "NonDefault";
+        WebViewBuilder builder = new WebViewBuilder(WebViewBuilder.PRESET_LEGACY)
+                .setProfile(profileName);
+        WebView webView = build(builder);
+        String actualProfileName = WebkitUtils.onMainThreadSync(
+                () -> WebViewCompat.getProfile(webView).getName());
+        WebViewOnUiThread.destroy(webView);
+
+        Assert.assertEquals(profileName, actualProfileName);
     }
 
     private WebView build(final WebViewBuilder builder) throws WebViewBuilderException {
@@ -239,7 +266,7 @@ public class WebViewBuilderTest {
         return WebkitUtils.waitForFuture(future);
     }
 
-    private MockResponse mockJavascriptInterfaceResponse() {
+    private MockResponse mockJavaScriptInterfaceResponse() {
         MockResponse response = new MockResponse();
         response.addHeader("Content-Type", "text/html");
         response.setBody(

@@ -18,6 +18,7 @@ package androidx.xr.compose.subspace.layout
 
 import androidx.compose.material3.Text
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.spatial.Subspace
@@ -28,6 +29,7 @@ import androidx.xr.compose.testing.assertDepthIsEqualTo
 import androidx.xr.compose.testing.assertHeightIsEqualTo
 import androidx.xr.compose.testing.assertWidthIsEqualTo
 import androidx.xr.compose.testing.onSubspaceNodeWithTag
+import androidx.xr.compose.unit.DpVolumeSize
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,6 +72,67 @@ class SizeTest {
             .assertWidthIsEqualTo(20.dp)
             .assertHeightIsEqualTo(20.dp)
             .assertDepthIsEqualTo(20.dp)
+    }
+
+    @Test
+    fun size_dpValues_panelsAreSizedCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel").size(20.dp, 30.dp, 40.dp)) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(30.dp)
+            .assertDepthIsEqualTo(40.dp)
+    }
+
+    @Test
+    fun size_unspecifiedDpValues_doesNotOverrideParentSize() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .size(width = 40.dp, height = 50.dp, depth = 60.dp)
+                        .size(
+                            width = Dp.Unspecified,
+                            height = Dp.Unspecified,
+                            depth = Dp.Unspecified,
+                        )
+                ) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(40.dp)
+            .assertHeightIsEqualTo(50.dp)
+            .assertDepthIsEqualTo(60.dp)
+    }
+
+    @Test
+    fun size_dpVolumeSize_panelsAreSizedCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel").size(DpVolumeSize(20.dp, 30.dp, 40.dp))
+                ) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(30.dp)
+            .assertDepthIsEqualTo(40.dp)
     }
 
     @Test
@@ -128,6 +191,70 @@ class SizeTest {
             .assertWidthIsEqualTo(20.dp)
             .assertHeightIsEqualTo(20.dp)
             .assertDepthIsEqualTo(20.dp)
+    }
+
+    @Test
+    fun requiredSize_dpValues_panelsAreSizedCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(SubspaceModifier.testTag("panel").requiredSize(20.dp, 30.dp, 40.dp)) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(30.dp)
+            .assertDepthIsEqualTo(40.dp)
+    }
+
+    @Test
+    fun requiredSize_unspecifiedDpValues_doesNotOverrideParentSize() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialRow(SubspaceModifier.size(10.dp, 20.dp, 30.dp)) {
+                    SpatialPanel(
+                        SubspaceModifier.testTag("panel")
+                            .requiredSize(width = 40.dp, height = 50.dp, depth = 60.dp)
+                            .requiredSize(
+                                width = Dp.Unspecified,
+                                height = Dp.Unspecified,
+                                depth = Dp.Unspecified,
+                            )
+                    ) {
+                        Text(text = "Panel")
+                    }
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(40.dp)
+            .assertHeightIsEqualTo(50.dp)
+            .assertDepthIsEqualTo(60.dp)
+    }
+
+    @Test
+    fun requiredSize_dpVolumeSize_panelsAreSizedCorrectly() {
+        composeTestRule.setContent {
+            Subspace {
+                SpatialPanel(
+                    SubspaceModifier.testTag("panel")
+                        .requiredSize(DpVolumeSize(20.dp, 30.dp, 40.dp))
+                ) {
+                    Text(text = "Panel")
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("panel")
+            .assertWidthIsEqualTo(20.dp)
+            .assertHeightIsEqualTo(30.dp)
+            .assertDepthIsEqualTo(40.dp)
     }
 
     @Test

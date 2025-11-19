@@ -135,11 +135,15 @@ internal class SubspaceDepthSortedSet(
                 backingIterator.next().also { lastReturned = it }
 
             override fun remove() {
-                // Call the remove method of the SubspaceDepthSortedSet instead of the backing
-                // iterator's remove method.
                 val elementToRemove =
                     checkNotNull(lastReturned) { "next() must be called before remove()" }
-                this@SubspaceDepthSortedSet.remove(elementToRemove)
+                backingIterator.remove()
+                if (extraAssertions) {
+                    check(mapOfOriginalDepth[elementToRemove] == elementToRemove.depth) {
+                        "invalid node depth"
+                    }
+                    mapOfOriginalDepth -= elementToRemove
+                }
                 lastReturned = null
             }
         }

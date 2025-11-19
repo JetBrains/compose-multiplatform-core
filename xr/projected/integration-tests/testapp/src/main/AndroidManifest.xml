@@ -72,6 +72,11 @@
             android:launchMode="singleTop"
             android:requiredDisplayCategory="@string/display_category_xr_projected">
         </activity>
+        <activity
+            android:name="androidx.xr.projected.testapp.camera.CameraActivity"
+            android:exported="true"
+            android:label="Camera Activity">
+        </activity>
     </application>
 
     <uses-feature android:name="android.hardware.camera" />

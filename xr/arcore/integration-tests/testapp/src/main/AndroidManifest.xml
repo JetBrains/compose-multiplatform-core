@@ -22,6 +22,7 @@
   <uses-permission android:name="android.permission.FACE_TRACKING" />
   <uses-permission android:name="android.permission.EYE_TRACKING_COARSE" />
   <uses-permission android:name="android.permission.EYE_TRACKING_FINE" />
+  <uses-permission android:name="android.permission.INTERNET" />
   <application
       android:label="JXR ARCore Tests"
       android:taskAffinity="">

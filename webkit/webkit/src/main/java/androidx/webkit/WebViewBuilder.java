@@ -42,18 +42,21 @@ import java.util.List;
 /**
  * WebViewBuilder can be used in place of {@link android.webkit.WebView}'s constructor.
  *
- * <p>This API allows you to declare how the WebView will be used via APIs like {@link
- * RestrictionAllowlist}.
+ * <p>This API allows you to declare how the WebView will be used via APIs like
+ * {@link RestrictionAllowlist}.
  *
  * <p>WebView instances constructed by this builder can be used as direct drop-in replacements for
- * WebView's created by the class constructor with no additional code changes.
+ * WebViews created by {@link WebView#WebView(Context)} with no additional code changes.
  */
 @WebViewBuilder.Experimental
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+// WebView is a framework class that cannot be readily evolved. This builder in AndroidX can only be
+// implemented at the top level.
+@SuppressWarnings("TopLevelBuilder")
 public final class WebViewBuilder {
     private boolean mRestrictJavascriptInterface;
-    private final @NonNull List<RestrictionAllowlist> mAllowLists =
-            new ArrayList<RestrictionAllowlist>();
+    private final @NonNull List<@NonNull RestrictionAllowlist> mAllowLists =
+            new ArrayList<@NonNull RestrictionAllowlist>();
+    private @Nullable String mProfileName;
 
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
@@ -61,23 +64,30 @@ public final class WebViewBuilder {
     public @interface Experimental {}
 
     /**
+     * Matches the configuration of a WebView created via the {@link WebView#WebView(Context)}
+     * constructor.
+     */
+    public static final int PRESET_LEGACY = 0;
+
+    /**
      * Common configuration presets for WebView.
      */
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({
-        Preset.LEGACY,
+        PRESET_LEGACY,
     })
-    public @interface Preset {
-        /**
-         * Matches the configuration of a WebView created via the WebView constructor.
-         */
-        int LEGACY = 0;
-    }
+    public @interface Preset {}
 
     @Nullable WebViewBuilderBoundaryInterface mBuilderStateBoundary;
 
+    /**
+     * Create a new builder with settings initialized to the given preset Preset.
+     *
+     * <p>Currently, only the {@link PRESET_LEGACY} preset is supported.
+     */
     public WebViewBuilder(@Preset int preset) {
-        if (preset != Preset.LEGACY) {
+        if (preset != PRESET_LEGACY) {
             throw new IllegalArgumentException("Invalid preset: " + preset);
         }
         // TODO(crbug.com/419726203): We only have the no-op LEGACY preset right now, so no logic
@@ -85,25 +95,50 @@ public final class WebViewBuilder {
     }
 
     /**
-     * Restrict {@link WebView#addJavascriptInterface(Object, String)} and {@link
-     * WebView#removeJavascriptInterface(String)} from being callable.
+     * Restrict {@link WebView#addJavascriptInterface(Object, String)} and
+     * {@link WebView#removeJavascriptInterface(String)} from being callable.
      *
-     * <p>This needs to be called in order to allow specific origin patterns to inject javascript
-     * interfaces via {@link RestrictionAllowlist#addJavascriptInterface(Object, String)}.
+     * <p>Opting into this restriction makes these methods throw a RuntimeException if called on the
+     * built WebView.
+     *
+     * <p>This needs to be called in order to allow specific origin patterns to inject JavaScript
+     * interfaces via {@link RestrictionAllowlist#addJavaScriptInterface(Object, String)}.
      */
-    public @NonNull WebViewBuilder restrictJavascriptInterface() {
+    // We prefer a one-directional switch in order to improve app code auditability.
+    @SuppressWarnings("BuilderSetStyle")
+    public @NonNull WebViewBuilder restrictJavaScriptInterfaces() {
         mRestrictJavascriptInterface = true;
         return this;
     }
 
     /**
-     * Add an allowlist of behaviors for a list origin patterns. All allowlists will be merged
-     * together. A WebViewBuilderException will be thrown from {@link WebViewBuilder#build(Context)}
-     * if a behavior is allow listed that has not been restricted via the WebViewBuilder.
+     * Set the profile for the WebView.
      *
-     * @param allowList An allow list that will allow behaviors for the origin patterns provided.
+     * <p>If the profile does not exist, it will be created when {@link WebViewBuilder#build} is
+     * called, as per {@link ProfileStore#getOrCreateProfile(String)}.
+     *
+     * @param profileName The name of the profile to use.
      */
-    @Experimental
+    @RequiresFeature(name = WebViewFeature.MULTI_PROFILE,
+            enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
+    // Corresponding getter is in WebViewCompat (AndroidX), not WebView (framework).
+    // Similar to WebViewCompat, the setter uses String and the getter uses Profile.
+    @SuppressWarnings("MissingGetterMatchingBuilder")
+    public @NonNull WebViewBuilder setProfile(@NonNull String profileName) {
+        mProfileName = profileName;
+        return this;
+    }
+
+    /**
+     * Add an allowlist of behaviors for a list of origin patterns. All allowlists will be merged
+     * together. A WebViewBuilderException will be thrown from {@link WebViewBuilder#build(Context)}
+     * if a behavior is allowlisted that has not been restricted via the WebViewBuilder.
+     *
+     * @param allowList An allowlist that will allow behaviors for the origin patterns provided.
+     */
+    // This input data is somewhat ephemeral and reprocessed. There's no direct use for a getter,
+    // and the RestrictionAllowlist object itself is somewhat opaque.
+    @SuppressWarnings("MissingGetterMatchingBuilder")
     public @NonNull WebViewBuilder addAllowlist(@NonNull RestrictionAllowlist allowList) {
         mAllowLists.add(allowList);
         return this;
@@ -112,15 +147,16 @@ public final class WebViewBuilder {
     /**
      * Constructs a new WebView with all the properties defined.
      *
-     * @param context an Activity Context to access application assets
+     * @param context The Activity Context for the WebView.
+     * @throws WebViewBuilderException if there was an issue with validation or constructing the
+     *                                 WebView.
      */
-    @Experimental
     @UiThread
     @RequiresFeature(
-            name = WebViewFeature.WEBVIEW_BUILDER,
+            name = WebViewFeature.WEBVIEW_BUILDER_EXPERIMENTAL_V1,
             enforcement = "androidx.webkit.WebViewFeature#isFeatureSupported")
-    public @NonNull WebView build(@NonNull Context context) throws WebViewBuilderException {
-        final ApiFeature.NoFramework feature = WebViewFeatureInternal.WEBVIEW_BUILDER;
+    public @NonNull WebView build(@NonNull Context context) {
+        final ApiFeature.NoFramework feature = WebViewFeatureInternal.WEBVIEW_BUILDER_V1;
         if (!feature.isSupportedByWebView()) {
             throw WebViewFeatureInternal.getUnsupportedOperationException();
         }
@@ -137,6 +173,7 @@ public final class WebViewBuilder {
                 new WebViewBuilderBoundaryInterface.Config();
 
         config.restrictJavascriptInterface = mRestrictJavascriptInterface;
+        config.profileName = mProfileName;
 
         try {
             for (RestrictionAllowlist allowList : mAllowLists) {

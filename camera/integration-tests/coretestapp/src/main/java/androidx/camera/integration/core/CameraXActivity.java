@@ -406,7 +406,7 @@ public class CameraXActivity extends AppCompatActivity {
     private boolean mIsLowLightBoostOn = false;
     private Range<Integer> mFpsRange = FPS_UNSPECIFIED;
     private boolean mForceEnableStreamSharing;
-    private boolean mDisableViewPort;
+    private boolean mDisableViewPort = true;
     private boolean mEnableTorchAsFlash;
 
     SessionMediaUriSet mSessionImagesUriSet = new SessionMediaUriSet();

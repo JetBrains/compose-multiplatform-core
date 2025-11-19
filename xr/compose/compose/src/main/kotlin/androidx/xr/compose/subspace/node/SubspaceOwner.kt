@@ -16,6 +16,8 @@
 
 package androidx.xr.compose.subspace.node
 
+import kotlin.coroutines.CoroutineContext
+
 /**
  * Owner interface that defines the connection to the underlying element system.
  *
@@ -30,6 +32,8 @@ internal interface SubspaceOwner {
 
     /** Optional logger for debugging and testing. */
     public var logger: Logger?
+
+    public val coroutineContext: CoroutineContext
 
     /**
      * Called by [SubspaceLayoutNode] when the node is attached to this owner's element system.

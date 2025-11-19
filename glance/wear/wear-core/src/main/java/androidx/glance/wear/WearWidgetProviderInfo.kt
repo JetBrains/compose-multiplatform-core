@@ -138,8 +138,8 @@ public constructor(
          * interface.
          */
         @RestrictTo(LIBRARY_GROUP)
-        public const val WEAR_WIDGET_PROVIDER_IDENTIFIER: String =
-            "androidx.glance.wear.WEAR_WIDGET_PROVIDER_IDENTIFIER"
+        public const val WEAR_WIDGET_PROVIDER_SUPPORTED_IDENTIFIER: String =
+            "androidx.glance.wear.WEAR_WIDGET_PROVIDER_SUPPORTED_IDENTIFIER"
 
         /**
          * Parses a [WearWidgetProviderInfo] from the metadata of a service.

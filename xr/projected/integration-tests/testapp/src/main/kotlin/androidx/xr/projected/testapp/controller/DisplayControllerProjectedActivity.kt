@@ -18,6 +18,7 @@ package androidx.xr.projected.testapp.controller
 
 import android.app.Activity
 import android.content.Intent
+import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -27,21 +28,28 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
 import androidx.xr.projected.ProjectedDeviceController
 import androidx.xr.projected.ProjectedDeviceController.Capability
+import androidx.xr.projected.ProjectedDeviceController.Capability.Companion.CAPABILITY_VISUAL_UI
 import androidx.xr.projected.ProjectedDisplayController
 import androidx.xr.projected.ProjectedDisplayController.PresentationMode
 import androidx.xr.projected.ProjectedDisplayController.PresentationModeFlags
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
+import androidx.xr.projected.testapp.R
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /*
@@ -62,6 +70,8 @@ class DisplayControllerProjectedActivity : ComponentActivity() {
     val presentationModesList = mutableStateListOf<PresentationModeFlags>()
     var capabilities = emptySet<Capability>()
 
+    var mediaPlayer: MediaPlayer? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "Creating DisplayControllerProjectedActivity")
         super.onCreate(savedInstanceState)
@@ -69,6 +79,13 @@ class DisplayControllerProjectedActivity : ComponentActivity() {
         initializeProjectedDeviceController(this)
         initializeProjectedDisplayController(presentationModesList, this)
         setContent { CreateUi() }
+    }
+
+    override fun onDestroy() {
+        Log.i(TAG, "Destroying DisplayControllerProjectedActivity")
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        super.onDestroy()
     }
 
     @Composable
@@ -82,10 +99,30 @@ class DisplayControllerProjectedActivity : ComponentActivity() {
                 Text(statusMessage)
                 return
             }
+
+            var elapsedSec by remember { mutableIntStateOf(0) }
+            LaunchedEffect(Unit) {
+                while (true) {
+                    delay(1.seconds)
+                    elapsedSec++
+                }
+            }
+            // TODO(b/459576296): Currently using a continuously updating UI element to force
+            // Compose updates. Without this, there seems to be a race condition right when the
+            // display turns on. This should be removed once we understand the problem.
+            Text(text = "Elapsed Time: $elapsedSec seconds")
+            Text(text = "")
             Text("Projected Capabilities: $capabilities", fontSize = 30.sp)
             Text("Keep Screen On: ${screenOnState.value}", fontSize = 30.sp)
             Text("Presentation Mode Events:")
             PresentationModeFlagsList(presentationModesList.toList())
+
+            LaunchedEffect(presentationModesList.size) {
+                if (mediaPlayer != null) {
+                    mediaPlayer?.start()
+                    Log.i(TAG, "Playing voice clip")
+                }
+            }
         }
     }
 
@@ -93,7 +130,16 @@ class DisplayControllerProjectedActivity : ComponentActivity() {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 projectedDeviceController = ProjectedDeviceController.create(activity)
-                projectedDeviceController?.let { capabilities = it.capabilities }
+                projectedDeviceController?.let {
+                    capabilities = it.capabilities
+                    if (CAPABILITY_VISUAL_UI in it.capabilities) {
+                        mediaPlayer = MediaPlayer.create(activity, R.raw.display_detected)
+                        Log.i(TAG, "Loading display detected voice clip")
+                    } else {
+                        mediaPlayer = MediaPlayer.create(activity, R.raw.no_display)
+                        Log.i(TAG, "Loading no display voice clip")
+                    }
+                }
                 deviceControllerReady.value = true
             } catch (e: Exception) {
                 statusMessage = "Failed to start ProjectedDisplayController."

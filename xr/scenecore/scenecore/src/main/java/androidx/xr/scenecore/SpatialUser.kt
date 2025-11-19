@@ -56,7 +56,7 @@ internal constructor(
     /**
      * Returns the Head for the SpatialUser, or null if it is not yet available.
      *
-     * @throws [IllegalStateException] if [session.config.headTracking] is set to
+     * @throws [IllegalStateException] if [androidx.xr.runtime.Session.config] is set to
      *   [HeadTrackingMode.DISABLED].
      */
     public var head: Head? = null
@@ -76,7 +76,7 @@ internal constructor(
      * list are dependent on the device type. The list will be empty if the cameras are not yet
      * available.
      *
-     * @throws [IllegalStateException] if [session.config.headTracking] is set to
+     * @throws [IllegalStateException] if [androidx.xr.runtime.Session.config] is set to
      *   [HeadTrackingMode.DISABLED].
      */
     public var cameraViews: Map<CameraView.CameraType, CameraView> = emptyMap()

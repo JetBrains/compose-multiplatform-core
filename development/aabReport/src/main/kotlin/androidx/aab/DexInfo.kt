@@ -16,10 +16,11 @@
 
 package androidx.aab
 
-import androidx.aab.cli.VERBOSE
 import java.io.InputStream
 import java.security.MessageDigest
 import java.util.zip.CRC32
+import kotlin.collections.map
+import kotlin.collections.sumOf
 import org.jf.dexlib2.Opcodes
 import org.jf.dexlib2.dexbacked.DexBackedDexFile
 
@@ -201,39 +202,60 @@ data class DexInfo(
             )
         }
 
-        val CSV_TITLES =
+        val CSV_COLUMNS =
             listOf(
-                "dex_totalSizeMb",
-                "dex_minifiedClassesLower",
-                "dex_minifiedClassesLength",
-                "dex_noPackageClasses",
-                "dex_classes",
-            ) +
-                if (VERBOSE) {
-                    listOf("dex_names", "dex_sortedChecksumsSha256", "dex_sortedChecksumsCrc32")
-                } else {
-                    emptyList()
-                }
-
-        fun List<DexInfo>.csvEntries(): List<String> {
-            return listOf(
-                (this.sumOf { it.uncompressedSize } / (1024.0 * 1024)).toString(),
-                this.sumOf { it.minifiedClassCountLowercase }.toString(),
-                this.sumOf { it.minifiedClassCountLengthHeuristic }.toString(),
-                this.sumOf { it.noPackageClassCount }.toString(),
-                this.sumOf { it.classInfo.size }.toString(),
-            ) +
-                if (VERBOSE)
-                    listOf(
-                        joinToString(INTERNAL_CSV_SEPARATOR) { it.entryName },
-                        // NOTE: we individually sort each of these, so they aren't associated with
-                        // each other, but they are easy to compare when joined
-                        this.map { it.sha256 }.sorted().joinToString(INTERNAL_CSV_SEPARATOR),
-                        this.map { it.crc32 }.sorted().joinToString(INTERNAL_CSV_SEPARATOR),
-                    )
-                else {
-                    emptyList()
-                }
-        }
+                CsvColumn<List<DexInfo>>(
+                    columnLabel = "dex_totalSizeMb",
+                    description = "Total size of dex in MB",
+                    calculate = { (it.sumOf { it.uncompressedSize } / (1024.0 * 1024)).toString() },
+                ),
+                CsvColumn<List<DexInfo>>(
+                    columnLabel = "dex_minifiedClassesLower",
+                    description =
+                        "Number of (outer) classes in dex that match the lowercase heuristic, indicating obfuscation",
+                    calculate = { it.sumOf { it.minifiedClassCountLowercase }.toString() },
+                ),
+                CsvColumn<List<DexInfo>>(
+                    columnLabel = "dex_minifiedClassesLength",
+                    description =
+                        "Number of (outer) classes in dex that match the length heuristic, indicating obfuscation",
+                    calculate = { it.sumOf { it.minifiedClassCountLengthHeuristic }.toString() },
+                ),
+                CsvColumn<List<DexInfo>>(
+                    columnLabel = "dex_noPackageClasses",
+                    description =
+                        "Number of (outer) classes in dex that have no package, indicating use of -repackageclasses",
+                    calculate = { it.sumOf { it.noPackageClassCount }.toString() },
+                ),
+                CsvColumn<List<DexInfo>>(
+                    columnLabel = "dex_classes",
+                    description = "Number of (outer) classes in dex",
+                    calculate = { it.sumOf { it.classInfo.size }.toString() },
+                ),
+                CsvColumn<List<DexInfo>>(
+                    columnLabel = "dex_names",
+                    description = "Dex file paths",
+                    requiresVerbose = true,
+                    calculate = { it.joinToString(INTERNAL_CSV_SEPARATOR) { dex -> dex.entryName } },
+                ),
+                CsvColumn<List<DexInfo>>(
+                    columnLabel = "dex_sortedChecksumsSha256",
+                    description =
+                        "Sorted sha256 checksums for each dex file, for validating with R8 json",
+                    requiresVerbose = true,
+                    calculate = {
+                        it.map { dex -> dex.sha256 }.sorted().joinToString(INTERNAL_CSV_SEPARATOR)
+                    },
+                ),
+                CsvColumn<List<DexInfo>>(
+                    columnLabel = "dex_sortedChecksumsCrc32",
+                    description =
+                        "Sorted crc32 checksums for each dex file, for validating with profiles",
+                    requiresVerbose = true,
+                    calculate = {
+                        it.map { dex -> dex.sha256 }.sorted().joinToString(INTERNAL_CSV_SEPARATOR)
+                    },
+                ),
+            )
     }
 }

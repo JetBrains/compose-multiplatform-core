@@ -125,7 +125,7 @@ public class WebViewFeature {
             NAVIGATION_CALLBACK_BASIC,
             NAVIGATION_LISTENER_V1,
             PAYMENT_REQUEST,
-            WEBVIEW_BUILDER,
+            WEBVIEW_BUILDER_EXPERIMENTAL_V1,
             WARM_UP_RENDERER_PROCESS,
             PRECONNECT,
             PROVIDER_WEAKLY_REF_WEBVIEW,
@@ -748,14 +748,11 @@ public class WebViewFeature {
     /**
      * Feature for {@link #isFeatureSupported(String)}.
      * This feature covers:
-     * {@link WebViewBuilder#build(Context)},
-     * {@link WebViewBuilder#build(Context, AttributeSet)},
-     * {@link WebViewBuilder#build(Context, AttributeSet, int)} and
-     * {@link WebViewBuilder#build(Context, AttributeSet, int, int)}.
+     * {@link WebViewBuilder#build(Context)}.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @WebViewBuilder.Experimental
-    public static final String WEBVIEW_BUILDER = "WEBVIEW_BUILDER";
+    public static final String WEBVIEW_BUILDER_EXPERIMENTAL_V1 = "WEBVIEW_BUILDER_EXPERIMENTAL_V1";
 
     /**
      * Feature for {@link #isFeatureSupported(String)}.

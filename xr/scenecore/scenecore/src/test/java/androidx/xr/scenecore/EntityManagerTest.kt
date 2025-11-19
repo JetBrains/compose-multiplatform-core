@@ -38,7 +38,6 @@ import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
-import com.google.common.util.concurrent.Futures
 import java.nio.file.Paths
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -86,8 +85,10 @@ class EntityManagerTest {
         whenever(mockSceneRuntime.headActivityPose).thenReturn(mock())
         whenever(mockSceneRuntime.perceptionSpaceActivityPose).thenReturn(mock())
         whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
-        whenever(mockRenderingRuntime.loadGltfByAssetName(Mockito.anyString()))
-            .thenReturn(Futures.immediateFuture(mock()))
+        runBlocking {
+            whenever(mockRenderingRuntime.loadGltfByAssetNameAsync(Mockito.anyString()))
+                .thenReturn(mock())
+        }
         whenever(mockRenderingRuntime.createGltfEntity(any(), any(), any()))
             .thenReturn(mockGltfModelEntityImpl)
         whenever(

@@ -50,9 +50,6 @@ import kotlinx.coroutines.withContext
  * </service>
  * ```
  *
- * For supporting AppFunction(s) on devices targeting below Android 16, use
- * [ExtensionsAppFunctionService]
- *
  * @see [android.app.appfunctions.AppFunctionService]
  */
 @RequiresApi(Build.VERSION_CODES.BAKLAVA)

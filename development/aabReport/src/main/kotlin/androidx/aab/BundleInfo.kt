@@ -16,12 +16,6 @@
 
 package androidx.aab
 
-import androidx.aab.AppMetadataPropsInfo.Companion.csvEntries
-import androidx.aab.DexInfo.Companion.csvEntries
-import androidx.aab.MappingFileInfo.Companion.csvEntries
-import androidx.aab.ProfInfo.Companion.csvEntries
-import androidx.aab.R8JsonFileInfo.Companion.csvEntries
-import androidx.aab.SoInfo.Companion.csvEntries
 import com.android.tools.build.libraries.metadata.AppDependencies
 import java.io.File
 import java.io.FileInputStream
@@ -48,26 +42,26 @@ data class BundleInfo(
     val appMetadataPropsInfoMetaInf: AppMetadataPropsInfo?,
     val appMetadataPropsInfoBundleMetadata: AppMetadataPropsInfo?,
 ) {
-    fun csvEntries(): List<String> =
-        listOf(path.substringAfterLast(File.separatorChar)) +
-            profileInfo.csvEntries() +
-            dexInfo.csvEntries() +
-            soInfo.csvEntries() +
-            mappingFileInfo.csvEntries() +
-            r8JsonFileInfo.csvEntries() +
-            appMetadataPropsInfoBundleMetadata.csvEntries() +
-            appMetadataPropsInfoMetaInf.csvEntries()
-
     companion object {
-        val CSV_TITLES =
-            listOf("filename") +
-                ProfInfo.CSV_TITLES +
-                DexInfo.CSV_TITLES +
-                SoInfo.CSV_TITLES +
-                MappingFileInfo.CSV_TITLES +
-                R8JsonFileInfo.CSV_TITLES +
-                AppMetadataPropsInfo.CSV_TITLES_BUNDLE +
-                AppMetadataPropsInfo.CSV_TITLES_META_INF
+        val CSV_COLUMNS =
+            listOf(
+                CsvColumn<BundleInfo>(
+                    "filename",
+                    description = "Filename when tool was run",
+                    calculate = { it.path.substringAfterLast(File.separatorChar) },
+                )
+            ) +
+                ProfInfo.CSV_COLUMNS.mapAll { it.profileInfo } +
+                DexInfo.CSV_COLUMNS.mapAll { it.dexInfo } +
+                SoInfo.CSV_COLUMNS.mapAll { it.soInfo } +
+                MappingFileInfo.CSV_COLUMNS.mapAll { it.mappingFileInfo } +
+                R8JsonFileInfo.CSV_COLUMNS.mapAll { it.r8JsonFileInfo } +
+                AppMetadataPropsInfo.CSV_COLUMNS_META_INF.mapAll {
+                    it.appMetadataPropsInfoMetaInf
+                } +
+                AppMetadataPropsInfo.CSV_COLUMNS_BUNDLE.mapAll {
+                    it.appMetadataPropsInfoBundleMetadata
+                }
 
         // TODO: Move to wrapper object
         const val DEPENDENCIES_PB_LOCATION =

@@ -811,14 +811,12 @@ public class WebViewFeatureInternal {
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.
      * This feature covers:
-     * {@link WebViewBuilder#build(Context)},
-     * {@link WebViewBuilder#build(Context, AttributeSet)},
-     * {@link WebViewBuilder#build(Context, AttributeSet, int)} and
-     * {@link WebViewBuilder#build(Context, AttributeSet, int, int)}.
+     * {@link WebViewBuilder#build(Context)}.
      */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public static final ApiFeature.NoFramework WEBVIEW_BUILDER =
-            new ApiFeature.NoFramework(WebViewFeature.WEBVIEW_BUILDER, Features.WEBVIEW_BUILDER);
+    public static final ApiFeature.NoFramework WEBVIEW_BUILDER_V1 =
+            new ApiFeature.NoFramework(WebViewFeature.WEBVIEW_BUILDER_EXPERIMENTAL_V1,
+                    Features.WEBVIEW_BUILDER);
 
     /**
      * Feature for {@link WebViewFeature#isFeatureSupported(String)}.

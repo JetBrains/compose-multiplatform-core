@@ -74,7 +74,7 @@ internal constructor(
      *   whenever the maximum perceived resolution of the main panel changes. The parameter passed
      *   to the Consumer’s accept method is the new value for [IntSize2d] value for perceived
      *   resolution.
-     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     * @throws [IllegalStateException] if [Session.config] is not set to
      *   [Config.DeviceTrackingMode.LAST_KNOWN].
      */
     public fun addPerceivedResolutionChangedListener(
@@ -118,7 +118,7 @@ internal constructor(
      *   whenever the maximum perceived resolution of the main panel changes. The parameter passed
      *   to the Consumer’s accept method is the new value for [IntSize2d] value for perceived
      *   resolution.
-     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     * @throws [IllegalStateException] if [Session.config] is not set to
      *   [Config.DeviceTrackingMode.LAST_KNOWN].
      */
     public fun addPerceivedResolutionChangedListener(listener: Consumer<IntSize2d>): Unit =

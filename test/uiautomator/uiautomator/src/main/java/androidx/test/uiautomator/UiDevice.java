@@ -67,6 +67,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -1587,6 +1588,21 @@ public class UiDevice implements Searchable {
 
     InteractionController getInteractionController() {
         return mInteractionController;
+    }
+
+    /**
+     * Performs accessibility checks on the given {@link AccessibilityNodeInfo} using the
+     * validators set in
+     * {@link Configurator#addUiAccessibilityValidator(UiAccessibilityValidator)}.
+     *
+     * @param node The {@link AccessibilityNodeInfo} to validate.
+     */
+    void performAccessibilityChecks(@NonNull AccessibilityNodeInfo node) {
+        Objects.requireNonNull(node);
+        for (UiAccessibilityValidator validator : Configurator.getInstance()
+                .getUiAccessibilityValidators()) {
+            validator.validate(node);
+        }
     }
 
     @RequiresApi(24)

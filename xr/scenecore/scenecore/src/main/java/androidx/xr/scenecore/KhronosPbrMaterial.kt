@@ -425,9 +425,9 @@ internal constructor(
             session: Session,
         ): KhronosPbrMaterial {
             val material =
-                renderingRuntime
-                    .createKhronosPbrMaterial(alphaMode.toRtKhronosPbrMaterialSpec())
-                    .awaitSuspending()
+                renderingRuntime.createKhronosPbrMaterialAsync(
+                    alphaMode.toRtKhronosPbrMaterialSpec()
+                )
             return KhronosPbrMaterial(material, alphaMode, session)
         }
 

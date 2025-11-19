@@ -50,6 +50,7 @@ import androidx.xr.compose.platform.disposableValueOf
 import androidx.xr.compose.platform.getValue
 import androidx.xr.compose.subspace.layout.CoreActivityPanelEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
+import androidx.xr.compose.subspace.layout.InteractionPolicy
 import androidx.xr.compose.subspace.layout.PlaneOrientation
 import androidx.xr.compose.subspace.layout.PlaneSemantic
 import androidx.xr.compose.subspace.layout.SpatialMoveEndEvent
@@ -64,6 +65,7 @@ import androidx.xr.compose.subspace.layout.SubspaceMeasureResult
 import androidx.xr.compose.subspace.layout.SubspaceMeasureScope
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.anchorable
+import androidx.xr.compose.subspace.layout.interactable
 import androidx.xr.compose.subspace.layout.movable
 import androidx.xr.compose.subspace.layout.resizable
 import androidx.xr.compose.subspace.node.ComposeSubspaceNode
@@ -325,6 +327,9 @@ public class ResizePolicy(
  * @param resizePolicy An optional [ResizePolicy] configuration object that resizing behavior of
  *   this [SpatialPanel]. The draggable UI controls will be shown that allow the user to resize the
  *   element in 3D space. If null, there is no resize behavior applied to the element.
+ * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect 3D input
+ *   events. Setting this will not intercept 2D input events and is intended to provide additional
+ *   spatial input information.
  */
 @Composable
 @SubspaceComposable
@@ -335,12 +340,14 @@ public fun <T : View> SpatialAndroidViewPanel(
     shape: SpatialShape = SpatialPanelDefaults.shape,
     dragPolicy: DragPolicy? = null,
     resizePolicy: ResizePolicy? = null,
+    interactionPolicy: InteractionPolicy? = null,
 ) {
     val finalModifier =
         buildSpatialPanelModifier(
             baseModifier = modifier,
             dragPolicy = dragPolicy,
             resizePolicy = resizePolicy,
+            interactionPolicy = interactionPolicy,
         )
     val dialogManager = LocalDialogManager.current
     val context = LocalContext.current
@@ -428,6 +435,9 @@ private fun <T : View> AndroidViewPanel(
  * @param resizePolicy An optional [ResizePolicy] that defines the resizing behavior of this
  *   [SpatialPanel]. If a policy is provided, resize UI controls will be shown, allowing the user to
  *   resize the element in 3D space. If null, no resize behavior is applied to the element.
+ * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect 3D input
+ *   events. Setting this will not intercept 2D input events and is intended to provide additional
+ *   spatial input information.
  * @param content The composable content to render within the SpatialPanel.
  */
 @Composable
@@ -437,6 +447,7 @@ public fun SpatialPanel(
     shape: SpatialShape = SpatialPanelDefaults.shape,
     dragPolicy: DragPolicy? = null,
     resizePolicy: ResizePolicy? = null,
+    interactionPolicy: InteractionPolicy? = null,
     content: @Composable @UiComposable () -> Unit,
 ) {
     val finalModifier =
@@ -444,6 +455,7 @@ public fun SpatialPanel(
             baseModifier = modifier,
             dragPolicy = dragPolicy,
             resizePolicy = resizePolicy,
+            interactionPolicy = interactionPolicy,
         )
     val view = rememberComposeView()
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
@@ -570,6 +582,9 @@ public fun SpatialPanel(
  * @param resizePolicy An optional [ResizePolicy] configuration object that resizing behavior of
  *   this [SpatialPanel]. The draggable UI controls will be shown that allow the user to resize the
  *   element in 3D space. If null, there is no resize behavior applied to the element.
+ * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect 3D input
+ *   events. Setting this will not intercept 2D input events and is intended to provide additional
+ *   spatial input information.
  * @sample androidx.xr.compose.samples.SpatialMainPanelSample
  */
 @Composable
@@ -579,12 +594,14 @@ public fun SpatialMainPanel(
     shape: SpatialShape = SpatialPanelDefaults.shape,
     dragPolicy: DragPolicy? = null,
     resizePolicy: ResizePolicy? = null,
+    interactionPolicy: InteractionPolicy? = null,
 ) {
     val finalModifier =
         buildSpatialPanelModifier(
             baseModifier = modifier,
             dragPolicy = dragPolicy,
             resizePolicy = resizePolicy,
+            interactionPolicy = interactionPolicy,
         )
     val mainPanel = LocalCoreMainPanelEntity.current ?: return
     val density = LocalDensity.current
@@ -616,6 +633,9 @@ public fun SpatialMainPanel(
  * @param resizePolicy An optional [ResizePolicy] configuration object that resizing behavior of
  *   this [SpatialPanel]. The draggable UI controls will be shown that allow the user to resize the
  *   element in 3D space. If null, there is no resize behavior applied to the element.
+ * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect 3D input
+ *   events. Setting this will not intercept 2D input events and is intended to provide additional
+ *   spatial input information.
  */
 @Composable
 @SubspaceComposable
@@ -625,12 +645,14 @@ public fun SpatialActivityPanel(
     shape: SpatialShape = SpatialPanelDefaults.shape,
     dragPolicy: DragPolicy? = null,
     resizePolicy: ResizePolicy? = null,
+    interactionPolicy: InteractionPolicy? = null,
 ) {
     val finalModifier =
         buildSpatialPanelModifier(
             baseModifier = modifier,
             dragPolicy = dragPolicy,
             resizePolicy = resizePolicy,
+            interactionPolicy = interactionPolicy,
         )
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val dialogManager = LocalDialogManager.current
@@ -740,12 +762,15 @@ private class SpatialViewPanelMeasurePolicy(private val view: View) : SubspaceMe
  * @param dragPolicy An optional [AnchorPolicy] or [MovePolicy] to configure either anchoring or
  *   movement behavior.
  * @param resizePolicy An optional [ResizePolicy] to configure resizing behavior.
+ * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect 3D input
+ *   events.
  * @return A [SubspaceModifier] with all applicable policies integrated.
  */
 internal fun buildSpatialPanelModifier(
     baseModifier: SubspaceModifier,
     dragPolicy: DragPolicy?,
     resizePolicy: ResizePolicy?,
+    interactionPolicy: InteractionPolicy? = null,
 ): SubspaceModifier {
 
     var finalModifier =
@@ -783,5 +808,14 @@ internal fun buildSpatialPanelModifier(
                 onSizeChange = resizePolicy.onSizeChange,
             )
     }
+
+    if (interactionPolicy != null) {
+        finalModifier =
+            finalModifier.interactable(
+                enabled = interactionPolicy.isEnabled,
+                onInputEvent = interactionPolicy.onInputEvent,
+            )
+    }
+
     return finalModifier
 }

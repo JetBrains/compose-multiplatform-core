@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertTopPositionInRootIsEqualTo
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -1228,5 +1229,139 @@ class ButtonGroupTest {
         val button1Bottom = rule.onNodeWithTag(button1Tag).getUnclippedBoundsInRoot().bottom
         val button2Bottom = rule.onNodeWithTag(button2Tag).getUnclippedBoundsInRoot().bottom
         assertThat(button1Bottom).isEqualTo(button2Bottom)
+    }
+
+    @Test
+    fun buttonGroup_individualAlignment_alignTop() {
+        rule.setContent {
+            Box {
+                ButtonGroup(overflowIndicator = {}) {
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                modifier = Modifier.height(50.dp).align(Alignment.Top),
+                                onClick = {},
+                            ) {
+                                Text("Top")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                    customItem(
+                        buttonGroupContent = {
+                            Button(modifier = Modifier.height(100.dp), onClick = {}) {
+                                Text("Tall")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                }
+            }
+        }
+
+        rule.onNodeWithText("Top").assertTopPositionInRootIsEqualTo(0.dp)
+        rule.onNodeWithText("Tall").assertTopPositionInRootIsEqualTo(0.dp)
+    }
+
+    @Test
+    fun buttonGroup_individualAlignment_alignCenter() {
+        rule.setContent {
+            Box {
+                ButtonGroup(overflowIndicator = {}) {
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                modifier = Modifier.height(50.dp).align(Alignment.CenterVertically),
+                                onClick = {},
+                            ) {
+                                Text("Center")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                    customItem(
+                        buttonGroupContent = {
+                            Button(modifier = Modifier.height(100.dp), onClick = {}) {
+                                Text("Tall")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                }
+            }
+        }
+
+        // The group height will be 100.dp. The smaller button is 50.dp.
+        // Y-position should be (100 - 50) / 2 = 25.dp
+        rule.onNodeWithText("Center").assertTopPositionInRootIsEqualTo(25.dp)
+        rule.onNodeWithText("Tall").assertTopPositionInRootIsEqualTo(0.dp)
+    }
+
+    @Test
+    fun buttonGroup_individualAlignment_alignBottom() {
+        rule.setContent {
+            Box {
+                ButtonGroup(overflowIndicator = {}) {
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                modifier = Modifier.height(50.dp).align(Alignment.Bottom),
+                                onClick = {},
+                            ) {
+                                Text("Bottom")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                    customItem(
+                        buttonGroupContent = {
+                            Button(modifier = Modifier.height(100.dp), onClick = {}) {
+                                Text("Tall")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                }
+            }
+        }
+
+        // The group height will be 100.dp. The smaller button is 50.dp.
+        // Y-position should be 100 - 50 = 50.dp
+        rule.onNodeWithText("Bottom").assertTopPositionInRootIsEqualTo(50.dp)
+        rule.onNodeWithText("Tall").assertTopPositionInRootIsEqualTo(0.dp)
+    }
+
+    @Test
+    fun buttonGroup_individualAlignment_overridesGroupAlignment() {
+        rule.setContent {
+            Box {
+                ButtonGroup(overflowIndicator = {}, verticalAlignment = Alignment.Bottom) {
+                    customItem(
+                        buttonGroupContent = {
+                            Button(
+                                modifier = Modifier.height(50.dp).align(Alignment.Top),
+                                onClick = {},
+                            ) {
+                                Text("Top")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                    customItem(
+                        buttonGroupContent = {
+                            Button(modifier = Modifier.height(100.dp), onClick = {}) {
+                                Text("Tall")
+                            }
+                        },
+                        menuContent = {},
+                    )
+                }
+            }
+        }
+
+        // The individual alignment (Top) should take precedence.
+        rule.onNodeWithText("Top").assertTopPositionInRootIsEqualTo(0.dp)
+        // The "Tall" button should be aligned to the group's alignment (Bottom).
+        rule.onNodeWithText("Tall").assertTopPositionInRootIsEqualTo(0.dp)
     }
 }

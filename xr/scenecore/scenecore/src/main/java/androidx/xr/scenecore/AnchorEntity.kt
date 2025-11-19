@@ -261,7 +261,7 @@ private constructor(rtEntity: RtAnchorEntity, entityManager: EntityManager) :
          *   will be set to AnchorEntity.State.TIMEDOUT. It may take longer than the timeout period
          *   before the anchor state is updated. If the timeout duration is zero it will search for
          *   the anchor indefinitely.
-         * @throws [IllegalStateException] if [session.config.planeTracking] is set to
+         * @throws [IllegalStateException] if [androidx.xr.runtime.Session.config] is set to
          *   [PlaneTrackingMode.DISABLED].
          */
         @JvmStatic

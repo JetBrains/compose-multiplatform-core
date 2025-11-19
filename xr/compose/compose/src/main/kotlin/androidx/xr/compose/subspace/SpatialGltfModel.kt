@@ -44,18 +44,18 @@ import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.scenecore.GltfModel
 import androidx.xr.scenecore.GltfModelEntity
 import java.nio.file.Path
+import kotlin.coroutines.resume
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 /**
  * A composable that loads and displays a 3D glTF model in the scene.
  *
  * This composable renders a `glTF` or `.glb` model that is loaded asynchronously from the provided
- * [source].
+ * `source`.
  *
  * ### Layout and Sizing
  *
@@ -71,47 +71,45 @@ import kotlinx.coroutines.supervisorScope
  * **Note:** Because the model is loaded asynchronously, its intrinsic size may be zero during
  * initial composition. The layout will be remeasured with the correct size once the model has
  * finished loading. You can use the [state] parameter to observe the loading status via
- * [SpatialGltfModelState.isSpatialModelReady].
+ * [SpatialGltfModelState.status].
  *
- * @param source A [SpatialGltfModelSource] that defines where to load the 3D model from. Use the
- *   helper functions [fromPath], [fromUri], or [fromData] to create one.
+ * @param state A [SpatialGltfModelState] object to observe and control the `SpatialGltfModel`. This
+ *   can be created using [rememberSpatialGltfModelState]. The state should be created with a
+ *   [SpatialGltfModelSource] that defines where to load the 3D model from. Use the helper functions
+ *   [fromPath], [fromUri], or [fromData] to create a [SpatialGltfModelSource].
  * @param modifier The [SubspaceModifier] to be applied to this `SpatialGltfModel`.
- * @param state A [SpatialGltfModelState] object to observe and control the `SpatialGltfModel`.
  */
 @Composable
 @SubspaceComposable
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public fun SpatialGltfModel(
-    source: SpatialGltfModelSource,
+    state: SpatialGltfModelState,
     modifier: SubspaceModifier = SubspaceModifier,
-    state: SpatialGltfModelState? = null,
 ) {
-    var loadingFailed by remember(source) { mutableStateOf(false) }
+    var loadingFailed by remember(state) { mutableStateOf(false) }
     if (loadingFailed) return // Do not proceed until the source has changed.
 
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val coreModelEntity = remember { CoreModelEntity() }
     var intrinsicSize by remember { mutableStateOf(IntVolumeSize.Zero) }
 
-    LaunchedEffect(state, source) {
-        state?.reset()
-
+    LaunchedEffect(state) {
         supervisorScope {
             launch(
                 CoroutineExceptionHandler { _, throwable ->
-                    state?.setLoadResult(Result.failure(throwable.cause ?: throwable))
+                    state.setLoadResult(Result.failure(throwable.cause ?: throwable))
                     loadingFailed = true
                 }
             ) {
-                val model = source.createModel(session)
+                val model = state.source.createModel(session)
                 val entity = GltfModelEntity.create(session, model)
                 coreModelEntity.attachEntity(entity)
-                state?.setLoadResult(Result.success(coreModelEntity))
+                state.setLoadResult(Result.success(coreModelEntity))
                 intrinsicSize = coreModelEntity.intrinsicSize
             }
         }
 
-        state?.watchAnimationState()
+        state.watchAnimationState()
     }
 
     SubspaceLayout(
@@ -119,6 +117,126 @@ public fun SpatialGltfModel(
         coreEntity = coreModelEntity,
         measurePolicy = SpatialGltfModelMeasurePolicy(intrinsicSize),
     )
+}
+
+/** Remembers a [SpatialGltfModelState] object for use with the [SpatialGltfModel] API. */
+@Composable
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public fun rememberSpatialGltfModelState(source: SpatialGltfModelSource): SpatialGltfModelState {
+    return remember(source) { SpatialGltfModelState(source) }
+}
+
+/**
+ * A state object that can be hoisted to observe and control a [SpatialGltfModel].
+ *
+ * A `SpatialGltfModelState` can be used to query loading and animation status, and to start or stop
+ * animations on the associated `SpatialGltfModel`.
+ *
+ * To create and remember a `SpatialGltfModelState`, use [rememberSpatialGltfModelState].
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public class SpatialGltfModelState(internal val source: SpatialGltfModelSource) {
+    private val coreEntityActionQueue = ActionQueue<CoreModelEntity>()
+
+    /** Indicates whether the [SpatialGltfModel] is currently animating or not. */
+    public val isAnimating: State<Boolean>
+        get() = _isAnimating
+
+    private val _isAnimating: MutableState<Boolean> = mutableStateOf(false)
+
+    /**
+     * The current [SpatialGltfModelStatus] of the glTF model.
+     *
+     * It will initially be [SpatialGltfModelStatus.Loading] until the model is loaded and ready to
+     * be displayed at which point it should be [SpatialGltfModelStatus.Loaded]. However, if the
+     * model fails to load for any reason, the `status` will be a [SpatialGltfModelStatus.Failed]
+     * with the exception that was thrown.
+     */
+    public val status: State<SpatialGltfModelStatus>
+        get() = _status
+
+    private val _status: MutableState<SpatialGltfModelStatus> =
+        mutableStateOf(SpatialGltfModelStatus.Loading())
+
+    /**
+     * Starts an animation that will play once. If an animation name is not provided then the
+     * default animation will play.
+     *
+     * @param name The name of the animation to play, as defined in the glTF file.
+     */
+    public fun startAnimation(name: String? = null) {
+        coreEntityActionQueue.executeWhenAvailable { it.startAnimation(name) }
+    }
+
+    /**
+     * Starts an animation that will loop indefinitely. If an animation name is not provided then
+     * the default animation will play.
+     *
+     * @param name The name of the animation to play, as defined in the glTF file.
+     */
+    public fun loopAnimation(name: String? = null) {
+        coreEntityActionQueue.executeWhenAvailable { it.loopAnimation(name) }
+    }
+
+    /** Stops all currently playing animations. */
+    public fun stopAllAnimations() {
+        coreEntityActionQueue.executeWhenAvailable { it.stopAllAnimations() }
+    }
+
+    internal fun setLoadResult(result: Result<CoreModelEntity>) {
+        result
+            .onSuccess { coreEntity ->
+                coreEntityActionQueue.value = coreEntity
+                _status.value = SpatialGltfModelStatus.Loaded()
+            }
+            .onFailure { exception -> _status.value = SpatialGltfModelStatus.Failed(exception) }
+    }
+
+    internal suspend fun watchAnimationState() {
+        val entity = suspendCancellableCoroutine { continuation ->
+            coreEntityActionQueue.executeWhenAvailable { continuation.resume(it) }
+        }
+
+        entity.animationStateFlow.collect { animationState ->
+            _isAnimating.value = animationState == GltfModelEntity.AnimationState.PLAYING
+        }
+    }
+}
+
+/**
+ * An object that describes and contains information relevant to the current loading state of the
+ * glTF model.
+ */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public abstract class SpatialGltfModelStatus private constructor() {
+
+    /** The glTF model is fully loaded and ready to be displayed. */
+    public class Loaded() : SpatialGltfModelStatus()
+
+    /** The glTF model is currently loading and is not ready to be displayed. */
+    public class Loading() : SpatialGltfModelStatus()
+
+    /**
+     * The glTF model has failed to load properly.
+     *
+     * The [exception] can be inspected to understand why the glTF model has failed to load.
+     *
+     * @param exception thrown when the glTF model tried to load.
+     */
+    public class Failed(public val exception: Throwable) : SpatialGltfModelStatus() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Failed) return false
+
+            if (exception != other.exception) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            return exception.hashCode()
+        }
+    }
 }
 
 /**
@@ -219,119 +337,6 @@ public interface SpatialGltfModelSource {
                 return result
             }
         }
-    }
-}
-
-/**
- * A state object that can be hoisted to observe and control a [SpatialGltfModel].
- *
- * A `SpatialGltfModelState` can be used to query loading and animation status, and to start or stop
- * animations on the associated `SpatialGltfModel`.
- *
- * To create and remember a `SpatialGltfModelState`, use [remember] in your composable:
- * ```
- * val modelState = remember { SpatialGltfModelState() }
- * SpatialGltfModel(source = ..., state = modelState)
- * ```
- */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class SpatialGltfModelState {
-    private val coreEntityActionQueue = ActionQueue<CoreModelEntity>()
-
-    /** Indicates whether the [SpatialGltfModel] is currently animating or not. */
-    public val isAnimating: State<Boolean>
-        get() = _isAnimating
-
-    private val _isAnimating: MutableState<Boolean> = mutableStateOf(false)
-
-    /** The exception encountered should the [SpatialGltfModel] fail to load. */
-    public val isSpatialModelReady: State<Boolean>
-        get() = _isSpatialModelReady
-
-    private val _isSpatialModelReady: MutableState<Boolean> = mutableStateOf(false)
-
-    /** The exception encountered if the [SpatialGltfModel] fails to load. */
-    public val loadException: State<Throwable?>
-        get() = _loadException
-
-    private val _loadException: MutableState<Throwable?> = mutableStateOf(null)
-
-    private val shouldWatchForAnimationEndFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
-
-    /**
-     * Starts an animation that will play once. If an animation name is not provided then the
-     * default animation will play.
-     *
-     * @param name The name of the animation to play, as defined in the glTF file.
-     */
-    public fun startAnimation(name: String? = null) {
-        coreEntityActionQueue.executeWhenAvailable { coreEntity ->
-            coreEntity.startAnimation(name)
-            shouldWatchForAnimationEndFlow.compareAndSet(expect = false, update = true)
-        }
-    }
-
-    /**
-     * Starts an animation that will loop indefinitely. If an animation name is not provided then
-     * the default animation will play.
-     *
-     * @param name The name of the animation to play, as defined in the glTF file.
-     */
-    public fun loopAnimation(name: String? = null) {
-        coreEntityActionQueue.executeWhenAvailable { coreEntity ->
-            coreEntity.loopAnimation(name)
-            _isAnimating.value = true
-        }
-    }
-
-    /** Stops all currently playing animations. */
-    public fun stopAllAnimations() {
-        coreEntityActionQueue.executeWhenAvailable { coreEntity ->
-            coreEntity.stopAllAnimations()
-            _isAnimating.value = false
-        }
-    }
-
-    internal fun reset() {
-        _loadException.value = null
-        _isSpatialModelReady.value = false
-        _isAnimating.value = false
-    }
-
-    internal fun setLoadResult(result: Result<CoreModelEntity>) {
-        result
-            .onSuccess { coreEntity ->
-                coreEntityActionQueue.value = coreEntity
-                _isSpatialModelReady.value = true
-            }
-            .onFailure { exception -> _loadException.value = exception }
-    }
-
-    internal suspend fun watchAnimationState() {
-        // We don't have access to animation callbacks to tell us when an animation has ended.
-        // Instead, we need to poll the animation state and update our state objects ourselves.
-        shouldWatchForAnimationEndFlow.collect { shouldWatch ->
-            val entity = coreEntityActionQueue.value ?: return@collect
-            if (shouldWatch) {
-                while (!entity.isAnimating) {
-                    // using awaitFrame() here hangs in unit tests
-                    delay(timeMillis = ANIMATION_POLLING_DELAY_MILLIS)
-                }
-                _isAnimating.value = true
-
-                while (entity.isAnimating) {
-                    // using awaitFrame() here hangs in unit tests
-                    delay(timeMillis = ANIMATION_POLLING_DELAY_MILLIS)
-                }
-                _isAnimating.value = false
-
-                shouldWatchForAnimationEndFlow.compareAndSet(expect = true, update = false)
-            }
-        }
-    }
-
-    private companion object {
-        private const val ANIMATION_POLLING_DELAY_MILLIS = 20L
     }
 }
 

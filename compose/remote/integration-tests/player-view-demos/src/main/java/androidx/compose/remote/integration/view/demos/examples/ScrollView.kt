@@ -47,7 +47,6 @@ import androidx.compose.remote.creation.compose.state.abs
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberRemoteDpValue
 import androidx.compose.remote.creation.compose.state.rememberRemoteFloat
-import androidx.compose.remote.creation.compose.state.rememberRemoteFloatValue
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.compose.state.toPx
 import androidx.compose.runtime.Composable
@@ -227,11 +226,11 @@ fun ScrollViewDemo() {
             for (i in 0 until numElements) {
                 val scale = rememberRemoteFloat {
                     0.8f.rf +
-                        (1.rf - abs(scrollState.position.rf - (height * i.toFloat())) / height) *
+                        (1.rf - abs(scrollState.positionState - (height * i.toFloat())) / height) *
                             0.2f
                 }
                 val rotation = rememberRemoteFloat {
-                    (abs(scrollState.position.rf - (height * i.toFloat())) / height) * 40f
+                    (abs(scrollState.positionState - (height * i.toFloat())) / height) * 40f
                 }
                 //                Box(horizontalAlignment = Alignment.End) {
                 CanvasCalendarMonth(
@@ -261,7 +260,7 @@ fun ScrollViewDemo() {
             ) {
                 val blue = RemoteColor(Color.Blue.toArgb())
                 RemoteText(
-                    rememberRemoteFloatValue { scrollState.position }.toRemoteString(5),
+                    scrollState.positionState.toRemoteString(5),
                     fontSize = 34.sp,
                     color = blue,
                 )

@@ -34,9 +34,6 @@ public class RemoteScrollState(
 ) {
     public constructor(position: Float, notches: Int) : this(MutableRemoteFloat(position), notches)
 
-    public val position: Float
-        get() = positionState.id
-
     public fun toComposeUi(): ScrollState {
         return ScrollState(0)
     }
@@ -56,7 +53,7 @@ public fun rememberRemoteScrollState(evenNotches: Int = 0): RemoteScrollState {
 public data class ScrollModifier(val direction: Int, val state: RemoteScrollState) :
     RemoteModifier.Element {
     override fun toRemoteComposeElement(): RecordingModifier.Element {
-        return CoreScrollModifier(direction, state.position, state.notches)
+        return CoreScrollModifier(direction, state.positionState.id, state.notches)
     }
 }
 

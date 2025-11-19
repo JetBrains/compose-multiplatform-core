@@ -897,7 +897,10 @@ private class ButtonGroupMeasurePolicy(
                                 0
                             }
                     }
-                val yPosition = verticalAlignment.align(placeables[index].height, height)
+                val parentData = contentMeasurables[index].parentData as? ButtonGroupParentData
+                val yPosition =
+                    parentData?.alignment?.align(placeables[index].height, height)
+                        ?: verticalAlignment.align(placeables[index].height, height)
                 placeables[index].place(x = mainAxisPositions[index] + growth, y = yPosition)
             }
             overflowPlaceables?.fastForEach {
@@ -949,6 +952,14 @@ interface ButtonGroupScope {
      * @param interactionSource the [InteractionSource] that button group will observe.
      */
     fun Modifier.animateWidth(interactionSource: InteractionSource): Modifier
+
+    /**
+     * Align the element vertically within the [ButtonGroup]. This alignment will have priority over
+     * the [ButtonGroup]'s `verticalAlignment` parameter.
+     *
+     * @param alignment the vertical alignment of the element
+     */
+    @Stable fun Modifier.align(alignment: Alignment.Vertical): Modifier
 
     /**
      * Adds a clickable item to the [ButtonGroup].
@@ -1009,6 +1020,7 @@ internal val ButtonGroupParentData?.weight: Float
 internal data class ButtonGroupParentData(
     var weight: Float = 0f,
     var pressedAnimatable: Animatable<Float, AnimationVector1D> = Animatable(0f),
+    var alignment: Alignment.Vertical? = null,
 )
 
 internal class ButtonGroupElement(val weight: Float = 0f) : ModifierNodeElement<ButtonGroupNode>() {
@@ -1128,7 +1140,7 @@ internal class EnlargeOnPressNode(
 
     override fun Density.modifyParentData(parentData: Any?) =
         (parentData as? ButtonGroupParentData).let { prev ->
-            ButtonGroupParentData(prev.weight, pressedAnimatable)
+            ButtonGroupParentData(prev.weight, pressedAnimatable, prev?.alignment)
         }
 }
 
@@ -1274,6 +1286,39 @@ internal class CustomButtonGroupItem(
     override fun MenuContent(state: ButtonGroupMenuState) {
         menuContent(state)
     }
+}
+
+internal class VerticalAlignElement(val alignment: Alignment.Vertical) :
+    ModifierNodeElement<VerticalAlignNode>() {
+    override fun create(): VerticalAlignNode {
+        return VerticalAlignNode(alignment)
+    }
+
+    override fun update(node: VerticalAlignNode) {
+        node.alignment = alignment
+    }
+
+    override fun InspectorInfo.inspectableProperties() {
+        name = "align"
+        value = alignment
+    }
+
+    override fun hashCode(): Int {
+        return alignment.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        val otherModifier = other as? VerticalAlignElement ?: return false
+        return alignment == otherModifier.alignment
+    }
+}
+
+internal class VerticalAlignNode(var alignment: Alignment.Vertical) :
+    ParentDataModifierNode, Modifier.Node() {
+    override fun Density.modifyParentData(parentData: Any?) =
+        ((parentData as? ButtonGroupParentData) ?: ButtonGroupParentData()).also {
+            it.alignment = alignment
+        }
 }
 
 /** State containing information about the overflow in an [ButtonGroup]. */
@@ -1430,6 +1475,10 @@ private class ButtonGroupScopeImpl(val animationSpec: AnimationSpec<Float>) :
                 animationSpec = animationSpec,
             )
         )
+
+    override fun Modifier.align(alignment: Alignment.Vertical): Modifier {
+        return this.then(VerticalAlignElement(alignment))
+    }
 }
 
 private const val MAX_WAIT_TIME_MILLIS = 1_000L

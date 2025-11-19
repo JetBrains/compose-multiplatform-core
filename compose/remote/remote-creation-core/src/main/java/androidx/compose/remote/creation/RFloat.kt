@@ -521,6 +521,29 @@ public fun clamp(min: Number, max: Number, value: RFloat): RFloat {
     )
 }
 
+/** clamp a value between min and max */
+public fun cubic(x1: Number, x2: Number, y1: Number, y2: Number, value: Number): RFloat {
+    val writer =
+        if (value is RFloat) value.writer
+        else if (x1 is RFloat) x1.writer
+        else if (x2 is RFloat) x2.writer
+        else if (y1 is RFloat) y1.writer else if (y2 is RFloat) y2.writer else null
+    if (writer == null) {
+        throw IllegalStateException("one of the inputs must be an RFloat")
+    }
+    return RFloat(
+        writer,
+        floatArrayOf(
+            *(toArray(x1)),
+            *(toArray(y1)),
+            *(toArray(x2)),
+            *(toArray(y2)),
+            *(toArray(value)),
+            Rc.FloatExpression.CUBIC,
+        ),
+    )
+}
+
 /** hours run from Midnight=0 quantized to Hours 0-23 */
 public fun RemoteComposeWriter.Hour(): RFloat {
     return RFloat(this, FLOAT_TIME_IN_HR)

@@ -48,10 +48,10 @@ private constructor(rtEntity: RtSubspaceNodeEntity, entityManager: EntityManager
 
     public companion object {
         /**
-         * Creates a [SubspaceNodeEntity] from a [SubspaceNodeHolder] with a given [FloatSize3d].
+         * Creates a [SubspaceNodeEntity] from a [Node] with a given [FloatSize3d].
          *
          * @param session The [Session].
-         * @param the [Node] to create the [SubspaceNodeEntity] from.
+         * @param node [Node] to create the [SubspaceNodeEntity] from.
          * @param size The initial [FloatSize3d] of the [SubspaceNodeEntity] in meters in unscaled
          *   local space.
          */

@@ -23,7 +23,6 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.ExrImageResource as RtExrImage
 import androidx.xr.scenecore.runtime.RenderingRuntime
-import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Path
 
 /**
@@ -73,7 +72,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
                 "Only preprocessed skybox files with the .zip extension are supported."
             }
 
-            return createExrImage(renderingRuntime.loadExrImageByAssetName(name), session)
+            return createExrImage(renderingRuntime.loadExrImageByAssetNameAsync(name), session)
         }
 
         @SuppressWarnings("RestrictTo")
@@ -84,7 +83,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             session: Session,
         ): ExrImage {
             return createExrImage(
-                renderingRuntime.loadExrImageByByteArray(byteArray, assetKey),
+                renderingRuntime.loadExrImageByByteArrayAsync(byteArray, assetKey),
                 session,
             )
         }
@@ -157,13 +156,8 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             return createFromZip(session.renderingRuntime, assetData, assetKey, session)
         }
 
-        private suspend fun createExrImage(
-            exrImageResourceFuture: ListenableFuture<RtExrImage>,
-            session: Session,
-        ): ExrImage {
-            val image = exrImageResourceFuture.awaitSuspending()
-            return ExrImage(image, session)
-        }
+        private fun createExrImage(exrImageResource: RtExrImage, session: Session): ExrImage =
+            ExrImage(exrImageResource, session)
     }
 
     override fun equals(other: Any?): Boolean {

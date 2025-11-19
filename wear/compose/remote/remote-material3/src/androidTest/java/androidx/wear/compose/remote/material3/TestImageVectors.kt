@@ -17,7 +17,7 @@
 package androidx.wear.compose.remote.material3
 
 import androidx.compose.remote.creation.RemotePath
-import androidx.wear.compose.remote.material3.icons.RemoteImageVector
+import androidx.compose.remote.creation.compose.capture.RemoteImageVector
 
 internal object TestImageVectors {
 

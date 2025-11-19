@@ -218,6 +218,13 @@ public class Rc {
 
         /** VAR2 operator */
         public static final float VAR3 = AnimatedFloatExpression.VAR3;
+
+        /** cubic Easing function */
+        public static final float CUBIC = AnimatedFloatExpression.CUBIC;
+        /** monotonic spline that loops function */
+        public static final float A_SPLINE_LOOP = AnimatedFloatExpression.A_SPLINE_LOOP;
+        /** Change the sign of value x -> -x */
+        public static final float CHANGE_SIGN = AnimatedFloatExpression.CHANGE_SIGN;
     }
 
     /** Used in IntegerExpressions */

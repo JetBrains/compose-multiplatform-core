@@ -41,6 +41,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
 import android.view.inputmethod.InputMethodManager
+import androidx.annotation.FloatRange
 import androidx.annotation.IntDef
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
@@ -164,23 +165,55 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     @PagesPerRow
     internal var pagesPerRow: Int = SINGLE_PAGE
         set(value) {
-            if (value != SINGLE_PAGE && value != TWO_PAGE) {
-                throw IllegalArgumentException("Invalid pages per row")
+            checkMainThread()
+            // If pagesPerRow anything other than two pages default it to single page.
+            val validPagesPerRow = if (value == TWO_PAGE) TWO_PAGE else SINGLE_PAGE
+            if (field == validPagesPerRow) return
+            field = validPagesPerRow
+            pageLayoutManager?.let {
+                val lastVisiblePage = fullyVisiblePages.lower
+                updateLayoutStrategy()
+                // Restore scroll position after layout change.
+                scrollToPage(lastVisiblePage)
             }
-            if (field == value) return
-            field = value
         }
 
     /**
-     * The spacing between two horizontally adjacent pages in dp.
+     * The spacing between two horizontally adjacent pages in pixels.
      *
      * Note: This value is only relevant when [pagesPerRow] is set to [TWO_PAGE].
      */
+    @FloatRange(from = 0.0)
     internal var horizontalPageSpacing: Float =
         context.getDimensions(R.dimen.horizontal_page_spacing)
+        set(value) {
+            checkMainThread()
+            val validHorizontalPageSpacing = value.coerceAtLeast(0f)
+            if (field == validHorizontalPageSpacing) return
+            field = validHorizontalPageSpacing
+            // horizontal page spacing does not affect single page layout strategy.
+            if (pagesPerRow == SINGLE_PAGE) return
+            updateLayoutStrategy()
+        }
 
-    /** The spacing between vertically adjacent pages in dp. */
+    /** The spacing between vertically adjacent pages in pixels. */
+    @FloatRange(from = 0.0)
     internal var verticalPageSpacing: Float = context.getDimensions(R.dimen.vertical_page_spacing)
+        set(value) {
+            checkMainThread()
+            val validVerticalPageSpacing = value.coerceAtLeast(0f)
+            if (field == validVerticalPageSpacing) return
+            field = validVerticalPageSpacing
+            updateLayoutStrategy()
+        }
+
+    /** Updates the page layout strategy and triggers a viewport refresh. */
+    private fun updateLayoutStrategy() {
+        pageLayoutManager?.let {
+            it.updateLayoutStrategy(pagesPerRow, horizontalPageSpacing, verticalPageSpacing)
+            onViewportChanged()
+        }
+    }
 
     /**
      * Controls the vertical alignment of a page within the [PdfView].
@@ -598,6 +631,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private var doubleTapAnimator: ValueAnimator? = null
     internal var lastFastScrollerVisibility: Boolean = false
+
+    private var prevScrollY: Int = 0
 
     @VisibleForTesting
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -1176,7 +1211,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         if (pendingZoomRecalculation) {
-            this.zoom = getDefaultZoom()
+            this.zoom = getFitToWidthZoom()
             pendingZoomRecalculation = false
         }
 
@@ -1223,7 +1258,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
          * We only want to adjust zoom if we're restoring from a saved state or PdfView's size has
          * changed, i.e. we'll have a valid [oldWidth] to use.
          *
-         * For view init scenario, zoom set from [getDefaultZoom] should be enough to fit to width.
+         * For view init scenario, [getFitToWidthZoom] should be enough to fit to width.
          */
         if (localOldWidth != null) {
             // Either we're restoring or view size has changed; adjust zoom by factor of w / oldW.
@@ -1304,6 +1339,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
         state.isFormFillingEnabled = isFormFillingEnabled
         state.isFormFillingTooltipEnabled = isFormFillingTooltipEnabled
+        state.pagesPerRow = pagesPerRow
+        state.horizontalPageSpacing = horizontalPageSpacing
+        state.verticalPageSpacing = verticalPageSpacing
         state.documentUri = pdfDocument?.uri
         state.paginationModel = pageLayoutManager?.paginationModel
         state.layoutStrategy = pageLayoutManager?.layoutStrategy
@@ -1311,6 +1349,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         state.pdfFormEditRecords = pdfDocument?.formEditRecords
         state.selectionModel = selectionStateManager?.selectionModel?.value
         state.pdfFormFillingEditTextState = getFormFillingEditTextState()
+
         return state
     }
 
@@ -1388,7 +1427,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
     }
 
-    internal fun getDefaultZoom(): Float {
+    internal fun getFitToWidthZoom(): Float {
         if (contentWidth == 0f || viewportWidth <= 0) {
             if (awaitingFirstLayout) pendingZoomRecalculation = true
             return DEFAULT_INIT_ZOOM
@@ -1413,12 +1452,19 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             stateToRestore = null
             return false
         }
+        // Restore layout properties
+        pagesPerRow = localStateToRestore.pagesPerRow
+        horizontalPageSpacing = localStateToRestore.horizontalPageSpacing
+        verticalPageSpacing = localStateToRestore.verticalPageSpacing
+
         pageLayoutManager =
             PageLayoutManager(
                     localPdfDocument,
                     backgroundScope,
                     topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                    verticalPageSpacingPx = context.getDimensions(R.dimen.vertical_page_spacing),
+                    pagesPerRow = pagesPerRow,
+                    horizontalPageSpacingPx = horizontalPageSpacing,
+                    verticalPageSpacingPx = verticalPageSpacing,
                     paginationModel = requireNotNull(localStateToRestore.paginationModel),
                     layoutStrategy = requireNotNull(localStateToRestore.layoutStrategy),
                     pdfFormFillingState = requireNotNull(localStateToRestore.pdfFormFillingState),
@@ -1735,8 +1781,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         localPdfDocument,
                         backgroundScope,
                         topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
-                        verticalPageSpacingPx =
-                            context.getDimensions(R.dimen.vertical_page_spacing),
+                        pagesPerRow = pagesPerRow,
+                        horizontalPageSpacingPx = horizontalPageSpacing,
+                        verticalPageSpacingPx = verticalPageSpacing,
                         errorFlow = errorFlow,
                         isFormFillingEnabled = isFormFillingEnabled,
                     )
@@ -1782,7 +1829,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         if (deferViewportUpdate) return
         val prevVisiblePages = visiblePages
         // If the viewport didn't actually change, short-circuit all of the downstream work
-        if (pageLayoutManager?.onViewportChanged(getVisibleAreaInContentCoords()) != true) return
+        if (
+            pageLayoutManager?.onViewportChanged(getVisibleAreaInContentCoords()) != true &&
+                prevScrollY == scrollY
+        )
+            return
+        prevScrollY = scrollY
         dispatchViewportChanged()
         // Avoid fetching Bitmaps during active gestures like zoom and scroll, except to render
         // net new pages
@@ -1944,6 +1996,18 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
     }
 
+    /** Sets the initial zoom to fit the content width and centers the view. */
+    private fun setInitialZoomScroll() {
+        // Only set default zoom if zoom is still the initial value
+        if (zoom == DEFAULT_INIT_ZOOM) {
+            this.zoom = getFitToWidthZoom()
+        }
+        // We use scrollY to center content smaller than the viewport. This triggers the initial
+        // centering if it's needed. It doesn't override any restored state because we're scrolling
+        // to the current scroll position.
+        scrollTo(scrollX, scrollY)
+    }
+
     /** React to a page's metadata being made available */
     private fun onPageMetaDataReceived(pageInfo: PdfDocument.PageInfo) {
         val pageNum = pageInfo.pageNum
@@ -1969,15 +2033,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         // the viewport
         onViewportChanged()
 
-        // We use scrollY to center content smaller than the viewport. This triggers the initial
-        // centering if it's needed. It doesn't override any restored state because we're scrolling
-        // to the current scroll position.
-        if (pageNum == 0) {
-            // Only set default zoom if zoom is still the initial value
-            if (zoom == DEFAULT_INIT_ZOOM) {
-                this.zoom = getDefaultZoom()
-            }
-            scrollTo(scrollX, scrollY)
+        // Trigger initial zoom/scroll when the dimensions for all the pages in first row depending
+        // upon the layout strategy are loaded. minOf correctly handles documents with fewer pages
+        // than the row capacity.
+        val localPdfDocument = pdfDocument ?: return
+        if (pageNum == minOf(localPdfDocument.pageCount - 1, pagesPerRow - 1)) {
+            setInitialZoomScroll()
         }
 
         when (val target = deferredScrollTarget) {

@@ -319,8 +319,9 @@ private constructor(
 
             /**
              * A Default (unset) value for ContentColorMetadata. Setting this will cause the system
-             * to render the content according to values set on the underlying [HardwareBuffer]s;
-             * these are usually set correctly by the MediaCodec.
+             * to render the content according to values set on the underlying
+             * [android.hardware.HardwareBuffer]s; these are usually set correctly by the
+             * MediaCodec.
              */
             public val DEFAULT_UNSET_CONTENT_COLOR_METADATA: ContentColorMetadata =
                 ContentColorMetadata(
@@ -749,7 +750,7 @@ private constructor(
      *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
      *       the calculation is invalid or unavailable.
      *
-     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     * @throws [IllegalStateException] if [Session.config] is not set to
      *   [Config.DeviceTrackingMode.LAST_KNOWN].
      * @see PerceivedResolutionResult
      */

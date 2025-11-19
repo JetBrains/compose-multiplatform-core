@@ -53,7 +53,7 @@ internal class PdfViewExternalInputManager(pdfView: PdfView) {
             KeyEvent.KEYCODE_0,
             KeyEvent.KEYCODE_NUMPAD_0 -> {
                 if (event.isCtrlPressed) {
-                    keyboardActionHandler.zoomToDefault()
+                    keyboardActionHandler.zoomFitToWidth()
                     return true
                 }
                 false

@@ -60,9 +60,17 @@ public class FakeRenderingRuntime(
         )
     }
 
+    override suspend fun loadGltfByAssetNameAsync(assetName: String): GltfModelResource =
+        FakeGltfModelResource(0)
+
     @Suppress("AsyncSuffixFuture")
     override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> =
         immediateFuture(FakeGltfModelResource(0))
+
+    override suspend fun loadGltfByByteArrayAsync(
+        assetData: ByteArray,
+        assetKey: String,
+    ): GltfModelResource = FakeGltfModelResource(0)
 
     @Suppress("AsyncSuffixFuture")
     override fun loadGltfByByteArray(
@@ -72,9 +80,17 @@ public class FakeRenderingRuntime(
 
     override fun destroyGltfModel(gltfModel: GltfModelResource) {}
 
+    override suspend fun loadExrImageByAssetNameAsync(assetName: String): ExrImageResource =
+        FakeExrImageResource(0)
+
     @Suppress("AsyncSuffixFuture")
     override fun loadExrImageByAssetName(assetName: String): ListenableFuture<ExrImageResource> =
         immediateFuture(FakeExrImageResource(0))
+
+    override suspend fun loadExrImageByByteArrayAsync(
+        assetData: ByteArray,
+        assetKey: String,
+    ): ExrImageResource = FakeExrImageResource(1)
 
     @Suppress("AsyncSuffixFuture")
     override fun loadExrImageByByteArray(
@@ -83,6 +99,8 @@ public class FakeRenderingRuntime(
     ): ListenableFuture<ExrImageResource> = immediateFuture(FakeExrImageResource(1))
 
     override fun destroyExrImage(exrImage: ExrImageResource) {}
+
+    override suspend fun loadTextureAsync(assetName: String): TextureResource = FakeResource()
 
     @Suppress("AsyncSuffixFuture")
     override fun loadTexture(assetName: String): ListenableFuture<TextureResource> =
@@ -214,6 +232,12 @@ public class FakeRenderingRuntime(
     public val createdKhronosPbrMaterials: MutableList<FakeKhronosPbrMaterial> =
         mutableListOf<FakeKhronosPbrMaterial>()
 
+    override suspend fun createWaterMaterialAsync(isAlphaMapVersion: Boolean): MaterialResource {
+        val newMaterial = FakeWaterMaterial(isAlphaMapVersion)
+        createdWaterMaterials.add(newMaterial)
+        return newMaterial
+    }
+
     @Suppress("AsyncSuffixFuture")
     override fun createWaterMaterial(
         isAlphaMapVersion: Boolean
@@ -278,6 +302,14 @@ public class FakeRenderingRuntime(
         normalBoundary: Float,
     ) {
         (material as? FakeWaterMaterial)?.normalBoundary = normalBoundary
+    }
+
+    override suspend fun createKhronosPbrMaterialAsync(
+        spec: KhronosPbrMaterialSpec
+    ): MaterialResource {
+        val newMaterial = FakeKhronosPbrMaterial(spec)
+        createdKhronosPbrMaterials.add(newMaterial)
+        return newMaterial
     }
 
     @Suppress("AsyncSuffixFuture")

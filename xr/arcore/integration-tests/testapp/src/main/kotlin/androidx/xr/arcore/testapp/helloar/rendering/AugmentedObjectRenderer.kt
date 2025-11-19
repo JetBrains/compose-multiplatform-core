@@ -18,10 +18,9 @@ package androidx.xr.arcore.testapp.helloar.rendering
 
 import android.annotation.SuppressLint
 import android.content.res.Resources
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import androidx.xr.arcore.AugmentedObject
 import androidx.xr.runtime.AugmentedObjectCategory
+import androidx.xr.runtime.Log as XRLog
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
@@ -31,130 +30,77 @@ import androidx.xr.scenecore.GltfModelEntity
 import androidx.xr.scenecore.scene
 import java.nio.file.Paths
 import java.util.Collections
-import kotlinx.coroutines.CompletableJob
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-internal class AugmentedObjectRenderer(val session: Session, val coroutineScope: CoroutineScope) :
-    DefaultLifecycleObserver {
+internal class AugmentedObjectRenderer {
     private val _cubeModelMap = Collections.synchronizedMap(HashMap<String, GltfModel?>())
-    private val _renderedObjects: MutableStateFlow<List<AugmentedObjectModel>> =
-        MutableStateFlow(mutableListOf<AugmentedObjectModel>())
+    private val _renderedObjects: MutableStateFlow<List<AugmentedObject>> =
+        MutableStateFlow(mutableListOf<AugmentedObject>())
+    private val _runningJobs = Collections.synchronizedMap(HashMap<AugmentedObject, Job>())
 
-    internal val renderedObjects: StateFlow<Collection<AugmentedObjectModel>> =
-        _renderedObjects.asStateFlow()
+    private lateinit var _coroutineScope: CoroutineScope
+    private lateinit var _session: Session
+    private lateinit var _supervisorJob: Job
 
-    private lateinit var updateJob: CompletableJob
+    val renderedObjects: StateFlow<Collection<AugmentedObject>> = _renderedObjects.asStateFlow()
 
-    override fun onResume(owner: LifecycleOwner) {
-        updateJob =
-            SupervisorJob(
-                coroutineScope.launch {
-                    AugmentedObject.subscribe(session).collect { updateObjectModels(it) }
-                }
-            )
-    }
+    fun startRendering(session: Session, coroutineScope: CoroutineScope) {
+        _session = session
 
-    override fun onPause(owner: LifecycleOwner) {
-        updateJob.complete()
-        _renderedObjects.value = emptyList<AugmentedObjectModel>()
-    }
+        _supervisorJob = SupervisorJob()
+        _coroutineScope = CoroutineScope(coroutineScope.coroutineContext + _supervisorJob)
 
-    private suspend fun updateObjectModels(objects: Collection<AugmentedObject>) {
-        val objectsToRender = _renderedObjects.value.toMutableList()
-        // create renderers for new objects
-        for (obj in objects) {
-            if (_renderedObjects.value.none { it.id == obj.hashCode() }) {
-                addObjectModel(obj, objectsToRender)
-            }
+        _coroutineScope.launch {
+            XRLog.debug { "listening to AugmentedObject flow" }
+            AugmentedObject.subscribe(_session).collect { updateObjectModels(it) }
         }
-
-        // stop rendering dropped objects
-        for (renderedObject in objectsToRender) {
-            if (objects.none { it.hashCode() == renderedObject.id }) {
-                removeObjectModel(renderedObject, objectsToRender)
-            }
-        }
-
-        // emit to notify collectors that the collection has been updated.
-        _renderedObjects.value = objectsToRender
     }
 
-    private suspend fun addObjectModel(
+    fun stopRendering() {
+        check(::_session.isInitialized) { "_session is not initialized" }
+        check(::_supervisorJob.isInitialized) { "_supervisorJob is not initialized" }
+
+        // cancel all rendering jobs
+        _runningJobs.clear()
+        _supervisorJob.cancel()
+
+        // emit an empty list to and flow subscribers
+        _renderedObjects.value = emptyList()
+    }
+
+    private fun addObjectModel(
         obj: AugmentedObject,
-        objectsToRender: MutableList<AugmentedObjectModel>,
+        objectsToRender: MutableList<AugmentedObject>,
     ) {
-        val category = obj.state.value.category.toString()
+        // Make the render job a child of the update job so it completes when the parent completes.
+        _coroutineScope.launch { updateAndRenderObject(obj) }
+
+        objectsToRender.add(obj)
+    }
+
+    private suspend fun loadModelForCategory(category: AugmentedObjectCategory): GltfModelEntity {
+        val key = category.toString()
+
         val asset =
-            if (SUPPORTED_OBJECT_MODELS.containsKey(category)) {
-                SUPPORTED_OBJECT_MODELS[category]
+            if (SUPPORTED_OBJECT_MODELS.containsKey(key)) {
+                SUPPORTED_OBJECT_MODELS[key]
             } else {
                 DEFAULT_OBJECT_MODEL
             }
-        _cubeModelMap.putIfAbsent(category, GltfModel.create(session, Paths.get("models", asset)))
-        val gltfCubeModelEntity: GltfModelEntity? =
-            GltfModelEntity.create(session, _cubeModelMap[category]!!)
-        // The counter starts at max to trigger the resize on the first update loop since emulators
-        // only
-        // update their static planes once.
-        var counter = PANEL_RESIZE_UPDATE_COUNT
-        // Make the render job a child of the update job so it completes when the parent completes.
-        val renderJob =
-            coroutineScope.launch(updateJob) {
-                obj.state.collect { state ->
-                    when (state.trackingState) {
-                        TrackingState.TRACKING -> {
-                            if (state.category == AugmentedObjectCategory.UNKNOWN) {
-                                gltfCubeModelEntity!!.setEnabled(false)
-                            } else {
-                                gltfCubeModelEntity!!.setEnabled(true)
-                                gltfCubeModelEntity!!.setAlpha(
-                                    TRACKED_ALPHA_VALUES[state.category.toString()]
-                                        ?: TRACKED_ALPHA_DEFAULT
-                                )
-                                counter++
 
-                                val newPose =
-                                    session.scene.perceptionSpace.transformPoseTo(
-                                        state.centerPose,
-                                        session.scene.activitySpace,
-                                    )
-                                gltfCubeModelEntity!!.setPose(newPose)
+        if (!_cubeModelMap.containsKey(key)) {
+            _cubeModelMap[key] = GltfModel.create(_session, Paths.get("models", asset))
+        }
 
-                                if (counter > PANEL_RESIZE_UPDATE_COUNT) {
-                                    gltfCubeModelEntity!!.setScale(scaledExtents(state.extents))
-                                    counter = 0
-                                }
-                            }
-                        }
-                        TrackingState.PAUSED -> gltfCubeModelEntity!!.setAlpha(PAUSED_ALPHA)
-                        TrackingState.STOPPED -> gltfCubeModelEntity!!.setEnabled(false)
-                    }
-                }
-            }
-
-        objectsToRender.add(
-            AugmentedObjectModel(
-                obj.hashCode(),
-                obj.state.value.category,
-                obj.state,
-                gltfCubeModelEntity!!,
-                renderJob,
-            )
-        )
-    }
-
-    private fun removeObjectModel(
-        objectModel: AugmentedObjectModel,
-        objsToRender: MutableList<AugmentedObjectModel>,
-    ) {
-        objectModel.renderJob?.cancel()
-        objectModel.modelEntity.dispose()
-        objsToRender.remove(objectModel)
+        val entity = GltfModelEntity.create(_session, _cubeModelMap[key]!!)
+        entity.setEnabled(false)
+        return entity
     }
 
     private fun scaledExtents(extents: FloatSize3d): Vector3 {
@@ -163,6 +109,85 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
             extents.height * MODEL_SCALING_FACTOR,
             extents.depth * MODEL_SCALING_FACTOR,
         )
+    }
+
+    private suspend fun updateAndRenderObject(augmentedObject: AugmentedObject) {
+        var currentCategory = augmentedObject.state.value.category
+        var modelEntity = loadModelForCategory(currentCategory)
+        // The counter starts at max to trigger the resize on the first update loop.
+        var counter = PANEL_RESIZE_UPDATE_COUNT
+        try {
+            XRLog.debug { "Starting render job for $augmentedObject ($currentCategory)" }
+            augmentedObject.state.collect { state ->
+                // update the model entity based on the current tracking state,
+                // pose, and extents.
+                when (state.trackingState) {
+                    TrackingState.TRACKING -> {
+                        // update our model if our category changes, but ignore changes
+                        // _into_ the unknown state.
+                        if (
+                            state.category != currentCategory &&
+                                state.category != AugmentedObjectCategory.UNKNOWN
+                        ) {
+                            modelEntity.dispose()
+                            modelEntity = loadModelForCategory(state.category)
+                            currentCategory = state.category
+                        }
+
+                        if (currentCategory == AugmentedObjectCategory.UNKNOWN) {
+                            modelEntity.setEnabled(false)
+                            // early return; wait for the next update.
+                            return@collect
+                        }
+
+                        modelEntity.setEnabled(true)
+                        modelEntity.setAlpha(
+                            TRACKED_ALPHA_VALUES[state.category.toString()] ?: TRACKED_ALPHA_DEFAULT
+                        )
+                        counter++
+
+                        val newPose =
+                            _session.scene.perceptionSpace.transformPoseTo(
+                                state.centerPose,
+                                _session.scene.activitySpace,
+                            )
+                        modelEntity.setPose(newPose)
+
+                        if (counter > PANEL_RESIZE_UPDATE_COUNT) {
+                            modelEntity.setScale(scaledExtents(state.extents))
+                            counter = 0
+                        }
+                    }
+                    TrackingState.PAUSED -> modelEntity.setAlpha(PAUSED_ALPHA)
+                    TrackingState.STOPPED -> modelEntity.setEnabled(false)
+                }
+            }
+        } finally {
+            XRLog.debug { "Stopping render job for $augmentedObject" }
+            // we've been cancelled, so dispose of the model entity.
+            modelEntity.dispose()
+        }
+    }
+
+    private fun updateObjectModels(objects: Collection<AugmentedObject>) {
+        val objectsToRender = _renderedObjects.value.toMutableList()
+        // create renderers for new objects
+        for (obj in objects) {
+            if (_renderedObjects.value.none { it.hashCode() == obj.hashCode() }) {
+                addObjectModel(obj, objectsToRender)
+            }
+        }
+
+        // stop rendering dropped objects
+        for (renderedObject in objectsToRender) {
+            if (objects.none { it.hashCode() == renderedObject.hashCode() }) {
+                objectsToRender.remove(renderedObject)
+                _runningJobs.remove(renderedObject)?.cancel()
+            }
+        }
+
+        // emit to notify collectors that the collection has been updated.
+        _renderedObjects.value = objectsToRender
     }
 
     private companion object {
@@ -178,7 +203,7 @@ internal class AugmentedObjectRenderer(val session: Session, val coroutineScope:
                 "Mouse" to "BoundingBoxMouse.glb",
                 "Laptop" to "BoundingBoxLaptop.glb",
             )
-        private val DEFAULT_OBJECT_MODEL = "BoundingBoxKeyboard.glb"
+        private const val DEFAULT_OBJECT_MODEL = "BoundingBoxKeyboard.glb"
         private const val TRACKED_ALPHA_DEFAULT = .5f
         private const val PAUSED_ALPHA = 0.25f
 

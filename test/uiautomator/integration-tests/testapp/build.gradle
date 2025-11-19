@@ -42,6 +42,7 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":kruth:kruth"))
 
     // Align dependencies in debugRuntimeClasspath and debugAndroidTestRuntimeClasspath.

@@ -242,8 +242,10 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.runtime.TextureResource? borrowReflectionTexture();
     method public androidx.xr.scenecore.runtime.GltfEntity createGltfEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.GltfModelResource loadedGltf, androidx.xr.scenecore.runtime.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.MaterialResource> createKhronosPbrMaterial(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec spec);
+    method public suspend Object? createKhronosPbrMaterialAsync(androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec spec, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.MaterialResource>);
     method public androidx.xr.scenecore.runtime.SurfaceEntity createSurfaceEntity(int stereoMode, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape, int surfaceProtection, int superSampling, androidx.xr.scenecore.runtime.Entity parentEntity);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.MaterialResource> createWaterMaterial(boolean isAlphaMapVersion);
+    method public suspend Object? createWaterMaterialAsync(boolean isAlphaMapVersion, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.MaterialResource>);
     method public void destroyExrImage(androidx.xr.scenecore.runtime.ExrImageResource exrImage);
     method public void destroyGltfModel(androidx.xr.scenecore.runtime.GltfModelResource gltfModel);
     method public void destroyKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material);
@@ -254,10 +256,15 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.runtime.TextureResource? getReflectionTextureFromIbl(androidx.xr.scenecore.runtime.ExrImageResource iblToken);
     method @InaccessibleFromKotlin public Enum<androidx.xr.scenecore.testing.FakeRenderingRuntime.State> getState();
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.ExrImageResource> loadExrImageByAssetName(String assetName);
+    method public suspend Object? loadExrImageByAssetNameAsync(String assetName, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.ExrImageResource>);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.ExrImageResource> loadExrImageByByteArray(byte[] assetData, String assetKey);
+    method public suspend Object? loadExrImageByByteArrayAsync(byte[] assetData, String assetKey, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.ExrImageResource>);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.GltfModelResource> loadGltfByAssetName(String assetName);
+    method public suspend Object? loadGltfByAssetNameAsync(String assetName, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.GltfModelResource>);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.GltfModelResource> loadGltfByByteArray(byte[] assetData, String assetKey);
+    method public suspend Object? loadGltfByByteArrayAsync(byte[] assetData, String assetKey, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.GltfModelResource>);
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.TextureResource> loadTexture(String assetName);
+    method public suspend Object? loadTextureAsync(String assetName, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.runtime.TextureResource>);
     method public void setAlphaCutoffOnKhronosPbrMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float alphaCutoff);
     method public void setAlphaMapOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, androidx.xr.scenecore.runtime.TextureResource alphaMap, androidx.xr.scenecore.runtime.TextureSampler sampler);
     method public void setAlphaStepMultiplierOnWaterMaterial(androidx.xr.scenecore.runtime.MaterialResource material, float alphaStepMultiplier);

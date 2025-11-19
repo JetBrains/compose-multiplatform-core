@@ -49,12 +49,20 @@ import kotlinx.coroutines.withContext
 internal class PageLayoutManager(
     private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
-    topPageMarginPx: Float = 0f,
+    private val topPageMarginPx: Float = 0f,
+    pagesPerRow: Int = SINGLE_PAGE,
+    horizontalPageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
     verticalPageSpacingPx: Float = DEFAULT_PAGE_SPACING_PX,
     internal val paginationModel: PaginationModel =
         PaginationModel(verticalPageSpacingPx, pdfDocument.pageCount, topPageMarginPx),
     internal var layoutStrategy: LayoutStrategy =
-        SinglePageLayoutStrategy(pdfDocument.pageCount, verticalPageSpacingPx, topPageMarginPx),
+        createLayoutStrategy(
+            pdfDocument.pageCount,
+            pagesPerRow,
+            horizontalPageSpacingPx,
+            verticalPageSpacingPx,
+            topPageMarginPx,
+        ),
     internal val pdfFormFillingState: PdfFormFillingState =
         PdfFormFillingState(pdfDocument.pageCount),
     private val errorFlow: MutableSharedFlow<Throwable>,
@@ -151,6 +159,26 @@ internal class PageLayoutManager(
         }
 
         increaseReach(DEFAULT_PREFETCH_RADIUS)
+    }
+
+    /** Updates the layout strategy with a new configuration. */
+    fun updateLayoutStrategy(
+        pagesPerRow: Int,
+        horizontalPageSpacingPx: Float,
+        verticalPageSpacingPx: Float,
+    ) {
+        layoutStrategy =
+            createLayoutStrategy(
+                pdfDocument.pageCount,
+                pagesPerRow,
+                horizontalPageSpacingPx,
+                verticalPageSpacingPx,
+                topPageMarginPx,
+            )
+
+        for (pageNum in 0..paginationModel.reach) {
+            layoutStrategy.setPagePositions(pageNum, paginationModel.getPageSize(pageNum))
+        }
     }
 
     /** Calculates the content coordinate location for a 0-indexed [pageNum] */
@@ -420,5 +448,26 @@ internal class PageLayoutManager(
     companion object {
         internal const val DEFAULT_PREFETCH_RADIUS = 4
         private const val DEFAULT_PAGE_SPACING_PX = 20f
+        private const val SINGLE_PAGE = 1
+        private const val TWO_PAGE = 2
+
+        private fun createLayoutStrategy(
+            pageCount: Int,
+            pagesPerRow: Int,
+            horizontalPageSpacingPx: Float,
+            verticalPageSpacingPx: Float,
+            topPageMarginPx: Float,
+        ): LayoutStrategy {
+            return if (pagesPerRow == TWO_PAGE) {
+                TwoPageLayoutStrategy(
+                    pageCount,
+                    verticalPageSpacingPx,
+                    horizontalPageSpacingPx,
+                    topPageMarginPx,
+                )
+            } else {
+                SinglePageLayoutStrategy(pageCount, verticalPageSpacingPx, topPageMarginPx)
+            }
+        }
     }
 }

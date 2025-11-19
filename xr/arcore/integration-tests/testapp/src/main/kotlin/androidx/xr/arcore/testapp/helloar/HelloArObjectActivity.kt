@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.xr.arcore.perceptionState
 import androidx.xr.arcore.testapp.common.BackToMainActivityButton
 import androidx.xr.arcore.testapp.common.SessionLifecycleHelper
 import androidx.xr.arcore.testapp.common.TrackablesList
@@ -59,7 +58,7 @@ class HelloArObjectActivity : ComponentActivity() {
 
     private lateinit var session: Session
     private lateinit var sessionHelper: SessionLifecycleHelper
-    private lateinit var augmentedObjectRenderer: AugmentedObjectRenderer
+    private val augmentedObjectRenderer = AugmentedObjectRenderer()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,9 +79,6 @@ class HelloArObjectActivity : ComponentActivity() {
                 onSessionAvailable = { session ->
                     this.session = session
 
-                    augmentedObjectRenderer = AugmentedObjectRenderer(session, lifecycleScope)
-                    lifecycle.addObserver(augmentedObjectRenderer)
-
                     setContent {
                         Subspace {
                             SpatialPanel(
@@ -100,10 +96,22 @@ class HelloArObjectActivity : ComponentActivity() {
         sessionHelper.tryCreateSession()
     }
 
+    override fun onPause() {
+        super.onPause()
+        augmentedObjectRenderer.stopRendering()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::session.isInitialized) augmentedObjectRenderer.startRendering(session, lifecycleScope)
+    }
+
     @Composable
     fun HelloObjects(session: Session) {
         val state by session.state.collectAsStateWithLifecycle()
-        val perceptionState = state.perceptionState
+        val objects by
+            augmentedObjectRenderer.renderedObjects.collectAsStateWithLifecycle(emptyList())
+
         var title = intent.getStringExtra("TITLE")
         if (title == null) title = "Hello AR Object"
         Scaffold(
@@ -128,12 +136,12 @@ class HelloArObjectActivity : ComponentActivity() {
         ) { innerPadding ->
             Column(modifier = Modifier.padding(innerPadding).background(color = Color.White)) {
                 Text(text = "CoreState: ${state.timeMark}")
-                if (perceptionState != null) {
-                    TrackablesList(perceptionState.trackables.toList())
-                } else {
-                    Text("PerceptionState is null.")
-                }
+                TrackablesList(objects.toList())
             }
         }
+    }
+
+    companion object {
+        const val ACTIVITY_NAME = "AugmentedObjectActivity"
     }
 }

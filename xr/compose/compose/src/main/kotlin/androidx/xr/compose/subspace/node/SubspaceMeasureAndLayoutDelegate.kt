@@ -17,11 +17,38 @@
 package androidx.xr.compose.subspace.node
 
 import androidx.compose.runtime.snapshots.SnapshotStateObserver
+import androidx.compose.ui.util.fastForEach
+import androidx.xr.compose.subspace.node.SubspaceLayoutNode.LayoutState
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 
 internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayoutNode) {
     val snapshotStateObserver: SnapshotStateObserver = SnapshotStateObserver(::run)
+
+    /**
+     * Set of nodes that have invalidated measurement and need to to call "remeasure()".
+     * Automatically sorted by depth (parents first)
+     */
+    private val nodesPendingMeasure = SubspaceDepthSortedSet(extraAssertions = true)
+
+    /**
+     * Set of nodes that have invalidated layout and need to call "replace". Automatically sorted by
+     * depth.
+     */
+    private val nodesPendingLayout = SubspaceDepthSortedSet(extraAssertions = true)
+
+    /**
+     * The current state of the measure and layout scheduler. With this we determine if we should
+     * postpone the request of remeasurement and relayout of the current node until the current
+     * measurement and layout pass has finished.
+     */
+    private var measureAndLayoutInProgress = false
+
+    /**
+     * List of measure invalidation requests that are in the queue to be processed in the next
+     * measurement and layout pass.
+     */
+    private val postponedRequests = mutableListOf<SubspaceLayoutNode>()
 
     private val onCommitAffectingMeasure: (SubspaceLayoutNode) -> Unit = { layoutNode ->
         layoutNode.requestMeasure()
@@ -32,24 +59,28 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
     }
 
     /**
-     * Whether a layout request has been made. If a layout request is made while a layout is in
-     * progress, the new request will be handled after the current layout is complete.
-     */
-    private var isLayoutRequested = false
-
-    /**
-     * Tracks whether a layout is currently in progress to avoid recursively triggering a layout.
-     */
-    private var isLayoutInProgress = false
-
-    /**
      * Requests remeasure for this [node] and nodes affected by its measure result.
      *
      * @return true if the [measureAndLayout] execution should be scheduled as a result of the
      *   request.
      */
     fun requestMeasure(node: SubspaceLayoutNode, forceRequest: Boolean = false): Boolean {
-        return true
+        if (node.layoutState == LayoutState.Measuring) {
+            return false
+        }
+
+        if (node.layoutState == LayoutState.LayingOut) {
+            postponedRequests.add(node)
+            return false
+        }
+        if (!node.isAttached || (node.measurePending && !forceRequest)) {
+            return false
+        }
+
+        node.measurePending = true
+        nodesPendingMeasure.add(node)
+        requestLayout(node, true)
+        return !measureAndLayoutInProgress
     }
 
     /**
@@ -59,22 +90,46 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
      *   request.
      */
     fun requestLayout(node: SubspaceLayoutNode, forceRequest: Boolean = false): Boolean {
-        return true
+        if (
+            node.layoutState == LayoutState.Measuring || node.layoutState == LayoutState.LayingOut
+        ) {
+            return false
+        }
+        if (!node.isAttached || (node.layoutPending && !forceRequest)) {
+            return false
+        }
+
+        node.layoutPending = true
+        nodesPendingLayout.add(node)
+        return !measureAndLayoutInProgress
     }
 
     /**
-     * Iterates through all SubspaceLayoutNodes that have requested layout and measures and lays
-     * them out.
+     * This is the main measure and layout pass, triggered by the [snapshotStateObserver]. It
+     * processes all nodes that have been marked as "dirty" for measure or layout.
      */
     fun measureAndLayout() {
-        if (isLayoutInProgress) {
-            isLayoutRequested = true
-            return
+        if (nodesPendingMeasure.isEmpty() && nodesPendingLayout.isEmpty()) {
+            return // No measurement or layout scheduled.
         }
+        measureAndLayoutInProgress = true
 
-        isLayoutRequested = false
-        isLayoutInProgress = true
+        try {
+            if (nodesPendingMeasure.firstOrNull() == root) {
+                processRootNode()
+            } else {
+                processMeasureRequests()
+                processLayoutRequests()
+            }
+        } finally {
+            measureAndLayoutInProgress = false
+            drainPostponedRequests()
+        }
+    }
 
+    private fun processRootNode() {
+        nodesPendingMeasure.clear()
+        nodesPendingLayout.clear()
         snapshotStateObserver.observeReads(root, onCommitAffectingMeasure) {
             root.measurableLayout.measure(VolumeConstraints())
         }
@@ -82,10 +137,46 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
         snapshotStateObserver.observeReads(root, onCommitAffectingLayout) {
             root.measurableLayout.placeAt(Pose.Identity)
         }
+    }
 
-        isLayoutInProgress = false
-        if (isLayoutRequested) {
-            measureAndLayout()
+    private fun processMeasureRequests() {
+        nodesPendingMeasure.removeAll { originalNode ->
+            if (originalNode.measurePending && originalNode.isAttached) {
+                var node = originalNode
+
+                var sizeChanged = node.remeasureWithSnapshot()
+
+                while (sizeChanged && node?.parent != null) {
+                    node = node.parent
+                    sizeChanged = node?.remeasureWithSnapshot() ?: false
+                }
+
+                if (originalNode != node) {
+                    requestLayout(node, true)
+                }
+            }
+            true
         }
+    }
+
+    private fun processLayoutRequests() {
+        nodesPendingLayout.removeAll { node ->
+            if (node.layoutPending && node.isAttached) {
+                snapshotStateObserver.observeReads(node, onCommitAffectingLayout) { node.replace() }
+            }
+            true
+        }
+    }
+
+    private fun drainPostponedRequests() {
+        if (postponedRequests.isEmpty()) return
+        postponedRequests.fastForEach { node -> node.requestMeasure() }
+        postponedRequests.clear()
+    }
+
+    private fun SubspaceLayoutNode.remeasureWithSnapshot(): Boolean {
+        var result = false
+        snapshotStateObserver.observeReads(this, onCommitAffectingMeasure) { result = remeasure() }
+        return result
     }
 }

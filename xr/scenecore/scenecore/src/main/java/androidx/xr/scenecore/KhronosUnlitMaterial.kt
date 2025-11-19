@@ -131,9 +131,9 @@ internal constructor(
             session: Session,
         ): KhronosUnlitMaterial {
             val material =
-                renderingRuntime
-                    .createKhronosPbrMaterial(alphaMode.toRtKhronosUnlitMaterialSpec())
-                    .awaitSuspending()
+                renderingRuntime.createKhronosPbrMaterialAsync(
+                    alphaMode.toRtKhronosUnlitMaterialSpec()
+                )
             return KhronosUnlitMaterial(material, alphaMode, session)
         }
 

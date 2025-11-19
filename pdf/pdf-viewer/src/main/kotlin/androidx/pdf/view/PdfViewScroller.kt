@@ -77,7 +77,7 @@ internal class PdfViewScroller(private val pdfView: PdfView) {
                 ZoomUtils.calculateZoomToFit(
                     viewportWidth.toFloat(),
                     viewportHeight.toFloat(),
-                    pageRect.width(),
+                    contentWidth,
                     1f,
                 )
             val x =

@@ -49,6 +49,7 @@ import androidx.xr.compose.subspace.SpatialExternalSurface
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.StereoMode
 import androidx.xr.compose.subspace.SurfaceProtection
+import androidx.xr.compose.subspace.layout.InteractionPolicy
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.fillMaxSize
@@ -101,6 +102,16 @@ class VideoPlayerFragment : Fragment() {
                     ),
             dragPolicy = MovePolicy(),
             resizePolicy = ResizePolicy(),
+            interactionPolicy =
+                InteractionPolicy.clickable {
+                    exoPlayer?.let {
+                        if (it.isPlaying) {
+                            it.pause()
+                        } else {
+                            it.play()
+                        }
+                    }
+                },
             stereoMode = stereoMode,
             surfaceProtection =
                 if (useDrmState.value) SurfaceProtection.Protected else SurfaceProtection.None,

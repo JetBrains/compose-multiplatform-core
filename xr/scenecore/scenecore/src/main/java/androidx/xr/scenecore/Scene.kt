@@ -44,7 +44,7 @@ import java.util.function.Consumer
  * real world.
  */
 @Suppress("NotCloseable")
-public class Scene : SessionConnector {
+public class Scene internal constructor() : SessionConnector {
 
     internal val entityManager = EntityManager()
 
@@ -75,7 +75,7 @@ public class Scene : SessionConnector {
      * The [ActivitySpace] is a special entity that represents the space in which the application is
      * launched. It is the default parent of all entities in the scene.
      *
-     * The ActivitySpace is created automatically when the [Session] is created.
+     * The ActivitySpace is created automatically when the [androidx.xr.runtime.Session] is created.
      */
     public lateinit var activitySpace: ActivitySpace
         private set
@@ -169,7 +169,7 @@ public class Scene : SessionConnector {
         }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override fun initialize(runtimes: List<JxrRuntime>): Unit {
+    override fun initialize(runtimes: List<JxrRuntime>) {
         this.sceneRuntime = runtimes.filterIsInstance<SceneRuntime>().first()
         spatialEnvironment = SpatialEnvironment(sceneRuntime)
         perceptionSpace = PerceptionSpace.create(sceneRuntime)
@@ -197,7 +197,7 @@ public class Scene : SessionConnector {
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-    override fun close(): Unit {
+    override fun close() {
         entityManager.clear()
         sceneRuntime.removeSpatialCapabilitiesChangedListener(rtSpatialCapabilitiesListener)
         spatialCapabilitiesListeners.keys.forEach { removeSpatialCapabilitiesChangedListener(it) }
@@ -220,8 +220,8 @@ public class Scene : SessionConnector {
         }
 
     /**
-     * Adds the given [Consumer] as a listener to be invoked when this [Session]'s spatial
-     * capabilities change.
+     * Adds the given [Consumer] as a listener to be invoked when this
+     * [androidx.xr.runtime.Session]'s spatial capabilities change.
      *
      * @param listener The Consumer to be invoked asynchronously, on the main thread. The set
      *   includes every currently-available [SpatialCapability].
@@ -231,8 +231,8 @@ public class Scene : SessionConnector {
     ): Unit = addSpatialCapabilitiesChangedListener(HandlerExecutor.mainThreadExecutor, listener)
 
     /**
-     * Adds the given [Consumer] as a listener to be invoked when this [Session]'s spatial
-     * capabilities change.
+     * Adds the given [Consumer] as a listener to be invoked when this
+     * [androidx.xr.runtime.Session]'s spatial capabilities change.
      *
      * @param callbackExecutor The [Executor] to run the listener on.
      * @param listener The Consumer to be invoked asynchronously on the given callbackExecutor. The
@@ -241,13 +241,13 @@ public class Scene : SessionConnector {
     public fun addSpatialCapabilitiesChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<Set<SpatialCapability>>,
-    ): Unit {
+    ) {
         spatialCapabilitiesListeners[listener] = callbackExecutor
     }
 
     /**
-     * Releases the given [Consumer] from receiving updates when the [Session]'s [SpatialCapability]
-     * change.
+     * Releases the given [Consumer] from receiving updates when the [androidx.xr.runtime.Session]'s
+     * [SpatialCapability] change.
      *
      * The listeners are automatically released at the end of the Scene's lifecycle even if this
      * method is not explicitly called.
@@ -256,7 +256,7 @@ public class Scene : SessionConnector {
      */
     public fun removeSpatialCapabilitiesChangedListener(
         listener: Consumer<Set<SpatialCapability>>
-    ): Unit {
+    ) {
         spatialCapabilitiesListeners.remove(listener)
     }
 
@@ -298,7 +298,7 @@ public class Scene : SessionConnector {
     public fun setSpatialVisibilityChangedListener(
         callbackExecutor: Executor,
         listener: Consumer<SpatialVisibility>,
-    ): Unit {
+    ) {
         // Wrap client's listener in a callback that converts the sceneRuntime's
         // SpatialVisibility.
         val rtListener =

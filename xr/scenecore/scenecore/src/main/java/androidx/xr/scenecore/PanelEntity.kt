@@ -105,7 +105,7 @@ internal constructor(
      *     - [PerceivedResolutionResult.InvalidCameraView] if the camera information required for
      *       the calculation is invalid or unavailable.
      *
-     * @throws [IllegalStateException] if [Session.config.deviceTracking] is not set to
+     * @throws [IllegalStateException] if [Session.config] is not set to
      *   [Config.DeviceTrackingMode.LAST_KNOWN].
      * @see PerceivedResolutionResult
      */

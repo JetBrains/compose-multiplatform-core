@@ -18,26 +18,21 @@
 
 package androidx.wear.compose.remote.material3
 
-import android.annotation.SuppressLint
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.compose.capture.scale
-import androidx.compose.remote.creation.compose.layout.ROffset
+import androidx.compose.remote.creation.compose.capture.RemoteImageVector
+import androidx.compose.remote.creation.compose.capture.painter.painterRemoteVector
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
-import androidx.compose.remote.creation.compose.layout.RemoteCanvasDrawScope
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.semantics
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteColor
-import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.remote.material3.icons.RemoteImageVector
 
 /**
  * Composable function that displays an icon using an [RemoteImageVector].
@@ -59,34 +54,8 @@ public fun RemoteIcon(
     tint: RemoteColor = RemoteColor(DefaultTint),
 ) {
     RemoteBox(modifier.semantics { this.contentDescription = contentDescription }) {
-        RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) { drawImageVector(imageVector, tint) }
-    }
-}
-
-@SuppressLint("RestrictedApiAndroidX") // RemoteColor
-private fun RemoteCanvasDrawScope.drawImageVector(
-    remoteImageVector: RemoteImageVector,
-    tint: RemoteColor,
-) {
-    val viewportSize = remote.component.width
-
-    val intrinsicSize = remoteImageVector.intrinsicWidth
-    val scale = viewportSize / intrinsicSize
-
-    // Handles autoMirror
-    val isRtl = drawContext.layoutDirection == LayoutDirection.Rtl
-    val shouldAutoMirror = remoteImageVector.autoMirror && isRtl
-
-    val scaleX = if (shouldAutoMirror) -scale else scale
-    val scaleY = scale
-
-    val pivotX = if (shouldAutoMirror) viewportSize / (-scale + 1f) else 0f
-    val pivot = ROffset(pivotX, 0f)
-
-    val paint = RemotePaint(remoteImageVector.paint()).apply { remoteColor = tint }
-
-    scale(scaleX = scaleX.internalAsFloat(), scaleY = scaleY.internalAsFloat(), pivot = pivot) {
-        canvas.drawRPath(path = remoteImageVector.path, paint = paint)
+        val painter = painterRemoteVector(imageVector, tint)
+        RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) { with(painter) { onDraw() } }
     }
 }
 

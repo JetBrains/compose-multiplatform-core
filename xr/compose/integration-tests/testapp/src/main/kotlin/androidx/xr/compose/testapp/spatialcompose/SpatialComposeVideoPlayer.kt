@@ -88,6 +88,7 @@ import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.StereoMode
 import androidx.xr.compose.subspace.SurfaceProtection
+import androidx.xr.compose.subspace.layout.InteractionPolicy
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialFeatheringEffect
 import androidx.xr.compose.subspace.layout.SpatialSmoothFeatheringEffect
@@ -107,6 +108,7 @@ import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
+import androidx.xr.scenecore.InputEvent.Action
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.SpatialMediaPlayer
 import androidx.xr.scenecore.SurfaceEntity
@@ -212,6 +214,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
         var featheringValue by remember { mutableFloatStateOf(0f) }
         var surfaceType by remember { mutableStateOf(SpatialExternalSurfaceType.QUAD) }
         var useMainPanelOverlay by remember { mutableStateOf(false) }
+        var isVideoHovered by remember { mutableStateOf(false) }
 
         if (useDrmState.value) {
             val file = File(drmVideoUri)
@@ -253,6 +256,24 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     surfaceProtection =
                         if (useDrmState.value) SurfaceProtection.Protected
                         else SurfaceProtection.None,
+                    interactionPolicy =
+                        InteractionPolicy(
+                            onInputEvent = { event ->
+                                isVideoHovered =
+                                    !(event.action == Action.HOVER_EXIT ||
+                                        event.action == Action.CANCEL)
+
+                                if (event.action == Action.UP && event.hitPosition != null) {
+                                    if (exoPlayer?.isPlaying == true) {
+                                        exoPlayer?.pause()
+                                    } else {
+                                        exoPlayer?.play()
+                                    }
+                                }
+
+                                Log.i(TAG, "onInputEvent: $event")
+                            }
+                        ),
                 ) {
                     onSurfaceCreated {
                         val player = ExoPlayer.Builder(this@SpatialComposeVideoPlayer).build()
@@ -269,7 +290,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                         exoPlayer = null
                     }
                 }
-                SphereVideoControlPanel()
+                SphereVideoControlPanel(isVideoHovered)
             }
         } else if (videoPlaying && surfaceType == SpatialExternalSurfaceType.SPHERE) {
             SpatialBox {
@@ -279,6 +300,22 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     surfaceProtection =
                         if (useDrmState.value) SurfaceProtection.Protected
                         else SurfaceProtection.None,
+                    interactionPolicy =
+                        InteractionPolicy(
+                            onInputEvent = { event ->
+                                isVideoHovered =
+                                    !(event.action == Action.HOVER_EXIT ||
+                                        event.action == Action.CANCEL)
+
+                                if (event.action == Action.UP && event.hitPosition != null) {
+                                    if (exoPlayer?.isPlaying == true) {
+                                        exoPlayer?.pause()
+                                    } else {
+                                        exoPlayer?.play()
+                                    }
+                                }
+                            }
+                        ),
                 ) {
                     onSurfaceCreated {
                         val player = ExoPlayer.Builder(this@SpatialComposeVideoPlayer).build()
@@ -295,7 +332,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                         exoPlayer = null
                     }
                 }
-                SphereVideoControlPanel()
+                SphereVideoControlPanel(isVideoHovered)
             }
         } else {
 
@@ -704,10 +741,10 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
     }
 
     @Composable
-    fun SphereVideoControlPanel() {
+    fun SphereVideoControlPanel(isVideoHovered: Boolean) {
         SpatialBox(modifier = SubspaceModifier.fillMaxSize()) {
             val interactionSource = remember { MutableInteractionSource() }
-            val isHovered by interactionSource.collectIsHoveredAsState()
+            val isPanelHovered by interactionSource.collectIsHoveredAsState()
 
             // Having an alpha helps reduce depth perception issues with stereo video.
             SpatialPanel(
@@ -715,7 +752,7 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     SubspaceModifier.offset(y = (-300).dp, z = (-600).dp)
                         .width(600.dp)
                         .height(120.dp)
-                        .alpha(if (isHovered) 0.9f else 0.3f)
+                        .alpha(if (isVideoHovered || isPanelHovered) 0.9f else 0.3f)
             ) {
                 Row(
                     modifier =
@@ -727,10 +764,10 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                 ) {
                     Button(
                         onClick = {
-                            if (exoPlayer!!.isPlaying) {
-                                exoPlayer!!.pause()
+                            if (exoPlayer?.isPlaying == true) {
+                                exoPlayer?.pause()
                             } else {
-                                exoPlayer!!.play()
+                                exoPlayer?.play()
                             }
                         }
                     ) {
@@ -826,6 +863,10 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                     ),
             dragPolicy = MovePolicy(),
             resizePolicy = ResizePolicy(),
+            interactionPolicy =
+                InteractionPolicy.clickable {
+                    if (isPaused) exoPlayer?.play() else exoPlayer?.pause()
+                },
             stereoMode = stereoMode,
             featheringEffect = getFeatheringEffect(animatedFeatheringValue, featheringType),
             surfaceProtection =
@@ -845,6 +886,11 @@ class SpatialComposeVideoPlayer : ComponentActivity() {
                             if (height > 0 && width > 0) {
                                 videoHeight = videoWidth * height / width
                             }
+                        }
+
+                        override fun onIsPlayingChanged(isPlaying: Boolean) {
+                            super.onIsPlayingChanged(isPlaying)
+                            isPaused = !isPlaying
                         }
                     }
                 )

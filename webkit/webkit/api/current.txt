@@ -208,6 +208,15 @@ package androidx.webkit {
     method public abstract void setProxyOverride(androidx.webkit.ProxyConfig, java.util.concurrent.Executor, Runnable);
   }
 
+  @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public final class RestrictionAllowlist {
+  }
+
+  @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public static final class RestrictionAllowlist.Builder {
+    ctor public RestrictionAllowlist.Builder(java.util.Set<java.lang.String>);
+    method public androidx.webkit.RestrictionAllowlist.Builder addJavaScriptInterface(Object, String);
+    method public androidx.webkit.RestrictionAllowlist build();
+  }
+
   public abstract class SafeBrowsingResponseCompat {
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.SAFE_BROWSING_RESPONSE_BACK_TO_SAFETY, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public abstract void backToSafety(boolean);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.SAFE_BROWSING_RESPONSE_PROCEED, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public abstract void proceed(boolean);
@@ -522,6 +531,21 @@ package androidx.webkit {
   public static final class WebViewAssetLoader.ResourcesPathHandler implements androidx.webkit.WebViewAssetLoader.PathHandler {
     ctor public WebViewAssetLoader.ResourcesPathHandler(android.content.Context);
     method @WorkerThread public android.webkit.WebResourceResponse? handle(String);
+  }
+
+  @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public final class WebViewBuilder {
+    ctor public WebViewBuilder(int);
+    method public androidx.webkit.WebViewBuilder addAllowlist(androidx.webkit.RestrictionAllowlist);
+    method @RequiresFeature(name="WEBVIEW_BUILDER_EXPERIMENTAL_V1", enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") @UiThread public android.webkit.WebView build(android.content.Context);
+    method public androidx.webkit.WebViewBuilder restrictJavaScriptInterfaces();
+    method @RequiresFeature(name=androidx.webkit.WebViewFeature.MULTI_PROFILE, enforcement="androidx.webkit.WebViewFeature#isFeatureSupported") public androidx.webkit.WebViewBuilder setProfile(String);
+    field public static final int PRESET_LEGACY = 0; // 0x0
+  }
+
+  @SuppressCompatibility @RequiresOptIn(level=androidx.annotation.RequiresOptIn.Level.ERROR) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.FIELD}) public static @interface WebViewBuilder.Experimental {
+  }
+
+  @SuppressCompatibility @androidx.webkit.WebViewBuilder.Experimental public class WebViewBuilderException extends java.lang.RuntimeException {
   }
 
   public class WebViewClientCompat extends android.webkit.WebViewClient {

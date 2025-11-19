@@ -35,6 +35,11 @@ dependencies {
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-unit"))
+    implementation(project(":camera:camera-camera2"))
+    implementation(project(":camera:camera-core"))
+    implementation(project(":camera:camera-view"))
+    implementation(project(":camera:camera-lifecycle"))
+
 }
 
 android {

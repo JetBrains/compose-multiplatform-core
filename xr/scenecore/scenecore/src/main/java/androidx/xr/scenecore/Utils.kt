@@ -112,8 +112,7 @@ internal fun RtPixelDimensions.toIntSize2d(): IntSize2d {
 }
 
 /**
- * Extension function that converts [Int] to
- * [androidx.xr.scenecore.runtime.SceneRuntime.planeOrientation].
+ * Extension function that converts [PlaneOrientation] to [androidx.xr.scenecore.runtime.PlaneType].
  */
 internal fun Int.toRtPlaneType(): RtPlaneType {
     return when (this) {
@@ -125,8 +124,8 @@ internal fun Int.toRtPlaneType(): RtPlaneType {
 }
 
 /**
- * Extension function that converts [Int] to
- * [androidx.xr.scenecore.runtime.SceneRuntime.PlaneSemantic].
+ * Extension function that converts [PlaneSemanticType] to
+ * [androidx.xr.scenecore.runtime.PlaneSemantic].
  */
 internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
     return when (this) {
@@ -140,8 +139,7 @@ internal fun Int.toRtPlaneSemantic(): RtPlaneSemantic {
 }
 
 /**
- * Extension function that converts [Space] value to
- * [androidx.xr.scenecore.runtime.SceneRuntime.Space] value.
+ * Extension function that converts [Space] value to [androidx.xr.scenecore.runtime.Space] value.
  */
 internal fun Space.toRtSpace(): Int {
     return when (this) {
@@ -251,7 +249,7 @@ internal fun RtResizeEvent.toResizeEvent(entity: Entity): ResizeEvent {
 
 /**
  * Extension function that converts a [Set] of [AnchorPlacement] to a [Set] of
- * [androidx.xr.scenecore.runtime.SceneRuntime.AnchorPlacement].
+ * [androidx.xr.scenecore.runtime.AnchorPlacement].
  */
 internal fun Set<AnchorPlacement>.toRtAnchorPlacement(
     sceneRuntime: SceneRuntime

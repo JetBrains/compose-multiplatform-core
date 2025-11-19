@@ -28,7 +28,6 @@ import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
-import com.google.common.util.concurrent.Futures
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.test.assertFailsWith
@@ -37,9 +36,11 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 
 @RunWith(AndroidJUnit4::class)
@@ -69,10 +70,9 @@ class GltfModelTest {
     @Test
     fun createGltfByAssetNameTest() = runTest {
         val mockRtGltfModel = mock<RtGltfModel>()
-        mockRenderingRuntime.stub {
-            on { loadGltfByAssetName("FakeAsset.glb") }
-                .thenReturn(Futures.immediateFuture(mockRtGltfModel))
-        }
+        doReturn(mockRtGltfModel)
+            .whenever(mockRenderingRuntime)
+            .loadGltfByAssetNameAsync("FakeAsset.glb")
         val session =
             Session(
                 activity,
@@ -84,18 +84,17 @@ class GltfModelTest {
                     ),
             )
 
-        val gltfModel: GltfModel = GltfModel.create(session, Paths.get("FakeAsset.glb"))
+        GltfModel.create(session, Paths.get("FakeAsset.glb"))
 
-        verify(mockRenderingRuntime).loadGltfByAssetName("FakeAsset.glb")
+        verify(mockRenderingRuntime).loadGltfByAssetNameAsync("FakeAsset.glb")
     }
 
     @Test
     fun createGltfByByteArrayTest() = runTest {
         val mockRtGltfModel = mock<RtGltfModel>()
-        mockRenderingRuntime.stub {
-            on { loadGltfByByteArray(byteArrayOf(1, 2, 3), "FakeAsset.zip") }
-                .thenReturn(Futures.immediateFuture(mockRtGltfModel))
-        }
+        doReturn(mockRtGltfModel)
+            .whenever(mockRenderingRuntime)
+            .loadGltfByByteArrayAsync(byteArrayOf(1, 2, 3), "FakeAsset.zip")
         val session =
             Session(
                 activity,
@@ -106,10 +105,9 @@ class GltfModelTest {
                         mockRenderingRuntime,
                     ),
             )
+        GltfModel.create(session, byteArrayOf(1, 2, 3), "FakeAsset.zip")
 
-        val gltfModel: GltfModel = GltfModel.create(session, byteArrayOf(1, 2, 3), "FakeAsset.zip")
-
-        verify(mockRenderingRuntime).loadGltfByByteArray(byteArrayOf(1, 2, 3), "FakeAsset.zip")
+        verify(mockRenderingRuntime).loadGltfByByteArrayAsync(byteArrayOf(1, 2, 3), "FakeAsset.zip")
     }
 
     @SdkSuppress(minSdkVersion = 26)

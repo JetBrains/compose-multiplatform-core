@@ -37,8 +37,6 @@ import androidx.compose.remote.creation.compose.state.RemoteState
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.isLiteral
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.unit.Dp
 
 // TODO fix up types after RemoteType refactor
@@ -139,7 +137,7 @@ public fun ValueChange(
 }
 
 public fun ValueChange(remoteState: MutableRemoteInt, updatedValue: Int): ValueChangeAction<Int> =
-    ValueChangeAction<Int>(remoteState, MutableRemoteInt(mutableIntStateOf(updatedValue)))
+    ValueChangeAction<Int>(remoteState, RemoteInt(v = updatedValue))
 
 public fun ValueChange(
     remoteState: MutableRemoteInt,
@@ -149,5 +147,4 @@ public fun ValueChange(
 public fun ValueChange(
     remoteState: MutableRemoteString,
     updatedValue: String,
-): ValueChangeAction<String> =
-    ValueChangeAction<String>(remoteState, MutableRemoteString(mutableStateOf(updatedValue)))
+): ValueChangeAction<String> = ValueChangeAction<String>(remoteState, RemoteString(updatedValue))

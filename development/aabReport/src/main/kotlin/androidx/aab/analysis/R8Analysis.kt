@@ -167,13 +167,6 @@ data class R8Analysis(
     val dexSha256ChecksumsDexOnly: Set<String>,
     val minificationStats: MinificationStats?,
 ) : ScoreReporter {
-    fun R8JsonFileInfo.getScore(): Int {
-        return (50 *
-                ((if (this.shrinkingEnabled) 0.3 else 0.0) +
-                    (if (this.optimizationEnabled) 0.5 else 0.0) +
-                    (if (this.obfuscationEnabled) 0.2 else 0.0)))
-            .roundToInt()
-    }
 
     override fun getSubScore(): SubScore {
         val issues =
@@ -208,27 +201,57 @@ data class R8Analysis(
         }
     }
 
-    fun csvEntries() =
-        listOf(
-            (r8JsonFileInfo?.getScore()).toString(),
-            compilerMarker.toString(),
-            compilerJson.toString(),
-            getDexMatchRatio().toString(),
-            (minificationStats?.minifiedClassesLowerAccuracy).toString(),
-            (minificationStats?.minifiedClassesLengthAccuracy).toString(),
-            (minificationStats?.minifiedRate).toString(),
-        )
-
     companion object {
-        val CSV_TITLES =
+
+        fun R8JsonFileInfo.getScore(): Int {
+            return (50 *
+                    ((if (this.shrinkingEnabled) 0.3 else 0.0) +
+                        (if (this.optimizationEnabled) 0.5 else 0.0) +
+                        (if (this.obfuscationEnabled) 0.2 else 0.0)))
+                .roundToInt()
+        }
+
+        val CSV_COLUMNS =
             listOf(
-                "r8_score",
-                "r8_compilerFromMarker",
-                "r8_compilerFromJson",
-                "r8_ratio_json_shas_match_dex",
-                "r8_minifiedClassesLowerAccuracy",
-                "r8_minifiedClassesLengthAccuracy",
-                "r8_minifiedRate",
+                CsvColumn<R8Analysis>(
+                    columnLabel = "r8_score",
+                    description = "experimental - Score for R8 adoption, out of 50",
+                    requiresVerbose = true,
+                    calculate = { (it.r8JsonFileInfo?.getScore()).toString() },
+                ),
+                CsvColumn(
+                    columnLabel = "r8_compilerFromMarker",
+                    description =
+                        "Which compiler (d8 vs r8) is being used, based on dex marker string",
+                    calculate = { it.compilerMarker.toString() },
+                ),
+                CsvColumn(
+                    columnLabel = "r8_compilerFromJson",
+                    description =
+                        "Which compiler (d8 vs r8) is being used, based on r8.json from bundle metadata. Requires AGP 8.8+",
+                    calculate = { it.compilerJson.toString() },
+                ),
+                CsvColumn(
+                    columnLabel = "r8_ratio_json_shas_match_dex",
+                    description =
+                        "What portion of dex shas from r8.json match those of the dex files - indicator of dex post-processing",
+                    calculate = { it.getDexMatchRatio().toString() },
+                ),
+                CsvColumn(
+                    columnLabel = "r8_minifiedClassesLowerAccuracy",
+                    description = "Accuracy of lowercase heuristic, based upon mapping file",
+                    calculate = { (it.minificationStats?.minifiedClassesLowerAccuracy).toString() },
+                ),
+                CsvColumn(
+                    columnLabel = "r8_minifiedClassesLengthAccuracy",
+                    description = "Accuracy of length heuristic, based upon mapping file",
+                    calculate = { (it.minificationStats?.minifiedClassesLowerAccuracy).toString() },
+                ),
+                CsvColumn(
+                    columnLabel = "r8_minifiedRate",
+                    description = "Obfuscation ratio based upon mapping file",
+                    calculate = { (it.minificationStats?.minifiedRate).toString() },
+                ),
             )
 
         fun ApkInfo.getR8Analysis(): R8Analysis {

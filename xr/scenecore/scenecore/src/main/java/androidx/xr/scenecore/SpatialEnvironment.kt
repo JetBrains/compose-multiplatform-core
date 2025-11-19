@@ -31,7 +31,8 @@ import java.util.function.Consumer
 
 /**
  * The SpatialEnvironment is used to manage the XR background and passthrough. There is a single
- * instance of this class managed by each [Session] and it is accessible through Session.scene.
+ * instance of this class managed by each [androidx.xr.runtime.Session] and it is accessible through
+ * Session.scene.
  *
  * The SpatialEnvironment is a composite of a stand-alone skybox, and of a
  * [glTF](https://www.khronos.org/Gltf)-specified geometry. A single skybox and a single glTF can be
@@ -144,7 +145,7 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      * applied and visible to the user. The actual passthrough opacity value is controlled by the
      * system in response to a combination of this preference and user actions outside the
      * application. Generally, this preference is honored when the application has the
-     * [SpatialCapability.SPATIAL_CAPABILITY_PASSTHROUGH_CONTROL] capability.
+     * [SpatialCapability.PASSTHROUGH_CONTROL] capability.
      *
      * The value should be between 0.0f (passthrough disabled) and 1.0f (passthrough fully obscures
      * the spatial environment). Values within 0.01f of 0.0 or 1.0 are snapped to those values.
@@ -238,9 +239,9 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      *
      * Setting this property only sets the preference and does not cause an immediate change unless
      * [isPreferredSpatialEnvironmentActive] is already true. Once the device enters a state where
-     * the XR background can be changed and the
-     * [SpatialCapability.SPATIAL_CAPABILITY_APP_ENVIRONMENT] capability is available, the preferred
-     * spatial environment for the application will be automatically displayed.
+     * the XR background can be changed and the [SpatialCapability.APP_ENVIRONMENT] capability is
+     * available, the preferred spatial environment for the application will be automatically
+     * displayed.
      *
      * Setting the preference to null will disable the preferred spatial environment for the
      * application, meaning the default system environment will be displayed instead.
@@ -263,8 +264,8 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      *
      * The environment will try to transition to the application environment when a non-null
      * preference is set through [preferredSpatialEnvironment] and the application has the
-     * [SpatialCapability.SPATIAL_CAPABILITY_APP_ENVIRONMENT] capability. The environment
-     * preferences will otherwise not be active.
+     * [SpatialCapability.APP_ENVIRONMENT] capability. The environment preferences will otherwise
+     * not be active.
      *
      * The listener consumes a boolean value that is true if the environment preference is active
      * when the listener is notified.
@@ -284,8 +285,8 @@ public class SpatialEnvironment internal constructor(private val sceneRuntime: S
      *
      * The environment will try to transition to the application environment when a non-null
      * preference is set through [preferredSpatialEnvironment] and the application has the
-     * [SpatialCapability.SPATIAL_CAPABILITY_APP_ENVIRONMENT] capability. The environment
-     * preferences will otherwise not be active.
+     * [SpatialCapability.APP_ENVIRONMENT] capability. The environment preferences will otherwise
+     * not be active.
      *
      * The listener consumes a boolean value that is true if the environment preference is active
      * when the listener is notified.

@@ -40,12 +40,6 @@ actual constructor(
         isAppearanceLightStatusBars: Boolean,
         isAppearanceLightNavigationBars: Boolean,
     ) : this(shouldDismissOnBackPress)
-
-    @Deprecated(
-        level = DeprecationLevel.HIDDEN,
-        message = "Replaced with additional shouldDismissOnClickOutside param constructor.",
-    )
-    actual constructor(shouldDismissOnBackPress: Boolean) : this(shouldDismissOnBackPress, true)
 }
 
 @Immutable

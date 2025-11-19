@@ -267,8 +267,8 @@ class EntityTest {
         whenever(mockSceneRuntime.spatialCapabilities).thenReturn(RtSpatialCapabilities(0))
         whenever(mockSceneRuntime.mainPanelEntity).thenReturn(mockMainPanelEntity)
         val mockGltfModelResource = mock<RtGltfModelResource>()
-        whenever(mockRenderingRuntime.loadGltfByAssetName(anyString()))
-            .thenReturn(Futures.immediateFuture(mockGltfModelResource))
+        whenever(mockRenderingRuntime.loadGltfByAssetNameAsync(anyString()))
+            .thenReturn(mockGltfModelResource)
         whenever(mockRenderingRuntime.createGltfEntity(any(), any(), any()))
             .thenReturn(mockGltfModelEntityImpl)
         whenever(
@@ -1209,23 +1209,22 @@ class EntityTest {
         runBlocking {
             @Suppress("NewApi") val unused = GltfModel.create(session, Paths.get("intest.glb"))
 
-            verify(mockRenderingRuntime).loadGltfByAssetName("intest.glb")
+            verify(mockRenderingRuntime).loadGltfByAssetNameAsync("intest.glb")
         }
     }
 
     @Test
     fun createGltfEntity_callsRuntimeCreateGltfEntity() {
         runBlocking {
-            val mockInTestglTFModelResource = mock<RtGltfModelResource>()
-            whenever(mockRenderingRuntime.loadGltfByAssetName("intest.glb"))
-                .thenReturn(Futures.immediateFuture(mockInTestglTFModelResource))
+            val mockGltfModelResource = mock<RtGltfModelResource>()
+            whenever(mockRenderingRuntime.loadGltfByAssetNameAsync("intest.glb"))
+                .thenReturn(mockGltfModelResource)
 
             @Suppress("NewApi") val gltfModel = GltfModel.create(session, Paths.get("intest.glb"))
             val unused = GltfModelEntity.create(session, gltfModel)
 
-            verify(mockRenderingRuntime).loadGltfByAssetName(eq("intest.glb"))
-            verify(mockRenderingRuntime)
-                .createGltfEntity(any(), eq(mockInTestglTFModelResource), any())
+            verify(mockRenderingRuntime).loadGltfByAssetNameAsync(eq("intest.glb"))
+            verify(mockRenderingRuntime).createGltfEntity(any(), eq(mockGltfModelResource), any())
         }
     }
 

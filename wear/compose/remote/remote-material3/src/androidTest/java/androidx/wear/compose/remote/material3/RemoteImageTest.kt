@@ -24,8 +24,8 @@ import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.rememberRemoteBitmap
 import androidx.compose.remote.creation.compose.state.rememberRemoteBitmapValue
-import androidx.compose.remote.creation.compose.state.rememberRemoteFloatValue
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.remote.player.core.platform.BitmapLoader
@@ -89,7 +89,7 @@ class RemoteImageTest {
                 }
             RemoteImage(
                 remoteBitmap = backgroundImage,
-                alpha = rememberRemoteFloatValue { 0.6f },
+                alpha = 0.6f.rf,
                 contentDescription = rememberRemoteString { "background" },
                 modifier = RemoteModifier.size(size),
             )

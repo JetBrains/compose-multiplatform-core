@@ -72,6 +72,27 @@ public fun SubspaceModifier.size(size: Dp): SubspaceModifier =
     )
 
 /**
+ * Declare the preferred size of the content to be exactly [width] dp along the x dimensions,
+ * [height] dp along the y dimensions, and [depth] dp along the z dimension.
+ */
+public fun SubspaceModifier.size(
+    width: Dp = Dp.Unspecified,
+    height: Dp = Dp.Unspecified,
+    depth: Dp = Dp.Unspecified,
+): SubspaceModifier =
+    this.then(
+        SizeElement(
+            minWidth = width,
+            maxWidth = width,
+            minHeight = height,
+            maxHeight = height,
+            minDepth = depth,
+            maxDepth = depth,
+            enforceIncoming = true,
+        )
+    )
+
+/**
  * Declare the preferred size of the content to be exactly [size] in each of the three dimensions.
  * Panels have 0 depth and ignore the z-component of this modifier.
  */
@@ -363,6 +384,33 @@ public fun SubspaceModifier.requiredSize(size: DpVolumeSize): SubspaceModifier =
             maxHeight = size.height,
             minDepth = size.depth,
             maxDepth = size.depth,
+            enforceIncoming = false,
+        )
+    )
+
+/**
+ * Declare the size of the content to be exactly [width], [height], and [depth] in each of the three
+ * dimensions, disregarding the incoming [VolumeConstraints]. Panels have 0 depth and ignore the
+ * z-component of this modifier.
+ *
+ * This is in contrast to [SubspaceModifier.size], which respects the parent's constraints.
+ * `requiredSize` will ignore all min and max constraints from the incoming constraints, which can
+ * be useful for sizing an element to a specific value even if it exceeds the parent's bounds. The
+ * parent will then determine how to handle the overflow.
+ */
+public fun SubspaceModifier.requiredSize(
+    width: Dp = Dp.Unspecified,
+    height: Dp = Dp.Unspecified,
+    depth: Dp = Dp.Unspecified,
+): SubspaceModifier =
+    this.then(
+        SizeElement(
+            minWidth = width,
+            maxWidth = width,
+            minHeight = height,
+            maxHeight = height,
+            minDepth = depth,
+            maxDepth = depth,
             enforceIncoming = false,
         )
     )

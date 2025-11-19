@@ -47,7 +47,7 @@ class GlanceWearWidgetServiceTest {
         val service: TestService = Robolectric.setupService(TestService::class.java)
         val bindIntent =
             Intent(GlanceWearWidgetService.ACTION_BIND_TILE_PROVIDER).apply {
-                identifier = WearWidgetProviderInfo.WEAR_WIDGET_PROVIDER_IDENTIFIER
+                identifier = WearWidgetProviderInfo.WEAR_WIDGET_PROVIDER_SUPPORTED_IDENTIFIER
             }
 
         val binder: IBinder? = service.onBind(bindIntent)

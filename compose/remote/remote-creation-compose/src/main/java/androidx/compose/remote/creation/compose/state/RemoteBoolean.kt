@@ -22,7 +22,6 @@ import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.core.operations.utilities.IntegerExpressionEvaluator
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.runtime.mutableStateOf
 
 /**
  * A class representing a remote boolean value.
@@ -95,7 +94,6 @@ public class RemoteBoolean internal constructor(internal val v: RemoteInt) : Rem
         }
 
         return MutableRemoteString(
-            mutableStateOf(""),
             constantValue = null,
             object : LazyRemoteString {
                 override fun reserveTextId(creationState: RemoteComposeCreationState): Int {

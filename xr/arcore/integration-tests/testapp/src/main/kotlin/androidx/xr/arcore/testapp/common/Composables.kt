@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.xr.arcore.AugmentedObject
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.Trackable
 import androidx.xr.arcore.testapp.ui.theme.GoogleYellow
@@ -80,11 +81,17 @@ fun TrackableCard(trackable: Trackable<Trackable.State>) {
         modifier = Modifier.padding(8.dp).fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = "Trackable ID: ${trackable}")
+            Text(text = "Trackable ID: $trackable")
             Text(text = "Tracking State: ${state.value.trackingState}")
-            if (trackable is Plane) {
-                Text("Plane Type: ${trackable.type}")
-                PlaneStateInfo(state.value as Plane.State)
+            when (trackable) {
+                is AugmentedObject -> {
+                    val objState = state.value as AugmentedObject.State
+                    Text("Object Category: ${objState.category}")
+                }
+                is Plane -> {
+                    Text("Plane Type: ${trackable.type}")
+                    PlaneStateInfo(state.value as Plane.State)
+                }
             }
         }
     }

@@ -27,7 +27,7 @@ import java.nio.file.Path
  * Represents a [Texture] in SceneCore.
  *
  * A texture is an image that can be applied to a 3D model to give it color, detail, and realism. It
- * can also be used as an alpha mask for a [StereoSurfaceEntity].
+ * can also be used as an alpha mask for a [SurfaceEntity].
  *
  * It's important to close a [Texture] when it's no longer needed to free up resources. This can be
  * done by calling the [close] method or letting it get garbage collected.
@@ -54,7 +54,7 @@ internal constructor(internal val texture: RtTextureResource, internal val sessi
             name: String,
             session: Session,
         ): Texture {
-            val textureResource = renderingRuntime.loadTexture(name)!!.awaitSuspending()
+            val textureResource = renderingRuntime.loadTextureAsync(name)
             return Texture(textureResource, session)
         }
 

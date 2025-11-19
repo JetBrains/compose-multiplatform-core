@@ -27,6 +27,7 @@ import androidx.xr.compose.subspace.ActionQueue
 import androidx.xr.compose.subspace.SceneCoreEntitySizeAdapter
 import androidx.xr.compose.subspace.SpatialPanelDefaults
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
+import androidx.xr.compose.subspace.node.SubspaceOwner
 import androidx.xr.compose.unit.IntVolumeSize
 import androidx.xr.compose.unit.Meter
 import androidx.xr.compose.unit.toIntVolumeSize
@@ -43,6 +44,13 @@ import androidx.xr.scenecore.PanelEntity
 import androidx.xr.scenecore.SurfaceEntity
 import androidx.xr.scenecore.scene
 import kotlin.math.PI
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.shareIn
 import org.jetbrains.annotations.TestOnly
 
 /**
@@ -236,7 +244,7 @@ internal class CoreGroupEntity(entity: Entity) : CoreEntity(entity) {
  * from SceneCore.
  */
 internal sealed class CoreBasePanelEntity(private val panelEntity: PanelEntity) :
-    CoreEntity(panelEntity), MovableCoreEntity, ResizableCoreEntity {
+    CoreEntity(panelEntity), MovableCoreEntity, ResizableCoreEntity, InteractableCoreEntity {
     // Density set from setShape.
     private var shapeDensity: Density? = null
 
@@ -334,7 +342,7 @@ internal class CoreMainPanelEntity(session: Session) :
 internal class CoreSurfaceEntity(
     internal val surfaceEntity: SurfaceEntity,
     private val localDensity: Density,
-) : CoreEntity(surfaceEntity), ResizableCoreEntity, MovableCoreEntity {
+) : CoreEntity(surfaceEntity), ResizableCoreEntity, MovableCoreEntity, InteractableCoreEntity {
     private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
 
     internal var stereoMode: SurfaceEntity.StereoMode
@@ -413,7 +421,7 @@ internal class AdaptableCoreEntity<T : Entity>(
 internal class CoreSphereSurfaceEntity(
     internal val surfaceEntity: SurfaceEntity,
     val initialDensity: Density,
-) : CoreEntity(surfaceEntity) {
+) : CoreEntity(surfaceEntity), InteractableCoreEntity {
     private var pendingOnSurfaceDestroyed: ((Surface) -> Unit)? = null
 
     internal var stereoMode: SurfaceEntity.StereoMode
@@ -517,6 +525,19 @@ internal class CoreSphereSurfaceEntity(
 }
 
 internal class CoreModelEntity() : CoreEntity() {
+    private val scope: CoroutineScope by lazy {
+        val context = requireOwner().coroutineContext
+        CoroutineScope(context + Job(context[Job]))
+    }
+
+    val animationStateFlow by lazy {
+        callbackFlow {
+                onEntity { addAnimationStateListener(::trySend) }
+                awaitClose { onEntity { removeAnimationStateListener(::trySend) } }
+            }
+            .shareIn(scope = scope, started = SharingStarted.WhileSubscribed(5000), replay = 1)
+    }
+
     /**
      * The size of the glTF entity will be scaled uniformly such that it fits within the most
      * restrictive dimension according to the constraints.
@@ -552,6 +573,11 @@ internal class CoreModelEntity() : CoreEntity() {
                 GltfModelEntity.AnimationState.PLAYING
         }
 
+    override fun dispose() {
+        scope.cancel()
+        super.dispose()
+    }
+
     fun startAnimation(name: String? = null) {
         if (name == null) {
             onEntity { startAnimation(loop = false) }
@@ -583,6 +609,9 @@ internal interface ResizableCoreEntity
 /** [CoreEntity] types that implement this interface may have the MovableComponent attached. */
 internal interface MovableCoreEntity
 
+/** [CoreEntity] types that implement this interface may have the InteractableComponent attached. */
+internal interface InteractableCoreEntity
+
 /**
  * Check if the current entity is disposed.
  *
@@ -596,3 +625,6 @@ private val Entity.isDisposed
         } catch (e: IllegalStateException) {
             e.message?.contains("disposed") == true
         }
+
+private fun CoreEntity.requireOwner(): SubspaceOwner =
+    checkNotNull(layout?.owner) { "Failed to get SubspaceOwner for CoreEntity." }

@@ -196,15 +196,18 @@ package androidx.test.uiautomator {
   }
 
   public final class Configurator {
+    method public void addUiAccessibilityValidator(androidx.test.uiautomator.UiAccessibilityValidator);
     method public long getActionAcknowledgmentTimeout();
     method public int getDefaultDisplayId();
     method public static androidx.test.uiautomator.Configurator getInstance();
     method @Deprecated public long getKeyInjectionDelay();
     method public long getScrollAcknowledgmentTimeout();
     method public int getToolType();
+    method public java.util.List<androidx.test.uiautomator.UiAccessibilityValidator!> getUiAccessibilityValidators();
     method public int getUiAutomationFlags();
     method public long getWaitForIdleTimeout();
     method public long getWaitForSelectorTimeout();
+    method public void removeUiAccessibilityValidator(androidx.test.uiautomator.UiAccessibilityValidator);
     method public androidx.test.uiautomator.Configurator resetDefaultDisplayId();
     method public androidx.test.uiautomator.Configurator setActionAcknowledgmentTimeout(long);
     method public androidx.test.uiautomator.Configurator setDefaultDisplayId(int);
@@ -266,6 +269,10 @@ package androidx.test.uiautomator {
 
   public class StaleObjectException extends java.lang.RuntimeException {
     ctor public StaleObjectException();
+  }
+
+  public interface UiAccessibilityValidator {
+    method public void validate(android.view.accessibility.AccessibilityNodeInfo);
   }
 
   @Deprecated public class UiAutomatorInstrumentationTestRunner extends android.test.InstrumentationTestRunner {

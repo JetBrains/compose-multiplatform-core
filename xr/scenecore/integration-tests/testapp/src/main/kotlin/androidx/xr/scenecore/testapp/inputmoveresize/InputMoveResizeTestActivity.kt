@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.RadioButton
@@ -146,6 +147,10 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         val mainPanelScaleInZ = findViewById<CheckBox>(R.id.scaleInZ)
         mainPanelScaleInZ.isChecked = true
         var mainPanelMovableComponent = MovableComponent.createSystemMovable(session!!)
+        val contentViewRoot = findViewById<ViewGroup>(android.R.id.content).getChildAt(0)
+        contentViewRoot.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            mainPanelMovableComponent.size = session!!.scene.mainPanelEntity.size.to3d()
+        }
 
         fun updateMainPanelMovableComponent() {
             if (mainPanelMovableActive) {

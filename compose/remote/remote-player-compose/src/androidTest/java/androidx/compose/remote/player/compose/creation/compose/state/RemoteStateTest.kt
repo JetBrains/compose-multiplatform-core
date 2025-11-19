@@ -17,12 +17,14 @@
 package androidx.compose.remote.player.compose.creation.compose.state
 
 import androidx.compose.remote.core.operations.Utils
+import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rememberRemoteFloat
+import androidx.compose.remote.creation.compose.state.rememberRemoteString
 import androidx.compose.remote.player.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
@@ -47,9 +49,10 @@ class RemoteStateTest {
         )
 
     @Test
-    fun testNamedFloat() {
+    fun testNamedFloatIdDiffers() {
         var widthId = 0
         var configurableWidthId = 0
+        var configurableWidth2Id = 0
 
         composeTestRule.runTest {
             RemoteColumn(modifier = RemoteModifier.size(100.dp)) {
@@ -57,16 +60,55 @@ class RemoteStateTest {
 
                 val configurableWidth = rememberRemoteFloat(name = "configurableWidth") { width }
 
+                val configurableWidth2 = rememberRemoteFloat(name = "configurableWidth2") { width }
+
                 RemoteText(RemoteString("Width: ") + width.toRemoteString(3, 0))
                 RemoteText(
                     RemoteString("Configurable Width: ") + configurableWidth.toRemoteString(3, 0)
                 )
+                RemoteText(
+                    RemoteString("Configurable Width2: ") + configurableWidth2.toRemoteString(3, 0)
+                )
 
                 widthId = Utils.idFromNan(width.id)
                 configurableWidthId = Utils.idFromNan(configurableWidth.id)
+                configurableWidth2Id = Utils.idFromNan(configurableWidth2.id)
             }
         }
 
         assertThat(widthId).isNotEqualTo(configurableWidthId)
+        assertThat(configurableWidthId).isNotEqualTo(configurableWidth2Id)
+    }
+
+    @Test
+    fun testNamedStringIdDiffers() {
+        var valId = 0
+        var namedId1 = 0
+        var namedId2 = 0
+
+        composeTestRule.runTest {
+            RemoteColumn(modifier = RemoteModifier.size(100.dp)) {
+                val valString = rememberRemoteString { "Hello" }
+
+                val namedString1 = rememberRemoteString(name = "named1") { "Hello" }
+
+                val namedString2 = rememberRemoteString(name = "named2") { "Hello" }
+
+                RemoteText(RemoteString("val: ") + valString)
+                RemoteText(RemoteString("named1: ") + namedString1)
+                RemoteText(RemoteString("named2: ") + namedString2)
+
+                val state = LocalRemoteComposeCreationState.current
+
+                valId = valString.getIdForCreationState(state)
+                namedId1 = namedString1.getIdForCreationState(state)
+                namedId2 = namedString2.getIdForCreationState(state)
+            }
+        }
+
+        // If ids match that updates will be seen across values
+        assertThat(valId).isNotEqualTo(0)
+        assertThat(namedId1).isNotEqualTo(0)
+        assertThat(namedId2).isNotEqualTo(0)
     }
 }

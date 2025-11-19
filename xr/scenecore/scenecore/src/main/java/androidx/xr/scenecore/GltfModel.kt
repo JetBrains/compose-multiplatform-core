@@ -23,7 +23,6 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Session
 import androidx.xr.scenecore.runtime.GltfModelResource as RtGltfModel
 import androidx.xr.scenecore.runtime.RenderingRuntime
-import com.google.common.util.concurrent.ListenableFuture
 import java.nio.file.Path
 
 /**
@@ -43,7 +42,7 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
     public companion object {
 
         private suspend fun create(renderingRuntime: RenderingRuntime, name: String): GltfModel {
-            return createModel(renderingRuntime.loadGltfByAssetName(name))
+            return createModel(renderingRuntime.loadGltfByAssetNameAsync(name))
         }
 
         private suspend fun create(
@@ -51,7 +50,7 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
             assetData: ByteArray,
             assetKey: String,
         ): GltfModel {
-            return createModel(renderingRuntime.loadGltfByByteArray(assetData, assetKey))
+            return createModel(renderingRuntime.loadGltfByByteArrayAsync(assetData, assetKey))
         }
 
         /**
@@ -64,7 +63,7 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
          * @param path The Path of the binary glTF (.glb) model to be loaded, relative to the
          *   application's `assets/` folder.
          * @return a [GltfModel] upon completion.
-         * @throws IllegalArgumentException if [path.isAbsolute] is true, as this method requires a
+         * @throws IllegalArgumentException if [Path.isAbsolute] is true, as this method requires a
          *   relative path.
          */
         @MainThread
@@ -113,10 +112,8 @@ public class GltfModel internal constructor(internal val model: RtGltfModel) {
             return GltfModel.create(session.renderingRuntime, assetData, assetKey)
         }
 
-        private suspend fun createModel(
-            gltfResourceFuture: ListenableFuture<RtGltfModel>
-        ): GltfModel {
-            return GltfModel(gltfResourceFuture.awaitSuspending())
+        private fun createModel(gltfResource: RtGltfModel): GltfModel {
+            return GltfModel(gltfResource)
         }
     }
 

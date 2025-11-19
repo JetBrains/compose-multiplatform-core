@@ -704,7 +704,6 @@ package androidx.xr.scenecore {
   }
 
   public final class Scene implements androidx.xr.runtime.SessionConnector {
-    ctor public Scene();
     method public void addSpatialCapabilitiesChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<java.util.Set<androidx.xr.scenecore.SpatialCapability>> listener);
     method public void addSpatialCapabilitiesChangedListener(java.util.function.Consumer<java.util.Set<androidx.xr.scenecore.SpatialCapability>> listener);
     method public void clearSpatialModeChangedListener();

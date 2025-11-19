@@ -28,11 +28,6 @@ class OutputContext(
     outputPath: String?,
     /** Pass true to generate an output csv file with optimization stats */
     csv: Boolean,
-    /**
-     * Produces an additional obf.txt and unobf.txt for debugging what is counted as obfuscated as
-     * an indicator of overall program optimizations
-     */
-    val dumpMappingDebug: Boolean,
     /** List of patterns that will detect presence of .so file names in bundles/apks. */
     val soMatchPatterns: List<String>,
 ) {
@@ -50,10 +45,8 @@ class OutputContext(
             outputDir: File?
         ) : this(
             outputDir = outputDir,
-            obfuscatedClasses =
-                if (dumpMappingDebug) outputDir?.run { File(this, "obf.csv") } else null,
-            unobfuscatedClasses =
-                if (dumpMappingDebug) outputDir?.run { File(this, "unobf.csv") } else null,
+            obfuscatedClasses = outputDir?.run { File(this, "obf.csv") },
+            unobfuscatedClasses = outputDir?.run { File(this, "unobf.csv") },
         ) {
             val header = "size, fullName, originalName, mappingFileLine,\n"
             obfuscatedClasses?.appendText(header)
@@ -63,14 +56,8 @@ class OutputContext(
         init {
             if (outputDir != null) {
                 Files.createDirectory(outputDir.toPath())
-            } else {
-                require(!dumpMappingDebug) {
-                    "must specify an output directory to support mapping debug"
-                }
             }
         }
-
-        fun flush() {}
     }
 
     val outputDir =

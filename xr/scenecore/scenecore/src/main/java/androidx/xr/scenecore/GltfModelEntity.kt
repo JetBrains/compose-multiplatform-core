@@ -207,7 +207,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
      *   cleared.
      * @param primitiveIndex The zero-based index for the primitive of the specified node, as
      *   defined in the glTF graph. Default is the first primitive of that node.
-     * @throws IllegalArgumentException if the provided [material] is invalid or if no node with the
+     * @throws IllegalArgumentException if the provided [Material] is invalid or if no node with the
      *   given [nodeName] is found in the model.
      * @throws IndexOutOfBoundsException if the [primitiveIndex] is out of bounds.
      */

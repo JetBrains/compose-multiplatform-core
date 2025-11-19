@@ -27,7 +27,6 @@ import androidx.xr.scenecore.runtime.RenderingRuntime
 import androidx.xr.scenecore.runtime.SceneRuntime
 import androidx.xr.scenecore.runtime.SpatialCapabilities as RtSpatialCapabilities
 import com.google.common.truth.Truth.assertThat
-import com.google.common.util.concurrent.Futures
 import java.nio.file.Paths
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -39,6 +38,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.stub
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.robolectric.Robolectric
 
 @RunWith(AndroidJUnit4::class)
@@ -65,23 +65,21 @@ class ExrImageTest {
 
     @Test
     fun exrImage_createFromZip_failsForExrFile() {
-        val mockRtExrImage = mock<RtExrImage>()
-        mockRenderingRuntime.stub {
-            on { loadExrImageByAssetName("test.exr") }
-                .thenReturn(Futures.immediateFuture(mockRtExrImage))
-        }
-        val session =
-            Session(
-                activity,
-                runtimes =
-                    listOf(
-                        mFakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockSceneRuntime,
-                        mockRenderingRuntime,
-                    ),
-            )
-
         runBlocking {
+            val mockRtExrImage = mock<RtExrImage>()
+            whenever(mockRenderingRuntime.loadExrImageByAssetNameAsync("test.exr"))
+                .thenReturn(mockRtExrImage)
+            val session =
+                Session(
+                    activity,
+                    runtimes =
+                        listOf(
+                            mFakePerceptionRuntimeFactory.createRuntime(activity),
+                            mockSceneRuntime,
+                            mockRenderingRuntime,
+                        ),
+                )
+
             @Suppress("UNUSED_VARIABLE", "NewApi")
             val exception =
                 assertFailsWith<IllegalArgumentException> {
@@ -92,34 +90,32 @@ class ExrImageTest {
             assertThat(exception)
                 .hasMessageThat()
                 .contains("Only preprocessed skybox files with the .zip extension are supported.")
+            verify(mockRenderingRuntime, never()).loadExrImageByAssetNameAsync("test.exr")
         }
-        verify(mockRenderingRuntime, never()).loadExrImageByAssetName("test.exr")
     }
 
     @Test
     fun exrImage_createFromZip_withZipExtension_passes() {
-        val mockRtExrImage = mock<RtExrImage>()
-        mockRenderingRuntime.stub {
-            on { loadExrImageByAssetName("test.zip") }
-                .thenReturn(Futures.immediateFuture(mockRtExrImage))
-        }
-        val session =
-            Session(
-                activity,
-                runtimes =
-                    listOf(
-                        mFakePerceptionRuntimeFactory.createRuntime(activity),
-                        mockSceneRuntime,
-                        mockRenderingRuntime,
-                    ),
-            )
-
         runBlocking {
+            val mockRtExrImage = mock<RtExrImage>()
+            whenever(mockRenderingRuntime.loadExrImageByAssetNameAsync("test.zip"))
+                .thenReturn(mockRtExrImage)
+            val session =
+                Session(
+                    activity,
+                    runtimes =
+                        listOf(
+                            mFakePerceptionRuntimeFactory.createRuntime(activity),
+                            mockSceneRuntime,
+                            mockRenderingRuntime,
+                        ),
+                )
+
             @Suppress("UNUSED_VARIABLE", "NewApi")
             val exrImage: ExrImage = ExrImage.createFromZip(session, Paths.get("test.zip"))
 
             assertIs<ExrImage>(exrImage)
+            verify(mockRenderingRuntime).loadExrImageByAssetNameAsync("test.zip")
         }
-        verify(mockRenderingRuntime).loadExrImageByAssetName("test.zip")
     }
 }

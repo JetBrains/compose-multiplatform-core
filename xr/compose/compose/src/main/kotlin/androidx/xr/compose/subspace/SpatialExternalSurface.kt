@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.subspace.layout.CoreSphereSurfaceEntity
 import androidx.xr.compose.subspace.layout.CoreSurfaceEntity
+import androidx.xr.compose.subspace.layout.InteractionPolicy
 import androidx.xr.compose.subspace.layout.SpatialAlignment
 import androidx.xr.compose.subspace.layout.SpatialFeatheringEffect
 import androidx.xr.compose.subspace.layout.SubspaceLayout
@@ -165,10 +166,10 @@ private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
  * the User will see left and right eye content mapped to the appropriate display. Width and height
  * will default to 400 pixels if it is not specified using size modifiers.
  *
- * Note that this Surface does not capture input events. It is also not currently possible to
- * synchronize StereoMode changes with application rendering or video decoding. This composable
- * currently cannot render in front of other panels, so [dragPolicy] usage is not recommended if
- * there are other panels in the layout, aside from the content block of this Composable.
+ * It is not currently possible to synchronize StereoMode changes with application rendering or
+ * video decoding. This composable currently cannot render in front of other panels, so [dragPolicy]
+ * usage is not recommended if there are other panels in the layout, aside from the content block of
+ * this Composable.
  *
  * Playing certain content will require the proper [SurfaceProtection]. This is mainly used to
  * protect DRM video content.
@@ -188,6 +189,7 @@ private constructor(internal val value: SurfaceEntity.SurfaceProtection) {
  * @param resizePolicy An optional [ResizePolicy] configuration object that resizing behavior of
  *   this [SpatialPanel]. The draggable UI controls will be shown that allow the user to resize the
  *   element in 3D space. If null, there is no resize behavior applied to the element.
+ * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect input events.
  * @param content Content block where the surface can be accessed using
  *   [SpatialExternalSurfaceScope.onSurfaceCreated]. Composable content will be rendered over the
  *   Surface canvas. If using [StereoMode.SideBySide] or [StereoMode.TopBottom], it is recommended
@@ -202,9 +204,11 @@ public fun SpatialExternalSurface(
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
     dragPolicy: DragPolicy? = null,
     resizePolicy: ResizePolicy? = null,
+    interactionPolicy: InteractionPolicy? = null,
     content: @Composable @SubspaceComposable SpatialExternalSurfaceScope.() -> Unit,
 ) {
-    val finalModifier = buildSpatialPanelModifier(modifier, dragPolicy, resizePolicy)
+    val finalModifier =
+        buildSpatialPanelModifier(modifier, dragPolicy, resizePolicy, interactionPolicy)
     val session = LocalSession.current
     val density = LocalDensity.current
 
@@ -251,8 +255,8 @@ public fun SpatialExternalSurface(
  * put the user inside a boundary. In cases where the user has not consented to the boundary or if
  * passthrough is ever fully enabled, a transparent feathered surface will display instead.
  *
- * Note that this Surface does not capture input events. It is also not currently possible to
- * synchronize StereoMode changes with application rendering or video decoding.
+ * It is not currently possible to synchronize StereoMode changes with application rendering or
+ * video decoding.
  *
  * Playing certain content will require the proper [SurfaceProtection]. This is mainly used to
  * protect DRM video content.
@@ -269,6 +273,7 @@ public fun SpatialExternalSurface(
  * @param surfaceProtection Sets the Surface's content protection. Use this to redact content in
  *   screen recordings. Setting this to [SurfaceProtection.Protected] is required if decoding DRM
  *   media content.
+ * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect input events.
  * @param onSurface Lambda invoked when the surface is created through
  *   [SpatialExternalSurfaceScope.onSurfaceCreated] and destroyed through
  *   [SpatialExternalSurfaceScope.onSurfaceDestroyed].
@@ -281,6 +286,7 @@ public fun SpatialExternalSurface180Hemisphere(
     radius: Dp = SpatialExternalSurfaceDefaults.sphereRadius,
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
+    interactionPolicy: InteractionPolicy? = null,
     onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     SpatialExternalSurfaceSphere(
@@ -290,6 +296,7 @@ public fun SpatialExternalSurface180Hemisphere(
         radius = radius,
         featheringEffect = featheringEffect,
         surfaceProtection = surfaceProtection,
+        interactionPolicy = interactionPolicy,
         onSurface = onSurface,
     )
 }
@@ -305,8 +312,8 @@ public fun SpatialExternalSurface180Hemisphere(
  * put the user inside a boundary. In cases where the user has not consented to the boundary or if
  * passthrough is ever fully enabled, a transparent feathered surface will display instead.
  *
- * Note that this Surface does not capture input events. It is also not currently possible to
- * synchronize StereoMode changes with application rendering or video decoding.
+ * It is not currently possible to synchronize StereoMode changes with application rendering or
+ * video decoding.
  *
  * Playing certain content will require the proper [SurfaceProtection]. This is mainly used to
  * protect DRM video content.
@@ -323,6 +330,7 @@ public fun SpatialExternalSurface180Hemisphere(
  * @param surfaceProtection Sets the Surface's content protection. Use this to redact content in
  *   screen recordings. Setting this to [SurfaceProtection.Protected] is required if decoding DRM
  *   media content.
+ * @param interactionPolicy An optional [InteractionPolicy] that can be set to detect input events.
  * @param onSurface Lambda invoked when the surface is created through
  *   [SpatialExternalSurfaceScope.onSurfaceCreated] and destroyed through
  *   [SpatialExternalSurfaceScope.onSurfaceDestroyed].
@@ -335,6 +343,7 @@ public fun SpatialExternalSurface360Sphere(
     radius: Dp = SpatialExternalSurfaceDefaults.sphereRadius,
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
+    interactionPolicy: InteractionPolicy? = null,
     onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     SpatialExternalSurfaceSphere(
@@ -344,6 +353,7 @@ public fun SpatialExternalSurface360Sphere(
         radius = radius,
         featheringEffect = featheringEffect,
         surfaceProtection = surfaceProtection,
+        interactionPolicy = interactionPolicy,
         onSurface = onSurface,
     )
 }
@@ -357,12 +367,14 @@ private fun SpatialExternalSurfaceSphere(
     radius: Dp = SpatialExternalSurfaceDefaults.sphereRadius,
     featheringEffect: SpatialFeatheringEffect = ZeroFeatheringEffect,
     surfaceProtection: SurfaceProtection = SurfaceProtection.None,
+    interactionPolicy: InteractionPolicy?,
     onSurface: SpatialExternalSurfaceScope.() -> Unit,
 ) {
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
     val density = LocalDensity.current
 
     val meterRadius = radius.toMeter().value
+    val finalModifier = buildSpatialPanelModifier(modifier, null, null, interactionPolicy)
 
     val coreSurfaceEntity =
         remember(surfaceProtection) {
@@ -427,7 +439,7 @@ private fun SpatialExternalSurfaceSphere(
 
     key(coreSurfaceEntity) {
         SubspaceLayout(
-            modifier = modifier,
+            modifier = finalModifier,
             coreEntity = coreSurfaceEntity,
             measurePolicy = SphereMeasurePolicy(),
         )

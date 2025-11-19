@@ -566,7 +566,7 @@ class PdfViewExternalInputTest {
                     val pdfView = view as PdfView
                     pdfView.post { pdfView.requestFocus() }
 
-                    defaultZoom = pdfView.getDefaultZoom()
+                    defaultZoom = pdfView.getFitToWidthZoom()
 
                     pdfView.zoom = pdfView.maxZoom
                 }
@@ -599,7 +599,7 @@ class PdfViewExternalInputTest {
                     val pdfView = view as PdfView
                     pdfView.post { pdfView.requestFocus() }
 
-                    defaultZoom = pdfView.getDefaultZoom()
+                    defaultZoom = pdfView.getFitToWidthZoom()
 
                     pdfView.zoom = pdfView.minZoom
                 }
@@ -632,7 +632,7 @@ class PdfViewExternalInputTest {
                     val pdfView = view as PdfView
                     pdfView.post { pdfView.requestFocus() }
 
-                    defaultZoom = pdfView.getDefaultZoom()
+                    defaultZoom = pdfView.getFitToWidthZoom()
 
                     pdfView.zoom = pdfView.maxZoom
                 }
@@ -665,7 +665,7 @@ class PdfViewExternalInputTest {
                     val pdfView = view as PdfView
                     pdfView.post { pdfView.requestFocus() }
 
-                    defaultZoom = pdfView.getDefaultZoom()
+                    defaultZoom = pdfView.getFitToWidthZoom()
 
                     pdfView.zoom = pdfView.minZoom
                 }

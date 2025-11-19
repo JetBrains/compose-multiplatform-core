@@ -35,8 +35,6 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteFloatContext
 import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableFloatState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 
 private const val MAX_SAFE_FLOAT_ARRAY = 30
@@ -151,7 +149,6 @@ public abstract class RemoteFloat : Number(), RemoteState<Float> {
             return RemoteString(floatToString(it, before, after, flags))
         }
         return MutableRemoteString(
-            mutableStateOf(""), // TODO compute the string?
             constantValue = null,
             object : LazyRemoteString {
                 override fun reserveTextId(creationState: RemoteComposeCreationState): Int {
@@ -858,8 +855,7 @@ public fun yearForReference(referenceEpochMillis: RemoteLong): RemoteFloat {
 }
 
 /**
- * A mutable implementation of [RemoteFloat] that holds a [MutableFloatState]. It also implements
- * [MutableRemoteState<Float>].
+ * A mutable implementation of [RemoteFloat]. It also implements [MutableRemoteState<Float>].
  *
  * @property idProvider A lambda that provides the ID for this mutable float within the
  *   [RemoteComposeCreationState]. Defaults to reserving a new float variable ID if not provided.
@@ -1103,19 +1099,6 @@ public fun rememberRemoteFloatArray(content: () -> FloatArray): RemoteFloat {
     val state = LocalRemoteComposeCreationState.current
     val floatArrayId = state.document.addFloatArray(content())
     return rememberRemoteFloat { floatArrayId.rf }
-}
-
-/** Temporary method during migration */
-@Composable
-@RemoteComposable
-public fun rememberRemoteFloatValue(content: RemoteFloatContext.() -> Float): MutableRemoteFloat {
-    val state = LocalRemoteComposeCreationState.current
-    return remember {
-        val context = RemoteFloatContext(state)
-        val value = content(context)
-        val id = state.document.addFloatConstant(value)
-        MutableRemoteFloat(id)
-    }
 }
 
 /**

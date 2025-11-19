@@ -353,4 +353,25 @@ class SubspaceDepthSortedSetTest {
         // returning false.
         assertThat(set.contains(node)).isFalse()
     }
+
+    @Test
+    fun removeAll_returnsEmptySet() {
+        val owner = AndroidComposeSpatialElement()
+        val root = owner.root
+        val parent = SubspaceLayoutNode()
+        val child = SubspaceLayoutNode()
+        val set = SubspaceDepthSortedSet(extraAssertions = true)
+
+        root.insertAt(0, parent)
+        parent.insertAt(0, child)
+        set.add(root)
+        set.add(parent)
+        set.add(child)
+
+        assertThat(set.size).isEqualTo(3)
+
+        set.removeAll { true }
+
+        assertThat(set.isEmpty()).isTrue()
+    }
 }
