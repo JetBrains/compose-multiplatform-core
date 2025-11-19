@@ -463,6 +463,7 @@ class IntegrationTest {
                                         owner = Owner("test"),
                                         attachments =
                                             listOf(Attachment("Uri1", Attachment("nested"))),
+                                        folderId = null,
                                     ),
                                     CreateNoteParams::class.java,
                                 ),
@@ -511,6 +512,7 @@ class IntegrationTest {
                                         owner = Owner("test"),
                                         attachments =
                                             listOf(Attachment("Uri1", Attachment("nested"))),
+                                        folderId = null,
                                     ),
                                     CreateNoteParams::class.java,
                                 ),
@@ -559,6 +561,7 @@ class IntegrationTest {
                                         owner = Owner("test"),
                                         attachments =
                                             listOf(Attachment("Uri1", Attachment("nested"))),
+                                        folderId = null,
                                     ),
                                     CreateNoteParams::class.java,
                                 ),

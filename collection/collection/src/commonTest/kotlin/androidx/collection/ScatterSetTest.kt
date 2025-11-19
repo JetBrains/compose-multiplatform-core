@@ -72,6 +72,24 @@ class ScatterSetTest {
     }
 
     @Test
+    fun mutableScatterSetFromSet() {
+        val from = setOf("Hello", "World")
+        val set = MutableScatterSet(from)
+        assertEquals(2, set.size)
+        assertTrue("Hello" in set)
+        assertTrue("World" in set)
+    }
+
+    @Test
+    fun mutableScatterSetFromScatterSet() {
+        val from = scatterSetOf("Hello", "World")
+        val set = MutableScatterSet(from)
+        assertEquals(2, set.size)
+        assertTrue("Hello" in set)
+        assertTrue("World" in set)
+    }
+
+    @Test
     fun addToScatterSet() {
         val set = MutableScatterSet<String>()
         set += "Hello"

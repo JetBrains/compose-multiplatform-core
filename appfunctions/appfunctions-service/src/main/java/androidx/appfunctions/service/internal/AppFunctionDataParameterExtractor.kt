@@ -123,7 +123,7 @@ internal fun AppFunctionData.unsafeGetParameterValue(
                     )
             }
         if (value == null) {
-            require(!parameterMetadata.isRequired) {
+            require(!parameterMetadata.isRequired || parameterMetadata.dataType.isNullable) {
                 Log.d(APP_FUNCTIONS_TAG, "Parameter ${parameterMetadata.name} is required")
                 "Parameter ${parameterMetadata.name} is required"
             }

@@ -411,6 +411,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                             GroupableFeatures.SD_RECORDING,
                             GroupableFeature.FPS_60,
                             GroupableFeature.PREVIEW_STABILIZATION,
+                            GroupableFeatures.VIDEO_STABILIZATION,
                         )
                 )
         } else {
@@ -421,6 +422,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                             GroupableFeature.IMAGE_ULTRA_HDR,
                             GroupableFeature.HDR_HLG10,
                             GroupableFeature.PREVIEW_STABILIZATION,
+                            GroupableFeatures.VIDEO_STABILIZATION,
                             GroupableFeature.FPS_60,
                         )
                 )
@@ -560,8 +562,11 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
         if (fps == Fps.FPS_60) {
             features.add(GroupableFeature.FPS_60)
         }
-        if (stabilizationMode == StabilizationMode.PREVIEW) {
-            features.add(GroupableFeature.PREVIEW_STABILIZATION)
+
+        when (stabilizationMode) {
+            StabilizationMode.PREVIEW -> features.add(GroupableFeature.PREVIEW_STABILIZATION)
+            StabilizationMode.VIDEO -> features.add(GroupableFeatures.VIDEO_STABILIZATION)
+            else -> {}
         }
 
         return features
@@ -593,6 +598,10 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                 GroupableFeature.PREVIEW_STABILIZATION -> {
                     newAppFeatures =
                         newAppFeatures.copy(stabilizationMode = StabilizationMode.PREVIEW)
+                }
+                GroupableFeatures.VIDEO_STABILIZATION -> {
+                    newAppFeatures =
+                        newAppFeatures.copy(stabilizationMode = StabilizationMode.VIDEO)
                 }
                 GroupableFeature.IMAGE_ULTRA_HDR -> {
                     newAppFeatures = newAppFeatures.copy(imageFormat = ImageFormat.JPEG_R)

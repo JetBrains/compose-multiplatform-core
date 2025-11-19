@@ -95,6 +95,7 @@ import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -104,7 +105,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class SwipeToRevealTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Before
     fun setUp() {

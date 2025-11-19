@@ -58,12 +58,13 @@ import androidx.compose.ui.unit.dp
 import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.samples.SplitSwitchButtonSample
 import androidx.wear.compose.material3.samples.SwitchButtonSample
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
 class SwitchButtonTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {

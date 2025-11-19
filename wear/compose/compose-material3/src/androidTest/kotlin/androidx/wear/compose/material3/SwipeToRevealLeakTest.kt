@@ -30,13 +30,14 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.wear.compose.material3.SwipeToRevealDefaults.SingleActionAnchorWidth
 import androidx.wear.compose.materialcore.CustomTouchSlopProvider
+import kotlinx.coroutines.test.StandardTestDispatcher
 import leakcanary.DetectLeaksAfterTestSuccess
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
 
 class SwipeToRevealLeakTest {
-    private val composeTestRule = createComposeRule()
+    private val composeTestRule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @get:Rule
     val ruleChain: RuleChain =

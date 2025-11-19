@@ -2512,6 +2512,8 @@ package androidx.collection {
   }
 
   public final class ScatterMapKt {
+    method public static <K, V> androidx.collection.MutableScatterMap<K,V> MutableScatterMap(androidx.collection.ScatterMap<K,V> from);
+    method public static <K, V> androidx.collection.MutableScatterMap<K,V> MutableScatterMap(java.util.Map<K,? extends V> from);
     method public static <K, V> androidx.collection.ScatterMap<K,V> emptyScatterMap();
     method @kotlin.PublishedApi internal static inline boolean isFull(long value);
     method @kotlin.PublishedApi internal static inline int lowestBitSet(long);
@@ -2563,6 +2565,8 @@ package androidx.collection {
   }
 
   public final class ScatterSetKt {
+    method public static <E> androidx.collection.MutableScatterSet<E> MutableScatterSet(androidx.collection.ScatterSet<E> from);
+    method public static <E> androidx.collection.MutableScatterSet<E> MutableScatterSet(java.util.Set<? extends E> from);
     method public static <E> androidx.collection.ScatterSet<E> emptyScatterSet();
     method public static <E> androidx.collection.MutableScatterSet<E> mutableScatterSetOf();
     method public static <E> androidx.collection.MutableScatterSet<E> mutableScatterSetOf(E element1);

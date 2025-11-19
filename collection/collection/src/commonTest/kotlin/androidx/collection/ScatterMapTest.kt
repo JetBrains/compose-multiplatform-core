@@ -83,6 +83,24 @@ class ScatterMapTest {
     }
 
     @Test
+    fun mutableScatterMapFromMap() {
+        val from = mapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = MutableScatterMap(from)
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
+    fun mutableScatterMapFromScatterMap() {
+        val from = mutableScatterMapOf("Hello" to "World", "Bonjour" to "Monde")
+        val map = MutableScatterMap(from)
+        assertEquals(2, map.size)
+        assertEquals("World", map["Hello"])
+        assertEquals("Monde", map["Bonjour"])
+    }
+
+    @Test
     fun addToMap() {
         val map = MutableScatterMap<String, String>()
         map["Hello"] = "World"

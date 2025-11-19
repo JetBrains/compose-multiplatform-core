@@ -109,6 +109,8 @@ object IntrospectionHelper {
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionParameterMetadata")
     val APP_FUNCTION_DATA_TYPE_METADATA =
         ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionDataTypeMetadata")
+    val APP_FUNCTION_DEPRECATION_METADATA_CLASS =
+        ClassName(APP_FUNCTIONS_METADATA_PACKAGE_NAME, "AppFunctionDeprecationMetadata")
 
     // Primitive Types
     val APP_FUNCTION_UNIT_TYPE_METADATA_CLASS =

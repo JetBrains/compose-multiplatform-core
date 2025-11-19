@@ -89,6 +89,24 @@ public fun <E> mutableScatterSetOf(vararg elements: E): MutableScatterSet<E> =
     MutableScatterSet<E>(elements.size).apply { plusAssign(elements) }
 
 /**
+ * Returns a new [MutableScatterSet] with the specified contents.
+ *
+ * The [MutableScatterSet] is created an initial capacity sufficient to hold the content in the
+ * specified [Set].
+ */
+public fun <E> MutableScatterSet(from: Set<E>): MutableScatterSet<E> =
+    MutableScatterSet<E>(from.size).apply { plusAssign(from) }
+
+/**
+ * Returns a new [MutableScatterSet] with the specified contents.
+ *
+ * The [MutableScatterSet] is created an initial capacity sufficient to hold the content in the
+ * specified [ScatterSet].
+ */
+public fun <E> MutableScatterSet(from: ScatterSet<E>): MutableScatterSet<E> =
+    MutableScatterSet<E>(from.size).apply { plusAssign(from) }
+
+/**
  * [ScatterSet] is a container with a [Set]-like interface based on a flat hash table
  * implementation. The underlying implementation is designed to avoid all allocations on insertion,
  * removal, retrieval, and iteration. Allocations may still happen on insertion when the underlying

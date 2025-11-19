@@ -45,6 +45,7 @@ import androidx.wear.compose.material3.SwipeToRevealDefaults.SingleActionAnchorW
 import androidx.wear.compose.material3.SwipeToRevealDefaults.bidirectionalGestureInclusion
 import androidx.wear.compose.materialcore.CustomTouchSlopProvider
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -59,7 +60,7 @@ import org.junit.runners.Parameterized
  */
 @RunWith(Parameterized::class)
 class SwipeToRevealAnchorTest(val testParams: TestParams) {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Before
     fun setUp() {

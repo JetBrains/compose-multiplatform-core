@@ -22,6 +22,7 @@ import androidx.appfunctions.compiler.core.metadata.AppFunctionBooleanTypeMetada
 import androidx.appfunctions.compiler.core.metadata.AppFunctionBytesTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDataTypeMetadata
+import androidx.appfunctions.compiler.core.metadata.AppFunctionDeprecationMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionDoubleTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionFloatTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.AppFunctionIntTypeMetadata
@@ -37,6 +38,7 @@ import androidx.appfunctions.compiler.core.metadata.AppFunctionStringTypeMetadat
 import androidx.appfunctions.compiler.core.metadata.AppFunctionUnitTypeMetadata
 import androidx.appfunctions.compiler.core.metadata.CompileTimeAppFunctionMetadata
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.APP_FUNCTION_METADATA_PROPERTY_NAME
+import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.DEPRECATION_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.FUNCTION_ID_TO_METADATA_MAP_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.INVENTORY_COMPONENTS_METADATA_PROPERTY_NAME
 import androidx.appfunctions.compiler.processors.AppFunctionInventoryProcessor.Companion.PARAMETER_METADATA_LIST_PROPERTY_NAME
@@ -77,6 +79,10 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                 functionMetadataObjectClassBuilder,
                 functionMetadata.response,
             )
+            addDeprecationMetadataPropertyForFunction(
+                functionMetadataObjectClassBuilder,
+                functionMetadata.deprecation,
+            )
             addPropertyForAppFunctionMetadata(functionMetadataObjectClassBuilder, functionMetadata)
             inventoryClassBuilder.addType(functionMetadataObjectClassBuilder.build())
         }
@@ -104,25 +110,20 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                 .addModifiers(KModifier.PUBLIC)
                 .initializer(
                     buildCodeBlock {
-                        // TODO(b/454661174): Include deprecated data
-                        addStatement(
-                            """
-                            %T(
-                                id = %S,
-                                isEnabledByDefault = %L,
-                                schema =  %L,
-                                parameters = %L,
-                                response = %L,
-                            )
-                            """
-                                .trimIndent(),
-                            IntrospectionHelper.APP_FUNCTION_METADATA_CLASS,
-                            functionMetadata.id,
-                            functionMetadata.isEnabledByDefault,
-                            SCHEMA_METADATA_PROPERTY_NAME,
-                            PARAMETER_METADATA_LIST_PROPERTY_NAME,
-                            RESPONSE_METADATA_PROPERTY_NAME,
-                        )
+                        indent()
+                        add("%T(\n", IntrospectionHelper.APP_FUNCTION_METADATA_CLASS)
+                        indent()
+                        add("id = %S,\n", functionMetadata.id)
+                        add("isEnabledByDefault = %L,\n", functionMetadata.isEnabledByDefault)
+                        add("schema =  %L,\n", SCHEMA_METADATA_PROPERTY_NAME)
+                        add("parameters = %L,\n", PARAMETER_METADATA_LIST_PROPERTY_NAME)
+                        add("response = %L,\n", RESPONSE_METADATA_PROPERTY_NAME)
+                        if (functionMetadata.deprecation != null) {
+                            add("deprecation = %L,\n", DEPRECATION_METADATA_PROPERTY_NAME)
+                        }
+                        unindent()
+                        unindent()
+                        add(")")
                     }
                 )
                 .build()
@@ -1096,6 +1097,32 @@ class AppFunctionInventoryCodeBuilder(private val inventoryClassBuilder: TypeSpe
                                 schemaMetadata.version,
                             )
                         }
+                    }
+                )
+                .build()
+        )
+    }
+
+    private fun addDeprecationMetadataPropertyForFunction(
+        functionMetadataObjectClassBuilder: TypeSpec.Builder,
+        deprecationMetadata: AppFunctionDeprecationMetadata?,
+    ) {
+        if (deprecationMetadata == null) return
+        functionMetadataObjectClassBuilder.addProperty(
+            PropertySpec.builder(
+                    DEPRECATION_METADATA_PROPERTY_NAME,
+                    IntrospectionHelper.APP_FUNCTION_DEPRECATION_METADATA_CLASS.copy(
+                        nullable = true
+                    ),
+                )
+                .addModifiers(KModifier.PRIVATE)
+                .initializer(
+                    buildCodeBlock {
+                        addStatement(
+                            "%T(message= %S)",
+                            IntrospectionHelper.APP_FUNCTION_DEPRECATION_METADATA_CLASS,
+                            deprecationMetadata.message,
+                        )
                     }
                 )
                 .build()

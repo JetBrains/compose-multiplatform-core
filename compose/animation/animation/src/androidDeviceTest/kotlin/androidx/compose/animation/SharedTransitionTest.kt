@@ -5046,6 +5046,110 @@ class SharedTransitionTest {
             }
         }
     }
+
+    @Test
+    fun testIsTransitionActiveWithoutRemovingSharedElementEntriesInLazy() {
+        // Intentionally set up a scenario where the shared element entry is first added
+        // in subcomposition (i.e. LazyColumn), which is *after* the observation started. This
+        // test will verify that newly added shared elements are being accounted for in the
+        // overall activeness observation.
+        var showMatch by mutableStateOf(false)
+        var scope: SharedTransitionScope? = null
+        rule.setContent {
+            SharedTransitionLayout {
+                scope = this
+                LazyColumn {
+                    items(3) { item ->
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            Box(
+                                modifier =
+                                    Modifier.size(100.dp)
+                                        .then(
+                                            Modifier.sharedElementWithCallerManagedVisibility(
+                                                rememberSharedContentState(key = item),
+                                                visible = false,
+                                            )
+                                        )
+                            )
+                            Spacer(Modifier.size(15.dp))
+                        }
+                    }
+                }
+                if (showMatch) {
+                    Box(
+                        modifier =
+                            Modifier.size(100.dp)
+                                .then(
+                                    Modifier.sharedElementWithCallerManagedVisibility(
+                                        rememberSharedContentState(key = 1),
+                                        visible = true,
+                                    )
+                                )
+                    )
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertEquals(false, scope?.isTransitionActive)
+        showMatch = true
+
+        rule.waitForIdle()
+        assertEquals(false, scope?.isTransitionActive)
+    }
+
+    @Test
+    fun testIsTransitionActiveWithSharedElementWithCallerManagedVisibility() {
+        // Delay adding the initial shared element entry until after _initial composition_ of
+        // SharedTransitionLayout, which is *after* the observation started.
+        // This allows us to verify that newly added shared elements are being accounted for
+        // in the overall activeness observation.
+        var showMatch by mutableStateOf(false)
+        var showInitialElement by mutableStateOf(false)
+        var scope: SharedTransitionScope? = null
+        rule.setContent {
+            SharedTransitionLayout {
+                scope = this
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    if (showInitialElement) {
+                        Box(
+                            modifier =
+                                Modifier.size(100.dp)
+                                    .then(
+                                        Modifier.sharedElementWithCallerManagedVisibility(
+                                            rememberSharedContentState(key = 1),
+                                            visible = false,
+                                        )
+                                    )
+                        )
+                    }
+                    Spacer(Modifier.size(15.dp))
+                }
+                if (showMatch) {
+                    Box(
+                        modifier =
+                            Modifier.size(100.dp)
+                                .then(
+                                    Modifier.sharedElementWithCallerManagedVisibility(
+                                        rememberSharedContentState(key = 1),
+                                        visible = true,
+                                    )
+                                )
+                    )
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertEquals(false, scope?.isTransitionActive)
+        showInitialElement = true
+        rule.waitForIdle()
+        assertEquals(false, scope?.isTransitionActive)
+
+        rule.waitForIdle()
+        showMatch = true
+
+        rule.waitForIdle()
+        assertEquals(false, scope?.isTransitionActive)
+    }
 }
 
 private fun assertEquals(a: IntSize, b: IntSize, delta: IntSize) {

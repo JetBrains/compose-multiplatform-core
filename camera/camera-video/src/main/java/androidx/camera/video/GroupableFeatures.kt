@@ -16,8 +16,6 @@
 
 package androidx.camera.video
 
-import androidx.annotation.RestrictTo
-import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FEATURE_TYPE_RECORDING_QUALITY
 import androidx.camera.core.featuregroup.GroupableFeature.Companion.FEATURE_TYPE_VIDEO_STABILIZATION
@@ -61,7 +59,6 @@ public object GroupableFeatures {
      *
      * @see androidx.camera.core.featuregroup.GroupableFeature.PREVIEW_STABILIZATION
      */
-    @RestrictTo(LIBRARY_GROUP)
     @JvmField
     public val VIDEO_STABILIZATION: GroupableFeature =
         VideoStabilizationFeature(VideoStabilization.ON)

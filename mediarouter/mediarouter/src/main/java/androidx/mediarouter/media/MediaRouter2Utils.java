@@ -315,7 +315,7 @@ class MediaRouter2Utils {
 
     @NonNull
     static MediaRouteDiscoveryRequest toMediaRouteDiscoveryRequest(
-            @NonNull RouteDiscoveryPreference preference) {
+            @NonNull RouteDiscoveryPreference preference, boolean shouldScanWithScreenOff) {
         List<String> controlCategories = new ArrayList<>();
         for (String feature : preference.getPreferredFeatures()) {
             controlCategories.add(MediaRouter2Utils.toControlCategory(feature));
@@ -324,7 +324,8 @@ class MediaRouter2Utils {
                 .addControlCategories(controlCategories)
                 .build();
 
-        return new MediaRouteDiscoveryRequest(selector, preference.shouldPerformActiveScan());
+        return new MediaRouteDiscoveryRequest(
+                selector, preference.shouldPerformActiveScan(), shouldScanWithScreenOff);
     }
 
     @NonNull

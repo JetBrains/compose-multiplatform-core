@@ -443,7 +443,7 @@ constructor(
                 is AppFunctionAllOfTypeMetadata -> it.qualifiedName == qualifiedName
                 else -> throw IllegalArgumentException("Unexpected data type $it for one of type")
             }
-        } ?: throw IllegalArgumentException("No object metadata found for $qualifiedName")
+        } ?: throw IllegalArgumentException("$qualifiedName does not match any of the oneOf types")
     }
 
     public companion object {

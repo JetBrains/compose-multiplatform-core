@@ -295,7 +295,8 @@ class MediaRoute2ProviderServiceAdapter extends MediaRoute2ProviderService {
     @Override
     public void onDiscoveryPreferenceChanged(@NonNull RouteDiscoveryPreference preference) {
         mServiceImpl.setBaseDiscoveryRequest(
-                MediaRouter2Utils.toMediaRouteDiscoveryRequest(preference));
+                MediaRouter2Utils.toMediaRouteDiscoveryRequest(
+                        preference, preference.shouldPerformActiveScan()));
     }
 
     public void setProviderDescriptor(@Nullable MediaRouteProviderDescriptor descriptor) {

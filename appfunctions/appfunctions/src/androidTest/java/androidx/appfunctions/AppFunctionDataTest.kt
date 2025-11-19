@@ -42,6 +42,7 @@ import androidx.appfunctions.metadata.AppFunctionFloatTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionIntTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionOneOfTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.appfunctions.metadata.AppFunctionPendingIntentTypeMetadata
 import androidx.appfunctions.metadata.AppFunctionReferenceTypeMetadata
@@ -51,6 +52,7 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Ignore
@@ -1626,6 +1628,84 @@ class AppFunctionDataTest {
         }
     }
 
+    @Test
+    fun buildOneOfType_wrongNestedType_fails() {
+        val exception =
+            assertFailsWith<IllegalArgumentException> {
+                AppFunctionData.Builder(
+                        AppFunctionResponseMetadata(TEST_ONE_OF_TYPE_METADATA),
+                        AppFunctionComponentsMetadata(),
+                    )
+                    .setAppFunctionData(
+                        ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                        AppFunctionData.Builder(
+                                AppFunctionObjectTypeMetadata(
+                                    emptyMap(),
+                                    emptyList(),
+                                    "randomTestObject",
+                                    false,
+                                ),
+                                AppFunctionComponentsMetadata(),
+                            )
+                            .build(),
+                    )
+                    .build()
+            }
+        assertThat(exception)
+            .hasMessageThat()
+            .contains("randomTestObject does not match any of the oneOf types")
+    }
+
+    @Test
+    fun buildOneOfType_correctSubclasses_success() {
+        val afd =
+            AppFunctionData.Builder(
+                    AppFunctionResponseMetadata(
+                        AppFunctionArrayTypeMetadata(TEST_ONE_OF_TYPE_METADATA, isNullable = false)
+                    ),
+                    AppFunctionComponentsMetadata(),
+                )
+                .setAppFunctionDataList(
+                    ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE,
+                    listOf(
+                        AppFunctionData.Builder(
+                                TEST_ONE_OF_TYPE_A_METADATA,
+                                AppFunctionComponentsMetadata(),
+                            )
+                            .setInt("int", 10)
+                            .build(),
+                        AppFunctionData.Builder(
+                                TEST_ONE_OF_TYPE_B_WITH_ALL_OF_METADATA,
+                                AppFunctionComponentsMetadata(),
+                            )
+                            .setString("str", "hello")
+                            .setAppFunctionDataList(
+                                "resources",
+                                listOf(
+                                    AppFunctionData.Builder(
+                                            TEST_APP_FUNCTION_TEXT_RESOURCE_METADATA,
+                                            AppFunctionComponentsMetadata(),
+                                        )
+                                        .setString("mimeType", "text/plain")
+                                        .setString("content", "hello again!")
+                                        .build()
+                                ),
+                            )
+                            .build(),
+                    ),
+                )
+                .build()
+
+        val oneOfList =
+            assertNotNull(
+                afd.getAppFunctionDataList(ExecuteAppFunctionResponse.Success.PROPERTY_RETURN_VALUE)
+            )
+        assertThat(oneOfList[0].getInt("int")).isEqualTo(10)
+        assertThat(oneOfList[1].getString("str")).isEqualTo("hello")
+        assertThat(oneOfList[1].getAppFunctionDataList("resources")?.single()?.getString("content"))
+            .isEqualTo("hello again!")
+    }
+
     companion object {
         val TEST_OBJECT_METADATA =
             AppFunctionObjectTypeMetadata(
@@ -1803,6 +1883,62 @@ class AppFunctionDataTest {
                             isNullable = false,
                         ),
                 ),
+            )
+
+        val TEST_APP_FUNCTION_TEXT_RESOURCE_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties =
+                    mapOf(
+                        "mimeType" to AppFunctionStringTypeMetadata(isNullable = false),
+                        "content" to AppFunctionStringTypeMetadata(isNullable = false),
+                    ),
+                required = listOf("mimeType", "content"),
+                qualifiedName = "androidx.appfunctions.AppFunctionTextResource",
+                isNullable = false,
+            )
+
+        val TEST_ONE_OF_TYPE_A_METADATA =
+            AppFunctionObjectTypeMetadata(
+                properties = mapOf("int" to AppFunctionIntTypeMetadata(isNullable = false)),
+                required = listOf("int"),
+                qualifiedName = "androidx.appfunctions.TestOneOfASubclass",
+                isNullable = false,
+            )
+
+        val TEST_ONE_OF_TYPE_B_WITH_ALL_OF_METADATA =
+            AppFunctionAllOfTypeMetadata(
+                matchAll =
+                    listOf(
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf("str" to AppFunctionStringTypeMetadata(isNullable = false)),
+                            required = listOf("str"),
+                            qualifiedName = "androidx.appfunctions.TestOneOfBSubclass",
+                            isNullable = false,
+                        ),
+                        AppFunctionObjectTypeMetadata(
+                            properties =
+                                mapOf(
+                                    "resources" to
+                                        AppFunctionArrayTypeMetadata(
+                                            itemType = TEST_APP_FUNCTION_TEXT_RESOURCE_METADATA,
+                                            isNullable = false,
+                                        )
+                                ),
+                            required = listOf("resources"),
+                            qualifiedName = "androidx.appfunctions.AppFunctionResourceContainer",
+                            isNullable = false,
+                        ),
+                    ),
+                qualifiedName = "androidx.appfunctions.TestOneOfBSubclass",
+                isNullable = false,
+            )
+        val TEST_ONE_OF_TYPE_METADATA =
+            AppFunctionOneOfTypeMetadata(
+                qualifiedName = "androidx.appfunctions.TestOneOfType",
+                isNullable = false,
+                matchOneOf =
+                    listOf(TEST_ONE_OF_TYPE_A_METADATA, TEST_ONE_OF_TYPE_B_WITH_ALL_OF_METADATA),
             )
     }
 }

@@ -1019,11 +1019,17 @@ public abstract class MediaRouteProviderService extends Service {
         boolean updateCompositeDiscoveryRequest() {
             MediaRouteSelector.Builder selectorBuilder = null;
             mActiveScanThrottlingHelper.reset();
+            boolean shouldScanWithScreenOff = false;
 
             if (mBaseDiscoveryRequest != null) {
                 mActiveScanThrottlingHelper.requestActiveScan(
                         mBaseDiscoveryRequest.isActiveScan(),
                         mBaseDiscoveryRequestTimestamp);
+                shouldScanWithScreenOff =
+                        mBaseDiscoveryRequest.shouldScanWithScreenOff()
+                                && mActiveScanThrottlingHelper.isActiveScanTimedOut(
+                                        mBaseDiscoveryRequest.isActiveScan(),
+                                        mBaseDiscoveryRequestTimestamp);
                 selectorBuilder = new MediaRouteSelector.Builder(
                         mBaseDiscoveryRequest.getSelector());
             }
@@ -1047,8 +1053,11 @@ public abstract class MediaRouteProviderService extends Service {
             boolean activeScan =
                     mActiveScanThrottlingHelper
                             .finalizeActiveScanAndScheduleSuppressActiveScanRunnable();
-            MediaRouteDiscoveryRequest composite = (selectorBuilder == null) ? null
-                    : new MediaRouteDiscoveryRequest(selectorBuilder.build(), activeScan);
+            MediaRouteDiscoveryRequest composite =
+                    (selectorBuilder == null)
+                            ? null
+                            : new MediaRouteDiscoveryRequest(
+                                    selectorBuilder.build(), activeScan, shouldScanWithScreenOff);
             if (!ObjectsCompat.equals(mCompositeDiscoveryRequest, composite)) {
                 mCompositeDiscoveryRequest = composite;
                 MediaRouteProvider mediaRouteProvider = mService.getMediaRouteProvider();

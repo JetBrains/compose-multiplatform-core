@@ -51,6 +51,7 @@ data class CreateNoteParams(
     val content: List<String>,
     val owner: Owner,
     val attachments: List<Attachment>,
+    val folderId: String?,
 )
 
 // TODO(b/401517540): Test AppFunctionSerializable

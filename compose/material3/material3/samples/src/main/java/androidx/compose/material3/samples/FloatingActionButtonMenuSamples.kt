@@ -76,7 +76,11 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun FloatingActionButtonMenuSample() {
     val listState = rememberLazyListState()
-    val fabVisible by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
+    val fabVisible by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex == 0 || listState.canScrollForward == false
+        }
+    }
     val focusRequester = FocusRequester()
 
     Box {

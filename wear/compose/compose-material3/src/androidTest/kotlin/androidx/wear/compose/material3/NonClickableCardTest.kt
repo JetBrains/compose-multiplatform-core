@@ -26,11 +26,12 @@ import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.wear.compose.material3.test.R
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 
 class NonClickableCardTest {
-    @get:Rule val rule: ComposeContentTestRule = createComposeRule()
+    @get:Rule val rule: ComposeContentTestRule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun non_clickable_card_has_no_click_action() {

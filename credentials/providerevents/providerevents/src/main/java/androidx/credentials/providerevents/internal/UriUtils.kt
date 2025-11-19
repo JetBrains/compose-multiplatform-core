@@ -57,17 +57,26 @@ public class UriUtils {
 
         /** Creates a new temp file responsible for credential transfer and return its uri. */
         public fun generateCredentialTransferFile(context: Context): File? {
-            val importExportDir = File(context.cacheDir, CREDENTIAL_TRANSFER_FILE_PATH)
-            importExportDir.mkdir()
-            val importExportFile = File(importExportDir, CREDENTIAL_TRANSFER_FILE_NAME)
-            val created = importExportFile.createNewFile()
-            if (!created) {
-                Log.d(TAG, "The file already exists")
-                // Could be a residual from previous session. Clean up.
-                importExportFile.delete()
-                return null
+            try {
+                val importExportDir = File(context.cacheDir, CREDENTIAL_TRANSFER_FILE_PATH)
+                importExportDir.mkdir()
+                val importExportFile = File(importExportDir, CREDENTIAL_TRANSFER_FILE_NAME)
+                if (!importExportFile.createNewFile()) {
+                    Log.d(TAG, "The file already exists. Cleaning it up and retrying")
+                    // Could be a residual from previous session. Clean up.
+                    importExportFile.delete()
+                    if (importExportFile.createNewFile()) {
+                        return importExportFile
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d(
+                    TAG,
+                    "Encountered an exception while trying to set up the transfer medium.",
+                    e,
+                )
             }
-            return importExportFile
+            return null
         }
     }
 }

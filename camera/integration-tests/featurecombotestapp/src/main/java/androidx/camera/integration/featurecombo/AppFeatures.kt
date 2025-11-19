@@ -36,6 +36,7 @@ enum class DynamicRange(val text: String) {
 
 enum class StabilizationMode(val text: String) {
     PREVIEW("Preview"),
+    VIDEO("Video"),
     OFF("Off"),
 }
 
