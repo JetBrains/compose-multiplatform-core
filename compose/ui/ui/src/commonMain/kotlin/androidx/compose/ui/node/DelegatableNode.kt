@@ -269,11 +269,26 @@ internal inline fun <reified T> DelegatableNode.visitSelfAndAncestors(
     }
 }
 
-internal inline fun <reified T> DelegatableNode.ancestors(type: NodeKind<T>): List<T>? {
+internal inline fun <reified T> DelegatableNode.ancestors(
+    type: NodeKind<T>,
+    includeSelf: Boolean = false,
+): List<T>? {
     var result: MutableList<T>? = null
-    visitAncestors(type) {
+    visitAncestors(type, includeSelf) {
         if (result == null) result = mutableListOf()
         result?.add(it)
+    }
+    return result
+}
+
+internal inline fun <reified T> DelegatableNode.setOfAncestors(
+    type: NodeKind<T>,
+    includeSelf: Boolean = false,
+): Set<T>? {
+    var result: MutableSet<T>? = null
+    visitAncestors(type, includeSelf) {
+        if (result == null) result = mutableSetOf()
+        result.add(it)
     }
     return result
 }

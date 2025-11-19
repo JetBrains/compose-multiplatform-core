@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,25 @@
  * limitations under the License.
  */
 
-package androidx.compose.remote.wear.material3
+import androidx.build.SoftwareType
 
-internal const val SCREENSHOT_GOLDEN_DIRECTORY = "compose/remote/wear/wear-material3"
+plugins {
+    id("AndroidXPlugin")
+    id("java-library")
+    id("org.jetbrains.kotlin.jvm")
+}
+
+androidx {
+    name = "Remote Compose Internal Test Utils"
+    type = SoftwareType.INTERNAL_TEST_LIBRARY
+    inceptionYear = "2024"
+    description = "Remote Compose internal test utils"
+}
+
+dependencies {
+    api(libs.jspecify)
+    api(libs.junit)
+    api(libs.truth)
+    implementation(project(":compose:remote:remote-core"))
+    implementation("org.yaml:snakeyaml:2.4")
+}

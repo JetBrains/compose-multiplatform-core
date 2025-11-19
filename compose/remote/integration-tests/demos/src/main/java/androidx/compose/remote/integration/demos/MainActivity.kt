@@ -98,6 +98,7 @@ fun Greeting(modifier: RemoteModifier = RemoteModifier) {
 
 @Suppress("RestrictedApiAndroidX")
 @Preview
-@RemoteComposable
 @Composable
-fun GreetingPreview() = RemoteComposePreview { Greeting() }
+fun GreetingPreview() {
+    RemoteComposePreview { Greeting() }
+}

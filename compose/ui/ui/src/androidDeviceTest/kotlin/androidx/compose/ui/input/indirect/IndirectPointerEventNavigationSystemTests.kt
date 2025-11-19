@@ -22,37 +22,36 @@ import android.view.MotionEvent.ACTION_DOWN
 import android.view.MotionEvent.ACTION_MOVE
 import android.view.MotionEvent.ACTION_UP
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ComposeUiFlags.isOptimizedFocusEventDispatchEnabled
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.background
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.FocusState
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusEvent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.AndroidComposeView
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.times
 import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 import androidx.test.core.view.MotionEventBuilder
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.runner.RunWith
@@ -63,9 +62,9 @@ import org.junit.runner.RunWith
  *
  * Important Note: While we set every other value in the MotionEvent for these tests, we manually
  * set the IndirectPointerEventPrimaryAxis in Compose vs. deriving it from the [MotionEvent],
- * because setting the [MotionEvent] fields required for deriving the
- * IndirectPointerEventPrimaryAxis (InputDevice and InputDevice.MotionRange) do not have setters,
- * and we can't mock() or spy() on MotionEvent to make the tests work (see details below):
+ * because setting the [MotionEvent] fields required for deriving the IndirectPointerEventPrimaryAxis
+ * (InputDevice and InputDevice.MotionRange) do not have setters, and we can't mock() or spy() on
+ * MotionEvent to make the tests work (see details below):
  *   - spy() - While spy "wraps" the original MotionEvent, it actually makes a copy of the
  * mNativePtr (so both the original MotionEvent and the spy have a non-zero, matching number).
  * During garbage collection, both the spy object and the original MotionEvent have their
@@ -86,39 +85,76 @@ class IndirectPointerEventNavigationSystemTests {
     // Used to dispatch motion events
     private lateinit var rootView: AndroidComposeView
     private var receivedEvent: IndirectPointerEvent? = null
-    private var indirectEventCancellation = false
+    private var indirectPointerCancelForTopContainer = false
+
+    // Simple UI tests
+    val testTagRootSimple = "testTagRootSimple"
+    val testTagBox1 = "testTagBox1"
+    val testTagBox2 = "testTagBox2"
+    val testTagBox3 = "testTagBox3"
+    var indirectPointerCancelForBox1 = false
+    var indirectPointerCancelForBox2 = false
+    var indirectPointerCancelForBox3 = false
+
+    // Complex UI tests
+    val testTagParent1 = "testTagParent1"
+    val testTagParent1Child1 = "testTagParent1Child1"
+    val testTagParent1Child2 = "testTagParent1Child2"
+    var onIndirectPointerCancelForParent1 = false
+    var onIndirectPointerCancelForParent1Child1 = false
+    var onIndirectPointerCancelForParent1Child2 = false
+
+    val testTagParent2 = "testTagParent2"
+    val testTagParent2Child1 = "testTagParent2Child1"
+    val testTagParent2Child2 = "testTagParent2Child2"
+    var onIndirectPointerCancelForParent2 = false
+    var onIndirectPointerCancelForParent2Child1 = false
+    var onIndirectPointerCancelForParent2Child2 = false
+
+    val testTagParent3 = "testTagParent3"
+    val testTagParent3Child1 = "testTagParent3Child1"
+    val testTagParent3Child2 = "testTagParent3Child2"
+    var onIndirectPointerCancelForParent3 = false
+    var onIndirectPointerCancelForParent3Child1 = false
+    var onIndirectPointerCancelForParent3Child2 = false
+
+    // Other general setup and focus/fling enabling behavior variables
+    val contentBoxSize = 100.dp
+    val boxPadding = 10.dp
+
+    lateinit var focusManager: FocusManager
 
     private val timeBetweenEvents = 20L
     private val flingTriggeringDistanceBetweenEvents = 50
     private val nonFlingTriggeringDistanceBetweenEvents = 5
 
+    private fun resetCancelEvents() {
+        indirectPointerCancelForTopContainer = false
+        indirectPointerCancelForBox1 = false
+        indirectPointerCancelForBox2 = false
+        indirectPointerCancelForBox3 = false
+
+        indirectPointerCancelForTopContainer = false
+        onIndirectPointerCancelForParent1 = false
+        onIndirectPointerCancelForParent1Child1 = false
+        onIndirectPointerCancelForParent1Child2 = false
+        onIndirectPointerCancelForParent2 = false
+        onIndirectPointerCancelForParent2Child1 = false
+        onIndirectPointerCancelForParent2Child2 = false
+        onIndirectPointerCancelForParent3 = false
+        onIndirectPointerCancelForParent3Child1 = false
+        onIndirectPointerCancelForParent3Child2 = false
+    }
+
     @Before
     fun setup() {
         receivedEvent = null
-        indirectEventCancellation = false
+        resetCancelEvents()
     }
 
     // ----- Primary Directional Motion Axis X tests -----
     @Test
     fun swipeViaNavigationMotionEvent_swipeRightWithPrimaryAxisX_movesFocusableBoxToNext() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -127,36 +163,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -182,19 +210,21 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(true)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
             // For a first event in a stream, previous is going to equal current (since there is
             // no previous).
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(false)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(false)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -212,17 +242,19 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(true)
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(true)
-            assertThat(indirectEventCancellation).isFalse()
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         previousTime = eventTime
@@ -243,17 +275,19 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(true)
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(true)
-            assertThat(indirectEventCancellation).isFalse()
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         previousTime = eventTime
@@ -274,46 +308,32 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(true)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertFalse(box2Focused)
-            assertTrue(box3Focused)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(false)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            // The MotionEvent combo above creates a swipe which triggers a focus move (which
+            // triggers focus change and some indirect nodes losing focus and, thus, getting an
+            // indirect cancel event).
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeLeftWithPrimaryAxisX_movesFocusableBoxToPrevious() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -322,36 +342,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -374,7 +386,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -392,7 +407,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -410,7 +428,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -428,36 +449,23 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertTrue(box1Focused)
-            assertFalse(box2Focused)
-            assertFalse(box3Focused)
+            // The MotionEvent combo above creates a swipe which triggers a focus move (which
+            // triggers focus change and some indirect nodes losing focus and, thus, getting an
+            // indirect cancel event).
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeRightAndSmallDownWithPrimaryAxisX_movesFocusableBoxToNext() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -466,36 +474,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -518,7 +518,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -537,7 +540,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -556,7 +562,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -575,36 +584,24 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
+            // The MotionEvent combo above creates a swipe which triggers a focus move (which
+            // triggers focus change and some indirect nodes losing focus and, thus, getting an
+            // indirect cancel event).
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
 
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertFalse(box2Focused)
-            assertTrue(box3Focused)
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeLeftAndSmallUpWithPrimaryAxisX_movesFocusableBoxToPrevious() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -613,36 +610,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -665,7 +654,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -684,7 +676,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -703,7 +698,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -722,13 +720,18 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertTrue(box1Focused)
-            assertFalse(box2Focused)
-            assertFalse(box3Focused)
+            // The MotionEvent combo above creates a swipe which triggers a focus move (which
+            // triggers focus change and some indirect nodes losing focus and, thus, getting an
+            // indirect cancel event).
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
@@ -736,24 +739,6 @@ class IndirectPointerEventNavigationSystemTests {
     // a navigation if the non-primary axis motion is larger (the larger motion always wins).
     @Test
     fun swipeViaNavigationMotionEvent_swipeRightAndDoubleSwipeDownWithPrimaryAxisX_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -762,36 +747,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -814,7 +791,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -833,7 +813,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -852,7 +835,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -871,13 +857,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
@@ -885,24 +868,6 @@ class IndirectPointerEventNavigationSystemTests {
     // a navigation if the non-primary axis motion is larger (the larger motion always wins).
     @Test
     fun swipeViaNavigationMotionEvent_swipeLeftAndDoubleSwipeUpWithPrimaryAxisX_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -911,36 +876,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -963,7 +920,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -982,7 +942,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1001,7 +964,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1020,37 +986,16 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     // Checks a minimal move does NOT qualify as a swipe/fling and does not trigger a behavior.
     @Test
     fun nonSwipeViaNavigationMotionEvent_minimalMoveRightWithPrimaryAxisX_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -1059,36 +1004,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -1111,7 +1048,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1129,7 +1069,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1147,7 +1090,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1165,37 +1111,16 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     // Checks a minimal move does NOT qualify as a swipe/fling and does not trigger a behavior.
     @Test
     fun nonSwipeViaNavigationMotionEvent_minimalMoveLeftWithPrimaryAxisX_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -1204,36 +1129,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -1256,7 +1173,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1274,7 +1194,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1292,7 +1215,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1310,36 +1236,15 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeDownWithPrimaryAxisX_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -1348,36 +1253,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -1400,7 +1297,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1418,7 +1318,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1436,7 +1339,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1454,36 +1360,15 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeUpWithPrimaryAxisX_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -1492,36 +1377,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -1544,7 +1421,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1562,7 +1442,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1580,7 +1463,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1598,37 +1484,16 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     // ----- Primary Directional Motion Axis Y tests -----
     @Test
     fun swipeViaNavigationMotionEvent_swipeDownWithPrimaryAxisY_movesFocusableBoxToNext() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -1637,36 +1502,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -1692,19 +1549,21 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(true)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
             // For a first event in a stream, previous is going to equal current (since there is
             // no previous).
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(false)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(false)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1722,17 +1581,19 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(true)
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(true)
-            assertThat(indirectEventCancellation).isFalse()
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         previousTime = eventTime
@@ -1753,17 +1614,19 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(true)
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(true)
-            assertThat(indirectEventCancellation).isFalse()
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         previousTime = eventTime
@@ -1784,46 +1647,33 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(true)
-            assertThat(indirectEventCancellation).isFalse()
-        }
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(false)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            // The MotionEvent combo above creates a swipe which triggers a focus move (which
+            // triggers focus change and some indirect nodes losing focus and, thus, getting an
+            // indirect cancel event).
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
 
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertFalse(box2Focused)
-            assertTrue(box3Focused)
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeUpWithPrimaryAxisY_movesFocusableBoxToPrevious() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -1832,36 +1682,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -1884,7 +1726,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1902,7 +1747,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1920,7 +1768,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -1938,36 +1789,23 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertTrue(box1Focused)
-            assertFalse(box2Focused)
-            assertFalse(box3Focused)
+            // The MotionEvent combo above creates a swipe which triggers a focus move (which
+            // triggers focus change and some indirect nodes losing focus and, thus, getting an
+            // indirect cancel event).
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeDownAndSmallRightWithPrimaryAxisY_movesFocusableBoxToNext() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -1976,36 +1814,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -2028,7 +1858,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2047,7 +1880,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2066,7 +1902,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2085,36 +1924,24 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
 
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertFalse(box2Focused)
-            assertTrue(box3Focused)
+            // The MotionEvent combo above creates a swipe which triggers a focus move (which
+            // triggers focus change and some indirect nodes losing focus and, thus, getting an
+            // indirect cancel event).
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeUpAndSmallLeftWithPrimaryAxisY_movesFocusableBoxToPrevious() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -2123,36 +1950,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -2175,7 +1994,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2194,7 +2016,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2213,7 +2038,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2232,13 +2060,18 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertTrue(box1Focused)
-            assertFalse(box2Focused)
-            assertFalse(box3Focused)
+            // The MotionEvent combo above creates a swipe which triggers a focus move (which
+            // triggers focus change and some indirect nodes losing focus and, thus, getting an
+            // indirect cancel event).
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
@@ -2246,24 +2079,6 @@ class IndirectPointerEventNavigationSystemTests {
     // a navigation if the non-primary axis motion is larger (the larger motion always wins).
     @Test
     fun swipeViaNavigationMotionEvent_swipeDownAndDoubleSwipeRightWithPrimaryAxisY_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -2272,36 +2087,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -2324,7 +2131,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2343,7 +2153,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2362,7 +2175,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2381,13 +2197,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
@@ -2395,24 +2208,6 @@ class IndirectPointerEventNavigationSystemTests {
     // a navigation if the non-primary axis motion is larger (the larger motion always wins).
     @Test
     fun swipeViaNavigationMotionEvent_swipeUpAndDoubleSwipeLeftWithPrimaryAxisY_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -2421,36 +2216,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -2473,7 +2260,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2492,7 +2282,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2511,7 +2304,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2530,37 +2326,16 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     // Checks a minimal move does NOT qualify as a swipe/fling and does not trigger a behavior.
     @Test
     fun nonSwipeViaNavigationMotionEvent_minimalMoveDownWithPrimaryAxisY_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -2569,36 +2344,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -2621,7 +2388,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2639,7 +2409,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2657,7 +2430,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2675,37 +2451,16 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     // Checks a minimal move does NOT qualify as a swipe/fling and does not trigger a behavior.
     @Test
     fun nonSwipeViaNavigationMotionEvent_minimalMoveUpWithPrimaryAxisY_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -2714,36 +2469,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -2766,7 +2513,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2784,7 +2534,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2802,7 +2555,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2820,36 +2576,15 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeRightWithPrimaryAxisY_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -2858,36 +2593,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -2910,7 +2637,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2928,7 +2658,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2946,7 +2679,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -2964,36 +2700,15 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeLeftWithPrimaryAxisY_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -3002,36 +2717,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -3054,7 +2761,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3072,7 +2782,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3090,7 +2803,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3108,13 +2824,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
@@ -3123,24 +2836,6 @@ class IndirectPointerEventNavigationSystemTests {
     // by the system into key up, down, left, and right.
     @Test
     fun swipeViaNavigationMotionEvent_swipeDownAndRightWithPrimaryAxisNone_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -3149,36 +2844,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -3204,19 +2891,21 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(true)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
             // For a first event in a stream, previous is going to equal current (since there is
             // no previous).
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(false)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(false)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3235,17 +2924,19 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(true)
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(true)
-            assertThat(indirectEventCancellation).isFalse()
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         previousTime = eventTime
@@ -3268,17 +2959,19 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(true)
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(true)
-            assertThat(indirectEventCancellation).isFalse()
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         previousTime = eventTime
@@ -3301,46 +2994,24 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(receivedEvent!!.changes.first().position.x).isEqualTo(indirectX)
-            assertThat(receivedEvent!!.changes.first().position.y).isEqualTo(indirectY)
-            assertThat(receivedEvent!!.changes.first().isConsumed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().pressed).isEqualTo(false)
-            assertThat(receivedEvent!!.changes.first().previousPosition.x)
-                .isEqualTo(previousIndirectX)
-            assertThat(receivedEvent!!.changes.first().previousPosition.y)
-                .isEqualTo(previousIndirectY)
-            assertThat(receivedEvent!!.changes.first().previousUptimeMillis).isEqualTo(previousTime)
-            assertThat(receivedEvent!!.changes.first().previousPressed).isEqualTo(true)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(false)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeUpAndLeftWithPrimaryAxisNone_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -3349,36 +3020,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -3401,7 +3064,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3420,7 +3086,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3439,7 +3108,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3458,37 +3130,16 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     // Checks a minimal move does NOT qualify as a swipe/fling and does not trigger a behavior.
     @Test
     fun nonSwipeViaNavigationMotionEvent_minimalMoveDownAndRightWithPrimaryAxisNone_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -3497,36 +3148,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -3549,7 +3192,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3568,7 +3214,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3587,7 +3236,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3606,37 +3258,16 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     // Checks a minimal move does NOT qualify as a swipe/fling and does not trigger a behavior.
     @Test
     fun nonSwipeViaNavigationMotionEvent_minimalMoveUpAndLeftWithPrimaryAxisNone_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -3645,36 +3276,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -3697,7 +3320,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3716,7 +3342,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3735,7 +3364,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3754,36 +3386,15 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeRightWithPrimaryAxisNone_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -3792,36 +3403,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -3844,7 +3447,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3862,7 +3468,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3880,7 +3489,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -3898,36 +3510,15 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeLeftWithPrimaryAxisNone_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -3936,36 +3527,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -3988,7 +3571,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4006,7 +3592,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4024,7 +3613,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4042,36 +3634,15 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeDownWithPrimaryAxisNone_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -4080,36 +3651,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -4132,7 +3695,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4150,7 +3716,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4168,7 +3737,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4186,36 +3758,15 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_swipeUpWithPrimaryAxisNone_noBehavior() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -4224,36 +3775,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -4276,7 +3819,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4294,7 +3840,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4312,7 +3861,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4330,36 +3882,15 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
-            assertThat(indirectEventCancellation).isFalse()
-        }
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused) // No behavior, stays on box 2
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
     }
 
     @Test
     fun swipeViaNavigationMotionEvent_cancelEvent_callsOnCancel() {
-        var focusManager: FocusManager? = null
-
-        val testTagBox1 = "testTagBox1"
-        var box1Focused = false
-
-        val testTagBox2 = "testTagBox2"
-        var box2Focused = false
-
-        val testTagBox3 = "testTagBox3"
-        var box3Focused = false
-
-        val contentBoxSize = 100.dp
-        val boxPadding = 10.dp
-
-        val focusRequesterBox1 = FocusRequester()
-        val focusRequesterBox2 = FocusRequester()
-        val focusRequesterBox3 = FocusRequester()
-
         rule.setContent {
             rootView = LocalView.current as AndroidComposeView
             focusManager = LocalFocusManager.current
@@ -4368,36 +3899,28 @@ class IndirectPointerEventNavigationSystemTests {
                 boxSize = contentBoxSize,
                 boxPadding = boxPadding,
                 testTagBox1 = testTagBox1,
-                onBox1FocusChanged = { box1Focused = it },
-                focusRequesterBox1 = focusRequesterBox1,
                 testTagBox2 = testTagBox2,
-                onBox2FocusChanged = { box2Focused = it },
-                focusRequesterBox2 = focusRequesterBox2,
                 testTagBox3 = testTagBox3,
-                onBox3FocusChanged = { box3Focused = it },
-                focusRequesterBox3 = focusRequesterBox3,
                 onIndirectPointerEventMainPassForAllBoxes = {
                     receivedEvent = it
                     // We don't consume the event, so it can pass on for system navigation behavior.
                 },
-                onIndirectPointerCancelForAllBoxes = { indirectEventCancellation = true },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
             )
         }
 
         // --- Test assertions and actions ---
 
         // Clear focus to start
-        rule.runOnIdle { focusManager!!.clearFocus(true) }
+        rule.runOnIdle { focusManager.clearFocus(true) }
 
         // Request initial focus for center box
-        rule.runOnIdle { focusRequesterBox2.requestFocus() }
-        rule.waitForIdle()
-
-        rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
-        }
+        rule.onNodeWithTag(testTagBox2).requestFocus()
 
         val downTime = SystemClock.uptimeMillis()
         var eventTime = downTime
@@ -4420,7 +3943,10 @@ class IndirectPointerEventNavigationSystemTests {
         }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4438,7 +3964,10 @@ class IndirectPointerEventNavigationSystemTests {
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent) }
         rule.runOnIdle {
             assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
-            assertThat(indirectEventCancellation).isFalse()
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
         }
 
         eventTime += timeBetweenEvents
@@ -4453,13 +3982,1092 @@ class IndirectPointerEventNavigationSystemTests {
                 .build()
 
         rule.runOnIdle { rootView.dispatchGenericMotionEvent(cancelEvent) }
-        rule.runOnIdle { assertThat(indirectEventCancellation).isTrue() }
-
-        // Focus should not have changed.
         rule.runOnIdle {
-            assertFalse(box1Focused)
-            assertTrue(box2Focused)
-            assertFalse(box3Focused)
+            assertThat(indirectPointerCancelForTopContainer).isTrue()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isTrue()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+    }
+
+    // ----- Tests for indirect pointer cancellations -----
+    @Test
+    fun noNavigationMotionEvent_clearsFocus_triggersIndirectCancel() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackedBoxes(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagBox1 = testTagBox1,
+                testTagBox2 = testTagBox2,
+                testTagBox3 = testTagBox3,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
+            )
+        }
+
+        // --- Test assertions and actions ---
+
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // If nothing was focused, then indirect pointer callbacks will NOT get a cancel event.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+
+        resetCancelEvents()
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagBox2).requestFocus()
+
+        // Manually clear focus
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+
+            // Because a ui element with indirect pointer was focused, indirect pointer callbacks
+            // WILL receive cancel events.
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForTopContainer).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForTopContainer).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+    }
+
+    @Test
+    fun noNavigationMotionEvent_clearsFocusWithDeeperUiTree_triggersIndirectCancel() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackUIsWithTwoBoxChildren(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagParent1 = testTagParent1,
+                testTagParent1Child1 = testTagParent1Child1,
+                testTagParent1Child2 = testTagParent1Child2,
+                testTagParent2 = testTagParent2,
+                testTagParent2Child1 = testTagParent2Child1,
+                testTagParent2Child2 = testTagParent2Child2,
+                testTagParent3 = testTagParent3,
+                testTagParent3Child1 = testTagParent3Child1,
+                testTagParent3Child2 = testTagParent3Child2,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForParent1 = { onIndirectPointerCancelForParent1 = true },
+                onIndirectPointerCancelForParent1Child1 = {
+                    onIndirectPointerCancelForParent1Child1 = true
+                },
+                onIndirectPointerCancelForParent1Child2 = {
+                    onIndirectPointerCancelForParent1Child2 = true
+                },
+                onIndirectPointerCancelForParent2 = { onIndirectPointerCancelForParent2 = true },
+                onIndirectPointerCancelForParent2Child1 = {
+                    onIndirectPointerCancelForParent2Child1 = true
+                },
+                onIndirectPointerCancelForParent2Child2 = {
+                    onIndirectPointerCancelForParent2Child2 = true
+                },
+                onIndirectPointerCancelForParent3 = { onIndirectPointerCancelForParent3 = true },
+                onIndirectPointerCancelForParent3Child1 = {
+                    onIndirectPointerCancelForParent3Child1 = true
+                },
+                onIndirectPointerCancelForParent3Child2 = {
+                    onIndirectPointerCancelForParent3Child2 = true
+                },
+            )
+        }
+
+        // --- Test assertions and actions ---
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // If nothing was focused, then indirect pointer callbacks will NOT get a cancel event.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(onIndirectPointerCancelForParent1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent3).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child2).isFalse()
+        }
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagParent2Child1).requestFocus()
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // If nothing was focused, then indirect pointer callbacks will NOT get a cancel event.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(onIndirectPointerCancelForParent1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent3).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child2).isFalse()
+        }
+
+        resetCancelEvents()
+
+        // Manually clear focus
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForTopContainer).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForTopContainer).isFalse()
+            }
+            assertThat(onIndirectPointerCancelForParent1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child2).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(onIndirectPointerCancelForParent2).isTrue()
+                assertThat(onIndirectPointerCancelForParent2Child1).isTrue()
+            } else {
+                assertThat(onIndirectPointerCancelForParent2).isFalse()
+                assertThat(onIndirectPointerCancelForParent2Child1).isFalse()
+            }
+            assertThat(onIndirectPointerCancelForParent2Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent3).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child2).isFalse()
+        }
+    }
+
+    @Test
+    fun noNavigationMotionEvent_moveFocusNextProgrammatically_triggersIndirectCancel() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackedBoxes(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagBox1 = testTagBox1,
+                testTagBox2 = testTagBox2,
+                testTagBox3 = testTagBox3,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
+            )
+        }
+
+        // --- Test assertions and actions ---
+
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagBox2).requestFocus()
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+    }
+
+    @Test
+    fun noNavigationMotionEvent_moveFocusToFocusableParentProgrammatically_triggersIndirectCancelInChild() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackedBoxesWithFocusableParent(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagRoot = testTagRootSimple,
+                testTagBox1 = testTagBox1,
+                testTagBox2 = testTagBox2,
+                testTagBox3 = testTagBox3,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
+            )
+        }
+
+        // --- Test assertions and actions ---
+
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagBox2).requestFocus()
+
+        // Manually move focus
+        rule.onNodeWithTag(testTagRootSimple).requestFocus()
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+    }
+
+    @Test
+    fun noNavigationMotionEvent_moveFocusProgrammaticallyWrapAround_triggersIndirectCancel() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackedBoxes(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagBox1 = testTagBox1,
+                testTagBox2 = testTagBox2,
+                testTagBox3 = testTagBox3,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
+            )
+        }
+
+        // --- Test assertions and actions ---
+
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagBox1).requestFocus()
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Previous) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            // For situations where the focus wraps around (start of the list going to end of the
+            // list or vice versa), an indirect cancel will be sent to existing focused indirect
+            // nodes.
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForTopContainer).isTrue()
+                assertThat(indirectPointerCancelForBox1).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForTopContainer).isFalse()
+                assertThat(indirectPointerCancelForBox1).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+    }
+
+    @Test
+    fun noNavigationMotionEvent_moveFocusProgrammaticallyWithDeeperUiTree_triggersIndirectCancel() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackUIsWithTwoBoxChildren(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagParent1 = testTagParent1,
+                testTagParent1Child1 = testTagParent1Child1,
+                testTagParent1Child2 = testTagParent1Child2,
+                testTagParent2 = testTagParent2,
+                testTagParent2Child1 = testTagParent2Child1,
+                testTagParent2Child2 = testTagParent2Child2,
+                testTagParent3 = testTagParent3,
+                testTagParent3Child1 = testTagParent3Child1,
+                testTagParent3Child2 = testTagParent3Child2,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForParent1 = { onIndirectPointerCancelForParent1 = true },
+                onIndirectPointerCancelForParent1Child1 = {
+                    onIndirectPointerCancelForParent1Child1 = true
+                },
+                onIndirectPointerCancelForParent1Child2 = {
+                    onIndirectPointerCancelForParent1Child2 = true
+                },
+                onIndirectPointerCancelForParent2 = { onIndirectPointerCancelForParent2 = true },
+                onIndirectPointerCancelForParent2Child1 = {
+                    onIndirectPointerCancelForParent2Child1 = true
+                },
+                onIndirectPointerCancelForParent2Child2 = {
+                    onIndirectPointerCancelForParent2Child2 = true
+                },
+                onIndirectPointerCancelForParent3 = { onIndirectPointerCancelForParent3 = true },
+                onIndirectPointerCancelForParent3Child1 = {
+                    onIndirectPointerCancelForParent3Child1 = true
+                },
+                onIndirectPointerCancelForParent3Child2 = {
+                    onIndirectPointerCancelForParent3Child2 = true
+                },
+            )
+        }
+
+        // --- Test assertions and actions ---
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagParent2Child1).requestFocus()
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(onIndirectPointerCancelForParent1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(onIndirectPointerCancelForParent2Child1).isTrue()
+            } else {
+                assertThat(onIndirectPointerCancelForParent2Child1).isFalse()
+            }
+            assertThat(onIndirectPointerCancelForParent2Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent3).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child2).isFalse()
+        }
+
+        resetCancelEvents()
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(onIndirectPointerCancelForParent1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child2).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(onIndirectPointerCancelForParent2).isTrue()
+                assertThat(onIndirectPointerCancelForParent2Child2).isTrue()
+            } else {
+                assertThat(onIndirectPointerCancelForParent2).isFalse()
+                assertThat(onIndirectPointerCancelForParent2Child2).isFalse()
+            }
+            assertThat(onIndirectPointerCancelForParent2Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent3).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child2).isFalse()
+        }
+
+        resetCancelEvents()
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Previous) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(onIndirectPointerCancelForParent1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child2).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(onIndirectPointerCancelForParent3).isTrue()
+                assertThat(onIndirectPointerCancelForParent3Child1).isTrue()
+            } else {
+                assertThat(onIndirectPointerCancelForParent3).isFalse()
+                assertThat(onIndirectPointerCancelForParent3Child1).isFalse()
+            }
+            assertThat(onIndirectPointerCancelForParent3Child2).isFalse()
+        }
+    }
+
+    @Test
+    fun noNavigationMotionEvent_moveFocusProgrammaticallyWrapAroundWithDeeperUiTree_triggersIndirectCancel() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackUIsWithTwoBoxChildren(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagParent1 = testTagParent1,
+                testTagParent1Child1 = testTagParent1Child1,
+                testTagParent1Child2 = testTagParent1Child2,
+                testTagParent2 = testTagParent2,
+                testTagParent2Child1 = testTagParent2Child1,
+                testTagParent2Child2 = testTagParent2Child2,
+                testTagParent3 = testTagParent3,
+                testTagParent3Child1 = testTagParent3Child1,
+                testTagParent3Child2 = testTagParent3Child2,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForParent1 = { onIndirectPointerCancelForParent1 = true },
+                onIndirectPointerCancelForParent1Child1 = {
+                    onIndirectPointerCancelForParent1Child1 = true
+                },
+                onIndirectPointerCancelForParent1Child2 = {
+                    onIndirectPointerCancelForParent1Child2 = true
+                },
+                onIndirectPointerCancelForParent2 = { onIndirectPointerCancelForParent2 = true },
+                onIndirectPointerCancelForParent2Child1 = {
+                    onIndirectPointerCancelForParent2Child1 = true
+                },
+                onIndirectPointerCancelForParent2Child2 = {
+                    onIndirectPointerCancelForParent2Child2 = true
+                },
+                onIndirectPointerCancelForParent3 = { onIndirectPointerCancelForParent3 = true },
+                onIndirectPointerCancelForParent3Child1 = {
+                    onIndirectPointerCancelForParent3Child1 = true
+                },
+                onIndirectPointerCancelForParent3Child2 = {
+                    onIndirectPointerCancelForParent3Child2 = true
+                },
+            )
+        }
+
+        // --- Test assertions and actions ---
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagParent1Child1).requestFocus()
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Previous) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            // For situations where the focus wraps around (start of the list going to end of the
+            // list or vice versa), an indirect cancel will be sent to existing focused indirect
+            // nodes.
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForTopContainer).isTrue()
+                assertThat(onIndirectPointerCancelForParent1).isTrue()
+                assertThat(onIndirectPointerCancelForParent1Child1).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForTopContainer).isFalse()
+                assertThat(onIndirectPointerCancelForParent1).isFalse()
+                assertThat(onIndirectPointerCancelForParent1Child1).isFalse()
+            }
+            assertThat(onIndirectPointerCancelForParent1Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent3).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child2).isFalse()
+        }
+
+        resetCancelEvents()
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForTopContainer).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForTopContainer).isFalse()
+            }
+            assertThat(onIndirectPointerCancelForParent1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent1Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child2).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(onIndirectPointerCancelForParent3).isTrue()
+                assertThat(onIndirectPointerCancelForParent3Child2).isTrue()
+            } else {
+                assertThat(onIndirectPointerCancelForParent3).isFalse()
+                assertThat(onIndirectPointerCancelForParent3Child2).isFalse()
+            }
+            assertThat(onIndirectPointerCancelForParent3Child1).isFalse()
+        }
+
+        resetCancelEvents()
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(onIndirectPointerCancelForParent1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(onIndirectPointerCancelForParent1Child1).isTrue()
+            } else {
+                assertThat(onIndirectPointerCancelForParent1Child1).isFalse()
+            }
+            assertThat(onIndirectPointerCancelForParent1Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent2Child2).isFalse()
+            assertThat(onIndirectPointerCancelForParent3).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child1).isFalse()
+            assertThat(onIndirectPointerCancelForParent3Child2).isFalse()
+        }
+    }
+
+    @Test
+    fun downViaNavigationMotionEvent_moveFocusProgrammatically_triggersIndirectCancel() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackedBoxes(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagBox1 = testTagBox1,
+                testTagBox2 = testTagBox2,
+                testTagBox3 = testTagBox3,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
+            )
+        }
+
+        // --- Test assertions and actions ---
+
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagBox2).requestFocus()
+
+        val downTime = SystemClock.uptimeMillis()
+        val eventTime = downTime
+        val previousTime = eventTime
+        val indirectX = 100f
+        val previousIndirectX = indirectX
+        val indirectY = 100f
+        val previousIndirectY = indirectY
+
+        val downEvent =
+            MotionEventBuilder.newBuilder()
+                .setDownTime(downTime)
+                .setEventTime(eventTime)
+                .setAction(ACTION_DOWN)
+                .setSource(SOURCE_TOUCH_NAVIGATION)
+                .setPointer(indirectX, indirectY)
+                .build()
+
+        rule.runOnIdle {
+            rootView.primaryDirectionalMotionAxisOverride =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X
+            rootView.dispatchGenericMotionEvent(downEvent)
+        }
+        rule.runOnIdle {
+            assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            // For a first event in a stream, previous is going to equal current (since there is
+            // no previous).
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(false)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+
+        receivedEvent = null
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+    }
+
+    @Test
+    fun downAndMovesViaNavigationMotionEvent_moveFocusProgrammatically_triggersIndirectCancel() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackedBoxes(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagBox1 = testTagBox1,
+                testTagBox2 = testTagBox2,
+                testTagBox3 = testTagBox3,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
+            )
+        }
+
+        // --- Test assertions and actions ---
+
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagBox2).requestFocus()
+
+        val downTime = SystemClock.uptimeMillis()
+        var eventTime = downTime
+        var previousTime = eventTime
+        var indirectX = 100f
+        var previousIndirectX = indirectX
+        val indirectY = 100f
+        val previousIndirectY = indirectY
+
+        val downEvent =
+            MotionEventBuilder.newBuilder()
+                .setDownTime(downTime)
+                .setEventTime(eventTime)
+                .setAction(ACTION_DOWN)
+                .setSource(SOURCE_TOUCH_NAVIGATION)
+                .setPointer(indirectX, indirectY)
+                .build()
+
+        rule.runOnIdle {
+            rootView.primaryDirectionalMotionAxisOverride =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X
+            rootView.dispatchGenericMotionEvent(downEvent)
+        }
+        rule.runOnIdle {
+            assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            // For a first event in a stream, previous is going to equal current (since there is
+            // no previous).
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(false)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+
+        eventTime += timeBetweenEvents
+        indirectX += flingTriggeringDistanceBetweenEvents
+
+        val moveEvent1 =
+            MotionEventBuilder.newBuilder()
+                .setDownTime(downTime)
+                .setEventTime(eventTime)
+                .setAction(ACTION_MOVE)
+                .setSource(SOURCE_TOUCH_NAVIGATION)
+                .setPointer(indirectX, indirectY)
+                .build()
+
+        rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
+        rule.runOnIdle {
+            assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+
+        previousTime = eventTime
+        previousIndirectX = indirectX
+
+        eventTime += timeBetweenEvents
+        indirectX += flingTriggeringDistanceBetweenEvents
+
+        val moveEvent2 =
+            MotionEventBuilder.newBuilder()
+                .setDownTime(downTime)
+                .setEventTime(eventTime)
+                .setAction(ACTION_MOVE)
+                .setSource(SOURCE_TOUCH_NAVIGATION)
+                .setPointer(indirectX, indirectY)
+                .build()
+
+        rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
+        rule.runOnIdle {
+            assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+
+        receivedEvent = null
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+    }
+
+    // Indirect cancel will trigger after an up (considered the end of the event stream). We test
+    // that after a full swipe (down, move, move, up).
+    @Test
+    fun swipeViaNavigationMotionEvent_moveFocusProgrammatically_triggersIndirectCancel() {
+        rule.setContent {
+            rootView = LocalView.current as AndroidComposeView
+            focusManager = LocalFocusManager.current
+
+            ThreeStackedBoxes(
+                boxSize = contentBoxSize,
+                boxPadding = boxPadding,
+                testTagBox1 = testTagBox1,
+                testTagBox2 = testTagBox2,
+                testTagBox3 = testTagBox3,
+                onIndirectPointerEventMainPassForAllBoxes = {
+                    receivedEvent = it
+                    // We don't consume the event, so it can pass on for system navigation behavior.
+                },
+                onIndirectPointerCancelForTopContainer = {
+                    indirectPointerCancelForTopContainer = true
+                },
+                onIndirectPointerCancelForBox1 = { indirectPointerCancelForBox1 = true },
+                onIndirectPointerCancelForBox2 = { indirectPointerCancelForBox2 = true },
+                onIndirectPointerCancelForBox3 = { indirectPointerCancelForBox3 = true },
+            )
+        }
+
+        // --- Test assertions and actions ---
+
+        // Clear focus to start
+        rule.runOnIdle { focusManager.clearFocus(true) }
+
+        // Request initial focus for center box
+        rule.onNodeWithTag(testTagBox2).requestFocus()
+
+        val downTime = SystemClock.uptimeMillis()
+        var eventTime = downTime
+        var previousTime = eventTime
+        var indirectX = 100f
+        var previousIndirectX = indirectX
+        val indirectY = 100f
+        val previousIndirectY = indirectY
+
+        val downEvent =
+            MotionEventBuilder.newBuilder()
+                .setDownTime(downTime)
+                .setEventTime(eventTime)
+                .setAction(ACTION_DOWN)
+                .setSource(SOURCE_TOUCH_NAVIGATION)
+                .setPointer(indirectX, indirectY)
+                .build()
+
+        rule.runOnIdle {
+            rootView.primaryDirectionalMotionAxisOverride =
+                IndirectPointerEventPrimaryDirectionalMotionAxis.X
+            rootView.dispatchGenericMotionEvent(downEvent)
+        }
+        rule.runOnIdle {
+            assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Press)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            // For a first event in a stream, previous is going to equal current (since there is
+            // no previous).
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(false)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+
+        eventTime += timeBetweenEvents
+        indirectX += flingTriggeringDistanceBetweenEvents
+
+        val moveEvent1 =
+            MotionEventBuilder.newBuilder()
+                .setDownTime(downTime)
+                .setEventTime(eventTime)
+                .setAction(ACTION_MOVE)
+                .setSource(SOURCE_TOUCH_NAVIGATION)
+                .setPointer(indirectX, indirectY)
+                .build()
+
+        rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent1) }
+        rule.runOnIdle {
+            assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+
+        previousTime = eventTime
+        previousIndirectX = indirectX
+
+        eventTime += timeBetweenEvents
+        indirectX += flingTriggeringDistanceBetweenEvents
+
+        val moveEvent2 =
+            MotionEventBuilder.newBuilder()
+                .setDownTime(downTime)
+                .setEventTime(eventTime)
+                .setAction(ACTION_MOVE)
+                .setSource(SOURCE_TOUCH_NAVIGATION)
+                .setPointer(indirectX, indirectY)
+                .build()
+
+        rule.runOnIdle { rootView.dispatchGenericMotionEvent(moveEvent2) }
+        rule.runOnIdle {
+            assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Move)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(true)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+
+        previousTime = eventTime
+        previousIndirectX = indirectX
+
+        eventTime += timeBetweenEvents
+        indirectX += flingTriggeringDistanceBetweenEvents
+
+        val upEvent =
+            MotionEventBuilder.newBuilder()
+                .setDownTime(downTime)
+                .setEventTime(eventTime)
+                .setAction(ACTION_UP)
+                .setSource(SOURCE_TOUCH_NAVIGATION)
+                .setPointer(indirectX, indirectY)
+                .build()
+
+        rule.runOnIdle { rootView.dispatchGenericMotionEvent(upEvent) }
+        rule.runOnIdle {
+            assertThat(receivedEvent?.type).isEqualTo(IndirectPointerEventType.Release)
+            val firstChange = checkNotNull(receivedEvent?.changes?.first())
+            assertThat(firstChange.position.x).isEqualTo(indirectX)
+            assertThat(firstChange.position.y).isEqualTo(indirectY)
+            assertThat(firstChange.isConsumed).isEqualTo(false)
+            assertThat(firstChange.pressed).isEqualTo(false)
+            assertThat(firstChange.previousPosition.x).isEqualTo(previousIndirectX)
+            assertThat(firstChange.previousPosition.y).isEqualTo(previousIndirectY)
+            assertThat(firstChange.previousUptimeMillis).isEqualTo(previousTime)
+            assertThat(firstChange.previousPressed).isEqualTo(true)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox2).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox2).isFalse()
+            }
+
+            assertThat(indirectPointerCancelForBox3).isFalse()
+        }
+
+        receivedEvent = null
+
+        resetCancelEvents()
+
+        // Manually move focus
+        rule.runOnIdle { focusManager.moveFocus(FocusDirection.Previous) }
+
+        rule.runOnIdle {
+            assertThat(receivedEvent).isEqualTo(null)
+            // Any focus move (which triggers a focus change) will cause an indirect cancellation
+            // event for any losing focus.
+            assertThat(indirectPointerCancelForTopContainer).isFalse()
+            assertThat(indirectPointerCancelForBox1).isFalse()
+            assertThat(indirectPointerCancelForBox2).isFalse()
+            @OptIn(ExperimentalComposeUiApi::class)
+            if (isOptimizedFocusEventDispatchEnabled) {
+                assertThat(indirectPointerCancelForBox3).isTrue()
+            } else {
+                assertThat(indirectPointerCancelForBox3).isFalse()
+            }
         }
     }
 
@@ -4468,138 +5076,295 @@ class IndirectPointerEventNavigationSystemTests {
         boxSize: Dp,
         boxPadding: Dp,
         testTagBox1: String,
-        onBox1FocusChanged: (Boolean) -> Unit,
-        focusRequesterBox1: FocusRequester,
         testTagBox2: String,
-        onBox2FocusChanged: (Boolean) -> Unit,
-        focusRequesterBox2: FocusRequester,
         testTagBox3: String,
-        onBox3FocusChanged: (Boolean) -> Unit,
-        focusRequesterBox3: FocusRequester,
         onIndirectPointerEventMainPassForAllBoxes: (IndirectPointerEvent) -> Unit,
-        onIndirectPointerCancelForAllBoxes: () -> Unit,
+        onIndirectPointerCancelForTopContainer: () -> Unit,
+        onIndirectPointerCancelForBox1: () -> Unit,
+        onIndirectPointerCancelForBox2: () -> Unit,
+        onIndirectPointerCancelForBox3: () -> Unit,
     ) {
-        Layout(
+        Column(
             modifier =
                 @Suppress("DEPRECATION")
-                Modifier.onIndirectPointerInput(
-                    onEvent = {
-                        indirectPointerEvent: IndirectPointerEvent,
-                        pointerEventPass: PointerEventPass ->
-                        if (pointerEventPass == PointerEventPass.Main) {
-                            onIndirectPointerEventMainPassForAllBoxes(indirectPointerEvent)
-                        }
-                    },
-                    onCancel = { onIndirectPointerCancelForAllBoxes() },
-                ),
-            content = {
-                // Box 1
-                CustomBox(
-                    modifier =
-                        Modifier.testTag(testTagBox1)
-                            .onFocusEvent { focusState: FocusState ->
-                                onBox1FocusChanged(focusState.isFocused)
+                Modifier.fillMaxSize()
+                    .onIndirectPointerInput(
+                        onEvent = {
+                            indirectPointerEvent: IndirectPointerEvent,
+                            pointerEventPass: PointerEventPass ->
+                            if (pointerEventPass == PointerEventPass.Main) {
+                                onIndirectPointerEventMainPassForAllBoxes(indirectPointerEvent)
                             }
-                            .focusRequester(focusRequesterBox1)
-                            .focusable(),
-                    contentSize = boxSize,
-                    color = Color.Red,
-                    padding = boxPadding,
-                )
-
-                // Box 2
-                CustomBox(
-                    modifier =
-                        Modifier.testTag(testTagBox2)
-                            .onFocusEvent { focusState: FocusState ->
-                                onBox2FocusChanged(focusState.isFocused)
-                            }
-                            .focusRequester(focusRequesterBox2)
-                            .focusable(),
-                    contentSize = boxSize,
-                    color = Color.Green,
-                    padding = boxPadding,
-                )
-
-                // Box 3
-                CustomBox(
-                    modifier =
-                        Modifier.testTag(testTagBox3)
-                            .onFocusEvent { focusState: FocusState ->
-                                onBox3FocusChanged(focusState.isFocused)
-                            }
-                            .focusRequester(focusRequesterBox3)
-                            .focusable(),
-                    contentSize = boxSize,
-                    color = Color.Blue,
-                    padding = boxPadding,
-                )
-            },
-        ) { measurables, constraints ->
-            val placeables = measurables.map { measurable -> measurable.measure(constraints) }
-
-            var yPosition = 0
-            val layoutWidth = placeables.maxOfOrNull { it.width } ?: constraints.minWidth
-            val layoutHeight = placeables.sumOf { it.height }
-
-            layout(layoutWidth, layoutHeight) {
-                placeables.forEach { placeable ->
-                    placeable.placeRelative(x = 0, y = yPosition)
-                    yPosition += placeable.height
-                }
-            }
+                        },
+                        onCancel = { onIndirectPointerCancelForTopContainer() },
+                    )
+        ) {
+            // Box 1
+            Box(
+                modifier =
+                    Modifier.testTag(testTagBox1)
+                        .size(boxSize)
+                        .background(Color.Red)
+                        .padding(boxPadding)
+                        .onIndirectPointerInput(
+                            onEvent = { _, _ -> },
+                            onCancel = { onIndirectPointerCancelForBox1() },
+                        )
+                        .focusable()
+            )
+            // Box 2
+            Box(
+                modifier =
+                    Modifier.testTag(testTagBox2)
+                        .size(boxSize)
+                        .background(Color.Green)
+                        .padding(boxPadding)
+                        .onIndirectPointerInput(
+                            onEvent = { _, _ -> },
+                            onCancel = { onIndirectPointerCancelForBox2() },
+                        )
+                        .focusable()
+            )
+            // Box 3
+            Box(
+                modifier =
+                    Modifier.testTag(testTagBox3)
+                        .size(boxSize)
+                        .background(Color.Blue)
+                        .padding(boxPadding)
+                        .onIndirectPointerInput(
+                            onEvent = { _, _ -> },
+                            onCancel = { onIndirectPointerCancelForBox3() },
+                        )
+                        .focusable()
+            )
         }
     }
 
-    // Don't have access to Foundation Composables, so these fill in for the tests.
     @Composable
-    private fun CustomBox(
-        modifier: Modifier = Modifier,
-        contentSize: Dp,
-        padding: Dp = 0.dp,
-        color: Color,
-        content: @Composable () -> Unit = {},
+    private fun ThreeStackedBoxesWithFocusableParent(
+        boxSize: Dp,
+        boxPadding: Dp,
+        testTagRoot: String,
+        testTagBox1: String,
+        testTagBox2: String,
+        testTagBox3: String,
+        onIndirectPointerEventMainPassForAllBoxes: (IndirectPointerEvent) -> Unit,
+        onIndirectPointerCancelForTopContainer: () -> Unit,
+        onIndirectPointerCancelForBox1: () -> Unit,
+        onIndirectPointerCancelForBox2: () -> Unit,
+        onIndirectPointerCancelForBox3: () -> Unit,
     ) {
-        Layout(
-            content = content,
+        Column(
             modifier =
-                modifier.drawBehind {
-                    val paddingPx = padding.toPx()
-                    val left = paddingPx
-                    val top = paddingPx
-                    val right = size.width - paddingPx
-                    val bottom = size.height - paddingPx
-
-                    drawRect(
-                        SolidColor(color),
-                        topLeft = Offset(left, top),
-                        size = Size(right - left, bottom - top),
+                @Suppress("DEPRECATION")
+                Modifier.testTag(testTagRoot)
+                    .fillMaxSize()
+                    .onIndirectPointerInput(
+                        onEvent = {
+                            indirectPointerEvent: IndirectPointerEvent,
+                            pointerEventPass: PointerEventPass ->
+                            if (pointerEventPass == PointerEventPass.Main) {
+                                onIndirectPointerEventMainPassForAllBoxes(indirectPointerEvent)
+                            }
+                        },
+                        onCancel = { onIndirectPointerCancelForTopContainer() },
                     )
-                },
-        ) { measurables, incomingConstraints ->
-            val totalWidthPx = (contentSize + 2 * padding).roundToPx()
-            val totalHeightPx = (contentSize + 2 * padding).roundToPx()
+                    .focusable()
+        ) {
+            // Box 1
+            Box(
+                modifier =
+                    Modifier.testTag(testTagBox1)
+                        .size(boxSize)
+                        .background(Color.Red)
+                        .padding(boxPadding)
+                        .onIndirectPointerInput(
+                            onEvent = { _, _ -> },
+                            onCancel = { onIndirectPointerCancelForBox1() },
+                        )
+                        .focusable()
+            )
+            // Box 2
+            Box(
+                modifier =
+                    Modifier.testTag(testTagBox2)
+                        .size(boxSize)
+                        .background(Color.Green)
+                        .padding(boxPadding)
+                        .onIndirectPointerInput(
+                            onEvent = { _, _ -> },
+                            onCancel = { onIndirectPointerCancelForBox2() },
+                        )
+                        .focusable()
+            )
+            // Box 3
+            Box(
+                modifier =
+                    Modifier.testTag(testTagBox3)
+                        .size(boxSize)
+                        .background(Color.Blue)
+                        .padding(boxPadding)
+                        .onIndirectPointerInput(
+                            onEvent = { _, _ -> },
+                            onCancel = { onIndirectPointerCancelForBox3() },
+                        )
+                        .focusable()
+            )
+        }
+    }
 
-            val boxConstraints =
-                incomingConstraints.copy(
-                    minWidth = totalWidthPx,
-                    maxWidth = totalWidthPx,
-                    minHeight = totalHeightPx,
-                    maxHeight = totalHeightPx,
+    @Composable
+    private fun ThreeStackUIsWithTwoBoxChildren(
+        boxSize: Dp,
+        boxPadding: Dp,
+        testTagParent1: String,
+        testTagParent1Child1: String,
+        testTagParent1Child2: String,
+        testTagParent2: String,
+        testTagParent2Child1: String,
+        testTagParent2Child2: String,
+        testTagParent3: String,
+        testTagParent3Child1: String,
+        testTagParent3Child2: String,
+        onIndirectPointerEventMainPassForAllBoxes: (IndirectPointerEvent) -> Unit,
+        onIndirectPointerCancelForTopContainer: () -> Unit,
+        onIndirectPointerCancelForParent1: () -> Unit,
+        onIndirectPointerCancelForParent1Child1: () -> Unit,
+        onIndirectPointerCancelForParent1Child2: () -> Unit,
+        onIndirectPointerCancelForParent2: () -> Unit,
+        onIndirectPointerCancelForParent2Child1: () -> Unit,
+        onIndirectPointerCancelForParent2Child2: () -> Unit,
+        onIndirectPointerCancelForParent3: () -> Unit,
+        onIndirectPointerCancelForParent3Child1: () -> Unit,
+        onIndirectPointerCancelForParent3Child2: () -> Unit,
+    ) {
+        Box(
+            modifier =
+                Modifier.fillMaxSize()
+                    .onIndirectPointerInput(
+                        onEvent = {
+                            indirectPointerEvent: IndirectPointerEvent,
+                            pointerEventPass: PointerEventPass ->
+                            if (pointerEventPass == PointerEventPass.Main) {
+                                onIndirectPointerEventMainPassForAllBoxes(indirectPointerEvent)
+                            }
+                        },
+                        onCancel = { onIndirectPointerCancelForTopContainer() },
+                    )
+        ) {
+            // Parent UI Element 1
+            Column(
+                modifier =
+                    Modifier.testTag(testTagParent1)
+                        .fillMaxWidth()
+                        .onIndirectPointerInput(
+                            onEvent = { _, _ -> },
+                            onCancel = onIndirectPointerCancelForParent1,
+                        )
+            ) {
+                Box(
+                    modifier =
+                        @Suppress("DEPRECATION")
+                        Modifier.testTag(testTagParent1Child1)
+                            .size(boxSize)
+                            .background(Color.Red)
+                            .padding(boxPadding)
+                            .onIndirectPointerInput(
+                                onEvent = { _, _ -> },
+                                onCancel = onIndirectPointerCancelForParent1Child1,
+                            )
+                            .focusable()
                 )
-
-            val contentConstraints =
-                Constraints(
-                    minWidth = (contentSize - 2 * padding).roundToPx().coerceAtLeast(0),
-                    maxWidth = (contentSize - 2 * padding).roundToPx().coerceAtLeast(0),
-                    minHeight = (contentSize - 2 * padding).roundToPx().coerceAtLeast(0),
-                    maxHeight = (contentSize - 2 * padding).roundToPx().coerceAtLeast(0),
+                Box(
+                    modifier =
+                        @Suppress("DEPRECATION")
+                        Modifier.testTag(testTagParent1Child2)
+                            .size(boxSize)
+                            .background(Color.Magenta)
+                            .padding(boxPadding)
+                            .onIndirectPointerInput(
+                                onEvent = { _, _ -> },
+                                onCancel = onIndirectPointerCancelForParent1Child2,
+                            )
+                            .focusable()
                 )
-            val placeables = measurables.map { it.measure(contentConstraints) }
+            }
 
-            layout(totalWidthPx, totalHeightPx) {
-                val paddingPx = padding.roundToPx()
-                placeables.forEach { placeable -> placeable.placeRelative(paddingPx, paddingPx) }
+            // Parent UI Element 2
+            Column(
+                modifier =
+                    Modifier.testTag(testTagParent2)
+                        .fillMaxWidth()
+                        .onIndirectPointerInput(
+                            onEvent = { _, _ -> },
+                            onCancel = onIndirectPointerCancelForParent2,
+                        )
+            ) {
+                Box(
+                    modifier =
+                        @Suppress("DEPRECATION")
+                        Modifier.testTag(testTagParent2Child1)
+                            .size(boxSize)
+                            .background(Color.Green)
+                            .padding(boxPadding)
+                            .onIndirectPointerInput(
+                                onEvent = { _, _ -> },
+                                onCancel = onIndirectPointerCancelForParent2Child1,
+                            )
+                            .focusable()
+                )
+                Box(
+                    modifier =
+                        @Suppress("DEPRECATION")
+                        Modifier.testTag(testTagParent2Child2)
+                            .size(boxSize)
+                            .background(Color.Yellow)
+                            .padding(boxPadding)
+                            .onIndirectPointerInput(
+                                onEvent = { _, _ -> },
+                                onCancel = onIndirectPointerCancelForParent2Child2,
+                            )
+                            .focusable()
+                )
+            }
+
+            // Parent UI Element 3
+            Column(
+                modifier =
+                    Modifier.testTag(testTagParent3)
+                        .fillMaxWidth()
+                        .onIndirectPointerInput(
+                            onEvent = { _, _ -> },
+                            onCancel = onIndirectPointerCancelForParent3,
+                        )
+            ) {
+                Box(
+                    modifier =
+                        @Suppress("DEPRECATION")
+                        Modifier.testTag(testTagParent3Child1)
+                            .size(boxSize)
+                            .background(Color.Blue)
+                            .padding(boxPadding)
+                            .onIndirectPointerInput(
+                                onEvent = { _, _ -> },
+                                onCancel = onIndirectPointerCancelForParent3Child1,
+                            )
+                            .focusable()
+                )
+                Box(
+                    modifier =
+                        @Suppress("DEPRECATION")
+                        Modifier.testTag(testTagParent3Child2)
+                            .size(boxSize)
+                            .background(Color.Cyan)
+                            .padding(boxPadding)
+                            .onIndirectPointerInput(
+                                onEvent = { _, _ -> },
+                                onCancel = onIndirectPointerCancelForParent3Child2,
+                            )
+                            .focusable()
+                )
             }
         }
     }
