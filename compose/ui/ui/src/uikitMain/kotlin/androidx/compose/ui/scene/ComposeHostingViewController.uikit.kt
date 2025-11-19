@@ -81,7 +81,6 @@ import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
 import platform.UIKit.UIStatusBarAnimation
 import platform.UIKit.UIStatusBarStyle
-import platform.UIKit.UITraitCollection
 import platform.UIKit.UIUserInterfaceLayoutDirection
 import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIViewControllerTransitionCoordinatorProtocol
@@ -201,9 +200,7 @@ internal class ComposeHostingViewController(
         windowContext.updateWindowContainerSize()
     }
 
-    override fun traitCollectionDidChange(previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
+    override fun userInterfaceStyleDidChange() {
         systemThemeState.value = traitCollection.userInterfaceStyle.asComposeSystemTheme()
     }
 

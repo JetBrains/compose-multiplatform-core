@@ -29,6 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Indicates that view is considered as closed in terms of structural containment
 - (void)viewDidLeaveWindowHierarchy;
 
+/// Indicates that trait interface style trait changed
+- (void)userInterfaceStyleDidChange;
+
 @end
 
 NS_ASSUME_NONNULL_END

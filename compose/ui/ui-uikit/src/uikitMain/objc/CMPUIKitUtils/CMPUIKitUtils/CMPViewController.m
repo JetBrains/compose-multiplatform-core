@@ -79,6 +79,8 @@
     if (self) {
         _lifecycleDelegate = delegate;
         _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
+        
+        [self addTraitCollectionObserverIfNeeded];
     }
     
     return self;
@@ -90,9 +92,22 @@
     if (self) {
         _lifecycleDelegate = nil;
         _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
+
+        [self addTraitCollectionObserverIfNeeded];
     }
     
     return self;
+}
+
+- (void)addTraitCollectionObserverIfNeeded {
+    __weak typeof(self) weakSelf = self;
+    if (@available(iOS 17, *)) {
+        [self registerForTraitChanges:@[[UITraitUserInterfaceStyle class]]
+                          withHandler:^(__kindof id<UITraitEnvironment>  _Nonnull traitEnvironment,
+                                        UITraitCollection * _Nonnull previousCollection) {
+            [weakSelf userInterfaceStyleDidChange];
+        }];
+    }
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -144,10 +159,23 @@
     });
 }
 
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+    [super traitCollectionDidChange:previousTraitCollection];
+
+    if (@available(iOS 17, *)) {
+        // Do nothing
+    } else {
+        [self userInterfaceStyleDidChange];
+    }
+}
+
 - (void)viewControllerDidEnterWindowHierarchy {
 }
 
 - (void)viewControllerDidLeaveWindowHierarchy {
+}
+
+- (void)userInterfaceStyleDidChange {
 }
 
 - (void)dealloc {

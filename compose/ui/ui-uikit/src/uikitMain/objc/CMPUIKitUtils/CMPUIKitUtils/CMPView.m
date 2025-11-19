@@ -32,6 +32,15 @@
         _lifecycleDelegate = delegate;
         _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
         _isViewInWindowHierarchy = NO;
+        
+        __weak typeof(self) weakSelf = self;
+        if (@available(iOS 17, *)) {
+            [self registerForTraitChanges:@[[UITraitUserInterfaceStyle class]]
+                              withHandler:^(__kindof id<UITraitEnvironment>  _Nonnull traitEnvironment,
+                                            UITraitCollection * _Nonnull previousCollection) {
+                [weakSelf userInterfaceStyleDidChange];
+            }];
+        }
     }
     
     return self;
@@ -95,10 +104,23 @@
     });
 }
 
+- (void)traitCollectionDidChange:(UITraitCollection *)previousTraitCollection {
+    [super traitCollectionDidChange:previousTraitCollection];
+
+    if (@available(iOS 17, *)) {
+        // Do nothing
+    } else {
+        [self userInterfaceStyleDidChange];
+    }
+}
+
 - (void)viewDidEnterWindowHierarchy {
 }
 
 - (void)viewDidLeaveWindowHierarchy {
+}
+
+- (void)userInterfaceStyleDidChange {
 }
 
 - (void)dealloc {
