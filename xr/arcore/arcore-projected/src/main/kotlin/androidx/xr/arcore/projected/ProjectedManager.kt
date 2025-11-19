@@ -170,7 +170,12 @@ internal constructor(
             serviceConfig.geospatialMode = ProjectedGeospatialMode.DISABLED
             serviceConfig.trackingMode = ProjectedTrackingMode.PROJECTED_TRACKING_3DOF
         }
-        service.startWithConfiguration(serviceConfig)
+        val status = service.startWithConfiguration(serviceConfig)
+        if (status == ProjectedStatus.PROJECTED_ERROR_FINE_LOCATION_PERMISSION_NOT_GRANTED) {
+            throw SecurityException(
+                "Geospatial mode requested but app does not have ACCESS_FINE_LOCATION and ACCESS_COARSE_LOCATION"
+            )
+        }
         running.set(true)
     }
 

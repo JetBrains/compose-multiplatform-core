@@ -193,6 +193,63 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
         )
     }
 
+    /*
+     * The following tests add VideoCapture since some OEMs may not expect image capture or flash
+     * captures when VideoCapture is bound.
+     *
+     * By default, VideoCapture uses MediaCodec surface which may have more issues with flash
+     * captures.
+     *
+     * VideoCapture surface processing changes the MediaCodec surface to a SurfaceTexture one
+     * which may have different kinds of problems.
+     */
+
+    @LabTestRule.LabTestRearCamera
+    @Test
+    fun canCaptureWithFlashOn_whenVideoCaptureIsBound() {
+        canTakePicture(
+            flashMode = ImageCapture.FLASH_MODE_ON,
+            captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            addSharedEffect = false,
+            addVideoCapture = true,
+        )
+    }
+
+    @LabTestRule.LabTestFrontCamera
+    @Test
+    fun canCaptureWithFlashOnInDarkEnvironment_whenVideoCaptureIsBound() {
+        canTakePicture(
+            flashMode = ImageCapture.FLASH_MODE_ON,
+            captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            addSharedEffect = false,
+            addVideoCapture = true,
+        )
+    }
+
+    @LabTestRule.LabTestRearCamera
+    @Test
+    fun canCaptureWithFlashOn_whenSurfaceProcessorVideoCaptureIsBound() {
+        canTakePicture(
+            flashMode = ImageCapture.FLASH_MODE_ON,
+            captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            addSharedEffect = false,
+            addVideoCapture = true,
+            enableVideoCaptureSurfaceProcessing = true,
+        )
+    }
+
+    @LabTestRule.LabTestFrontCamera
+    @Test
+    fun canCaptureWithFlashOnInDarkEnvironment_whenSurfaceProcessorVideoCaptureIsBound() {
+        canTakePicture(
+            flashMode = ImageCapture.FLASH_MODE_ON,
+            captureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY,
+            addSharedEffect = false,
+            addVideoCapture = true,
+            enableVideoCaptureSurfaceProcessing = true,
+        )
+    }
+
     @LabTestRule.LabTestRearCamera
     @Test
     fun requestAeModeIsOnAlwaysFlash_whenCapturedWithFlashOn() {
@@ -278,10 +335,12 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
     private fun canTakePicture(
         flashMode: Int,
         captureMode: Int,
+        addSharedEffect: Boolean,
         captureCallback: CameraCaptureSession.CaptureCallback? = null,
         flashMustBeSupported: Boolean = false,
         assertCaptureCount: Boolean = true,
-        addSharedEffect: Boolean,
+        addVideoCapture: Boolean = false,
+        enableVideoCaptureSurfaceProcessing: Boolean = false,
     ) = runBlocking {
         val imageCapture =
             ImageCapture.Builder()
@@ -296,15 +355,27 @@ class FlashTest(private val implName: String, private val cameraXConfig: CameraX
 
         val preview = Preview.Builder().build()
 
-        val videoCapture = VideoCapture.withOutput(Recorder.Builder().build())
+        val videoCapture =
+            VideoCapture.Builder<Recorder>(Recorder.Builder().build())
+                .run {
+                    if (enableVideoCaptureSurfaceProcessing) {
+                        setSurfaceProcessingForceEnabled()
+                    } else {
+                        this
+                    }
+                }
+                .build()
 
         val useCaseGroup =
             UseCaseGroup.Builder()
                 .addUseCase(preview)
                 .addUseCase(imageCapture)
                 .apply {
-                    if (addSharedEffect) {
+                    if (addVideoCapture || addSharedEffect) {
                         addUseCase(videoCapture)
+                    }
+
+                    if (addSharedEffect) {
                         addEffect(StreamSharingForceEnabledEffect(IMAGE_CAPTURE))
                     }
                 }

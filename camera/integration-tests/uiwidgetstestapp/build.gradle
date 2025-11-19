@@ -36,9 +36,6 @@ android {
     buildFeatures {
         viewBinding = true
     }
-    lint {
-        disable += "ComposeTestRuleDispatcher"
-    }
     namespace = "androidx.camera.integration.uiwidgets"
 }
 
@@ -127,15 +124,16 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-graphics:1.7.2")
     androidTestImplementation("androidx.compose.ui:ui-unit:1.7.2")
     androidTestImplementation("androidx.compose.ui:ui-text:1.7.2")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.7.2")
+    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
     androidTestImplementation("androidx.collection:collection:1.4.2")
-    androidTestImplementation 'androidx.compose.ui:ui-test:1.7.2'
+    androidTestImplementation(project(":compose:ui:ui-test"))
     androidTestImplementation libs.hamcrestCore
     androidTestImplementation libs.junit
     androidTestImplementation libs.testMonitor
 
     // Needed for createComposeRule, but not createAndroidComposeRule:
-    debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.0")
+    debugImplementation(project(":compose:ui:ui-test-manifest"))
+    androidTestImplementation(project(":window:window"))
 }
 
 androidx.deviceTests.minSdkForFtlOverride = 24 // b/437944630

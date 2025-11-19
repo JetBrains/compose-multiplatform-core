@@ -32,12 +32,14 @@ internal class RegistryManagerImpl(private val context: Context) : RegistryManag
         val provider: RegistryManagerProvider? =
             RegistryManagerProviderFactory(context).getBestAvailableProvider()
         if (provider == null) {
-            callback.onError(
-                RegisterCredentialsConfigurationException(
-                    "registerCredentials: no provider dependencies found - please ensure " +
-                        "the desired provider dependencies are added"
+            executor.execute {
+                callback.onError(
+                    RegisterCredentialsConfigurationException(
+                        "registerCredentials: no provider dependencies found - please ensure " +
+                            "the desired provider dependencies are added"
+                    )
                 )
-            )
+            }
             return
         }
         provider.onRegisterCredentials(request, cancellationSignal, executor, callback)
@@ -55,12 +57,14 @@ internal class RegistryManagerImpl(private val context: Context) : RegistryManag
         val provider: RegistryManagerProvider? =
             RegistryManagerProviderFactory(context).getBestAvailableProvider()
         if (provider == null) {
-            callback.onError(
-                ClearCredentialRegistryConfigurationException(
-                    "clearCredentialRegistry: no provider dependencies found - please ensure " +
-                        "the desired provider dependencies are added"
+            executor.execute {
+                callback.onError(
+                    ClearCredentialRegistryConfigurationException(
+                        "clearCredentialRegistry: no provider dependencies found - please ensure " +
+                            "the desired provider dependencies are added"
+                    )
                 )
-            )
+            }
             return
         }
         provider.onClearCredentialRegistry(request, executor, callback)

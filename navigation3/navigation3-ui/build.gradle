@@ -75,14 +75,14 @@ androidXMultiplatform {
         androidMain {
             dependsOn(commonMain)
             dependencies {
-                api(project(":activity:activity-compose"))
+                api("androidx.activity:activity-compose:1.12.0")
             }
         }
 
         androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
-                implementation(project(":activity:activity-compose"))
+                implementation("androidx.activity:activity-compose:1.12.0")
                 implementation(libs.testRules)
                 implementation(libs.testRunner)
                 implementation(libs.junit)

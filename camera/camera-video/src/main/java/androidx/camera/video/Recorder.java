@@ -110,6 +110,7 @@ import androidx.camera.video.internal.encoder.OutputConfig;
 import androidx.camera.video.internal.encoder.VideoEncoderConfig;
 import androidx.camera.video.internal.encoder.VideoEncoderInfo;
 import androidx.camera.video.internal.encoder.VideoEncoderInfoImpl;
+import androidx.camera.video.internal.muxer.Media3MuxerImpl;
 import androidx.camera.video.internal.muxer.MediaMuxerImpl;
 import androidx.camera.video.internal.muxer.Muxer;
 import androidx.camera.video.internal.muxer.MuxerException;
@@ -369,7 +370,17 @@ public final class Recorder implements VideoOutput {
     private static final long RETRY_SETUP_VIDEO_DELAY_MS = 1000L;
     @VisibleForTesting
     static final EncoderFactory DEFAULT_ENCODER_FACTORY = EncoderImpl::new;
-    private static final MuxerFactory DEFAULT_MUXER_FACTORY = MediaMuxerImpl::new;
+    private static final MuxerFactory DEFAULT_MUXER_FACTORY = outputFormat -> {
+        switch (outputFormat) {
+            case Muxer.MUXER_FORMAT_MPEG_4:
+            case Muxer.MUXER_FORMAT_3GPP:
+                // Media3 muxer doesn't support WebM.
+                return new Media3MuxerImpl();
+            case Muxer.MUXER_FORMAT_WEBM:
+            default:
+                return new MediaMuxerImpl();
+        }
+    };
     private static final OutputStorage.Factory OUTPUT_STORAGE_FACTORY_DEFAULT =
             OutputStorageImpl::new;
     private static final Executor AUDIO_EXECUTOR =
@@ -3291,10 +3302,9 @@ public final class Recorder implements VideoOutput {
 
             mCloseGuard.open("finalizeRecording");
 
-            AtomicBoolean isMediaStorePendingFlagSet = new AtomicBoolean(false);
             MuxerSupplier muxerSupplier =
                     (muxerOutputFormat, outputUriCreatedCallback) -> {
-                        Muxer muxer = muxerFactory.create();
+                        Muxer muxer = muxerFactory.create(muxerOutputFormat);
                         Uri outputUri = Uri.EMPTY;
                         if (outputOptions instanceof FileOutputOptions) {
                             FileOutputOptions fileOutputOptions = (FileOutputOptions) outputOptions;
@@ -3322,7 +3332,6 @@ public final class Recorder implements VideoOutput {
                                 // Toggle on pending status for the video file. The saved file
                                 // will be hidden until the pending flag is changed to NOT_PENDING.
                                 contentValues.put(MediaStore.Video.Media.IS_PENDING, PENDING);
-                                isMediaStorePendingFlagSet.set(true);
                             }
                             try {
                                 outputUri = mediaStoreOutputOptions.getContentResolver().insert(
@@ -3420,12 +3429,12 @@ public final class Recorder implements VideoOutput {
                         if (outputUri.equals(Uri.EMPTY)) {
                             return;
                         }
-                        if (isMediaStorePendingFlagSet.get()) {
-                            ContentValues contentValues = new ContentValues();
-                            contentValues.put(MediaStore.Video.Media.IS_PENDING, NOT_PENDING);
-                            mediaStoreOutputOptions.getContentResolver().update(outputUri,
-                                    contentValues, null, null);
-                        }
+                        // Workaround: Explicitly update to NOT_PENDING even if it wasn't set.
+                        // This helps display the video duration on the Google Photos thumbnails.
+                        ContentValues contentValues = new ContentValues();
+                        contentValues.put(MediaStore.Video.Media.IS_PENDING, NOT_PENDING);
+                        mediaStoreOutputOptions.getContentResolver().update(outputUri,
+                                contentValues, null, null);
                     };
                 } else {
                     // Context will only be held in local scope of the consumer so it will not be

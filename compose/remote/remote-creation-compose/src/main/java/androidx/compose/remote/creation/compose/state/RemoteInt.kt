@@ -30,7 +30,6 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -87,7 +86,7 @@ public abstract class RemoteInt
 internal constructor(
     public override val constantValue: Int?,
     internal val arrayProvider: (creationState: RemoteComposeCreationState) -> LongArray,
-) : RemoteState<Int>, State<Int> {
+) : RemoteState<Int> {
 
     // @Deprecated("Use getLongIdForCreationState instead")
     // TODO: re-enable asap
@@ -99,9 +98,6 @@ internal constructor(
             // )
             return getLongIdForCreationState(FallbackCreationState.state)
         }
-
-    override val value: Int
-        get() = throw UnsupportedOperationException()
 
     /**
      * Retrieves the [LongArray] representing this [RemoteInt]\'s expression using the provided

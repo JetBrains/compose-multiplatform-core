@@ -57,6 +57,9 @@ internal constructor(
     }
 
     override fun isSupported(configMode: ConfigMode): Boolean {
+        if (configMode == Config.GeospatialMode.VPS_AND_GPS) {
+            return nativeIsGeospatialSupported()
+        }
         return SUPPORTED_CONFIG_MODES.contains(configMode)
     }
 
@@ -96,6 +99,8 @@ internal constructor(
     }
 
     private external fun nativeGetPreferredBlendMode(): DisplayBlendMode?
+
+    private external fun nativeIsGeospatialSupported(): Boolean
 }
 
 internal fun DisplayBlendMode.Companion.fromOpenXrEnvironmentBlendMode(

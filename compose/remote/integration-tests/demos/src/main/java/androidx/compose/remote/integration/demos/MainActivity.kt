@@ -29,10 +29,10 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
-import androidx.compose.remote.integration.demos.preview.RemoteComposePreview
 import androidx.compose.remote.integration.demos.ui.theme.RemoteComposeDemosTheme
 import androidx.compose.remote.player.compose.RemoteDocumentPlayer
 import androidx.compose.remote.player.core.RemoteDocument
+import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -100,5 +100,5 @@ fun Greeting(modifier: RemoteModifier = RemoteModifier) {
 @Preview
 @Composable
 fun GreetingPreview() {
-    RemoteComposePreview { Greeting() }
+    RemotePreview { Greeting() }
 }

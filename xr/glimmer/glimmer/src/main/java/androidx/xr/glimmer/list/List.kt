@@ -17,6 +17,7 @@
 package androidx.xr.glimmer.list
 
 import androidx.compose.foundation.OverscrollEffect
+import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -98,6 +99,7 @@ public fun VerticalList(
  * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
  *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
  *   need to use Modifier.overscroll separately.
+ * @param flingBehavior logic describing fling and snapping behavior when drag has finished.
  * @param reverseLayout reverses the direction of scrolling and layout.
  * @param horizontalAlignment aligns items horizontally. It's required and used only if
  *   [orientation] is [Orientation.Vertical].
@@ -119,6 +121,7 @@ internal fun List(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
+    flingBehavior: FlingBehavior = rememberSnapFlingBehavior(state),
     reverseLayout: Boolean = false,
     horizontalAlignment: Alignment.Horizontal? = null,
     verticalArrangement: Arrangement.Vertical? = null,
@@ -180,6 +183,7 @@ internal fun List(
                     enabled = scrollEnabled,
                     interactionSource = state.internalInteractionSource,
                     overscrollEffect = overscrollEffect,
+                    flingBehavior = flingBehavior,
                 ),
         itemProvider = itemProvider,
         measurePolicy = measurePolicy,

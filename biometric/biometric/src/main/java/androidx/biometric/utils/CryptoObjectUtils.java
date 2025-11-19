@@ -212,16 +212,16 @@ public class CryptoObjectUtils {
 
     /**
      * Unwraps a crypto object returned by
-     * {@link androidx.core.hardware.fingerprint.FingerprintManagerCompat}.
+     * {@link androidx.biometric.internal.FingerprintManagerCompat}.
      *
      * @param cryptoObject A crypto object from
-     *                     {@link androidx.core.hardware.fingerprint.FingerprintManagerCompat}.
+     * {@link androidx.biometric.internal.FingerprintManagerCompat}.
      * @return An equivalent {@link androidx.biometric.BiometricPrompt.CryptoObject} instance.
      */
     @SuppressWarnings("deprecation")
     static BiometricPrompt.@Nullable CryptoObject unwrapFromFingerprintManager(
-            androidx.core.hardware.fingerprint.FingerprintManagerCompat.@Nullable CryptoObject
-                    cryptoObject) {
+            androidx.biometric.internal.FingerprintManagerCompat.@Nullable
+                    CryptoObject cryptoObject) {
 
         if (cryptoObject == null) {
             return null;
@@ -247,14 +247,14 @@ public class CryptoObjectUtils {
 
     /**
      * Wraps a crypto object to be passed to
-     * {@link androidx.core.hardware.fingerprint.FingerprintManagerCompat}.
+     * {@link androidx.biometric.internal.FingerprintManagerCompat}.
      *
      * @param cryptoObject An instance of {@link androidx.biometric.BiometricPrompt.CryptoObject}.
      * @return An equivalent crypto object that is compatible with
-     * {@link androidx.core.hardware.fingerprint.FingerprintManagerCompat}.
+     * {@link androidx.biometric.internal.FingerprintManagerCompat}.
      */
     @SuppressWarnings("deprecation")
-    public static androidx.core.hardware.fingerprint.FingerprintManagerCompat.@Nullable CryptoObject
+    public static androidx.biometric.internal.FingerprintManagerCompat.@Nullable CryptoObject
             wrapForFingerprintManager(BiometricPrompt.@Nullable CryptoObject cryptoObject) {
 
         if (cryptoObject == null) {
@@ -263,19 +263,19 @@ public class CryptoObjectUtils {
 
         final Cipher cipher = cryptoObject.getCipher();
         if (cipher != null) {
-            return new androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject(
+            return new androidx.biometric.internal.FingerprintManagerCompat.CryptoObject(
                     cipher);
         }
 
         final Signature signature = cryptoObject.getSignature();
         if (signature != null) {
-            return new androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject(
+            return new androidx.biometric.internal.FingerprintManagerCompat.CryptoObject(
                     signature);
         }
 
         final Mac mac = cryptoObject.getMac();
         if (mac != null) {
-            return new androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject(
+            return new androidx.biometric.internal.FingerprintManagerCompat.CryptoObject(
                     mac);
         }
 

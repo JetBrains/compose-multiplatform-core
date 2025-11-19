@@ -49,7 +49,9 @@ class ComposeCameraAppTest {
     val permissionRule: GrantPermissionRule =
         GrantPermissionRule.grant(*ComposeCameraActivity.REQUIRED_PERMISSIONS)
 
-    @get:Rule val androidComposeTestRule = createAndroidComposeRule<ComposeCameraActivity>()
+    @Suppress("ComposeTestRuleDispatcher") // b/457970052
+    @get:Rule
+    val androidComposeTestRule = createAndroidComposeRule<ComposeCameraActivity>()
 
     @get:Rule val labTest: LabTestRule = LabTestRule()
 

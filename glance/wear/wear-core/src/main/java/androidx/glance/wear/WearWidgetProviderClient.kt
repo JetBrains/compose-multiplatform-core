@@ -28,6 +28,7 @@ import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope.LIBRARY
 import androidx.glance.wear.ContainerInfo.ContainerType
 import androidx.glance.wear.WearWidgetProviderInfo.Companion.ACTION_BIND_WIDGET_PROVIDER
+import androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel
 import androidx.glance.wear.parcel.IExecutionCallback
 import androidx.glance.wear.parcel.IWearWidgetProvider
 import com.google.common.util.concurrent.ListenableFuture
@@ -56,19 +57,10 @@ public class WearWidgetProviderClient(
         Intent(ACTION_BIND_WIDGET_PROVIDER).apply { component = componentName }
 
     /** Call [IWearWidgetProvider.onActivated] on the provider and wait for completion. */
-    public suspend fun sendActivationNotice(instanceId: Int, @ContainerType containerType: Int) {
-        withBoundService { service ->
-            suspendCancellableCoroutine { continuation ->
-                continuation.invokeOnCancellation {
-                    Log.d(TAG, "sendActivationNotice for instanceId=$instanceId cancelled")
-                }
-                service.onActivated(
-                    ActiveWearWidgetHandle(componentName, instanceId, containerType).toParcel(),
-                    ContinuationCallback(continuation),
-                )
-            }
-        }
-    }
+    public suspend fun sendActivationNotice(
+        instanceId: Int,
+        @ContainerType containerType: Int,
+    ): Unit = sendEvent(instanceId, containerType, "onActivated", IWearWidgetProvider::onActivated)
 
     /** ListenableFuture version of [sendActivationNotice]. */
     public fun sendActivationNoticeAsync(
@@ -76,25 +68,14 @@ public class WearWidgetProviderClient(
         @ContainerType containerType: Int,
         executor: Executor,
     ): ListenableFuture<Void?> =
-        CoroutineScope(executor.asCoroutineDispatcher()).future {
-            sendActivationNotice(instanceId, containerType)
-            null
-        }
+        sendEventAsync(executor) { sendActivationNotice(instanceId, containerType) }
 
     /** Call [IWearWidgetProvider.onDeactivated] on the provider and wait for completion. */
-    public suspend fun sendDeactivationNotice(instanceId: Int, @ContainerType containerType: Int) {
-        withBoundService { service ->
-            suspendCancellableCoroutine { continuation ->
-                continuation.invokeOnCancellation {
-                    Log.d(TAG, "sendDeactivationNotice for instanceId=$instanceId cancelled")
-                }
-                service.onDeactivated(
-                    ActiveWearWidgetHandle(componentName, instanceId, containerType).toParcel(),
-                    ContinuationCallback(continuation),
-                )
-            }
-        }
-    }
+    public suspend fun sendDeactivationNotice(
+        instanceId: Int,
+        @ContainerType containerType: Int,
+    ): Unit =
+        sendEvent(instanceId, containerType, "onDeactivated", IWearWidgetProvider::onDeactivated)
 
     /** ListenableFuture version of [sendDeactivationNotice]. */
     public fun sendDeactivationNoticeAsync(
@@ -102,8 +83,58 @@ public class WearWidgetProviderClient(
         @ContainerType containerType: Int,
         executor: Executor,
     ): ListenableFuture<Void?> =
+        sendEventAsync(executor) { sendDeactivationNotice(instanceId, containerType) }
+
+    /** Call [IWearWidgetProvider.onAdded] on the provider and wait for completion. */
+    public suspend fun sendAddEvent(instanceId: Int, @ContainerType containerType: Int): Unit =
+        sendEvent(instanceId, containerType, "onAdded", IWearWidgetProvider::onAdded)
+
+    /** ListenableFuture version of [sendAddEvent]. */
+    public fun sendAddEventAsync(
+        instanceId: Int,
+        @ContainerType containerType: Int,
+        executor: Executor,
+    ): ListenableFuture<Void?> =
+        sendEventAsync(executor) { sendAddEvent(instanceId, containerType) }
+
+    /** Call [IWearWidgetProvider.onRemoved] on the provider and wait for completion. */
+    public suspend fun sendRemoveEvent(instanceId: Int, @ContainerType containerType: Int): Unit =
+        sendEvent(instanceId, containerType, "onRemoved", IWearWidgetProvider::onRemoved)
+
+    /** ListenableFuture version of [sendRemoveEvent]. */
+    public fun sendRemoveEventAsync(
+        instanceId: Int,
+        @ContainerType containerType: Int,
+        executor: Executor,
+    ): ListenableFuture<Void?> =
+        sendEventAsync(executor) { sendRemoveEvent(instanceId, containerType) }
+
+    private suspend fun sendEvent(
+        instanceId: Int,
+        @ContainerType containerType: Int,
+        eventTag: String,
+        eventSender: IWearWidgetProvider.(ActiveWearWidgetHandleParcel, IExecutionCallback) -> Unit,
+    ) {
+        withBoundService { service ->
+            suspendCancellableCoroutine { continuation ->
+                continuation.invokeOnCancellation {
+                    Log.d(TAG, "$eventTag event for instanceId=$instanceId was cancelled")
+                }
+                eventSender.invoke(
+                    service,
+                    ActiveWearWidgetHandle(componentName, instanceId, containerType).toParcel(),
+                    ContinuationCallback(continuation),
+                )
+            }
+        }
+    }
+
+    private fun sendEventAsync(
+        executor: Executor,
+        block: suspend () -> Unit,
+    ): ListenableFuture<Void?> =
         CoroutineScope(executor.asCoroutineDispatcher()).future {
-            sendDeactivationNotice(instanceId, containerType)
+            block()
             null
         }
 

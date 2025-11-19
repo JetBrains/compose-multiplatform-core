@@ -105,19 +105,19 @@ class WearWidgetProviderImplTest {
     }
 
     @Test
-    fun onActivated_callsWidgetAndCallback() = runTest {
+    fun onAdded_callsWidgetAndCallback() = runTest {
         val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_LARGE)
         val provider = WearWidgetProviderImpl(context, testName, this, testWidget)
 
-        provider.onActivated(handle.toParcel(), fakeExecutionCallback)
+        provider.onAdded(handle.toParcel(), fakeExecutionCallback)
         advanceUntilIdle()
 
-        assertThat(testWidget.activatedHandle).isEqualTo(handle)
+        assertThat(testWidget.addedHandle).isEqualTo(handle)
         assertThat(fakeExecutionCallback.isSuccess).isTrue()
     }
 
     @Test
-    fun onActivated_throws_callsCallbackOnError() = runTest {
+    fun onAdded_throws_callsCallbackOnError() = runTest {
         val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_LARGE)
         val exceptionHandlerScope =
             CoroutineScope(
@@ -126,27 +126,27 @@ class WearWidgetProviderImplTest {
         val provider = WearWidgetProviderImpl(context, testName, exceptionHandlerScope, testWidget)
         testWidget.enableFailureMode = true
 
-        provider.onActivated(handle.toParcel(), fakeExecutionCallback)
+        provider.onAdded(handle.toParcel(), fakeExecutionCallback)
         advanceUntilIdle()
 
-        assertThat(testWidget.activatedHandle).isEqualTo(handle)
+        assertThat(testWidget.addedHandle).isEqualTo(handle)
         assertThat(fakeExecutionCallback.isFailure).isTrue()
     }
 
     @Test
-    fun onDeactivated_callsWidgetAndCallback() = runTest {
+    fun onRemoved_callsWidgetAndCallback() = runTest {
         val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_SMALL)
         val provider = WearWidgetProviderImpl(context, testName, this, testWidget)
 
-        provider.onDeactivated(handle.toParcel(), fakeExecutionCallback)
+        provider.onRemoved(handle.toParcel(), fakeExecutionCallback)
         advanceUntilIdle()
 
-        assertThat(testWidget.deactivatedHandle).isEqualTo(handle)
+        assertThat(testWidget.removedHandle).isEqualTo(handle)
         assertThat(fakeExecutionCallback.isSuccess).isTrue()
     }
 
     @Test
-    fun onDeactivated_throws_callsCallbackOnError() = runTest {
+    fun onRemoved_throws_callsCallbackOnError() = runTest {
         val handle = ActiveWearWidgetHandle(testName, 12, CONTAINER_TYPE_LARGE)
         val exceptionHandlerScope =
             CoroutineScope(
@@ -155,17 +155,17 @@ class WearWidgetProviderImplTest {
         val provider = WearWidgetProviderImpl(context, testName, exceptionHandlerScope, testWidget)
         testWidget.enableFailureMode = true
 
-        provider.onDeactivated(handle.toParcel(), fakeExecutionCallback)
+        provider.onRemoved(handle.toParcel(), fakeExecutionCallback)
         advanceUntilIdle()
 
-        assertThat(testWidget.deactivatedHandle).isEqualTo(handle)
+        assertThat(testWidget.removedHandle).isEqualTo(handle)
         assertThat(fakeExecutionCallback.isFailure).isTrue()
     }
 
     private class TestGlanceWearWidget : GlanceWearWidget() {
         var lastRequestedInstanceId: Int? = null
-        var activatedHandle: ActiveWearWidgetHandle? = null
-        var deactivatedHandle: ActiveWearWidgetHandle? = null
+        var addedHandle: ActiveWearWidgetHandle? = null
+        var removedHandle: ActiveWearWidgetHandle? = null
         var enableFailureMode = false
         var content = @Composable { RemoteText("WearWidgetProviderImplTest") }
 
@@ -180,15 +180,15 @@ class WearWidgetProviderImplTest {
             return WearWidgetContent { content() }
         }
 
-        override suspend fun onActivated(context: Context, widgetHandle: ActiveWearWidgetHandle) {
-            activatedHandle = widgetHandle
+        override suspend fun onAdded(context: Context, widgetHandle: ActiveWearWidgetHandle) {
+            addedHandle = widgetHandle
             if (enableFailureMode) {
                 throw Exception("Test exception")
             }
         }
 
-        override suspend fun onDeactivated(context: Context, widgetHandle: ActiveWearWidgetHandle) {
-            deactivatedHandle = widgetHandle
+        override suspend fun onRemoved(context: Context, widgetHandle: ActiveWearWidgetHandle) {
+            removedHandle = widgetHandle
             if (enableFailureMode) {
                 throw Exception("Test exception")
             }

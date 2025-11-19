@@ -19,7 +19,6 @@ package androidx.appsearch.platformstorage.converter;
 import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_NONE;
 import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN;
 import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_RFC822;
-import static android.app.appsearch.AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_VERBATIM;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
@@ -156,8 +155,8 @@ public final class SchemaToPlatformConverter {
             // Check delete propagation type.
             if (stringProperty.getDeletePropagationType()
                     != AppSearchSchema.StringPropertyConfig.DELETE_PROPAGATION_TYPE_NONE) {
-                // TODO(b/376913014): add isAtLeastW check to allow
-                //  DELETE_PROPAGATION_TYPE_PROPAGATE_FROM after Android W.
+                // TODO(b/376913014): add isAtLeastC check to allow
+                //  DELETE_PROPAGATION_TYPE_PROPAGATE_FROM after Android C.
                 throw new UnsupportedOperationException(
                         "StringPropertyConfig.DELETE_PROPAGATION_TYPE_PROPAGATE_FROM is not"
                                 + " supported on this AppSearch implementation.");

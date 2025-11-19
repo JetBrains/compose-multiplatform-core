@@ -33,9 +33,9 @@ import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreati
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteFloatContext
+import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableFloatState
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 
@@ -861,19 +861,16 @@ public fun yearForReference(referenceEpochMillis: RemoteLong): RemoteFloat {
  * A mutable implementation of [RemoteFloat] that holds a [MutableFloatState]. It also implements
  * [MutableRemoteState<Float>].
  *
- * @property content The underlying [MutableFloatState] that holds the actual float value.
  * @property idProvider A lambda that provides the ID for this mutable float within the
  *   [RemoteComposeCreationState]. Defaults to reserving a new float variable ID if not provided.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MutableRemoteFloat(
-    private val content: MutableFloatState,
-    private var idProvider: (creationState: RemoteComposeCreationState) -> Float,
+    private var idProvider: (creationState: RemoteComposeCreationState) -> Float
 ) : RemoteFloat(), MutableRemoteState<Float> {
     public constructor(
-        content: MutableFloatState,
-        id: Float? = null,
-    ) : this(content, { creationState -> id ?: creationState.document.reserveFloatVariable() })
+        id: Float? = null
+    ) : this({ creationState -> id ?: creationState.document.reserveFloatVariable() })
 
     public override val constantValue: Float?
         get() = null
@@ -1108,6 +1105,19 @@ public fun rememberRemoteFloatArray(content: () -> FloatArray): RemoteFloat {
     return rememberRemoteFloat { floatArrayId.rf }
 }
 
+/** Temporary method during migration */
+@Composable
+@RemoteComposable
+public fun rememberRemoteFloatValue(content: RemoteFloatContext.() -> Float): MutableRemoteFloat {
+    val state = LocalRemoteComposeCreationState.current
+    return remember {
+        val context = RemoteFloatContext(state)
+        val value = content(context)
+        val id = state.document.addFloatConstant(value)
+        MutableRemoteFloat(id)
+    }
+}
+
 /**
  * Composable function to remember and provide a mutable remote float value. This is intended for
  * use within a `@Composable` context and allows defining the initial value using a
@@ -1118,13 +1128,14 @@ public fun rememberRemoteFloatArray(content: () -> FloatArray): RemoteFloat {
  */
 @Composable
 @RemoteComposable
-public fun rememberRemoteFloatValue(content: RemoteFloatContext.() -> Float): MutableRemoteFloat {
+public fun rememberMutableRemoteFloat(
+    content: RemoteFloatContext.() -> RemoteFloat
+): MutableRemoteFloat {
     val state = LocalRemoteComposeCreationState.current
     return remember {
         val context = RemoteFloatContext(state)
         val value = content(context)
-        val id = state.document.addFloatConstant(value)
-        MutableRemoteFloat(content = mutableFloatStateOf(value), id)
+        MutableRemoteFloat { state -> value.getFloatIdForCreationState(state) }
     }
 }
 
@@ -1137,11 +1148,42 @@ public fun rememberRemoteFloatValue(content: RemoteFloatContext.() -> Float): Mu
  */
 @Composable
 @RemoteComposable
-public fun rememberRemoteFloat(content: () -> RemoteFloat): RemoteFloat {
+public fun rememberRemoteFloat(content: RemoteFloatContext.() -> RemoteFloat): RemoteFloat {
     val state = LocalRemoteComposeCreationState.current
-    val remoteFloat = content()
-    remoteFloat.getIdForCreationState(state)
-    return remember { RemoteFloatExpression(remoteFloat.constantValue, remoteFloat.arrayProvider) }
+    val context = RemoteFloatContext(state)
+    val remoteFloat = content(context)
+    return remember { remoteFloat }
+}
+
+/**
+ * A Composable function to remember and provide a **named** remote float value.
+ *
+ * @param name The unique name for this remote float.
+ * @param domain The domain of the named float (defaults to [RemoteDomains.USER]). This helps
+ *   organize named values in the remote document.
+ * @param content default [RemoteFloat] value for this remote float.
+ * @return A [RemoteFloat] instance that will be remembered across recompositions.
+ */
+@Composable
+@RemoteComposable
+public fun rememberRemoteFloat(
+    name: String,
+    domain: RemoteDomains = RemoteDomains.USER,
+    content: RemoteFloatContext.() -> RemoteFloat,
+): RemoteFloat {
+    val state = LocalRemoteComposeCreationState.current
+    val context = RemoteFloatContext(state)
+    val remoteFloat = content(context)
+    return rememberNamedState(name, domain) {
+        RemoteFloatExpression(constantValue = null) { creationState ->
+            // Create an additional expression to name, in case the input value is meaningful
+            // and just a default. So override is of this named value, not the expression.
+            val id =
+                state.document.floatExpression(*remoteFloat.arrayForCreationState(creationState))
+            state.document.setStringName(Utils.idFromNan(id), "$domain:$name")
+            floatArrayOf(id)
+        }
+    }
 }
 
 /**

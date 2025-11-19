@@ -1977,9 +1977,13 @@ package androidx.compose.material3 {
   public final class InteractiveComponentSizeKt {
     method @InaccessibleFromKotlin @Deprecated @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.runtime.ProvidableCompositionLocal<java.lang.Boolean> getLocalMinimumInteractiveComponentEnforcement();
     method @InaccessibleFromKotlin public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.unit.Dp> getLocalMinimumInteractiveComponentSize();
+    method @InaccessibleFromKotlin public static androidx.compose.ui.layout.VerticalAlignmentLine getMinimumInteractiveLeftAlignmentLine();
+    method @InaccessibleFromKotlin public static androidx.compose.ui.layout.HorizontalAlignmentLine getMinimumInteractiveTopAlignmentLine();
     method @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier minimumInteractiveComponentSize(androidx.compose.ui.Modifier);
     property @Deprecated @SuppressCompatibility @androidx.compose.material3.ExperimentalMaterial3Api public static androidx.compose.runtime.ProvidableCompositionLocal<java.lang.Boolean> LocalMinimumInteractiveComponentEnforcement;
     property public static androidx.compose.runtime.ProvidableCompositionLocal<androidx.compose.ui.unit.Dp> LocalMinimumInteractiveComponentSize;
+    property public static androidx.compose.ui.layout.VerticalAlignmentLine MinimumInteractiveLeftAlignmentLine;
+    property public static androidx.compose.ui.layout.HorizontalAlignmentLine MinimumInteractiveTopAlignmentLine;
   }
 
   @SuppressCompatibility public final class LabelKt {

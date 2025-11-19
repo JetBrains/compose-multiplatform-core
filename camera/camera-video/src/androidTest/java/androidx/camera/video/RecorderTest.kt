@@ -142,7 +142,7 @@ private const val TEST_ATTRIBUTION_TAG = "testAttribution"
 // For the file size is small, the final file length possibly exceeds the file size limit
 // after adding the file header. We still add the buffer for the tolerance of comparing the
 // file length and file size limit.
-private const val FILE_SIZE_LIMIT_BUFFER = 50 * 1024 // 50k threshold buffer
+private const val FILE_SIZE_LIMIT_BUFFER = 500 * 1024 // 500k threshold buffer
 
 @SdkSuppress(minSdkVersion = 23)
 @LargeTest

@@ -60,14 +60,15 @@ public abstract class GlanceWearWidgetService() : LifecycleService() {
             ACTION_BIND_WIDGET_PROVIDER -> provider
             ACTION_BIND_TILE_PROVIDER ->
                 if (
-                    intent.extras?.getBoolean(
-                        WearWidgetProviderInfo.EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED
+                    intent.identifier?.equals(
+                        WearWidgetProviderInfo.WEAR_WIDGET_PROVIDER_IDENTIFIER
                     ) == true
                 ) {
                     provider
                 } else {
                     legacyProvider
                 }
+
             else -> null
         }
     }

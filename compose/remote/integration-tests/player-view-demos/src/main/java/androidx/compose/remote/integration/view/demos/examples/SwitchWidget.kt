@@ -132,7 +132,7 @@ fun SwitchWidget(value: MutableRemoteInt) {
                 RemoteModifier.clickable(
                     ValueChange(
                         fsm.currentState as MutableRemoteInt,
-                        (fsm.currentState.value + 1) % 2,
+                        (fsm.currentState.constantValue!! + 1) % 2,
                     )
                 )
             } else {

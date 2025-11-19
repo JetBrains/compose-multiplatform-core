@@ -48,7 +48,7 @@ class LegacyTileProviderImplTest {
         LegacyTileProviderImpl(context, providerName, testScope, mockWidget)
 
     @Test
-    fun onTileAddEvent_callsWidgetOnActivated() = runTest {
+    fun onTileAddEvent_callsWidgetOnAdded() = runTest {
         val tileId = 123
         val addEvent = TileAddEvent(tile_id = tileId)
         val eventData = TileAddEventData(addEvent.encode(), TileAddEventData.VERSION_PROTOBUF)
@@ -58,11 +58,11 @@ class LegacyTileProviderImplTest {
         legacyTileProvider.onTileAddEvent(eventData)
         testScope.advanceUntilIdle()
 
-        verify(mockWidget).onActivated(context, expectedWidgetId)
+        verify(mockWidget).onAdded(context, expectedWidgetId)
     }
 
     @Test
-    fun onTileRemoveEvent_callsWidgetOnDeactivated() = runTest {
+    fun onTileRemoveEvent_callsWidgetOnRemoved() = runTest {
         val tileId = 456
         val removeEvent = TileRemoveEvent(tile_id = tileId)
         val eventData =
@@ -73,6 +73,6 @@ class LegacyTileProviderImplTest {
         legacyTileProvider.onTileRemoveEvent(eventData)
         testScope.advanceUntilIdle()
 
-        verify(mockWidget).onDeactivated(context, expectedWidgetId)
+        verify(mockWidget).onRemoved(context, expectedWidgetId)
     }
 }

@@ -23,7 +23,6 @@ import androidx.annotation.IntRange as AndroidXIntRange
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.spring
-import androidx.compose.foundation.ComposeFoundationFlags.isCacheWindowForPagerEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.ScrollIndicatorState
@@ -310,20 +309,6 @@ internal constructor(
 
     /** Only used for testing to disable prefetching when needed to test the main logic. */
     internal var prefetchingEnabled: Boolean = true
-
-    /**
-     * The index scheduled to be prefetched (or the last prefetched index if the prefetch is done).
-     */
-    private var indexToPrefetch = -1
-
-    /** The handle associated with the current index from [indexToPrefetch]. */
-    private var currentPrefetchHandle: LazyLayoutPrefetchState.PrefetchHandle? = null
-
-    /**
-     * Keeps the scrolling direction during the previous calculation in order to be able to detect
-     * the scrolling direction change.
-     */
-    private var wasPrefetchingForward = false
 
     /** Backing state for PagerLayoutInfo */
     private var pagerLayoutInfoState = mutableStateOf(EmptyLayoutInfo, neverEqualPolicy())
@@ -750,12 +735,8 @@ internal constructor(
                 scrollPosition.updateCurrentPageOffsetFraction(result.currentPageOffsetFraction)
             } else {
                 scrollPosition.updateFromMeasureResult(result)
-                if (isCacheWindowForPagerEnabled) {
-                    if (prefetchingEnabled) {
-                        cacheWindowLogic.onVisibleItemsChanged(result)
-                    }
-                } else {
-                    cancelPrefetchIfVisibleItemsChanged(result)
+                if (prefetchingEnabled) {
+                    cacheWindowLogic.onVisibleItemsChanged(result)
                 }
             }
             pagerLayoutInfoState.value = result
@@ -777,11 +758,7 @@ internal constructor(
             if (result.beyondViewportPageCount >= pageCount) return
             if (abs(previousPassDelta) <= 0.5f) return
             if (!isGestureActionMatchesScroll(previousPassDelta)) return
-            if (isCacheWindowForPagerEnabled) {
-                cacheWindowLogic.onScroll(previousPassDelta, result)
-            } else {
-                notifyPrefetch(previousPassDelta, result)
-            }
+            cacheWindowLogic.onScroll(previousPassDelta, result)
         }
 
     private fun Int.coerceInPageRange() =
@@ -803,77 +780,6 @@ internal constructor(
 
     internal fun isNotGestureAction(): Boolean =
         upDownDifference.x.toInt() == 0 && upDownDifference.y.toInt() == 0
-
-    private fun notifyPrefetch(delta: Float, info: PagerLayoutInfo) {
-        if (!prefetchingEnabled) {
-            return
-        }
-
-        if (info.visiblePagesInfo.isNotEmpty()) {
-            val isPrefetchingForward = delta > 0
-            val indexToPrefetch = calculatePrefetchIndex(isPrefetchingForward, info)
-            if (indexToPrefetch in 0 until pageCount) {
-                if (indexToPrefetch != this.indexToPrefetch) {
-                    if (wasPrefetchingForward != isPrefetchingForward) {
-                        // the scrolling direction has been changed which means the last prefetched
-                        // is not going to be reached anytime soon so it is safer to dispose it.
-                        // if this item is already visible it is safe to call the method anyway
-                        // as it will be no-op
-                        currentPrefetchHandle?.cancel()
-                    }
-                    this.wasPrefetchingForward = isPrefetchingForward
-                    this.indexToPrefetch = indexToPrefetch
-                    currentPrefetchHandle =
-                        prefetchState.schedulePrecompositionAndPremeasure(
-                            indexToPrefetch,
-                            premeasureConstraints,
-                        )
-                }
-                if (isPrefetchingForward) {
-                    val lastItem = info.visiblePagesInfo.last()
-                    val pageSize = info.pageSize + info.pageSpacing
-                    val distanceToReachNextItem =
-                        lastItem.offset + pageSize - info.viewportEndOffset
-                    // if in the next frame we will get the same delta will we reach the item?
-                    if (distanceToReachNextItem < delta) {
-                        currentPrefetchHandle?.markAsUrgent()
-                    }
-                } else {
-                    val firstItem = info.visiblePagesInfo.first()
-                    val distanceToReachNextItem = info.viewportStartOffset - firstItem.offset
-                    // if in the next frame we will get the same delta will we reach the item?
-                    if (distanceToReachNextItem < -delta) {
-                        currentPrefetchHandle?.markAsUrgent()
-                    }
-                }
-            }
-        }
-    }
-
-    private fun cancelPrefetchIfVisibleItemsChanged(info: PagerLayoutInfo) {
-        if (indexToPrefetch != -1 && info.visiblePagesInfo.isNotEmpty()) {
-            val expectedPrefetchIndex = calculatePrefetchIndex(wasPrefetchingForward, info)
-            if (indexToPrefetch != expectedPrefetchIndex) {
-                indexToPrefetch = -1
-                currentPrefetchHandle?.cancel()
-                currentPrefetchHandle = null
-            }
-        }
-    }
-
-    /** Calculate the farthest page index that should be prefetched when scrolling. */
-    private fun calculatePrefetchIndex(forward: Boolean, info: PagerLayoutInfo): Int {
-        return if (forward) {
-            val offset = info.beyondViewportPageCount + PagesToPrefetch
-            if (offset < 0) { // Detect overflow from large beyondViewportPageCount
-                Int.MAX_VALUE
-            } else {
-                info.visiblePagesInfo.last().index + offset
-            }
-        } else {
-            info.visiblePagesInfo.first().index - info.beyondViewportPageCount - PagesToPrefetch
-        }
-    }
 
     /**
      * An utility function to help to calculate a given page's offset. This is an offset that

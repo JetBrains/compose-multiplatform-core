@@ -3,8 +3,8 @@ package androidx.glance.wear {
 
   public abstract class GlanceWearWidget {
     ctor public GlanceWearWidget();
-    method @MainThread public suspend Object? onActivated(android.content.Context context, androidx.glance.wear.ActiveWearWidgetHandle widgetHandle, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @MainThread public suspend Object? onDeactivated(android.content.Context context, androidx.glance.wear.ActiveWearWidgetHandle widgetHandle, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @MainThread public suspend Object? onAdded(android.content.Context context, androidx.glance.wear.ActiveWearWidgetHandle widgetHandle, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @MainThread public suspend Object? onRemoved(android.content.Context context, androidx.glance.wear.ActiveWearWidgetHandle widgetHandle, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @MainThread public abstract suspend Object? provideWidgetContent(android.content.Context context, androidx.glance.wear.WearWidgetRequest request, kotlin.coroutines.Continuation<? super androidx.glance.wear.WearWidgetContent>);
     method public final void triggerUpdate(android.content.Context context, android.content.ComponentName provider);
   }

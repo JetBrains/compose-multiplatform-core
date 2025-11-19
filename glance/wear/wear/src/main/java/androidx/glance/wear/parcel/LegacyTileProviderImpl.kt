@@ -52,7 +52,7 @@ internal class LegacyTileProviderImpl(
                         addEvent.tile_id,
                         CONTAINER_TYPE_FULLSCREEN,
                     )
-                widget.onActivated(context, widgetId)
+                widget.onAdded(context, widgetId)
             } catch (ex: IOException) {
                 Log.e(TAG, "Error deserializing TileAddEvent payload.", ex)
             }
@@ -72,7 +72,7 @@ internal class LegacyTileProviderImpl(
                         removeEvent.tile_id,
                         CONTAINER_TYPE_FULLSCREEN,
                     )
-                widget.onDeactivated(context, widgetId)
+                widget.onRemoved(context, widgetId)
             } catch (ex: IOException) {
                 Log.e(TAG, "Error deserializing TileRemoveEvent payload.", ex)
             }

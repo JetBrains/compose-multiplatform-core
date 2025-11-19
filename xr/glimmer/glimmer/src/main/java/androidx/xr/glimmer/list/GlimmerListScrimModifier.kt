@@ -157,6 +157,9 @@ private fun DrawScope.drawScrim(
     endOffset: Offset,
 ) {
     val layoutInfo = state.layoutInfo
+    if (layoutInfo.totalItemsCount == 0) {
+        return
+    }
     val averageSize = layoutInfo.visibleItemsAverageSize()
     val startScrollOffsetPx = getScrollOffsetFromStart(state = state, averageSize = averageSize)
     val endScrollOffsetPx =

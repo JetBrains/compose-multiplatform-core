@@ -146,8 +146,8 @@ public class RemoteComposeStateLayoutModifier(
 @RemoteComposable
 @Composable
 public fun StateLayout(
-    modifier: RemoteModifier = RemoteModifier,
     stateMachine: StateMachineSpec,
+    modifier: RemoteModifier = RemoteModifier,
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
     verticalArrangement: Arrangement.Vertical = Arrangement.Center,
     content: @Composable (Int) -> Unit,

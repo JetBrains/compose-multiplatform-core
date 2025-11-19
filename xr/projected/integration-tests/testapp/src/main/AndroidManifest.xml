@@ -60,6 +60,18 @@
             android:label="Projected Input Activity"
             android:requiredDisplayCategory="@string/display_category_xr_projected">
         </activity>
+        <activity
+            android:name="androidx.xr.projected.testapp.controller.DisplayControllerActivity"
+            android:exported="true"
+            android:label="Controller Activity">
+        </activity>
+        <activity
+            android:name="androidx.xr.projected.testapp.controller.DisplayControllerProjectedActivity"
+            android:exported="true"
+            android:label="Controller Projected Activity"
+            android:launchMode="singleTop"
+            android:requiredDisplayCategory="@string/display_category_xr_projected">
+        </activity>
     </application>
 
     <uses-feature android:name="android.hardware.camera" />

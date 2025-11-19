@@ -51,7 +51,7 @@ internal constructor(private val updateClient: WidgetUpdateClient) {
     ): WearWidgetContent
 
     /**
-     * Called when a widget provider linked to this widget class becomes active in the host.
+     * Called when a widget provider linked to this widget class is added to the host.
      *
      * This occurs when a widget is added to the carousel.
      *
@@ -61,10 +61,10 @@ internal constructor(private val updateClient: WidgetUpdateClient) {
      * @param widgetHandle the handle of the active widget.
      */
     @MainThread
-    public open suspend fun onActivated(context: Context, widgetHandle: ActiveWearWidgetHandle) {}
+    public open suspend fun onAdded(context: Context, widgetHandle: ActiveWearWidgetHandle) {}
 
     /**
-     * Called when a widget provider linked to this widget class becomes deactivated in the host.
+     * Called when a widget provider linked to this widget class is removed from the host.
      *
      * This occurs when a widget is removed from the carousel.
      *
@@ -74,7 +74,7 @@ internal constructor(private val updateClient: WidgetUpdateClient) {
      * @param widgetHandle the handle of the widget.
      */
     @MainThread
-    public open suspend fun onDeactivated(context: Context, widgetHandle: ActiveWearWidgetHandle) {}
+    public open suspend fun onRemoved(context: Context, widgetHandle: ActiveWearWidgetHandle) {}
 
     /**
      * Trigger a content update for all widgets associated with the [provider] service component.

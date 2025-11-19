@@ -18,104 +18,129 @@ package androidx.xr.compose.subspace.node
 
 import androidx.collection.MutableObjectIntMap
 import androidx.collection.mutableObjectIntMapOf
-import java.util.TreeSet
-
-private val SubspaceDepthComparator: Comparator<SubspaceLayoutNode> = Comparator { a, b ->
-    val depthDiff = a.depth.compareTo(b.depth)
-    if (depthDiff != 0) {
-        depthDiff
-    } else {
-        a.hashCode().compareTo(b.hashCode())
-    }
-}
+import androidx.compose.ui.util.fastForEach
+import java.util.Comparator
+import java.util.SortedSet
 
 /**
- * A set of [SubspaceLayoutNode]s ordered by their [SubspaceLayoutNode.depth]. It allows for
- * modifications (additions and removals) while iterating via [popEach]. A [SubspaceLayoutNode]
- * added to this set must remain attached and its depth must not change, as this would violate the
- * comparator's contract and could lead to inconsistent state.
+ * A set of [SubspaceLayoutNode]s ordered by their [SubspaceLayoutNode.depth]. A
+ * [SubspaceLayoutNode] added to this set must remain attached and its depth must not change, as
+ * this would violate the comparator's contract and could lead to inconsistent state.
  *
  * Based on [androidx.compose.ui.node.DepthSortedSet].
  */
-internal class SubspaceDepthSortedSet(private val extraAssertions: Boolean = false) {
+internal class SubspaceDepthSortedSet(
+    private val extraAssertions: Boolean = false,
+    private val set: SortedSet<SubspaceLayoutNode> =
+        sortedSetOf(compareBy({ it.depth }, { it.hashCode() })),
+) : SortedSet<SubspaceLayoutNode> {
     // Stores the depth used when the node was added to the set to assert it wasn't changed.
     // This is crucial because changing the depth can break the comparator's contract for the
-    // TreeSet.
-    private var mapOfOriginalDepth: MutableObjectIntMap<SubspaceLayoutNode>? = null
-
-    private val set = TreeSet(SubspaceDepthComparator)
-
-    fun contains(node: SubspaceLayoutNode): Boolean {
-        val contains = set.contains(node)
-        if (extraAssertions) {
-            check(contains == safeMapOfOriginalDepth().containsKey(node)) {
-                "inconsistency in TreeSet"
-            }
-        }
-        return contains
+    // SortedSet.
+    private val mapOfOriginalDepth: MutableObjectIntMap<SubspaceLayoutNode> by lazy {
+        mutableObjectIntMapOf()
     }
 
-    fun add(node: SubspaceLayoutNode) {
-        if (extraAssertions) {
-            val map = safeMapOfOriginalDepth()
-            val usedDepth = map.getOrDefault(node, Int.MAX_VALUE)
-            if (usedDepth == Int.MAX_VALUE) {
-                map[node] = node.depth
-            } else {
-                check(usedDepth == node.depth) { "invalid node depth" }
+    fun pollFirst(): SubspaceLayoutNode? =
+        set.takeIf { it.isNotEmpty() }?.first()?.also { remove(it) }
+
+    fun pollLast(): SubspaceLayoutNode? =
+        set.takeIf { it.isNotEmpty() }?.last()?.also { remove(it) }
+
+    override val size: Int
+        get() = set.size
+
+    override fun contains(element: SubspaceLayoutNode): Boolean =
+        set.contains(element).also { contains ->
+            if (extraAssertions) {
+                check(contains == (element in mapOfOriginalDepth)) { "inconsistency in SortedSet" }
             }
         }
-        set.add(node)
+
+    override fun containsAll(elements: Collection<SubspaceLayoutNode?>): Boolean {
+        return elements.all { contains(it) }
     }
 
-    fun remove(node: SubspaceLayoutNode): Boolean {
-        // It's possible we are removing a node that has just been detached.
-        if (extraAssertions) {
-            val map = safeMapOfOriginalDepth()
-            if (map.contains(node)) {
-                val usedDepth = map[node]
-                map.remove(node)
-                val contains = set.remove(node)
-                check(usedDepth == if (contains) node.depth else Int.MAX_VALUE) {
+    override fun add(element: SubspaceLayoutNode) =
+        set.add(element).also {
+            if (extraAssertions) {
+                check(mapOfOriginalDepth.getOrPut(element) { element.depth } == element.depth) {
                     "invalid node depth"
                 }
-                return contains
             }
         }
-        return set.remove(node)
+
+    override fun addAll(elements: Collection<SubspaceLayoutNode?>): Boolean {
+        val initialSize = size
+        elements.forEach { it?.let(::add) }
+        return size > initialSize
     }
 
-    fun pop(): SubspaceLayoutNode {
-        val node = set.first()
-        remove(node)
-        return node
-    }
-
-    inline fun popEach(crossinline block: (SubspaceLayoutNode) -> Unit) {
-        while (isNotEmpty()) {
-            val node = pop()
-            block(node)
+    override fun remove(element: SubspaceLayoutNode): Boolean =
+        set.remove(element).also { removed ->
+            if (removed && extraAssertions) {
+                check(mapOfOriginalDepth[element] == element.depth) { "invalid node depth" }
+                mapOfOriginalDepth -= element
+            }
         }
+
+    override fun removeAll(elements: Collection<SubspaceLayoutNode?>): Boolean {
+        val initialSize = size
+        elements.forEach(::remove)
+        return size < initialSize
     }
 
-    fun isEmpty(): Boolean = set.isEmpty()
+    override fun retainAll(elements: Collection<SubspaceLayoutNode?>): Boolean {
+        val initialSize = size
+        set.filter { it !in elements }.fastForEach(::remove)
+        return size < initialSize
+    }
 
-    @Suppress("NOTHING_TO_INLINE") inline fun isNotEmpty(): Boolean = !isEmpty()
+    override fun comparator(): Comparator<in SubspaceLayoutNode>? = set.comparator()
 
-    fun toList(): List<SubspaceLayoutNode> = set.toList()
-
-    private fun safeMapOfOriginalDepth(): MutableObjectIntMap<SubspaceLayoutNode> {
-        if (mapOfOriginalDepth == null) {
-            mapOfOriginalDepth = mutableObjectIntMapOf()
+    override fun subSet(
+        fromElement: SubspaceLayoutNode?,
+        toElement: SubspaceLayoutNode?,
+    ): SubspaceDepthSortedSet? =
+        set.subSet(fromElement, toElement)?.let { nextSet ->
+            SubspaceDepthSortedSet(extraAssertions = extraAssertions, set = nextSet)
         }
-        return mapOfOriginalDepth!!
-    }
 
-    override fun toString(): String {
-        return set.toString()
-    }
+    override fun headSet(toElement: SubspaceLayoutNode?): SubspaceDepthSortedSet? =
+        set.headSet(toElement)?.let { nextSet ->
+            SubspaceDepthSortedSet(extraAssertions = extraAssertions, set = nextSet)
+        }
 
-    fun clear() {
-        set.clear()
-    }
+    override fun tailSet(fromElement: SubspaceLayoutNode?): SubspaceDepthSortedSet? =
+        set.tailSet(fromElement)?.let { nextSet ->
+            SubspaceDepthSortedSet(extraAssertions = extraAssertions, set = nextSet)
+        }
+
+    override fun first(): SubspaceLayoutNode = set.first()
+
+    override fun last(): SubspaceLayoutNode = set.last()
+
+    override fun isEmpty(): Boolean = set.isEmpty()
+
+    override fun clear() = set.clear().also { mapOfOriginalDepth.clear() }
+
+    override fun iterator(): MutableIterator<SubspaceLayoutNode> =
+        object : MutableIterator<SubspaceLayoutNode> {
+            val backingIterator = set.iterator()
+            var lastReturned: SubspaceLayoutNode? = null
+
+            override fun hasNext(): Boolean = backingIterator.hasNext()
+
+            override fun next(): SubspaceLayoutNode =
+                backingIterator.next().also { lastReturned = it }
+
+            override fun remove() {
+                // Call the remove method of the SubspaceDepthSortedSet instead of the backing
+                // iterator's remove method.
+                val elementToRemove =
+                    checkNotNull(lastReturned) { "next() must be called before remove()" }
+                this@SubspaceDepthSortedSet.remove(elementToRemove)
+                lastReturned = null
+            }
+        }
 }

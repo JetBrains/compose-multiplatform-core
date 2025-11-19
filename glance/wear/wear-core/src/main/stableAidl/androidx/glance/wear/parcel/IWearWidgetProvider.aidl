@@ -53,6 +53,7 @@ interface IWearWidgetProvider {
      *
      * @since version 1
      */
+     // TODO: b/458364657 - Remove
     oneway void onActivated(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 2;
 
     /**
@@ -60,5 +61,20 @@ interface IWearWidgetProvider {
      *
      * @since version 1
      */
+     // TODO: b/458364657 - Remove
     oneway void onDeactivated(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 3;
+
+    /**
+     * Called when the widget is added to the Host.
+     *
+     * @since version 1
+     */
+    oneway void onAdded(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 4;
+
+    /**
+     * Called when the widget is removed from the Host.
+     *
+     * @since version 1
+     */
+    oneway void onRemoved(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 5;
 }

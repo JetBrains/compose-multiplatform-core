@@ -113,30 +113,4 @@ object ComposeFoundationFlags {
     @field:Suppress("MutableBareField")
     @JvmField
     var isKeepInViewFocusObservationChangeEnabled: Boolean = true
-
-    /**
-     * With this flag on we don't use suspend pointer input as part of drag related modifiers as an
-     * optimization. This will affect [androidx.compose.foundation.gestures.scrollable],
-     * [androidx.compose.foundation.gestures.draggable],
-     * [androidx.compose.foundation.gestures.draggable2D] and
-     * [androidx.compose.foundation.gestures.anchoredDraggable].
-     */
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isNonSuspendingPointerInputInDraggableEnabled = true
-
-    /**
-     * Used to enable support for 2 dimensional mouse wheel event in scrollable modifier and
-     * scrollable components
-     */
-    @field:Suppress("MutableBareField")
-    @JvmField
-    var isMouseWheel1DAxisLockingEnabled: Boolean = true
-
-    /**
-     * With this flag on, Pager will use Cache Window as the default prefetching strategy, instead
-     * of 1 item in the direction of the scroll. The window used will be 1 view port AFTER the
-     * currently composed items, this includes visible and items composed through beyond bounds.
-     */
-    @field:Suppress("MutableBareField") @JvmField var isCacheWindowForPagerEnabled = true
 }

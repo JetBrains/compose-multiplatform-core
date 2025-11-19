@@ -334,9 +334,12 @@ public interface IcingOptionsConfig {
                 .setEnableScorableProperties(Flags.enableScorableProperty())
                 .setIcuDataFileAbsolutePath(getIcuDataFileAbsolutePath())
                 .setManageBlobFiles(!Flags.enableAppSearchManageBlobFiles())
-                // Join index v3 is a prerequisite for delete propagation.
+                // Join index v3 and soft index restoration are prerequisites for delete
+                // propagation.
                 .setEnableDeletePropagationFrom(
-                        Flags.enableDeletePropagationType() && Flags.enableQualifiedIdJoinIndexV3())
+                        Flags.enableDeletePropagationType()
+                                && Flags.enableQualifiedIdJoinIndexV3()
+                                && Flags.enableSoftIndexRestoration())
                 .setCalculateTimeSinceLastAttemptedOptimize(
                         Flags.enableCalculateTimeSinceLastAttemptedOptimize())
                 .setEnableQualifiedIdJoinIndexV3(Flags.enableQualifiedIdJoinIndexV3())
@@ -375,7 +378,7 @@ public interface IcingOptionsConfig {
                         Flags.enableSchemaTypeIdOptimization())
                 .setEnableOptimizeImprovements(
                         Flags.enableOptimizeImprovements())
-                .setEnableRepeatedFieldJoins(Flags.enableRepeatedFieldJoins())
+                .setEnableRepeatedFieldJoins(enableRepeatedFieldJoins())
                 .build();
     }
 }

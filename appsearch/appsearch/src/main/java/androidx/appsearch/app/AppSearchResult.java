@@ -40,7 +40,8 @@ import java.util.concurrent.ExecutionException;
  *
  * @param <ValueType> The type of result object for successful calls.
  */
-// TODO(b/384721898): Switch to JSpecify annotations
+// TODO(b/384721898): Switching to JSpecify annotations changes APIs once synced to platform.
+//  Do not switch unless you've checked that no APIs are affected.
 @SuppressWarnings("JSpecifyNullness")
 public final class AppSearchResult<ValueType> {
     private static final String TAG = "AppSearchResult";

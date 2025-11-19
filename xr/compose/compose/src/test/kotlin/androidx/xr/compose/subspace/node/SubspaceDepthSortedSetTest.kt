@@ -21,6 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.platform.AndroidComposeSpatialElement
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -43,7 +44,7 @@ class SubspaceDepthSortedSetTest {
         subspaceDepthSortedSet.add(childNode)
         subspaceDepthSortedSet.add(rootNode)
 
-        assertThat(subspaceDepthSortedSet.pop()).isEqualTo(rootNode)
+        assertThat(subspaceDepthSortedSet.first()).isEqualTo(rootNode)
     }
 
     @Test
@@ -94,14 +95,262 @@ class SubspaceDepthSortedSetTest {
         subspaceDepthSortedSet.add(parentNode)
         subspaceDepthSortedSet.add(childNode)
 
-        assertThat(subspaceDepthSortedSet.pop()).isEqualTo(parentNode)
-        assertThat(subspaceDepthSortedSet.pop()).isEqualTo(childNode)
+        assertThat(subspaceDepthSortedSet.pollFirst()).isEqualTo(parentNode)
+        assertThat(subspaceDepthSortedSet.pollFirst()).isEqualTo(childNode)
 
         subspaceDepthSortedSet.add(childNode)
         subspaceDepthSortedSet.add(parentNode)
 
-        assertThat(subspaceDepthSortedSet.pop()).isEqualTo(parentNode)
-        assertThat(subspaceDepthSortedSet.pop()).isEqualTo(childNode)
+        assertThat(subspaceDepthSortedSet.pollFirst()).isEqualTo(parentNode)
+        assertThat(subspaceDepthSortedSet.pollFirst()).isEqualTo(childNode)
         assertThat(subspaceDepthSortedSet.isEmpty()).isTrue()
+    }
+
+    @Test
+    fun pollFirst_removesAndReturnsSmallestElement() {
+        val owner = AndroidComposeSpatialElement()
+        val rootNode = SubspaceLayoutNode()
+        val parentNode = SubspaceLayoutNode()
+        val childNode = SubspaceLayoutNode()
+        val subspaceDepthSortedSet = SubspaceDepthSortedSet()
+        rootNode.attach(owner)
+        rootNode.insertAt(0, parentNode)
+        parentNode.insertAt(0, childNode)
+
+        // Add in a non-sorted order
+        subspaceDepthSortedSet.add(childNode)
+        subspaceDepthSortedSet.add(rootNode)
+        subspaceDepthSortedSet.add(parentNode)
+
+        assertThat(subspaceDepthSortedSet.size).isEqualTo(3)
+
+        // pollFirst should return the root node (depth 0) and remove it.
+        val first = subspaceDepthSortedSet.pollFirst()
+        assertThat(first).isEqualTo(rootNode)
+        assertThat(subspaceDepthSortedSet.size).isEqualTo(2)
+        assertThat(subspaceDepthSortedSet.contains(rootNode)).isFalse()
+
+        // The next pollFirst should return the parent node (depth 1).
+        val second = subspaceDepthSortedSet.pollFirst()
+        assertThat(second).isEqualTo(parentNode)
+        assertThat(subspaceDepthSortedSet.size).isEqualTo(1)
+        assertThat(subspaceDepthSortedSet.contains(parentNode)).isFalse()
+    }
+
+    @Test
+    fun pollLast_removesAndReturnsLargestElement() {
+        val owner = AndroidComposeSpatialElement()
+        val rootNode = SubspaceLayoutNode()
+        val parentNode = SubspaceLayoutNode()
+        val childNode = SubspaceLayoutNode()
+        val subspaceDepthSortedSet = SubspaceDepthSortedSet()
+        rootNode.attach(owner)
+        rootNode.insertAt(0, parentNode)
+        parentNode.insertAt(0, childNode)
+
+        // Add in a non-sorted order
+        subspaceDepthSortedSet.add(childNode)
+        subspaceDepthSortedSet.add(rootNode)
+        subspaceDepthSortedSet.add(parentNode)
+
+        assertThat(subspaceDepthSortedSet.size).isEqualTo(3)
+
+        // pollLast should return the child node (deepest) and remove it.
+        val last = subspaceDepthSortedSet.pollLast()
+        assertThat(last).isEqualTo(childNode)
+        assertThat(subspaceDepthSortedSet.size).isEqualTo(2)
+        assertThat(subspaceDepthSortedSet.contains(childNode)).isFalse()
+
+        // The next pollLast should return the parent node.
+        val secondLast = subspaceDepthSortedSet.pollLast()
+        assertThat(secondLast).isEqualTo(parentNode)
+        assertThat(subspaceDepthSortedSet.size).isEqualTo(1)
+        assertThat(subspaceDepthSortedSet.contains(parentNode)).isFalse()
+    }
+
+    @Test
+    fun pollFirstAndLast_onEmptySet_returnsNull() {
+        val subspaceDepthSortedSet = SubspaceDepthSortedSet()
+        assertThat(subspaceDepthSortedSet.isEmpty()).isTrue()
+
+        // Polling from an empty set should return null, not throw.
+        val first = subspaceDepthSortedSet.pollFirst()
+        assertThat(first).isNull()
+
+        val last = subspaceDepthSortedSet.pollLast()
+        assertThat(last).isNull()
+
+        assertThat(subspaceDepthSortedSet.isEmpty()).isTrue()
+    }
+
+    @Test
+    fun add_withExtraAssertions_throwsIfDepthChanges() {
+        val owner = AndroidComposeSpatialElement()
+        val rootNode = SubspaceLayoutNode()
+        val parentNode = SubspaceLayoutNode()
+        val childNode = SubspaceLayoutNode()
+        val set = SubspaceDepthSortedSet(extraAssertions = true)
+        rootNode.attach(owner)
+        rootNode.insertAt(0, parentNode)
+
+        // Add the node when its depth is 1
+        set.add(parentNode)
+        assertThat(parentNode.depth).isEqualTo(1)
+
+        // Change the node's depth by moving it in the tree
+        rootNode.removeAt(0, 1) // Detach from root
+        rootNode.insertAt(0, childNode) // root -> child
+        childNode.insertAt(0, parentNode) // root -> child -> parent
+        assertThat(parentNode.depth).isEqualTo(2) // Depth is now 2
+
+        // Act & Assert: Trying to add the same node again should fail the depth check
+        val exception =
+            assertThrows(IllegalStateException::class.java) {
+                // This add will check the existing entry's depth against the new depth
+                set.add(parentNode)
+            }
+        assertThat(exception).hasMessageThat().isEqualTo("invalid node depth")
+    }
+
+    @Test
+    fun remove_withExtraAssertions_throwsIfDepthChanges() {
+        val owner = AndroidComposeSpatialElement()
+        val rootNode = SubspaceLayoutNode()
+        val parentNode = SubspaceLayoutNode()
+        val childNode = SubspaceLayoutNode()
+        val set = SubspaceDepthSortedSet(extraAssertions = true)
+        rootNode.attach(owner)
+        rootNode.insertAt(0, parentNode)
+
+        // Add the node when its depth is 1
+        set.add(parentNode)
+        assertThat(parentNode.depth).isEqualTo(1)
+
+        // Change the node's depth by moving it in the tree
+        rootNode.removeAt(0, 1) // Detach from root
+        rootNode.insertAt(0, childNode) // root -> child
+        childNode.insertAt(0, parentNode) // root -> child -> parent
+        assertThat(parentNode.depth).isEqualTo(2) // Depth is now 2
+
+        // Act & Assert: Removing the node whose depth has changed should fail the check
+        val exception = assertThrows(IllegalStateException::class.java) { set.remove(parentNode) }
+        assertThat(exception).hasMessageThat().isEqualTo("invalid node depth")
+    }
+
+    @Test
+    fun remove_doesNotCauseFailureOnSubsequentContainsCheck() {
+        val owner = AndroidComposeSpatialElement()
+        val node = SubspaceLayoutNode()
+        val set = SubspaceDepthSortedSet(extraAssertions = true)
+        node.attach(owner)
+
+        // 1. Add the node to the set.
+        set.add(node)
+        assertThat(set.contains(node)).isTrue()
+        assertThat(set.size).isEqualTo(1)
+
+        // 2. Remove the node.
+        val wasRemoved = set.remove(node)
+        assertThat(wasRemoved).isTrue()
+        assertThat(set.size).isEqualTo(0)
+
+        // 3. Verify that contains() now returns false and does not throw an exception.
+        // This confirms the internal state was cleaned up correctly.
+        val stillContains = set.contains(node)
+        assertThat(stillContains).isFalse()
+    }
+
+    @Test
+    fun remove_nodeNotInSet_doesNotFail() {
+        val owner = AndroidComposeSpatialElement()
+        val nodeInSet = SubspaceLayoutNode()
+        val nodeNotInSet = SubspaceLayoutNode()
+        val set = SubspaceDepthSortedSet(extraAssertions = true)
+        nodeInSet.attach(owner)
+        nodeNotInSet.attach(owner)
+
+        // Add one node to the set
+        set.add(nodeInSet)
+        assertThat(set.size).isEqualTo(1)
+
+        // Act: Try to remove a node that was never added
+        val wasRemoved = set.remove(nodeNotInSet)
+
+        // Assert: The operation should fail gracefully
+        assertThat(wasRemoved).isFalse()
+        assertThat(set.size).isEqualTo(1)
+        assertThat(set.contains(nodeInSet)).isTrue()
+    }
+
+    @Test
+    fun contains_nodeNotInSet_doesNotFail() {
+        val owner = AndroidComposeSpatialElement()
+        val nodeInSet = SubspaceLayoutNode()
+        val nodeNotInSet = SubspaceLayoutNode()
+        val set = SubspaceDepthSortedSet(extraAssertions = true)
+        nodeInSet.attach(owner)
+        nodeNotInSet.attach(owner)
+
+        // Add one node to the set
+        set.add(nodeInSet)
+
+        // Act: Check for the presence of a node that was never added
+        val isPresent = set.contains(nodeNotInSet)
+
+        // Assert: The check should return false and not throw
+        assertThat(isPresent).isFalse()
+    }
+
+    @Test
+    fun iteratorRemove_withExtraAssertions_maintainsConsistency() {
+        val owner = AndroidComposeSpatialElement()
+        val node = SubspaceLayoutNode()
+        val set = SubspaceDepthSortedSet(extraAssertions = true)
+        node.attach(owner)
+        set.add(node)
+        assertThat(set.size).isEqualTo(1)
+
+        // 1. Get an iterator for the set.
+        val iterator = set.iterator()
+
+        // 2. Use the iterator to remove the element.
+        // In a correct implementation, this should trigger the overridden remove() logic.
+        while (iterator.hasNext()) {
+            if (iterator.next() == node) {
+                iterator.remove()
+            }
+        }
+
+        // 3. Assert that the set is now empty.
+        assertThat(set.size).isEqualTo(0)
+        assertThat(set.isEmpty()).isTrue()
+
+        // 4. Assert that a subsequent check for the removed element works correctly.
+        // This is the step that will FAIL with the current implementation, as it will
+        // throw an IllegalStateException instead of returning false.
+        assertThat(set.contains(node)).isFalse()
+    }
+
+    @Test
+    fun clear_withExtraAssertions_maintainsConsistency() {
+        val owner = AndroidComposeSpatialElement()
+        val node = SubspaceLayoutNode()
+        val set = SubspaceDepthSortedSet(extraAssertions = true)
+        node.attach(owner)
+        set.add(node)
+
+        assertThat(set.size).isEqualTo(1)
+
+        // 1. Clear the set. This currently only clears the backing set.
+        set.clear()
+
+        // 2. Assert that the set is now empty.
+        assertThat(set.isEmpty()).isTrue()
+
+        // 3. Assert that a subsequent check for the removed element works correctly.
+        // This is the step that will FAIL with the current implementation, as it will
+        // throw an IllegalStateException ("inconsistency in TreeSet") instead of
+        // returning false.
+        assertThat(set.contains(node)).isFalse()
     }
 }

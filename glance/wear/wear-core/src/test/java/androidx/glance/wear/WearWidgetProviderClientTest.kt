@@ -138,9 +138,96 @@ class WearWidgetProviderClientTest {
         assertThat(shadowApp.boundServiceConnections).isEmpty()
     }
 
+    @Test
+    fun sendAddEvent() = runTest {
+        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
+        val instanceId = 123
+        val containerType = CONTAINER_TYPE_LARGE
+
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+
+        launch { client.sendAddEvent(instanceId, containerType) }
+        // Actual binding runs on the main thread.
+        advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+        advanceUntilIdle()
+
+        val handle = ActiveWearWidgetHandle.fromParcel(service.addedHandleParcel!!, COMPONENT_NAME)
+        assertThat(handle.provider).isEqualTo(COMPONENT_NAME)
+        assertThat(handle.instanceId).isEqualTo(instanceId)
+        assertThat(handle.containerType).isEqualTo(containerType)
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+    }
+
+    @Test
+    fun sendRemoveEvent() = runTest {
+        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
+        val instanceId = 123
+        val containerType = CONTAINER_TYPE_LARGE
+
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+
+        launch { client.sendRemoveEvent(instanceId, containerType) }
+        // Actual binding runs on the main thread.
+        advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+        advanceUntilIdle()
+
+        val handle =
+            ActiveWearWidgetHandle.fromParcel(service.removedHandleParcel!!, COMPONENT_NAME)
+        assertThat(handle.provider).isEqualTo(COMPONENT_NAME)
+        assertThat(handle.instanceId).isEqualTo(instanceId)
+        assertThat(handle.containerType).isEqualTo(containerType)
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+    }
+
+    @Test
+    fun sendAddEvent_cancelled() = runTest {
+        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
+        val instanceId = 123
+        val containerType = CONTAINER_TYPE_LARGE
+
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+
+        val job = launch { client.sendAddEvent(instanceId, containerType) }
+        // Actual binding runs on the main thread.
+        advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        job.cancel()
+        advanceUntilIdle()
+
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+    }
+
+    @Test
+    fun sendRemoveEvent_cancelled() = runTest {
+        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
+        val instanceId = 123
+        val containerType = CONTAINER_TYPE_LARGE
+
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+
+        val job = launch { client.sendRemoveEvent(instanceId, containerType) }
+        // Actual binding runs on the main thread.
+        advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        job.cancel()
+        advanceUntilIdle()
+
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+    }
+
     private class FakeWearWidgetProvider : IWearWidgetProvider.Stub() {
         var activatedHandleParcel: ActiveWearWidgetHandleParcel? = null
         var deactivatedHandleParcel: ActiveWearWidgetHandleParcel? = null
+        var addedHandleParcel: ActiveWearWidgetHandleParcel? = null
+        var removedHandleParcel: ActiveWearWidgetHandleParcel? = null
 
         override fun getApiVersion(): Int = 1
 
@@ -162,6 +249,22 @@ class WearWidgetProviderClientTest {
             callback: IExecutionCallback?,
         ) {
             deactivatedHandleParcel = handleParcel
+            callback?.onSuccess()
+        }
+
+        override fun onAdded(
+            handleParcel: ActiveWearWidgetHandleParcel?,
+            callback: IExecutionCallback?,
+        ) {
+            addedHandleParcel = handleParcel
+            callback?.onSuccess()
+        }
+
+        override fun onRemoved(
+            handleParcel: ActiveWearWidgetHandleParcel?,
+            callback: IExecutionCallback?,
+        ) {
+            removedHandleParcel = handleParcel
             callback?.onSuccess()
         }
     }

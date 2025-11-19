@@ -17,8 +17,10 @@
 package androidx.appsearch.app;
 
 import android.os.Parcel;
-import android.os.Parcelable;
+import android.os.Parcelable.Creator;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.flags.FlaggedApi;
 import androidx.appsearch.flags.Flags;
@@ -27,9 +29,6 @@ import androidx.appsearch.safeparcel.SafeParcelable;
 import androidx.appsearch.safeparcel.stub.StubCreators.AppSearchBlobHandleCreator;
 import androidx.appsearch.util.IndentingStringBuilder;
 import androidx.core.util.Preconditions;
-
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -55,17 +54,19 @@ import java.util.Objects;
  * @see GenericDocument.Builder#setPropertyBlobHandle
  */
 @FlaggedApi(Flags.FLAG_ENABLE_BLOB_STORE)
-@SuppressWarnings("HiddenSuperclass")
+// TODO(b/384721898): Switching to JSpecify annotations changes APIs once synced to Platform.
+//  Do not switch until this is resolved.
+@SuppressWarnings({"HiddenSuperclass", "JSpecifyNullness"})
 @SafeParcelable.Class(creator = "AppSearchBlobHandleCreator")
 public final class AppSearchBlobHandle extends AbstractSafeParcelable {
     /** The length of the SHA-256 digest in bytes. SHA-256 produces a 256-bit (32-byte) digest. */
     private static final int SHA_256_DIGEST_BYTE_LENGTH = 32;
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public static final Parcelable.@NonNull Creator<AppSearchBlobHandle> CREATOR =
+    public static final @NonNull Creator<AppSearchBlobHandle> CREATOR =
             new AppSearchBlobHandleCreator();
     @Field(id = 1, getter = "getSha256Digest")
-    private final byte@NonNull [] mSha256Digest;
+    private final @NonNull byte[] mSha256Digest;
 
     @Field(id = 2, getter = "getPackageName")
     private final @NonNull String mPackageName;
@@ -85,7 +86,7 @@ public final class AppSearchBlobHandle extends AbstractSafeParcelable {
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     @Constructor
     AppSearchBlobHandle(
-            @Param(id = 1) byte@NonNull [] sha256Digest,
+            @Param(id = 1) @NonNull byte[] sha256Digest,
             @Param(id = 2) @NonNull String packageName,
             @Param(id = 3) @NonNull String databaseName,
             @Param(id = 4) @NonNull String namespace) {
@@ -103,7 +104,7 @@ public final class AppSearchBlobHandle extends AbstractSafeParcelable {
      * <p> For two objects of {@link AppSearchBlobHandle} to be considered equal, the
      * {@code packageName}, {@code database}, {@code namespace} and {@code digest} must be equal.
      */
-    public byte@NonNull [] getSha256Digest() {
+    public @NonNull byte[] getSha256Digest() {
         return mSha256Digest;
     }
 
@@ -203,7 +204,7 @@ public final class AppSearchBlobHandle extends AbstractSafeParcelable {
      *
      * @return a new instance of {@link AppSearchBlobHandle} object.
      */
-    public static @NonNull AppSearchBlobHandle createWithSha256(byte@NonNull [] digest,
+    public static @NonNull AppSearchBlobHandle createWithSha256(@NonNull byte[] digest,
             @NonNull String packageName, @NonNull String databaseName, @NonNull String namespace) {
         Preconditions.checkNotNull(digest);
         Preconditions.checkArgument(digest.length == SHA_256_DIGEST_BYTE_LENGTH,

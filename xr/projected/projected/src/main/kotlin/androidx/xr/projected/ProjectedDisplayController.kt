@@ -60,6 +60,9 @@ private constructor(
      *
      * Supported flags:
      * - [android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON]
+     *     - Note: Keeping the device's screen on can drain the battery quickly. Ordinarily, you
+     *       should let the device turn the screen off if the user is not interacting with it. If
+     *       you do need to keep the screen on, do so for as short a time as possible.
      *
      * If an unsupported flag is passed, this method does nothing.
      */

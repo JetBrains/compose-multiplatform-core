@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
+import androidx.compose.testutils.WithTouchSlop
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -83,19 +84,21 @@ abstract class BaseListTestWithOrientation(protected val orientation: Orientatio
         contentPadding: PaddingValues = PaddingValues(),
         itemContent: @Composable (index: Int) -> Unit,
     ) {
-        List(
-            state = state,
-            orientation = listOrientation,
-            userScrollEnabled = userScrollEnabled,
-            horizontalAlignment = horizontalAlignment,
-            horizontalArrangement = horizontalArrangement,
-            verticalAlignment = verticalAlignment,
-            verticalArrangement = verticalArrangement,
-            overscrollEffect = overscrollEffect,
-            modifier = modifier.testTag(LIST_TEST_TAG),
-            contentPadding = contentPadding,
-        ) {
-            items(itemsCount, key = keyProvider) { index -> itemContent(index) }
+        WithTouchSlop(0f) {
+            List(
+                state = state,
+                orientation = listOrientation,
+                userScrollEnabled = userScrollEnabled,
+                horizontalAlignment = horizontalAlignment,
+                horizontalArrangement = horizontalArrangement,
+                verticalAlignment = verticalAlignment,
+                verticalArrangement = verticalArrangement,
+                overscrollEffect = overscrollEffect,
+                modifier = modifier.testTag(LIST_TEST_TAG),
+                contentPadding = contentPadding,
+            ) {
+                items(itemsCount, key = keyProvider) { index -> itemContent(index) }
+            }
         }
     }
 

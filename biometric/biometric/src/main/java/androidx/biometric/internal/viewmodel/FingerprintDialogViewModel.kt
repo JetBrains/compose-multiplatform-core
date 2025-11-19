@@ -28,8 +28,7 @@ import kotlinx.coroutines.flow.filter
 /** A [ViewModel] that manages the UI state of the fingerprint dialog. */
 internal class FingerprintDialogViewModel(
     @Suppress("deprecation")
-    val fingerprintPreAuthChecker:
-        (androidx.core.hardware.fingerprint.FingerprintManagerCompat) -> Int =
+    val fingerprintPreAuthChecker: (androidx.biometric.internal.FingerprintManagerCompat) -> Int =
         ::checkForFingerprintPreAuthenticationErrors
 ) : ViewModel() {
 
@@ -184,7 +183,7 @@ internal class FingerprintDialogViewModel(
  */
 @Suppress("deprecation")
 private fun checkForFingerprintPreAuthenticationErrors(
-    fingerprintManager: androidx.core.hardware.fingerprint.FingerprintManagerCompat
+    fingerprintManager: androidx.biometric.internal.FingerprintManagerCompat
 ): Int {
     if (!fingerprintManager.isHardwareDetected) {
         return BiometricPrompt.ERROR_HW_NOT_PRESENT

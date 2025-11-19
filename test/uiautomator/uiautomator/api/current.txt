@@ -414,6 +414,7 @@ package androidx.test.uiautomator {
     method public void sleep() throws android.os.RemoteException;
     method public boolean swipe(android.graphics.Point![], int);
     method public boolean swipe(int, int, int, int, int);
+    method public android.graphics.Bitmap? takeScreenshot();
     method public boolean takeScreenshot(java.io.File);
     method public boolean takeScreenshot(java.io.File, float, int);
     method public void unfreezeRotation() throws android.os.RemoteException;

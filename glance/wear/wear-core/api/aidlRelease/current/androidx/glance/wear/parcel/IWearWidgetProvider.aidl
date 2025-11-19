@@ -38,6 +38,8 @@ interface IWearWidgetProvider {
   oneway void onWidgetRequest(in androidx.glance.wear.parcel.WearWidgetRequestParcel requestParcel, androidx.glance.wear.parcel.IWearWidgetCallback callback) = 1;
   oneway void onActivated(in androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel handleParcel, androidx.glance.wear.parcel.IExecutionCallback callback) = 2;
   oneway void onDeactivated(in androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel handleParcel, androidx.glance.wear.parcel.IExecutionCallback callback) = 3;
+  oneway void onAdded(in androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel handleParcel, androidx.glance.wear.parcel.IExecutionCallback callback) = 4;
+  oneway void onRemoved(in androidx.glance.wear.parcel.ActiveWearWidgetHandleParcel handleParcel, androidx.glance.wear.parcel.IExecutionCallback callback) = 5;
   const int API_VERSION = 1;
   const int ACTIVATION_ERROR_CODE_INTERNAL_ERROR = 1;
   const int ACTIVATION_ERROR_CODE_INVALID_ARGUMENT = 2;

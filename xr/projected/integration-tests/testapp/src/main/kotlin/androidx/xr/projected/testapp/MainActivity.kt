@@ -41,6 +41,7 @@ import androidx.xr.projected.ProjectedContext
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.testapp.audio.AudioActivity
 import androidx.xr.projected.testapp.componentpermissions.PermissionsComponentActivity
+import androidx.xr.projected.testapp.controller.DisplayControllerActivity
 import androidx.xr.projected.testapp.input.ProjectedInputActivity
 import androidx.xr.projected.testapp.permissions.PermissionsActivity
 import androidx.xr.projected.testapp.projectedcontext.ProjectedContextActivity
@@ -129,6 +130,7 @@ class MainActivity : ComponentActivity() {
             mapOf(
                 "Projected Context" to ProjectedContextActivity::class.java,
                 "Audio" to AudioActivity::class.java,
+                "Display Controller" to DisplayControllerActivity::class.java,
             )
 
         // A list of projected activities that are launchable from the main activity.

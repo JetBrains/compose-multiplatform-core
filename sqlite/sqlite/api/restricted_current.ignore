@@ -1,4 +1,8 @@
 // Baseline format: 1.0
+AddedClass: androidx.sqlite.SQLiteException:
+    Added typealias androidx.sqlite.SQLiteException
+
+
 AddedMethod: androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration#Configuration(android.content.Context, String, androidx.sqlite.db.SupportSQLiteOpenHelper.Callback, boolean, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker):
     Added constructor androidx.sqlite.db.SupportSQLiteOpenHelper.Configuration(android.content.Context,String,androidx.sqlite.db.SupportSQLiteOpenHelper.Callback,boolean,boolean,int,kotlin.jvm.internal.DefaultConstructorMarker)
 

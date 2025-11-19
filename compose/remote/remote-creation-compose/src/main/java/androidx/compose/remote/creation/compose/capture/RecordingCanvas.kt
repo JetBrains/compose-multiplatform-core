@@ -53,7 +53,6 @@ import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.getFloatIdForCreationState
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.ui.graphics.asAndroidPath
 
 /**
@@ -1374,7 +1373,7 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
      */
     public fun loop(from: Number, until: Number, step: Number, body: (index: RemoteFloat) -> Unit) {
         val loopVariableId = document.createFloatId()
-        val loopVariable = MutableRemoteFloat(mutableFloatStateOf(0f), loopVariableId)
+        val loopVariable = MutableRemoteFloat(loopVariableId)
         document.loop(
             Utils.idFromNan(loopVariableId),
             from.getFloatIdForCreationState(creationState),
@@ -1397,7 +1396,7 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
      */
     public fun loop(from: Int, until: RemoteInt, body: (index: RemoteInt) -> Unit) {
         val loopVariableId = document.createFloatId()
-        val loopVariable = MutableRemoteFloat(mutableFloatStateOf(0f), loopVariableId)
+        val loopVariable = MutableRemoteFloat(loopVariableId)
         document.loop(
             Utils.idFromNan(loopVariableId),
             from.toFloat(),

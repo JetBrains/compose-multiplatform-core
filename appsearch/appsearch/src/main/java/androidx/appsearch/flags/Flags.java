@@ -556,9 +556,7 @@ public final class Flags {
      * {@link #enableQualifiedIdJoinIndexV3()} should also be true.
      */
     public static boolean enableDeletePropagationType() {
-        // TODO(b/384947619): enable this flag once expiry propagation and dependency check are
-        //   implemented.
-        return false;
+        return true;
     }
 
     /**

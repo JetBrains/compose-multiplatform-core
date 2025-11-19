@@ -125,20 +125,19 @@ public class AuthenticationCallbackProviderTest {
     @SuppressWarnings("deprecation")
     @Test
     public void testFingerprintCallback_IsCached() {
-        final androidx.core.hardware.fingerprint.FingerprintManagerCompat.AuthenticationCallback
-                callback = mAuthenticationCallbackProvider.getFingerprintCallback();
+        final androidx.biometric.internal.FingerprintManagerCompat.AuthenticationCallback callback =
+                mAuthenticationCallbackProvider.getFingerprintCallback();
         assertThat(mAuthenticationCallbackProvider.getFingerprintCallback()).isEqualTo(callback);
     }
 
     @SuppressWarnings("deprecation")
     @Test
     public void testFingerprintCallback_HandlesSuccess() {
-        final androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject crypto =
-                new androidx.core.hardware.fingerprint.FingerprintManagerCompat.CryptoObject(
-                        mCipher);
-        final androidx.core.hardware.fingerprint.FingerprintManagerCompat.AuthenticationResult
-                result = new androidx.core.hardware.fingerprint.FingerprintManagerCompat
-                .AuthenticationResult(crypto);
+        final androidx.biometric.internal.FingerprintManagerCompat.CryptoObject crypto =
+                new androidx.biometric.internal.FingerprintManagerCompat.CryptoObject(mCipher);
+        final androidx.biometric.internal.FingerprintManagerCompat.AuthenticationResult result =
+                new androidx.biometric.internal.FingerprintManagerCompat.AuthenticationResult(
+                        crypto);
 
         mAuthenticationCallbackProvider.getFingerprintCallback().onAuthenticationSucceeded(result);
 

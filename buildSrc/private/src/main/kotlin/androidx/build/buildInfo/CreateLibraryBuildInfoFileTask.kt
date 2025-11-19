@@ -29,16 +29,21 @@ import androidx.build.getProjectZipPath
 import androidx.build.getSupportRootFolder
 import androidx.build.gitclient.getHeadShaProvider
 import androidx.build.jetpad.LibraryBuildInfoFile
+import androidx.build.kotlinExtensionOrNull
+import com.android.build.api.variant.AndroidComponentsExtension
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.GsonBuilder
 import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencyConstraint
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.component.ComponentWithCoordinates
 import org.gradle.api.component.ComponentWithVariants
 import org.gradle.api.file.RegularFileProperty
@@ -60,6 +65,9 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.configure
 import org.gradle.plugin.devel.GradlePluginDevelopmentExtension
 import org.gradle.work.DisableCachingByDefault
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinSingleTargetExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
 /**
@@ -103,6 +111,9 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
 
     @get:[Input Optional]
     abstract val dependencyList: ListProperty<LibraryBuildInfoFile.Dependency>
+
+    @get:[Input Optional]
+    abstract val allDependencies: ListProperty<LibraryBuildInfoFile.Dependency>
 
     @get:[Input Optional]
     abstract val dependencyConstraintList: ListProperty<LibraryBuildInfoFile.Dependency>
@@ -165,6 +176,8 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
         libraryBuildInfoFile.checks = ArrayList()
         libraryBuildInfoFile.dependencies =
             if (dependencyList.isPresent) ArrayList(dependencyList.get()) else ArrayList()
+        libraryBuildInfoFile.allDependencies =
+            if (allDependencies.isPresent) ArrayList(allDependencies.get()) else ArrayList()
         libraryBuildInfoFile.dependencyConstraints =
             if (dependencyConstraintList.isPresent) ArrayList(dependencyConstraintList.get())
             else ArrayList()
@@ -246,6 +259,19 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 task.dependencyConstraintList.set(
                     variant.dependencyConstraints.map { it.asBuildInfoDependencies() }
                 )
+                task.allDependencies.set(
+                    variant.runtimeConfigurationNames.map { configList ->
+                        val deps = LinkedHashSet<LibraryBuildInfoFile.Dependency>()
+                        configList.forEach { config ->
+                            project.configurations.named(config).configure {
+                                deps += collectResolvedModules(it)
+                            }
+                        }
+                        deps.sortedWith(
+                            compareBy({ it.groupId }, { it.artifactId }, { it.version })
+                        )
+                    }
+                )
                 task.shouldPublishDocs.set(shouldPublishDocs)
                 task.kmp.set(isKmp)
                 task.target.set(target)
@@ -294,6 +320,40 @@ abstract class CreateLibraryBuildInfoFileTask : DefaultTask() {
                 !startsWith("androidx.test") &&
                 !startsWith("androidx.databinding") &&
                 !startsWith("androidx.media3")
+
+        private fun collectResolvedModules(
+            conf: Configuration
+        ): Set<LibraryBuildInfoFile.Dependency> {
+            val deps = LinkedHashSet<LibraryBuildInfoFile.Dependency>()
+            val rootComponent = conf.incoming.resolutionResult.root
+            conf.incoming.resolutionResult.allComponents.forEach { comp ->
+                // Skip the current project itself
+                if (comp == rootComponent) return@forEach
+                when (val id = comp.id) {
+                    is ModuleComponentIdentifier -> {
+                        deps +=
+                            LibraryBuildInfoFile.Dependency().apply {
+                                artifactId = id.module
+                                groupId = id.group
+                                version = comp.moduleVersion?.version ?: id.version
+                                isTipOfTree = false
+                            }
+                    }
+                    is ProjectComponentIdentifier -> {
+                        comp.moduleVersion?.let {
+                            deps +=
+                                LibraryBuildInfoFile.Dependency().apply {
+                                    artifactId = it.name
+                                    groupId = it.group
+                                    version = it.version
+                                    isTipOfTree = true
+                                }
+                        }
+                    }
+                }
+            }
+            return deps
+        }
     }
 }
 
@@ -393,6 +453,28 @@ private fun Project.createBuildInfoTask(
     variantName: String,
 ): TaskProvider<CreateLibraryBuildInfoFileTask> {
     val kmpTaskSuffix = computeTaskSuffix(variantName, isKmp)
+
+    val runtimeConfigurationNames: List<String> =
+        when (val kotlinExt = project.kotlinExtensionOrNull) {
+            is KotlinSingleTargetExtension<*> -> {
+                kotlinExt.target.compilations.classpathConfigs()
+            }
+            is KotlinMultiplatformExtension -> {
+                kotlinExt.targets.findByName(variantName)?.compilations?.classpathConfigs()
+                    // We are in the "root" of the KMP project
+                    ?: emptyList()
+            }
+            else -> {
+                // Java-only Android project
+                if (project.extensions.findByType(AndroidComponentsExtension::class.java) != null) {
+                    listOf("releaseRuntimeClasspath")
+                } else {
+                    // Java-only project
+                    listOf("runtimeClasspath")
+                }
+            }
+        }
+
     return CreateLibraryBuildInfoFileTask.setup(
         project = project,
         mavenGroup = libraryGroup,
@@ -410,6 +492,10 @@ private fun Project.createBuildInfoTask(
                     pub.component.map { component ->
                         component.usages.orEmpty().flatMap { it.dependencyConstraints }
                     },
+                runtimeConfigurationNames =
+                    project.objects
+                        .listProperty(String::class.java)
+                        .convention(runtimeConfigurationNames),
             ),
         shaProvider = shaProvider,
         // There's a build_info file for each KMP platform, but only the artifact without a platform
@@ -427,6 +513,12 @@ private fun Project.createBuildInfoTask(
                 ?.toSet() ?: emptySet(),
     )
 }
+
+private fun Iterable<KotlinCompilation<*>>.classpathConfigs(): List<String> =
+    asSequence()
+        .filterNot { it.name.contains("test", ignoreCase = true) }
+        .mapNotNull { it.runtimeDependencyConfigurationName }
+        .toList()
 
 private fun modifyKmpChildrenForBuildInfo(kmpChild: String): String {
     // Jetbrains converts the "wasmJs" target to "wasm-js", which does not match the convention

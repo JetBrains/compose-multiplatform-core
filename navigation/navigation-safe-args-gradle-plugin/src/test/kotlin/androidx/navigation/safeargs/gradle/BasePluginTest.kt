@@ -75,8 +75,13 @@ abstract class BasePluginTest {
             GradleRunner.create()
                 .withProjectDir(projectRoot())
                 .withPluginClasspath()
-                // b/175897186 set explicit metaspace size in hopes of fewer crashes
-                .withArguments("-Dorg.gradle.jvmargs=-XX:MaxMetaspaceSize=512m", *args)
+                .withArguments(
+                    // b/175897186 set explicit metaspace size in hopes of fewer crashes
+                    "-Dorg.gradle.jvmargs=-XX:MaxMetaspaceSize=512m",
+                    // Enable configuration cache for these tests
+                    "-Dorg.gradle.configuration-cache=true",
+                    *args,
+                )
         return runner
     }
 

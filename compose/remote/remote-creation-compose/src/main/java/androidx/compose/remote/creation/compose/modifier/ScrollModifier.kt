@@ -21,13 +21,21 @@ import androidx.annotation.RestrictTo
 import androidx.compose.foundation.ScrollState
 import androidx.compose.remote.core.operations.Utils
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
+import androidx.compose.remote.creation.compose.state.MutableRemoteFloat
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.modifiers.ScrollModifier as CoreScrollModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteScrollState(public val position: Float, public val notches: Int) {
+public class RemoteScrollState(
+    public val positionState: MutableRemoteFloat,
+    public val notches: Int,
+) {
+    public constructor(position: Float, notches: Int) : this(MutableRemoteFloat(position), notches)
+
+    public val position: Float
+        get() = positionState.id
 
     public fun toComposeUi(): ScrollState {
         return ScrollState(0)

@@ -64,11 +64,11 @@ public class RegistryManagerProviderPlayServicesImpl(private val context: Contex
             )
         client
             .registerCredentials(gmsRequest)
-            .addOnSuccessListener {
+            .addOnSuccessListener(executor) {
                 // TODO: b/355652174 - convert this more generically from the parent abstract class
                 callback.onResult(object : RegisterCredentialsResponse(request.type) {})
             }
-            .addOnFailureListener {
+            .addOnFailureListener(executor) {
                 callback.onError(RegisterCredentialsUnknownException(it.message))
             }
     }
@@ -97,10 +97,10 @@ public class RegistryManagerProviderPlayServicesImpl(private val context: Contex
             )
         client
             .clearRegistry(gmsRequest)
-            .addOnSuccessListener {
+            .addOnSuccessListener(executor) {
                 callback.onResult(ClearCredentialRegistryResponse(it.isDeleted))
             }
-            .addOnFailureListener {
+            .addOnFailureListener(executor) {
                 callback.onError(ClearCredentialRegistryUnknownException(it.message))
             }
     }

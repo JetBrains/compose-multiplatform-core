@@ -1328,7 +1328,19 @@ public class UiDevice implements Searchable {
     }
 
     /**
-     * Take a screenshot of current window and store it as PNG
+     * Take a screenshot of the default display.
+     *
+     * <p>The screenshot is adjusted per screen rotation.
+     *
+     * @return The screenshot bitmap on success, {@code null} otherwise
+     * @see android.app.UiAutomation#takeScreenshot()
+     */
+    public @Nullable Bitmap takeScreenshot() {
+        return getUiAutomation().takeScreenshot();
+    }
+
+    /**
+     * Take a screenshot of the default display and store it as PNG
      *
      * Default scale of 1.0f (original size) and 90% quality is used
      * The screenshot is adjusted per screen rotation
@@ -1341,7 +1353,7 @@ public class UiDevice implements Searchable {
     }
 
     /**
-     * Take a screenshot of current window and store it as PNG
+     * Take a screenshot of the default display and store it as PNG
      *
      * The screenshot is adjusted per screen rotation
      *
@@ -1353,7 +1365,7 @@ public class UiDevice implements Searchable {
     public boolean takeScreenshot(@NonNull File storePath, float scale, int quality) {
         Log.d(TAG, String.format("Taking screenshot (scale=%f, quality=%d) and storing at %s.",
                 scale, quality, storePath));
-        Bitmap screenshot = getUiAutomation().takeScreenshot();
+        Bitmap screenshot = takeScreenshot();
         if (screenshot == null) {
             Log.w(TAG, "Failed to take screenshot.");
             return false;

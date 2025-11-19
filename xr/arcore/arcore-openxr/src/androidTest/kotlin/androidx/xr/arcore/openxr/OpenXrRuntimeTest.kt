@@ -22,6 +22,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.filters.SdkSuppress
+import androidx.xr.runtime.Config
 import androidx.xr.runtime.XrDevice.DisplayBlendMode
 import org.junit.Rule
 import org.junit.Test
@@ -52,6 +53,12 @@ class OpenXrRuntimeTest {
         // Result comes from `kBlendModes` defined in
         // //third_party/jetpack_xr_natives/openxr/openxr_stub.cc.
         assertThat(underTest.getPreferredDisplayBlendMode()).isEqualTo(DisplayBlendMode.ADDITIVE)
+    }
+
+    @Test
+    fun isSupported_geospatialVpsAndGps_returnsTrue() = initOpenXrRuntimeAndRunTest {
+        // Result comes from //third_party/jetpack_xr_natives/openxr/openxr_stub.cc.
+        assertThat(underTest.isSupported(Config.GeospatialMode.VPS_AND_GPS)).isTrue()
     }
 
     private fun initOpenXrRuntimeAndRunTest(testBody: () -> Unit) {

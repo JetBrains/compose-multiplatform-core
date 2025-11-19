@@ -34,7 +34,6 @@ androidXMultiplatform {
     androidLibrary {
         namespace = "androidx.compose.ui.test.accessibility"
         compileSdk = 35
-        lint.disable += "ComposeTestRuleDispatcher"
     }
 
     defaultPlatform(PlatformIdentifier.ANDROID)

@@ -32,8 +32,6 @@ public class ProjectedDeviceController private constructor(capabilitiesParam: Se
     /**
      * Represents an intrinsic piece of functionality of a Projected device, i.e., what it is
      * capable of.
-     *
-     * @constructor
      */
     public class Capability private constructor(private val id: Int) {
         override fun toString(): String =

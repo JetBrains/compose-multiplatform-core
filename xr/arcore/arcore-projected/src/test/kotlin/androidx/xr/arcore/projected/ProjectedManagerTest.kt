@@ -118,6 +118,22 @@ class ProjectedManagerTest {
     }
 
     @Test
+    fun configure_withGeospatialEnabledWithoutLocationPermissions_throwsSecurityException() {
+        underTest.create()
+        `when`(mockPerceptionService.startWithConfiguration(any()))
+            .thenReturn(
+                -21 /*ProjectedStatus.PROJECTED_ERROR_FINE_LOCATION_PERMISSION_NOT_GRANTED*/
+            )
+        val config =
+            Config(
+                deviceTracking = Config.DeviceTrackingMode.LAST_KNOWN,
+                geospatial = Config.GeospatialMode.VPS_AND_GPS,
+            )
+
+        assertThrows(SecurityException::class.java) { underTest.configure(config) }
+    }
+
+    @Test
     fun configure_whenAllFeaturesAreDisabled_stopsService() {
         underTest.create()
         underTest.running.set(true)

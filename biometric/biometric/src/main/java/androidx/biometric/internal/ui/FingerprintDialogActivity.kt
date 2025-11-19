@@ -348,7 +348,7 @@ public class FingerprintDialogActivity : ComponentActivity() {
     private fun showAuthentication() {
         @Suppress("deprecation")
         val fingerprintManagerCompat =
-            androidx.core.hardware.fingerprint.FingerprintManagerCompat.from(applicationContext)
+            androidx.biometric.internal.FingerprintManagerCompat.from(applicationContext)
         val errorCode =
             fingerprintDialogViewModel.fingerprintPreAuthChecker(fingerprintManagerCompat)
         if (errorCode != BiometricPrompt.BIOMETRIC_SUCCESS) {
@@ -373,7 +373,7 @@ public class FingerprintDialogActivity : ComponentActivity() {
      */
     @Suppress("deprecation")
     private fun authenticateWithFingerprint(
-        fingerprintManager: androidx.core.hardware.fingerprint.FingerprintManagerCompat,
+        fingerprintManager: androidx.biometric.internal.FingerprintManagerCompat,
         context: Context,
     ) {
         val crypto =
