@@ -21,12 +21,14 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.RemoteException
 import android.util.ArrayMap
 import android.util.Log
 import androidx.annotation.GuardedBy
+import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import androidx.xr.projected.platform.IEngagementModeCallback
 import androidx.xr.projected.platform.IEngagementModeService
@@ -67,6 +69,7 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
      * @param executor the executor on which the callback will be invoked.
      * @param callback the callback to be invoked.
      */
+    @RequiresApi(Build.VERSION_CODES.N)
     fun addUpdateCallback(executor: Executor, callback: Consumer<Int>) {
         var shouldConnect = false
         var currentFlags: Int? = null
@@ -191,6 +194,7 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
 
     private val mCallback: IEngagementModeCallback.Stub =
         object : IEngagementModeCallback.Stub() {
+            @RequiresApi(Build.VERSION_CODES.N)
             override fun onEngagementModeChanged(engagementModeFlags: Int) {
                 val callbacksToNotify: MutableMap<Consumer<Int>, Executor>?
                 // Check if the engagement mode flag has been updated. If it has copy the callbacks

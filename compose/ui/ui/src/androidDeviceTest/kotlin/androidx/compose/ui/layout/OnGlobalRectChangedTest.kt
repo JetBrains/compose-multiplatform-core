@@ -1857,6 +1857,61 @@ class OnGlobalRectChangedTest {
     }
 
     @Test
+    fun testRemovingScaleUpdatedOffsetsForSubhierarchy() {
+        var actualBoundsChild: IntRect? = null
+        var actualBoundsGrandChild: IntRect? = null
+        var actualBoundsScaledGrandChild: IntRect? = null
+        var needLayer by mutableStateOf(true)
+        rule.setContent {
+            CompositionLocalProvider(LocalDensity provides Density(1f)) {
+                Box(
+                    Modifier.layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            if (needLayer) {
+                                placeable.placeWithLayer(10, 10) {
+                                    scaleX = 2f
+                                    scaleY = 2f
+                                }
+                            } else {
+                                placeable.place(10, 10)
+                            }
+                        }
+                    }
+                ) {
+                    Box(
+                        Modifier.onLayoutRectChanged(0, 0) { actualBoundsChild = it.boundsInWindow }
+                            .size(20.dp)
+                    ) {
+                        Box(
+                            Modifier.onLayoutRectChanged(0, 0) {
+                                    actualBoundsGrandChild = it.boundsInWindow
+                                }
+                                .size(10.dp)
+                        )
+                        Box(Modifier.graphicsLayer(scaleX = 2f, scaleY = 2f)) {
+                            Box(
+                                Modifier.onLayoutRectChanged(0, 0) {
+                                        actualBoundsScaledGrandChild = it.boundsInWindow
+                                    }
+                                    .size(10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        rule.runOnIdle { needLayer = false }
+
+        rule.runOnIdle {
+            assertThat(actualBoundsChild).isEqualTo(IntRect(10, 10, 30, 30))
+            assertThat(actualBoundsGrandChild).isEqualTo(IntRect(10, 10, 20, 20))
+            assertThat(actualBoundsScaledGrandChild).isEqualTo(IntRect(5, 5, 25, 25))
+        }
+    }
+
+    @Test
     fun removingLayoutModifierShouldInvalidateOffsetCacheForSubtree() {
         with(rule.density) {
             var actualPosition: IntOffset = IntOffset.Max

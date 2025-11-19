@@ -20,7 +20,6 @@ import android.content.Context
 import android.media.AudioFormat
 import android.media.MediaRecorder
 import android.os.Build
-import android.util.Range
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraXConfig
@@ -159,9 +158,9 @@ class AudioSettingsAudioProfileResolverTest(
     fun nonDefaultAudioSpecResolvesToSupportedSampleRate() {
         val audioSpecs =
             listOf(
-                AudioSpec.builder().setSampleRate(Range(0, 1000)).build(),
-                AudioSpec.builder().setSampleRate(Range(1000, 10000)).build(),
-                AudioSpec.builder().setSampleRate(Range(10000, 100000)).build(),
+                AudioSpec.builder().setSampleRate(1000).build(),
+                AudioSpec.builder().setSampleRate(10000).build(),
+                AudioSpec.builder().setSampleRate(100000).build(),
             )
 
         val resolvedSettings =
@@ -218,10 +217,7 @@ class AudioSettingsAudioProfileResolverTest(
         )
 
         // Create an audio spec that overrides the auto sample rate behavior
-        val audioSpec =
-            AudioSpec.builder()
-                .setSampleRate(Range(nonReportedSampleRate!!, nonReportedSampleRate))
-                .build()
+        val audioSpec = AudioSpec.builder().setSampleRate(nonReportedSampleRate!!).build()
         val resolvedAudioSettings =
             AudioSettingsAudioProfileResolver(audioSpec, audioProfile, null).get()
 

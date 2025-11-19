@@ -63,6 +63,7 @@ import androidx.wear.compose.material.assertContainsColor
 import androidx.wear.compose.material.setContentWithTheme
 import androidx.wear.compose.material.setContentWithThemeForSizeAssertions
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -74,7 +75,7 @@ internal const val BUTTON_TAG = "Button"
 internal const val CHIP_TAG = "Chip"
 
 class DialogBehaviourTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun supports_testtag_on_alert_with_buttons() {
@@ -447,7 +448,7 @@ class DialogBehaviourTest {
 }
 
 class DialogContentSizeAndPositionTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun spaces_icon_and_title_correctly_on_alert_with_buttons() {
@@ -669,7 +670,7 @@ class DialogContentSizeAndPositionTest {
 }
 
 class DialogContentColorTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun gives_icon_onbackground_on_alert_for_buttons() {
@@ -1062,7 +1063,7 @@ class DialogContentColorTest {
 }
 
 class DialogTextStyleTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun gives_title_correct_textstyle_on_alert_for_buttons() {

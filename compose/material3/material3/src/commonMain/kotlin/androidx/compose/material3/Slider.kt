@@ -1635,47 +1635,6 @@ object SliderDefaults {
      *
      * @param sliderState [SliderState] which is used to obtain the current active track.
      * @param modifier the [Modifier] to be applied to the track.
-     * @param colors [SliderColors] that will be used to resolve the colors used for this track in
-     *   different states. See [SliderDefaults.colors].
-     * @param enabled controls the enabled state of this slider. When `false`, this component will
-     *   not respond to user input, and it will appear visually disabled and disabled to
-     *   accessibility services.
-     */
-    @Deprecated(
-        message =
-            "Use the overload that takes `drawStopIndicator`, `drawTick`, " +
-                "`thumbTrackGapSize` and `trackInsideCornerSize`, see `LegacySliderSample` " +
-                "on how to restore the previous behavior",
-        replaceWith =
-            ReplaceWith(
-                "Track(sliderState, modifier, enabled, colors, drawStopIndicator, " +
-                    "drawTick, thumbTrackGapSize, trackInsideCornerSize)"
-            ),
-        level = DeprecationLevel.HIDDEN,
-    )
-    @Composable
-    @ExperimentalMaterial3Api
-    fun Track(
-        sliderState: SliderState,
-        modifier: Modifier = Modifier,
-        colors: SliderColors = colors(),
-        enabled: Boolean = true,
-    ) {
-        Track(
-            sliderState,
-            modifier,
-            enabled,
-            colors,
-            thumbTrackGapSize = ThumbTrackGapSize,
-            trackInsideCornerSize = TrackInsideCornerSize,
-        )
-    }
-
-    /**
-     * The Default track for [Slider]
-     *
-     * @param sliderState [SliderState] which is used to obtain the current active track.
-     * @param modifier the [Modifier] to be applied to the track.
      * @param enabled controls the enabled state of this slider. When `false`, this component will
      *   not respond to user input, and it will appear visually disabled and disabled to
      *   accessibility services.

@@ -147,7 +147,7 @@ fun Variant.packageInspector(libraryProject: Project, inspectorProject: Project)
     val consumeInspector = libraryProject.createConsumeInspectionConfiguration()
 
     libraryProject.dependencies.add(consumeInspector.name, inspectorProject)
-    val consumeInspectorFiles = consumeInspector.incoming.artifactView {}.files
+    val consumeInspectorFiles = consumeInspector.incoming.files
 
     libraryProject.registerGenerateProguardDetectionFileTask(this)
     val repackageWithInspectorJarTaskProvider =

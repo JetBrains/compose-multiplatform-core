@@ -50,6 +50,7 @@ import org.mockito.kotlin.whenever
 
 /** Test class for [EngagementModeClient]. */
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
 class EngagementModeClientTest {
     private val mMockContext = mock<Context>()
     private val mMockConsumer = mock<Consumer<Int>>()

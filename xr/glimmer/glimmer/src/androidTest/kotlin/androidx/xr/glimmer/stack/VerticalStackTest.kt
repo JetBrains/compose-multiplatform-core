@@ -17,6 +17,8 @@
 package androidx.xr.glimmer.stack
 
 import android.os.Build
+import android.os.SystemClock.uptimeMillis
+import android.view.MotionEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.DragInteraction
@@ -36,6 +38,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.ExperimentalIndirectPointerApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
@@ -47,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.input.indirect.IndirectPointerEvent
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
@@ -67,10 +71,12 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.size
+import androidx.core.view.InputDeviceCompat.SOURCE_TOUCH_NAVIGATION
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.glimmer.Text
 import androidx.xr.glimmer.nonTouchInputModeRule
+import androidx.xr.glimmer.performIndirectPointerEvent
 import androidx.xr.glimmer.performIndirectSwipe
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -1478,6 +1484,96 @@ class VerticalStackTest {
         }
     }
 
+    @Test
+    fun edgeScrim_onIndirectPressAndRelease_drawsScrim() {
+        val state = StackState()
+        rule.setContentWithInitialFocus {
+            VerticalStack(state = state, modifier = Modifier.background(Color.Red)) {
+                item { Box(Modifier.focusable().fillMaxSize().background(Color.Green)) }
+                item { Box(Modifier.focusable().fillMaxSize().background(Color.Blue)) }
+            }
+        }
+        val x = 0
+        val y = 0
+
+        rule.onRoot().captureToImage().run {
+            val pixels = toPixelMap()
+            assertWithMessage("Pixel at ($x, $y) should have the item's color before press")
+                .that(pixels[x, y])
+                .isEqualTo(Color.Green)
+        }
+
+        performIndirectPress()
+
+        rule.onRoot().captureToImage().run {
+            val pixels = toPixelMap()
+            val scrimTopPixelColor = pixels[x, y]
+            assertWithMessage("Pixel at ($x, $y) should have the scrim's color on press")
+                .that(scrimTopPixelColor.red)
+                .isGreaterThan(0.9f)
+            assertWithMessage("Pixel at ($x, $y) should have the scrim's color on press")
+                .that(scrimTopPixelColor.green)
+                .isLessThan(0.1f)
+            assertWithMessage("Pixel at ($x, $y) should have the scrim's color on press")
+                .that(scrimTopPixelColor.blue)
+                .isZero()
+        }
+
+        performIndirectRelease()
+
+        rule.onRoot().captureToImage().run {
+            val pixels = toPixelMap()
+            assertWithMessage("Pixel at ($x, $y) should have the item's color after release")
+                .that(pixels[x, y])
+                .isEqualTo(Color.Green)
+        }
+    }
+
+    @Test
+    fun edgeScrim_onPointerPressAndRelease_drawsScrim() {
+        val state = StackState()
+        rule.setContentWithInitialFocus {
+            VerticalStack(state = state, modifier = Modifier.background(Color.Red)) {
+                item { Box(Modifier.focusable().fillMaxSize().background(Color.Green)) }
+                item { Box(Modifier.focusable().fillMaxSize().background(Color.Blue)) }
+            }
+        }
+        val x = 0
+        val y = 0
+
+        rule.onRoot().captureToImage().run {
+            val pixels = toPixelMap()
+            assertWithMessage("Pixel at ($x, $y) should have the item's color before press")
+                .that(pixels[x, y])
+                .isEqualTo(Color.Green)
+        }
+
+        rule.onRoot().performTouchInput { down(center) }
+
+        rule.onRoot().captureToImage().run {
+            val pixels = toPixelMap()
+            val scrimTopPixelColor = pixels[x, y]
+            assertWithMessage("Pixel at ($x, $y) should have the scrim's color on press")
+                .that(scrimTopPixelColor.red)
+                .isGreaterThan(0.9f)
+            assertWithMessage("Pixel at ($x, $y) should have the scrim's color on press")
+                .that(scrimTopPixelColor.green)
+                .isLessThan(0.1f)
+            assertWithMessage("Pixel at ($x, $y) should have the scrim's color on press")
+                .that(scrimTopPixelColor.blue)
+                .isZero()
+        }
+
+        rule.onRoot().performTouchInput { up() }
+
+        rule.onRoot().captureToImage().run {
+            val pixels = toPixelMap()
+            assertWithMessage("Pixel at ($x, $y) should have the item's color after release")
+                .that(pixels[x, y])
+                .isEqualTo(Color.Green)
+        }
+    }
+
     @Composable
     private fun StackItem(
         text: String,
@@ -1497,6 +1593,38 @@ class VerticalStackTest {
 
     private fun ComposeContentTestRule.setContentWithInitialFocus(content: @Composable () -> Unit) {
         setContent { Box(Modifier.focusRequester(focusRequester)) { content() } }
+    }
+
+    @OptIn(ExperimentalIndirectPointerApi::class)
+    private fun performIndirectPress() {
+        val currentTime = uptimeMillis()
+        val down =
+            MotionEvent.obtain(
+                /* downTime = */ currentTime,
+                /* eventTime = */ currentTime,
+                /* action = */ MotionEvent.ACTION_DOWN,
+                /* x = */ 0f,
+                /* y = */ 0f,
+                /* metaState = */ 0,
+            )
+        down.source = SOURCE_TOUCH_NAVIGATION
+        rule.onRoot().performIndirectPointerEvent(rule, IndirectPointerEvent(motionEvent = down))
+    }
+
+    @OptIn(ExperimentalIndirectPointerApi::class)
+    private fun performIndirectRelease() {
+        val currentTime = uptimeMillis()
+        val up =
+            MotionEvent.obtain(
+                /* downTime = */ currentTime,
+                /* eventTime = */ currentTime,
+                /* action = */ MotionEvent.ACTION_UP,
+                /* x = */ 0f,
+                /* y = */ 0f,
+                /* metaState = */ 0,
+            )
+        up.source = SOURCE_TOUCH_NAVIGATION
+        rule.onRoot().performIndirectPointerEvent(rule, IndirectPointerEvent(motionEvent = up))
     }
 
     private fun performIndirectSwipe(distancePx: Int) {

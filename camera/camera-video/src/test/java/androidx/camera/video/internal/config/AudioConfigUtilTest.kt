@@ -16,10 +16,8 @@
 
 package androidx.camera.video.internal.config
 
-import android.util.Range
 import android.util.Rational
 import androidx.camera.video.AudioSpec.Companion.CHANNEL_COUNT_MONO
-import androidx.camera.video.AudioSpec.Companion.SAMPLE_RATE_RANGE_AUTO
 import androidx.camera.video.AudioSpec.Companion.SOURCE_FORMAT_PCM_16BIT
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -34,15 +32,13 @@ import org.robolectric.annotation.internal.DoNotInstrument
 class AudioConfigUtilTest {
 
     @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_auto_noRatio() {
-        val targetEncodeSampleRateRange = SAMPLE_RATE_RANGE_AUTO
-        val initialTargetEncodeSampleRate = 24000
+    fun resolveSampleRates_noRatio() {
+        val targetEncodeSampleRate = 24000
         val captureToEncodeRatio: Rational? = null
 
         val result =
             AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
+                targetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
                 captureToEncodeRatio,
@@ -53,15 +49,13 @@ class AudioConfigUtilTest {
     }
 
     @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_auto_withRatio() {
-        val targetEncodeSampleRateRange = SAMPLE_RATE_RANGE_AUTO
-        val initialTargetEncodeSampleRate = 24000
+    fun resolveSampleRates_withRatio() {
+        val targetEncodeSampleRate = 24000
         val captureToEncodeRatio = Rational(2, 1)
 
         val result =
             AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
+                targetEncodeSampleRate,
                 CHANNEL_COUNT_MONO,
                 SOURCE_FORMAT_PCM_16BIT,
                 captureToEncodeRatio,
@@ -69,81 +63,5 @@ class AudioConfigUtilTest {
 
         assertThat(result.captureRate).isEqualTo(48000)
         assertThat(result.encodeRate).isEqualTo(24000)
-    }
-
-    @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_specific_noRatio() {
-        val targetEncodeSampleRateRange = Range(22050, 24000)
-        val initialTargetEncodeSampleRate = 24000
-        val captureToEncodeRatio: Rational? = null
-
-        val result =
-            AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
-                CHANNEL_COUNT_MONO,
-                SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio,
-            )
-
-        assertThat(result.captureRate).isEqualTo(24000)
-        assertThat(result.encodeRate).isEqualTo(24000)
-    }
-
-    @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_specific_withRatio() {
-        val targetEncodeSampleRateRange = Range(22050, 24000)
-        val initialTargetEncodeSampleRate = 24000
-        val captureToEncodeRatio = Rational(2, 1)
-
-        val result =
-            AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
-                CHANNEL_COUNT_MONO,
-                SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio,
-            )
-
-        assertThat(result.captureRate).isEqualTo(48000)
-        assertThat(result.encodeRate).isEqualTo(24000)
-    }
-
-    @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_clamping_noRatio() {
-        val targetEncodeSampleRateRange = Range(22050, 22050)
-        val initialTargetEncodeSampleRate = 24000
-        val captureToEncodeRatio: Rational? = null
-
-        val result =
-            AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
-                CHANNEL_COUNT_MONO,
-                SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio,
-            )
-
-        assertThat(result.captureRate).isEqualTo(22050)
-        assertThat(result.encodeRate).isEqualTo(22050)
-    }
-
-    @Test
-    fun resolveSampleRates_targetEncodeSampleRateRange_clamping_withRatio() {
-        val targetEncodeSampleRateRange = Range(22050, 22050)
-        val initialTargetEncodeSampleRate = 24000
-        val captureToEncodeRatio = Rational(2, 1)
-
-        val result =
-            AudioConfigUtil.resolveSampleRates(
-                targetEncodeSampleRateRange,
-                initialTargetEncodeSampleRate,
-                CHANNEL_COUNT_MONO,
-                SOURCE_FORMAT_PCM_16BIT,
-                captureToEncodeRatio,
-            )
-
-        assertThat(result.captureRate).isEqualTo(44100)
-        assertThat(result.encodeRate).isEqualTo(22050)
     }
 }

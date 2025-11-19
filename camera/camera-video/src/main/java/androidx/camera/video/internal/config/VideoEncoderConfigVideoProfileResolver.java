@@ -90,15 +90,20 @@ public class VideoEncoderConfigVideoProfileResolver implements Supplier<VideoEnc
                 + "Capture frame rate = " + resolvedFrameRates.getCaptureRate() + "fps. "
                 + "Encode frame rate = " + resolvedFrameRates.getEncodeRate() + "fps.");
 
-        Range<Integer> videoSpecBitrateRange = mVideoSpec.getBitrate();
-        Logger.d(TAG, "Using resolved VIDEO bitrate from EncoderProfiles");
-        int resolvedBitrate = VideoConfigUtil.scaleAndClampBitrate(
-                mVideoProfile.getBitrate(),
-                mDynamicRange.getBitDepth(), mVideoProfile.getBitDepth(),
-                resolvedFrameRates.getEncodeRate(), mVideoProfile.getFrameRate(),
-                mSurfaceSize.getWidth(), mVideoProfile.getWidth(),
-                mSurfaceSize.getHeight(), mVideoProfile.getHeight(),
-                videoSpecBitrateRange);
+        int resolvedBitrate;
+        int videoSpecBitrate = mVideoSpec.getBitrate();
+        if (videoSpecBitrate != VideoSpec.BITRATE_AUTO) {
+            resolvedBitrate = videoSpecBitrate;
+        } else {
+            Logger.d(TAG, "Using resolved VIDEO bitrate from EncoderProfiles");
+            resolvedBitrate = VideoConfigUtil.scaleBitrate(
+                    mVideoProfile.getBitrate(),
+                    mDynamicRange.getBitDepth(), mVideoProfile.getBitDepth(),
+                    resolvedFrameRates.getEncodeRate(), mVideoProfile.getFrameRate(),
+                    mSurfaceSize.getWidth(), mVideoProfile.getWidth(),
+                    mSurfaceSize.getHeight(), mVideoProfile.getHeight()
+            );
+        }
 
         int resolvedProfile = mVideoProfile.getProfile();
         VideoEncoderDataSpace dataSpace =

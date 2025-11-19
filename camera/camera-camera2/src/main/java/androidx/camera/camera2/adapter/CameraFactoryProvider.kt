@@ -91,7 +91,7 @@ public class CameraFactoryProvider(
             val cameraPipe =
                 CameraPipe(
                     CameraPipe.Config(
-                        appContext = ContextUtil.getApplicationContext(context),
+                        appContext = ContextUtil.getPersistentApplicationContext(context),
                         threadConfig =
                             CameraPipe.ThreadConfig(
                                 // This executor should be single-threaded or a sequential executor

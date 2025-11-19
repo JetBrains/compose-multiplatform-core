@@ -17,7 +17,6 @@
 package androidx.room3.testing
 
 import androidx.kruth.assertThat
-import androidx.room3.compiler.processing.util.CompilationTestCapabilities
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.runProcessorTest
 import org.junit.Test
@@ -62,18 +61,10 @@ class InProcessorTest(private val kotlinCode: Boolean) {
             assertThat(it.processingEnv.findTypeElement("foo.bar.MyClass")).isNotNull()
             runCount++
         }
-        // run 1 or 2 times
-        // +1 if KSP is enabled
-        // 1 for javac or kapt depending on whether source is in kotlin or java
-        assertThat(runCount)
-            .isEqualTo(
-                1 +
-                    if (CompilationTestCapabilities.canTestWithKsp) {
-                        1
-                    } else {
-                        0
-                    }
-            )
+        // run 2 times
+        // +1 for KSP
+        // +1 for javac or kapt depending on whether source is in kotlin or java
+        assertThat(runCount).isEqualTo(2)
     }
 
     companion object {

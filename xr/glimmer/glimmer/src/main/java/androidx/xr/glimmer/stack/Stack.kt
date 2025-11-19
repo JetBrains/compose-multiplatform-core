@@ -82,7 +82,7 @@ public fun VerticalStack(
 
     VerticalPager(
         state = state.pagerState,
-        modifier = modifier.onFocusChanged(state::onTopLevelFocusChanged),
+        modifier = modifier.onFocusChanged(state::onTopLevelFocusChanged).stackScrim(),
         contentPadding = PaddingValues(bottom = RevealAreaSize),
         key = { page -> stackItemHolderState.value.getKey(page) },
         beyondViewportPageCount = MaxNextVisibleItemCount,

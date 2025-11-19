@@ -101,9 +101,8 @@ public class DisplayInfoManager private constructor(context: Context) {
             return instance
                 ?: synchronized(this) {
                     instance
-                        ?: DisplayInfoManager(ContextUtil.getApplicationContext(context)).also {
-                            instance = it
-                        }
+                        ?: DisplayInfoManager(ContextUtil.getPersistentApplicationContext(context))
+                            .also { instance = it }
                 }
         }
 

@@ -446,3 +446,6 @@ w: file://\$SUPPORT/navigationevent/navigationevent/src/wasmJsTest/kotlin/androi
 \(Use `node \-\-trace\-deprecation \.\.\.` to show where the warning was created\)
 # > Task :kruth:kruth:compileNativeMainKotlinMetadata
 w: KLIB resolver: The same 'unique_name=kotlin\-stdlib\-common' found in more than one library: \$OUT_DIR/androidx/kruth/kruth/build/kotlinTransformedMetadataLibraries/commonMain/org\.jetbrains\.kotlin\-kotlin\-stdlib\-[0-9]+\.[0-9]+\.[0-9]+\-commonMain\-Y[0-9]+sbrw\.klib, \$OUT_DIR/androidx/kruth/kruth/build/kotlinTransformedMetadataLibraries/nonJvmMain/org\.jetbrains\.kotlin\-kotlin\-stdlib\-[0-9]+\.[0-9]+\.[0-9]+\-commonNonJvmMain\-Y[0-9]+sbrw\.klib, \$OUT_DIR/androidx/kruth/kruth/build/kotlinTransformedMetadataLibraries/nonJvmMain/org\.jetbrains\.kotlin\-kotlin\-stdlib\-[0-9]+\.[0-9]+\.[0-9]+\-webMain\-Y[0-9]+sbrw\.klib
+# > Task :wear:watchfacepush:watchfacepush:processReleaseAndroidTestManifest
+\$SUPPORT/wear/watchfacepush/watchfacepush/src/androidTest/AndroidManifest\.xml:[0-9]+:[0-9]+\-[0-9]+:[0-9]+ Warning:
+uses\-library\#wear\-sdk@android:required was tagged at AndroidManifest\.xml:[0-9]+ to replace other declarations but no other declaration present

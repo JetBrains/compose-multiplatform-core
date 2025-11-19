@@ -561,7 +561,7 @@ package androidx.xr.compose.subspace.layout {
   public interface ParentLayoutParamsAdjustable {
   }
 
-  public interface ParentLayoutParamsModifier {
+  public interface ParentLayoutParamsModifier extends androidx.xr.compose.subspace.layout.DelegatableSubspaceNode {
     method public void adjustParams(androidx.xr.compose.subspace.layout.ParentLayoutParamsAdjustable params);
   }
 

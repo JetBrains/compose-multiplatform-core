@@ -362,7 +362,7 @@ public abstract class CameraController {
 
     CameraController(@NonNull Context context,
             @NonNull ListenableFuture<ProcessCameraProviderWrapper> cameraProviderFuture) {
-        mAppContext = ContextUtil.getApplicationContext(context);
+        mAppContext = ContextUtil.getPersistentApplicationContext(context);
         mPreview = createPreview();
         mImageCapture = createImageCapture(null);
         mImageAnalysis = createImageAnalysis(null, null, null);

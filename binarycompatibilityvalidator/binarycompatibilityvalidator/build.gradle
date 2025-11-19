@@ -100,6 +100,6 @@ androidx {
 
 tasks.withType(KotlinCompile).configureEach { task ->
     task.compilerOptions {
-        friendPaths.from(configurations.friends.incoming.artifactView {}.files)
+        friendPaths.from(configurations.friends.incoming.files)
     }
 }

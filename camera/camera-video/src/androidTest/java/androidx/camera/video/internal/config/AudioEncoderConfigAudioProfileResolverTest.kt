@@ -18,7 +18,6 @@ package androidx.camera.video.internal.config
 
 import android.content.Context
 import android.os.Build
-import android.util.Range
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraXConfig
@@ -212,54 +211,5 @@ class AudioEncoderConfigAudioProfileResolverTest(
                 .get()
 
         assertThat(higherSampleRateConfig.bitrate).isGreaterThan(defaultConfig.bitrate)
-    }
-
-    @Test
-    fun bitrateRangeInVideoSpecClampsBitrate() {
-        val encoderProfiles = videoCapabilities.getProfiles(Quality.HIGHEST, SDR)!!
-        val profile = encoderProfiles.defaultAudioProfile
-        Assume.assumeTrue(profile != null)
-
-        val defaultAudioSettings =
-            AudioSettingsAudioProfileResolver(defaultAudioSpec, profile!!, null).get()
-
-        val defaultBitrate = profile.bitrate
-
-        // Create audio spec with limit 20% higher than default.
-        val higherBitrate = (defaultBitrate * 1.2).toInt()
-        val higherAudioSpec =
-            AudioSpec.builder().setBitrate(Range(higherBitrate, Int.MAX_VALUE)).build()
-
-        // Create audio spec with limit 20% lower than default.
-        val lowerBitrate = (defaultBitrate * 0.8).toInt()
-        val lowerAudioSpec = AudioSpec.builder().setBitrate(Range(0, lowerBitrate)).build()
-
-        assertThat(
-                AudioEncoderConfigAudioProfileResolver(
-                        profile.mediaType,
-                        profile.profile,
-                        timebase,
-                        higherAudioSpec,
-                        defaultAudioSettings,
-                        profile,
-                    )
-                    .get()
-                    .bitrate
-            )
-            .isEqualTo(higherBitrate)
-
-        assertThat(
-                AudioEncoderConfigAudioProfileResolver(
-                        profile.mediaType,
-                        profile.profile,
-                        timebase,
-                        lowerAudioSpec,
-                        defaultAudioSettings,
-                        profile,
-                    )
-                    .get()
-                    .bitrate
-            )
-            .isEqualTo(lowerBitrate)
     }
 }

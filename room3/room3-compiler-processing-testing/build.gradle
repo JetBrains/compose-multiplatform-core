@@ -45,32 +45,6 @@ dependencies {
     implementation(libs.kotlinAnnotationProcessingEmbeddable)
 }
 
-/**
- * Create a properties file with versions that can be read from the test helper to setup test projects.
- * see: b/178725084
- */
-def writeTestPropsTask = tasks.register("prepareTestConfiguration", WriteProperties.class) {
-    description = "Generates a properties file with the current environment for compilation tests"
-    destinationFile.set(project.layout.buildDirectory.dir("test-config").map {
-        it.file("androidx.room3.compiler.processing.util.CompilationTestCapabilities.Config" +
-                ".properties")
-    })
-    property("kotlinVersion", libs.versions.kotlin.get())
-    property("kspVersion", libs.versions.ksp.get())
-}
-
-java {
-    sourceSets {
-        main {
-            resources.srcDir(
-                    writeTestPropsTask.map {
-                        it.destinationFile.asFile.get().parentFile
-                    }
-            )
-        }
-    }
-}
-
 // enable opt in only for tests so that we don't create non experimental APIs by mistake
 // in the source.
 tasks.named("compileTestKotlin", KotlinCompile.class).configure {

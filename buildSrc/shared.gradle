@@ -46,7 +46,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
         )
         // TODO(b/410631668): Remove when we migrate away from using internal API in binary compatibility validator
         if (task.path == ":imports:binary-compatibility-validator:compileKotlin") {
-            friendPaths.from(configurations.friends.incoming.artifactView {}.files)
+            friendPaths.from(configurations.friends.incoming.files)
         }
         languageVersion.set(KotlinVersion.KOTLIN_2_0)
         apiVersion.set(KotlinVersion.KOTLIN_2_0)

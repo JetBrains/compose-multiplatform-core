@@ -117,6 +117,7 @@ private constructor(
      * are visuals on). The callback will be called as soon as it is available.
      */
     // TODO: b/457550010 - Make EngagementMode calls thread safe.
+    @RequiresApi(Build.VERSION_CODES.N)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun addEngagementModeChangedListener(
         executor: Executor = Dispatchers.Main.asExecutor(),

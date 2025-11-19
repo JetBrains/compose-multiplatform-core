@@ -67,7 +67,9 @@ import org.junit.runner.RunWith
 @MediumTest
 @RunWith(AndroidJUnit4::class)
 class ScrollAwayTest {
-    @get:Rule val rule = createComposeRule()
+    @Suppress("ComposeTestRuleDispatcher") // b/457595340
+    @get:Rule
+    val rule = createComposeRule()
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
     @Test
