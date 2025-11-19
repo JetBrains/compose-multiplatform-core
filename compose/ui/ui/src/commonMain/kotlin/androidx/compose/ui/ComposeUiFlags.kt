@@ -115,30 +115,6 @@ object ComposeUiFlags {
     // off for b/410868572
     @field:Suppress("MutableBareField") @JvmField var areWindowInsetsRulersEnabled = true
 
-    /**
-     * With this flag on, when an AccessibilityService performs ACTION_FOCUS on a Composable node,
-     * if it is in touch mode, it will exit touch mode first, then try to request focus on the node.
-     */
-    @Deprecated("This flag is no longer needed.")
-    @field:Suppress("MutableBareField", "unused")
-    @JvmField
-    var isFocusActionExitsTouchModeEnabled: Boolean = false
-
-    /**
-     * With this flag on, Modifier.focusRestorer() will not pin the item that needs to be restored.
-     * Users are responsible for providing a key for the item that needs to be restored b/330696779.
-     */
-    @Deprecated("This flag is no longer needed.")
-    @field:Suppress("MutableBareField", "unused")
-    @JvmField
-    var isNoPinningInFocusRestorationEnabled: Boolean = false
-
-    /** Enable clearing focus when a focused item is removed from a lazyList. */
-    @Deprecated("This flag is no longer needed.")
-    @field:Suppress("MutableBareField", "unused")
-    @JvmField
-    var isClearFocusOnResetEnabled: Boolean = false
-
     /** Enable initial focus when a focusable is added to a screen with no focusable content. */
     @field:Suppress("MutableBareField")
     @JvmField

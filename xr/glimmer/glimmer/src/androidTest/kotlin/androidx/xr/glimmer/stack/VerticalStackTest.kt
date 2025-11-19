@@ -1016,13 +1016,13 @@ class VerticalStackTest {
             val nextNextItemColor = pixels[x, y]
             assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
                 .that(nextNextItemColor.red)
-                .isEqualTo(0)
+                .isLessThan(0.1f)
             assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
                 .that(nextNextItemColor.green)
-                .isEqualTo(0)
+                .isLessThan(0.1f)
             assertWithMessage("Pixel at ($x, $y) should have the next-next item's color")
                 .that(nextNextItemColor.blue)
-                .isGreaterThan(0)
+                .isGreaterThan(0.5f)
         }
     }
 

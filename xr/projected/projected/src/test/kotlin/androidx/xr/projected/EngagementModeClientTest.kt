@@ -135,16 +135,20 @@ class EngagementModeClientTest {
         val initialFlags = EngagementModeClient.ENGAGEMENT_MODE_FLAG_VISUALS_ON
         callback.onEngagementModeChanged(initialFlags)
         // Client gets the initial state and the update callback is called
-        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(initialFlags)
-        verify(mMockConsumer).accept(initialFlags)
+        // Expect AUDIO_ON to always be set to true
+        var expectedFlags = initialFlags or EngagementModeClient.ENGAGEMENT_MODE_FLAG_AUDIO_ON
+        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(expectedFlags)
+        verify(mMockConsumer).accept(expectedFlags)
 
         // Simulate engagement mode update from service
         val newFlags = 0
         callback.onEngagementModeChanged(newFlags)
 
         // Client is updated and the update callback is called again
-        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(newFlags)
-        verify(mMockConsumer).accept(newFlags)
+        // Expect AUDIO_ON to always be set to true
+        expectedFlags = newFlags or EngagementModeClient.ENGAGEMENT_MODE_FLAG_AUDIO_ON
+        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(expectedFlags)
+        verify(mMockConsumer).accept(expectedFlags)
     }
 
     @Test
@@ -165,22 +169,26 @@ class EngagementModeClientTest {
         val initialFlags = EngagementModeClient.ENGAGEMENT_MODE_FLAG_VISUALS_ON
         callback.onEngagementModeChanged(initialFlags)
         // Client gets the initial state and the update callback is called
-        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(initialFlags)
-        verify(mMockConsumer).accept(initialFlags)
+        // Expect AUDIO_ON to always be set to true
+        var expectedFlags = initialFlags or EngagementModeClient.ENGAGEMENT_MODE_FLAG_AUDIO_ON
+        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(expectedFlags)
+        verify(mMockConsumer).accept(expectedFlags)
 
         // Add the second listener.
         mClient!!.addUpdateCallback(mDirectExecutor, anotherMockConsumer)
         // Client gets the initial state and the update callback is called
-        verify(anotherMockConsumer).accept(initialFlags)
+        verify(anotherMockConsumer).accept(expectedFlags)
 
         // Simulate engagement mode update from service
         val newFlags = 0
         callback.onEngagementModeChanged(newFlags)
 
         // Client is updated and the both callbacks are called again
-        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(newFlags)
-        verify(mMockConsumer).accept(newFlags)
-        verify(anotherMockConsumer).accept(newFlags)
+        // Expect AUDIO_ON to always be set to true
+        expectedFlags = newFlags or EngagementModeClient.ENGAGEMENT_MODE_FLAG_AUDIO_ON
+        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(expectedFlags)
+        verify(mMockConsumer).accept(expectedFlags)
+        verify(anotherMockConsumer).accept(expectedFlags)
     }
 
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
@@ -200,8 +208,10 @@ class EngagementModeClientTest {
         val initialFlags = EngagementModeClient.ENGAGEMENT_MODE_FLAG_VISUALS_ON
         callback.onEngagementModeChanged(initialFlags)
         // Client gets the initial state and the update callback is called
-        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(initialFlags)
-        verify(mMockConsumer).accept(initialFlags)
+        // Expect AUDIO_ON to always be set to true
+        val expectedFlags = initialFlags or EngagementModeClient.ENGAGEMENT_MODE_FLAG_AUDIO_ON
+        assertThat(mClient!!.getEngagementModeFlags()).isEqualTo(expectedFlags)
+        verify(mMockConsumer).accept(expectedFlags)
 
         // Disconnect from service
         connection.onServiceDisconnected(ComponentName(FAKE_PACKAGE_NAME, "Test"))

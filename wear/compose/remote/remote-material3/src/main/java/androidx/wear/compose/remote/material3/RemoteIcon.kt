@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
 import android.annotation.SuppressLint
-import android.os.Build
 import androidx.annotation.RestrictTo
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.capture.scale
 import androidx.compose.remote.creation.compose.layout.ROffset
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -36,7 +35,6 @@ import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.remote.material3.icons.RemoteImageVector
@@ -71,7 +69,7 @@ private fun RemoteCanvasDrawScope.drawImageVector(
     tint: RemoteColor,
 ) {
     val viewportSize = remote.component.width
-    val canvas = drawContext.canvas.nativeCanvas
+
     val intrinsicSize = remoteImageVector.intrinsicWidth
     val scale = viewportSize / intrinsicSize
 
@@ -85,16 +83,10 @@ private fun RemoteCanvasDrawScope.drawImageVector(
     val pivotX = if (shouldAutoMirror) viewportSize / (-scale + 1f) else 0f
     val pivot = ROffset(pivotX, 0f)
 
-    val paint =
-        RemotePaint(remoteImageVector.paint()).apply {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
-            remoteColor = tint
-        }
+    val paint = RemotePaint(remoteImageVector.paint()).apply { remoteColor = tint }
 
-    if (canvas is RecordingCanvas) {
-        scale(scaleX = scaleX.internalAsFloat(), scaleY = scaleY.internalAsFloat(), pivot = pivot) {
-            canvas.drawRPath(path = remoteImageVector.path, paint = paint)
-        }
+    scale(scaleX = scaleX.internalAsFloat(), scaleY = scaleY.internalAsFloat(), pivot = pivot) {
+        canvas.drawRPath(path = remoteImageVector.path, paint = paint)
     }
 }
 

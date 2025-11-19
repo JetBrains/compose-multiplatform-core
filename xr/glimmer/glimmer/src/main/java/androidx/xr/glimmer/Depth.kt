@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.ShadowScope
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.DefaultAlpha
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.shadow.DropShadowPainter
@@ -188,10 +189,14 @@ internal class DepthNode(private var depth: Depth, private var shape: Shape) :
     }
 
     override fun ContentDrawScope.draw() {
-        // In order to get layer2 to render on top of layer1, we draw layer1 first.
-        with(obtainLayer1ShadowPainter()) { draw(size) }
-        with(obtainLayer2ShadowPainter()) { draw(size) }
+        drawDepth()
         drawContent()
+    }
+
+    internal fun ContentDrawScope.drawDepth(alpha: Float = DefaultAlpha) {
+        // In order to get layer2 to render on top of layer1, we draw layer1 first.
+        with(obtainLayer1ShadowPainter()) { draw(size, alpha = alpha) }
+        with(obtainLayer2ShadowPainter()) { draw(size, alpha = alpha) }
     }
 
     private fun obtainLayer1ShadowPainter(): DropShadowPainter =

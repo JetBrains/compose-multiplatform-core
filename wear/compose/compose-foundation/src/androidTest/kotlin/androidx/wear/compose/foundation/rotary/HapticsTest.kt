@@ -221,11 +221,11 @@ class HapticsTest {
                                         scrollFeedbackProvider,
                                     ),
                                 scrollDistanceDivider =
-                                    RotarySnapSensitivity.DEFAULT.resistanceFactor,
+                                    RotarySnapSensitivityValues.Default.resistanceFactor,
                                 thresholdHandlerFactory = {
                                     ThresholdHandler(
-                                        RotarySnapSensitivity.DEFAULT.minThresholdDivider,
-                                        RotarySnapSensitivity.DEFAULT.maxThresholdDivider,
+                                        RotarySnapSensitivityValues.Default.minThresholdDivider,
+                                        RotarySnapSensitivityValues.Default.maxThresholdDivider,
                                     ) {
                                         50f
                                     }

@@ -116,9 +116,6 @@ export ANDROIDX_JDK21="$APP_HOME/../../prebuilts/jdk/jdk21/$plat-$platform_suffi
 export JAVA_HOME=$ANDROIDX_JDK21
 export STUDIO_GRADLE_JDK=$JAVA_HOME
 
-# Creates/overwrites local.properties with sdk.dir and cmake.dir to avoid invalidating configuration cache
-$APP_HOME/development/write_sdk_path.sh
-
 # Warn developers if they try to build top level project without the full checkout
 [ ! -d "$JAVA_HOME" ] && echo "Failed to find: $JAVA_HOME
 
@@ -127,6 +124,9 @@ Typically, this means either:
    building a subset of projects. See CONTRIBUTING.md for details.
 2. You are using the repo checkout, but the last repo sync failed. Use repo status
    to check for projects which are partially-synced, e.g. showing ***NO BRANCH***." && exit -1
+
+# Creates/overwrites local.properties with sdk.dir and cmake.dir to avoid invalidating configuration cache
+$APP_HOME/development/write_sdk_path.sh
 
 # ----------------------------------------------------------------------------
 

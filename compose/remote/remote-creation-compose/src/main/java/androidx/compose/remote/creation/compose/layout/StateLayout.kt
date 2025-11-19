@@ -19,11 +19,7 @@ package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.Box
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.toComposeUi
 import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
@@ -31,8 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StateMachineSpec(public val currentState: RemoteInt, public var states: IntArray) {
@@ -141,23 +135,10 @@ public class RemoteComposeStateLayoutModifier(
     public var currentState: RemoteInt,
 ) : DrawModifier {
     override fun ContentDrawScope.draw() {
-        drawIntoCanvas {
-            if (it.nativeCanvas is RecordingCanvas) {
-                (it.nativeCanvas as RecordingCanvas).let {
-                    it.document.startStateLayout(
-                        modifier.toRemoteCompose(),
-                        currentState.getIntId(),
-                    )
-                    //          it.document.startBox(
-                    //            modifier.toRemoteCompose(),
-                    //            horizontalAlignment.toRemoteCompose(),
-                    //            verticalArrangement.toRemoteCompose(),
-                    //          )
-                    drawContent()
-                    //          it.document.endBox()
-                    it.document.endStateLayout()
-                }
-            }
+        drawIntoRemoteCanvas { canvas ->
+            canvas.document.startStateLayout(modifier.toRemoteCompose(), currentState.getIntId())
+            this@draw.drawContent()
+            canvas.document.endStateLayout()
         }
     }
 }
@@ -171,30 +152,18 @@ public fun StateLayout(
     verticalArrangement: Arrangement.Vertical = Arrangement.Center,
     content: @Composable (Int) -> Unit,
 ) {
-    val captureMode = LocalRemoteComposeCreationState.current
-    if (captureMode is NoRemoteCompose) {
-        val currentState = stateMachine.currentState
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-        Box(
-            modifier.toComposeUi(),
-            contentAlignment = boxAlignment(horizontalAlignment, verticalArrangement),
-        ) {
-            content(currentState.constantValue!!)
-        }
-    } else {
-        @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-        Box(
-            RemoteComposeStateLayoutModifier(
-                    modifier,
-                    horizontalAlignment,
-                    verticalArrangement,
-                    stateMachine.currentState,
-                )
-                .then(modifier.toComposeUiLayout())
-        ) {
-            for (state in stateMachine.states) {
-                content(state)
-            }
+    @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
+    Box(
+        RemoteComposeStateLayoutModifier(
+                modifier,
+                horizontalAlignment,
+                verticalArrangement,
+                stateMachine.currentState,
+            )
+            .then(modifier.toComposeUiLayout())
+    ) {
+        for (state in stateMachine.states) {
+            content(state)
         }
     }
 }

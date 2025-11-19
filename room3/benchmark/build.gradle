@@ -40,6 +40,7 @@ plugins {
 dependencies {
     androidTestImplementation(project(":room3:room3-common"))
     androidTestImplementation(project(":room3:room3-runtime"))
+    androidTestImplementation(project(":room3:room3-sqlite-wrapper"))
     androidTestImplementation(project(":sqlite:sqlite-bundled"))
     kspAndroidTest(project(":room3:room3-compiler"))
     androidTestImplementation("androidx.arch.core:core-runtime:2.2.0")

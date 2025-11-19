@@ -283,44 +283,36 @@ class InProgressStrokeTest {
     }
 
     @Test
-    fun enqueueInputs_withLowElapsedTime_fails() {
+    fun enqueueInputs_withLowElapsedTime_succeeds() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f))
         val predictedInputs = ImmutableStrokeInputBatch.EMPTY
         inProgressStroke.enqueueInputs(realInputs, predictedInputs) // adds 2 inputs points
-        inProgressStroke.updateShape(0)
+        // Adding the same two points does not throw an error.
+        inProgressStroke.enqueueInputs(realInputs, predictedInputs)
 
-        // Try to add same two points with elapsed time from start still at 0.
-        assertThat(
-                assertFailsWith<IllegalArgumentException> {
-                    inProgressStroke.enqueueInputs(realInputs, predictedInputs)
-                }
-            )
-            .hasMessageThat()
-            .contains("non-decreasing")
+        inProgressStroke.updateShape(10)
+        assertThat(inProgressStroke.getInputCount()).isEqualTo(2)
     }
 
     @Test
-    fun enqueueInputs_withInvalidRealInputs_fails() {
+    fun enqueueInputs_withInvalidRealInputs_succeeds() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
-        val realInputs = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
-        inProgressStroke.enqueueInputs(realInputs, ImmutableStrokeInputBatch.EMPTY)
-        inProgressStroke.updateShape(2)
+        val realInputs1 = buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f))
+        val realInputs2 =
+            buildStrokeInputBatchFromPoints(floatArrayOf(10f, 3f, 20f, 5f, 30f, 7f, 12f, 34f))
+        inProgressStroke.enqueueInputs(realInputs1, ImmutableStrokeInputBatch.EMPTY)
+        // Adding the invalid inputs does not throw an error, but discards the invalid points.
+        inProgressStroke.enqueueInputs(realInputs2, ImmutableStrokeInputBatch.EMPTY)
 
-        // Try to add same three points that don't increase in elapsed time from last batch.
-        assertThat(
-                assertFailsWith<IllegalArgumentException> {
-                    inProgressStroke.enqueueInputs(realInputs, ImmutableStrokeInputBatch.EMPTY)
-                }
-            )
-            .hasMessageThat()
-            .contains("non-decreasing")
+        inProgressStroke.updateShape(10)
+        assertThat(inProgressStroke.getInputCount()).isEqualTo(4)
     }
 
     @Test
-    fun enqueueInputs_withInvalidPredictedInputs_fails() {
+    fun enqueueInputs_withInvalidPredictedInputs_succeeds() {
         val inProgressStroke = InProgressStroke()
         inProgressStroke.start(makeBrush())
         val realInputs =
@@ -330,16 +322,45 @@ class InProgressStrokeTest {
         val predictedInputs =
             buildStrokeInputBatchFromPoints(floatArrayOf(30f, 7f, 40f, 9f)) // elapsed time 0, 1
 
-        // Fails to add predicted points that don't make a valid StrokeInputBatch in conjunction
-        // with
-        // the real inputs.
-        assertThat(
-                assertFailsWith<IllegalArgumentException> {
-                    inProgressStroke.enqueueInputs(realInputs, predictedInputs)
-                }
-            )
-            .hasMessageThat()
-            .contains("non-decreasing")
+        inProgressStroke.enqueueInputs(realInputs, predictedInputs)
+        // No error is thrown, but none of the predicted inputs are queued.
+        inProgressStroke.updateShape(10)
+        assertThat(inProgressStroke.getPredictedInputCount()).isEqualTo(0)
+    }
+
+    @Test
+    fun enqueueInputs_withMismatchedOptionalAttributes_fails() {
+        val inProgressStroke = InProgressStroke()
+        inProgressStroke.start(makeBrush())
+
+        val batchWithPressure =
+            MutableStrokeInputBatch().apply {
+                add(
+                    StrokeInput.create(1f, 2f, 0L, toolType = InputToolType.STYLUS, pressure = 0.5f)
+                )
+                add(
+                    StrokeInput.create(3f, 4f, 1L, toolType = InputToolType.STYLUS, pressure = 0.6f)
+                )
+            }
+
+        val batchWithoutPressure =
+            MutableStrokeInputBatch().apply {
+                add(StrokeInput.create(5f, 6f, 2L, toolType = InputToolType.STYLUS))
+                add(StrokeInput.create(7f, 8f, 3L, toolType = InputToolType.STYLUS))
+            }
+
+        // First, enqueue inputs with pressure.
+        inProgressStroke.enqueueInputs(batchWithPressure, ImmutableStrokeInputBatch.EMPTY)
+
+        // Attempt to enqueue inputs without pressure, which should fail.
+        val error =
+            assertFailsWith<IllegalArgumentException> {
+                inProgressStroke.enqueueInputs(
+                    batchWithoutPressure,
+                    ImmutableStrokeInputBatch.EMPTY,
+                )
+            }
+        assertThat(error).hasMessageThat().contains("pressure")
     }
 
     @Test

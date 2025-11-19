@@ -36,7 +36,6 @@ import androidx.compose.remote.creation.compose.state.RemoteInt
 import androidx.compose.remote.creation.compose.state.RemoteState
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.isLiteral
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -82,11 +81,6 @@ public class ValueChangeAction<T>(
             TODO("println unsupported type in ValueChange $remoteValue")
         }
     }
-
-    @Composable
-    public override fun toComposeUiAction(): () -> Unit {
-        return { println("Updating $remoteValue to $updatedValue") }
-    }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -98,11 +92,6 @@ public class ValueFloatChangeAction(
         val id = Utils.idFromNan(value.value.internalAsFloat())
         return ValueFloatChange(id, updatedValue)
     }
-
-    @Composable
-    public override fun toComposeUiAction(): () -> Unit {
-        return { println("Updating RemoteFloat $value to $updatedValue") }
-    }
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -111,11 +100,6 @@ public class ValueFloatDpChangeAction(public val value: RemoteDp, public val upd
     public override fun toRemoteAction(): Action {
         val id = Utils.idFromNan(value.value.internalAsFloat())
         return ValueFloatChange(id, updatedValue)
-    }
-
-    @Composable
-    public override fun toComposeUiAction(): () -> Unit {
-        return { println("Updating RemoteFloat $value to $updatedValue") }
     }
 }
 

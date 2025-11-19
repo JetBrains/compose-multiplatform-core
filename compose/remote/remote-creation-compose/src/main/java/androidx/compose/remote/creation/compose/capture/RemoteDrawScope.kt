@@ -235,7 +235,6 @@ public inline fun RemoteDrawScope.drawIntoCanvas(block: (Canvas) -> Unit): Unit 
  *   operations are issued
  * @param drawBlock Callback invoked to issue drawing operations after the transformations are
  *   applied
- * @sample androidx.compose.ui.graphics.samples.MyDrawScopeBatchedTransformSample
  */
 public inline fun RemoteDrawScope.withTransform(
     transformBlock: DrawTransform.() -> Unit,
@@ -261,13 +260,13 @@ public inline fun RemoteDrawScope.withTransform(
  * coordinates are always the origin and the right and bottom coordinates are always the specified
  * width and height respectively. Drawing content is not clipped, so it is possible to draw outside
  * of the specified bounds.
- *
- * @sample androidx.compose.ui.graphics.samples.DrawScopeSample
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @DrawScopeMarker
 public // @JvmDefaultWithCompatibility
 interface RemoteDrawScope : Density {
+    public val canvas: RecordingCanvas
+        get() = drawContext.canvas.nativeCanvas as RecordingCanvas
 
     /**
      * The current [DrawContext] that contains the dependencies needed to create the drawing
@@ -666,7 +665,6 @@ interface RemoteDrawScope : Density {
      * @param style Whether or not the oval is stroked or filled in
      * @param colorFilter ColorFilter to apply to the [brush] when drawn into the destination
      * @param blendMode Blending algorithm to be applied to the brush
-     * @sample androidx.compose.ui.graphics.samples.MyDrawScopeOvalBrushSample
      */
     public fun drawOval(
         brush: Brush,
@@ -692,7 +690,6 @@ interface RemoteDrawScope : Density {
      * @param style Whether or not the oval is stroked or filled in
      * @param colorFilter ColorFilter to apply to the [color] when drawn into the destination
      * @param blendMode Blending algorithm to be applied to the brush
-     * @sample androidx.compose.ui.graphics.samples.MyDrawScopeOvalColorSample
      */
     public fun drawOval(
         color: Color,
@@ -1042,8 +1039,6 @@ interface RemoteDrawScope : Density {
      * @param textDecoration The decorations to paint on the text (e.g., an underline).
      * @param drawStyle Whether or not the text is stroked or filled in.
      * @param blendMode Blending algorithm to be applied to the text
-     * @sample androidx.compose.ui.text.samples.DrawTextMeasureInLayoutSample
-     * @sample androidx.compose.ui.text.samples.DrawTextDrawWithCacheSample
      */
     public fun drawText(
         textLayoutResult: TextLayoutResult,
@@ -1113,8 +1108,6 @@ interface RemoteDrawScope : Density {
      *   [TextOverflow.Ellipsis]. Otherwise, [Size.height] either defines where the text is clipped
      *   ([TextOverflow.Clip]) or becomes no-op.
      * @param blendMode Blending algorithm to be applied to the text
-     * @sample androidx.compose.ui.text.samples.DrawTextSample
-     * @sample androidx.compose.ui.text.samples.DrawTextStyledSample
      */
     public fun drawText(
         textMeasurer: TextMeasurer,
@@ -1162,7 +1155,6 @@ interface RemoteDrawScope : Density {
      *   [TextOverflow.Ellipsis]. Otherwise, [Size.height] either defines where the text is clipped
      *   ([TextOverflow.Clip]) or becomes no-op.
      * @param blendMode Blending algorithm to be applied to the text
-     * @sample androidx.compose.ui.text.samples.DrawTextAnnotatedStringSample
      */
     public fun drawText(
         textMeasurer: TextMeasurer,

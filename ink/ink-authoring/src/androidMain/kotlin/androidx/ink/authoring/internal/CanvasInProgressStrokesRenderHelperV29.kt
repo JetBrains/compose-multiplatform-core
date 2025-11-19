@@ -41,12 +41,12 @@ import androidx.annotation.WorkerThread
 import androidx.core.graphics.withMatrix
 import androidx.graphics.lowlatency.CanvasFrontBufferedRenderer
 import androidx.graphics.surface.SurfaceControlCompat
+import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
 import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.InProgressShape
+import androidx.ink.authoring.InProgressShapeRenderer
 import androidx.ink.authoring.InProgressStrokeId
-import androidx.ink.authoring.InkInProgressShape
-import androidx.ink.authoring.InkInProgressShapeRenderer
 import androidx.ink.authoring.latency.LatencyData
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.geometry.MutableBox
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -64,23 +64,28 @@ import kotlin.math.floor
  */
 @Suppress("ObsoleteSdkInt") // TODO(b/262911421): Should not need to suppress.
 @RequiresApi(Build.VERSION_CODES.Q)
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalInkCustomBrushApi::class)
-internal class CanvasInProgressStrokesRenderHelperV29(
+@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+internal class CanvasInProgressStrokesRenderHelperV29<
+    ShapeSpecT : Any,
+    InProgressShapeT : InProgressShape<ShapeSpecT, CompletedShapeT>,
+    CompletedShapeT : Any,
+>(
     private val mainView: ViewGroup,
-    private val callback: InProgressStrokesRenderHelper.Callback,
-    private val renderer: InkInProgressShapeRenderer,
+    private val callback: InProgressStrokesRenderHelper.Callback<CompletedShapeT>,
+    private val renderer: InProgressShapeRenderer<InProgressShapeT>,
     private val canvasFrontBufferedRendererWrapper: CanvasFrontBufferedRendererWrapper =
         CanvasFrontBufferedRendererWrapperImpl(),
-    frontBufferToHwuiHandoffFactory: (SurfaceView) -> FrontBufferToHwuiHandoff = { surfaceView ->
-        FrontBufferToHwuiHandoff.create(
-            mainView,
-            surfaceView,
-            callback::onStrokeCohortHandoffToHwui,
-            callback::onStrokeCohortHandoffToHwuiComplete,
-        )
-    },
+    frontBufferToHwuiHandoffFactory: (SurfaceView) -> FrontBufferToHwuiHandoff<CompletedShapeT> =
+        { surfaceView ->
+            FrontBufferToHwuiHandoff.create(
+                mainView,
+                surfaceView,
+                callback::onStrokeCohortHandoffToHwui,
+                callback::onStrokeCohortHandoffToHwuiComplete,
+            )
+        },
     private val uiThreadHandler: Handler = Handler(Looper.getMainLooper()),
-) : InProgressStrokesRenderHelper {
+) : InProgressStrokesRenderHelper<ShapeSpecT, InProgressShapeT, CompletedShapeT> {
 
     // The front buffer is updated each time rather than cleared and completely redrawn every time
     // as
@@ -286,7 +291,7 @@ internal class CanvasInProgressStrokesRenderHelperV29(
 
     @WorkerThread
     override fun drawInModifiedRegion(
-        inProgressShape: InkInProgressShape,
+        inProgressShape: InProgressShapeT,
         strokeToMainViewTransform: Matrix,
     ) {
         assertOnRenderThread()
@@ -335,7 +340,7 @@ internal class CanvasInProgressStrokesRenderHelperV29(
 
     @UiThread
     override fun requestStrokeCohortHandoffToHwui(
-        handingOff: Map<InProgressStrokeId, FinishedStroke>
+        handingOff: Map<InProgressStrokeId, FinishedStroke<CompletedShapeT>>
     ) {
         frontBufferToHwuiHandoff.requestCohortHandoff(handingOff)
     }

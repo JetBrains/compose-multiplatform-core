@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
+import androidx.compose.remote.creation.compose.layout.drawIntoRemoteCanvas
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
-import androidx.compose.remote.creation.compose.modifier.semantics
-import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.remote.creation.compose.state.RemoteBitmap
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteString
@@ -34,8 +33,6 @@ import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.DefaultAlpha
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.wear.compose.remote.material3.image.toRemoteCompose
 
@@ -46,17 +43,13 @@ internal class RemoteComposeImageModifier(
     val alpha: RemoteFloat,
 ) : DrawModifier {
     override fun ContentDrawScope.draw() {
-        drawIntoCanvas {
-            if (it.nativeCanvas is RecordingCanvas) {
-                (it.nativeCanvas as RecordingCanvas)
-                    .document
-                    .image(
-                        modifier.toRemoteCompose(),
-                        bitmapId,
-                        contentScale.toRemoteCompose(),
-                        alpha.internalAsFloat(),
-                    )
-            }
+        drawIntoRemoteCanvas { canvas ->
+            canvas.document.image(
+                modifier.toRemoteCompose(),
+                bitmapId,
+                contentScale.toRemoteCompose(),
+                alpha.internalAsFloat(),
+            )
         }
     }
 }
@@ -84,13 +77,7 @@ public fun RemoteImage(
 ) {
     val bitmapId = LocalRemoteComposeCreationState.current.document.addBitmap(bitmap)
     @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-    Box(
-        modifier =
-            RemoteComposeImageModifier(modifier, bitmapId, contentScale, alpha)
-                .then(
-                    modifier.semantics { contentDescription?.let { text = it } }.toComposeUiLayout()
-                )
-    )
+    Box(modifier = RemoteComposeImageModifier(modifier, bitmapId, contentScale, alpha))
 }
 
 /**
@@ -115,11 +102,5 @@ public fun RemoteImage(
     alpha: RemoteFloat = rememberRemoteFloatValue { DefaultAlpha },
 ) {
     @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-    Box(
-        modifier =
-            RemoteComposeImageModifier(modifier, remoteBitmap.id, contentScale, alpha)
-                .then(
-                    modifier.semantics { contentDescription?.let { text = it } }.toComposeUiLayout()
-                )
-    )
+    Box(modifier = RemoteComposeImageModifier(modifier, remoteBitmap.id, contentScale, alpha))
 }

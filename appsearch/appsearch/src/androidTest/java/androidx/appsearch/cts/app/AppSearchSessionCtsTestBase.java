@@ -1336,6 +1336,63 @@ public abstract class AppSearchSessionCtsTestBase {
                                 + "not supported on this AppSearch implementation.");
     }
 
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_REPEATED_FIELD_JOINS)
+    @Test
+    public void testGetSchema_joinableValueTypeQualifiedIdRepeatedProperty() throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.JOIN_SPEC_AND_QUALIFIED_ID));
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(
+                Features.SCHEMA_JOINABLE_REPEATED_PROPERTIES));
+        AppSearchSchema inSchema = new AppSearchSchema.Builder("Test")
+                .addProperty(new StringPropertyConfig.Builder("qualifiedId")
+                        .setCardinality(PropertyConfig.CARDINALITY_REPEATED)
+                        .setJoinableValueType(StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID)
+                        .build()
+                ).build();
+
+        SetSchemaRequest request = new SetSchemaRequest.Builder()
+                .addSchemas(inSchema).build();
+        mDb1.setSchemaAsync(request).get();
+
+        Set<AppSearchSchema> actual = mDb1.getSchemaAsync().get().getSchemas();
+        assertThat(actual).hasSize(1);
+        assertThat(actual).containsExactlyElementsIn(request.getSchemas());
+    }
+
+    @Test
+    public void testGetSchema_joinableValueTypeQualifiedIdRepeatedProperty_notAllowed()
+            throws Exception {
+        assumeTrue(mDb1.getFeatures().isFeatureSupported(Features.JOIN_SPEC_AND_QUALIFIED_ID));
+        assumeFalse(mDb1.getFeatures().isFeatureSupported(
+                Features.SCHEMA_JOINABLE_REPEATED_PROPERTIES));
+        AppSearchSchema inSchema = new AppSearchSchema.Builder("Test")
+                .addProperty(new StringPropertyConfig.Builder("qualifiedId")
+                        .setCardinality(PropertyConfig.CARDINALITY_REPEATED)
+                        .setJoinableValueType(StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID)
+                        .build()
+                ).build();
+
+        SetSchemaRequest request = new SetSchemaRequest.Builder()
+                .addSchemas(inSchema).build();
+
+        Exception e = assertThrows(Exception.class, () -> mDb1.setSchemaAsync(request).get());
+        if (e instanceof ExecutionException) {
+            assertThat(e).hasCauseThat().isInstanceOf(AppSearchException.class);
+            AppSearchException a = (AppSearchException) e.getCause();
+            assertThat(a.getResultCode()).isEqualTo(RESULT_INVALID_ARGUMENT);
+            assertThat(a).hasMessageThat().contains(
+                    "Repeated properties cannot be used with JOINABLE_VALUE_TYPE_QUALIFIED_ID");
+        } else {
+            // Previous behavior in AppSearchSchema.StringPropertyConfig.Builder#build would throw
+            // IllegalStateException if callers set JOINABLE_VALUE_TYPE_QUALIFIED_ID and
+            // CARDINALITY_REPEATED.
+            // If this test runs against older builds of certain backends, this old exception will
+            // be thrown.
+            assertThat(e).isInstanceOf(IllegalStateException.class);
+            assertThat(e).hasMessageThat().contains(
+                    "Cannot set JOINABLE_VALUE_TYPE_QUALIFIED_ID with CARDINALITY_REPEATED.");
+        }
+    }
+
     @Test
     public void testGetNamespaces() throws Exception {
         // Schema registration

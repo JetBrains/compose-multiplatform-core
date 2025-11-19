@@ -197,17 +197,19 @@ internal class EngagementModeClient(context: Context, private val mHandler: Hand
             @RequiresApi(Build.VERSION_CODES.N)
             override fun onEngagementModeChanged(engagementModeFlags: Int) {
                 val callbacksToNotify: MutableMap<Consumer<Int>, Executor>?
+                // Always state that audio is engaged for now.
+                val updatedFlags = engagementModeFlags or ENGAGEMENT_MODE_FLAG_AUDIO_ON
                 // Check if the engagement mode flag has been updated. If it has copy the callbacks
                 // so that they can be called outside the lock.
                 synchronized(mLock) {
-                    if (mCurrentEngagementModeFlags == engagementModeFlags) {
+                    if (mCurrentEngagementModeFlags == updatedFlags) {
                         return
                     }
-                    mCurrentEngagementModeFlags = engagementModeFlags
+                    mCurrentEngagementModeFlags = updatedFlags
                     callbacksToNotify = ArrayMap(mUpdateCallbacks)
                 }
                 callbacksToNotify?.forEach { (callback: Consumer<Int>, executor: Executor) ->
-                    executor.execute { callback.accept(engagementModeFlags) }
+                    executor.execute { callback.accept(updatedFlags) }
                 }
             }
         }

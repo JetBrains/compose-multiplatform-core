@@ -55,8 +55,6 @@ public class PendingIntentAction(
         }
     }
 
-    @Composable override fun toComposeUiAction(): () -> Unit = {}
-
     public companion object {
         public const val ACTION_NAME: String = "SendPendingIntent"
     }

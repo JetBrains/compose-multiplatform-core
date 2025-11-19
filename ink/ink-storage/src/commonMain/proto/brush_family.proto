@@ -30,12 +30,6 @@ message BrushFamily {
   // existing strokes.
   message SpringModel {}
 
-  // Model that attempts to preserve input positions as closely as possible.
-  // This is an experimental configuration which may be adjusted or removed
-  // later. Strokes generated with this input model might change shape if read
-  // with a later version of the code that has removed this feature.
-  message ExperimentalRawPositionModel {}
-
   // A naive model that passes through raw inputs mostly unchanged.  This is an
   // experimental configuration which may be adjusted or removed later. Strokes
   // generated with this input model might change shape if read with a later
@@ -61,12 +55,12 @@ message BrushFamily {
   message InputModel {
     oneof input_model {
       SpringModel spring_model = 2;
-      ExperimentalRawPositionModel experimental_raw_position_model = 3;
       ExperimentalNaiveModel experimental_naive_model = 4;
       SlidingWindowModel sliding_window_model = 5;
     }
-    // Was legacy InputModel type, reserved needs to be outside oneof
+    // Removed InputModel types go here (reserved needs to be outside oneof).
     reserved 1;
+    reserved 3;
   }
 
   // The coats of paint applied by any brush of this brush family. When a stroke

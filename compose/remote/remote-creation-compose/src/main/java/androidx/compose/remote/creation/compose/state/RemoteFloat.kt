@@ -30,7 +30,6 @@ import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.core.operations.utilities.StringUtils
 import androidx.compose.remote.core.operations.utilities.easing.FloatAnimation
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteFloatContext
@@ -1105,10 +1104,7 @@ public fun toArray(a: Number, creationState: RemoteComposeCreationState): FloatA
 @RemoteComposable
 public fun rememberRemoteFloatArray(content: () -> FloatArray): RemoteFloat {
     val state = LocalRemoteComposeCreationState.current
-    var floatArrayId = 0f
-    if (state !is NoRemoteCompose) {
-        floatArrayId = state.document.addFloatArray(content())
-    }
+    val floatArrayId = state.document.addFloatArray(content())
     return rememberRemoteFloat { floatArrayId.rf }
 }
 

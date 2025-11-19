@@ -255,6 +255,29 @@ public interface RotarySnapLayoutInfoProvider {
     public val totalItemCount: Int
 }
 
+/** Represents the rotary sensitivity level for snapping algorithms during rotary scrolling. */
+@JvmInline
+public value class RotarySnapSensitivity private constructor(private val sensitivityLevel: Int) {
+    public companion object {
+        // sensitivityLevel indicates the scaling factor for rotary values.
+        // Currently, 4 and 16 are used for Default and High sensitivity, respectively, leaving
+        // room for future additional levels.
+
+        /**
+         * Default sensitivity: The standard setting, intended for general use when the user is
+         * performing typical UI navigation.
+         */
+        public val Default: RotarySnapSensitivity = RotarySnapSensitivity(4)
+
+        /**
+         * High sensitivity. Recommended for contexts where even a light or minimal gesture should
+         * trigger movement, such as navigating a long list (e.g. at least 10 items) where quick
+         * scrolling is desired.
+         */
+        public val High: RotarySnapSensitivity = RotarySnapSensitivity(16)
+    }
+}
+
 /** Defaults for rotaryScrollable modifier */
 public object RotaryScrollableDefaults {
 
@@ -304,6 +327,42 @@ public object RotaryScrollableDefaults {
      * @param hapticFeedbackEnabled Controls whether haptic feedback is given during rotary
      *   scrolling (true by default). It's recommended to keep the default value of true for premium
      *   scrolling experience.
+     * @param snapSensitivity Configures the sensitivity for rotary snapping. Defaults to
+     *   [RotarySnapSensitivity.Default].
+     */
+    @Composable
+    public fun snapBehavior(
+        scrollableState: ScrollableState,
+        layoutInfoProvider: RotarySnapLayoutInfoProvider,
+        snapOffset: Dp = 0.dp,
+        hapticFeedbackEnabled: Boolean = true,
+        snapSensitivity: RotarySnapSensitivity = RotarySnapSensitivity.Default,
+    ): RotaryScrollableBehavior =
+        snapBehavior(
+            scrollableState = scrollableState,
+            layoutInfoProvider = layoutInfoProvider,
+            snapSensitivity = RotarySnapSensitivityValues(snapSensitivity),
+            snapOffset = snapOffset,
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
+        )
+
+    @Deprecated(
+        "This snapBehavior overload is provided for backwards compatibility with Wear " +
+            "Compose 1.5. Please use the new snapBehavior function that takes optional " +
+            "snapSensitivity parameter.",
+        level = DeprecationLevel.HIDDEN,
+    )
+    /**
+     * Implementation of [RotaryScrollableBehavior] to define scrolling behaviour with snap - used
+     * with the [rotaryScrollable] modifier when snapping is required.
+     *
+     * @param scrollableState Scrollable state which will be scrolled while receiving rotary events.
+     * @param layoutInfoProvider A connection between scrollable entities and rotary events.
+     * @param snapOffset An optional offset to be applied when snapping the item. Defines the
+     *   distance from the center of the scrollable to the center of the snapped item.
+     * @param hapticFeedbackEnabled Controls whether haptic feedback is given during rotary
+     *   scrolling (true by default). It's recommended to keep the default value of true for premium
+     *   scrolling experience.
      */
     @Composable
     public fun snapBehavior(
@@ -315,11 +374,48 @@ public object RotaryScrollableDefaults {
         snapBehavior(
             scrollableState = scrollableState,
             layoutInfoProvider = layoutInfoProvider,
-            snapSensitivity = RotarySnapSensitivity.DEFAULT,
+            snapSensitivity = RotarySnapSensitivityValues.Default,
             snapOffset = snapOffset,
             hapticFeedbackEnabled = hapticFeedbackEnabled,
         )
 
+    /**
+     * Implementation of [RotaryScrollableBehavior] to define scrolling behaviour with snap for
+     * [ScalingLazyColumn] - used with the [rotaryScrollable] modifier when snapping is required.
+     *
+     * @param scrollableState [ScalingLazyListState] to which rotary scroll will be connected.
+     * @param snapOffset An optional offset to be applied when snapping the item. Defines the
+     *   distance from the center of the scrollable to the center of the snapped item.
+     * @param hapticFeedbackEnabled Controls whether haptic feedback is given during rotary
+     *   scrolling (true by default). It's recommended to keep the default value of true for premium
+     *   scrolling experience.
+     * @param snapSensitivity Configures the sensitivity for rotary snapping. Defaults to
+     *   [RotarySnapSensitivity.Default].
+     */
+    @Composable
+    public fun snapBehavior(
+        scrollableState: ScalingLazyListState,
+        snapOffset: Dp = 0.dp,
+        hapticFeedbackEnabled: Boolean = true,
+        snapSensitivity: RotarySnapSensitivity = RotarySnapSensitivity.Default,
+    ): RotaryScrollableBehavior =
+        snapBehavior(
+            scrollableState = scrollableState,
+            layoutInfoProvider =
+                remember(scrollableState) {
+                    ScalingLazyColumnRotarySnapLayoutInfoProvider(scrollableState)
+                },
+            snapOffset = snapOffset,
+            snapSensitivity = RotarySnapSensitivityValues(snapSensitivity),
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
+        )
+
+    @Deprecated(
+        "This snapBehavior overload is provided for backwards compatibility with Wear " +
+            "Compose 1.5. Please use the new snapBehavior function that takes optional " +
+            "snapSensitivity parameter.",
+        level = DeprecationLevel.HIDDEN,
+    )
     /**
      * Implementation of [RotaryScrollableBehavior] to define scrolling behaviour with snap for
      * [ScalingLazyColumn] - used with the [rotaryScrollable] modifier when snapping is required.
@@ -344,10 +440,45 @@ public object RotaryScrollableDefaults {
                     ScalingLazyColumnRotarySnapLayoutInfoProvider(scrollableState)
                 },
             snapOffset = snapOffset,
-            snapSensitivity = RotarySnapSensitivity.DEFAULT,
+            snapSensitivity = RotarySnapSensitivityValues.Default,
             hapticFeedbackEnabled = hapticFeedbackEnabled,
         )
 
+    /**
+     * Implementation of [RotaryScrollableBehavior] to define scrolling behaviour with snap for
+     * [HorizontalPager] and [VerticalPager].
+     *
+     * @param pagerState [PagerState] to which rotary scroll will be connected.
+     * @param snapOffset An optional offset to be applied when snapping the item. Defines the
+     *   distance from the center of the scrollable to the center of the snapped item.
+     * @param hapticFeedbackEnabled Controls whether haptic feedback is given during rotary
+     *   scrolling (true by default). It's recommended to keep the default value of true for premium
+     *   scrolling experience.
+     * @param snapSensitivity Configures the sensitivity for rotary snapping. Defaults to
+     *   [RotarySnapSensitivity.High].
+     */
+    @Composable
+    public fun snapBehavior(
+        pagerState: PagerState,
+        snapOffset: Dp = 0.dp,
+        hapticFeedbackEnabled: Boolean = true,
+        snapSensitivity: RotarySnapSensitivity = RotarySnapSensitivity.High,
+    ): RotaryScrollableBehavior =
+        snapBehavior(
+            scrollableState = pagerState,
+            layoutInfoProvider =
+                remember(pagerState) { PagerRotarySnapLayoutInfoProvider(pagerState) },
+            snapSensitivity = RotarySnapSensitivityValues(snapSensitivity),
+            snapOffset = snapOffset,
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
+        )
+
+    @Deprecated(
+        "This snapBehavior overload is provided for backwards compatibility with Wear " +
+            "Compose 1.5. Please use the new snapBehavior function that takes optional " +
+            "snapSensitivity parameter.",
+        level = DeprecationLevel.HIDDEN,
+    )
     /**
      * Implementation of [RotaryScrollableBehavior] to define scrolling behaviour with snap for
      * [HorizontalPager] and [VerticalPager].
@@ -369,7 +500,7 @@ public object RotaryScrollableDefaults {
             scrollableState = pagerState,
             layoutInfoProvider =
                 remember(pagerState) { PagerRotarySnapLayoutInfoProvider(pagerState) },
-            snapSensitivity = RotarySnapSensitivity.HIGH,
+            snapSensitivity = RotarySnapSensitivityValues.High,
             snapOffset = snapOffset,
             hapticFeedbackEnabled = hapticFeedbackEnabled,
         )
@@ -379,7 +510,7 @@ public object RotaryScrollableDefaults {
     private fun snapBehavior(
         scrollableState: ScrollableState,
         layoutInfoProvider: RotarySnapLayoutInfoProvider,
-        snapSensitivity: RotarySnapSensitivity,
+        snapSensitivity: RotarySnapSensitivityValues,
         snapOffset: Dp,
         hapticFeedbackEnabled: Boolean,
     ): RotaryScrollableBehavior {
@@ -682,7 +813,7 @@ private fun snapBehavior(
     scrollableState: ScrollableState,
     layoutInfoProvider: RotarySnapLayoutInfoProvider,
     rotaryHaptics: RotaryHapticHandler,
-    snapSensitivity: RotarySnapSensitivity,
+    snapSensitivity: RotarySnapSensitivityValues,
     snapOffset: Int,
     isLowRes: Boolean,
 ): RotaryScrollableBehavior {
@@ -1615,17 +1746,28 @@ private class RotaryInputNode(
  * - resistanceFactor : Used to dampen the visual scroll effect. This allows the UI to scroll less
  *   than the actual input from the rotary device, providing a more controlled scrolling experience.
  */
-internal enum class RotarySnapSensitivity(
+internal class RotarySnapSensitivityValues
+private constructor(
     val minThresholdDivider: Float,
     val maxThresholdDivider: Float,
     val resistanceFactor: Float,
 ) {
-    // Default sensitivity
-    DEFAULT(1f, 1.5f, 3f),
+    companion object {
+        // Default sensitivity
+        val Default = RotarySnapSensitivityValues(1f, 1.5f, 3f)
 
-    // Used for full-screen pagers
-    HIGH(5f, 7.5f, 5f),
+        // Used for full-screen pagers
+        val High = RotarySnapSensitivityValues(5f, 7.5f, 5f)
+    }
 }
+
+internal fun RotarySnapSensitivityValues(
+    sensitivity: RotarySnapSensitivity
+): RotarySnapSensitivityValues =
+    when (sensitivity) {
+        RotarySnapSensitivity.High -> RotarySnapSensitivityValues.High
+        else -> RotarySnapSensitivityValues.Default
+    }
 
 private val ScrollableState.shouldDispatchOverscroll
     get() = canScrollForward || canScrollBackward

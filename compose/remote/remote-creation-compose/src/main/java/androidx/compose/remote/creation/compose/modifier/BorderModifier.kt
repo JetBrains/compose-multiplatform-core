@@ -22,11 +22,9 @@ import androidx.compose.foundation.border
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class BorderModifier(public val width: RemoteFloat, public val color: Color) :
@@ -38,11 +36,6 @@ public class BorderModifier(public val width: RemoteFloat, public val color: Col
             color.toArgb(),
             0,
         )
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        return border(width = width.toFloat().dp, color = color)
     }
 }
 

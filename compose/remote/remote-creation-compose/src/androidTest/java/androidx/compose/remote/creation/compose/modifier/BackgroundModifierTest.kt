@@ -32,7 +32,6 @@ import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
@@ -74,13 +73,7 @@ class BackgroundModifierTest {
                 RemoteBox(
                     modifier =
                         RemoteModifier.fillMaxSize()
-                            .background(
-                                RemoteBrush.verticalGradient(
-                                    listOf(Color.Blue, Color.Red),
-                                    startY = 0f,
-                                    endY = 200f,
-                                )
-                            )
+                            .background(RemoteBrush.verticalGradient(listOf(Color.Blue, Color.Red)))
                 ) {}
             }
         }
@@ -94,11 +87,7 @@ class BackgroundModifierTest {
                     modifier =
                         RemoteModifier.fillMaxSize()
                             .background(
-                                RemoteBrush.horizontalGradient(
-                                    listOf(Color.Blue, Color.Red),
-                                    startX = 0f,
-                                    endX = 200f,
-                                )
+                                RemoteBrush.horizontalGradient(listOf(Color.Blue, Color.Red))
                             )
                 ) {}
             }
@@ -112,13 +101,7 @@ class BackgroundModifierTest {
                 RemoteBox(
                     modifier =
                         RemoteModifier.fillMaxSize()
-                            .background(
-                                RemoteBrush.radialGradient(
-                                    listOf(Color.Blue, Color.Red),
-                                    radius = 100f,
-                                    center = Offset(100f, 100f),
-                                )
-                            )
+                            .background(RemoteBrush.radialGradient(listOf(Color.Blue, Color.Red)))
                 ) {}
             }
         }
@@ -131,12 +114,7 @@ class BackgroundModifierTest {
                 RemoteBox(
                     modifier =
                         RemoteModifier.fillMaxSize()
-                            .background(
-                                RemoteBrush.sweepGradient(
-                                    listOf(Color.Blue, Color.Red),
-                                    center = Offset(100f, 100f),
-                                )
-                            )
+                            .background(RemoteBrush.sweepGradient(listOf(Color.Blue, Color.Red)))
                 ) {}
             }
         }

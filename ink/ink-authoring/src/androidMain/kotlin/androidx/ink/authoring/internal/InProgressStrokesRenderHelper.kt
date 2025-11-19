@@ -19,9 +19,10 @@ package androidx.ink.authoring.internal
 import android.graphics.Matrix
 import android.graphics.Path
 import androidx.annotation.UiThread
+import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
 import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.InProgressShape
 import androidx.ink.authoring.InProgressStrokeId
-import androidx.ink.authoring.InkInProgressShape
 import androidx.ink.authoring.latency.LatencyData
 import androidx.ink.geometry.MutableBox
 
@@ -42,8 +43,12 @@ import androidx.ink.geometry.MutableBox
  * - Stroke cohort: A group of strokes that are in progress at the same time, which means that they
  *   need to be handed off to HWUI rendering at the same time.
  */
-@OptIn(ExperimentalLatencyDataApi::class)
-internal interface InProgressStrokesRenderHelper {
+@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+internal interface InProgressStrokesRenderHelper<
+    ShapeSpecT : Any,
+    InProgressShapeT : InProgressShape<ShapeSpecT, CompletedShapeT>,
+    CompletedShapeT : Any,
+> {
 
     /**
      * Whether stroke contents that were drawn earlier are preserved for later draws, as an
@@ -85,7 +90,7 @@ internal interface InProgressStrokesRenderHelper {
      * Allows communication between this interface and the code making use of it, which is presumed
      * to be an [InProgressStrokesManager].
      */
-    interface Callback {
+    interface Callback<CompletedShapeT : Any> {
 
         /**
          * Called on the render thread to prompt [InProgressStrokesManager] to start making draw
@@ -142,7 +147,9 @@ internal interface InProgressStrokesRenderHelper {
          *   back to front.
          */
         @UiThread
-        fun onStrokeCohortHandoffToHwui(strokeCohort: Map<InProgressStrokeId, FinishedStroke>)
+        fun onStrokeCohortHandoffToHwui(
+            strokeCohort: Map<InProgressStrokeId, FinishedStroke<CompletedShapeT>>
+        )
 
         /**
          * Called some time after [onStrokeCohortHandoffToHwui], when it is appropriate to start
@@ -158,11 +165,11 @@ internal interface InProgressStrokesRenderHelper {
     fun prepareToDrawInModifiedRegion(modifiedRegionInMainView: MutableBox)
 
     /**
-     * Draw an [InkInProgressShape] in the region previously prepared with
+     * Draw an [InProgressShape] in the region previously prepared with
      * [prepareToDrawInModifiedRegion]. This may be called multiple times per modified region with
-     * different [InkInProgressShape] objects. Called on the render thread.
+     * different [InProgressShape] objects. Called on the render thread.
      */
-    fun drawInModifiedRegion(inProgressShape: InkInProgressShape, strokeToMainViewTransform: Matrix)
+    fun drawInModifiedRegion(inProgressShape: InProgressShapeT, strokeToMainViewTransform: Matrix)
 
     /**
      * Cleans up what was initialized in [prepareToDrawInModifiedRegion]. Called on the render
@@ -188,5 +195,7 @@ internal interface InProgressStrokesRenderHelper {
      *   to front.
      */
     @UiThread
-    fun requestStrokeCohortHandoffToHwui(handingOff: Map<InProgressStrokeId, FinishedStroke>)
+    fun requestStrokeCohortHandoffToHwui(
+        handingOff: Map<InProgressStrokeId, FinishedStroke<CompletedShapeT>>
+    )
 }

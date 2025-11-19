@@ -40,7 +40,6 @@ import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.Entity
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  * A composable that attaches to a SceneCore entity and allow compose to size, position, reparent,
@@ -75,15 +74,16 @@ public fun <T : Entity> SceneCoreEntity(
         factory = {
             ComposeSubspaceNode.Constructor().apply {
                 SetCoreEntity(AdaptableCoreEntity(entity, sizeAdapter))
-                SetMeasurePolicy(
-                    SceneCoreEntityMeasurePolicy(sizeAdapter?.intrinsicSize?.invoke(entity))
-                )
             }
         },
         update = {
             set(compositionLocalMap, SetCompositionLocalMap)
             set(modifier, SetModifier)
-            update(sizeAdapter) {
+            set(
+                SceneCoreEntityMeasurePolicy(sizeAdapter?.intrinsicSize?.invoke(entity)),
+                SetMeasurePolicy,
+            )
+            set(sizeAdapter) {
                 getAdaptableCoreEntity<T>()?.sceneCoreEntitySizeAdapter = sizeAdapter
             }
             update(entity)
@@ -149,33 +149,33 @@ private class SceneCoreEntityMeasurePolicy(private val originalSize: IntVolumeSi
         measurables: List<SubspaceMeasurable>,
         constraints: VolumeConstraints,
     ): SubspaceMeasureResult {
+        var size =
+            originalSize?.coerceIn(constraints)
+                ?: IntVolumeSize(
+                    width = constraints.minWidth,
+                    height = constraints.minHeight,
+                    depth = constraints.minDepth,
+                )
+
         if (measurables.isEmpty()) {
-            return if (originalSize == null) {
-                layout(constraints.minWidth, constraints.minHeight, constraints.minDepth) {}
-            } else {
-                layout(
-                    max(originalSize.width, constraints.minWidth),
-                    max(originalSize.height, constraints.minHeight),
-                    max(originalSize.depth, constraints.minDepth),
-                ) {}
-            }
+            return layout(size.width, size.height, size.depth) {}
         }
 
         val placeables = arrayOfNulls<SubspacePlaceable>(measurables.size)
-        var width = max(constraints.minWidth, min(originalSize?.width ?: 0, constraints.maxWidth))
-        var height =
-            max(constraints.minHeight, min(originalSize?.height ?: 0, constraints.maxHeight))
-        var depth = max(constraints.minDepth, min(originalSize?.depth ?: 0, constraints.maxDepth))
         measurables.fastForEachIndexed { index, measurable ->
             val placeable = measurable.measure(constraints)
             placeables[index] = placeable
-            width = max(width, placeable.measuredWidth)
-            height = max(height, placeable.measuredHeight)
-            depth = max(depth, placeable.measuredDepth)
+            size =
+                IntVolumeSize(
+                    width = max(size.width, placeable.measuredWidth),
+                    height = max(size.height, placeable.measuredHeight),
+                    depth = max(size.depth, placeable.measuredDepth),
+                )
         }
+        val finalSize = size.coerceIn(constraints)
 
-        return layout(width, height, depth) {
-            placeables.forEachIndexed { index, placeable ->
+        return layout(finalSize.width, finalSize.height, finalSize.depth) {
+            placeables.forEachIndexed { _, placeable ->
                 placeable as SubspacePlaceable
                 placeable.place(Pose.Identity)
             }
@@ -200,3 +200,14 @@ private fun <T : Entity> ComposeSubspaceNode.getAdaptableCoreEntity(): Adaptable
     entity.castTo<AdaptableCoreEntity<T>>()
 
 private inline fun <reified T> Any?.castTo() = this as? T
+
+/**
+ * Coerces the dimensions of this [IntVolumeSize] to be within the bounds of the given
+ * [VolumeConstraints].
+ */
+private fun IntVolumeSize.coerceIn(constraints: VolumeConstraints) =
+    IntVolumeSize(
+        width = width.coerceIn(constraints.minWidth, constraints.maxWidth),
+        height = height.coerceIn(constraints.minHeight, constraints.maxHeight),
+        depth = depth.coerceIn(constraints.minDepth, constraints.maxDepth),
+    )

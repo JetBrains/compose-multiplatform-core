@@ -30,12 +30,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.xr.projected.ProjectedActivityCompat
 import androidx.xr.projected.ProjectedInputEvent
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 
 /**
  * The ProjectedInputActivity creates the [ProjectedActivityCompat], starts collecting
  * [ProjectedInputEvent]s and displays corresponding information when an input is received. It
  * closes the [ProjectedActivityCompat] in onDestroy.
  */
+@ExperimentalProjectedApi
 class ProjectedInputActivity : ComponentActivity() {
 
     private lateinit var projectedActivityCompat: ProjectedActivityCompat

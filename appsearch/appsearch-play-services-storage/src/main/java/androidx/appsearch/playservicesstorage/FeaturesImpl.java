@@ -113,6 +113,8 @@ final class FeaturesImpl implements Features {
             case Features.SET_SCHEMA_REQUEST_SCHEMA_TYPE_DISPLAYED_BY_SYSTEM:
                 // READ_GLOBAL_APP_SEARCH_DATA permission is only supported in platform storage.
                 // fall through
+            case Features.SCHEMA_JOINABLE_REPEATED_PROPERTIES:
+                // TODO(b/457496944) : Update when feature is ready in service-appsearch.
             default:
                 return false; // AppSearch features absent in GMSCore AppSearch.
         }

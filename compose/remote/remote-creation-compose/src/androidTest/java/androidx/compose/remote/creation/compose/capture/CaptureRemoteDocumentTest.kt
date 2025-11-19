@@ -34,7 +34,6 @@ import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.creation.profile.Profile
 import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -105,20 +104,17 @@ class CaptureRemoteDocumentTest {
                                 textSize = 12f
                             }
 
-                        val canvas = drawScope.drawContext.canvas.nativeCanvas
-                        if (canvas is RecordingCanvas) {
-                            canvas.drawTextOnCircle(
-                                text = RemoteString("10:09"),
-                                centerX = size.width / 2,
-                                centerY = size.height / 2,
-                                radius = size.width / 2,
-                                startAngle = 0f,
-                                warpRadiusOffset = 0f,
-                                alignment = DrawTextOnCircle.Alignment.CENTER,
-                                placement = DrawTextOnCircle.Placement.INSIDE,
-                                paint = textPaint,
-                            )
-                        }
+                        canvas.drawTextOnCircle(
+                            text = RemoteString("10:09"),
+                            centerX = size.width / 2,
+                            centerY = size.height / 2,
+                            radius = size.width / 2,
+                            startAngle = 0f,
+                            warpRadiusOffset = 0f,
+                            alignment = DrawTextOnCircle.Alignment.CENTER,
+                            placement = DrawTextOnCircle.Placement.INSIDE,
+                            paint = textPaint,
+                        )
                     }
                 }
             }

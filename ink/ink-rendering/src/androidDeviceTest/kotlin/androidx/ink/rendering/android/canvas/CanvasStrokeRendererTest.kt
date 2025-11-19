@@ -97,7 +97,7 @@ class CanvasStrokeRendererTest {
                         "Multicoat",
                         finishedInProgressStroke(
                             brush(
-                                BrushFamily(
+                                brushFamily(
                                     listOf(
                                         BrushCoat(
                                             paint =
@@ -124,7 +124,7 @@ class CanvasStrokeRendererTest {
                             .trimIndent(),
                         finishedInProgressStroke(
                             brush(
-                                BrushFamily(
+                                brushFamily(
                                     BrushTip(
                                         behaviors =
                                             listOf(
@@ -179,7 +179,7 @@ class CanvasStrokeRendererTest {
                         "Solid",
                         finishedInProgressStroke(
                             brush(
-                                BrushFamily(BrushTip(particleGapDistanceScale = 2f)),
+                                brushFamily(BrushTip(particleGapDistanceScale = 2f)),
                                 TestColors.RED,
                             ),
                             INPUTS_ZIGZAG,
@@ -189,7 +189,7 @@ class CanvasStrokeRendererTest {
                         "Translucent",
                         finishedInProgressStroke(
                             brush(
-                                BrushFamily(BrushTip(particleGapDistanceScale = 0.75f)),
+                                brushFamily(BrushTip(particleGapDistanceScale = 0.75f)),
                                 TestColors.COBALT_BLUE.withAlpha(0.4),
                             ),
                             INPUTS_TWIST,
@@ -854,11 +854,18 @@ class CanvasStrokeRendererTest {
                 .toImmutable()
 
         fun brush(
-            family: BrushFamily = StockBrushes.marker(),
+            family: BrushFamily =
+                StockBrushes.marker().copy(inputModel = BrushFamily.SlidingWindowModel()),
             @ColorInt color: Int = TestColors.BLACK,
             size: Float = 15F,
             epsilon: Float = 0.1F,
         ) = Brush.createWithColorIntArgb(family, color, size, epsilon)
+
+        fun brushFamily(tip: BrushTip = BrushTip(), paint: BrushPaint = BrushPaint()) =
+            BrushFamily(tip, paint, inputModel = BrushFamily.SlidingWindowModel())
+
+        fun brushFamily(coats: List<BrushCoat>) =
+            BrushFamily(coats, inputModel = BrushFamily.SlidingWindowModel())
 
         fun texturedBrush(
             particleGapDistanceScale: Float = 0f,
@@ -889,7 +896,7 @@ class CanvasStrokeRendererTest {
                     textureRotationDegrees = textureRotationDegrees,
                     textureMapping = textureMapping,
                 )
-            return brush(BrushFamily(tip = tip, paint = paint), brushColor, brushSize)
+            return brush(brushFamily(tip = tip, paint = paint), brushColor, brushSize)
         }
 
         fun texturedBrushPaint(
@@ -969,7 +976,7 @@ class CanvasStrokeRendererTest {
                     blendMode = blendMode,
                 )
             val paint = BrushPaint(listOf(textureLayer))
-            val brush = brush(BrushFamily(paint = paint), color, size = 30f)
+            val brush = brush(brushFamily(paint = paint), color, size = 30f)
             return finishedInProgressStroke(brush, INPUTS_TWIST)
         }
 
@@ -990,7 +997,7 @@ class CanvasStrokeRendererTest {
                     sizeUnit = TextureSizeUnit.BRUSH_SIZE,
                 )
             val paint = BrushPaint(listOf(textureLayer1, textureLayer2))
-            val brush = brush(BrushFamily(paint = paint), color = TestColors.WHITE, size = 40f)
+            val brush = brush(brushFamily(paint = paint), color = TestColors.WHITE, size = 40f)
             return finishedInProgressStroke(brush, INPUTS_ZIGZAG)
         }
 
@@ -1041,7 +1048,7 @@ class CanvasStrokeRendererTest {
                             )
                         ),
                 )
-            val brush = brush(family = BrushFamily(tip, paint), color = 0x7733fc66)
+            val brush = brush(family = brushFamily(tip, paint), color = 0x7733fc66)
             return finishedInProgressStroke(brush, INPUTS_TWIST)
         }
 

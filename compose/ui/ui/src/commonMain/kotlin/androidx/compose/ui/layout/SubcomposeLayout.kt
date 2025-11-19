@@ -1215,20 +1215,18 @@ internal class LayoutNodeSubcompositionsState(
                     }
                     val isComplete =
                         Snapshot.withoutReadObservation {
-                            ignoreRemeasureRequests {
-                                try {
-                                    pausedComposition.resume(shouldPause)
-                                } catch (e: Throwable) {
-                                    val operations = nodeState.operations
-                                    if (operations != null) {
-                                        throw SubcomposeLayoutPausableCompositionException(
-                                            nodeState.operations,
-                                            slotId,
-                                            e,
-                                        )
-                                    } else {
-                                        throw e
-                                    }
+                            try {
+                                pausedComposition.resume(shouldPause)
+                            } catch (e: Throwable) {
+                                val operations = nodeState.operations
+                                if (operations != null) {
+                                    throw SubcomposeLayoutPausableCompositionException(
+                                        nodeState.operations,
+                                        slotId,
+                                        e,
+                                    )
+                                } else {
+                                    throw e
                                 }
                             }
                         }

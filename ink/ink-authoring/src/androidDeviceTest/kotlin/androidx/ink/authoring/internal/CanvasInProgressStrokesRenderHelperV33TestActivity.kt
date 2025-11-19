@@ -25,10 +25,13 @@ import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
 import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
+import androidx.ink.authoring.InkInProgressShape
 import androidx.ink.authoring.InkInProgressShapeRenderer
 import androidx.ink.authoring.latency.LatencyData
+import androidx.ink.brush.Brush
 import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.geometry.AffineTransform
 import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
@@ -37,22 +40,27 @@ import androidx.ink.strokes.Stroke
 import java.util.concurrent.TimeUnit
 
 /** An [Activity] to support [CanvasInProgressStrokesRenderHelperV33]. */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalInkCustomBrushApi::class)
+@OptIn(
+    ExperimentalLatencyDataApi::class,
+    ExperimentalInkCustomBrushApi::class,
+    ExperimentalCustomShapeWorkflowApi::class,
+)
 @SuppressLint("UseSdkSuppress") // SdkSuppress is on the test class.
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
 
     lateinit var rootView: ViewGroup
     lateinit var mainView: ViewGroup
-    internal lateinit var renderHelper: CanvasInProgressStrokesRenderHelperV33
+    internal lateinit var renderHelper:
+        CanvasInProgressStrokesRenderHelperV33<Brush, InkInProgressShape, Stroke>
 
     internal var fakeThreads = FakeThreads()
 
-    internal var callback: InProgressStrokesRenderHelper.Callback? = null
+    internal var callback: InProgressStrokesRenderHelper.Callback<Stroke>? = null
     var renderer: CanvasStrokeRenderer? = null
 
     private val delegatingCallback =
-        object : InProgressStrokesRenderHelper.Callback {
+        object : InProgressStrokesRenderHelper.Callback<Stroke> {
             override fun onDraw() {
                 callback?.onDraw()
             }
@@ -78,7 +86,7 @@ class CanvasInProgressStrokesRenderHelperV33TestActivity : Activity() {
             }
 
             override fun onStrokeCohortHandoffToHwui(
-                strokeCohort: Map<InProgressStrokeId, FinishedStroke>
+                strokeCohort: Map<InProgressStrokeId, FinishedStroke<Stroke>>
             ) {
                 callback?.onStrokeCohortHandoffToHwui(strokeCohort)
             }

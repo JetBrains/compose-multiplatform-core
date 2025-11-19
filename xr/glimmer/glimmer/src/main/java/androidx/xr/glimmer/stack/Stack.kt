@@ -67,7 +67,7 @@ public fun VerticalStack(
         remember(state) {
             // Re-run the DSL to parse items only when the content lambda instance changes.
             derivedStateOf(referentialEqualityPolicy()) {
-                    StackItemHolder(latestContent.value).also {
+                    StackItemHolder(state, latestContent.value).also {
                         // Set the item count on the StackState immediately when the derived state
                         // re-evaluates (i.e., when content changes), even before recomposition.
                         state.itemCount = it.itemCount
@@ -92,6 +92,7 @@ public fun VerticalStack(
             val key =
                 itemInterval.getKeyOrDefault(globalIndex = page, localIntervalIndex = localIndex)
             val itemScope = itemInterval.getOrCreateItemScope(key)
+            itemScope.index = page
             StackItemLayout(
                 page = page,
                 state = state,
@@ -271,12 +272,6 @@ private fun Modifier.clipToItemAbove(
             }
         }
     }
-
-private fun Int.isTopItem(topItem: Int) = this == topItem
-
-private fun Int.isNextItem(topItem: Int) = this == topItem + 1
-
-private fun Int.isNextNextItem(topItem: Int) = this == topItem + 2
 
 /**
  * The translation Y of the top item in pixels, which is always equal to the snapped position

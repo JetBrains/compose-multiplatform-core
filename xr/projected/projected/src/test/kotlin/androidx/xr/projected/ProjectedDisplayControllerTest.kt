@@ -36,6 +36,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.xr.projected.ProjectedContext.PROJECTED_DEVICE_NAME
+import androidx.xr.projected.ProjectedDisplayController.PresentationMode
+import androidx.xr.projected.ProjectedDisplayController.PresentationModeFlags
 import androidx.xr.projected.ProjectedServiceBinding.ACTION_BIND
 import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IEngagementModeCallback
@@ -161,9 +163,9 @@ class ProjectedDisplayControllerTest {
             assertThat(shadowOf(context).boundServiceConnections).isEmpty()
         }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, ExperimentalProjectedApi::class)
     @Test
-    fun addEngagementModeChangedListener_callsService() {
+    fun addPresentationModeChangedListener_callsService() {
         launchTestProjectedDeviceActivity { projectedDeviceActivity ->
             val dispatcher = UnconfinedTestDispatcher()
             Dispatchers.setMain(dispatcher)
@@ -172,8 +174,8 @@ class ProjectedDisplayControllerTest {
                 projectedDisplayController =
                     ProjectedDisplayController.create(projectedDeviceActivity)
 
-                val listener = Consumer<Set<ProjectedDisplayController.EngagementMode>> {}
-                projectedDisplayController.addEngagementModeChangedListener(listener = listener)
+                val listener = Consumer<PresentationModeFlags> {}
+                projectedDisplayController.addPresentationModeChangedListener(listener = listener)
 
                 verify(mockEngagementModeService).registerCallback(any())
 
@@ -182,9 +184,9 @@ class ProjectedDisplayControllerTest {
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, ExperimentalProjectedApi::class)
     @Test
-    fun addEngagementModeChangedListener_receivesUpdates() {
+    fun addPresentationModeChangedListener_receivesUpdates() {
         launchTestProjectedDeviceActivity { projectedDeviceActivity ->
             val dispatcher = UnconfinedTestDispatcher()
             Dispatchers.setMain(dispatcher)
@@ -193,10 +195,10 @@ class ProjectedDisplayControllerTest {
                 projectedDisplayController =
                     ProjectedDisplayController.create(projectedDeviceActivity)
 
-                val engagementModes = mutableSetOf<ProjectedDisplayController.EngagementMode>()
+                var presentationModes: PresentationModeFlags? = null
 
-                projectedDisplayController.addEngagementModeChangedListener { updatedModes ->
-                    engagementModes.addAll(updatedModes)
+                projectedDisplayController.addPresentationModeChangedListener { updatedModes ->
+                    presentationModes = updatedModes
                 }
 
                 // Trigger the callback.
@@ -206,14 +208,17 @@ class ProjectedDisplayControllerTest {
                     EngagementModeClient.ENGAGEMENT_MODE_FLAG_VISUALS_ON
                 )
 
-                assertThat(engagementModes)
-                    .containsExactly(ProjectedDisplayController.EngagementMode.VISUALS_ON)
+                assertThat(presentationModes).isNotNull()
+                assertThat(presentationModes?.hasPresentationMode(PresentationMode.VISUALS_ON))
+                    .isTrue()
+                assertThat(presentationModes?.hasPresentationMode(PresentationMode.AUDIO_ON))
+                    .isTrue()
                 removeEngagementModeService()
             }
         }
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, ExperimentalProjectedApi::class)
     @Test
     fun addMultipleEngagementModeChangedListener_receivesUpdates() {
         launchTestProjectedDeviceActivity { projectedDeviceActivity ->
@@ -224,24 +229,22 @@ class ProjectedDisplayControllerTest {
                 projectedDisplayController =
                     ProjectedDisplayController.create(projectedDeviceActivity)
 
-                val engagementModes1 = mutableSetOf<ProjectedDisplayController.EngagementMode>()
+                var presentationModes1: PresentationModeFlags? = null
                 var callCount1 = 0
                 val listener1 =
-                    Consumer<Set<ProjectedDisplayController.EngagementMode>> { updatedModes ->
-                        engagementModes1.clear()
-                        engagementModes1.addAll(updatedModes)
+                    Consumer<PresentationModeFlags> { updatedModes ->
+                        presentationModes1 = updatedModes
                         ++callCount1
                     }
-                val engagementModes2 = mutableSetOf<ProjectedDisplayController.EngagementMode>()
+                var presentationModes2: PresentationModeFlags? = null
                 var callCount2 = 0
                 val listener2 =
-                    Consumer<Set<ProjectedDisplayController.EngagementMode>> { updatedModes ->
-                        engagementModes2.clear()
-                        engagementModes2.addAll(updatedModes)
+                    Consumer<PresentationModeFlags> { updatedModes ->
+                        presentationModes2 = updatedModes
                         ++callCount2
                     }
-                projectedDisplayController.addEngagementModeChangedListener(listener = listener1)
-                projectedDisplayController.addEngagementModeChangedListener(listener = listener2)
+                projectedDisplayController.addPresentationModeChangedListener(listener = listener1)
+                projectedDisplayController.addPresentationModeChangedListener(listener = listener2)
 
                 // Trigger the callback.
                 val callbackCaptor = argumentCaptor<IEngagementModeCallback>()
@@ -252,24 +255,37 @@ class ProjectedDisplayControllerTest {
 
                 // Verify that both listeners were called once.
                 assertThat(callCount1).isEqualTo(1)
-                assertThat(engagementModes1)
-                    .containsExactly(ProjectedDisplayController.EngagementMode.VISUALS_ON)
+                assertThat(presentationModes1).isNotNull()
+                assertThat(presentationModes1?.hasPresentationMode(PresentationMode.VISUALS_ON))
+                    .isTrue()
+                assertThat(presentationModes1?.hasPresentationMode(PresentationMode.AUDIO_ON))
+                    .isTrue()
                 assertThat(callCount2).isEqualTo(1)
-                assertThat(engagementModes2)
-                    .containsExactly(ProjectedDisplayController.EngagementMode.VISUALS_ON)
+                assertThat(presentationModes2).isNotNull()
+                assertThat(presentationModes2?.hasPresentationMode(PresentationMode.VISUALS_ON))
+                    .isTrue()
+                assertThat(presentationModes1?.hasPresentationMode(PresentationMode.AUDIO_ON))
+                    .isTrue()
 
                 // Remove the second callback.
-                projectedDisplayController.removeEngagementModeChangedListener(listener2)
+                projectedDisplayController.removePresentationModeChangedListener(listener2)
 
                 // Trigger another callback.
                 callbackCaptor.firstValue.onEngagementModeChanged(0)
 
                 // Verify that only the first listener was called again
                 assertThat(callCount1).isEqualTo(2)
-                assertThat(engagementModes1).isEmpty()
+                assertThat(presentationModes1).isNotNull()
+                assertThat(presentationModes1?.hasPresentationMode(PresentationMode.VISUALS_ON))
+                    .isFalse()
+                assertThat(presentationModes1?.hasPresentationMode(PresentationMode.AUDIO_ON))
+                    .isTrue()
                 assertThat(callCount2).isEqualTo(1)
-                assertThat(engagementModes2)
-                    .containsExactly(ProjectedDisplayController.EngagementMode.VISUALS_ON)
+                assertThat(presentationModes2).isNotNull()
+                assertThat(presentationModes2?.hasPresentationMode(PresentationMode.VISUALS_ON))
+                    .isTrue()
+                assertThat(presentationModes1?.hasPresentationMode(PresentationMode.AUDIO_ON))
+                    .isTrue()
                 removeEngagementModeService()
             }
         }

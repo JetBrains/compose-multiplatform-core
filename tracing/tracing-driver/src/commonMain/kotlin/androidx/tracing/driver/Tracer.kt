@@ -258,6 +258,7 @@ public abstract class Tracer(
                     category = category,
                     name = name,
                     token = token,
+                    isRoot = isRoot,
                     metadataBlock = metadataBlock,
                 )
             }
@@ -310,6 +311,7 @@ public abstract class Tracer(
                     category = category,
                     name = name,
                     token = token,
+                    isRoot = isRoot,
                     metadataBlock = metadataBlock,
                 )
             }

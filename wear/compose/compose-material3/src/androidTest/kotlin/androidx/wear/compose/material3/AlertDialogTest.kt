@@ -21,6 +21,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,10 +34,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
@@ -287,6 +292,52 @@ class AlertDialogTest {
             )
         }
         rule.onNodeWithTag(TEST_TAG).assertExists()
+    }
+
+    @Test
+    fun alert_dialog_dismiss_button_content_description() {
+        val description = "Test Description"
+        rule.setContentWithTheme {
+            AlertDialog(
+                title = {},
+                dismissButton = {
+                    AlertDialogDefaults.DismissButton(
+                        onClick = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                    ) {
+                        Icon(imageVector = Icons.Outlined.Add, contentDescription = description)
+                    }
+                },
+                confirmButton = {},
+                onDismissRequest = {},
+                visible = true,
+            )
+        }
+
+        rule.onNodeWithTag(TEST_TAG).assertContentDescriptionEquals(description)
+    }
+
+    @Test
+    fun alert_dialog_confirm_button_content_description() {
+        val description = "Test Description"
+        rule.setContentWithTheme {
+            AlertDialog(
+                title = {},
+                dismissButton = {},
+                confirmButton = {
+                    AlertDialogDefaults.ConfirmButton(
+                        onClick = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                    ) {
+                        Icon(imageVector = Icons.Outlined.Add, contentDescription = description)
+                    }
+                },
+                onDismissRequest = {},
+                visible = true,
+            )
+        }
+
+        rule.onNodeWithContentDescription(description).assertExists().assertHasClickAction()
     }
 
     @Test

@@ -26,39 +26,17 @@ import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WidthModifier(public val type: Type, public val value: RemoteFloat) :
-    RemoteLayoutModifier {
+    RemoteModifier.Element {
     override fun toRemoteComposeElement(): RecordingModifier.Element {
         return androidx.compose.remote.creation.modifiers.WidthModifier(
             type,
             value.internalAsFloat(),
         )
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        return if (type == Type.EXACT) {
-            val valueDp = with(LocalDensity.current) { value.toFloat().toDp() }
-            width(valueDp)
-        } else if (type == Type.EXACT_DP) {
-            width(value.toFloat().dp)
-        } else if (type == Type.FILL) {
-            fillMaxWidth(value.toFloat())
-            //        } else if (type == Type.WEIGHT) {
-            //            @Suppress("INVISIBLE_REFERENCE")
-            //            with(androidx.compose.foundation.layout.RowScopeInstance as RowScope) {
-            //                weight(value.toFloat(), true)
-            //            }
-        } else {
-            System.err.println("Not handled width modifier $type")
-            this
-        }
     }
 }
 

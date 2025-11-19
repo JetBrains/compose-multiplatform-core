@@ -292,7 +292,7 @@ public class TransformingLazyColumnState(
          * default arguments, the list is correctly pinned to the start of the viewport (top or
          * bottom, depending on `reverseLayout`).
          */
-        internal const val OffsetToTriggerInitialPin = Int.MIN_VALUE / 2
+        internal const val OffsetToTriggerInitialPin = -1_000_000
 
         /** The default [Saver] implementation for [TransformingLazyColumnState]. */
         internal val Saver =

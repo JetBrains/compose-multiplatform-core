@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
 import android.graphics.Paint
-import android.os.Build
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.layout.Alignment
 import androidx.compose.remote.creation.compose.layout.Arrangement
@@ -53,7 +52,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -286,43 +284,36 @@ private fun RemoteDrawWithContentScope.drawShapedBackground(
             }
     }
 
-    val canvas = drawContext.canvas.nativeCanvas
     val w = remoteComponentWidth(state)
     val h = remoteComponentHeight(state)
 
-    if (canvas is RecordingCanvas) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            canvas.drawRect(0f, 0f, w, h, paint)
-            return
-        }
-        when (shape) {
-            is RoundedCornerShape -> {
+    when (shape) {
+        is RoundedCornerShape -> {
+            canvas.drawRoundRect(
+                0f,
+                0f,
+                w,
+                h,
+                shape.bottomEnd.toPx(size, drawContext.density),
+                shape.bottomEnd.toPx(size, drawContext.density),
+                paint,
+            )
+            if (borderPaint != null) {
                 canvas.drawRoundRect(
-                    0f,
-                    0f,
-                    w,
-                    h,
+                    paint.strokeWidth,
+                    paint.strokeWidth,
+                    w - paint.strokeWidth,
+                    h - paint.strokeWidth,
                     shape.bottomEnd.toPx(size, drawContext.density),
                     shape.bottomEnd.toPx(size, drawContext.density),
-                    paint,
+                    borderPaint,
                 )
-                if (borderPaint != null) {
-                    canvas.drawRoundRect(
-                        paint.strokeWidth,
-                        paint.strokeWidth,
-                        w - paint.strokeWidth,
-                        h - paint.strokeWidth,
-                        shape.bottomEnd.toPx(size, drawContext.density),
-                        shape.bottomEnd.toPx(size, drawContext.density),
-                        borderPaint,
-                    )
-                }
             }
-            is CircleShape -> {
-                canvas.drawCircle(0f, 0f, size.maxDimension / 2f, paint)
-                if (borderPaint != null) {
-                    canvas.drawCircle(0f, 0f, size.maxDimension / 2f, borderPaint)
-                }
+        }
+        is CircleShape -> {
+            canvas.drawCircle(0f, 0f, size.maxDimension / 2f, paint)
+            if (borderPaint != null) {
+                canvas.drawCircle(0f, 0f, size.maxDimension / 2f, borderPaint)
             }
         }
     }

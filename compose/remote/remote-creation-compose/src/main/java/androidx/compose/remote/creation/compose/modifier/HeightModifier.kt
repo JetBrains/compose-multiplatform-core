@@ -19,48 +19,23 @@ package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class HeightModifier(public val type: Type, public val value: RemoteFloat) :
-    RemoteLayoutModifier {
+    RemoteModifier.Element {
     override fun toRemoteComposeElement(): RecordingModifier.Element {
         return androidx.compose.remote.creation.modifiers.HeightModifier(
             type,
             value.internalAsFloat(),
         )
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        return if (type == Type.EXACT) {
-            val valueDp = with(LocalDensity.current) { value.toFloat().toDp() }
-            height(valueDp)
-        } else if (type == Type.FILL) {
-            fillMaxHeight(value.toFloat())
-            //        } else if (type == Type.WEIGHT) {
-            //            @Suppress("INVISIBLE_REFERENCE")
-            //            with(androidx.compose.foundation.layout.ColumnScopeInstance as
-            // ColumnScope) {
-            //                weight(value.toFloat(), true)
-            //            }
-        } else if (type == Type.INTRINSIC_MIN) {
-            height(IntrinsicSize.Min)
-        } else if (type == Type.INTRINSIC_MAX) {
-            height(IntrinsicSize.Max)
-        } else {
-            System.err.println("Not handled height modifier $type")
-            this
-        }
     }
 }
 

@@ -120,11 +120,10 @@ public class DisplayInfoManager private constructor(context: Context) {
         }
     }
 
-    private val displayManager: DisplayManager by lazy {
+    private val displayManager: DisplayManager =
         (context.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager).also {
             it.registerDisplayListener(displayListener, Handler(Looper.getMainLooper()))
         }
-    }
 
     @Volatile private var previewSize: Size? = null
 

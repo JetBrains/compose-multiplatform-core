@@ -24,13 +24,9 @@ import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.modifiers.CircleShape
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.modifiers.RectShape
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.layer.CompositingStrategy
 import androidx.compose.ui.graphics.layer.CompositingStrategy.Companion.Auto
 import androidx.compose.ui.graphics.layer.CompositingStrategy.Companion.ModulateAlpha
@@ -53,7 +49,7 @@ public class GraphicsLayerModifier(
     public val alpha: Float,
     public val cameraDistance: Float,
     public val renderEffect: RenderEffect?,
-) : RemoteLayoutModifier {
+) : RemoteModifier.Element {
 
     override fun toRemoteComposeElement(): RecordingModifier.Element {
         val layer = androidx.compose.remote.creation.modifiers.GraphicsLayerModifier()
@@ -145,23 +141,6 @@ public class GraphicsLayerModifier(
             )
         }
         return layer
-    }
-
-    @Composable
-    override fun Modifier.toComposeUi(): Modifier {
-        return graphicsLayer(
-            scaleX = scaleX,
-            scaleY = scaleY,
-            rotationX = rotationX,
-            rotationY = rotationY,
-            rotationZ = rotationZ,
-            shadowElevation = shadowElevation,
-            transformOrigin = TransformOrigin(transformOriginX, transformOriginY),
-            alpha = alpha,
-            shape = shape,
-            cameraDistance = cameraDistance,
-            renderEffect = renderEffect?.toComposeRenderEffect(),
-        )
     }
 }
 

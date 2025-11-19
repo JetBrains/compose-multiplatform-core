@@ -28,6 +28,7 @@ import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
  * [androidx.ink.rendering.android.canvas.CanvasStrokeRenderer].
  */
 @OpenForTesting
+@ExperimentalCustomShapeWorkflowApi
 internal open class InkInProgressShapeRenderer(
     private val canvasStrokeRenderer: CanvasStrokeRenderer
 ) : InProgressShapeRenderer<InkInProgressShape> {

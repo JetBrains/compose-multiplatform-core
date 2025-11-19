@@ -582,10 +582,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             get() = coreEntity?.semanticsEntity
 
         override val size: IntVolumeSize
-            get() {
-                return coreEntity?.size
-                    ?: IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
-            }
+            get() = IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
 
         override fun toString(): String {
             return this@SubspaceLayoutNode.toString()

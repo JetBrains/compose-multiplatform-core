@@ -21,6 +21,7 @@ import android.os.Build
 import android.os.SystemClock
 import android.view.SurfaceView
 import androidx.graphics.surface.SurfaceControlCompat
+import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
 import androidx.ink.authoring.ExperimentalLatencyDataApi
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.InkInProgressShape
@@ -59,7 +60,11 @@ import org.mockito.kotlin.whenever
  * level but covers the functionality of [CanvasInProgressStrokesRenderHelperV33] in a different way
  * than this test.
  */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalInkCustomBrushApi::class)
+@OptIn(
+    ExperimentalLatencyDataApi::class,
+    ExperimentalInkCustomBrushApi::class,
+    ExperimentalCustomShapeWorkflowApi::class,
+)
 @RunWith(AndroidJUnit4::class)
 @MediumTest
 @SdkSuppress(
@@ -73,7 +78,7 @@ class CanvasInProgressStrokesRenderHelperV33Test {
         ActivityScenarioRule(CanvasInProgressStrokesRenderHelperV33TestActivity::class.java)
 
     private val renderer = mock<CanvasStrokeRenderer> {}
-    private val callback = mock<InProgressStrokesRenderHelper.Callback> {}
+    private val callback = mock<InProgressStrokesRenderHelper.Callback<Stroke>> {}
 
     @Test
     fun init_shouldAddSurfaceViewAndRunUiThreadTasks() {

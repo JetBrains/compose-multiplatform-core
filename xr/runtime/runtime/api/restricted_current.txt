@@ -232,6 +232,44 @@ package androidx.xr.runtime {
     property public float angleUp;
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class Log {
+    method public void debug(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
+    method @BytecodeOnly public static void debug$default(androidx.xr.runtime.Log!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
+    method public void error(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
+    method @BytecodeOnly public static void error$default(androidx.xr.runtime.Log!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
+    method @InaccessibleFromKotlin public boolean getEnabled();
+    method @InaccessibleFromKotlin public androidx.xr.runtime.Log.Level getLevel();
+    method public void info(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
+    method @BytecodeOnly public static void info$default(androidx.xr.runtime.Log!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
+    method @InaccessibleFromKotlin public void setEnabled(boolean);
+    method @InaccessibleFromKotlin public void setLevel(androidx.xr.runtime.Log.Level);
+    method public void verbose(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
+    method @BytecodeOnly public static void verbose$default(androidx.xr.runtime.Log!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
+    method public void warn(optional Throwable? throwable, kotlin.jvm.functions.Function0<java.lang.String> message);
+    method @BytecodeOnly public static void warn$default(androidx.xr.runtime.Log!, Throwable!, kotlin.jvm.functions.Function0!, int, Object!);
+    property public boolean enabled;
+    property public androidx.xr.runtime.Log.Level level;
+    field public static final androidx.xr.runtime.Log INSTANCE;
+  }
+
+  public static final class Log.Level implements java.lang.Comparable<androidx.xr.runtime.Log.Level> {
+    method public int compareTo(androidx.xr.runtime.Log.Level other);
+    field public static final androidx.xr.runtime.Log.Level.Companion Companion;
+    field public static final androidx.xr.runtime.Log.Level DEBUG;
+    field public static final androidx.xr.runtime.Log.Level ERROR;
+    field public static final androidx.xr.runtime.Log.Level INFO;
+    field public static final androidx.xr.runtime.Log.Level VERBOSE;
+    field public static final androidx.xr.runtime.Log.Level WARN;
+  }
+
+  public static final class Log.Level.Companion {
+    property public androidx.xr.runtime.Log.Level DEBUG;
+    property public androidx.xr.runtime.Log.Level ERROR;
+    property public androidx.xr.runtime.Log.Level INFO;
+    property public androidx.xr.runtime.Log.Level VERBOSE;
+    property public androidx.xr.runtime.Log.Level WARN;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class NodeHolder<T> extends androidx.xr.runtime.TypeHolder<T> {
     ctor public NodeHolder(T node, Class<? extends java.lang.Object?> type);
   }

@@ -93,24 +93,6 @@
 
     <issue
         id="NewApi"
-        message="Call requires API level 29 (current min is 26): `android.graphics.Paint#getTextBounds`"
-        errorLine1="        ap.getTextBounds(text, 0, text.length, rec)"
-        errorLine2="           ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/layout/RemoteCanvas.kt"/>
-    </issue>
-
-    <issue
-        id="NewApi"
-        message="Call requires API level 29 (current min is 26): `android.graphics.Paint#getTextBounds`"
-        errorLine1="        ap.getTextBounds(text, 0, text.length, rec)"
-        errorLine2="           ~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/layout/RemoteCanvas.kt"/>
-    </issue>
-
-    <issue
-        id="NewApi"
         message="Enum for switch requires API level 29 (current min is 26): `android.graphics.BlendMode`"
         errorLine1="    return when (mode) {"
         errorLine2="                 ~~~~">
@@ -418,24 +400,6 @@
     <issue
         id="ListIterator"
         message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        val previewActions = actions.map { it.toComposeUiAction() }"
-        errorLine2="                                     ~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/modifier/ClickActionModifier.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        return clickable { previewActions.forEach { action -> action.invoke() } }"
-        errorLine2="                                          ~~~~~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/modifier/ClickActionModifier.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
         errorLine1="        for (op in conditionalOperations.mList) {"
         errorLine2="                ~~">
         <location
@@ -454,15 +418,6 @@
     <issue
         id="ListIterator"
         message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="                colorStops = stops.zip&lt;Float, Color>(colors).toTypedArray&lt;Pair&lt;Float, Color>>(),"
-        errorLine2="                                   ~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/capture/shaders/RemoteLinearGradient.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
         errorLine1="    colors.forEachIndexed { index, color ->"
         errorLine2="           ~~~~~~~~~~~~~~">
         <location
@@ -472,44 +427,8 @@
     <issue
         id="ListIterator"
         message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="                colorStops = stops.zip&lt;Float, Color>(colors).toTypedArray&lt;Pair&lt;Float, Color>>(),"
-        errorLine2="                                   ~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/capture/shaders/RemoteRadialGradient.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="                *stops.zip&lt;Float, Color>(colors).toTypedArray&lt;Pair&lt;Float, Color>>(),"
-        errorLine2="                       ~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/capture/shaders/RemoteSweepGradient.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
         errorLine1="            actions.map { it.toRemoteAction() },"
         errorLine2="                    ~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/modifier/TouchCancelActionModifier.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        val previewActions = actions.map { it.toComposeUiAction() }"
-        errorLine2="                                     ~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/modifier/TouchCancelActionModifier.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        return clickable { previewActions.forEach { action -> action.invoke() } }"
-        errorLine2="                                          ~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/modifier/TouchCancelActionModifier.kt"/>
     </issue>
@@ -526,44 +445,8 @@
     <issue
         id="ListIterator"
         message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        val previewActions = actions.map { it.toComposeUiAction() }"
-        errorLine2="                                     ~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/modifier/TouchDownActionModifier.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        return clickable { previewActions.forEach { action -> action.invoke() } }"
-        errorLine2="                                          ~~~~~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/modifier/TouchDownActionModifier.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
         errorLine1="            actions.map { it.toRemoteAction() },"
         errorLine2="                    ~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/modifier/TouchUpActionModifier.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        val previewActions = actions.map { it.toComposeUiAction() }"
-        errorLine2="                                     ~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/modifier/TouchUpActionModifier.kt"/>
-    </issue>
-
-    <issue
-        id="ListIterator"
-        message="Creating an unnecessary Iterator to iterate through a List"
-        errorLine1="        return clickable { previewActions.forEach { action -> action.invoke() } }"
-        errorLine2="                                          ~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/modifier/TouchUpActionModifier.kt"/>
     </issue>

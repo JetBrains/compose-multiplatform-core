@@ -58,10 +58,12 @@ import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.TimeText
 import androidx.wear.compose.material3.VerticalPagerScaffold
 import androidx.wear.compose.material3.samples.HorizontalPagerScaffoldSample
+import androidx.wear.compose.material3.samples.HorizontalPagerScaffoldWithLowSensitivitySample
 import androidx.wear.compose.material3.samples.ScaffoldSample
 import androidx.wear.compose.material3.samples.ScaffoldWithSLCEdgeButtonSample
 import androidx.wear.compose.material3.samples.ScaffoldWithTLCEdgeButtonSample
 import androidx.wear.compose.material3.samples.VerticalPagerScaffoldSample
+import androidx.wear.compose.material3.samples.VerticalPagerScaffoldWithLowSensitivitySample
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -84,6 +86,12 @@ val ScaffoldDemos =
         },
         ComposableDemo("Complex Horizontal Pager") { ComplexHorizontalPager() },
         ComposableDemo("Nested Pagers") { NestedPagers() },
+        ComposableDemo("Horizontal Pager (PagerSensitivity.Low)") {
+            HorizontalPagerScaffoldWithLowSensitivitySample(it.navigateBack)
+        },
+        ComposableDemo("Vertical Pager (PagerSensitivity.Low)") {
+            VerticalPagerScaffoldWithLowSensitivitySample()
+        },
     )
 
 @Composable

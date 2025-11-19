@@ -105,6 +105,8 @@ public class FeaturesImpl implements Features {
             case Features.SEARCH_SPEC_RANKING_FUNCTION_FILTER_BY_RANGE:
                 // fall through
             case Features.SEARCH_EMBEDDING_MATCH_INFO:
+                // fall through
+            case Features.SCHEMA_JOINABLE_REPEATED_PROPERTIES:
                 return true;
             case Features.INDEXER_MOBILE_APPLICATIONS:
                 // The Apps Indexer is only available on platform storage and some versions of

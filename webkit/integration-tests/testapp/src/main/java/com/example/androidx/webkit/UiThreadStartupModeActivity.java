@@ -47,13 +47,13 @@ public class UiThreadStartupModeActivity extends AppCompatActivity {
         WebkitHelpers.appendWebViewVersionToTitle(this);
 
         if (!WebViewFeature.isStartupFeatureSupported(
-                this, WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE)) {
+            this, WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2)) {
             WebkitHelpers.showMessageInActivity(this, R.string.webkit_api_not_available);
             return;
         }
         ProcessGlobalConfig config = new ProcessGlobalConfig();
         config.setUiThreadStartupMode(
-                this, ProcessGlobalConfig.UI_THREAD_STARTUP_MODE_ASYNC_LONG_TASKS);
+            this, ProcessGlobalConfig.UI_THREAD_STARTUP_MODE_ASYNC_WITHOUT_MULTI_PROCESS_STARTUP);
         ProcessGlobalConfig.apply(config);
         setContentView(R.layout.activity_ui_thread_startup_mode);
 

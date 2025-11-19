@@ -28,12 +28,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.UiThread
 import androidx.core.graphics.withMatrix
+import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
 import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.InProgressShape
+import androidx.ink.authoring.InProgressShapeRenderer
 import androidx.ink.authoring.InProgressStrokeId
-import androidx.ink.authoring.InkInProgressShape
-import androidx.ink.authoring.InkInProgressShapeRenderer
 import androidx.ink.authoring.latency.LatencyData
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.geometry.MutableBox
 
 /**
@@ -44,13 +44,17 @@ import androidx.ink.geometry.MutableBox
  * higher than it would be with [CanvasInProgressStrokesRenderHelperV29] or
  * [CanvasInProgressStrokesRenderHelperV33].
  */
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalInkCustomBrushApi::class)
+@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
 @UiThread
-internal class CanvasInProgressStrokesRenderHelperV21(
+internal class CanvasInProgressStrokesRenderHelperV21<
+    ShapeSpecT : Any,
+    InProgressShapeT : InProgressShape<ShapeSpecT, CompletedShapeT>,
+    CompletedShapeT : Any,
+>(
     private val mainView: ViewGroup,
-    private val callback: InProgressStrokesRenderHelper.Callback,
-    private val renderer: InkInProgressShapeRenderer,
-) : InProgressStrokesRenderHelper {
+    private val callback: InProgressStrokesRenderHelper.Callback<CompletedShapeT>,
+    private val renderer: InProgressShapeRenderer<InProgressShapeT>,
+) : InProgressStrokesRenderHelper<ShapeSpecT, InProgressShapeT, CompletedShapeT> {
 
     // View hierarchy rendering does not retain its contents between frames, so all contents must be
     // redrawn on every frame.
@@ -146,7 +150,7 @@ internal class CanvasInProgressStrokesRenderHelperV21(
     override fun prepareToDrawInModifiedRegion(modifiedRegionInMainView: MutableBox) = Unit
 
     override fun drawInModifiedRegion(
-        inProgressShape: InkInProgressShape,
+        inProgressShape: InProgressShapeT,
         strokeToMainViewTransform: Matrix,
     ) {
         assertOnUiThread()
@@ -166,7 +170,7 @@ internal class CanvasInProgressStrokesRenderHelperV21(
     }
 
     override fun requestStrokeCohortHandoffToHwui(
-        handingOff: Map<InProgressStrokeId, FinishedStroke>
+        handingOff: Map<InProgressStrokeId, FinishedStroke<CompletedShapeT>>
     ) {
         // The callback will ensure that the handoff data is drawn in HWUI in its next frame.
         callback.onStrokeCohortHandoffToHwui(handingOff)

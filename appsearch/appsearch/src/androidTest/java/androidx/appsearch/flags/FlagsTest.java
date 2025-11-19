@@ -353,4 +353,10 @@ public class FlagsTest {
         assertThat(Flags.FLAG_ENABLE_OPTIMIZE_IMPROVEMENTS).isEqualTo(
                 "com.android.appsearch.flags.enable_optimize_improvements");
     }
+
+    @Test
+    public void testFlagValue_enableRepeatedFieldJoins() {
+        assertThat(Flags.FLAG_ENABLE_REPEATED_FIELD_JOINS).isEqualTo(
+                "com.android.appsearch.flags.enable_repeated_field_joins");
+    }
 }

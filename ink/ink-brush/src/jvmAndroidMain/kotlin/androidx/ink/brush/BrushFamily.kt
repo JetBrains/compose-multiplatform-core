@@ -265,16 +265,6 @@ private constructor(
         public val SPRING_MODEL: InputModel = NoParametersModel.SPRING_MODEL
 
         /**
-         * Input model that attempts to preserve input positions as closely as possible. This is an
-         * experimental configuration which may be adjusted or removed later.
-         */
-        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-        @ExperimentalInkCustomBrushApi
-        @JvmField
-        public val EXPERIMENTAL_RAW_POSITION_MODEL: InputModel =
-            NoParametersModel.EXPERIMENTAL_RAW_POSITION_MODEL
-
-        /**
          * A naive model that passes through raw inputs mostly unchanged. This is an experimental
          * configuration which may be adjusted or removed later.
          */
@@ -342,8 +332,6 @@ private constructor(
                 checkNotNull(TYPE_TO_INSTANCE[type]) { "Invalid NoParametersModel type: $type" }
 
             val SPRING_MODEL = NoParametersModel(1, "SpringModel")
-            val EXPERIMENTAL_RAW_POSITION_MODEL =
-                NoParametersModel(2, "ExperimentalRawPositionModel")
             val EXPERIMENTAL_NAIVE_MODEL = NoParametersModel(3, "ExperimentalNaiveModel")
             // SlidingWindowModel, below, uses type 4.
         }
@@ -358,11 +346,9 @@ private constructor(
         public val upsamplingFrequencyHz: Int =
             InputModelNative.getSlidingUpsamplingFrequencyHz(nativePointer)
 
-        /**
-         * Constructs an `SlidingWindowModel` with default parameters (20 ms window duration, and
-         * 180 Hz upsampling frequency).
-         */
-        public constructor() : this(windowDurationMillis = 20, upsamplingFrequencyHz = 180)
+        /** Constructs a `SlidingWindowModel` with default parameters. */
+        public constructor() :
+            this(InputModelNative.createSlidingWindowModelWithDefaultParameters())
 
         public constructor(
             windowDurationMillis: Long,
@@ -440,6 +426,8 @@ private object InputModelNative {
         windowDurationMillis: Long,
         upsamplingFrequencyHz: Int,
     ): Long
+
+    @UsedByNative external fun createSlidingWindowModelWithDefaultParameters(): Long
 
     @UsedByNative external fun free(nativePointer: Long)
 

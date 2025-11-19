@@ -20,9 +20,14 @@ import androidx.collection.MutableScatterMap
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatingNode
+import androidx.compose.ui.node.DrawModifierNode
 import androidx.compose.ui.node.LayoutAwareModifierNode
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.currentValueOf
@@ -82,8 +87,9 @@ internal constructor(private val stackItemScope: StackItemScopeImpl, private val
 // TODO(b/413429531): add support for shape bounds.
 internal class StackItemDecoration(internal var shape: Shape, internal var size: Size)
 
-internal class StackItemScopeImpl : StackItemScope {
+internal class StackItemScopeImpl(internal val state: StackState) : StackItemScope {
 
+    internal var index = -1
     internal val decorations = MutableScatterMap<Any, StackItemDecoration>()
 
     // TODO(b/413429531): remove the first decoration getter once multiple shapes are supported.
@@ -100,7 +106,11 @@ internal class StackItemScopeImpl : StackItemScope {
 internal class ItemDecorationNode(
     private var stackItemScope: StackItemScopeImpl,
     private var shape: Shape,
-) : DelegatingNode(), LayoutAwareModifierNode, CompositionLocalConsumerModifierNode {
+) :
+    DelegatingNode(),
+    LayoutAwareModifierNode,
+    CompositionLocalConsumerModifierNode,
+    DrawModifierNode {
 
     private var depthNode: DepthNode? = null
     private var size = Size.Zero
@@ -124,6 +134,22 @@ internal class ItemDecorationNode(
         depthNode?.let { undelegate(it) }
     }
 
+    override fun ContentDrawScope.draw() {
+        val alpha = calculateAlpha()
+
+        // Apply alpha to the depth separately from the content so that the shadows are not clipped.
+        depthNode?.apply { drawDepth(alpha = alpha) }
+
+        // Draw item content with a scrim based on the current alpha.
+        drawContent()
+        drawOutline(
+            outline = shape.createOutline(size, layoutDirection, this),
+            blendMode = BlendMode.DstOut,
+            color = Color.Black,
+            alpha = 1f - alpha,
+        )
+    }
+
     fun update(stackItemScope: StackItemScopeImpl, shape: Shape) {
         depthNode?.update(currentValueOfDepth(), shape)
         if (this.stackItemScope != stackItemScope || this.shape != shape) {
@@ -144,5 +170,27 @@ internal class ItemDecorationNode(
         }
     }
 
+    private fun calculateAlpha(): Float {
+        val index = stackItemScope.index
+        if (index == -1) return 0f
+        val state = stackItemScope.state
+        val topItem = state.topItem
+        return when {
+            index.isTopItem(topItem = topItem) -> 1f - state.topItemOffsetFraction
+            index.isNextItem(topItem = topItem) -> 1f
+            index.isNextNextItem(topItem = topItem) -> state.topItemOffsetFraction
+            else -> 0f
+        }
+    }
+
     private fun currentValueOfDepth() = currentValueOf(LocalGlimmerTheme).depthLevels.level2
 }
+
+/** Returns whether the index is of the top of the stack item. */
+internal fun Int.isTopItem(topItem: Int) = this == topItem
+
+/** Returns whether the index is of the next item that follows the top of the stack item. */
+internal fun Int.isNextItem(topItem: Int) = this == topItem + 1
+
+/** Returns whether the index is of the next-next item after the top of the stack item. */
+internal fun Int.isNextNextItem(topItem: Int) = this == topItem + 2

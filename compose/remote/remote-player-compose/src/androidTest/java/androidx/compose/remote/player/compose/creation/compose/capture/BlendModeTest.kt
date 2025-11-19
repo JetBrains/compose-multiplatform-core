@@ -22,7 +22,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.Log
 import androidx.compose.remote.core.WireBuffer
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.layout.Alignment
 import androidx.compose.remote.creation.compose.layout.Arrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -43,7 +42,6 @@ import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.core.app.ApplicationProvider
@@ -124,8 +122,6 @@ class BlendModeTest {
             verticalArrangement = Arrangement.Top,
         ) {
             RemoteCanvas(RemoteModifier.size(100.dp)) {
-                val canvas = drawContext.canvas.nativeCanvas
-                if (canvas !is RecordingCanvas) return@RemoteCanvas
                 val w = remoteComponentWidth(remoteComposeCreationState)
                 val h = remoteComponentHeight(remoteComposeCreationState)
 

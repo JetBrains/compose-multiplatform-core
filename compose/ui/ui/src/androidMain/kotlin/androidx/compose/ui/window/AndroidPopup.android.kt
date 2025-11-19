@@ -303,8 +303,6 @@ actual fun Popup(
     val parentComposition = rememberCompositionContext()
     val currentContent by rememberUpdatedState(content)
     val popupId = rememberSaveable { UUID.randomUUID() }
-    // Determine if this Popup is nested within another Popup's content.
-    val isCurrentlyInPopupLayout = LocalIsInPopupLayout.current
     val popupLayout = remember {
         PopupLayout(
                 onDismissRequest = onDismissRequest,
@@ -314,23 +312,20 @@ actual fun Popup(
                 density = density,
                 initialPositionProvider = popupPositionProvider,
                 popupId = popupId,
-                isNested = isCurrentlyInPopupLayout,
             )
             .apply {
                 setContent(parentComposition) {
-                    CompositionLocalProvider(LocalIsInPopupLayout provides true) {
-                        SimpleStack(
-                            Modifier.semantics { this.popup() }
-                                // Get the size of the content
-                                .onSizeChanged {
-                                    popupContentSize = it
-                                    updatePosition()
-                                }
-                                // Hide the popup while we can't position it correctly
-                                .alpha(if (canCalculatePosition) 1f else 0f),
-                            currentContent,
-                        )
-                    }
+                    SimpleStack(
+                        Modifier.semantics { this.popup() }
+                            // Get the size of the content
+                            .onSizeChanged {
+                                popupContentSize = it
+                                updatePosition()
+                            }
+                            // Hide the popup while we can't position it correctly
+                            .alpha(if (canCalculatePosition) 1f else 0f),
+                        currentContent,
+                    )
                 }
             }
     }
@@ -424,18 +419,6 @@ private fun createFlags(
 //  to Popup
 internal val LocalPopupTestTag = compositionLocalOf { "DEFAULT_TEST_TAG" }
 
-/**
- * CompositionLocal used to track the immediate parent [PopupLayout]. This is essential for
- * determining if a [Popup] is nested within another [Popup], which in turn affects the coordinate
- * system used for positioning with the [WindowManager].
- *
- * We use a dedicated CompositionLocal instead of overriding [LocalView] to avoid issues with
- * components like Material Ripple, which expect [LocalView] to provide a standard [View] or
- * [ViewGroup] capable of accepting [View] children, something [PopupLayout] (as an
- * [AbstractComposeView]) does not support.
- */
-internal val LocalIsInPopupLayout = compositionLocalOf { false }
-
 @Composable
 internal fun PopupTestTag(tag: String, content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalPopupTestTag provides tag, content = content)
@@ -488,7 +471,6 @@ internal class PopupLayout(
     density: Density,
     initialPositionProvider: PopupPositionProvider,
     popupId: UUID,
-    private val isNested: Boolean,
     private val popupLayoutHelper: PopupLayoutHelper =
         if (Build.VERSION.SDK_INT >= 29) {
             PopupLayoutHelperImpl29()
@@ -764,9 +746,9 @@ internal class PopupLayout(
         val windowSize =
             getVisibleDisplayBounds().let { IntSize(width = it.width, height = it.height) }
 
-        var absolutePopupPosition = IntOffset.Zero
+        var popupPosition = IntOffset.Zero
         snapshotStateObserver.observeReads(this, onCommitAffectingPopupPosition) {
-            absolutePopupPosition =
+            popupPosition =
                 positionProvider.calculatePosition(
                     parentBounds,
                     windowSize,
@@ -775,20 +757,8 @@ internal class PopupLayout(
                 )
         }
 
-        // Get the on-screen location of the window this popup is attached to.
-        val parentLocation = IntArray(2)
-        composeView.getLocationOnScreen(parentLocation)
-
-        if (isNested) {
-            // Nested Popup: WindowManager expects absolute screen coordinates.
-            params.x = absolutePopupPosition.x
-            params.y = absolutePopupPosition.y
-        } else {
-            // Popup in Activity or Dialog: WindowManager expects coordinates
-            // relative to the parent window's origin.
-            params.x = absolutePopupPosition.x - parentLocation[0]
-            params.y = absolutePopupPosition.y - parentLocation[1]
-        }
+        params.x = popupPosition.x
+        params.y = popupPosition.y
 
         if (properties.excludeFromSystemGesture) {
             // Resolve conflict with gesture navigation back when dragging this handle view on the

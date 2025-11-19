@@ -29,14 +29,12 @@ import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_MIN
 import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_SEC
 import androidx.compose.remote.core.RemoteContext.FLOAT_WEEK_DAY
 import androidx.compose.remote.core.operations.Utils
-import androidx.compose.remote.core.operations.utilities.ImageScaling
 import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
 import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope
 import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.state.AnimatedRemoteFloat
-import androidx.compose.remote.creation.compose.state.MutableRemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.ui.geometry.CornerRadius
@@ -88,7 +86,6 @@ public open class RemoteCanvasDrawScope(
     override val drawContext: DrawContext = drawScope.drawContext,
     override val layoutDirection: LayoutDirection = drawScope.layoutDirection,
 ) : RemoteDrawScope {
-
     public fun drawCircle(
         color: Color,
         radius: RemoteFloat = remote.component.height / 2f,
@@ -210,17 +207,17 @@ public open class RemoteCanvasDrawScope(
             }
 
             public fun Seconds(): RemoteFloat {
-                if (state is NoRemoteCompose) { // in Compose local
+                if (false) { // in Compose local
                     state.time.value
                 }
                 return RemoteFloat(FLOAT_TIME_IN_SEC)
             }
 
             public val time: Long
-                get() = if (state is NoRemoteCompose) state.time.value else 0L
+                get() = if (false) state.time.value else 0L
 
             public fun ContinuousSec(): RemoteFloat {
-                if (state is NoRemoteCompose) {
+                if (false) {
                     state.time.value
                 }
                 return RemoteFloat(FLOAT_CONTINUOUS_SEC)
@@ -282,23 +279,15 @@ public open class RemoteCanvasDrawScope(
             step: Float = 1f,
             content: RemoteCanvasDrawScope.(RemoteFloat) -> Unit,
         ) {
-            if (drawScope.drawContext.canvas.nativeCanvas is RecordingCanvas) {
-                val loopIndex = remoteComposeCreationState.document.addFloatConstant(0f)
-                remoteComposeCreationState.document.startLoop(
-                    Utils.idFromNan(loopIndex),
-                    from,
-                    step,
-                    until,
-                )
-                content.invoke(remoteDrawScope, RemoteFloat(loopIndex))
-                remoteComposeCreationState.document.endLoop()
-            } else {
-                var loopIndex = from
-                while (loopIndex < until) {
-                    content.invoke(remoteDrawScope, RemoteFloat(loopIndex))
-                    loopIndex += step
-                }
-            }
+            val loopIndex = remoteComposeCreationState.document.addFloatConstant(0f)
+            remoteComposeCreationState.document.startLoop(
+                Utils.idFromNan(loopIndex),
+                from,
+                step,
+                until,
+            )
+            content.invoke(remoteDrawScope, RemoteFloat(loopIndex))
+            remoteComposeCreationState.document.endLoop()
         }
     }
 
@@ -427,7 +416,7 @@ public open class RemoteCanvasDrawScope(
     ) {
         val right = ofAdd(topLeft.x, size.width)
         val bottom = ofAdd(topLeft.y, size.height)
-        drawScope.remoteDrawRect(
+        remoteDrawRect(
             RemoteBrush.fromComposeUi(brush),
             topLeft.x,
             topLeft.y,
@@ -442,21 +431,21 @@ public open class RemoteCanvasDrawScope(
 
     public fun drawRect(
         brush: RemoteBrush,
-        topLeft: ROffset = Offset.Zero,
-        size: RSize = RSize(remote.component.width, remote.component.height),
+        topLeft: RemoteOffset = RemoteOffset.Zero,
+        size: RemoteSize = RemoteSize(remote.component.width, remote.component.height),
         alpha: Float = 1f,
         style: DrawStyle = Fill,
         colorFilter: ColorFilter? = null,
         blendMode: BlendMode = DefaultBlendMode,
     ) {
-        val right = ofAdd(topLeft.x, size.width)
-        val bottom = ofAdd(topLeft.y, size.height)
-        drawScope.remoteDrawRect(
+        val right = topLeft.x + size.width
+        val bottom = topLeft.y + size.height
+        remoteDrawRect(
             brush,
-            topLeft.x,
-            topLeft.y,
-            right,
-            bottom,
+            topLeft.x.toFloat(),
+            topLeft.y.toFloat(),
+            right.toFloat(),
+            bottom.toFloat(),
             alpha,
             style,
             colorFilter,
@@ -489,7 +478,7 @@ public open class RemoteCanvasDrawScope(
                 }
             }
 
-        drawScope.remoteDrawRect(
+        remoteDrawRect(
             brush,
             topLeft.x,
             topLeft.y,
@@ -519,7 +508,7 @@ public open class RemoteCanvasDrawScope(
     ) {
         val right = ofAdd(topLeft.x, size.width)
         val bottom = ofAdd(topLeft.y, size.height)
-        drawScope.remoteDrawRect(
+        remoteDrawRect(
             color,
             topLeft.x,
             topLeft.y,
@@ -546,69 +535,27 @@ public open class RemoteCanvasDrawScope(
         blendMode: BlendMode = DefaultBlendMode,
         filterQuality: FilterQuality = DefaultFilterQuality,
     ) {
-        if (drawContext.canvas.nativeCanvas is RecordingCanvas) {
-            val srcR = ofAdd(srcOffset.x, srcSize.width)
-            val srcB = ofAdd(srcOffset.y, srcSize.height)
-            val dstR = ofAdd(dstOffset.x, dstSize.width)
-            val dstB = ofAdd(dstOffset.y, dstSize.height)
+        val srcR = ofAdd(srcOffset.x, srcSize.width)
+        val srcB = ofAdd(srcOffset.y, srcSize.height)
+        val dstR = ofAdd(dstOffset.x, dstSize.width)
+        val dstB = ofAdd(dstOffset.y, dstSize.height)
 
-            val iScaleFactor =
-                if (scaleFactor is RemoteFloat) scaleFactor.internalAsFloat()
-                else scaleFactor.toFloat()
-            drawScope.remoteDrawScaledBitmap(
-                image.asAndroidBitmap(),
-                srcOffset.x,
-                srcOffset.y,
-                srcR,
-                srcB,
-                dstOffset.x,
-                dstOffset.y,
-                dstR,
-                dstB,
-                scaleType,
-                iScaleFactor,
-                description,
-            )
-        } else {
-            val srcR = ofAdd(srcOffset.x, srcSize.width)
-            val srcB = ofAdd(srcOffset.y, srcSize.height)
-            val dstR = ofAdd(dstOffset.x, dstSize.width)
-            val dstB = ofAdd(dstOffset.y, dstSize.height)
-            val iScaleFactor =
-                if (scaleFactor is RemoteFloat) scaleFactor.internalAsFloat()
-                else scaleFactor.toFloat()
-            val scale =
-                ImageScaling(
-                    srcOffset.x,
-                    srcOffset.y,
-                    srcR,
-                    srcB,
-                    dstOffset.x,
-                    dstOffset.y,
-                    dstR,
-                    dstB,
-                    scaleType,
-                    iScaleFactor,
-                )
-            val size =
-                IntSize(
-                    (scale.mFinalDstRight - scale.mFinalDstLeft).toInt(),
-                    (scale.mFinalDstBottom - scale.mFinalDstTop).toInt(),
-                )
-
-            clipRect(dstOffset.x, dstOffset.y, dstR, dstB) {
-                drawImage(
-                    image = image,
-                    srcOffset = IntOffset(srcOffset.x.toInt(), srcOffset.y.toInt()),
-                    srcSize = IntSize(srcSize.width.toInt(), srcSize.height.toInt()),
-                    dstOffset = IntOffset(scale.mFinalDstLeft.toInt(), scale.mFinalDstTop.toInt()),
-                    dstSize = size,
-                    colorFilter = colorFilter,
-                    blendMode = blendMode,
-                    filterQuality = filterQuality,
-                )
-            }
-        }
+        val iScaleFactor =
+            if (scaleFactor is RemoteFloat) scaleFactor.internalAsFloat() else scaleFactor.toFloat()
+        remoteDrawScaledBitmap(
+            image.asAndroidBitmap(),
+            srcOffset.x,
+            srcOffset.y,
+            srcR,
+            srcB,
+            dstOffset.x,
+            dstOffset.y,
+            dstR,
+            dstB,
+            scaleType,
+            iScaleFactor,
+            description,
+        )
     }
 
     override fun drawImage(
@@ -692,34 +639,21 @@ public open class RemoteCanvasDrawScope(
         colorFilter: ColorFilter?,
         blendMode: BlendMode,
     ) {
-        if (drawContext.canvas.nativeCanvas is RecordingCanvas) {
-            val right = ofAdd(topLeft.x, size.width)
-            val bottom = ofAdd(topLeft.y, size.height)
+        val right = ofAdd(topLeft.x, size.width)
+        val bottom = ofAdd(topLeft.y, size.height)
 
-            drawScope.remoteDrawRoundRect(
-                brush,
-                topLeft.x,
-                topLeft.y,
-                right,
-                bottom,
-                cornerRadius,
-                alpha,
-                style,
-                colorFilter,
-                blendMode,
-            )
-        } else {
-            drawScope.drawRoundRect(
-                brush.toComposeUi(),
-                topLeft,
-                size,
-                cornerRadius,
-                alpha,
-                style,
-                colorFilter,
-                blendMode,
-            )
-        }
+        remoteDrawRoundRect(
+            brush,
+            topLeft.x,
+            topLeft.y,
+            right,
+            bottom,
+            cornerRadius,
+            alpha,
+            style,
+            colorFilter,
+            blendMode,
+        )
     }
 
     public fun drawRoundRect(
@@ -749,23 +683,12 @@ public open class RemoteCanvasDrawScope(
             val right = ofAdd(topLeft.x, size.width)
             val bottom = ofAdd(topLeft.y, size.height)
 
-            drawScope.remoteDrawRoundRect(
+            remoteDrawRoundRect(
                 brush,
                 topLeft.x,
                 topLeft.y,
                 right,
                 bottom,
-                cornerRadius,
-                alphaValue,
-                style,
-                colorFilter,
-                blendMode,
-            )
-        } else {
-            drawScope.drawRoundRect(
-                brush.toComposeUi(),
-                topLeft,
-                size,
                 cornerRadius,
                 alphaValue,
                 style,
@@ -785,34 +708,21 @@ public open class RemoteCanvasDrawScope(
         colorFilter: ColorFilter?,
         blendMode: BlendMode,
     ) {
-        if (drawContext.canvas.nativeCanvas is RecordingCanvas) {
-            val right = ofAdd(topLeft.x, size.width)
-            val bottom = ofAdd(topLeft.y, size.height)
+        val right = ofAdd(topLeft.x, size.width)
+        val bottom = ofAdd(topLeft.y, size.height)
 
-            drawScope.remoteDrawRoundRect(
-                RemoteBrush.fromComposeUi(brush),
-                topLeft.x,
-                topLeft.y,
-                right,
-                bottom,
-                cornerRadius,
-                alpha,
-                style,
-                colorFilter,
-                blendMode,
-            )
-        } else {
-            drawScope.drawRoundRect(
-                brush,
-                topLeft,
-                size,
-                cornerRadius,
-                alpha,
-                style,
-                colorFilter,
-                blendMode,
-            )
-        }
+        remoteDrawRoundRect(
+            RemoteBrush.fromComposeUi(brush),
+            topLeft.x,
+            topLeft.y,
+            right,
+            bottom,
+            cornerRadius,
+            alpha,
+            style,
+            colorFilter,
+            blendMode,
+        )
     }
 
     override fun drawText(
@@ -922,7 +832,7 @@ public open class RemoteCanvasDrawScope(
         val right = ofAdd(topLeft.x, size.width)
         val bottom = ofAdd(topLeft.y, size.height)
 
-        drawScope.remoteDrawRoundRect(
+        remoteDrawRoundRect(
             color,
             topLeft.x,
             topLeft.y,
@@ -972,7 +882,7 @@ public open class RemoteCanvasDrawScope(
         val right = ofAdd(topLeft.x, size.width)
         val bottom = ofAdd(topLeft.y, size.height)
 
-        drawScope.remoteDrawOval(
+        remoteDrawOval(
             RemoteBrush.fromComposeUi(brush),
             topLeft.x,
             topLeft.y,
@@ -997,7 +907,7 @@ public open class RemoteCanvasDrawScope(
         val right = ofAdd(topLeft.x, size.width)
         val bottom = ofAdd(topLeft.y, size.height)
 
-        drawScope.remoteDrawOval(
+        remoteDrawOval(
             color,
             topLeft.x,
             topLeft.y,
@@ -1070,7 +980,7 @@ public open class RemoteCanvasDrawScope(
         colorFilter: ColorFilter?,
         blendMode: BlendMode,
     ) {
-        drawScope.remoteDrawPath(path, color, alpha, style, colorFilter, blendMode)
+        remoteDrawPath(path, color, alpha, style, colorFilter, blendMode)
     }
 
     override fun drawPath(
@@ -1096,30 +1006,18 @@ public open class RemoteCanvasDrawScope(
         colorFilter: ColorFilter?,
         blendMode: BlendMode,
     ) {
-        if (remoteComposeCreationState is NoRemoteCompose) {
-            // In Compose preview, let's at least draw one of the paths
-            // TODO: support tween path in compose preview
-            if (
-                tween.toFloat() == 0f || (tween is MutableRemoteFloat && tween.constantValue == 0f)
-            ) {
-                drawPath(path1, color, alpha, style, colorFilter, blendMode)
-            } else {
-                drawPath(path2, color, alpha, style, colorFilter, blendMode)
-            }
-        } else {
-            remoteDrawTweePath(
-                path1,
-                path2,
-                tween,
-                start,
-                stop,
-                color,
-                alpha,
-                style,
-                colorFilter,
-                blendMode,
-            )
-        }
+        remoteDrawTweePath(
+            path1,
+            path2,
+            tween,
+            start,
+            stop,
+            color,
+            alpha,
+            style,
+            colorFilter,
+            blendMode,
+        )
     }
 
     override fun drawAnchoredText(

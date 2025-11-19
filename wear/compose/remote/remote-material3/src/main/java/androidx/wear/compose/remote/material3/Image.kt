@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
 import android.annotation.SuppressLint
 import android.graphics.Paint
-import android.os.Build
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
@@ -39,7 +38,6 @@ import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rememberRemoteDpValue
 import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 
@@ -163,27 +161,20 @@ private fun FallbackAvatar(
 @SuppressLint("RestrictedApiAndroidX")
 private fun BackgroundOverlay(modifier: RemoteModifier, overlayColor: RemoteColor) {
     RemoteCanvas(modifier = modifier.clip(ImageDefaults.backgroundShape())) {
-        val canvas = drawContext.canvas.nativeCanvas
         val paint =
             RemotePaint().apply {
                 remoteColor = overlayColor
                 style = Paint.Style.FILL
             }
-        if (canvas is RecordingCanvas) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                canvas.drawRect(0f, 0f, size.width, size.height, paint)
-                return@RemoteCanvas
-            }
-            canvas.drawRoundRect(
-                0f,
-                0f,
-                size.width,
-                size.height,
-                ImageDefaults.BACKGROUND_CORNER_RADIUS_DP.toPx(),
-                ImageDefaults.BACKGROUND_CORNER_RADIUS_DP.toPx(),
-                paint,
-            )
-        }
+        canvas.drawRoundRect(
+            0f,
+            0f,
+            remote.component.width,
+            remote.component.height,
+            ImageDefaults.BACKGROUND_CORNER_RADIUS_DP.toPx(),
+            ImageDefaults.BACKGROUND_CORNER_RADIUS_DP.toPx(),
+            paint,
+        )
     }
 }
 

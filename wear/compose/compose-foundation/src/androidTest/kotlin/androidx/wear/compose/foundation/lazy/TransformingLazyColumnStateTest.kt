@@ -34,6 +34,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState.Companion.OffsetToTriggerInitialPin
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
@@ -66,7 +67,7 @@ class TransformingLazyColumnStateTest {
         lateinit var state: TransformingLazyColumnState
         rule.setContent { state = rememberTransformingLazyColumnState() }
         assertThat(state.anchorItemIndex).isEqualTo(0)
-        assertThat(state.anchorItemScrollOffset).isEqualTo(Int.MIN_VALUE / 2)
+        assertThat(state.anchorItemScrollOffset).isEqualTo(OffsetToTriggerInitialPin)
     }
 
     @Test

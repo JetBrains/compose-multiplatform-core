@@ -44,12 +44,12 @@ import androidx.core.graphics.withMatrix
 import androidx.graphics.CanvasBufferedRenderer
 import androidx.graphics.surface.SurfaceControlCompat
 import androidx.hardware.SyncFenceCompat
+import androidx.ink.authoring.ExperimentalCustomShapeWorkflowApi
 import androidx.ink.authoring.ExperimentalLatencyDataApi
+import androidx.ink.authoring.InProgressShape
+import androidx.ink.authoring.InProgressShapeRenderer
 import androidx.ink.authoring.InProgressStrokeId
-import androidx.ink.authoring.InkInProgressShape
-import androidx.ink.authoring.InkInProgressShapeRenderer
 import androidx.ink.authoring.latency.LatencyData
-import androidx.ink.brush.ExperimentalInkCustomBrushApi
 import androidx.ink.geometry.MutableBox
 import java.util.concurrent.Executor
 import java.util.concurrent.RejectedExecutionException
@@ -75,11 +75,15 @@ import kotlin.math.floor
  */
 @Suppress("ObsoleteSdkInt") // TODO(b/262911421): Should not need to suppress.
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-@OptIn(ExperimentalLatencyDataApi::class, ExperimentalInkCustomBrushApi::class)
-internal class CanvasInProgressStrokesRenderHelperV33(
+@OptIn(ExperimentalLatencyDataApi::class, ExperimentalCustomShapeWorkflowApi::class)
+internal class CanvasInProgressStrokesRenderHelperV33<
+    ShapeSpecT : Any,
+    InProgressShapeT : InProgressShape<ShapeSpecT, CompletedShapeT>,
+    CompletedShapeT : Any,
+>(
     private val mainView: ViewGroup,
-    private val callback: InProgressStrokesRenderHelper.Callback,
-    private val renderer: InkInProgressShapeRenderer,
+    private val callback: InProgressStrokesRenderHelper.Callback<CompletedShapeT>,
+    private val renderer: InProgressShapeRenderer<InProgressShapeT>,
     private val uiThreadExecutor: ScheduledExecutor =
         Looper.getMainLooper().let { looper ->
             ScheduledExecutorImpl(looper.thread, Handler(looper))
@@ -90,7 +94,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
                 it.start()
                 ScheduledExecutorImpl(it, Handler(it.looper))
             },
-) : InProgressStrokesRenderHelper {
+) : InProgressStrokesRenderHelper<ShapeSpecT, InProgressShapeT, CompletedShapeT> {
 
     override val contentsPreservedBetweenDraws = true
 
@@ -220,7 +224,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
 
     @WorkerThread
     override fun drawInModifiedRegion(
-        inProgressShape: InkInProgressShape,
+        inProgressShape: InProgressShapeT,
         strokeToMainViewTransform: Matrix,
     ) {
         currentViewport?.drawInModifiedRegion(inProgressShape, strokeToMainViewTransform)
@@ -233,7 +237,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
 
     @UiThread
     override fun requestStrokeCohortHandoffToHwui(
-        handingOff: Map<InProgressStrokeId, FinishedStroke>
+        handingOff: Map<InProgressStrokeId, FinishedStroke<CompletedShapeT>>
     ) {
         currentViewport?.requestHandoff(handingOff)
     }
@@ -671,7 +675,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
 
         @WorkerThread
         fun drawInModifiedRegion(
-            inProgressShape: InkInProgressShape,
+            inProgressShape: InProgressShapeT,
             strokeToMainViewTransform: Matrix,
         ) {
             val canvas = checkNotNull(renderThreadState.offScreenCanvas)
@@ -710,7 +714,7 @@ internal class CanvasInProgressStrokesRenderHelperV33(
         }
 
         @UiThread
-        fun requestHandoff(strokeCohort: Map<InProgressStrokeId, FinishedStroke>) {
+        fun requestHandoff(strokeCohort: Map<InProgressStrokeId, FinishedStroke<CompletedShapeT>>) {
             assertOnUiThread()
             val state = buffersState.get() ?: return
             check(state.inactiveIsReady) {

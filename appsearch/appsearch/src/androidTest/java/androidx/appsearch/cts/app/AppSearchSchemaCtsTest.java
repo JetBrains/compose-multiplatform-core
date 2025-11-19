@@ -613,20 +613,6 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    public void testInvalidStringPropertyConfigsJoinableValueType() {
-        // Setting cardinality to be REPEATED with joinable value type QUALIFIED_ID should fail.
-        final StringPropertyConfig.Builder builder =
-                new StringPropertyConfig.Builder("qualifiedId")
-                        .setCardinality(PropertyConfig.CARDINALITY_REPEATED)
-                        .setJoinableValueType(
-                                StringPropertyConfig.JOINABLE_VALUE_TYPE_QUALIFIED_ID);
-        IllegalStateException e =
-                assertThrows(IllegalStateException.class, () -> builder.build());
-        assertThat(e).hasMessageThat().contains(
-                "Cannot set JOINABLE_VALUE_TYPE_QUALIFIED_ID with CARDINALITY_REPEATED.");
-    }
-
-    @Test
     @SuppressWarnings({"StringConcatToTextBlock", "StringSplitter"}) // Not supported in Jetpack.
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMA_DESCRIPTION)  // setDescription
     public void testAppSearchSchema_toString() {

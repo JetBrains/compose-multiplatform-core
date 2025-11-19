@@ -20,13 +20,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.Button
-import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.creation.compose.action.HostAction
 import androidx.compose.remote.creation.compose.action.ValueChange
-import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
-import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
 import androidx.compose.remote.creation.compose.capture.rememberAsyncRemoteDocument
 import androidx.compose.remote.creation.compose.capture.rememberRemoteDocument
 import androidx.compose.remote.creation.compose.capture.rotate
@@ -62,7 +59,6 @@ import androidx.compose.remote.creation.compose.modifier.onTouchDown
 import androidx.compose.remote.creation.compose.modifier.onTouchUp
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.size
-import androidx.compose.remote.creation.compose.modifier.toComposeUi
 import androidx.compose.remote.creation.compose.modifier.width
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
@@ -77,6 +73,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
@@ -1080,13 +1077,15 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
 DATA_TEXT<42> = ""
 DATA_TEXT<43> = "Green"
 ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+  ComponentValue value 44 set to WIDTH of Component -2
+  ComponentValue value 45 set to HEIGHT of Component -2
   BOX [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
     MODIFIERS
     CANVAS [-5:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
       MODIFIERS
       CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-        ComponentValue value 44 set to WIDTH of Component -7
-        ComponentValue value 45 set to HEIGHT of Component -7
+        ComponentValue value 49 set to WIDTH of Component -7
+        ComponentValue value 50 set to HEIGHT of Component -7
     TEXT_LAYOUT [-8:-1] = [305.0, 364.0, 215.0, 97.0] VISIBLE (43:"Green")
       MODIFIERS
 """
@@ -1112,26 +1111,15 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
         modifier: RemoteModifier = RemoteModifier,
         tint: Color = Color.White,
     ) {
-        val captureMode = LocalRemoteComposeCreationState.current
-        if (true || captureMode is NoRemoteCompose) {
-            @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = modifier.toComposeUi().size(size),
-                tint = tint,
-            )
-        } else {
-            // note -- tint isn't applied in that codepath
-            val painter = rememberVectorPainter(icon)
-            val iconSizePx = with(LocalDensity.current) { size.toPx() }
-            val scale = iconSizePx / 24f
-            RemoteCanvas(modifier = RemoteModifier.size(size)) {
-                scale(scale, pivot = Offset.Zero) {
-                    // Suppressed because of https://buganizer.corp.google.com/issues/375131944
-                    @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
-                    with(painter.vector.root) { this@RemoteCanvas.drawScope.draw() }
-                }
+        // note -- tint isn't applied in that codepath
+        val painter = rememberVectorPainter(icon)
+        val iconSizePx = with(LocalDensity.current) { size.toPx() }
+        val scale = iconSizePx / 24f
+        RemoteCanvas(modifier = RemoteModifier.size(size)) {
+            scale(scale, pivot = Offset.Zero) {
+                // Suppressed because of https://buganizer.corp.google.com/issues/375131944
+                @Suppress("INVISIBLE_MEMBER", "INVISIBLE_REFERENCE")
+                with(painter.vector.root) { this@RemoteCanvas.drawScope.draw() }
             }
         }
     }
@@ -1143,18 +1131,23 @@ ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
             """
 DATA_TEXT<42> = ""
 ROOT [-2:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
+  ComponentValue value 43 set to WIDTH of Component -2
+  ComponentValue value 44 set to HEIGHT of Component -2
   BOX [-3:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
     MODIFIERS
     CANVAS [-5:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
       MODIFIERS
       CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 825.0, 825.0] VISIBLE
-        ComponentValue value 43 set to WIDTH of Component -7
-        ComponentValue value 44 set to HEIGHT of Component -7
+        ComponentValue value 48 set to WIDTH of Component -7
+        ComponentValue value 49 set to HEIGHT of Component -7
     ROW [-8:-1] = [368.5, 368.5, 88.0, 88.0] VISIBLE
       MODIFIERS
         BACKGROUND = [0.0, 0.0, 88.0, 88.0] color [0.0, 0.0, 1.0, 1.0] shape [0]
-      CANVAS_CONTENT [-10:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
-        BitmapData id 45 (88x88)
+      CANVAS [-10:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
+        MODIFIERS
+          WIDTH = 88.0
+          HEIGHT = 88.0
+        CANVAS_CONTENT [-12:-1] = [0.0, 0.0, 88.0, 88.0] VISIBLE
 """
         testLayout(result) {
             val colors =

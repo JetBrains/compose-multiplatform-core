@@ -17,8 +17,7 @@
 package androidx.xr.projected
 
 import android.content.Context
-import androidx.annotation.RestrictTo
-import androidx.xr.projected.ProjectedActivityCompat.Companion.create
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import androidx.xr.projected.platform.IProjectedInputEventListener
 import androidx.xr.projected.platform.IProjectedService
 import androidx.xr.projected.platform.ProjectedInputEvent
@@ -33,7 +32,7 @@ import kotlinx.coroutines.launch
  *
  * Use [create] to create an instance of this class. Use [close] to clear the instance.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@ExperimentalProjectedApi
 public class ProjectedActivityCompat
 private constructor(
     private val connection: ProjectedServiceConnection,

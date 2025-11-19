@@ -1073,6 +1073,14 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
              * {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_NONE}, so that it is not joinable.
              *
              * <p>At most, 64 properties can be set as joinable per schema.
+             *
+             * <!--@exportToFramework:ifJetpack()-->
+             * <p>Callers setting {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID} with
+             * {@link PropertyConfig#CARDINALITY_REPEATED} must retrieve
+             * {@link AppSearchSession#getFeatures()} and call
+             * {@link Features#isFeatureSupported(String)} for
+             * {@link Features#SCHEMA_JOINABLE_REPEATED_PROPERTIES}.
+             * <!--@exportToFramework:else()-->
              */
             @CanIgnoreReturnValue
             public @NonNull StringPropertyConfig.Builder setJoinableValueType(
@@ -1129,8 +1137,6 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
              *     indexing type {@link StringPropertyConfig#INDEXING_TYPE_NONE}.
              *     <li>Indexing type is not {@link StringPropertyConfig#INDEXING_TYPE_NONE} with
              *     tokenizer type {@link StringPropertyConfig#TOKENIZER_TYPE_NONE}.
-             *     <li>{@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID} is set to a
-             *     {@link PropertyConfig#CARDINALITY_REPEATED} property.
              *     <li>Deletion type other than
              *     {@link StringPropertyConfig#DELETE_PROPAGATION_TYPE_NONE} is used without setting
              *     {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
@@ -1144,10 +1150,6 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
                 } else {
                     Preconditions.checkState(mIndexingType != INDEXING_TYPE_NONE, "Cannot set "
                             + "TOKENIZER_TYPE_PLAIN with INDEXING_TYPE_NONE.");
-                }
-                if (mJoinableValueType == JOINABLE_VALUE_TYPE_QUALIFIED_ID) {
-                    Preconditions.checkState(mCardinality != CARDINALITY_REPEATED, "Cannot set "
-                            + "JOINABLE_VALUE_TYPE_QUALIFIED_ID with CARDINALITY_REPEATED.");
                 }
                 if (mDeletePropagationType != DELETE_PROPAGATION_TYPE_NONE) {
                     Preconditions.checkState(mJoinableValueType == JOINABLE_VALUE_TYPE_QUALIFIED_ID,

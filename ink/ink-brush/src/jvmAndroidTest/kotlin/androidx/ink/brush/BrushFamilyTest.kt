@@ -86,8 +86,6 @@ class BrushFamilyTest {
     @Test
     fun inputModelToString_returnsExpectedValues() {
         assertThat(BrushFamily.SPRING_MODEL.toString()).isEqualTo("SpringModel")
-        assertThat(BrushFamily.EXPERIMENTAL_RAW_POSITION_MODEL.toString())
-            .isEqualTo("ExperimentalRawPositionModel")
         assertThat(BrushFamily.EXPERIMENTAL_NAIVE_MODEL.toString())
             .isEqualTo("ExperimentalNaiveModel")
         assertThat(

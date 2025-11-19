@@ -16,8 +16,8 @@
 
 package androidx.xr.projected
 
-import androidx.annotation.RestrictTo
 import androidx.collection.MutableIntObjectMap
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import java.util.Objects
 
 /**
@@ -25,7 +25,7 @@ import java.util.Objects
  *
  * @property inputAction The action of this input event.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+@ExperimentalProjectedApi
 public class ProjectedInputEvent
 internal constructor(public val inputAction: ProjectedInputAction) {
 

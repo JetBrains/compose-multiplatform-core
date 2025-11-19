@@ -19,6 +19,7 @@ package androidx.appsearch.localstorage;
 import android.app.appsearch.SearchSpec;
 
 import androidx.annotation.RestrictTo;
+import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.flags.Flags;
 
 import com.google.android.icing.proto.IcingSearchEngineOptions;
@@ -291,6 +292,12 @@ public interface IcingOptionsConfig {
     int getEmbeddingIndexNumShards();
 
     /**
+     * Controls whether repeated fields may set joinable value type to
+     * {@link AppSearchSchema.StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
+     */
+    boolean enableRepeatedFieldJoins();
+
+    /**
      * Converts to an {@link IcingSearchEngineOptions} instance.
      *
      * @param baseDir base directory of the icing instance.
@@ -368,6 +375,7 @@ public interface IcingOptionsConfig {
                         Flags.enableSchemaTypeIdOptimization())
                 .setEnableOptimizeImprovements(
                         Flags.enableOptimizeImprovements())
+                .setEnableRepeatedFieldJoins(Flags.enableRepeatedFieldJoins())
                 .build();
     }
 }

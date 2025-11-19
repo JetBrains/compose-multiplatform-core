@@ -404,6 +404,7 @@ object ButtonGroupDefaults {
      *   appearance or preview the icon button in different states. Note that if `null` is provided,
      *   interactions will still happen internally.
      */
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun OverflowIndicator(
         menuState: ButtonGroupMenuState,
@@ -415,23 +416,33 @@ object ButtonGroupDefaults {
     ) {
         val contentDescription = getString(Strings.ButtonGroupMoreOptions)
 
-        FilledIconButton(
-            onClick = {
-                if (menuState.isShowing) {
-                    menuState.dismiss()
-                } else {
-                    menuState.show()
-                }
-            },
-            modifier = modifier,
-            enabled = enabled,
-            shape = shape,
-            colors = colors,
-            interactionSource = interactionSource,
-            content = {
-                Icon(imageVector = Icons.Filled.MoreVert, contentDescription = contentDescription)
-            },
-        )
+        TooltipBox(
+            positionProvider =
+                TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+            tooltip = { PlainTooltip { Text(contentDescription) } },
+            state = rememberTooltipState(),
+        ) {
+            FilledIconButton(
+                onClick = {
+                    if (menuState.isShowing) {
+                        menuState.dismiss()
+                    } else {
+                        menuState.show()
+                    }
+                },
+                modifier = modifier,
+                enabled = enabled,
+                shape = shape,
+                colors = colors,
+                interactionSource = interactionSource,
+                content = {
+                    Icon(
+                        imageVector = Icons.Filled.MoreVert,
+                        contentDescription = contentDescription,
+                    )
+                },
+            )
+        }
     }
 }
 

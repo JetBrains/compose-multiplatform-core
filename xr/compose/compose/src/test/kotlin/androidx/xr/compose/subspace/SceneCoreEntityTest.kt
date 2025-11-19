@@ -31,7 +31,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.layout.SubspaceModifier
+import androidx.xr.compose.subspace.layout.requiredSizeIn
 import androidx.xr.compose.subspace.layout.size
+import androidx.xr.compose.subspace.layout.sizeIn
 import androidx.xr.compose.subspace.layout.testTag
 import androidx.xr.compose.testing.SubspaceTestingActivity
 import androidx.xr.compose.testing.assertHeightIsEqualTo
@@ -55,27 +57,161 @@ class SceneCoreEntityTest {
     @get:Rule val composeTestRule = createAndroidComposeRule<SubspaceTestingActivity>()
 
     @Test
-    fun sceneCoreEntity_childrenAreComposed() {
+    fun sceneCoreEntity_noSizeModifierOrChildren_usesInitialIntrinsicSize() {
         composeTestRule.setContent {
             Subspace {
                 val session = checkNotNull(LocalSession.current)
-                SceneCoreEntity(factory = { GroupEntity.create(session, "TestEntity") }) {
-                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
-                        Text(text = "Panel 1")
-                    }
-                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
-                        Text(text = "Panel 2")
-                    }
+                SceneCoreEntity(
+                    factory = {
+                        PanelEntity.create(
+                            session,
+                            View(composeTestRule.activity),
+                            IntSize2d(100, 100),
+                            "TestPanel",
+                        )
+                    },
+                    sizeAdapter =
+                        SceneCoreEntitySizeAdapter(
+                            onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
+                            intrinsicSize = {
+                                IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
+                            },
+                        ),
+                    modifier = SubspaceModifier.testTag("mainPanel"),
+                )
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("mainPanel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(100.dp)
+            .assertHeightIsEqualTo(100.dp)
+    }
+
+    @Test
+    fun sceneCoreEntity_noSizeModifierOrChildrenOrIntrinsicSize_sizeIsZero() {
+        composeTestRule.setContent {
+            Subspace {
+                val session = checkNotNull(LocalSession.current)
+                SceneCoreEntity(
+                    factory = {
+                        PanelEntity.create(
+                            session,
+                            View(composeTestRule.activity),
+                            IntSize2d(100, 100),
+                            "TestPanel",
+                        )
+                    },
+                    sizeAdapter =
+                        SceneCoreEntitySizeAdapter(
+                            onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) }
+                        ),
+                    modifier = SubspaceModifier.testTag("mainPanel"),
+                )
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("mainPanel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(0.dp)
+            .assertHeightIsEqualTo(0.dp)
+    }
+
+    @Test
+    @Ignore("b/430291253 - behavior is different in presubmit after moving to targetSdk 35")
+    fun sceneCoreEntity_onStateChanges_factoryAndAndUpdateAreCalledAppropriately() {
+        var factoryCalled = 0
+        var updateCalled = 0
+        val cornerRadius = mutableStateOf(0.5f)
+
+        composeTestRule.setContent {
+            val session = LocalSession.current ?: error("No session")
+            Subspace {
+                SceneCoreEntity(
+                    factory = {
+                        factoryCalled += 1
+                        PanelEntity.create(
+                            session,
+                            View(composeTestRule.activity),
+                            IntSize2d(100, 100),
+                            "TestPanel",
+                        )
+                    },
+                    update = {
+                        updateCalled += 1
+                        it.cornerRadius = cornerRadius.value
+                    },
+                ) {
+                    SpatialPanel(SubspaceModifier.testTag("TestPanel")) {}
                 }
             }
         }
 
-        composeTestRule.onSubspaceNodeWithTag("panel1").assertExists()
-        composeTestRule.onSubspaceNodeWithTag("panel2").assertExists()
+        composeTestRule.waitForIdle()
+        assertThat(factoryCalled).isEqualTo(1)
+        assertThat(updateCalled).isEqualTo(1)
+        cornerRadius.value = 0.3f
+        composeTestRule.waitForIdle()
+        assertThat(factoryCalled).isEqualTo(1)
+        assertThat(updateCalled).isEqualTo(2)
+        cornerRadius.value = 0.2f
+        composeTestRule.waitForIdle()
+        assertThat(factoryCalled).isEqualTo(1)
+        assertThat(updateCalled).isEqualTo(3)
+        cornerRadius.value = 0.1f
+        composeTestRule.waitForIdle()
+        assertThat(factoryCalled).isEqualTo(1)
+        assertThat(updateCalled).isEqualTo(4)
     }
 
     @Test
-    fun sceneCoreEntity_childrenAreCentered() {
+    fun sceneCoreEntity_onStateChanges_updateReceivesStateChanges() {
+        val cornerRadius = mutableStateOf(0.5f)
+
+        composeTestRule.setContent {
+            val session = LocalSession.current ?: error("No session")
+            Subspace {
+                SceneCoreEntity(
+                    factory = {
+                        PanelEntity.create(
+                            session,
+                            View(composeTestRule.activity),
+                            IntSize2d(100, 100),
+                            "TestPanel",
+                        )
+                    },
+                    update = { it.cornerRadius = cornerRadius.value },
+                    modifier = SubspaceModifier.testTag("TestPanel"),
+                )
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("TestPanel").assertExists()
+        assertThat(
+                (composeTestRule
+                        .onSubspaceNodeWithTag("TestPanel")
+                        .fetchSemanticsNode()
+                        .semanticsEntity as PanelEntity)
+                    .cornerRadius
+            )
+            .isEqualTo(0.5f)
+
+        cornerRadius.value = 0.4f
+
+        assertThat(
+                (composeTestRule
+                        .onSubspaceNodeWithTag("TestPanel")
+                        .fetchSemanticsNode()
+                        .semanticsEntity as PanelEntity)
+                    .cornerRadius
+            )
+            .isEqualTo(0.4f)
+    }
+
+    @Test
+    fun sceneCoreEntity_withChildren_childrenAreCentered() {
         composeTestRule.setContent {
             Subspace {
                 val session = checkNotNull(LocalSession.current)
@@ -104,7 +240,206 @@ class SceneCoreEntityTest {
     }
 
     @Test
-    fun sceneCoreEntity_size_modifierSizeIsAppliedToEntity() {
+    fun sceneCoreEntity_withChildren_childrenAreComposed() {
+        composeTestRule.setContent {
+            Subspace {
+                val session = checkNotNull(LocalSession.current)
+                SceneCoreEntity(factory = { GroupEntity.create(session, "TestEntity") }) {
+                    SpatialPanel(SubspaceModifier.testTag("panel1").size(50.dp)) {
+                        Text(text = "Panel 1")
+                    }
+                    SpatialPanel(SubspaceModifier.testTag("panel2").size(50.dp)) {
+                        Text(text = "Panel 2")
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("panel1").assertExists()
+        composeTestRule.onSubspaceNodeWithTag("panel2").assertExists()
+    }
+
+    @Test
+    fun sceneCoreEntity_withChildren_respectsBoundsWhenIntrinsicIsOutOfBounds() {
+        // A mutable state to control the intrinsic size for recomposition.
+        var intrinsicSize by mutableStateOf(IntSize2d(200, 200))
+
+        composeTestRule.setContent {
+            Subspace {
+                val session = checkNotNull(LocalSession.current)
+                SceneCoreEntity(
+                    factory = {
+                        PanelEntity.create(
+                            session,
+                            View(composeTestRule.activity),
+                            // The initial size is larger than the max constraint.
+                            IntSize2d(200, 200),
+                            "TestPanel",
+                        )
+                    },
+                    sizeAdapter =
+                        SceneCoreEntitySizeAdapter(
+                            onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
+                            // The intrinsic size is controlled by the mutable state.
+                            intrinsicSize = {
+                                IntVolumeSize(intrinsicSize.width, intrinsicSize.height, 0)
+                            },
+                        ),
+                    // Apply constraints that are smaller than the initial intrinsic size.
+                    modifier =
+                        SubspaceModifier.sizeIn(
+                                minWidth = 50.dp,
+                                minHeight = 50.dp,
+                                maxWidth = 100.dp,
+                                maxHeight = 100.dp,
+                            )
+                            .testTag("mainPanel"),
+                ) {
+                    // Add a child to ensure constraints are respected in a hierarchy.
+                    SpatialBox(modifier = SubspaceModifier.size(10.dp)) {}
+                }
+            }
+        }
+
+        // 1. Test Upper Bound: Intrinsic size (200) is larger than max constraint (100).
+        // The final size should be clamped to the maximum constraint.
+        composeTestRule
+            .onSubspaceNodeWithTag("mainPanel")
+            .assertWidthIsEqualTo(100.dp)
+            .assertHeightIsEqualTo(100.dp)
+
+        // 2. Test Lower Bound: Update intrinsic size to be smaller than min constraint.
+        intrinsicSize = IntSize2d(20, 20)
+
+        // The final size should now be clamped to the minimum constraint.
+        composeTestRule
+            .onSubspaceNodeWithTag("mainPanel")
+            .assertWidthIsEqualTo(50.dp)
+            .assertHeightIsEqualTo(50.dp)
+    }
+
+    @Test
+    fun sceneCoreEntity_withChildren_respectsUpperBoundWhenChildIsLarger() {
+        composeTestRule.setContent {
+            Subspace {
+                val session = checkNotNull(LocalSession.current)
+                // Parent entity with a smaller intrinsic size than its max constraint.
+                SceneCoreEntity(
+                    factory = {
+                        PanelEntity.create(
+                            session,
+                            View(composeTestRule.activity),
+                            IntSize2d(80, 80),
+                            "ParentPanel",
+                        )
+                    },
+                    sizeAdapter =
+                        SceneCoreEntitySizeAdapter(
+                            onLayoutSizeChanged = {},
+                            intrinsicSize = { IntVolumeSize(80, 80, 0) },
+                        ),
+                    // Apply a max width constraint of 100dp.
+                    modifier =
+                        SubspaceModifier.sizeIn(maxWidth = 100.dp, maxHeight = 100.dp)
+                            .testTag("parentPanel"),
+                ) {
+                    // Child entity with an intrinsic size larger than the parent's max constraint.
+                    SceneCoreEntity(
+                        factory = {
+                            PanelEntity.create(
+                                session,
+                                View(composeTestRule.activity),
+                                IntSize2d(120, 120),
+                                "ChildPanel",
+                            )
+                        },
+                        modifier =
+                            SubspaceModifier.requiredSizeIn(maxWidth = 200.dp, maxHeight = 200.dp),
+                        sizeAdapter =
+                            SceneCoreEntitySizeAdapter(
+                                onLayoutSizeChanged = {},
+                                intrinsicSize = { IntVolumeSize(120, 120, 0) },
+                            ),
+                    )
+                }
+            }
+        }
+
+        // The parent's final size should be clamped to its maxWidth constraint (100.dp),
+        // even though its size was expanded by the larger child. Without the fix,
+        // the parent's width would incorrectly become 120.dp.
+        composeTestRule
+            .onSubspaceNodeWithTag("parentPanel")
+            .assertWidthIsEqualTo(100.dp)
+            .assertHeightIsEqualTo(100.dp)
+    }
+
+    @Test
+    fun sceneCoreEntity_withLargerChildren_matchesChildrenSize() {
+        composeTestRule.setContent {
+            Subspace {
+                val session = checkNotNull(LocalSession.current)
+                SceneCoreEntity(
+                    factory = {
+                        PanelEntity.create(
+                            session,
+                            View(composeTestRule.activity),
+                            IntSize2d(100, 100),
+                            "TestPanel",
+                        )
+                    },
+                    sizeAdapter =
+                        SceneCoreEntitySizeAdapter(
+                            onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
+                            intrinsicSize = {
+                                IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
+                            },
+                        ),
+                    modifier = SubspaceModifier.testTag("mainPanel"),
+                ) {
+                    SpatialPanel(SubspaceModifier.size(200.dp)) {}
+                }
+            }
+        }
+
+        composeTestRule
+            .onSubspaceNodeWithTag("mainPanel")
+            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
+            .assertWidthIsEqualTo(200.dp)
+            .assertHeightIsEqualTo(200.dp)
+    }
+
+    @Test
+    fun sceneCoreEntity_withSizeAdapterAndNoChildren_doesNotThrowException() {
+        composeTestRule.setContent {
+            Subspace {
+                val session = checkNotNull(LocalSession.current)
+                SceneCoreEntity(
+                    factory = {
+                        PanelEntity.create(
+                            session,
+                            View(composeTestRule.activity),
+                            IntSize2d(0, 0),
+                            "TestPanel",
+                        )
+                    },
+                    sizeAdapter =
+                        SceneCoreEntitySizeAdapter(
+                            onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
+                            intrinsicSize = {
+                                IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
+                            },
+                        ),
+                    modifier = SubspaceModifier.testTag("mainPanel"),
+                )
+            }
+        }
+
+        composeTestRule.onSubspaceNodeWithTag("mainPanel").assertExists()
+    }
+
+    @Test
+    fun sceneCoreEntity_withSizeModifier_sizeIsAppliedToEntity() {
         var testEntity by mutableStateOf<PanelEntity?>(null)
         var targetSize by mutableStateOf(500.dp)
 
@@ -164,7 +499,7 @@ class SceneCoreEntityTest {
     }
 
     @Test
-    fun sceneCoreEntity_size_modifierSizeChangesWithDensity() {
+    fun sceneCoreEntity_withSizeModifierAndDensityChange_sizeChangesWithDensity() {
         var testEntity by mutableStateOf<PanelEntity?>(null)
         var targetSize by mutableStateOf(500.dp)
 
@@ -225,7 +560,7 @@ class SceneCoreEntityTest {
     }
 
     @Test
-    fun sceneCoreEntity_size_usesInitialSizeIfNoModifierOrChildren() {
+    fun sceneCoreEntity_withSizeModifierSmallerThanIntrinsic_respectsModifierConstraints() {
         composeTestRule.setContent {
             Subspace {
                 val session = checkNotNull(LocalSession.current)
@@ -234,22 +569,25 @@ class SceneCoreEntityTest {
                         PanelEntity.create(
                             session,
                             View(composeTestRule.activity),
-                            IntSize2d(100, 100),
+                            // This initial size is larger than the constraints that will be applied
+                            // by the modifier.
+                            IntSize2d(200, 200),
                             "TestPanel",
                         )
                     },
                     sizeAdapter =
                         SceneCoreEntitySizeAdapter(
                             onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
-                            intrinsicSize = {
-                                IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
-                            },
+                            intrinsicSize = { IntVolumeSize(200, 200, 200) },
                         ),
-                    modifier = SubspaceModifier.testTag("mainPanel"),
+                    // Apply constraints that are smaller than the intrinsic size.
+                    modifier = SubspaceModifier.size(100.dp).testTag("mainPanel"),
                 )
             }
         }
 
+        // The final size should match the constraints from the modifier, not the larger
+        // intrinsic size of the entity.
         composeTestRule
             .onSubspaceNodeWithTag("mainPanel")
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
@@ -258,37 +596,7 @@ class SceneCoreEntityTest {
     }
 
     @Test
-    fun sceneCoreEntity_size_isZeroIfNoModifierOrChildrenOrIntrinsicSize() {
-        composeTestRule.setContent {
-            Subspace {
-                val session = checkNotNull(LocalSession.current)
-                SceneCoreEntity(
-                    factory = {
-                        PanelEntity.create(
-                            session,
-                            View(composeTestRule.activity),
-                            IntSize2d(100, 100),
-                            "TestPanel",
-                        )
-                    },
-                    sizeAdapter =
-                        SceneCoreEntitySizeAdapter(
-                            onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) }
-                        ),
-                    modifier = SubspaceModifier.testTag("mainPanel"),
-                )
-            }
-        }
-
-        composeTestRule
-            .onSubspaceNodeWithTag("mainPanel")
-            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(0.dp)
-            .assertHeightIsEqualTo(0.dp)
-    }
-
-    @Test
-    fun sceneCoreEntity_size_usesInitialSizeIfChildrenAreSmaller() {
+    fun sceneCoreEntity_withSmallerChildren_usesInitialIntrinsicSize() {
         composeTestRule.setContent {
             Subspace {
                 val session = checkNotNull(LocalSession.current)
@@ -320,160 +628,5 @@ class SceneCoreEntityTest {
             .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
             .assertWidthIsEqualTo(100.dp)
             .assertHeightIsEqualTo(100.dp)
-    }
-
-    @Test
-    fun sceneCoreEntity_size_doesNotThrowExceptionIfSetterAndGetter() {
-        composeTestRule.setContent {
-            Subspace {
-                val session = checkNotNull(LocalSession.current)
-                SceneCoreEntity(
-                    factory = {
-                        PanelEntity.create(
-                            session,
-                            View(composeTestRule.activity),
-                            IntSize2d(0, 0),
-                            "TestPanel",
-                        )
-                    },
-                    sizeAdapter =
-                        SceneCoreEntitySizeAdapter(
-                            onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
-                            intrinsicSize = {
-                                IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
-                            },
-                        ),
-                    modifier = SubspaceModifier.testTag("mainPanel"),
-                )
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("mainPanel").assertExists()
-    }
-
-    @Test
-    fun sceneCoreEntity_size_matchesSizeOfChildrenIfLarger() {
-        composeTestRule.setContent {
-            Subspace {
-                val session = checkNotNull(LocalSession.current)
-                SceneCoreEntity(
-                    factory = {
-                        PanelEntity.create(
-                            session,
-                            View(composeTestRule.activity),
-                            IntSize2d(100, 100),
-                            "TestPanel",
-                        )
-                    },
-                    sizeAdapter =
-                        SceneCoreEntitySizeAdapter(
-                            onLayoutSizeChanged = { sizeInPixels = IntSize2d(it.width, it.height) },
-                            intrinsicSize = {
-                                IntVolumeSize(sizeInPixels.width, sizeInPixels.height, 0)
-                            },
-                        ),
-                    modifier = SubspaceModifier.testTag("mainPanel"),
-                ) {
-                    SpatialPanel(SubspaceModifier.size(200.dp)) {}
-                }
-            }
-        }
-
-        composeTestRule
-            .onSubspaceNodeWithTag("mainPanel")
-            .assertPositionInRootIsEqualTo(0.dp, 0.dp, 0.dp)
-            .assertWidthIsEqualTo(200.dp)
-            .assertHeightIsEqualTo(200.dp)
-    }
-
-    @Test
-    @Ignore("b/430291253 - behavior is different in presubmit after moving to targetSdk 35")
-    fun sceneCoreEntity_factoryAndUpdate_areCalledTheAppropriateNumberOfTimes() {
-        var factoryCalled = 0
-        var updateCalled = 0
-        val cornerRadius = mutableStateOf(0.5f)
-
-        composeTestRule.setContent {
-            val session = LocalSession.current ?: error("No session")
-            Subspace {
-                SceneCoreEntity(
-                    factory = {
-                        factoryCalled += 1
-                        PanelEntity.create(
-                            session,
-                            View(composeTestRule.activity),
-                            IntSize2d(100, 100),
-                            "TestPanel",
-                        )
-                    },
-                    update = {
-                        updateCalled += 1
-                        it.cornerRadius = cornerRadius.value
-                    },
-                ) {
-                    SpatialPanel(SubspaceModifier.testTag("TestPanel")) {}
-                }
-            }
-        }
-
-        composeTestRule.waitForIdle()
-        assertThat(factoryCalled).isEqualTo(1)
-        assertThat(updateCalled).isEqualTo(1)
-        cornerRadius.value = 0.3f
-        composeTestRule.waitForIdle()
-        assertThat(factoryCalled).isEqualTo(1)
-        assertThat(updateCalled).isEqualTo(2)
-        cornerRadius.value = 0.2f
-        composeTestRule.waitForIdle()
-        assertThat(factoryCalled).isEqualTo(1)
-        assertThat(updateCalled).isEqualTo(3)
-        cornerRadius.value = 0.1f
-        composeTestRule.waitForIdle()
-        assertThat(factoryCalled).isEqualTo(1)
-        assertThat(updateCalled).isEqualTo(4)
-    }
-
-    @Test
-    fun sceneCoreEntity_update_getsMutableStateChanges() {
-        val cornerRadius = mutableStateOf(0.5f)
-
-        composeTestRule.setContent {
-            val session = LocalSession.current ?: error("No session")
-            Subspace {
-                SceneCoreEntity(
-                    factory = {
-                        PanelEntity.create(
-                            session,
-                            View(composeTestRule.activity),
-                            IntSize2d(100, 100),
-                            "TestPanel",
-                        )
-                    },
-                    update = { it.cornerRadius = cornerRadius.value },
-                    modifier = SubspaceModifier.testTag("TestPanel"),
-                )
-            }
-        }
-
-        composeTestRule.onSubspaceNodeWithTag("TestPanel").assertExists()
-        assertThat(
-                (composeTestRule
-                        .onSubspaceNodeWithTag("TestPanel")
-                        .fetchSemanticsNode()
-                        .semanticsEntity as PanelEntity)
-                    .cornerRadius
-            )
-            .isEqualTo(0.5f)
-
-        cornerRadius.value = 0.4f
-
-        assertThat(
-                (composeTestRule
-                        .onSubspaceNodeWithTag("TestPanel")
-                        .fetchSemanticsNode()
-                        .semanticsEntity as PanelEntity)
-                    .cornerRadius
-            )
-            .isEqualTo(0.4f)
     }
 }

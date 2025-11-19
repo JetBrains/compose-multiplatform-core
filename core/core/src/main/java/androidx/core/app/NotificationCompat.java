@@ -8796,7 +8796,7 @@ public class NotificationCompat {
      * </pre>
      */
     public static final class ProjectedExtender implements Extender {
-        static final String EXTRA_PROJECTED_EXTENDER = "android.extender.projected";
+        static final String EXTRA_PROJECTED_EXTENDER = "android.projected.EXTENSIONS";
         static final String KEY_CONTENT_INTENT = "content_intent";
 
         private PendingIntent mContentIntent;
@@ -8824,13 +8824,13 @@ public class NotificationCompat {
         }
 
         /**
-         * Sets the {@link PendingIntent} to be fired when the notification is
-         * tapped on the Projected device. This is distinct from the notification's main
-         * {@link Notification#contentIntent}, which is typically fired when the
-         * notification is tapped on the host device (e.g., the phone).
+         * Sets the {@link PendingIntent} to be opened on the Projected device when the
+         * notification is tapped on the that device. This is distinct from the notification's
+         * main {@link Notification#contentIntent}, which is typically fired when the notification
+         * is tapped on the host device (e.g., the phone).
          *
-         * @param intent the {@link PendingIntent} to fire on tap.
-         * @return this {@code ProjectedExtender} object for chaining.
+         * @param intent the {@link PendingIntent} to fire on tap
+         * @return this {@code ProjectedExtender} object for chaining
          */
         public @NonNull ProjectedExtender setContentIntent(@Nullable PendingIntent intent) {
             mContentIntent = intent;
@@ -8841,7 +8841,7 @@ public class NotificationCompat {
          * Returns the {@link PendingIntent} to be fired when the notification is
          * tapped on the Projected device.
          *
-         * @return the {@link PendingIntent} to fire on tap, or null if not set.
+         * @return the {@link PendingIntent} to fire on tap, or null if not set
          */
         @Nullable
         public PendingIntent getContentIntent() {
@@ -8853,8 +8853,8 @@ public class NotificationCompat {
          * called by the {@link NotificationCompat.Builder#extend} method and should not
          * be called directly.
          *
-         * @param builder the notification builder to extend.
-         * @return the modified notification builder.
+         * @param builder the notification builder to extend
+         * @return the modified notification builder
          */
         @Override
         public NotificationCompat.@NonNull Builder extend(

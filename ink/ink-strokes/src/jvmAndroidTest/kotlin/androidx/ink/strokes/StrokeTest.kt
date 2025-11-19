@@ -334,9 +334,7 @@ class StrokeTest {
         val inputModelChangedBrush =
             originalBrush.copy(
                 family =
-                    originalBrush.family.copy(
-                        inputModel = BrushFamily.EXPERIMENTAL_RAW_POSITION_MODEL
-                    )
+                    originalBrush.family.copy(inputModel = BrushFamily.EXPERIMENTAL_NAIVE_MODEL)
             )
         val inputs = makeTestInputs()
         val originalStroke = Stroke(originalBrush, inputs)

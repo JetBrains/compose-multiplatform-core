@@ -1,7 +1,7 @@
 // Signature format: 4.0
 package androidx.xr.projected {
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ProjectedActivityCompat implements java.lang.AutoCloseable {
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedActivityCompat implements java.lang.AutoCloseable {
     method public void close();
     method public static suspend Object? create(android.content.Context context, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedActivityCompat>);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<androidx.xr.projected.ProjectedInputEvent> getProjectedInputEvents();
@@ -9,7 +9,7 @@ package androidx.xr.projected {
     field public static final androidx.xr.projected.ProjectedActivityCompat.Companion Companion;
   }
 
-  public static final class ProjectedActivityCompat.Companion {
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public static final class ProjectedActivityCompat.Companion {
     method public suspend Object? create(android.content.Context context, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedActivityCompat>);
   }
 
@@ -45,9 +45,13 @@ package androidx.xr.projected {
 
   public final class ProjectedDisplayController implements java.lang.AutoCloseable {
     method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void addLayoutParamsFlags(int flags);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.N) @androidx.xr.projected.experimental.ExperimentalProjectedApi public void addPresentationModeChangedListener(optional java.util.concurrent.Executor executor, java.util.function.Consumer<androidx.xr.projected.ProjectedDisplayController.PresentationModeFlags> listener);
+    method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.N) @androidx.xr.projected.experimental.ExperimentalProjectedApi public void addPresentationModeChangedListener(java.util.function.Consumer<androidx.xr.projected.ProjectedDisplayController.PresentationModeFlags> listener);
+    method @BytecodeOnly @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.N) @androidx.xr.projected.experimental.ExperimentalProjectedApi public static void addPresentationModeChangedListener$default(androidx.xr.projected.ProjectedDisplayController!, java.util.concurrent.Executor!, java.util.function.Consumer!, int, Object!);
     method public void close();
     method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) @androidx.xr.projected.experimental.ExperimentalProjectedApi public static suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
     method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void removeLayoutParamsFlags(int flags);
+    method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void removePresentationModeChangedListener(java.util.function.Consumer<androidx.xr.projected.ProjectedDisplayController.PresentationModeFlags> listener);
     field public static final androidx.xr.projected.ProjectedDisplayController.Companion Companion;
   }
 
@@ -55,17 +59,33 @@ package androidx.xr.projected {
     method @SuppressCompatibility @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) @androidx.xr.projected.experimental.ExperimentalProjectedApi public suspend Object? create(android.app.Activity activity, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDisplayController>);
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class ProjectedInputEvent {
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public static final class ProjectedDisplayController.PresentationMode {
+    field public static final androidx.xr.projected.ProjectedDisplayController.PresentationMode AUDIO_ON;
+    field public static final androidx.xr.projected.ProjectedDisplayController.PresentationMode.Companion Companion;
+    field public static final androidx.xr.projected.ProjectedDisplayController.PresentationMode VISUALS_ON;
+  }
+
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public static final class ProjectedDisplayController.PresentationMode.Companion {
+    property public androidx.xr.projected.ProjectedDisplayController.PresentationMode AUDIO_ON;
+    property public androidx.xr.projected.ProjectedDisplayController.PresentationMode VISUALS_ON;
+  }
+
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public static final class ProjectedDisplayController.PresentationModeFlags {
+    method public boolean hasPresentationMode(androidx.xr.projected.ProjectedDisplayController.PresentationMode presentationMode);
+    method public boolean hasPresentationMode(java.util.Set<androidx.xr.projected.ProjectedDisplayController.PresentationMode> presentationModes);
+  }
+
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedInputEvent {
     method @InaccessibleFromKotlin public androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction getInputAction();
     property public androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction inputAction;
   }
 
-  public static final class ProjectedInputEvent.ProjectedInputAction {
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public static final class ProjectedInputEvent.ProjectedInputAction {
     field public static final androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction.Companion Companion;
     field public static final androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction TOGGLE_APP_CAMERA;
   }
 
-  public static final class ProjectedInputEvent.ProjectedInputAction.Companion {
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public static final class ProjectedInputEvent.ProjectedInputAction.Companion {
     property public androidx.xr.projected.ProjectedInputEvent.ProjectedInputAction TOGGLE_APP_CAMERA;
   }
 

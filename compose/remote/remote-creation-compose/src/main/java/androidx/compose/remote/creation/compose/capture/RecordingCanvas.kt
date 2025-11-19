@@ -543,7 +543,6 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         document.drawRect(rect.left, rect.top, rect.right, rect.bottom)
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun drawOval(left: Float, top: Float, right: Float, bottom: Float, paint: Paint) {
         usePaint(paint)
         document.drawOval(left, top, right, bottom)
@@ -559,7 +558,6 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun drawRoundRect(
         left: Float,
         top: Float,
@@ -594,7 +592,6 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun drawLine(startX: Float, startY: Float, stopX: Float, stopY: Float, paint: Paint) {
         //        println("NRO drawLine")
         usePaint(paint)
@@ -647,7 +644,6 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun drawBitmap(bitmap: Bitmap, left: Float, top: Float, paint: Paint?) {
         // println("NRO drawBitmap 2")
         usePaint(paint!!)
@@ -672,7 +668,6 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun drawBitmap(bitmap: Bitmap, src: Rect?, dst: Rect, paint: Paint?) {
         // println("NRO drawBitmap 3 ")
         usePaint(paint!!)
@@ -1105,7 +1100,6 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         )
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun drawArc(
         left: Float,
         top: Float,
@@ -1158,7 +1152,6 @@ public open class RecordingCanvas(bitmap: Bitmap) : Canvas(bitmap) {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun drawCircle(cx: Float, cy: Float, radius: Float, paint: Paint) {
         //        println("NRO drawCircle ($cx, $cy)")
         usePaint(paint)

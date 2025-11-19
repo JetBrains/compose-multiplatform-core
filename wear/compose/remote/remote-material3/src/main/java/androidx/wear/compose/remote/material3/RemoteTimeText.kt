@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 @file:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.wear.compose.remote.material3
 
@@ -23,7 +24,6 @@ import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_HR
 import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_MIN
 import androidx.compose.remote.core.operations.DrawTextOnCircle
 import androidx.compose.remote.core.operations.TextFromFloat
-import androidx.compose.remote.creation.compose.capture.RecordingCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteCanvasDrawScope
@@ -36,7 +36,6 @@ import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.nativeCanvas
 
 /**
  * A remote composable for displaying the time and surrounding text, designed to curve along the top
@@ -94,7 +93,6 @@ private fun buildTimeTextString(
 private fun RemoteCanvasDrawScope.drawTimeText(text: RemoteString, color: RemoteColor) {
     val width = remote.component.width
     val height = remote.component.height
-    val canvas = drawContext.canvas.nativeCanvas
 
     val fontSize = 30f
     val textPaint =
@@ -104,19 +102,17 @@ private fun RemoteCanvasDrawScope.drawTimeText(text: RemoteString, color: Remote
             remoteColor = color
         }
 
-    if (canvas is RecordingCanvas) {
-        canvas.drawTextOnCircle(
-            text,
-            width / 2f,
-            height / 2f,
-            width / 2f - fontSize,
-            270f,
-            0f,
-            DrawTextOnCircle.Alignment.CENTER,
-            DrawTextOnCircle.Placement.INSIDE,
-            textPaint,
-        )
-    }
+    canvas.drawTextOnCircle(
+        text,
+        width / 2f,
+        height / 2f,
+        width / 2f - fontSize,
+        270f,
+        0f,
+        DrawTextOnCircle.Alignment.CENTER,
+        DrawTextOnCircle.Placement.INSIDE,
+        textPaint,
+    )
 }
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
