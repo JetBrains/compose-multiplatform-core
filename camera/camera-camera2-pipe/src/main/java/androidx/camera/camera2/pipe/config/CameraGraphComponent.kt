@@ -27,6 +27,7 @@ import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.Parameters
 import androidx.camera.camera2.pipe.Request
+import androidx.camera.camera2.pipe.RequestListeners
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.SurfaceTracker
 import androidx.camera.camera2.pipe.core.Threads
@@ -38,6 +39,7 @@ import androidx.camera.camera2.pipe.graph.Listener3A
 import androidx.camera.camera2.pipe.graph.StreamGraphImpl
 import androidx.camera.camera2.pipe.graph.SurfaceGraph
 import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
+import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
 import androidx.camera.camera2.pipe.internal.ImageSourceMap
@@ -110,6 +112,11 @@ internal abstract class SharedCameraGraphModules {
     abstract fun bindSurfaceTracker(surfaceGraph: SurfaceGraph): SurfaceTracker
 
     @Binds abstract fun bindCameraGraphParameters(parameters: CameraGraphParametersImpl): Parameters
+
+    @Binds
+    abstract fun bindCameraGraphListeners(
+        listeners: CameraGraphRequestListenersImpl
+    ): RequestListeners
 
     companion object {
         @CameraGraphScope

@@ -68,5 +68,5 @@ dependencies {
 }
 
 tasks.withType(KotlinCompile).configureEach {
-    it.friendPaths.from(configurations.friends.incoming.artifactView { }.files)
+    it.friendPaths.from(configurations.friends.incoming.files)
 }

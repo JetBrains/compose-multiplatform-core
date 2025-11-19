@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.xr.projected.R
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 
 /**
  * An Activity to display rationale and request permissions on the host display. See
@@ -51,6 +52,7 @@ import androidx.xr.projected.R
  */
 @Suppress("ForbiddenSuperClass")
 @RestrictTo(RestrictTo.Scope.LIBRARY)
+@OptIn(ExperimentalProjectedApi::class)
 public class RequestPermissionsOnHostActivity : AppCompatActivity() {
 
     private data class PermissionRequest(

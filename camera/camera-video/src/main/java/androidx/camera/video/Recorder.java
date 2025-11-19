@@ -772,7 +772,7 @@ public final class Recorder implements VideoOutput {
      * {@link Builder#setTargetVideoEncodingBitRate(int)} is not called.
      */
     public int getTargetVideoEncodingBitRate() {
-        return getObservableData(mMediaSpec).getVideoSpec().getBitrate().getLower();
+        return getObservableData(mMediaSpec).getVideoSpec().getBitrate();
     }
 
     /** Gets an {@link Observable} of the video encoder's supported bitrate range. */
@@ -3776,8 +3776,7 @@ public final class Recorder implements VideoOutput {
                         + " is not supported. Target bitrate must be greater than 0.");
             }
 
-            mMediaSpecBuilder.configureVideo(
-                    builder -> builder.setBitrate(new Range<>(bitrate, bitrate)));
+            mMediaSpecBuilder.configureVideo(builder -> builder.setBitrate(bitrate));
             return this;
         }
 

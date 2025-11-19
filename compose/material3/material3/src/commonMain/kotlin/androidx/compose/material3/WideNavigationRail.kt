@@ -317,9 +317,12 @@ private fun WideNavigationRailLayout(
 
                         val itemsPlaceables =
                             if (itemsCount > 0) mutableListOf<Placeable>() else null
+                        val itemExpandedMaxWidth =
+                            looseConstraints.maxWidth - ItemHorizontalPadding.roundToPx()
                         val itemMaxWidthConstraint =
-                            (if (expanded) looseConstraints.maxWidth else actualMinWidth)
-                                .coerceAtLeast(minimumA11ySize.roundToPx())
+                            (if (expanded) itemExpandedMaxWidth else actualMinWidth).coerceAtLeast(
+                                minimumA11ySize.roundToPx()
+                            )
                         val itemMaxHeightConstraint =
                             looseConstraints.maxHeight.coerceAtLeast(itemMinHeight.roundToPx())
                         var expandedItemMaxWidth = 0

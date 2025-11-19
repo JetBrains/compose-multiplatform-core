@@ -46,7 +46,7 @@ class CaptureLimiterTest {
             cameraGraphId = cameraGraphId,
             defaultParameters = emptyMap<Any, Any?>(),
             requiredParameters = emptyMap<Any, Any?>(),
-            graphListeners = listOf(),
+            requiredListeners = listOf(),
             listeners = listOf(captureLimiter),
             shutdownScope = testScope,
             dispatcher = testDispatcher,

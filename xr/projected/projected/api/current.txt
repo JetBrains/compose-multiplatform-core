@@ -11,6 +11,26 @@ package androidx.xr.projected {
     field public static final androidx.xr.projected.ProjectedContext INSTANCE;
   }
 
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedDeviceController {
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public static suspend Object? create(android.content.Context context, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDeviceController>);
+    method @InaccessibleFromKotlin public java.util.Set<androidx.xr.projected.ProjectedDeviceController.Capability> getCapabilities();
+    property public java.util.Set<androidx.xr.projected.ProjectedDeviceController.Capability> capabilities;
+    field public static final androidx.xr.projected.ProjectedDeviceController.Companion Companion;
+  }
+
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public static final class ProjectedDeviceController.Capability {
+    field public static final androidx.xr.projected.ProjectedDeviceController.Capability CAPABILITY_VISUAL_UI;
+    field public static final androidx.xr.projected.ProjectedDeviceController.Capability.Companion Companion;
+  }
+
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public static final class ProjectedDeviceController.Capability.Companion {
+    property public androidx.xr.projected.ProjectedDeviceController.Capability CAPABILITY_VISUAL_UI;
+  }
+
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public static final class ProjectedDeviceController.Companion {
+    method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public suspend Object? create(android.content.Context context, kotlin.coroutines.Continuation<? super androidx.xr.projected.ProjectedDeviceController>);
+  }
+
   public final class ProjectedDisplayController implements java.lang.AutoCloseable {
     method @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public void addLayoutParamsFlags(int flags);
     method public void close();
@@ -32,9 +52,9 @@ package @SuppressCompatibility androidx.xr.projected.experimental {
 
 }
 
-package androidx.xr.projected.permissions {
+package @SuppressCompatibility androidx.xr.projected.permissions {
 
-  public final class ProjectedPermissionsRequestParams {
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedPermissionsRequestParams {
     ctor public ProjectedPermissionsRequestParams(java.util.List<java.lang.String> permissions, String? rationale);
     method @InaccessibleFromKotlin public java.util.List<java.lang.String> getPermissions();
     method @InaccessibleFromKotlin public String? getRationale();
@@ -42,7 +62,7 @@ package androidx.xr.projected.permissions {
     property public String? rationale;
   }
 
-  public final class ProjectedPermissionsResultContract extends androidx.activity.result.contract.ActivityResultContract<java.util.List<? extends androidx.xr.projected.permissions.ProjectedPermissionsRequestParams>,java.util.Map<java.lang.String,? extends java.lang.Boolean>> {
+  @SuppressCompatibility @androidx.xr.projected.experimental.ExperimentalProjectedApi public final class ProjectedPermissionsResultContract extends androidx.activity.result.contract.ActivityResultContract<java.util.List<? extends androidx.xr.projected.permissions.ProjectedPermissionsRequestParams>,java.util.Map<java.lang.String,? extends java.lang.Boolean>> {
     ctor public ProjectedPermissionsResultContract();
     method @RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) public android.content.Intent createIntent(android.content.Context context, java.util.List<androidx.xr.projected.permissions.ProjectedPermissionsRequestParams> input);
     method public java.util.Map<java.lang.String,java.lang.Boolean> parseResult(int resultCode, android.content.Intent? intent);

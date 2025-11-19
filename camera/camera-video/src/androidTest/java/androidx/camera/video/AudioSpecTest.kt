@@ -41,8 +41,8 @@ class AudioSpecTest {
 
         assertThat(audioSpec.source).isEqualTo(AudioSpec.SOURCE_AUTO)
         assertThat(audioSpec.sourceFormat).isEqualTo(AudioSpec.SOURCE_FORMAT_AUTO)
-        assertThat(audioSpec.bitrate).isEqualTo(AudioSpec.BITRATE_RANGE_AUTO)
+        assertThat(audioSpec.bitrate).isEqualTo(AudioSpec.BITRATE_AUTO)
         assertThat(audioSpec.channelCount).isEqualTo(AudioSpec.CHANNEL_COUNT_AUTO)
-        assertThat(audioSpec.sampleRate).isEqualTo(AudioSpec.SAMPLE_RATE_RANGE_AUTO)
+        assertThat(audioSpec.sampleRate).isEqualTo(AudioSpec.SAMPLE_RATE_AUTO)
     }
 }

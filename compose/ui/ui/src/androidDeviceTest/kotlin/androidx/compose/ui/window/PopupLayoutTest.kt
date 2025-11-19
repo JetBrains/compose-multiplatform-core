@@ -338,6 +338,7 @@ class PopupLayoutTest {
                         initialPositionProvider = positionProvider,
                         popupId = UUID.randomUUID(),
                         popupLayoutHelper = popupLayoutHelper,
+                        isNested = false,
                     )
                     .also { layout = it }
             }

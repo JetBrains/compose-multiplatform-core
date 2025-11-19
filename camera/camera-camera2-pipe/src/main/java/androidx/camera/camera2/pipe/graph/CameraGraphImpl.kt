@@ -44,6 +44,7 @@ import androidx.camera.camera2.pipe.core.acquireToken
 import androidx.camera.camera2.pipe.core.acquireTokenAndSuspend
 import androidx.camera.camera2.pipe.core.tryAcquireToken
 import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
+import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
 import javax.inject.Inject
@@ -77,6 +78,7 @@ constructor(
     private val audioRestrictionController: AudioRestrictionController,
     override val id: CameraGraphId,
     override val parameters: CameraGraphParametersImpl,
+    override val listeners: CameraGraphRequestListenersImpl,
     private val sessionLock: SessionLock,
     @ForCameraGraph private val graphScope: CoroutineScope,
 ) : CameraGraph {
@@ -302,7 +304,14 @@ constructor(
     override fun toString(): String = id.toString()
 
     private fun createSessionFromToken(token: Token) =
-        CameraGraphSessionImpl(token, graphProcessor, controller3A, frameCaptureQueue, parameters)
+        CameraGraphSessionImpl(
+            token,
+            graphProcessor,
+            controller3A,
+            frameCaptureQueue,
+            parameters,
+            listeners,
+        )
 
     /**
      * Acquires a [SessionLock] token and executes the given code block. The code block(s) will

@@ -57,7 +57,6 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.util.ReflectionHelpers
@@ -126,7 +125,6 @@ class ProjectedDisplayControllerTest {
         }
 
     @Test
-    @OptIn(ExperimentalProjectedApi::class)
     fun addFlags_callsService() = launchTestProjectedDeviceActivity { projectedDeviceActivity ->
         runBlocking {
             projectedDisplayController = ProjectedDisplayController.create(projectedDeviceActivity)
@@ -139,7 +137,6 @@ class ProjectedDisplayControllerTest {
     }
 
     @Test
-    @OptIn(ExperimentalProjectedApi::class)
     fun removeFlags_callsService() = launchTestProjectedDeviceActivity { projectedDeviceActivity ->
         runBlocking {
             projectedDisplayController = ProjectedDisplayController.create(projectedDeviceActivity)
@@ -149,30 +146,6 @@ class ProjectedDisplayControllerTest {
         projectedDisplayController.removeLayoutParamsFlags(flags)
         verify(mockProjectedService).clearWindowFlags(flags)
     }
-
-    @Test
-    fun isDisplayCapable_serviceReturnsTrue_returnsTrue() =
-        launchTestProjectedDeviceActivity { projectedDeviceActivity ->
-            runBlocking {
-                projectedDisplayController =
-                    ProjectedDisplayController.create(projectedDeviceActivity)
-            }
-            whenever(mockProjectedService.isDisplayCapable()).thenReturn(true)
-
-            assertThat(projectedDisplayController.isDisplayCapable()).isTrue()
-        }
-
-    @Test
-    fun isDisplayCapable_serviceReturnsFalse_returnsFalse() =
-        launchTestProjectedDeviceActivity { projectedDeviceActivity ->
-            runBlocking {
-                projectedDisplayController =
-                    ProjectedDisplayController.create(projectedDeviceActivity)
-            }
-            whenever(mockProjectedService.isDisplayCapable()).thenReturn(false)
-
-            assertThat(projectedDisplayController.isDisplayCapable()).isFalse()
-        }
 
     @Test
     fun close_disconnectsConnection() =

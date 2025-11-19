@@ -17,7 +17,6 @@ package androidx.camera.video
 
 import android.media.AudioFormat
 import android.media.MediaRecorder
-import android.util.Range
 import androidx.annotation.IntDef
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -29,10 +28,10 @@ import java.util.Objects
 public class AudioSpec
 @JvmOverloads
 constructor(
-    public val bitrate: Range<Int> = BITRATE_RANGE_AUTO,
+    public val bitrate: Int = BITRATE_AUTO,
     @get:SourceFormat public val sourceFormat: Int = SOURCE_FORMAT_AUTO,
     @get:Source public val source: Int = SOURCE_AUTO,
-    public val sampleRate: Range<Int> = SAMPLE_RATE_RANGE_AUTO,
+    public val sampleRate: Int = SAMPLE_RATE_AUTO,
     @get:ChannelCount public val channelCount: Int = CHANNEL_COUNT_AUTO,
 ) {
     /** Returns a [Builder] instance with the same property values as this instance. */
@@ -72,18 +71,18 @@ constructor(
     /** The builder of the [AudioSpec]. */
     @RestrictTo(Scope.LIBRARY)
     public class Builder {
-        private var bitrate: Range<Int> = BITRATE_RANGE_AUTO
+        private var bitrate: Int = BITRATE_AUTO
         private var sourceFormat: Int = SOURCE_FORMAT_AUTO
         private var source: Int = SOURCE_AUTO
-        private var sampleRate: Range<Int> = SAMPLE_RATE_RANGE_AUTO
+        private var sampleRate: Int = SAMPLE_RATE_AUTO
         private var channelCount: Int = CHANNEL_COUNT_AUTO
 
         /**
-         * Sets the desired range of bitrates to be used by the encoder.
+         * Sets the desired bitrate to be used by the encoder.
          *
-         * If not set, defaults to [BITRATE_RANGE_AUTO].
+         * If not set, defaults to [BITRATE_AUTO].
          */
-        public fun setBitrate(bitrate: Range<Int>): Builder {
+        public fun setBitrate(bitrate: Int): Builder {
             this.bitrate = bitrate
             return this
         }
@@ -111,13 +110,11 @@ constructor(
         public fun setSource(@Source source: Int): Builder = apply { this.source = source }
 
         /**
-         * Sets the desired range of sample rates to be used by the encoder.
+         * Sets the desired sample rate to be used by the encoder.
          *
-         * If not set, defaults to [SAMPLE_RATE_RANGE_AUTO].
+         * If not set, defaults to [SAMPLE_RATE_AUTO].
          */
-        public fun setSampleRate(sampleRate: Range<Int>): Builder = apply {
-            this.sampleRate = sampleRate
-        }
+        public fun setSampleRate(sampleRate: Int): Builder = apply { this.sampleRate = sampleRate }
 
         /**
          * Sets the desired number of audio channels.
@@ -245,20 +242,20 @@ constructor(
         public const val SOURCE_VOICE_PERFORMANCE: Int = MediaRecorder.AudioSource.VOICE_PERFORMANCE
 
         /**
-         * Bitrate range representing no preference for bitrate.
+         * No preference for bitrate.
          *
          * Using this value with [AudioSpec.Builder.setBitrate] informs the device it should choose
          * any appropriate bitrate given the device and codec constraints.
          */
-        @JvmField public val BITRATE_RANGE_AUTO: Range<Int> = Range(0, Int.MAX_VALUE)
+        public const val BITRATE_AUTO: Int = 0
 
         /**
-         * Sample rate range representing no preference for sample rate.
+         * No preference for sample rate.
          *
          * Using this value with [AudioSpec.Builder.setSampleRate] informs the device it should
          * choose any appropriate sample rate given the device and codec constraints.
          */
-        @JvmField public val SAMPLE_RATE_RANGE_AUTO: Range<Int> = Range(0, Int.MAX_VALUE)
+        public const val SAMPLE_RATE_AUTO: Int = 0
 
         /**
          * An audio specification that corresponds to no audio.

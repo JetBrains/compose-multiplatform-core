@@ -140,6 +140,7 @@ package androidx.wear.watchfacepush {
 
   public final class WatchFacePushManagerFactory {
     method public static androidx.wear.watchfacepush.WatchFacePushManager createWatchFacePushManager(android.content.Context context);
+    method public static boolean isSupported();
     field public static final androidx.wear.watchfacepush.WatchFacePushManagerFactory INSTANCE;
   }
 

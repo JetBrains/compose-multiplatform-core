@@ -26,14 +26,13 @@ import androidx.build.checkapi.getBuiltBcvFileDirectory
 import androidx.build.checkapi.getRequiredCompatibilityApiFileFromDir
 import androidx.build.checkapi.shouldWriteVersionedApiFile
 import androidx.build.getDistributionDirectory
-import androidx.build.getLibraryByName
+import androidx.build.getLibraryClasspath
 import androidx.build.getSupportRootFolder
 import androidx.build.isWriteVersionedApiFilesEnabled
 import androidx.build.metalava.UpdateApiTask
 import androidx.build.uptodatedness.cacheEvenIfNoOutputs
 import androidx.build.version
 import com.android.utils.appendCapitalized
-import java.lang.IllegalStateException
 import kotlinx.validation.KlibDumpMetadata
 import kotlinx.validation.KotlinKlibExtractAbiTask
 import kotlinx.validation.KotlinKlibMergeAbiTask
@@ -43,8 +42,6 @@ import kotlinx.validation.toKlibTarget
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
@@ -108,8 +105,8 @@ class BinaryCompatibilityValidation(
         if (kotlinMultiplatformExtension.nativeTargets().isEmpty()) {
             return
         }
-        val runtimeClasspath: ConfigurableFileCollection =
-            project.files(project.prepareKlibValidationClasspath())
+        val runtimeClasspath: FileCollection =
+            project.getLibraryClasspath("kotlinCompilerEmbeddable")
         val projectAbiDir = project.getBcvFileDirectory().dir(NATIVE_SUFFIX)
         val currentIgnoreFile = projectAbiDir.file(IGNORE_FILE_NAME)
         val buildAbiDir = project.getBuiltBcvFileDirectory().map { it.dir(NATIVE_SUFFIX) }
@@ -186,7 +183,7 @@ class BinaryCompatibilityValidation(
         klibApiDir: Directory,
         klibExtractDir: Provider<Directory>,
         ignoreFile: RegularFile,
-        runtimeClasspath: ConfigurableFileCollection,
+        runtimeClasspath: FileCollection,
     ) =
         project.getRequiredCompatibilityAbiLocation(NATIVE_SUFFIX)?.let { requiredCompatFile ->
             val extractReleaseTask =
@@ -255,7 +252,7 @@ class BinaryCompatibilityValidation(
     private fun Project.updateKlibAbiTask(
         klibApiDir: Directory,
         mergedKlibFile: Provider<RegularFileProperty>,
-        runtimeClasspath: ConfigurableFileCollection,
+        runtimeClasspath: FileCollection,
     ) =
         project.tasks.register(
             UPDATE_NAME.appendCapitalized(NATIVE_SUFFIX),
@@ -278,7 +275,7 @@ class BinaryCompatibilityValidation(
     private fun Project.extractKlibAbiTask(
         klibApiDir: Directory,
         extractDir: Provider<Directory>,
-        runtimeClasspath: ConfigurableFileCollection,
+        runtimeClasspath: FileCollection,
     ) =
         project.tasks.register(EXTRACT_NAME, KotlinKlibExtractAbiTask::class.java) {
             it.strictValidation.set(HostManager.hostIsMac)
@@ -298,7 +295,7 @@ class BinaryCompatibilityValidation(
     /* Merge target specific dumps into single file located in [mergeDir] */
     private fun Project.generateAbiTask(
         mergeFile: Provider<RegularFile>,
-        runtimeClasspath: ConfigurableFileCollection,
+        runtimeClasspath: FileCollection,
     ) =
         project.tasks.register(GENERATE_NAME, KotlinKlibMergeAbiTask::class.java) {
             it.mergedApiFile.set(mergeFile)
@@ -309,7 +306,7 @@ class BinaryCompatibilityValidation(
     private fun Project.configureKlibTargets(
         mergeTask: TaskProvider<KotlinKlibMergeAbiTask>,
         abiBuildDir: Provider<Directory>,
-        runtimeClasspath: ConfigurableFileCollection,
+        runtimeClasspath: FileCollection,
     ) {
         val generatedDumps = objects.setProperty(KlibDumpMetadata::class.java)
         mergeTask.configure { it.dumps.addAll(generatedDumps) }
@@ -359,7 +356,7 @@ class BinaryCompatibilityValidation(
         compilation: KotlinCompilation<*>,
         target: KlibTarget,
         outputFileDir: Provider<Directory>,
-        runtimeClasspath: ConfigurableFileCollection,
+        runtimeClasspath: FileCollection,
     ): TaskProvider<KotlinKlibAbiBuildTask> {
         val buildTask =
             tasks.register(
@@ -393,12 +390,6 @@ private fun KotlinMultiplatformExtension.nativeTargets() =
 
 private fun KotlinNativeTarget.klibTargetName(): String =
     instantiateKlibTarget(targetName, konanTargetNameMapping[konanTarget.name]!!).toString()
-
-private fun Project.prepareKlibValidationClasspath(): Configuration {
-    return project.configurations.detachedConfiguration(
-        project.dependencies.create(getLibraryByName("kotlinCompilerEmbeddable"))
-    )
-}
 
 // Not ideal to have a list instead of a pattern to match but this is all the API supports right now
 // https://github.com/Kotlin/binary-compatibility-validator/issues/280

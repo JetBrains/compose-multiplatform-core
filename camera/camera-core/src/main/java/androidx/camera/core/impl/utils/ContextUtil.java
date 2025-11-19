@@ -35,36 +35,40 @@ public final class ContextUtil {
     private static final int DEVICE_ID_DEFAULT = 0;
 
     /**
-     * Gets the application context and preserves the attribution tag and device id.
+     * Gets the persistent application context.
+     *
+     * <p>The persistent application context preserves the attribution tag and the device ID of the
+     * provided {@link Context}.
+     *
+     * <p>The device ID of the returned {@link Context} will not be changed by the system.
      */
-    public static @NonNull Context getApplicationContext(@NonNull Context context) {
+    public static @NonNull Context getPersistentApplicationContext(@NonNull Context context) {
         Context resultContext  = context.getApplicationContext();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            int deviceIdContext = Api34Impl.getDeviceId(context);
-            int deviceIdResultContext = Api34Impl.getDeviceId(resultContext);
-            if (deviceIdContext != deviceIdResultContext) {
-                resultContext = Api34Impl.createDeviceContext(resultContext, deviceIdContext);
-            }
+            int deviceId = Api34Impl.getDeviceId(context);
+            // Call createDeviceContext even if the device IDs are the same. The device ID of a
+            // Context created by createDeviceContext with an explicit device ID will not be
+            // changed by the system when the foreground activity is switched to different display.
+            resultContext = Api34Impl.createDeviceContext(resultContext, deviceId);
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            String attributeTagContext = Api30Impl.getAttributionTag(context);
-            String attributeTagResultContext = Api30Impl.getAttributionTag(resultContext);
-            if (!Objects.equals(attributeTagContext, attributeTagResultContext)) {
+            String attributionTagContext = Api30Impl.getAttributionTag(context);
+            String attributionTagResultContext = Api30Impl.getAttributionTag(resultContext);
+            if (!Objects.equals(attributionTagContext, attributionTagResultContext)) {
                 resultContext = Api30Impl.createAttributionContext(
-                        resultContext, attributeTagContext);
+                        resultContext, attributionTagContext);
             }
         }
         return resultContext;
     }
 
-
     /**
      * Attempts to retrieve an {@link Application} object from the provided {@link Context}.
      *
-     * <p>Because the contract does not specify that {@code Context.getApplicationContext()} must
-     * return an {@code Application} object, this method will attempt to retrieve the
-     * {@code Application} by unwrapping the context via {@link ContextWrapper#getBaseContext()} if
-     * {@code Context.getApplicationContext()}} does not succeed.
+     * <p>Because the contract does not specify that {@link Context#getApplicationContext()} must
+     * return an {@link Application} object, this method will attempt to retrieve the
+     * {@link Application} by unwrapping the context via {@link ContextWrapper#getBaseContext()} if
+     * {@link Context#getApplicationContext()}} does not succeed.
      *
      * <p>Since the purpose of this method is to retrieve the {@link Application} instance, it is
      * not necessary to keep the attribution and device id info and also invoking
@@ -72,9 +76,9 @@ public final class ContextUtil {
      * will create a non-ContextWrapper instance which could fail to invoke
      * {@link ContextWrapper#getBaseContext()}.
      */
-    public static @Nullable Application getApplicationFromContext(@NonNull Context context) {
+    public static @Nullable Application getApplication(@NonNull Context context) {
         Application application = null;
-        Context appContext = getApplicationContext(context);
+        Context appContext = context.getApplicationContext();
         while (appContext instanceof ContextWrapper) {
             if (appContext instanceof Application) {
                 application = (Application) appContext;

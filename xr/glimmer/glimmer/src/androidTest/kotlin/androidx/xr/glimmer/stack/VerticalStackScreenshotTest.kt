@@ -70,6 +70,13 @@ class VerticalStackScreenshotTest {
     }
 
     @Test
+    fun verticalStack_fixedSizeItems_pressAndHold() {
+        rule.setGlimmerThemeContent { VerticalStackSample() }
+        rule.onRoot().performTouchInput { down(Offset(x = centerX, y = centerY)) }
+        assertRootAgainstGolden("verticalStack_fixedSizeItems_pressAndHold")
+    }
+
+    @Test
     fun verticalStack_fixedSizeItems_scrollToNextItem() {
         rule.setGlimmerThemeContent { VerticalStackSample() }
         rule.onRoot().performTouchInput { swipeUp() }

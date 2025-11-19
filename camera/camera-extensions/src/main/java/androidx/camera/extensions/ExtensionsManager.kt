@@ -488,7 +488,7 @@ internal constructor(
                 val deinitInProgress = sDeinitializeFuture?.isDone == false
                 check(!deinitInProgress) { "Not yet done deinitializing extensions" }
                 sDeinitializeFuture = null
-                val applicationContext = ContextUtil.getApplicationContext(context)
+                val applicationContext = ContextUtil.getPersistentApplicationContext(context)
 
                 // Will be initialized, with an empty implementation which will report all
                 // extensions as unavailable

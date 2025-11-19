@@ -159,7 +159,7 @@ public interface ImpressApi {
     }
 
     /** This method initializes the Impress Split Engine instance. */
-    public fun setup(view: View)
+    public fun setup(view: View?)
 
     /** This method initializes the Impress Split Engine instance for test purposes. */
     @VisibleForTesting public fun setup(nativeTestViewHandle: Long)
@@ -181,10 +181,22 @@ public interface ImpressApi {
     public fun releaseImageBasedLightingAsset(iblToken: Long)
 
     /**
+     * This method loads an image based lighting asset from the assets folder and returns a token
+     * that can be used to reference the asset in other JNI calls.
+     */
+    public suspend fun loadImageBasedLightingAssetTemp(path: String): ExrImage
+
+    /**
      * This method loads an image based lighting asset from the assets folder and returns a future
      * with an ExrImage that can be used to reference the asset in other JNI calls.
      */
     public fun loadImageBasedLightingAsset(path: String): ListenableFuture<ExrImage>
+
+    /**
+     * This method loads an image based lighting asset from a byte array and returns a token that
+     * can be used to reference the asset in other JNI calls.
+     */
+    public suspend fun loadImageBasedLightingAssetTemp(data: ByteArray, key: String): ExrImage
 
     /**
      * This method loads an image based lighting asset from a byte array and returns a future with
@@ -194,9 +206,21 @@ public interface ImpressApi {
 
     /**
      * This method loads a glTF model from the local assets folder or a remote URL, and returns a
+     * model token that can be used to reference the model in other JNI calls.
+     */
+    public suspend fun loadGltfAssetTemp(path: String): GltfModel
+
+    /**
+     * This method loads a glTF model from the local assets folder or a remote URL, and returns a
      * future with the GltfModel that can be used to reference the model in other JNI calls.
      */
     public fun loadGltfAsset(path: String): ListenableFuture<GltfModel>
+
+    /**
+     * This method loads a glTF model from a byte array and returns the model token that can be used
+     * to reference the model in other JNI calls.
+     */
+    public suspend fun loadGltfAssetTemp(data: ByteArray, key: String): GltfModel
 
     /**
      * This method loads a glTF model from a byte array and returns a future with the GltfModel that
@@ -229,6 +253,24 @@ public interface ImpressApi {
      * @param enableCollider If the glTF model should have a collider or not.
      */
     public fun setGltfModelColliderEnabled(impressNode: ImpressNode, enableCollider: Boolean)
+
+    /**
+     * Starts an animation on an instanced GLTFModel.
+     *
+     * @param impressNode The object of the Impress node for the instance of the GLTF
+     * @param animationName A nullable String which contains a requested animation to play. If null
+     *   is provided, this will attempt to play the first animation it finds
+     * @param looping True if the animation should loop. Note that if the animation is looped, the
+     *   returned Coroutine will never fire successfully.
+     * @return a Coroutine which fires when the animation stops. It will return an exception if the
+     *   animation can't play.
+     */
+    // TODO: b/362829319 - Remove CompletableFuture from SE integration.
+    public suspend fun animateGltfModelTemp(
+        impressNode: ImpressNode,
+        animationName: String?,
+        looping: Boolean,
+    ): Void?
 
     /**
      * Starts an animation on an instanced GLTFModel.
@@ -474,6 +516,15 @@ public interface ImpressApi {
 
     /**
      * This method loads a local texture from the assets folder or a remote texture from a URL and
+     * returns the texture token that can be used to reference the texture in other JNI calls.
+     *
+     * @param path The name of the texture file to load or the URL of the remote texture.
+     * @return The loaded texture.
+     */
+    public suspend fun loadTextureTemp(path: String): Texture
+
+    /**
+     * This method loads a local texture from the assets folder or a remote texture from a URL and
      * returns a future with the texture token that can be used to reference the texture in other
      * JNI calls.
      *
@@ -495,6 +546,16 @@ public interface ImpressApi {
      * @return A texture that can be used to reference the texture in other JNI calls.
      */
     public fun getReflectionTextureFromIbl(iblToken: Long): Texture
+
+    /**
+     * This method creates a water material and returns the material native handle that can be used
+     * to reference the water material in other JNI calls.
+     *
+     * @param isAlphaMapVersion True if the water material should be the alpha map version.
+     * @return A WaterMaterial backed by an imp::WaterMaterial. The WaterMaterial can be destroyed
+     *   by passing it to destroyNativeObject.
+     */
+    public suspend fun createWaterMaterialTemp(isAlphaMapVersion: Boolean): WaterMaterial
 
     /**
      * This method creates a water material and returns a future with the material native handle
@@ -621,6 +682,18 @@ public interface ImpressApi {
         z: Float,
         w: Float,
     )
+
+    /**
+     * This method creates a Khronos PBR material and returns a material native handle that can be
+     * used to reference the Khronos PBR material in other JNI calls.
+     *
+     * @param spec The Khronos PBR material spec to use for the material.
+     * @return A Khronos PBR material.
+     * @throws IllegalArgumentException if the Khronos PBR material spec is invalid.
+     */
+    public suspend fun createKhronosPbrMaterialTemp(
+        spec: KhronosPbrMaterialSpec
+    ): KhronosPbrMaterial
 
     /**
      * This method creates a Khronos PBR material and returns a future with the material native

@@ -27,6 +27,7 @@ import static androidx.camera.core.impl.utils.executor.CameraXExecutors.mainThre
 import static androidx.camera.core.processing.TargetUtils.getHumanReadableName;
 import static androidx.core.util.Preconditions.checkArgument;
 
+import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.Size;
@@ -75,6 +76,7 @@ public class DualSurfaceProcessorNode implements
     // Guarded by main thread.
     private @Nullable Out mOutput;
     private @Nullable In mInput;
+    private final @Nullable String mDebugInfo;
 
     /**
      * Constructs the {@link DualSurfaceProcessorNode}.
@@ -82,14 +84,18 @@ public class DualSurfaceProcessorNode implements
      * @param primaryCameraInternal the associated primary camera instance.
      * @param secondaryCameraInternal the associated secondary camera instance.
      * @param surfaceProcessor the interface to wrap around.
+     * @param debugInfo the debug information to be shown in the log
      */
+    @SuppressLint("LambdaLast")
     public DualSurfaceProcessorNode(
             @NonNull CameraInternal primaryCameraInternal,
             @NonNull CameraInternal secondaryCameraInternal,
-            @NonNull SurfaceProcessorInternal surfaceProcessor) {
+            @NonNull SurfaceProcessorInternal surfaceProcessor,
+            @Nullable String debugInfo) {
         mPrimaryCameraInternal = primaryCameraInternal;
         mSecondaryCameraInternal = secondaryCameraInternal;
         mSurfaceProcessor = surfaceProcessor;
+        mDebugInfo = debugInfo;
     }
 
     /**
@@ -99,7 +105,8 @@ public class DualSurfaceProcessorNode implements
     @MainThread
     public @NonNull Out transform(@NonNull In in) {
         Threads.checkMainThread();
-        Logger.d(TAG, "DualSurfaceProcessorNode Transform Processor = " + mSurfaceProcessor
+        String info = mDebugInfo == null ? "" : "[" + mDebugInfo + "] ";
+        Logger.d(TAG, info + "DualSurfaceProcessorNode Transform Processor = " + mSurfaceProcessor
                 + "\n   primary input = " + in.getPrimarySurfaceEdge()
                 + "\n   secondary input = " + in.getSecondarySurfaceEdge());
         for (DualOutConfig outConfig : in.getOutConfigs()) {

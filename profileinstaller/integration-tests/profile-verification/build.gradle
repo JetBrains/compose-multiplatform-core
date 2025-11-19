@@ -79,7 +79,7 @@ abstract class PrepareAssetsTask extends DefaultTask {
 
 def prepareAssetsTaskProvider = tasks.register("prepareAssets", PrepareAssetsTask) {
     description = "Copies the apks and profiles provided by profile-verification-sample projects into the assets."
-    apkAssetsFolders.from(configurations.getByName("apkAssets").incoming.artifactView {}.files)
+    apkAssetsFolders.from(configurations.getByName("apkAssets").incoming.files)
     outputDir.set(layout.buildDirectory.dir("intermediates/profile-verification-assets"))
 }
 

@@ -75,15 +75,6 @@ private constructor(
     }
 
     /**
-     * Returns `true` if the currently connected projected device is capable of displaying content
-     * to the user.
-     *
-     * This method does not provide any more details on what type of display it is.
-     */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    public fun isDisplayCapable(): Boolean = projectedService.isDisplayCapable()
-
-    /**
      * An EngagementMode value.
      *
      * The EngagementMode represents how a user is interacting with a projected application (e.g.
@@ -117,6 +108,7 @@ private constructor(
      * are visuals on). The callback will be called as soon as it is available.
      */
     // TODO: b/457550010 - Make EngagementMode calls thread safe.
+    @RequiresApi(Build.VERSION_CODES.N)
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     public fun addEngagementModeChangedListener(
         executor: Executor = Dispatchers.Main.asExecutor(),

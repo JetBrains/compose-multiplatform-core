@@ -185,7 +185,7 @@ index b27c1ab28af..add98e68e37 100644
 +++ b/buildSrc/shared.gradle
 @@ -48,7 +48,7 @@ tasks.withType(KotlinCompile).configureEach { task ->
          if (task.path == ":imports:binary-compatibility-validator:compileKotlin") {
-             friendPaths.from(configurations.friends.incoming.artifactView {}.files)
+             friendPaths.from(configurations.friends.incoming.files)
          }
 -        languageVersion.set(KotlinVersion.KOTLIN_2_0)
 -        apiVersion.set(KotlinVersion.KOTLIN_2_0)

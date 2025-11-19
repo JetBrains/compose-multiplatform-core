@@ -579,6 +579,11 @@ public interface CameraGraphBase<TSession : Session> : AutoCloseable {
      */
     public val parameters: Parameters
 
+    /*
+     * This enables setting listeners directly. The listeners would receive callbacks similar to ones added in a [Request]. For detailed usage see [Listeners].
+     */
+    public val listeners: RequestListeners
+
     /** The [StreamGraph] for this camera graph instance. */
     public val streams: StreamGraph
 

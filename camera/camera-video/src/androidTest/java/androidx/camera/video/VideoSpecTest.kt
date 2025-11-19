@@ -40,7 +40,7 @@ class VideoSpecTest {
         val videoSpec = VideoSpec.builder().build()
 
         assertThat(videoSpec.qualitySelector).isEqualTo(VideoSpec.QUALITY_SELECTOR_AUTO)
-        assertThat(videoSpec.bitrate).isEqualTo(VideoSpec.BITRATE_RANGE_AUTO)
+        assertThat(videoSpec.bitrate).isEqualTo(VideoSpec.BITRATE_AUTO)
         assertThat(videoSpec.encodeFrameRate).isEqualTo(VideoSpec.ENCODE_FRAME_RATE_AUTO)
         assertThat(videoSpec.aspectRatio).isEqualTo(RATIO_DEFAULT)
     }

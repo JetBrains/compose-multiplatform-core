@@ -24,7 +24,6 @@ import androidx.room3.compiler.processing.testcode.AnywhereAnnotation
 import androidx.room3.compiler.processing.testcode.MainAnnotation
 import androidx.room3.compiler.processing.testcode.OtherAnnotation
 import androidx.room3.compiler.processing.testcode.SingleTypeValueAnnotation
-import androidx.room3.compiler.processing.util.CompilationTestCapabilities
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.asJClassName
 import androidx.room3.compiler.processing.util.compiler.TestCompilationArguments
@@ -594,7 +593,6 @@ class XProcessingStepTest {
 
     @Test
     fun kspReturnsUnprocessed() {
-        CompilationTestCapabilities.assumeKspIsEnabled()
         var returned: Set<XElement>? = null
         val processingStep =
             object : XProcessingStep {
@@ -1504,7 +1502,6 @@ class XProcessingStepTest {
 
     @Test
     fun kspDisableValidatingAnnotatedElements() {
-        CompilationTestCapabilities.assumeKspIsEnabled()
         val processingStep =
             object : XProcessingStep {
                 var round = 0

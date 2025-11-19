@@ -15,7 +15,6 @@
  */
 package androidx.camera.video
 
-import android.util.Range
 import androidx.annotation.RestrictTo
 import androidx.annotation.RestrictTo.Scope
 import androidx.camera.core.AspectRatio
@@ -28,7 +27,7 @@ public class VideoSpec
 public constructor(
     public val qualitySelector: QualitySelector = QUALITY_SELECTOR_AUTO,
     public val encodeFrameRate: Int = ENCODE_FRAME_RATE_AUTO,
-    public val bitrate: Range<Int> = BITRATE_RANGE_AUTO,
+    public val bitrate: Int = BITRATE_AUTO,
     @get:AspectRatio.Ratio public val aspectRatio: Int = AspectRatio.RATIO_DEFAULT,
 ) {
 
@@ -68,7 +67,7 @@ public constructor(
     public class Builder {
         private var qualitySelector: QualitySelector = QUALITY_SELECTOR_AUTO
         private var encodeFrameRate: Int = ENCODE_FRAME_RATE_AUTO
-        private var bitrate: Range<Int> = BITRATE_RANGE_AUTO
+        private var bitrate: Int = BITRATE_AUTO
         private var aspectRatio: Int = AspectRatio.RATIO_DEFAULT
 
         /**
@@ -92,9 +91,9 @@ public constructor(
         /**
          * Sets the bitrate.
          *
-         * If not set, defaults to [BITRATE_RANGE_AUTO].
+         * If not set, defaults to [BITRATE_AUTO].
          */
-        public fun setBitrate(bitrate: Range<Int>): Builder = apply { this.bitrate = bitrate }
+        public fun setBitrate(bitrate: Int): Builder = apply { this.bitrate = bitrate }
 
         /**
          * Sets the aspect ratio.
@@ -115,8 +114,8 @@ public constructor(
         /** Frame rate representing no preference for encode frame rate. */
         public const val ENCODE_FRAME_RATE_AUTO: Int = 0
 
-        /** Bitrate range representing no preference for bitrate. */
-        @JvmField public val BITRATE_RANGE_AUTO: Range<Int> = Range(0, Integer.MAX_VALUE)
+        /** No preference for bitrate. */
+        public const val BITRATE_AUTO: Int = 0
 
         /** Quality selector representing no preference for quality. */
         @JvmField

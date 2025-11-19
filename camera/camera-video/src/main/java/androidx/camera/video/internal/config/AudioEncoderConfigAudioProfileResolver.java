@@ -17,8 +17,6 @@
 package androidx.camera.video.internal.config;
 
 
-import android.util.Range;
-
 import androidx.camera.core.Logger;
 import androidx.camera.core.impl.EncoderProfilesProxy.AudioProfileProxy;
 import androidx.camera.core.impl.Timebase;
@@ -72,13 +70,18 @@ public final class AudioEncoderConfigAudioProfileResolver implements
 
     @Override
     public @NonNull AudioEncoderConfig get() {
-        Logger.d(TAG, "Using resolved AUDIO bitrate from AudioProfile");
-        Range<Integer> audioSpecBitrateRange = mAudioSpec.getBitrate();
-        int resolvedBitrate = AudioConfigUtil.scaleAndClampBitrate(
-                mAudioProfileProxy.getBitrate(),
-                mAudioSettings.getChannelCount(), mAudioProfileProxy.getChannels(),
-                mAudioSettings.getEncodeSampleRate(), mAudioProfileProxy.getSampleRate(),
-                audioSpecBitrateRange);
+        int resolvedBitrate;
+        int audioSpecBitrate = mAudioSpec.getBitrate();
+        if (audioSpecBitrate != AudioSpec.BITRATE_AUTO) {
+            resolvedBitrate = audioSpecBitrate;
+        } else {
+            Logger.d(TAG, "Using resolved AUDIO bitrate from AudioProfile");
+            resolvedBitrate = AudioConfigUtil.scaleBitrate(
+                    mAudioProfileProxy.getBitrate(),
+                    mAudioSettings.getChannelCount(), mAudioProfileProxy.getChannels(),
+                    mAudioSettings.getEncodeSampleRate(), mAudioProfileProxy.getSampleRate()
+            );
+        }
 
         return AudioEncoderConfig.builder()
                 .setMimeType(mMimeType)

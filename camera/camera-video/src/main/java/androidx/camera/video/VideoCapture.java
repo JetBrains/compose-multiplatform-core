@@ -1118,7 +1118,7 @@ public final class VideoCapture<T extends VideoOutput> extends UseCase {
             Logger.d(TAG, "Surface processing is enabled.");
             return new SurfaceProcessorNode(requireNonNull(getCamera()),
                     getEffect() != null ? getEffect().createSurfaceProcessorInternal() :
-                            DefaultSurfaceProcessor.Factory.newInstance(dynamicRange));
+                            DefaultSurfaceProcessor.Factory.newInstance(dynamicRange), TAG);
         }
         return null;
     }

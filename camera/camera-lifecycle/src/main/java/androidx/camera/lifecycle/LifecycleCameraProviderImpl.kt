@@ -109,7 +109,7 @@ internal class LifecycleCameraProviderImpl : LifecycleCameraProvider, CameraPres
                         { void: Void? ->
                             this@LifecycleCameraProviderImpl.initInternal(
                                 cameraX,
-                                ContextUtil.getApplicationContext(context),
+                                ContextUtil.getPersistentApplicationContext(context),
                             )
                             void
                         },

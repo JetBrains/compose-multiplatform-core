@@ -31,6 +31,7 @@ import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Parameters
+import androidx.camera.camera2.pipe.RequestListeners
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.config.FrameGraphCoroutineScope
@@ -118,6 +119,9 @@ constructor(
 
     override val parameters: Parameters
         get() = cameraGraph.parameters
+
+    override val listeners: RequestListeners
+        get() = cameraGraph.listeners
 
     override val id: CameraGraphId
         get() = cameraGraph.id

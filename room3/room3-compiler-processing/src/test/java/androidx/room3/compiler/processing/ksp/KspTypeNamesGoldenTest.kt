@@ -22,7 +22,6 @@ import androidx.room3.compiler.processing.XConstructorElement
 import androidx.room3.compiler.processing.XExecutableElement
 import androidx.room3.compiler.processing.XMethodElement
 import androidx.room3.compiler.processing.XTypeElement
-import androidx.room3.compiler.processing.util.CompilationTestCapabilities
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.compiler.processing.util.compileFiles
@@ -44,7 +43,6 @@ class KspTypeNamesGoldenTest {
 
     @Before
     fun setup() {
-        CompilationTestCapabilities.assumeKspIsEnabled()
         val (mainSources, mainSubjects) = createSubjects(pkg = "main")
         val (libSources, libSubjects) = createSubjects(pkg = "lib")
         sources = mainSources

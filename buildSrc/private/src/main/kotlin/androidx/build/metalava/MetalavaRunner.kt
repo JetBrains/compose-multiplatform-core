@@ -18,7 +18,7 @@ package androidx.build.metalava
 
 import androidx.build.Version
 import androidx.build.checkapi.ApiLocation
-import androidx.build.getLibraryByName
+import androidx.build.getLibraryClasspath
 import androidx.build.logging.TERMINAL_RED
 import androidx.build.logging.TERMINAL_RESET
 import java.io.ByteArrayOutputStream
@@ -132,11 +132,7 @@ abstract class MetalavaWorkAction @Inject constructor(private val execOperations
     }
 }
 
-fun Project.getMetalavaClasspath(): FileCollection {
-    val configuration =
-        configurations.detachedConfiguration(dependencies.create(getLibraryByName("metalava")))
-    return project.files(configuration)
-}
+fun Project.getMetalavaClasspath(): FileCollection = getLibraryClasspath("metalava")
 
 fun getApiLintArgs(targetsJavaConsumers: Boolean): List<String> {
     val args =

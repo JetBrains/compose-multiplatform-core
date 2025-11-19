@@ -56,7 +56,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.test.runTest
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,7 +70,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     @JvmField @Rule val countingTaskExecutorRule = CountingTaskExecutorRule()
 
     @Test
-    @Ignore // b/410015038
     fun initialEmptyLoad_futureIsDone() = setupAndRun { db ->
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db = db)
 
@@ -85,7 +83,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun initialLoad_returnsFutureImmediately() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db = db)
@@ -108,7 +105,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun append_returnsFutureImmediately() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -132,7 +128,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun prepend_returnsFutureImmediately() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -155,7 +150,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun append_returnsInvalid() = setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
         pagingSource.bypassInitialLoad(100)
@@ -178,7 +172,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun prepend_returnsInvalid() = setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
         pagingSource.bypassInitialLoad(100)
@@ -201,7 +194,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun refresh_consecutively() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -220,7 +212,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun append_consecutively() = setupAndRunWithTestExecutor { db, _, queryExecutor ->
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
         pagingSource.bypassInitialLoad(100)
@@ -241,7 +232,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun prepend_consecutively() = setupAndRunWithTestExecutor { db, _, queryExecutor ->
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
         pagingSource.bypassInitialLoad(100)
@@ -262,7 +252,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun refresh_onSuccess() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -289,7 +278,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun append_onSuccess() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -316,7 +304,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun prepend_onSuccess() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -343,7 +330,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun append_awaitThrowsCancellationException() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -365,7 +351,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun prepend_awaitThrowsCancellationException() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -387,7 +372,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun refresh_canceledFutureRunsOnFailureCallback() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -418,7 +402,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun append_canceledFutureRunsOnFailureCallback2() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -450,7 +433,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun prepend_canceledFutureRunsOnFailureCallback() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -483,7 +465,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun refresh_AfterCancellation() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -504,7 +485,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun appendAgain_afterFutureCanceled() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -525,7 +505,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun prependAgain_afterFutureCanceled() = setupAndRun { db ->
         db.getDao().addAllItems(ITEMS_LIST)
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
@@ -546,7 +525,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
     }
 
     @Test
-    @Ignore // b/410015038
     fun append_insertInvalidatesPagingSource() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db = db)
@@ -574,7 +552,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun prepend_insertInvalidatesPagingSource() =
         setupAndRunWithTestExecutor { db, queryContext, queryExecutor ->
             val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db = db)
@@ -600,7 +577,6 @@ class LimitOffsetListenableFuturePagingSourceTest {
         }
 
     @Test
-    @Ignore // b/410015038
     fun test_jumpSupport() = setupAndRun { db ->
         val pagingSource = LimitOffsetListenableFuturePagingSourceImpl(db)
         assertTrue(pagingSource.jumpingSupported)

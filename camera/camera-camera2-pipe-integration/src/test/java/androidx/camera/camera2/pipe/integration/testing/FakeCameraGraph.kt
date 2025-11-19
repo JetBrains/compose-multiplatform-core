@@ -29,6 +29,7 @@ import androidx.camera.camera2.pipe.FrameMetadata
 import androidx.camera.camera2.pipe.GraphState
 import androidx.camera.camera2.pipe.Lock3ABehavior
 import androidx.camera.camera2.pipe.Parameters
+import androidx.camera.camera2.pipe.RequestListeners
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamGraph
 import androidx.camera.camera2.pipe.StreamId
@@ -58,6 +59,9 @@ class FakeCameraGraph(
     private var audioRestrictionMode = AUDIO_RESTRICTION_NONE
 
     override val parameters: Parameters
+        get() = throw NotImplementedError("Not used in testing")
+
+    override val listeners: RequestListeners
         get() = throw NotImplementedError("Not used in testing")
 
     override suspend fun acquireSession(): CameraGraph.Session {

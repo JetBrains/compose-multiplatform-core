@@ -35,6 +35,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.projected.R
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
@@ -52,6 +53,7 @@ import org.robolectric.util.ReflectionHelpers
  */
 @RunWith(AndroidJUnit4::class)
 @Config(minSdk = Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@OptIn(ExperimentalProjectedApi::class)
 class ProjectedPermissionsResultContractTest {
 
     private val appContext: Application = getApplicationContext()

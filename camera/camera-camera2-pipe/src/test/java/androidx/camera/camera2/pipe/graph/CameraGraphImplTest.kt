@@ -31,6 +31,7 @@ import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.internal.CameraBackendsImpl
 import androidx.camera.camera2.pipe.internal.CameraGraphParametersImpl
+import androidx.camera.camera2.pipe.internal.CameraGraphRequestListenersImpl
 import androidx.camera.camera2.pipe.internal.CameraPipeLifetime
 import androidx.camera.camera2.pipe.internal.FrameCaptureQueue
 import androidx.camera.camera2.pipe.internal.FrameDistributor
@@ -139,6 +140,7 @@ internal class CameraGraphImplTest {
             audioRestriction,
             graphId,
             CameraGraphParametersImpl(sessionLock, fakeGraphProcessor, testBackgroundScope),
+            CameraGraphRequestListenersImpl(sessionLock, fakeGraphProcessor, testScope),
             sessionLock,
             testBackgroundScope,
         )

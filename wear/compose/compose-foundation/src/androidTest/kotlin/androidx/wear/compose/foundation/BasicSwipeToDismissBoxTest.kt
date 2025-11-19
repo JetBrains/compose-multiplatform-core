@@ -64,7 +64,9 @@ import org.junit.Rule
 import org.junit.Test
 
 class BasicSwipeToDismissBoxTest {
-    @get:Rule val rule = createComposeRule()
+    @Suppress("ComposeTestRuleDispatcher") // b/457618558
+    @get:Rule
+    val rule = createComposeRule()
 
     @Test
     fun supports_testtag() {

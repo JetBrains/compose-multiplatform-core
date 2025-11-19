@@ -60,7 +60,9 @@ import org.junit.Rule
 import org.junit.Test
 
 class PagerScaffoldTest {
-    @get:Rule val rule = createComposeRule()
+    @Suppress("ComposeTestRuleDispatcher") // b/457595340
+    @get:Rule
+    val rule = createComposeRule()
 
     @Test
     fun horizontal_pager_scaffold_is_composed() {
