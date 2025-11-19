@@ -102,30 +102,13 @@ final class CMPViewTests: XCTestCase {
             rootView = view
         }
         
-        await expect { delegate.viewWillAppearCallsCount == 1 }
+        await expect { delegate.containerWillAppearCallsCount == 1 }
         
         rootView = nil
 
-        await expect { delegate.viewWillAppearCallsCount == 1 }
-        await expect { delegate.viewDidDisappearCallsCount == 1 }
-        await expect { delegate.viewWillDeallocCallsCount == 1 }
-    }
-}
-
-private class LifecycleDelegate: CMPComposeContainerLifecycleDelegate {
-    var viewWillAppearCallsCount = 0
-    func composeContainerWillAppear() {
-        viewWillAppearCallsCount += 1
-    }
-    
-    var viewDidDisappearCallsCount = 0
-    func composeContainerDidDisappear() {
-        viewDidDisappearCallsCount += 1
-    }
-    
-    var viewWillDeallocCallsCount = 0
-    func composeContainerWillDealloc() {
-        viewWillDeallocCallsCount += 1
+        await expect { delegate.containerWillAppearCallsCount == 1 }
+        await expect { delegate.containerDidDisappearCallsCount == 1 }
+        await expect { delegate.containerWillDeallocCallsCount == 1 }
     }
 }
 

@@ -311,30 +311,30 @@ final class CMPViewControllerTests: XCTestCase {
             rootViewController = viewController
         }
         
-        await expect { delegate.viewControllerWillAppearCallsCount == 1 }
+        await expect { delegate.containerWillAppearCallsCount == 1 }
         
         rootViewController = UIViewController()
 
-        await expect { delegate.viewControllerWillAppearCallsCount == 1 }
-        await expect { delegate.viewControllerDidDisappearCallsCount == 1 }
-        await expect { delegate.viewControllerWillDeallocCallsCount == 1 }
+        await expect { delegate.containerWillAppearCallsCount == 1 }
+        await expect { delegate.containerDidDisappearCallsCount == 1 }
+        await expect { delegate.containerWillDeallocCallsCount == 1 }
     }
 }
 
-private class LifecycleDelegate: CMPComposeContainerLifecycleDelegate {
-    var viewControllerWillAppearCallsCount = 0
+class LifecycleDelegate: CMPComposeContainerLifecycleDelegate {
+    var containerWillAppearCallsCount = 0
     func composeContainerWillAppear() {
-        viewControllerWillAppearCallsCount += 1
+        containerWillAppearCallsCount += 1
     }
     
-    var viewControllerDidDisappearCallsCount = 0
+    var containerDidDisappearCallsCount = 0
     func composeContainerDidDisappear() {
-        viewControllerDidDisappearCallsCount += 1
+        containerDidDisappearCallsCount += 1
     }
     
-    var viewControllerWillDeallocCallsCount = 0
+    var containerWillDeallocCallsCount = 0
     func composeContainerWillDealloc() {
-        viewControllerWillDeallocCallsCount += 1
+        containerWillDeallocCallsCount += 1
     }
 }
 
