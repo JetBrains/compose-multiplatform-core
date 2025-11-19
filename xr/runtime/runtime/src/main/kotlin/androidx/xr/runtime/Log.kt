@@ -54,10 +54,7 @@ public object Log {
         }
     }
 
-    private const val DEFAULT_TAG: String = "JetpackXR"
-
-    private val tag: String
-        get() = getCallingClass() ?: DEFAULT_TAG
+    internal const val TAG: String = "JetpackXR"
 
     /** Whether or not messages meeting the current [level] will be printed to Android Logcat. */
     public var enabled: Boolean = false
@@ -73,7 +70,7 @@ public object Log {
      */
     public fun error(throwable: Throwable? = null, message: () -> String) {
         if (enabled && isLoggable(Level.ERROR)) {
-            AndroidLog.e(tag, message(), throwable)
+            AndroidLog.e(TAG, message(), throwable)
         }
     }
 
@@ -86,7 +83,7 @@ public object Log {
      */
     public fun warn(throwable: Throwable? = null, message: () -> String) {
         if (enabled && isLoggable(Level.WARN)) {
-            AndroidLog.w(tag, message(), throwable)
+            AndroidLog.w(TAG, message(), throwable)
         }
     }
 
@@ -98,7 +95,7 @@ public object Log {
      */
     public fun info(throwable: Throwable? = null, message: () -> String) {
         if (enabled && isLoggable(Level.INFO)) {
-            AndroidLog.i(tag, message(), throwable)
+            AndroidLog.i(TAG, message(), throwable)
         }
     }
 
@@ -110,7 +107,7 @@ public object Log {
      */
     public fun debug(throwable: Throwable? = null, message: () -> String) {
         if (enabled && isLoggable(Level.DEBUG)) {
-            AndroidLog.d(tag, message(), throwable)
+            AndroidLog.d(TAG, message(), throwable)
         }
     }
 
@@ -122,15 +119,9 @@ public object Log {
      */
     public fun verbose(throwable: Throwable? = null, message: () -> String) {
         if (enabled && isLoggable(Level.VERBOSE)) {
-            AndroidLog.v(tag, message(), throwable)
+            AndroidLog.v(TAG, message(), throwable)
         }
     }
 
     private fun isLoggable(level: Level): Boolean = level >= Log.level
-
-    private fun getCallingClass(): String? {
-        val stackTrace = Throwable().stackTrace
-        val caller = stackTrace.firstOrNull { it.className != Log::class.java.name }
-        return caller?.className
-    }
 }

@@ -19,11 +19,10 @@ package androidx.xr.scenecore.spatial.core;
 import android.annotation.SuppressLint;
 import android.content.Context;
 
+import androidx.xr.arcore.Anchor;
 import androidx.xr.arcore.runtime.ExportableAnchor;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.perception.Anchor;
-import androidx.xr.scenecore.impl.perception.Plane;
 import androidx.xr.scenecore.runtime.ActivitySpace;
 import androidx.xr.scenecore.runtime.AnchorEntity;
 import androidx.xr.scenecore.runtime.Entity;
@@ -36,7 +35,6 @@ import com.android.extensions.xr.node.Node;
 import com.android.extensions.xr.node.NodeTransaction;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -54,41 +52,8 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     private final AndroidXrEntity mActivitySpaceRoot;
     private OnStateChangedListener mOnStateChangedListener;
     private @State int mState = State.UNANCHORED;
-    private Anchor mAnchor;
 
     private final OpenXrScenePoseHelper mOpenXrScenePoseHelper;
-
-    private static class AnchorCreationData {
-        Plane mPlane;
-        Pose mPlaneOffsetPose;
-        Long mPlaneDataTimeNs;
-    }
-
-    static AnchorEntityImpl createAnchorFromPlane(
-            Context context,
-            Node node,
-            Plane plane,
-            Pose planeOffsetPose,
-            @Nullable Long planeDataTimeNs,
-            ActivitySpace activitySpace,
-            Entity activitySpaceRoot,
-            XrExtensions extensions,
-            EntityManager entityManager,
-            ScheduledExecutorService executor) {
-        AnchorCreationData anchorCreationData = new AnchorCreationData();
-        anchorCreationData.mPlane = plane;
-        anchorCreationData.mPlaneOffsetPose = planeOffsetPose;
-        anchorCreationData.mPlaneDataTimeNs = planeDataTimeNs;
-        return new AnchorEntityImpl(
-                context,
-                node,
-                anchorCreationData,
-                activitySpace,
-                activitySpaceRoot,
-                extensions,
-                entityManager,
-                executor);
-    }
 
     static AnchorEntityImpl create(
             Context context,
@@ -101,7 +66,6 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         return new AnchorEntityImpl(
                 context,
                 node,
-                null,
                 activitySpace,
                 activitySpaceRoot,
                 extensions,
@@ -112,7 +76,6 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
     protected AnchorEntityImpl(
             Context context,
             Node node,
-            AnchorCreationData anchorCreationData,
             ActivitySpace activitySpace,
             Entity activitySpaceRoot,
             XrExtensions extensions,
@@ -150,28 +113,10 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
         if (mState == State.ERROR) {
             return;
         }
-
-        if (anchorCreationData != null) {
-            tryCreateAnchorForPlane(anchorCreationData);
-        }
-    }
-
-    // Creates an anchor on the provided plane.
-    private void tryCreateAnchorForPlane(AnchorCreationData anchorCreationData) {
-        androidx.xr.scenecore.impl.perception.Pose perceptionPose =
-                RuntimeUtils.poseToPerceptionPose(anchorCreationData.mPlaneOffsetPose);
-        mAnchor =
-                anchorCreationData.mPlane.createAnchor(
-                        perceptionPose, anchorCreationData.mPlaneDataTimeNs);
-        if (mAnchor == null) {
-            updateState(State.ERROR);
-            return;
-        }
-        updateState(State.ANCHORED);
     }
 
     @Override
-    public boolean setAnchor(androidx.xr.arcore.@NonNull Anchor anchor) {
+    public boolean setAnchor(@NonNull Anchor anchor) {
         synchronized (this) {
             if (mState == State.ERROR || !(anchor.getRuntimeAnchor() instanceof ExportableAnchor)) {
                 return false;
@@ -192,19 +137,6 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
 
     private void updateState(@State int newState) {
         synchronized (this) {
-            // TODO - b/442007476 Remove after migrating MovableComponent to ARCore.
-            if (newState == State.ANCHORED && mAnchor != null) {
-                try (NodeTransaction transaction = mExtensions.createNodeTransaction()) {
-                    // Attach to the root CPM node. This will enable the anchored content to be
-                    // visible. Note that the parent of the Entity is null, but the CPM Node is
-                    // still attached.
-                    transaction
-                            .setParent(mNode, mActivitySpace.getNode())
-                            .setAnchorId(mNode, mAnchor.getAnchorToken())
-                            .apply();
-                }
-            }
-
             if (newState != mState) {
                 mState = newState;
                 if (mOnStateChangedListener != null) {
@@ -318,10 +250,6 @@ class AnchorEntityImpl extends SystemSpaceEntityImpl implements AnchorEntity {
                 return;
             }
             updateState(AnchorEntity.State.ERROR);
-            if (mAnchor != null && !mAnchor.detach()) {
-                mAnchor.detach();
-                mAnchor = null;
-            }
         }
 
         // Set the parent of the CPM node to null; to hide the anchored content.The parent of the

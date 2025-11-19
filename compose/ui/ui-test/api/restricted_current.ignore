@@ -1,3 +1,0 @@
-// Baseline format: 1.0
-RemovedDeprecatedField: androidx.compose.ui.test.GestureScope#delegateScope:
-    Binary breaking change: Removed deprecated field androidx.compose.ui.test.GestureScope.delegateScope

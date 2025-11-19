@@ -935,7 +935,7 @@ package androidx.tv.material3 {
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.runtime.ComposableTarget(applier="androidx.compose.ui.UiComposable") public static void RadioButton(boolean, kotlin.jvm.functions.Function0<kotlin.Unit!>?, androidx.compose.ui.Modifier?, boolean, androidx.tv.material3.RadioButtonColors?, androidx.compose.foundation.interaction.MutableInteractionSource?, androidx.compose.runtime.Composer?, int, int);
   }
 
-  @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public sealed interface ScrollPauseHandle {
+  @SuppressCompatibility @androidx.tv.material3.ExperimentalTvMaterial3Api public sealed nonexhaustive interface ScrollPauseHandle {
     method public void resumeAutoScroll();
   }
 

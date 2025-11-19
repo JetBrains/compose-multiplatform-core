@@ -18,6 +18,9 @@ package androidx.xr.scenecore.testing
 
 import android.app.Activity
 import android.view.View
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector2
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult
 import androidx.xr.scenecore.runtime.PixelDimensions
@@ -112,6 +115,33 @@ class FakePanelEntityTest {
 
         assertThat(successResult).isInstanceOf(PerceivedResolutionResult.Success::class.java)
         assertThat(successResult.perceivedResolution).isEqualTo(PixelDimensions(640, 480))
+    }
+
+    @Test
+    fun transformPixelCoordinatesToPose_center_returnsIdentity() {
+        underTest.sizeInPixels = PixelDimensions(640, 480)
+        val pose: Pose = underTest.transformPixelCoordinatesToPose(Vector2(320f, 240f))
+        assertThat(pose).isEqualTo(Pose.Identity)
+    }
+
+    @Test
+    fun transformPixelCoordinatesToPose_topLeft_returnsCorrectPose() {
+        val pose: Pose = underTest.transformPixelCoordinatesToPose(Vector2(0f, 0f))
+        val expected = Vector3(underTest.size.width * -0.5f, underTest.size.height * 0.5f, 0.0f)
+        assertThat(pose.translation).isEqualTo(expected)
+    }
+
+    @Test
+    fun transformNormalizedCoordinatesToPose_center_returnsIdentity() {
+        val pose: Pose = underTest.transformNormalizedCoordinatesToPose(Vector2(0f, 0f))
+        assertThat(pose).isEqualTo(Pose.Identity)
+    }
+
+    @Test
+    fun transformNormalizedCoordinatesToPose_topLeft_returnsCorrectPose() {
+        val pose: Pose = underTest.transformNormalizedCoordinatesToPose(Vector2(-1f, 1f))
+        val expected = Vector3(underTest.size.width * -0.5f, underTest.size.height * 0.5f, 0.0f)
+        assertThat(pose.translation).isEqualTo(expected)
     }
 
     @Test

@@ -265,7 +265,7 @@ package androidx.appfunctions {
   public static final class ExecuteAppFunctionRequest.Companion {
   }
 
-  public sealed interface ExecuteAppFunctionResponse {
+  public sealed exhaustive interface ExecuteAppFunctionResponse {
   }
 
   public static final class ExecuteAppFunctionResponse.Error implements androidx.appfunctions.ExecuteAppFunctionResponse {

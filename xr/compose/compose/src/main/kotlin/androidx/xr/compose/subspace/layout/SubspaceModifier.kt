@@ -20,6 +20,9 @@ import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNodeCoordinator
 import androidx.xr.compose.subspace.node.SubspaceLayoutNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 
 /**
  * An ordered, immutable collection of [subspace modifier elements][SubspaceModifierNodeElement]
@@ -80,6 +83,24 @@ public interface SubspaceModifier {
                 null
             }
 
+        private var scope: CoroutineScope? = null
+
+        /**
+         * A [CoroutineScope] that can be used to launch tasks that should run while the node is
+         * attached.
+         *
+         * The scope is accessible between [onAttach] and [onDetach] calls, and will be cancelled
+         * after the node is detached (after [onDetach] returns).
+         */
+        public val coroutineScope: CoroutineScope
+            get() =
+                scope
+                    ?: CoroutineScope(
+                            requireOwner().coroutineContext +
+                                Job(parent = requireOwner().coroutineContext[Job])
+                        )
+                        .also { scope = it }
+
         /**
          * Indicates that the node is attached to a [SubspaceLayout] which is part of the UI tree.
          * This will get set to true right before [onAttach] is called, and set to false right after
@@ -99,6 +120,11 @@ public interface SubspaceModifier {
         internal open fun markAsDetached() {
             check(isAttached) { "Cannot detach node that is not attached!" }
             isAttached = false
+
+            scope?.let {
+                it.cancel("SubspaceModifier.Node was detached")
+                scope = null
+            }
         }
 
         /** Called when the node is attached to a [SubspaceLayout] which is part of the UI tree. */

@@ -54,25 +54,29 @@ constructor(
         get() = _requestControl
         set(value) {
             _requestControl = value
-            setTorchAsync(
-                torch =
-                    when (torchStateLiveData.value) {
-                        androidx.camera.core.TorchState.ON -> true
-                        else -> false
-                    },
-                cancelPreviousTask = false,
-            )
+
+            if (torchMode != null) {
+                setTorchAsync(
+                    torch =
+                        when (torchStateLiveData.value) {
+                            androidx.camera.core.TorchState.ON -> true
+                            else -> false
+                        },
+                    cancelPreviousTask = false,
+                )
+            }
         }
 
     override fun reset() {
         updateTorchState(TorchMode.OFF)
         stopRunningTaskInternal()
         setTorchAsync(false)
+        torchMode = null
     }
 
     private val hasFlashUnit: Boolean = cameraProperties.isFlashAvailable()
 
-    @VisibleForTesting internal var torchMode = TorchMode.OFF
+    @VisibleForTesting internal var torchMode: TorchMode? = null
     private val _torchState = MutableLiveData(androidx.camera.core.TorchState.OFF)
     public val torchStateLiveData: LiveData<Int>
         get() = _torchState

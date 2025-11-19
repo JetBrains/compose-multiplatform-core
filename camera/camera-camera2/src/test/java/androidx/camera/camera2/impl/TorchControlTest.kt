@@ -309,6 +309,63 @@ class TorchControlTest {
         Truth.assertThat(deferred2.awaitWithTimeout()).isNotNull()
     }
 
+    @Test
+    fun setRequestControl_whenTorchModeIsNull_requestControlNotCalled(): Unit = runBlocking {
+        // Arrange: torchMode is initially null
+        val requestControl = FakeUseCaseCameraRequestControl()
+        torchControl.torchMode = null // Ensure torchMode is null
+
+        // Act: Set requestControl again without explicitly setting torchMode
+        torchControl.requestControl = requestControl
+
+        // Assert: setTorchOnAsync or setTorchOffAsync should not be called on
+        // UseCaseCameraRequestControl
+        Truth.assertThat(requestControl.setTorchCalls).isEmpty()
+    }
+
+    @Test
+    fun setRequestControl_afterTorchEnabled_requestControlCalledWithTorchOn(): Unit = runBlocking {
+        // Arrange: torchMode is initially null
+        val requestControl = FakeUseCaseCameraRequestControl()
+        torchControl.setTorchAsync(true)
+
+        // Act: Set requestControl again without explicitly setting torchMode
+        torchControl.requestControl = requestControl
+
+        // Assert: setTorchOnAsync or setTorchOffAsync should not be called on
+        // UseCaseCameraRequestControl
+        Truth.assertThat(requestControl.setTorchCalls).contains(true)
+    }
+
+    @Test
+    fun setRequestControl_afterTorchDisabled_requestControlCalledWithTorchOff(): Unit =
+        runBlocking {
+            // Arrange: torchMode is initially null
+            val requestControl = FakeUseCaseCameraRequestControl()
+            torchControl.setTorchAsync(false)
+
+            // Act: Set requestControl again without explicitly setting torchMode
+            torchControl.requestControl = requestControl
+
+            // Assert: setTorchOnAsync or setTorchOffAsync should not be called on
+            // UseCaseCameraRequestControl
+            Truth.assertThat(requestControl.setTorchCalls).contains(false)
+        }
+
+    @Test
+    fun torchMode_isNull_afterReset() {
+        // Arrange: Set torch to ON, so torchMode is not null
+        torchControl.setTorchAsync(true)
+        Truth.assertThat(torchControl.torchStateLiveData.value).isEqualTo(TorchState.ON)
+        Truth.assertThat(torchControl.torchMode).isNotNull()
+
+        // Act: Call reset
+        torchControl.reset()
+
+        // Assert: torchMode should be null after reset
+        Truth.assertThat(torchControl.torchMode).isNull()
+    }
+
     private suspend fun <T> Deferred<T>.awaitWithTimeout(
         timeMillis: Long = TimeUnit.SECONDS.toMillis(5)
     ) = withTimeout(timeMillis) { await() }

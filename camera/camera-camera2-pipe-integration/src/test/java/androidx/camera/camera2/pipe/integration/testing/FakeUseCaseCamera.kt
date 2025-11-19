@@ -104,6 +104,7 @@ open class FakeUseCaseCameraRequestControl(
     var setConfigCalls = mutableListOf<RequestParameters>()
     var setConfigResult = CompletableDeferred(Unit)
     var setTorchResult = CompletableDeferred(Result3A(status = Result3A.Status.OK))
+    var setTorchCalls = mutableListOf<Boolean>()
 
     // TODO - Implement thread-safety in the functions annotated with @AnyThread in
     //  UseCaseCameraRequestControl
@@ -157,10 +158,12 @@ open class FakeUseCaseCameraRequestControl(
     }
 
     override fun setTorchOnAsync(): Deferred<Result3A> {
+        setTorchCalls.add(true)
         return setTorchResult
     }
 
     override fun setTorchOffAsync(aeMode: AeMode): Deferred<Result3A> {
+        setTorchCalls.add(false)
         return setTorchResult
     }
 

@@ -33,6 +33,7 @@ import androidx.xr.runtime.math.Ray
  *   hit is at the beginning of the list.
  * @throws [IllegalStateException] if [Session.config] is set to
  *   [Config.PlaneTrackingMode.DISABLED].
+ * @sample androidx.xr.arcore.samples.callHitTest
  */
 public fun hitTest(session: Session, ray: Ray): List<HitResult> {
     val perceptionStateExtender =

@@ -188,12 +188,6 @@ public class FlagsTest {
     }
 
     @Test
-    public void testFlagValue_enableDeletePropagationType() {
-        assertThat(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
-                .isEqualTo("com.android.appsearch.flags.enable_delete_propagation_type");
-    }
-
-    @Test
     public void testFlagValue_enableAppSearchManageBlobFiles() {
         assertThat(Flags.FLAG_ENABLE_APP_SEARCH_MANAGE_BLOB_FILES)
                 .isEqualTo("com.android.appsearch.flags.enable_app_search_manage_blob_files");
@@ -358,5 +352,11 @@ public class FlagsTest {
     public void testFlagValue_enableRepeatedFieldJoins() {
         assertThat(Flags.FLAG_ENABLE_REPEATED_FIELD_JOINS).isEqualTo(
                 "com.android.appsearch.flags.enable_repeated_field_joins");
+    }
+
+    @Test
+    public void testFlagValue_enableDeletePropagationRw() {
+        assertThat(Flags.FLAG_ENABLE_DELETE_PROPAGATION_RW)
+                .isEqualTo("com.android.appsearch.flags.enable_delete_propagation_rw");
     }
 }

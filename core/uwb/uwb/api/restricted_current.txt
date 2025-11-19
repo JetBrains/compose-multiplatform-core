@@ -107,7 +107,7 @@ package androidx.core.uwb {
     property public androidx.core.uwb.RangingMeasurement? elevation;
   }
 
-  public abstract sealed class RangingResult {
+  public abstract sealed exhaustive class RangingResult {
     method @InaccessibleFromKotlin public abstract androidx.core.uwb.UwbDevice getDevice();
     property public abstract androidx.core.uwb.UwbDevice device;
     field public static final androidx.core.uwb.RangingResult.Companion Companion;

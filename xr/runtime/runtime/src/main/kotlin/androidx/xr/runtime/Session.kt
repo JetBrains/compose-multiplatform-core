@@ -105,6 +105,7 @@ public constructor(
          *   met.
          * @throws [SecurityException] if the [Session] is backed by Google Play Services for AR and
          *   [android.Manifest.permission.CAMERA] has not been granted to the calling application.
+         * @sample androidx.xr.arcore.samples.callSessionCreate
          */
         @JvmOverloads
         @JvmStatic
@@ -132,6 +133,7 @@ public constructor(
          *   met.
          * @throws [SecurityException] if the [Session] is backed by Google Play Services for AR and
          *   [android.Manifest.permission.CAMERA] has not been granted to the calling application.
+         * @sample androidx.xr.arcore.samples.callSessionCreate
          */
         @JvmStatic
         @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -168,6 +170,7 @@ public constructor(
          *   met.
          * @throws [SecurityException] if the [Session] is backed by Google Play Services for AR and
          *   [android.Manifest.permission.CAMERA] has not been granted to the calling application.
+         * @sample androidx.xr.arcore.samples.callSessionCreate
          */
         @JvmOverloads
         @JvmStatic

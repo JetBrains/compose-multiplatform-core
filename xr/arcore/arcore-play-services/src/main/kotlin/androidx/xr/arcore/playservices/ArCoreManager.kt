@@ -64,7 +64,11 @@ internal constructor(
 
     internal lateinit var _session: Session
 
-    /** The underlying [Session] instance. */
+    /**
+     * The underlying [Session] instance.
+     *
+     * @sample androidx.xr.arcore.samples.getARCoreSession
+     */
     @UnsupportedArCoreCompatApi public fun session(): Session = _session
 
     // TODO(b/411154789): Remove once Session runtime invocations are forced to run sequentially.

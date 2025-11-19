@@ -17,6 +17,7 @@
 package androidx.xr.scenecore.testing
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.MovableComponent
 import androidx.xr.scenecore.runtime.MoveEventListener
@@ -43,6 +44,12 @@ public class FakeMovableComponent : FakeComponent(), MovableComponent {
      */
     public val moveEventListenersMap: MutableMap<MoveEventListener, Executor> = mutableMapOf()
 
+    /** The number of times setPlanePoseForMoveUpdatePose is called */
+    public var setPlanePoseForMoveUpdatePoseCallCount: Long = 0
+
+    /** The last plane pose set by setPlanePoseForMoveUpdatePose */
+    public var lastPlanePose: Pose? = null
+
     /**
      * Adds the listener to the set of active listeners for the move events.
      *
@@ -68,5 +75,10 @@ public class FakeMovableComponent : FakeComponent(), MovableComponent {
      */
     override fun removeMoveEventListener(moveEventListener: MoveEventListener) {
         moveEventListenersMap.remove(moveEventListener)
+    }
+
+    override fun setPlanePoseForMoveUpdatePose(planePose: Pose?, moveUpdatePose: Pose) {
+        setPlanePoseForMoveUpdatePoseCallCount++
+        lastPlanePose = planePose
     }
 }

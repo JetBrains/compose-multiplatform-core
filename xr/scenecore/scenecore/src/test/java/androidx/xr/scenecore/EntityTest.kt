@@ -32,6 +32,7 @@ import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.IntSize2d
 import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector2
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.ActivityPanelEntity as RtActivityPanelEntity
 import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
@@ -1202,6 +1203,31 @@ class EntityTest {
         panelEntity.cornerRadius = radius
 
         verify(mockPanelEntityImpl).cornerRadius = radius
+    }
+
+    @Test
+    @OptIn(ExperimentalPanelCoordinateApi::class)
+    fun transformPixelCoordinatesToPose_callsRuntime() {
+        val input = Vector2(100f, 100f)
+        panelEntity.transformPixelCoordinatesToPose(input)
+        verify(mockPanelEntityImpl).transformPixelCoordinatesToPose(input)
+
+        val input2 = Vector2(200f, 200f)
+        activityPanelEntity.transformPixelCoordinatesToPose(input2)
+        verify(mockActivityPanelEntity).transformPixelCoordinatesToPose(input2)
+    }
+
+    @Test
+    @OptIn(ExperimentalPanelCoordinateApi::class)
+    fun transformNormalizedCoordinatesToPose_callsRuntime() {
+        val input = Vector2(1f, 1f)
+
+        panelEntity.transformNormalizedCoordinatesToPose(input)
+        verify(mockPanelEntityImpl).transformNormalizedCoordinatesToPose(input)
+
+        val input2 = Vector2(2f, 2f)
+        activityPanelEntity.transformNormalizedCoordinatesToPose(input)
+        verify(mockActivityPanelEntity).transformNormalizedCoordinatesToPose(input)
     }
 
     @Test

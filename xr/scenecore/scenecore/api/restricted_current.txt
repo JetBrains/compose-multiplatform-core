@@ -208,6 +208,9 @@ package androidx.xr.scenecore {
     method public default void onMoveUpdate(androidx.xr.scenecore.Entity entity, androidx.xr.runtime.math.Ray currentInputRay, androidx.xr.runtime.math.Pose currentPose, float currentScale);
   }
 
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalPanelCoordinateApi {
+  }
+
   public final class ExrImage {
     method @MainThread public static suspend Object? createFromZip(androidx.xr.runtime.Session session, android.net.Uri uri, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
     method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static suspend Object? createFromZip(androidx.xr.runtime.Session session, byte[] assetData, String assetKey, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
@@ -546,6 +549,8 @@ package androidx.xr.scenecore {
     method @InaccessibleFromKotlin public final void setCornerRadius(float);
     method @InaccessibleFromKotlin public final void setSize(androidx.xr.runtime.math.FloatSize2d);
     method @InaccessibleFromKotlin public final void setSizeInPixels(androidx.xr.runtime.math.IntSize2d);
+    method @SuppressCompatibility @androidx.xr.scenecore.ExperimentalPanelCoordinateApi public final androidx.xr.runtime.math.Pose transformNormalizedCoordinatesToPose(androidx.xr.runtime.math.Vector2 coordinates);
+    method @SuppressCompatibility @androidx.xr.scenecore.ExperimentalPanelCoordinateApi public final androidx.xr.runtime.math.Pose transformPixelCoordinatesToPose(androidx.xr.runtime.math.Vector2 coordinates);
     property public final float cornerRadius;
     property public final boolean isMainPanelEntity;
     property public final androidx.xr.runtime.math.FloatSize2d size;

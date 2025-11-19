@@ -46,7 +46,7 @@ public class DrawWithContentModifier(public val content: (RemoteDrawWithContentS
 
 @Composable
 public fun RemoteModifier.drawWithContent(
-    content: (RemoteDrawWithContentScope).() -> Unit
+    onDraw: (RemoteDrawWithContentScope).() -> Unit
 ): RemoteModifier {
-    return then(DrawWithContentModifier(content))
+    return then(DrawWithContentModifier(onDraw))
 }

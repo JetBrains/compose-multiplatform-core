@@ -93,10 +93,12 @@ class SceneTest {
     }
 
     @Test
-    fun getSceneAfterSessionDestroyed_throwsIllegalStateException() {
+    fun getSceneAfterSessionDestroyed_returnsScene() {
+        // We currently allow getScene to be invoked on a Session whose lifecycle state is
+        // DESTROYED. We may want to change this in the future, see b/450009236.
         activityController.destroy()
 
-        assertFailsWith<IllegalStateException> { session.scene }
+        assertThat(session.scene).isInstanceOf(Scene::class.java)
     }
 
     @Test

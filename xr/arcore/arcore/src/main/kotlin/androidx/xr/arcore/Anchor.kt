@@ -53,6 +53,7 @@ internal constructor(
          * @return a subtype of [AnchorCreateResult] based on the result of the operation. If the
          *   operation is successful, the result will be of type [AnchorCreateSuccess] with the
          *   created [Anchor] as its property.
+         * @sample androidx.xr.arcore.samples.callCreateAnchor
          */
         @JvmStatic
         public fun create(session: Session, pose: Pose): AnchorCreateResult {

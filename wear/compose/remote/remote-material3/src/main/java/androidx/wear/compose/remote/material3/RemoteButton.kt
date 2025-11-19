@@ -24,8 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.remote.creation.compose.action.Action
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
-import androidx.compose.remote.creation.compose.layout.Alignment
-import androidx.compose.remote.creation.compose.layout.Arrangement
+import androidx.compose.remote.creation.compose.layout.RemoteAlignment
+import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteDrawWithContentScope
 import androidx.compose.remote.creation.compose.layout.RemotePaddingValues
@@ -153,8 +153,8 @@ private fun RemoteButtonImpl(
             )
 
     RemoteRow(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.CenterHorizontally,
+        verticalAlignment = RemoteAlignment.CenterVertically,
+        horizontalArrangement = RemoteArrangement.CenterHorizontally,
         modifier =
             modifier
                 .drawWithContent {

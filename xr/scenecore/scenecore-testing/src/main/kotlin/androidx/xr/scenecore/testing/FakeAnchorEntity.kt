@@ -67,6 +67,10 @@ public class FakeAnchorEntity : FakeSystemSpaceEntity(), AnchorEntity {
         return anchor?.runtimeAnchor?.pose ?: Pose.Identity
     }
 
+    override fun dispose() {
+        anchor?.runtimeAnchor?.detach()
+    }
+
     /**
      * Test function to invoke the onStateChanged listener callback.
      *

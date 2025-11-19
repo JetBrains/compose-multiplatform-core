@@ -73,7 +73,11 @@ internal constructor(private val timeSource: ArCoreTimeSource) : PerceptionManag
     private var displayHeight = 0
     internal var displayChanged: Boolean = false
 
-    /** The latest [Frame] returned by the underlying [Session]. */
+    /**
+     * The latest [Frame] returned by the underlying [Session].
+     *
+     * @sample androidx.xr.arcore.samples.getARCoreFrame
+     */
     @UnsupportedArCoreCompatApi public fun lastFrame(): Frame = _latestFrame
 
     internal fun lastFrame(value: Frame) {

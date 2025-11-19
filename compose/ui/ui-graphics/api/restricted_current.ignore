@@ -1,9 +1,0 @@
-// Baseline format: 1.0
-AddedMethod: androidx.compose.ui.graphics.AndroidCanvas#getInternalCanvas():
-    Added method androidx.compose.ui.graphics.AndroidCanvas.getInternalCanvas()
-AddedMethod: androidx.compose.ui.graphics.AndroidCanvas#setInternalCanvas(android.graphics.Canvas):
-    Added method androidx.compose.ui.graphics.AndroidCanvas.setInternalCanvas(android.graphics.Canvas)
-AddedMethod: androidx.compose.ui.graphics.CanvasHolder#getAndroidCanvas():
-    Added method androidx.compose.ui.graphics.CanvasHolder.getAndroidCanvas()
-AddedMethod: androidx.compose.ui.graphics.drawscope.CanvasDrawScope#getDrawParams():
-    Added method androidx.compose.ui.graphics.drawscope.CanvasDrawScope.getDrawParams()

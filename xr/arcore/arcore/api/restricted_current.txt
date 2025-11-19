@@ -43,7 +43,7 @@ package androidx.xr.arcore {
     ctor public AnchorCreateResourcesExhausted();
   }
 
-  public abstract sealed class AnchorCreateResult {
+  public abstract sealed exhaustive class AnchorCreateResult {
   }
 
   public final class AnchorCreateSuccess extends androidx.xr.arcore.AnchorCreateResult {
@@ -109,7 +109,7 @@ package androidx.xr.arcore {
     ctor public CreateGeospatialPoseFromPoseNotTracking();
   }
 
-  public abstract sealed class CreateGeospatialPoseFromPoseResult {
+  public abstract sealed exhaustive class CreateGeospatialPoseFromPoseResult {
   }
 
   public final class CreateGeospatialPoseFromPoseSuccess extends androidx.xr.arcore.CreateGeospatialPoseFromPoseResult {
@@ -127,7 +127,7 @@ package androidx.xr.arcore {
     ctor public CreatePoseFromGeospatialPoseNotTracking();
   }
 
-  public abstract sealed class CreatePoseFromGeospatialPoseResult {
+  public abstract sealed exhaustive class CreatePoseFromGeospatialPoseResult {
   }
 
   public final class CreatePoseFromGeospatialPoseSuccess extends androidx.xr.arcore.CreatePoseFromGeospatialPoseResult {

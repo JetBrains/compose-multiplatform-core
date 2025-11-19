@@ -57,7 +57,7 @@ package androidx.glance.wear.tiles {
     property @Deprecated public java.time.Instant start;
   }
 
-  @Deprecated public sealed interface TimelineMode {
+  @Deprecated public sealed exhaustive interface TimelineMode {
   }
 
   @Deprecated public static final class TimelineMode.SingleEntry implements androidx.glance.wear.tiles.TimelineMode {

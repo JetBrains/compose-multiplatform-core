@@ -38,7 +38,7 @@ import com.google.common.util.concurrent.ListenableFuture
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakeScenePose : ScenePose {
     /** Returns the pose for this entity, relative to the activity space root. */
-    override val activitySpacePose: Pose = Pose.Identity
+    override var activitySpacePose: Pose = Pose.Identity
 
     /**
      * Returns the scale of this ScenePose. For base ScenePoses, the scale is (1,1,1). For entities
@@ -53,7 +53,7 @@ public open class FakeScenePose : ScenePose {
      * Returns the scale in the activity space. This is used by [transformPoseTo] in its
      * calculation.
      */
-    override val activitySpaceScale: Vector3 = Vector3.One
+    override var activitySpaceScale: Vector3 = Vector3.One
 
     /**
      * Returns a pose relative to this entity transformed into a pose relative to the destination.
@@ -63,7 +63,32 @@ public open class FakeScenePose : ScenePose {
      * @return The pose relative to the destination entity.
      */
     override fun transformPoseTo(pose: Pose, destination: ScenePose): Pose {
-        return pose
+        val destinationScale = destination.activitySpaceScale
+        val inverseDestinationScale =
+            Vector3(1f / destinationScale.x, 1f / destinationScale.y, 1f / destinationScale.z)
+
+        val activityToLocal = activitySpacePose
+        val activityToDestination = destination.activitySpacePose
+        val destinationToActivity =
+            Pose(
+                    activityToDestination.translation.scale(inverseDestinationScale),
+                    activityToDestination.rotation,
+                )
+                .inverse
+        val destinationToLocal =
+            destinationToActivity.compose(
+                Pose(
+                    activityToLocal.translation.scale(inverseDestinationScale),
+                    activityToLocal.rotation,
+                )
+            )
+
+        return destinationToLocal.compose(
+            Pose(
+                pose.translation.scale(this.activitySpaceScale).scale(inverseDestinationScale),
+                pose.rotation,
+            )
+        )
     }
 
     /**

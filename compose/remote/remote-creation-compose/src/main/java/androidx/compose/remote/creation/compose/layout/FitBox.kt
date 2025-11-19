@@ -30,8 +30,8 @@ import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeFitBoxModifier(
     private val modifier: RemoteModifier,
-    private val horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    private val verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    private val horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    private val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
 ) : DrawModifier {
     override fun ContentDrawScope.draw() {
         drawIntoRemoteCanvas { canvas ->
@@ -55,8 +55,8 @@ public class RemoteComposeFitBoxModifier(
 @Composable
 public fun FitBox(
     modifier: RemoteModifier = RemoteModifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Center,
+    horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.CenterHorizontally,
+    verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Center,
     content: @Composable () -> Unit,
 ) {
     val background = modifier.find<BackgroundModifier>()

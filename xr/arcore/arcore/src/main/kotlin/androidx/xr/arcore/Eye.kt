@@ -35,7 +35,11 @@ import kotlinx.coroutines.flow.asStateFlow
 public class Eye internal constructor(internal val runtimeEye: RuntimeEye) : Updatable {
 
     public companion object {
-        /** Returns the left eye, if available. */
+        /**
+         * Returns the left eye, if available.
+         *
+         * @sample androidx.xr.arcore.samples.getLeftEye
+         */
         @JvmStatic
         public fun left(session: Session): Eye? {
             val perceptionStateExtender = getPerceptionStateExtender(session)
@@ -46,7 +50,11 @@ public class Eye internal constructor(internal val runtimeEye: RuntimeEye) : Upd
             return perceptionStateExtender.xrResourcesManager.leftEye
         }
 
-        /** Returns the right eye, if available. */
+        /**
+         * Returns the right eye, if available.
+         *
+         * @sample androidx.xr.arcore.samples.getRightEye
+         */
         @JvmStatic
         public fun right(session: Session): Eye? {
             val perceptionStateExtender = getPerceptionStateExtender(session)

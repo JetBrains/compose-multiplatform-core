@@ -130,8 +130,8 @@ public fun rememberStateMachine(currentState: RemoteInt, vararg states: Int): St
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeStateLayoutModifier(
     public var modifier: RemoteModifier,
-    public var horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    public var verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    public var horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    public var verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
     public var currentState: RemoteInt,
 ) : DrawModifier {
     override fun ContentDrawScope.draw() {
@@ -148,8 +148,8 @@ public class RemoteComposeStateLayoutModifier(
 public fun StateLayout(
     stateMachine: StateMachineSpec,
     modifier: RemoteModifier = RemoteModifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Center,
+    horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.CenterHorizontally,
+    verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Center,
     content: @Composable (Int) -> Unit,
 ) {
     @Suppress("COMPOSE_APPLIER_CALL_MISMATCH") // b/446706254

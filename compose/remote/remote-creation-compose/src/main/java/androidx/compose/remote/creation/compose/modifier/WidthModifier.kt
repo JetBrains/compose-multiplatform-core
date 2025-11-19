@@ -19,8 +19,6 @@ package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
@@ -40,44 +38,33 @@ public class WidthModifier(public val type: Type, public val value: RemoteFloat)
     }
 }
 
-@Composable
-public fun RemoteModifier.size(width: Dp, height: Dp): RemoteModifier = width(width).height(height)
-
-@Composable public fun RemoteModifier.size(value: Dp): RemoteModifier = width(value).height(value)
-
-public fun RemoteModifier.fillMaxSize(weight: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
-    fillMaxWidth(weight).fillMaxHeight(weight)
-
 public fun RemoteModifier.width(width: RemoteDp): RemoteModifier =
     then(WidthModifier(Type.EXACT_DP, width.value))
 
 public fun RemoteModifier.width(width: RemoteFloat): RemoteModifier =
     then(WidthModifier(Type.EXACT, width))
 
-public fun RemoteModifier.fillMaxWidth(width: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
-    then(WidthModifier(Type.FILL, width))
+public fun RemoteModifier.fillMaxWidth(fraction: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
+    then(WidthModifier(Type.FILL, fraction))
 
-public fun RemoteModifier.fillMaxWidth(width: Float): RemoteModifier =
-    then(WidthModifier(Type.FILL, RemoteFloat(width)))
-
-public fun RemoteModifier.wrapContentSize(): RemoteModifier =
-    then(WidthModifier(Type.WRAP, RemoteFloat(1f))).then(HeightModifier(Type.WRAP, RemoteFloat(1f)))
+public fun RemoteModifier.fillMaxWidth(fraction: Float): RemoteModifier =
+    then(WidthModifier(Type.FILL, RemoteFloat(fraction)))
 
 @Composable
-public fun RemoteModifier.width(value: Dp): RemoteModifier {
-    val valuePx = with(LocalDensity.current) { value.toPx() }
+public fun RemoteModifier.width(width: Dp): RemoteModifier {
+    val valuePx = with(LocalDensity.current) { width.toPx() }
 
     return then(WidthModifier(Type.EXACT, RemoteFloat(valuePx)))
 }
 
-public fun RemoteModifier.width(value: Int): RemoteModifier =
-    then(WidthModifier(Type.EXACT, RemoteFloat(value.toFloat())))
+public fun RemoteModifier.width(width: Int): RemoteModifier =
+    then(WidthModifier(Type.EXACT, RemoteFloat(width.toFloat())))
 
 @Composable
-public fun RemoteModifier.width(value: IntrinsicSize): RemoteModifier {
-    if (value == IntrinsicSize.Min) {
-        return then(WidthModifier(Type.INTRINSIC_MIN, RemoteFloat(0f)))
+public fun RemoteModifier.width(width: IntrinsicSize): RemoteModifier {
+    return if (width == IntrinsicSize.Min) {
+        then(WidthModifier(Type.INTRINSIC_MIN, RemoteFloat(0f)))
     } else {
-        return then(WidthModifier(Type.INTRINSIC_MAX, RemoteFloat(0f)))
+        then(WidthModifier(Type.INTRINSIC_MAX, RemoteFloat(0f)))
     }
 }

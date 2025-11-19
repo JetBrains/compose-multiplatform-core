@@ -22,13 +22,10 @@ import static androidx.xr.runtime.testing.math.MathAssertions.assertVector3;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -254,28 +251,6 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
                 mXrExtensions,
                 mEntityManager,
                 mExecutor);
-    }
-
-    private AnchorEntityImpl createAnchorEntityFromPlane() {
-        when(mAnchor.persist()).thenReturn(UUID.randomUUID());
-
-        Node node = Objects.requireNonNull(mXrExtensions).createNode();
-        ActivityController<Activity> activityController = Robolectric.buildActivity(Activity.class);
-        Activity activity = activityController.create().start().get();
-        AnchorEntityImpl entity =
-                AnchorEntityImpl.createAnchorFromPlane(
-                        activity,
-                        node,
-                        mPlane,
-                        new Pose(),
-                        MILLISECONDS.toNanos(mCurrentTimeMillis),
-                        mActivitySpace,
-                        mActivitySpace,
-                        mXrExtensions,
-                        mEntityManager,
-                        mExecutor);
-        entity.setOnStateChangedListener(mAnchorStateListener);
-        return entity;
     }
 
     /** Creates a generic glTF entity. */
@@ -547,20 +522,6 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     }
 
     @Test
-    public void anchorEntityCreatedFromPlane_anchorsAndSetsParent() {
-        when(mPlane.createAnchor(any(), any())).thenReturn(mAnchor);
-        when(mAnchor.getAnchorToken()).thenReturn(mSharedAnchorToken);
-
-        AnchorEntityImpl anchorEntity = createAnchorEntityFromPlane();
-
-        Node anchorNode = anchorEntity.getNode();
-        Node rootNode = mActivitySpace.getNode();
-
-        assertThat(anchorEntity.getState()).isEqualTo(State.ANCHORED);
-        assertThat(NodeRepository.getInstance().getParent(anchorNode)).isEqualTo(rootNode);
-    }
-
-    @Test
     public void setAnchor_nonExportableAnchor_remainsUnanchored() {
         AnchorEntityImpl anchorEntity = createAnchorEntity();
         anchorEntity.setOnStateChangedListener(mAnchorStateListener);
@@ -612,40 +573,6 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
         anchorEntity.dispose();
 
         verify(mAnchorStateListener).onStateChanged(State.ERROR);
-    }
-
-    @Test
-    public void createAnchorEntityFromPlane_returnsAnchorEntity() {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        when(mPlane.createAnchor(any(), any())).thenReturn(mAnchor);
-        when(mAnchor.getAnchorToken()).thenReturn(mSharedAnchorToken);
-
-        AnchorEntityImpl anchorEntity = createAnchorEntityFromPlane();
-        mExecutor.runAll();
-
-        verify(mAnchorStateListener).onStateChanged(State.ANCHORED);
-        assertThat(anchorEntity).isNotNull();
-        assertThat(anchorEntity.getState()).isEqualTo(State.ANCHORED);
-        assertThat(NodeRepository.getInstance().getName(anchorEntity.getNode()))
-                .isEqualTo(AnchorEntityImpl.ANCHOR_NODE_NAME);
-        assertThat(NodeRepository.getInstance().getAnchorId(anchorEntity.getNode()))
-                .isEqualTo(mSharedAnchorToken);
-        assertThat(NodeRepository.getInstance().getParent(anchorEntity.getNode()))
-                .isEqualTo(mActivitySpace.getNode());
-    }
-
-    @Test
-    public void createAnchorEntityFromPlane_failureToAnchor_hasErrorState() {
-        when(mPerceptionLibrary.getSession()).thenReturn(mSession);
-        when(mPlane.createAnchor(any(), any())).thenReturn(null);
-
-        AnchorEntityImpl anchorEntity = createAnchorEntityFromPlane();
-        mExecutor.runAll();
-
-        verify(mAnchorStateListener).onStateChanged(State.ERROR);
-        assertThat(anchorEntity).isNotNull();
-        assertThat(anchorEntity.getState()).isEqualTo(State.ERROR);
-        assertThat(NodeRepository.getInstance().getParent(anchorEntity.getNode())).isEqualTo(null);
     }
 
     @Test

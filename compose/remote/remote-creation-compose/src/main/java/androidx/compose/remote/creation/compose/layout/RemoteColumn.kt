@@ -32,8 +32,8 @@ import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeColumnModifier(
     public val modifier: RemoteModifier = RemoteModifier,
-    public val horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    public val verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    public val horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    public val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
 ) : DrawModifier {
     override fun ContentDrawScope.draw() {
         drawIntoRemoteCanvas { canvas ->
@@ -66,8 +66,8 @@ public class RemoteColumnScope {
 @Composable
 public fun RemoteColumn(
     modifier: RemoteModifier = RemoteModifier,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
-    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
+    horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
     content: @Composable RemoteColumnScope.() -> Unit,
 ) {
     val scope = remember { RemoteColumnScope() }

@@ -1,5 +1,0 @@
-// Baseline format: 1.0
-AddedMethod: androidx.compose.foundation.layout.ColumnKt#getDefaultColumnMeasurePolicy():
-    Added method androidx.compose.foundation.layout.ColumnKt.getDefaultColumnMeasurePolicy()
-AddedMethod: androidx.compose.foundation.layout.RowKt#getDefaultRowMeasurePolicy():
-    Added method androidx.compose.foundation.layout.RowKt.getDefaultRowMeasurePolicy()

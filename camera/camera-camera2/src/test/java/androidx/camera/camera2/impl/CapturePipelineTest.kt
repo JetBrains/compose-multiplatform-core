@@ -320,9 +320,6 @@ class CapturePipelineTest {
         torchControl =
             TorchControl(fakeCameraProperties, state3AControl, fakeUseCaseThreads).also {
                 it.requestControl = fakeRequestControl
-
-                // Ensure the control is updated after the UseCaseCamera been set.
-                assertThat(fakeRequestControl.setTorchSemaphore.tryAcquire(testScope)).isTrue()
                 fakeRequestControl.torchUpdateEventList.clear()
             }
 

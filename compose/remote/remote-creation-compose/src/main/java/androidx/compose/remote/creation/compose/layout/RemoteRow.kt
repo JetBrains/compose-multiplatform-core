@@ -33,8 +33,8 @@ import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeRowModifier(
     public val modifier: RecordingModifier,
-    public val horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    public val verticalAlignment: Alignment.Vertical = Alignment.Top,
+    public val horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start,
+    public val verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top,
 ) : DrawModifier {
     override fun ContentDrawScope.draw() {
         drawIntoRemoteCanvas { canvas ->
@@ -67,8 +67,8 @@ public class RemoteRowScope {
 @Composable
 public fun RemoteRow(
     modifier: RemoteModifier = RemoteModifier,
-    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    verticalAlignment: Alignment.Vertical = Alignment.Top,
+    horizontalArrangement: RemoteArrangement.Horizontal = RemoteArrangement.Start,
+    verticalAlignment: RemoteAlignment.Vertical = RemoteAlignment.Top,
     content: @Composable RemoteRowScope.() -> Unit,
 ) {
 

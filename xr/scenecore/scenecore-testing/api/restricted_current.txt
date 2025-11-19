@@ -195,14 +195,21 @@ package androidx.xr.scenecore.testing {
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeMovableComponent extends androidx.xr.scenecore.testing.FakeComponent implements androidx.xr.scenecore.runtime.MovableComponent {
     ctor public FakeMovableComponent();
     method public void addMoveEventListener(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.MoveEventListener moveEventListener);
+    method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose? getLastPlanePose();
     method @InaccessibleFromKotlin public java.util.Map<androidx.xr.scenecore.runtime.MoveEventListener,java.util.concurrent.Executor> getMoveEventListenersMap();
     method @InaccessibleFromKotlin public int getScaleWithDistanceMode();
+    method @InaccessibleFromKotlin public long getSetPlanePoseForMoveUpdatePoseCallCount();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getSize();
     method public void removeMoveEventListener(androidx.xr.scenecore.runtime.MoveEventListener moveEventListener);
+    method @InaccessibleFromKotlin public void setLastPlanePose(androidx.xr.runtime.math.Pose?);
+    method public void setPlanePoseForMoveUpdatePose(androidx.xr.runtime.math.Pose? planePose, androidx.xr.runtime.math.Pose moveUpdatePose);
     method @InaccessibleFromKotlin public void setScaleWithDistanceMode(int);
+    method @InaccessibleFromKotlin public void setSetPlanePoseForMoveUpdatePoseCallCount(long);
     method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
+    property public androidx.xr.runtime.math.Pose? lastPlanePose;
     property public java.util.Map<androidx.xr.scenecore.runtime.MoveEventListener,java.util.concurrent.Executor> moveEventListenersMap;
     property public int scaleWithDistanceMode;
+    property public long setPlanePoseForMoveUpdatePoseCallCount;
     property public androidx.xr.scenecore.runtime.Dimensions size;
   }
 
@@ -221,6 +228,8 @@ package androidx.xr.scenecore.testing {
     method public final void setPerceivedResolution(androidx.xr.scenecore.runtime.PerceivedResolutionResult perceivedResolution);
     method @InaccessibleFromKotlin public void setSize(androidx.xr.scenecore.runtime.Dimensions);
     method @InaccessibleFromKotlin public void setSizeInPixels(androidx.xr.scenecore.runtime.PixelDimensions);
+    method public androidx.xr.runtime.math.Pose transformNormalizedCoordinatesToPose(androidx.xr.runtime.math.Vector2 coordinates);
+    method public androidx.xr.runtime.math.Pose transformPixelCoordinatesToPose(androidx.xr.runtime.math.Vector2 coordinates);
     property public float cornerRadius;
     property public androidx.xr.scenecore.runtime.Dimensions size;
     property public androidx.xr.scenecore.runtime.PixelDimensions sizeInPixels;
@@ -538,6 +547,8 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public final androidx.xr.scenecore.runtime.HitTestResult getHitTestResult();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Vector3 getWorldSpaceScale();
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.HitTestResult> hitTest(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue int hitTestFilter);
+    method @InaccessibleFromKotlin public void setActivitySpacePose(androidx.xr.runtime.math.Pose);
+    method @InaccessibleFromKotlin public void setActivitySpaceScale(androidx.xr.runtime.math.Vector3);
     method @InaccessibleFromKotlin public final void setHitTestResult(androidx.xr.scenecore.runtime.HitTestResult);
     method public androidx.xr.runtime.math.Pose transformPoseTo(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.ScenePose destination);
     property public androidx.xr.runtime.math.Pose activitySpacePose;
@@ -560,7 +571,7 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.runtime.Entity createGroupEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.scenecore.runtime.Entity parent);
     method public androidx.xr.scenecore.runtime.InteractableComponent createInteractableComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.InputEventListener listener);
     method public androidx.xr.scenecore.runtime.LoggingEntity createLoggingEntity(androidx.xr.runtime.math.Pose pose);
-    method public androidx.xr.scenecore.testing.FakeMovableComponent createMovableComponent(boolean systemMovable, boolean scaleInZ, java.util.Set<androidx.xr.scenecore.runtime.AnchorPlacement> anchorPlacement, boolean shouldDisposeParentAnchor);
+    method public androidx.xr.scenecore.testing.FakeMovableComponent createMovableComponent(boolean systemMovable, boolean scaleInZ, boolean userAnchorable);
     method public androidx.xr.scenecore.runtime.PanelEntity createPanelEntity(android.content.Context context, androidx.xr.runtime.math.Pose pose, android.view.View view, androidx.xr.scenecore.runtime.Dimensions dimensions, String name, androidx.xr.scenecore.runtime.Entity parent);
     method public androidx.xr.scenecore.runtime.PanelEntity createPanelEntity(android.content.Context context, androidx.xr.runtime.math.Pose pose, android.view.View view, androidx.xr.scenecore.runtime.PixelDimensions pixelDimensions, String name, androidx.xr.scenecore.runtime.Entity parent);
     method public androidx.xr.scenecore.testing.FakePointerCaptureComponent createPointerCaptureComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.PointerCaptureComponent.StateListener stateListener, androidx.xr.scenecore.runtime.InputEventListener inputListener);

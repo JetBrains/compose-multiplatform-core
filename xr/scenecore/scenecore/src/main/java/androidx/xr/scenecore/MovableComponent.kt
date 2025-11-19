@@ -18,14 +18,20 @@
 
 package androidx.xr.scenecore
 
+import androidx.xr.arcore.AnchorCreateSuccess
+import androidx.xr.arcore.Plane
 import androidx.xr.runtime.Session
+import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize3d
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.MovableComponent.Companion.createAnchorable
 import androidx.xr.scenecore.MovableComponent.Companion.createSystemMovable
 import androidx.xr.scenecore.runtime.MoveEventListener as RtMoveEventListener
-import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
+import kotlin.math.max
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * This [Component] can be attached to a single instance of an [Entity]. When attached, this
@@ -49,7 +55,7 @@ import java.util.concurrent.Executor
  */
 public class MovableComponent
 private constructor(
-    private val sceneRuntime: SceneRuntime,
+    private val session: Session,
     private val entityManager: EntityManager,
     private val systemMovable: Boolean = true,
     private val scaleInZ: Boolean = true,
@@ -58,17 +64,87 @@ private constructor(
     private val initialListener: EntityMoveListener? = null,
     private val initialListenerExecutor: Executor? = null,
 ) : Component {
-    private val rtMovableComponent by lazy {
-        sceneRuntime.createMovableComponent(
-            systemMovable,
-            scaleInZ,
-            anchorPlacement.toRtAnchorPlacement(sceneRuntime),
-            disposeParentOnReAnchor,
-        )
+
+    private val sceneRuntime = session.sceneRuntime
+    private val anchorable = !anchorPlacement.isEmpty()
+    private var createdAnchorEntity: AnchorEntity? = null
+
+    internal val rtMovableComponent by lazy {
+        sceneRuntime.createMovableComponent(systemMovable, scaleInZ, anchorable)
     }
-    private val moveListenersMap = ConcurrentHashMap<EntityMoveListener, RtMoveEventListener>()
+    private val moveListenersMap = ConcurrentHashMap<EntityMoveListener, Executor>()
+    private val rtMoveEventListener: RtMoveEventListener = RtMoveEventListener { rtMoveEvent ->
+        val moveEvent = rtMoveEvent.toMoveEvent(entityManager)
+        val updatedReformEventInfo: UpdatedReformEventInfo? =
+            if (anchorable) getUpdatedReformEventPoseAndParent(moveEvent) else null
+        moveListenersMap.forEach { (entityMoveListener, executor) ->
+            executor.execute {
+                when (moveEvent.moveState) {
+                    MoveEvent.MOVE_STATE_START ->
+                        entity?.let {
+                            entityMoveListener.onMoveStart(
+                                it,
+                                moveEvent.initialInputRay,
+                                moveEvent.previousPose,
+                                moveEvent.previousScale,
+                                moveEvent.initialParent,
+                            )
+                        }
+
+                    MoveEvent.MOVE_STATE_ONGOING ->
+                        entity?.let {
+                            entityMoveListener.onMoveUpdate(
+                                it,
+                                moveEvent.currentInputRay,
+                                updatedReformEventInfo?.pose ?: moveEvent.currentPose,
+                                updatedReformEventInfo?.scale ?: moveEvent.currentScale,
+                            )
+                        }
+
+                    MoveEvent.MOVE_STATE_END ->
+                        entity?.let {
+                            entityMoveListener.onMoveEnd(
+                                it,
+                                moveEvent.currentInputRay,
+                                updatedReformEventInfo?.pose ?: moveEvent.currentPose,
+                                updatedReformEventInfo?.scale ?: moveEvent.currentScale,
+                                updatedReformEventInfo?.parent ?: moveEvent.initialParent,
+                            )
+                        }
+                }
+            }
+        }
+    }
 
     private var entity: Entity? = null
+    private lateinit var planesFlow: StateFlow<Collection<Plane>>
+
+    private fun Collection<Plane>.filterByAnchorPlacement(
+        anchorPlacement: Set<AnchorPlacement>
+    ): Collection<Plane> =
+        this.mapNotNull { it ->
+            var outPlane: Plane? = null
+            val planeData = it.state.value
+            val planeOrientation = it.type.toSceneCoreOrientation()
+            val planeSemantic = planeData.label.toSceneCoreSemanticType()
+            for (anchorPlacementSpec in anchorPlacement) {
+                if (
+                    (anchorPlacementSpec.anchorablePlaneOrientations.contains(planeOrientation) ||
+                        anchorPlacementSpec.anchorablePlaneOrientations.contains(
+                            PlaneOrientation.ANY
+                        )) &&
+                        (anchorPlacementSpec.anchorablePlaneSemanticTypes.contains(planeSemantic) ||
+                            anchorPlacementSpec.anchorablePlaneSemanticTypes.contains(
+                                PlaneSemanticType.ANY
+                            )) &&
+                        planeData.trackingState == TrackingState.TRACKING
+                ) {
+                    outPlane = it
+                    break
+                }
+            }
+            outPlane
+        }
 
     /**
      * The size of the move affordance in meters. This property determines the size of the bounding
@@ -92,11 +168,22 @@ private constructor(
         }
         this.entity = entity
         val attached = (entity as BaseEntity<*>).rtEntity!!.addComponent(rtMovableComponent)
-        if (attached && initialListener != null) {
-            if (initialListenerExecutor != null) {
-                addMoveListener(initialListenerExecutor, initialListener)
-            } else {
-                addMoveListener(initialListener)
+        if (attached) {
+            if (anchorable) {
+                planesFlow = Plane.subscribe(session)
+            }
+            // TODO(b/458152082): Add rtMoveEventListener on the runtime thread executor instead of
+            // the main thread executor.
+            rtMovableComponent.addMoveEventListener(
+                HandlerExecutor.mainThreadExecutor,
+                rtMoveEventListener,
+            )
+            if (initialListener != null) {
+                if (initialListenerExecutor != null) {
+                    addMoveListener(initialListenerExecutor, initialListener)
+                } else {
+                    addMoveListener(initialListener)
+                }
             }
         }
         return attached
@@ -105,6 +192,133 @@ private constructor(
     override fun onDetach(entity: Entity) {
         (entity as BaseEntity<*>).rtEntity!!.removeComponent(rtMovableComponent)
         this.entity = null
+    }
+
+    private data class UpdatedReformEventInfo(
+        val pose: Pose,
+        val parent: Entity?,
+        val scale: Float,
+    )
+
+    private fun getUpdatedReformEventPoseAndParent(moveEvent: MoveEvent): UpdatedReformEventInfo {
+        val initialParent = moveEvent.initialParent
+        val initialPose = moveEvent.currentPose
+        val moveEventPoseInOxr =
+            initialParent.transformPoseTo(moveEvent.currentPose, session.scene.perceptionSpace)
+        val initialScale = moveEvent.currentScale
+        var updatedPose: Pose = initialPose
+        var updatedParent: Entity? = null
+        // Ignore the initial scale from the move event, it is currently incorrect.
+        var updatedScale: Float = entity?.getScale() ?: initialScale
+        var anchorablePlanePose: Pose? = null
+        var anchorablePlane: Plane? = null
+        val planes: Collection<Plane> = planesFlow.value
+        for (plane in planes.filterByAnchorPlacement(anchorPlacement)) {
+            val planeData = plane.state.value
+            var centerPoseToProposedPose = planeData.centerPose.inverse.compose(moveEventPoseInOxr)
+
+            // The extents of the plane are in the X and Z directions so we can use
+            // those to determine if the point is outside the plane. The absolute value
+            // of the y-value of centerPoseToProposedPose is the projected distance from
+            // the plane to the point.
+            if (
+                centerPoseToProposedPose.translation.x > -planeData.extents.width / 2.0f &&
+                    centerPoseToProposedPose.translation.x < planeData.extents.width / 2.0f &&
+                    centerPoseToProposedPose.translation.z > -planeData.extents.height / 2.0f &&
+                    centerPoseToProposedPose.translation.z < planeData.extents.height / 2.0f &&
+                    centerPoseToProposedPose.translation.y < MAX_PLANE_ANCHOR_DISTANCE
+            ) {
+                centerPoseToProposedPose =
+                    Pose(
+                        Vector3(
+                            centerPoseToProposedPose.translation.x,
+                            max(0f, centerPoseToProposedPose.translation.y),
+                            centerPoseToProposedPose.translation.z,
+                        ),
+                        centerPoseToProposedPose.rotation,
+                    )
+                anchorablePlanePose = planeData.centerPose
+                anchorablePlane = plane
+                updatedPose = planeData.centerPose.compose(centerPoseToProposedPose)
+                updatedPose =
+                    session.scene.perceptionSpace.transformPoseTo(updatedPose, initialParent)
+                break
+            }
+        }
+
+        if (!systemMovable) {
+            return UpdatedReformEventInfo(updatedPose, null, updatedScale)
+        }
+
+        if (anchorablePlanePose != null && anchorablePlane != null) {
+            if (moveEvent.moveState == MoveEvent.MOVE_STATE_END) {
+                val planeRotation = anchorablePlanePose.rotation
+                val rotatedPose =
+                    Pose(
+                        moveEventPoseInOxr.translation,
+                        rotateEntityToPlane(moveEventPoseInOxr.rotation, planeRotation),
+                    )
+
+                var poseToAnchor: Pose = anchorablePlanePose.inverse.compose(rotatedPose)
+                poseToAnchor =
+                    Pose(
+                        Vector3(poseToAnchor.translation.x, 0f, poseToAnchor.translation.z),
+                        poseToAnchor.rotation,
+                    )
+                val anchorResult = anchorablePlane.createAnchor(Pose.Identity)
+                if (anchorResult is AnchorCreateSuccess) {
+                    updatedPose = poseToAnchor
+                    updatedParent = AnchorEntity.create(session, anchorResult.anchor)
+                    createdAnchorEntity = updatedParent
+                }
+            }
+        } else {
+            entity?.let { entity ->
+                if (
+                    entity.parent == createdAnchorEntity &&
+                        moveEvent.moveState == MoveEvent.MOVE_STATE_END
+                ) {
+                    updatedParent = session.scene.activitySpace
+                    updatedPose =
+                        initialParent.transformPoseTo(
+                            moveEvent.currentPose,
+                            session.scene.activitySpace,
+                        )
+                }
+            }
+        }
+        rtMovableComponent.setPlanePoseForMoveUpdatePose(anchorablePlanePose, moveEventPoseInOxr)
+
+        // If the parent of the entity is changing, update its scale to reflect the ratio of the
+        // scale of the initial parent to the scale of the updated parent. This preserves activity
+        // space scaling when anchoring to an AnchorEntity, and removes it when anchoring back to
+        // the activity space.
+        if (updatedParent != null && updatedParent != initialParent) {
+            entity?.let {
+                updatedScale =
+                    it.getScale() * initialParent.getScale(Space.REAL_WORLD) /
+                        updatedParent.getScale(Space.REAL_WORLD)
+            }
+        }
+
+        entity?.let { entity ->
+            if (updatedParent != null && entity.parent != updatedParent) {
+                val prevParent = entity.parent
+                entity.parent = updatedParent
+                if (
+                    prevParent != null &&
+                        prevParent == createdAnchorEntity &&
+                        disposeParentOnReAnchor &&
+                        prevParent.children.isEmpty()
+                ) {
+                    prevParent.dispose()
+                    createdAnchorEntity = null
+                }
+            }
+            entity.setPose(updatedPose)
+            entity.setScale(updatedScale)
+        }
+        return UpdatedReformEventInfo(updatedPose, updatedParent, updatedScale)
     }
 
     /**
@@ -122,47 +336,7 @@ private constructor(
      * @param entityMoveListener The move event listener to set.
      */
     public fun addMoveListener(executor: Executor, entityMoveListener: EntityMoveListener) {
-        val rtMoveEventListener = RtMoveEventListener { rtMoveEvent ->
-            run {
-                // TODO: b/369157703 - Mirror the callback hierarchy in the runtime API.
-                val moveEvent = rtMoveEvent.toMoveEvent(entityManager)
-                when (moveEvent.moveState) {
-                    MoveEvent.MOVE_STATE_START ->
-                        entity?.let {
-                            entityMoveListener.onMoveStart(
-                                it,
-                                moveEvent.initialInputRay,
-                                moveEvent.previousPose,
-                                moveEvent.previousScale,
-                                moveEvent.initialParent,
-                            )
-                        }
-
-                    MoveEvent.MOVE_STATE_ONGOING ->
-                        entity?.let {
-                            entityMoveListener.onMoveUpdate(
-                                it,
-                                moveEvent.currentInputRay,
-                                moveEvent.currentPose,
-                                moveEvent.currentScale,
-                            )
-                        }
-
-                    MoveEvent.MOVE_STATE_END ->
-                        entity?.let {
-                            entityMoveListener.onMoveEnd(
-                                it,
-                                moveEvent.currentInputRay,
-                                moveEvent.currentPose,
-                                moveEvent.currentScale,
-                                moveEvent.updatedParent,
-                            )
-                        }
-                }
-            }
-        }
-        rtMovableComponent.addMoveEventListener(executor, rtMoveEventListener)
-        moveListenersMap[entityMoveListener] = rtMoveEventListener
+        moveListenersMap[entityMoveListener] = executor
     }
 
     /**
@@ -183,18 +357,16 @@ private constructor(
      * @param entityMoveListener The move event listener to remove.
      */
     public fun removeMoveListener(entityMoveListener: EntityMoveListener) {
-        val rtMoveEventListener = moveListenersMap.remove(entityMoveListener)
-        if (rtMoveEventListener != null) {
-            rtMovableComponent.removeMoveEventListener(rtMoveEventListener)
-        }
+        moveListenersMap.remove(entityMoveListener)
     }
 
     public companion object {
         private val kDimensionsOneMeter = FloatSize3d(1f, 1f, 1f)
+        internal const val MAX_PLANE_ANCHOR_DISTANCE = 0.2f
 
         /** Factory function for creating a MovableComponent. */
         internal fun create(
-            sceneRuntime: SceneRuntime,
+            session: Session,
             entityManager: EntityManager,
             systemMovable: Boolean = true,
             scaleInZ: Boolean = true,
@@ -204,7 +376,7 @@ private constructor(
             initialListenerExecutor: Executor? = null,
         ): MovableComponent {
             return MovableComponent(
-                sceneRuntime,
+                session,
                 entityManager,
                 systemMovable,
                 scaleInZ,
@@ -247,7 +419,7 @@ private constructor(
             entityMoveListener: EntityMoveListener,
         ): MovableComponent =
             MovableComponent.create(
-                sceneRuntime = session.sceneRuntime,
+                session = session,
                 entityManager = session.scene.entityManager,
                 systemMovable = false,
                 scaleInZ = scaleInZ,
@@ -281,7 +453,7 @@ private constructor(
             scaleInZ: Boolean = true,
         ): MovableComponent =
             MovableComponent.create(
-                sceneRuntime = session.sceneRuntime,
+                session = session,
                 entityManager = session.scene.entityManager,
                 systemMovable = true,
                 scaleInZ = scaleInZ,
@@ -323,7 +495,7 @@ private constructor(
                 "Cannot create a MovableComponent with createAnchorable and an empty set for anchorPlacement"
             }
             return MovableComponent.create(
-                sceneRuntime = session.sceneRuntime,
+                session = session,
                 entityManager = session.scene.entityManager,
                 systemMovable = true,
                 scaleInZ = false,

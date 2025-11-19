@@ -23,7 +23,8 @@ import androidx.compose.remote.creation.compose.capture.shaders.horizontalGradie
 import androidx.compose.remote.creation.compose.capture.shaders.radialGradient
 import androidx.compose.remote.creation.compose.capture.shaders.sweepGradient
 import androidx.compose.remote.creation.compose.capture.shaders.verticalGradient
-import androidx.compose.remote.creation.compose.layout.Arrangement
+import androidx.compose.remote.creation.compose.layout.RemoteAlignment
+import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteText
@@ -61,7 +62,7 @@ class BackgroundModifierTest {
     fun backgroundSolidColor() {
         remoteComposeTestRule.runScreenshotTest(size = size, backgroundColor = Color.Black) {
             DemoBox("background(Color.Blue)") {
-                RemoteBox(modifier = RemoteModifier.fillMaxSize().background(Color.Blue)) {}
+                RemoteBox(modifier = RemoteModifier.fillMaxSize().background(Color.Blue))
             }
         }
     }
@@ -74,7 +75,7 @@ class BackgroundModifierTest {
                     modifier =
                         RemoteModifier.fillMaxSize()
                             .background(RemoteBrush.verticalGradient(listOf(Color.Blue, Color.Red)))
-                ) {}
+                )
             }
         }
     }
@@ -89,7 +90,7 @@ class BackgroundModifierTest {
                             .background(
                                 RemoteBrush.horizontalGradient(listOf(Color.Blue, Color.Red))
                             )
-                ) {}
+                )
             }
         }
     }
@@ -102,7 +103,7 @@ class BackgroundModifierTest {
                     modifier =
                         RemoteModifier.fillMaxSize()
                             .background(RemoteBrush.radialGradient(listOf(Color.Blue, Color.Red)))
-                ) {}
+                )
             }
         }
     }
@@ -115,7 +116,7 @@ class BackgroundModifierTest {
                     modifier =
                         RemoteModifier.fillMaxSize()
                             .background(RemoteBrush.sweepGradient(listOf(Color.Blue, Color.Red)))
-                ) {}
+                )
             }
         }
     }
@@ -132,7 +133,7 @@ class BackgroundModifierTest {
             val color = RemoteColor.fromARGB(alpha, red, green, blue)
 
             DemoBox("background(RemoteColor.fromARGB(alpha, red, green, blue))") {
-                RemoteBox(modifier = RemoteModifier.fillMaxSize().background(color)) {}
+                RemoteBox(modifier = RemoteModifier.fillMaxSize().background(color))
             }
         }
     }
@@ -141,11 +142,16 @@ class BackgroundModifierTest {
     @RemoteComposable
     @Composable
     private fun DemoBox(title: String, content: @RemoteComposable @Composable () -> Unit) {
-        RemoteBox(modifier = RemoteModifier.fillMaxSize()) {
+        RemoteBox(
+            modifier = RemoteModifier.fillMaxSize(),
+            horizontalAlignment = RemoteAlignment.CenterHorizontally,
+            verticalArrangement = RemoteArrangement.Center,
+        ) {
             content()
             RemoteBox(
                 modifier = RemoteModifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Bottom,
+                verticalArrangement = RemoteArrangement.Bottom,
+                horizontalAlignment = RemoteAlignment.CenterHorizontally,
             ) {
                 RemoteText(title, color = RemoteColor(Color.White), fontSize = 8.sp)
             }

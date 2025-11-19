@@ -9,7 +9,7 @@ package androidx.wear.watchface.complications.data {
     property public boolean interpolated;
   }
 
-  public abstract sealed class ComplicationData {
+  public abstract sealed exhaustive class ComplicationData {
     method @InaccessibleFromKotlin public final android.content.ComponentName? getDataSource();
     method @InaccessibleFromKotlin public final int getDisplayPolicy();
     method @InaccessibleFromKotlin public final androidx.wear.watchface.complications.data.ComplicationData? getDynamicValueInvalidationFallback();

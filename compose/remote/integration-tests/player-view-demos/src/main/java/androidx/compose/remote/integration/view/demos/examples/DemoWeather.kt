@@ -18,9 +18,9 @@ package androidx.compose.remote.integration.view.demos.examples
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.remote.creation.compose.layout.Alignment
-import androidx.compose.remote.creation.compose.layout.Arrangement
 import androidx.compose.remote.creation.compose.layout.FitBox
+import androidx.compose.remote.creation.compose.layout.RemoteAlignment
+import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCollapsibleColumn
 import androidx.compose.remote.creation.compose.layout.RemoteCollapsibleRow
@@ -57,13 +57,16 @@ import androidx.compose.ui.unit.sp
 @Composable
 @Preview
 fun WeatherDemo() {
-    RemoteBox {
+    RemoteBox(
+        horizontalAlignment = RemoteAlignment.CenterHorizontally,
+        verticalArrangement = RemoteArrangement.Center,
+    ) {
         RemoteColumn(
             modifier = RemoteModifier.fillMaxWidth(),
             // .background(Color(219, 247, 239) )
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = RemoteAlignment.CenterHorizontally,
         ) {
-            FitBox(RemoteModifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+            FitBox(RemoteModifier.fillMaxSize(), verticalArrangement = RemoteArrangement.Top) {
                 val res = LocalContext.current.resources
                 val image = remember {
                     BitmapFactory.decodeResource(
@@ -86,8 +89,8 @@ fun WeatherDemo() {
                 }
                 RemoteBox(
                     modifier = RemoteModifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = RemoteAlignment.CenterHorizontally,
+                    verticalArrangement = RemoteArrangement.Center,
                 ) {
                     RemoteColumn(
                         modifier =
@@ -96,8 +99,8 @@ fun WeatherDemo() {
                                 .background(Color(219, 247, 239))
                                 //                            .background(Color.Blue)
                                 .padding(8.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = RemoteArrangement.Center,
+                        horizontalAlignment = RemoteAlignment.CenterHorizontally,
                     ) {
                         RemoteText("Rio de Janeiro")
                         RemoteText("100º", fontSize = 26.sp, fontWeight = FontWeight.Medium)
@@ -126,7 +129,7 @@ fun WeatherHeader() {
                 .width(400.dp)
                 .heightIn(min = rowHeight)
                 .padding(8.dp), // .background(Color.Red),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = RemoteAlignment.CenterVertically,
     ) {
         WeatherBox()
         RemoteBox(RemoteModifier.weight(1f).widthIn(min = 0.dp))
@@ -144,7 +147,7 @@ val rowHeight2 = 122.dp
 fun WeatherBox() {
     RemoteColumn(
         modifier = RemoteModifier.padding(8.dp),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = RemoteArrangement.Center,
     ) {
         RemoteText("Rio de Janeiro")
         RemoteText("100º", fontSize = 38.sp, fontWeight = FontWeight.Medium)
@@ -168,8 +171,8 @@ fun WeatherBox2() {
     }
     RemoteColumn(
         modifier = RemoteModifier.height(rowHeight).padding(8.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.End,
+        verticalArrangement = RemoteArrangement.Center,
+        horizontalAlignment = RemoteAlignment.End,
     ) {
         RemoteImage(refresh, RemoteString(""), modifier = RemoteModifier.size(20.dp))
         RemoteImage(image, RemoteString(""), modifier = RemoteModifier.size(48.dp))
@@ -184,8 +187,8 @@ fun WeatherBox2() {
 fun WeatherRow() {
     RemoteCollapsibleRow(
         modifier = RemoteModifier.fillMaxWidth().heightIn(min = rowHeight2),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = RemoteArrangement.SpaceBetween,
+        verticalAlignment = RemoteAlignment.CenterVertically,
     ) {
         Weather("62º", "1 AM", R.drawable.mostly_cloudy)
         Weather("68º", "12 PM", R.drawable.partly_cloudy)
@@ -227,7 +230,7 @@ fun WeatherDays() {
                 .clip(RoundedCornerShape(8.dp))
                 .background(Color(205, 232, 225))
                 .padding(8.dp),
-        verticalArrangement = Arrangement.SpaceEvenly,
+        verticalArrangement = RemoteArrangement.SpaceEvenly,
     ) {
         WeatherDay("Saturday", "70%", R.drawable.showers_rain, "62º/55ª")
         WeatherDay("Sunday", "", R.drawable.mostly_cloudy, "62º/55ª")
@@ -251,9 +254,13 @@ fun WeatherDay(day: String, precipitation: String, image: Int, temperature: Stri
     FitBox(modifier = RemoteModifier.fillMaxWidth()) {
         RemoteRow(
             modifier = RemoteModifier.fillMaxWidth().widthIn(min = 200.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = RemoteAlignment.CenterVertically,
         ) {
-            RemoteBox(RemoteModifier.width(70.dp), horizontalAlignment = Alignment.Start) {
+            RemoteBox(
+                RemoteModifier.width(70.dp),
+                horizontalAlignment = RemoteAlignment.Start,
+                verticalArrangement = RemoteArrangement.Center,
+            ) {
                 RemoteText(day, RemoteModifier.width(70.dp))
             }
             val modWeight = RemoteModifier.weight(1f)
@@ -261,9 +268,13 @@ fun WeatherDay(day: String, precipitation: String, image: Int, temperature: Stri
         }
         RemoteRow(
             modifier = RemoteModifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = RemoteAlignment.CenterVertically,
         ) {
-            RemoteBox(RemoteModifier.width(26.dp), horizontalAlignment = Alignment.Start) {
+            RemoteBox(
+                RemoteModifier.width(26.dp),
+                horizontalAlignment = RemoteAlignment.Start,
+                verticalArrangement = RemoteArrangement.Center,
+            ) {
                 RemoteText(day.substring(IntRange(0, 2)), RemoteModifier.width(100.dp))
             }
             val modWeight = RemoteModifier.weight(1f)
@@ -283,8 +294,8 @@ private fun Temp(
     RemoteBox(modWeight.widthIn(min = 0.dp))
     RemoteRow(
         modifier = RemoteModifier.width(70.dp),
-        horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = RemoteArrangement.End,
+        verticalAlignment = RemoteAlignment.CenterVertically,
     ) {
         RemoteBox(modifier = RemoteModifier.width(30.dp)) {
             RemoteText(precipitation, RemoteModifier.padding(right = 4.dp))
@@ -292,5 +303,11 @@ private fun Temp(
         RemoteImage(image, RemoteString(""), RemoteModifier.size(24.dp))
     }
     RemoteBox(modWeight.widthIn(min = 0.dp))
-    RemoteBox(modifier = RemoteModifier.width(60.dp)) { RemoteText(temperature) }
+    RemoteBox(
+        modifier = RemoteModifier.width(60.dp),
+        horizontalAlignment = RemoteAlignment.CenterHorizontally,
+        verticalArrangement = RemoteArrangement.Center,
+    ) {
+        RemoteText(temperature)
+    }
 }

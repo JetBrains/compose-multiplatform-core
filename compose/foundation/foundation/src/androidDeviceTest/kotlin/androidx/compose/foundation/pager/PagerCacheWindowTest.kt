@@ -16,6 +16,7 @@
 
 package androidx.compose.foundation.pager
 
+import androidx.compose.foundation.ComposeFoundationFlags.isCacheWindowForPagerEnabled
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollBy
@@ -30,7 +31,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.BeforeTest
 import kotlinx.coroutines.runBlocking
+import org.junit.Assume
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -57,6 +60,11 @@ class PagerCacheWindowTest(val config: ParamConfig) : BasePagerTest(config) {
     private val testPrefetchScheduler = TestPrefetchScheduler()
 
     lateinit var remeasure: Remeasurement
+
+    @BeforeTest
+    fun setUp() {
+        Assume.assumeTrue(isCacheWindowForPagerEnabled)
+    }
 
     @Test
     fun doNotPrefetchingForwardInitially() {

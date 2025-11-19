@@ -57,7 +57,6 @@ public data class ScrollModifier(val direction: Int, val state: RemoteScrollStat
     }
 }
 
-@Composable
 public fun RemoteModifier.verticalScroll(state: RemoteScrollState): RemoteModifier {
     return this.then(ScrollModifier(CoreScrollModifier.VERTICAL, state))
 }

@@ -43,7 +43,7 @@ package androidx.benchmark.macro {
     property public java.util.List<java.lang.String> startupProfiles;
   }
 
-  public abstract sealed class CompilationMode {
+  public abstract sealed nonexhaustive class CompilationMode {
     field public static final androidx.benchmark.macro.CompilationMode.Companion Companion;
     field public static final androidx.benchmark.macro.CompilationMode DEFAULT;
   }
@@ -142,7 +142,7 @@ package androidx.benchmark.macro {
     enum_constant public static final androidx.benchmark.macro.MemoryUsageMetric.SubMetric RssShmem;
   }
 
-  public abstract sealed class Metric {
+  public abstract sealed nonexhaustive class Metric {
   }
 
   @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public static final class Metric.CaptureInfo {
@@ -220,7 +220,7 @@ package androidx.benchmark.macro {
     method public boolean deviceSupportsHighPrecisionTracking();
   }
 
-  @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public abstract static sealed class PowerMetric.Type {
+  @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public abstract static sealed exhaustive class PowerMetric.Type {
     method @InaccessibleFromKotlin public final java.util.Map<androidx.benchmark.macro.PowerCategory,androidx.benchmark.macro.PowerCategoryDisplayLevel> getCategories();
     method @InaccessibleFromKotlin public final void setCategories(java.util.Map<androidx.benchmark.macro.PowerCategory,? extends androidx.benchmark.macro.PowerCategoryDisplayLevel>);
     property public final java.util.Map<androidx.benchmark.macro.PowerCategory,androidx.benchmark.macro.PowerCategoryDisplayLevel> categories;
@@ -274,7 +274,7 @@ package androidx.benchmark.macro {
     ctor @BytecodeOnly public TraceSectionMetric(String!, androidx.benchmark.macro.TraceSectionMetric.Mode!, String!, boolean, int, kotlin.jvm.internal.DefaultConstructorMarker!);
   }
 
-  @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public abstract static sealed class TraceSectionMetric.Mode {
+  @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public abstract static sealed nonexhaustive class TraceSectionMetric.Mode {
   }
 
   @SuppressCompatibility @androidx.benchmark.macro.ExperimentalMetricApi public static final class TraceSectionMetric.Mode.Average extends androidx.benchmark.macro.TraceSectionMetric.Mode {

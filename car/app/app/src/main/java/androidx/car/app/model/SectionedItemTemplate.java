@@ -200,6 +200,7 @@ public final class SectionedItemTemplate implements Template {
      * <p>Individual items may be excluded from the list by setting their {@code #isIndexable}
      * field to {@code false}.
      */
+    @AlphabeticalIndexingStrategy
     public int getAlphabeticalIndexingStrategy() {
         // Existing field is used if the new field is set to DISABLED
         if (mAlphabeticalIndexingStrategy == ALPHABETICAL_INDEXING_DISABLED
@@ -215,6 +216,7 @@ public final class SectionedItemTemplate implements Template {
      *
      * See {@link Builder#setScrollStatePersistenceStrategy(int)}
      */
+    @ScrollStatePersistenceStrategy
     public int getScrollStatePersistenceStrategy() {
         return mScrollStatePersistenceStrategy;
     }

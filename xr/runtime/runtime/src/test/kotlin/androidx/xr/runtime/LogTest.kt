@@ -27,7 +27,7 @@ import org.robolectric.junit.rules.ExpectedLogMessagesRule
 class LogTest {
 
     companion object {
-        val TEST_TAG: String = LogTest::class.java.name
+        const val TEST_TAG: String = Log.TAG
         const val MESSAGE_VERBOSE: String = "Verbose message"
         const val MESSAGE_DEBUG: String = "Debug message"
         const val MESSAGE_INFO: String = "Info message"

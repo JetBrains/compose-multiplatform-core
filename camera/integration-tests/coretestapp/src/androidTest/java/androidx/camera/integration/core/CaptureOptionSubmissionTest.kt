@@ -17,15 +17,24 @@
 package androidx.camera.integration.core
 
 import android.content.Context
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES
 import android.hardware.camera2.CameraCharacteristics.CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL
 import android.hardware.camera2.CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY
+import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_OFF
+import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON
+import android.hardware.camera2.CameraMetadata.CONTROL_AE_MODE_ON_ALWAYS_FLASH
 import android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_OFF
 import android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_ON
 import android.hardware.camera2.CameraMetadata.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION
+import android.hardware.camera2.CameraMetadata.FLASH_MODE_OFF
+import android.hardware.camera2.CameraMetadata.FLASH_MODE_SINGLE
+import android.hardware.camera2.CameraMetadata.FLASH_MODE_TORCH
 import android.hardware.camera2.CaptureRequest
+import android.hardware.camera2.CaptureRequest.CONTROL_AE_MODE
 import android.hardware.camera2.CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE
+import android.hardware.camera2.CaptureRequest.FLASH_MODE
 import android.hardware.camera2.TotalCaptureResult
 import android.util.Range
 import androidx.camera.camera2.Camera2Config
@@ -258,40 +267,10 @@ class CaptureOptionSubmissionTest(
                 return@forEach
             }
 
-            var lastSubmittedFpsRange: Range<Int>? = null
-            val result =
-                sessionCaptureCallback.verify { captureRequest, _ ->
-                    captureRequest[CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE]?.let {
-                        lastSubmittedFpsRange = it
-                    }
-                    captureRequest[CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE] == targetFpsRange
-                }
-
-            bindUseCases(
-                listOf(
-                    // since Preview & VideoCapture already has FPS APIs, Camera2Interop isn't
-                    // needed
-                    // when they are bound. Also, ImageCapture-only is more complex due to
-                    // MeteringRepeating and may pick up further issues.
-                    ImageCapture.Builder().also {
-                        Camera2Interop.Extender(it)
-                            .setCaptureRequestOption(
-                                CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
-                                targetFpsRange,
-                            )
-                    }
-                )
+            testCaptureRequestParameterSettingWithCamera2Interop(
+                key = CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,
+                targetValue = targetFpsRange,
             )
-
-            val isCompleted = result.awaitUntil(timeoutMillis = 10000)
-            assertWithMessage(
-                    "Test failed for FPS range = $targetFpsRange" +
-                        ", lastSubmittedFpsRange = $lastSubmittedFpsRange"
-                )
-                .that(isCompleted)
-                .isTrue()
-
-            unbindAllUseCases()
 
             // Checking for first supported & testable FPS range only
             return@forEach
@@ -524,29 +503,122 @@ class CaptureOptionSubmissionTest(
             .isTrue()
     }
 
+    @Test
+    fun canSetFlashModeToTorchWithCamera2Interop() = runBlocking {
+        assumeTrue(hasFlashUnit())
+
+        testCaptureRequestParameterSettingWithCamera2Interop(
+            key = FLASH_MODE,
+            targetValue = FLASH_MODE_TORCH,
+        )
+    }
+
+    @Test
+    fun canSetFlashModeToSingleWithCamera2Interop() = runBlocking {
+        assumeTrue(hasFlashUnit())
+
+        testCaptureRequestParameterSettingWithCamera2Interop(
+            key = FLASH_MODE,
+            targetValue = FLASH_MODE_SINGLE,
+        )
+    }
+
+    @Test
+    fun canSetFlashModeToOffWithCamera2Interop() = runBlocking {
+        testCaptureRequestParameterSettingWithCamera2Interop(
+            key = FLASH_MODE,
+            targetValue = FLASH_MODE_OFF,
+        )
+    }
+
+    @Test
+    fun canSetAeModeToOnWithCamera2Interop() = runBlocking {
+        assumeTrue(getSupportedAeModes().contains(CONTROL_AE_MODE_ON))
+
+        testCaptureRequestParameterSettingWithCamera2Interop(
+            key = CONTROL_AE_MODE,
+            targetValue = CONTROL_AE_MODE_ON,
+        )
+    }
+
+    @Test
+    fun canSetAeModeToOnAlwaysFlashWithCamera2Interop() = runBlocking {
+        assumeTrue(getSupportedAeModes().contains(CONTROL_AE_MODE_ON_ALWAYS_FLASH))
+
+        testCaptureRequestParameterSettingWithCamera2Interop(
+            key = CONTROL_AE_MODE,
+            targetValue = CONTROL_AE_MODE_ON_ALWAYS_FLASH,
+        )
+    }
+
+    @Test
+    fun canSetAeModeToOffWithCamera2Interop() = runBlocking {
+        assumeTrue(getSupportedAeModes().contains(CONTROL_AE_MODE_OFF))
+
+        testCaptureRequestParameterSettingWithCamera2Interop(
+            key = CONTROL_AE_MODE,
+            targetValue = CONTROL_AE_MODE_OFF,
+        )
+    }
+
+    private suspend fun <ValueT> testCaptureRequestParameterSettingWithCamera2Interop(
+        key: CaptureRequest.Key<ValueT>,
+        targetValue: ValueT,
+    ) {
+        var lastSubmittedValue: ValueT? = null
+        val result =
+            sessionCaptureCallback.verify { captureRequest, _ ->
+                captureRequest[key]?.let { lastSubmittedValue = it }
+                captureRequest[key] == targetValue
+            }
+
+        bindUseCases(
+            listOf(
+                ImageCapture.Builder().also {
+                    Camera2Interop.Extender(it).setCaptureRequestOption(key, targetValue)
+                }
+            )
+        )
+
+        val isCompleted = result.awaitUntil(timeoutMillis = 10000)
+        assertWithMessage(
+                "Test failed for $key = $targetValue" + ", lastSubmittedValue = $lastSubmittedValue"
+            )
+            .that(isCompleted)
+            .isTrue()
+
+        unbindAllUseCases()
+    }
+
     // TODO - Adds tests to check capture option is consistent for both non-repeating and repeating
     //  captures. E.g., FPS range is not submitted for non-repeating capture right now. But this
     //  will probably require us to add Camera2Interop callback for non-repeating captures as well,
     //  something that comes up every now and then, although low priority.
 
     private fun getSupportedFpsRanges(): Array<Range<Int>> {
-        val cameraCharacteristics = CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)
-        Assume.assumeNotNull(cameraCharacteristics)
-
-        val fpsRanges = cameraCharacteristics!!.get(CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
-        Assume.assumeNotNull(fpsRanges)
-
-        return fpsRanges!!
+        return getCameraCharacteristicsValues(CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES)
     }
 
     private fun getSupportedStabilizationModes(): IntArray {
+        return getCameraCharacteristicsValues(CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)
+    }
+
+    private fun getSupportedAeModes(): IntArray {
+        return getCameraCharacteristicsValues(CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES)
+    }
+
+    private fun hasFlashUnit(): Boolean {
+        return getCameraCharacteristicsValues(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+    }
+
+    private fun <T> getCameraCharacteristicsValues(key: CameraCharacteristics.Key<T>): T {
         val cameraCharacteristics = CameraUtil.getCameraCharacteristics(cameraSelector.lensFacing!!)
         Assume.assumeNotNull(cameraCharacteristics)
 
-        val modes = cameraCharacteristics!!.get(CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)
-        Assume.assumeNotNull(modes)
+        val values = cameraCharacteristics!!.get(key)
+        Assume.assumeNotNull(values)
 
-        return modes!!
+        return values!!
     }
 
     private fun isHwLevelLegacy(): Boolean {

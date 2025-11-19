@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.LayoutDirection
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeBoxModifier(
     private val modifier: RemoteModifier,
-    private val horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    private val verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    private val horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    private val verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
 ) : DrawModifier {
     override fun ContentDrawScope.draw() {
         drawIntoRemoteCanvas { canvas ->
@@ -58,8 +58,8 @@ public class RemoteComposeBoxModifier(
 @Composable
 public fun RemoteBox(
     modifier: RemoteModifier = RemoteModifier,
-    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    verticalArrangement: Arrangement.Vertical = Arrangement.Center,
+    horizontalAlignment: RemoteAlignment.Horizontal = RemoteAlignment.Start,
+    verticalArrangement: RemoteArrangement.Vertical = RemoteArrangement.Top,
     content: @Composable () -> Unit,
 ) {
     val background = modifier.find<BackgroundModifier>()
@@ -81,19 +81,20 @@ public inline fun <reified T : RemoteModifier.Element> RemoteModifier.find(): T?
 }
 
 public fun boxAlignment(
-    horizontal: Alignment.Horizontal,
-    vertical: Arrangement.Vertical,
+    horizontal: RemoteAlignment.Horizontal,
+    vertical: RemoteArrangement.Vertical,
 ): androidx.compose.ui.Alignment {
     return CombinedAlignment(horizontal.toComposeUi(), vertical.toComposeUiAlignment())
 }
 
-private fun Arrangement.Vertical.toComposeUiAlignment(): androidx.compose.ui.Alignment.Vertical {
+private fun RemoteArrangement.Vertical.toComposeUiAlignment():
+    androidx.compose.ui.Alignment.Vertical {
     return when (this) {
-        Arrangement.Top -> androidx.compose.ui.Alignment.Top
-        Arrangement.Center -> androidx.compose.ui.Alignment.CenterVertically
-        Arrangement.Bottom -> androidx.compose.ui.Alignment.Bottom
+        RemoteArrangement.Top -> androidx.compose.ui.Alignment.Top
+        RemoteArrangement.Center -> androidx.compose.ui.Alignment.CenterVertically
+        RemoteArrangement.Bottom -> androidx.compose.ui.Alignment.Bottom
         else -> {
-            System.err.println("Unsupported Arrangement $this")
+            System.err.println("Unsupported RemoteArrangement $this")
             androidx.compose.ui.Alignment.CenterVertically
         }
     }

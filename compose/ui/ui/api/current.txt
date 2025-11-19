@@ -365,7 +365,7 @@ package androidx.compose.ui.autofill {
     enum_constant @Deprecated public static final androidx.compose.ui.autofill.AutofillType Username;
   }
 
-  public sealed interface ContentDataType {
+  public sealed nonexhaustive interface ContentDataType {
     field public static final androidx.compose.ui.autofill.ContentDataType.Companion Companion;
   }
 
@@ -388,7 +388,7 @@ package androidx.compose.ui.autofill {
     property public static int androidx.compose.ui.autofill.ContentDataType.dataType;
   }
 
-  public sealed interface ContentType {
+  public sealed nonexhaustive interface ContentType {
     method public operator androidx.compose.ui.autofill.ContentType plus(androidx.compose.ui.autofill.ContentType other);
     field public static final androidx.compose.ui.autofill.ContentType.Companion Companion;
   }
@@ -502,7 +502,7 @@ package androidx.compose.ui.autofill {
 
 package @SuppressCompatibility androidx.compose.ui.contentcapture {
 
-  @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public sealed interface ContentCaptureManager {
+  @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public sealed exhaustive interface ContentCaptureManager {
     field public static final androidx.compose.ui.contentcapture.ContentCaptureManager.Companion Companion;
   }
 
@@ -533,7 +533,7 @@ package androidx.compose.ui.draganddrop {
     method public static androidx.compose.ui.draganddrop.DragAndDropTargetModifierNode DragAndDropTargetModifierNode(kotlin.jvm.functions.Function1<? super androidx.compose.ui.draganddrop.DragAndDropEvent,java.lang.Boolean> shouldStartDragAndDrop, androidx.compose.ui.draganddrop.DragAndDropTarget target);
   }
 
-  public sealed interface DragAndDropSourceModifierNode extends androidx.compose.ui.node.LayoutAwareModifierNode {
+  public sealed nonexhaustive interface DragAndDropSourceModifierNode extends androidx.compose.ui.node.LayoutAwareModifierNode {
     method @InaccessibleFromKotlin public boolean isRequestDragAndDropTransferRequired();
     method @KotlinOnly public void requestDragAndDropTransfer(androidx.compose.ui.geometry.Offset offset);
     method @BytecodeOnly public void requestDragAndDropTransfer-k-4lQ0M(long);
@@ -555,7 +555,7 @@ package androidx.compose.ui.draganddrop {
     method public default void onStarted(androidx.compose.ui.draganddrop.DragAndDropEvent event);
   }
 
-  public sealed interface DragAndDropTargetModifierNode extends androidx.compose.ui.node.LayoutAwareModifierNode {
+  public sealed nonexhaustive interface DragAndDropTargetModifierNode extends androidx.compose.ui.node.LayoutAwareModifierNode {
   }
 
   public final class DragAndDropTransferData {
@@ -617,7 +617,7 @@ package androidx.compose.ui.draw {
     property public abstract androidx.compose.ui.geometry.Size size;
   }
 
-  public sealed interface CacheDrawModifierNode extends androidx.compose.ui.node.DrawModifierNode {
+  public sealed nonexhaustive interface CacheDrawModifierNode extends androidx.compose.ui.node.DrawModifierNode {
     method public void invalidateDrawCache();
   }
 
@@ -751,7 +751,7 @@ package androidx.compose.ui.focus {
     property public androidx.compose.ui.focus.FocusDirection Up;
   }
 
-  public sealed interface FocusEnterExitScope {
+  public sealed nonexhaustive interface FocusEnterExitScope {
     method @Deprecated @SuppressCompatibility @androidx.compose.ui.ExperimentalComposeUiApi public default void cancelFocus();
     method public void cancelFocusChange();
     method @BytecodeOnly public int getRequestedFocusDirection-dhqQ-8s();
@@ -959,7 +959,7 @@ package androidx.compose.ui.focus {
     property public abstract boolean isFocused;
   }
 
-  public sealed interface FocusTargetModifierNode extends androidx.compose.ui.node.DelegatableNode {
+  public sealed nonexhaustive interface FocusTargetModifierNode extends androidx.compose.ui.node.DelegatableNode {
     method @InaccessibleFromKotlin public androidx.compose.ui.focus.FocusState getFocusState();
     method @BytecodeOnly public int getFocusability-LCbbffg();
     method @BytecodeOnly @Deprecated public boolean requestFocus();
@@ -1185,7 +1185,7 @@ package androidx.compose.ui.graphics.vector {
     method @BytecodeOnly public static androidx.compose.ui.graphics.vector.ImageVector.Builder! path-R_LF-3I$default(androidx.compose.ui.graphics.vector.ImageVector.Builder!, String!, androidx.compose.ui.graphics.Brush!, float, androidx.compose.ui.graphics.Brush!, float, float, int, int, float, int, kotlin.jvm.functions.Function1!, int, Object!);
   }
 
-  public abstract sealed class VNode {
+  public abstract sealed nonexhaustive class VNode {
     method public abstract void draw(androidx.compose.ui.graphics.drawscope.DrawScope);
     method public final void invalidate();
   }
@@ -1284,7 +1284,7 @@ package androidx.compose.ui.graphics.vector {
     field public static final float DefaultTrimPathStart = 0.0f;
   }
 
-  public abstract sealed class VectorNode {
+  public abstract sealed exhaustive class VectorNode {
   }
 
   public final class VectorPainter extends androidx.compose.ui.graphics.painter.Painter {
@@ -1338,7 +1338,7 @@ package androidx.compose.ui.graphics.vector {
     property public float trimPathStart;
   }
 
-  public abstract sealed class VectorProperty<T> {
+  public abstract sealed exhaustive class VectorProperty<T> {
   }
 
   public static final class VectorProperty.Fill extends androidx.compose.ui.graphics.vector.VectorProperty<androidx.compose.ui.graphics.Brush?> {
@@ -1488,7 +1488,7 @@ package androidx.compose.ui.input.indirect {
     property public static android.view.MotionEvent androidx.compose.ui.input.indirect.IndirectPointerEvent.nativeEvent;
   }
 
-  public sealed interface IndirectPointerEvent {
+  public sealed nonexhaustive interface IndirectPointerEvent {
     method @InaccessibleFromKotlin public java.util.List<androidx.compose.ui.input.indirect.IndirectPointerInputChange> getChanges();
     method @BytecodeOnly public int getPrimaryDirectionalMotionAxis-nZO2Niw();
     method @BytecodeOnly public int getType-4ZHQPSE();
@@ -2618,7 +2618,7 @@ package androidx.compose.ui.input.pointer {
     method @Deprecated public static androidx.compose.ui.Modifier pointerInput(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function2<? super androidx.compose.ui.input.pointer.PointerInputScope,? super kotlin.coroutines.Continuation<? super kotlin.Unit>,? extends java.lang.Object?> block);
   }
 
-  public sealed interface SuspendingPointerInputModifierNode extends androidx.compose.ui.node.PointerInputModifierNode {
+  public sealed nonexhaustive interface SuspendingPointerInputModifierNode extends androidx.compose.ui.node.PointerInputModifierNode {
     method @InaccessibleFromKotlin public default androidx.compose.ui.input.pointer.PointerInputEventHandler getPointerInputEventHandler();
     method @InaccessibleFromKotlin @Deprecated public kotlin.jvm.functions.Function2<androidx.compose.ui.input.pointer.PointerInputScope,kotlin.coroutines.Continuation<? super kotlin.Unit>,java.lang.Object?> getPointerInputHandler();
     method public void resetPointerInputHandler();
@@ -2694,7 +2694,7 @@ package androidx.compose.ui.input.rotary {
 
 package androidx.compose.ui.layout {
 
-  @androidx.compose.runtime.Immutable public abstract sealed class AlignmentLine {
+  @androidx.compose.runtime.Immutable public abstract sealed exhaustive class AlignmentLine {
     field public static final androidx.compose.ui.layout.AlignmentLine.Companion Companion;
     field public static final int Unspecified = -2147483648; // 0x80000000
   }
@@ -2710,7 +2710,7 @@ package androidx.compose.ui.layout {
     property public static androidx.compose.ui.layout.HorizontalAlignmentLine LastBaseline;
   }
 
-  public sealed interface ApproachIntrinsicMeasureScope extends androidx.compose.ui.layout.IntrinsicMeasureScope {
+  public sealed nonexhaustive interface ApproachIntrinsicMeasureScope extends androidx.compose.ui.layout.IntrinsicMeasureScope {
     method @BytecodeOnly public long getLookaheadConstraints-msEJaDk();
     method @BytecodeOnly public long getLookaheadSize-YbymL2g();
     property public abstract androidx.compose.ui.unit.Constraints lookaheadConstraints;
@@ -2731,7 +2731,7 @@ package androidx.compose.ui.layout {
     method public default int minApproachIntrinsicWidth(androidx.compose.ui.layout.ApproachIntrinsicMeasureScope, androidx.compose.ui.layout.IntrinsicMeasurable measurable, int height);
   }
 
-  public sealed interface ApproachMeasureScope extends androidx.compose.ui.layout.ApproachIntrinsicMeasureScope androidx.compose.ui.layout.MeasureScope {
+  public sealed nonexhaustive interface ApproachMeasureScope extends androidx.compose.ui.layout.ApproachIntrinsicMeasureScope androidx.compose.ui.layout.MeasureScope {
   }
 
   public interface BeyondBoundsLayout {
@@ -3226,7 +3226,7 @@ package androidx.compose.ui.layout {
     method public void onRemeasurementAvailable(androidx.compose.ui.layout.Remeasurement remeasurement);
   }
 
-  public abstract sealed class Ruler {
+  public abstract sealed exhaustive class Ruler {
   }
 
   @androidx.compose.ui.layout.MeasureScopeMarker public interface RulerScope extends androidx.compose.ui.unit.Density {
@@ -3303,7 +3303,7 @@ package androidx.compose.ui.layout {
     method @BytecodeOnly public androidx.compose.ui.layout.SubcomposeLayoutState.PrecomposedSlotHandle precompose(Object?, kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
   }
 
-  public static sealed interface SubcomposeLayoutState.PausedPrecomposition {
+  public static sealed nonexhaustive interface SubcomposeLayoutState.PausedPrecomposition {
     method public androidx.compose.ui.layout.SubcomposeLayoutState.PrecomposedSlotHandle apply();
     method public void cancel();
     method @InaccessibleFromKotlin public boolean isComplete();
@@ -3370,7 +3370,7 @@ package androidx.compose.ui.layout {
     method public androidx.compose.ui.layout.VerticalRuler minOf(androidx.compose.ui.layout.VerticalRuler... rulers);
   }
 
-  public sealed interface WindowInsetsAnimation {
+  public sealed nonexhaustive interface WindowInsetsAnimation {
     method @InaccessibleFromKotlin @FloatRange(from=0.0, to=1.0) public float getAlpha();
     method @InaccessibleFromKotlin @IntRange(from=0L) public long getDurationMillis();
     method @InaccessibleFromKotlin public float getFraction();
@@ -3387,7 +3387,7 @@ package androidx.compose.ui.layout {
     property public abstract androidx.compose.ui.layout.RectRulers target;
   }
 
-  public sealed interface WindowInsetsRulers {
+  public sealed nonexhaustive interface WindowInsetsRulers {
     method public androidx.compose.ui.layout.WindowInsetsAnimation getAnimation(androidx.compose.ui.layout.Placeable.PlacementScope scope);
     method @InaccessibleFromKotlin public androidx.compose.ui.layout.RectRulers getCurrent();
     method @InaccessibleFromKotlin public androidx.compose.ui.layout.RectRulers getMaximum();
@@ -3434,7 +3434,7 @@ package androidx.compose.ui.layout {
 
 package androidx.compose.ui.modifier {
 
-  @androidx.compose.runtime.Stable public abstract sealed class ModifierLocal<T> {
+  @androidx.compose.runtime.Stable public abstract sealed exhaustive class ModifierLocal<T> {
   }
 
   @androidx.compose.runtime.Stable @kotlin.jvm.JvmDefaultWithCompatibility public interface ModifierLocalConsumer extends androidx.compose.ui.Modifier.Element {
@@ -3449,7 +3449,7 @@ package androidx.compose.ui.modifier {
     method public static <T> androidx.compose.ui.modifier.ProvidableModifierLocal<T> modifierLocalOf(kotlin.jvm.functions.Function0<? extends T> defaultFactory);
   }
 
-  public abstract sealed class ModifierLocalMap {
+  public abstract sealed nonexhaustive class ModifierLocalMap {
   }
 
   public interface ModifierLocalModifierNode extends androidx.compose.ui.modifier.ModifierLocalReadScope androidx.compose.ui.node.DelegatableNode {
@@ -3589,7 +3589,7 @@ package androidx.compose.ui.node {
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is internal to library.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY, kotlin.annotation.AnnotationTarget.PROPERTY_GETTER, kotlin.annotation.AnnotationTarget.PROPERTY_SETTER}) public @interface InternalCoreApi {
   }
 
-  @SuppressCompatibility @androidx.compose.ui.InternalComposeUiApi public sealed interface InteroperableComposeUiNode {
+  @SuppressCompatibility @androidx.compose.ui.InternalComposeUiApi public sealed nonexhaustive interface InteroperableComposeUiNode {
     method public android.view.View? getInteropView();
   }
 
@@ -3774,6 +3774,7 @@ package androidx.compose.ui.platform {
     method @KotlinOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public abstract void Content();
     method @BytecodeOnly @androidx.compose.runtime.Composable @androidx.compose.ui.UiComposable public abstract void Content(androidx.compose.runtime.Composer?, int);
     method public final void createComposition();
+    method public final void createComposition(androidx.compose.ui.platform.ComposeViewContext composeViewContext);
     method public final void disposeComposition();
     method @BytecodeOnly public final int getAutoClearFocusBehavior-4UtRPd4();
     method @InaccessibleFromKotlin public final boolean getHasComposition();
@@ -3930,6 +3931,17 @@ package androidx.compose.ui.platform {
     method public void setContent(kotlin.jvm.functions.Function0<kotlin.Unit> content);
     method @BytecodeOnly public void setContent(kotlin.jvm.functions.Function2<? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     property protected boolean shouldCreateCompositionOnAttachedToWindow;
+  }
+
+  public final class ComposeViewContext {
+    ctor public ComposeViewContext(android.view.View view, optional androidx.compose.runtime.CompositionContext compositionContext, optional androidx.lifecycle.LifecycleOwner lifecycleOwner, optional androidx.savedstate.SavedStateRegistryOwner savedStateRegistryOwner, optional androidx.lifecycle.ViewModelStoreOwner? viewModelStoreOwner);
+    ctor @BytecodeOnly public ComposeViewContext(android.view.View!, androidx.compose.runtime.CompositionContext!, androidx.lifecycle.LifecycleOwner!, androidx.savedstate.SavedStateRegistryOwner!, androidx.lifecycle.ViewModelStoreOwner!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    method public androidx.compose.ui.platform.ComposeViewContext copy(optional android.view.View view, optional androidx.compose.runtime.CompositionContext compositionContext, optional androidx.lifecycle.LifecycleOwner lifecycleOwner, optional androidx.savedstate.SavedStateRegistryOwner savedStateRegistryOwner, optional androidx.lifecycle.ViewModelStoreOwner? viewModelStoreOwner);
+    method @BytecodeOnly public static androidx.compose.ui.platform.ComposeViewContext! copy$default(androidx.compose.ui.platform.ComposeViewContext!, android.view.View!, androidx.compose.runtime.CompositionContext!, androidx.lifecycle.LifecycleOwner!, androidx.savedstate.SavedStateRegistryOwner!, androidx.lifecycle.ViewModelStoreOwner!, int, Object!);
+  }
+
+  public final class ComposeView_androidKt {
+    method public static androidx.compose.ui.platform.ComposeViewContext? findViewTreeComposeViewContext(android.view.View);
   }
 
   public final class CompositionLocalsKt {

@@ -334,7 +334,7 @@ package androidx.xr.runtime {
     ctor public SessionConfigureGooglePlayServicesLocationLibraryNotLinked();
   }
 
-  public abstract sealed class SessionConfigureResult {
+  public abstract sealed exhaustive class SessionConfigureResult {
   }
 
   public final class SessionConfigureSuccess extends androidx.xr.runtime.SessionConfigureResult {
@@ -352,7 +352,7 @@ package androidx.xr.runtime {
     property public String requiredApk;
   }
 
-  public abstract sealed class SessionCreateResult {
+  public abstract sealed exhaustive class SessionCreateResult {
   }
 
   public final class SessionCreateSuccess extends androidx.xr.runtime.SessionCreateResult {
@@ -365,7 +365,7 @@ package androidx.xr.runtime {
     ctor public SessionCreateUnsupportedDevice();
   }
 
-  public abstract sealed class SessionResumeResult {
+  public abstract sealed exhaustive class SessionResumeResult {
   }
 
   public final class SessionResumeSuccess extends androidx.xr.runtime.SessionResumeResult {
@@ -394,7 +394,7 @@ package androidx.xr.runtime {
     property public androidx.xr.runtime.TrackingState TRACKING;
   }
 
-  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract sealed class TypeHolder<T> {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract sealed exhaustive class TypeHolder<T> {
     method public static final <T> androidx.xr.runtime.TypeHolder<T> assertCast(androidx.xr.runtime.TypeHolder<? extends java.lang.Object?> anyTypeHolder, Class<T> targetType);
     method public static final <T> T assertGetValue(androidx.xr.runtime.TypeHolder<? extends java.lang.Object?> anyTypeHolder, Class<T> targetType);
     method @InaccessibleFromKotlin public final Class<? extends java.lang.Object?> getType();
@@ -431,7 +431,7 @@ package androidx.xr.runtime {
     ctor public VpsAvailabilityResourceExhausted();
   }
 
-  public abstract sealed class VpsAvailabilityResult {
+  public abstract sealed exhaustive class VpsAvailabilityResult {
   }
 
   public final class VpsAvailabilityUnavailable extends androidx.xr.runtime.VpsAvailabilityResult {

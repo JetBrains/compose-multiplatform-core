@@ -193,10 +193,6 @@ public final class Flags {
     public static final String FLAG_ENABLE_SEARCH_RESULT_PARENT_TYPES =
             FLAG_PREFIX + "enable_search_result_parent_types";
 
-    /** Enables delete propagation type related APIs. */
-    public static final String FLAG_ENABLE_DELETE_PROPAGATION_TYPE =
-            FLAG_PREFIX + "enable_delete_propagation_type";
-
     /** Enables AppSearch to manage blob files. */
     public static final String FLAG_ENABLE_APP_SEARCH_MANAGE_BLOB_FILES =
             FLAG_PREFIX + "enable_app_search_manage_blob_files";
@@ -356,6 +352,10 @@ public final class Flags {
      */
     public static final String FLAG_ENABLE_REPEATED_FIELD_JOINS =
             FLAG_PREFIX + "enable_repeated_field_joins";
+
+    /** Enables delete propagation API. */
+    public static final String FLAG_ENABLE_DELETE_PROPAGATION_RW =
+            FLAG_PREFIX + "enable_delete_propagation_rw";
 
     // Whether the features should be enabled.
     //
@@ -546,16 +546,6 @@ public final class Flags {
      * {@link androidx.appsearch.app.GenericDocument}.
      */
     public static boolean enableSearchResultParentTypes() {
-        return true;
-    }
-
-    /**
-     * Whether delete propagation related APIs should be enabled.
-     *
-     * <p>Note: delete propagation depends on qualified id join index v3, so
-     * {@link #enableQualifiedIdJoinIndexV3()} should also be true.
-     */
-    public static boolean enableDeletePropagationType() {
         return true;
     }
 
@@ -783,6 +773,17 @@ public final class Flags {
      * {@link StringPropertyConfig#JOINABLE_VALUE_TYPE_QUALIFIED_ID}.
      */
     public static boolean enableRepeatedFieldJoins() {
+        return true;
+    }
+
+    /**
+     * Whether delete propagation API should be enabled.
+     *
+     * <p>Note: delete propagation depends on qualified id join index v3 and soft index restoration,
+     * so {@link #enableQualifiedIdJoinIndexV3()} and {@link #enableSoftIndexRestoration()} should
+     * also be true.
+     */
+    public static boolean enableDeletePropagationRw() {
         return true;
     }
 }

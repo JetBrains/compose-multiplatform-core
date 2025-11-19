@@ -551,7 +551,7 @@ package androidx.activity.result.contract {
     field public static final androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.VideoOnly INSTANCE;
   }
 
-  public static sealed interface ActivityResultContracts.PickVisualMedia.VisualMediaType {
+  public static sealed exhaustive interface ActivityResultContracts.PickVisualMedia.VisualMediaType {
   }
 
   public static final class ActivityResultContracts.RequestMultiplePermissions extends androidx.activity.result.contract.ActivityResultContract<java.lang.String[],java.util.Map<java.lang.String,java.lang.Boolean>> {

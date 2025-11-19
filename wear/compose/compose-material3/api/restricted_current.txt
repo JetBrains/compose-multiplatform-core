@@ -2244,7 +2244,7 @@ package androidx.wear.compose.material3 {
 
 package androidx.wear.compose.material3.lazy {
 
-  public sealed interface ResponsiveTransformationSpec extends androidx.wear.compose.material3.lazy.TransformationSpec {
+  public sealed nonexhaustive interface ResponsiveTransformationSpec extends androidx.wear.compose.material3.lazy.TransformationSpec {
     field public static final androidx.wear.compose.material3.lazy.ResponsiveTransformationSpec.Companion Companion;
   }
 

@@ -29,4 +29,4 @@ public class ZIndexModifier(public val value: RemoteFloat) : RemoteModifier.Elem
     }
 }
 
-public fun RemoteModifier.zIndex(value: RemoteFloat): RemoteModifier = then(ZIndexModifier(value))
+public fun RemoteModifier.zIndex(zIndex: RemoteFloat): RemoteModifier = then(ZIndexModifier(zIndex))

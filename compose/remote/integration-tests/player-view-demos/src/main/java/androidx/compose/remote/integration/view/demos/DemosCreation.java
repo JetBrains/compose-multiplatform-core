@@ -24,6 +24,7 @@ import androidx.compose.remote.integration.view.demos.examples.Cube3DKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoAnchorText;
 import androidx.compose.remote.integration.view.demos.examples.DemoAttributedString;
 import androidx.compose.remote.integration.view.demos.examples.DemoMetalClockKt;
+import androidx.compose.remote.integration.view.demos.examples.DemoParticlesKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths;
 import androidx.compose.remote.integration.view.demos.examples.ExampleTimerKt;
 import androidx.compose.remote.integration.view.demos.examples.PlotWaveKt;
@@ -48,12 +49,14 @@ public abstract class DemosCreation {
                 //getp("4/simplePlot/simplePlot", GraphKt::simplePlot),
                 getp("5/Server/serverClock", ServerSideKt::serverClock),
 
+
                 getp("Procedural/plotWave", PlotWaveKt::basicPlot),
                 getp("Procedural/plotWave", PlotWaveKt::plotWave),
                 getp("Java/AttributeString", DemoAttributedString::demo),
                 getp("Java/pathTest", ExampleTimerKt::basicTimer),
                 getp("fancyClock2", DemoMetalClockKt::fancyClock2),
                 getp("Java/pathTest", DemoAnchorText::anchoredText),
+                getp("1/Server/serverClock", DemoParticlesKt::pmaze),
                 getp("Java/pathTest", DemoPaths::pathTest),
                 getpc("Procedural/Text baseline", TextKt::RcTextDemo),
                 getp("Procedural/StartAnimation", DemoPaths::pathTest),

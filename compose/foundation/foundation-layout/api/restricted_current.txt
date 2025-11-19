@@ -268,7 +268,7 @@ package androidx.compose.foundation.layout {
     method @BytecodeOnly @androidx.compose.runtime.Composable @kotlin.PublishedApi internal static androidx.compose.ui.layout.MeasurePolicy rowMeasurementHelper(androidx.compose.foundation.layout.Arrangement.Horizontal, androidx.compose.foundation.layout.Arrangement.Vertical, int, androidx.compose.runtime.Composer?, int);
   }
 
-  @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract sealed class FlowLayoutOverflow {
+  @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public abstract sealed exhaustive class FlowLayoutOverflow {
   }
 
   @Deprecated @SuppressCompatibility @androidx.compose.foundation.layout.ExperimentalLayoutApi public final class FlowRowOverflow extends androidx.compose.foundation.layout.FlowLayoutOverflow {

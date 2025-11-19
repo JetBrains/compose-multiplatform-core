@@ -337,7 +337,7 @@ public interface IcingOptionsConfig {
                 // Join index v3 and soft index restoration are prerequisites for delete
                 // propagation.
                 .setEnableDeletePropagationFrom(
-                        Flags.enableDeletePropagationType()
+                        Flags.enableDeletePropagationRw()
                                 && Flags.enableQualifiedIdJoinIndexV3()
                                 && Flags.enableSoftIndexRestoration())
                 .setCalculateTimeSinceLastAttemptedOptimize(

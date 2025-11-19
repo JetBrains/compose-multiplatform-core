@@ -803,19 +803,12 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
     public @NonNull MovableComponent createMovableComponent(
             boolean systemMovable,
             boolean scaleInZ,
-            @NonNull Set<AnchorPlacement> anchorPlacement,
-            boolean shouldDisposeParentAnchor) {
+            boolean userAnchorable) {
         return new MovableComponentImpl(
                 systemMovable,
                 scaleInZ,
-                anchorPlacement,
-                shouldDisposeParentAnchor,
-                mPerceptionLibrary,
-                mExtensions,
+                userAnchorable,
                 mActivitySpace,
-                mActivitySpace,
-                mPerceptionSpaceScenePose,
-                mEntityManager,
                 new PanelShadowRenderer(
                         mActivitySpace, mPerceptionSpaceScenePose, mActivity, mExtensions),
                 mExecutor);

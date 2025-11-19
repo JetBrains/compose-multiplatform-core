@@ -33,6 +33,7 @@ import android.view.ViewGroup.LayoutParams;
 
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.runtime.math.Quaternion;
+import androidx.xr.runtime.math.Vector2;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
@@ -324,5 +325,65 @@ public class PanelEntityImplTest {
         // Perceived pixel height = 0.75 * 1000px = 750
         Truth.assertThat(successResult.getPerceivedResolution().width).isEqualTo(500);
         Truth.assertThat(successResult.getPerceivedResolution().height).isEqualTo(750);
+    }
+
+    @Test
+    public void transformPixelCoordinatesToPose_center_returnsIdentity() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX); // 640px x 480px
+        Pose pose = panelEntity.transformPixelCoordinatesToPose(new Vector2(320f, 240f));
+        assertThat(pose).isEqualTo(Pose.Identity);
+    }
+
+    @Test
+    public void transformPixelCoordinatesToPose_topLeft_returnsCorrectPose() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX); // 640px x 480px
+        Pose pose = panelEntity.transformPixelCoordinatesToPose(new Vector2(0f, 0f));
+        Vector3 expected =
+                new Vector3(
+                        panelEntity.getSize().width * -0.5f,
+                        panelEntity.getSize().height * 0.5f,
+                        0.0f);
+        assertThat(pose.getTranslation()).isEqualTo(expected);
+    }
+
+    @Test
+    public void transformPixelCoordinatesToPose_bottomRight_returnsCorrectPose() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX); // 640px x 480px
+        Pose pose = panelEntity.transformPixelCoordinatesToPose(new Vector2(640f, 480f));
+        Vector3 expected =
+                new Vector3(
+                        panelEntity.getSize().width * 0.5f,
+                        panelEntity.getSize().height * -0.5f,
+                        0.0f);
+        assertThat(pose.getTranslation()).isEqualTo(expected);
+    }
+
+    @Test
+    public void transformNormalizedCoordinatesToPose_center_returnsIdentity() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX);
+        Pose pose = panelEntity.transformNormalizedCoordinatesToPose(new Vector2(0f, 0f));
+        assertThat(pose).isEqualTo(Pose.Identity);
+    }
+
+    @Test
+    public void transformNormalizedCoordinatesToPose_topLeft_returnsCorrectPose() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX);
+        float width = 10.0f;
+        float height = 20.0f;
+        panelEntity.setSize(new Dimensions(width, height, 0.0f));
+        Pose pose = panelEntity.transformNormalizedCoordinatesToPose(new Vector2(-1f, 1f));
+        Vector3 expected = new Vector3(-width / 2, height / 2, 0.0f);
+        assertThat(pose.getTranslation()).isEqualTo(expected);
+    }
+
+    @Test
+    public void transformNormalizedCoordinatesToPose_bottomRight_returnsCorrectPose() {
+        PanelEntityImpl panelEntity = createPanelEntity(K_VGA_RESOLUTION_PX);
+        float width = 10.0f;
+        float height = 20.0f;
+        panelEntity.setSize(new Dimensions(width, height, 0.0f));
+        Pose pose = panelEntity.transformNormalizedCoordinatesToPose(new Vector2(1f, -1f));
+        Vector3 expected = new Vector3(width / 2, -height / 2, 0.0f);
+        assertThat(pose.getTranslation()).isEqualTo(expected);
     }
 }

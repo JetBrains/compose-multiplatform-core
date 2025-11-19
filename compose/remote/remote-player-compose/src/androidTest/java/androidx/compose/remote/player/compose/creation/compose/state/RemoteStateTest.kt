@@ -107,8 +107,8 @@ class RemoteStateTest {
         }
 
         // If ids match that updates will be seen across values
-        assertThat(valId).isNotEqualTo(0)
-        assertThat(namedId1).isNotEqualTo(0)
-        assertThat(namedId2).isNotEqualTo(0)
+        assertThat(valId).isNotEqualTo(namedId1)
+        assertThat(valId).isNotEqualTo(namedId2)
+        assertThat(namedId1).isNotEqualTo(namedId2)
     }
 }

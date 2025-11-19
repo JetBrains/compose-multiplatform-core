@@ -139,7 +139,7 @@ package androidx.navigationevent {
     method @EmptySuper @MainThread protected void onRemoved();
   }
 
-  @androidx.compose.runtime.Immutable public abstract sealed class NavigationEventTransitionState {
+  @androidx.compose.runtime.Immutable public abstract sealed exhaustive class NavigationEventTransitionState {
     field public static final androidx.navigationevent.NavigationEventTransitionState.Companion Companion;
     field public static final int TRANSITIONING_BACK = -1; // 0xffffffff
     field public static final int TRANSITIONING_FORWARD = 1; // 0x1
@@ -170,7 +170,7 @@ package androidx.navigationevent {
     ctor public OnBackInvokedDefaultInput(android.window.OnBackInvokedDispatcher onBackInvokedDispatcher);
   }
 
-  @RequiresApi(33) public abstract sealed class OnBackInvokedInput extends androidx.navigationevent.NavigationEventInput {
+  @RequiresApi(33) public abstract sealed exhaustive class OnBackInvokedInput extends androidx.navigationevent.NavigationEventInput {
   }
 
   @RequiresApi(33) public final class OnBackInvokedOverlayInput extends androidx.navigationevent.OnBackInvokedInput {

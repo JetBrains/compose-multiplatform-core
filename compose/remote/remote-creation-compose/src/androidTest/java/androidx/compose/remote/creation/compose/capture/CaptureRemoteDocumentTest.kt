@@ -62,7 +62,7 @@ class CaptureRemoteDocumentTest {
         val document: ByteArray =
             withContext(Dispatchers.Main) {
                 captureRemoteDocument(context) {
-                    RemoteBox(modifier = RemoteModifier.fillMaxSize().background(Color.Red)) {}
+                    RemoteBox(modifier = RemoteModifier.fillMaxSize().background(Color.Red))
                 }
             }
 

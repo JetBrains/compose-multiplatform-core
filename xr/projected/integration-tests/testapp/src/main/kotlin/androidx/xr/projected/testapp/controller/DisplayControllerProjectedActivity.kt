@@ -75,7 +75,7 @@ class DisplayControllerProjectedActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         Log.i(TAG, "Creating DisplayControllerProjectedActivity")
         super.onCreate(savedInstanceState)
-        updateScreenOnState(intent)
+        handleIntent(intent)
         initializeProjectedDeviceController(this)
         initializeProjectedDisplayController(presentationModesList, this)
         setContent { CreateUi() }
@@ -116,13 +116,6 @@ class DisplayControllerProjectedActivity : ComponentActivity() {
             Text("Keep Screen On: ${screenOnState.value}", fontSize = 30.sp)
             Text("Presentation Mode Events:")
             PresentationModeFlagsList(presentationModesList.toList())
-
-            LaunchedEffect(presentationModesList.size) {
-                if (mediaPlayer != null) {
-                    mediaPlayer?.start()
-                    Log.i(TAG, "Playing voice clip")
-                }
-            }
         }
     }
 
@@ -187,13 +180,26 @@ class DisplayControllerProjectedActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        updateScreenOnState(intent)
+        handleIntent(intent)
     }
 
-    private fun updateScreenOnState(intent: Intent) {
-        keepScreenOn.value = intent.getBooleanExtra("KEEP_SCREEN_ON", false)
-        Log.i(TAG, "Received Intent with KEEP_SCREEN_ON value of: ${keepScreenOn.value}")
-        updateScreenOnFlag()
+    private fun handleIntent(intent: Intent) {
+        if (intent.hasExtra("KEEP_SCREEN_ON")) {
+            keepScreenOn.value = intent.getBooleanExtra("KEEP_SCREEN_ON", false)
+            Log.i(TAG, "Received Intent with KEEP_SCREEN_ON value of: ${keepScreenOn.value}")
+            updateScreenOnFlag()
+        }
+        if (intent.getBooleanExtra("PLAY_SOUND", false)) {
+            if (mediaPlayer != null) {
+                mediaPlayer?.start()
+                Log.i(TAG, "Received Intent with PLAY_SOUND: Playing voice clip")
+            } else {
+                Log.w(
+                    TAG,
+                    "Received Intent with PLAY_SOUND: However can't play, voice clip not ready",
+                )
+            }
+        }
     }
 
     private fun updateScreenOnFlag() {

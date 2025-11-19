@@ -28,6 +28,8 @@ import android.content.Intent;
 import android.graphics.Rect;
 
 import androidx.xr.runtime.math.Pose;
+import androidx.xr.runtime.math.Vector2;
+import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.runtime.ActivityPanelEntity;
@@ -225,5 +227,30 @@ public class ActivityPanelEntityImplTest {
                 ShadowXrExtensions.extract(mXrExtensions).getActivityPanelForHost(mHostActivity);
 
         assertThat(ShadowActivityPanel.extract(panel).isDeleted()).isTrue();
+    }
+
+    @Test
+    public void transformPixelCoordinatesToPose_topLeft_returnsCorrectPose() {
+        ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
+        activityPanelEntity.setSize(new Dimensions(1f, 1f, 0f));
+        Pose pose = activityPanelEntity.transformPixelCoordinatesToPose(new Vector2(0f, 0f));
+        Vector3 expected = new Vector3(-0.5f, 0.5f, 0.0f);
+        assertThat(pose.getTranslation()).isEqualTo(expected);
+    }
+
+    @Test
+    public void transformNormalizedCoordinatesToPose_center_returnsIdentity() {
+        ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
+        Pose pose = activityPanelEntity.transformNormalizedCoordinatesToPose(new Vector2(0f, 0f));
+        assertThat(pose).isEqualTo(Pose.Identity);
+    }
+
+    @Test
+    public void transformNormalizedCoordinatesToPose_topLeft_returnsCorrectPose() {
+        ActivityPanelEntity activityPanelEntity = createActivityPanelEntity();
+        activityPanelEntity.setSize(new Dimensions(1f, 1f, 0f));
+        Pose pose = activityPanelEntity.transformNormalizedCoordinatesToPose(new Vector2(-1f, 1f));
+        Vector3 expected = new Vector3(-0.5f, 0.5f, 0.0f);
+        assertThat(pose.getTranslation()).isEqualTo(expected);
     }
 }

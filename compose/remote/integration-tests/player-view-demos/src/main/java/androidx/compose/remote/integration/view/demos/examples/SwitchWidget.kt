@@ -21,8 +21,8 @@ import androidx.compose.remote.creation.compose.action.ValueChange
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.LogTodo
 import androidx.compose.remote.creation.compose.capture.NoRemoteCompose
-import androidx.compose.remote.creation.compose.layout.Alignment
-import androidx.compose.remote.creation.compose.layout.Arrangement
+import androidx.compose.remote.creation.compose.layout.RemoteAlignment
+import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteContext
 import androidx.compose.remote.creation.compose.layout.RemoteText
@@ -61,8 +61,8 @@ fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) 
                     .clip(RoundedCornerShape(20.dp))
                     .background(Color(63, 81, 181, 255))
                     .padding(2.dp),
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = RemoteAlignment.End,
+            verticalArrangement = RemoteArrangement.Center,
         ) {
             Canvas(modifier = RemoteModifier.size(32.dp)) {
                 val color = Color(255, 255, 255)
@@ -86,8 +86,8 @@ fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier, id: Int = 0)
                     .background(Color(100, 100, 100))
                     .padding(8.dp)
                     .then(modifier),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = RemoteAlignment.Start,
+            verticalArrangement = RemoteArrangement.Center,
         ) {
             Canvas(modifier = RemoteModifier.size(20.dp)) {
                 val color = Color(220, 220, 220)
@@ -142,7 +142,10 @@ fun SwitchWidget(value: MutableRemoteInt) {
                 )
             }
 
-        Box(modifier = RemoteModifier.padding(4.dp), verticalArrangement = Arrangement.Center) {
+        Box(
+            modifier = RemoteModifier.padding(4.dp),
+            verticalArrangement = RemoteArrangement.Center,
+        ) {
             val modifierSize = RemoteModifier.size(60.dp, 36.dp)
             StateLayout(modifier = RemoteModifier.wrapContentSize(), stateMachine = fsm) { state ->
                 Box {
@@ -166,7 +169,7 @@ fun SwitchWidget(value: MutableRemoteInt) {
 @RemoteComposable
 fun RowSwitch(state: MutableRemoteInt, label: String, modifier: RemoteModifier = RemoteModifier) {
     RemoteContext {
-        Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = modifier, verticalAlignment = RemoteAlignment.CenterVertically) {
             RemoteText(label)
             SwitchWidget(state)
             RemoteText("State value is ")
@@ -181,7 +184,7 @@ fun RowSwitch(state: MutableRemoteInt, label: String, modifier: RemoteModifier =
 @RemoteComposable
 fun StateInfo(state: RemoteInt, label: String, modifier: RemoteModifier = RemoteModifier) {
     RemoteContext {
-        Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier = modifier, verticalAlignment = RemoteAlignment.CenterVertically) {
             RemoteText(label)
             val list = rememberRemoteStringList("OFF", "ON")
             RemoteText(list[state])
@@ -222,8 +225,8 @@ fun SwitchWidgetDemo() {
             RowSwitch(checkedC, "State C")
             Row(
                 modifier = Modifier.padding(top = 8.dp).fillMaxWidth(),
-                horizontalArrangement = Arrangement.CenterHorizontally,
-                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = RemoteArrangement.CenterHorizontally,
+                verticalAlignment = RemoteAlignment.CenterVertically,
             ) {
                 val visibilityModifierB = RemoteModifier.visibility(checkedB)
                 StateInfo(checkedA, "A is ")

@@ -46,6 +46,7 @@ import androidx.xr.scenecore.testapp.inputmoveresize.InputMoveResizeTestActivity
 import androidx.xr.scenecore.testapp.memoryleak.MemoryLeakActivity
 import androidx.xr.scenecore.testapp.model.GltfModelActivity
 import androidx.xr.scenecore.testapp.movable.MovableActivity
+import androidx.xr.scenecore.testapp.panelcoordinate.PanelCoordinateActivity
 import androidx.xr.scenecore.testapp.panelroundedcorner.PanelRoundedCornerActivity
 import androidx.xr.scenecore.testapp.sceneviewer.SceneViewerActivity
 import androidx.xr.scenecore.testapp.spatialaudio.SpatialAudioActivity
@@ -150,6 +151,7 @@ class MainActivity : AppCompatActivity() {
                 getString(R.string.cuj_surface_entity_playbacktest),
                 getString(R.string.cuj_gravity_aligned_pose_test),
                 getString(R.string.cuj_surface_entity_imagetest),
+                getString(R.string.cuj_panel_coordinates_test),
             )
         val customAdapter = TestCasesRecyclerViewAdapter(dataset)
         val recyclerView: RecyclerView = findViewById(R.id.cuj_buttons_recycler)
@@ -269,6 +271,9 @@ class MainActivity : AppCompatActivity() {
             Tests.SURFACE_PLAYBACK_TEST.test ->
                 startActivity(createIntent<SurfaceEntityPlaybackActivity>())
 
+            Tests.PANEL_COORDINATES_TEST.test ->
+                startActivity(createIntent<PanelCoordinateActivity>())
+
             else -> {
                 Log.i(ACTIVITY_NAME, "DO_NOTHING")
             }
@@ -337,5 +342,6 @@ class MainActivity : AppCompatActivity() {
         SURFACE_PLAYBACK_TEST(25),
         GRAVITY_ALIGNED_POSE_TEST(26),
         SURFACE_ENTITY_IMAGE_TEST(27),
+        PANEL_COORDINATES_TEST(28),
     }
 }

@@ -28,7 +28,7 @@ package androidx.compose.ui.test {
     method public static androidx.compose.ui.test.SemanticsNodeInteraction tryPerformAccessibilityChecks(androidx.compose.ui.test.SemanticsNodeInteraction);
   }
 
-  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public sealed interface AndroidComposeUiTest<A extends androidx.activity.ComponentActivity> extends androidx.compose.ui.test.ComposeUiTest {
+  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public sealed nonexhaustive interface AndroidComposeUiTest<A extends androidx.activity.ComponentActivity> extends androidx.compose.ui.test.ComposeUiTest {
     method @InaccessibleFromKotlin public A? getActivity();
     property public abstract A? activity;
   }
@@ -120,7 +120,7 @@ package androidx.compose.ui.test {
     ctor public ComposeTimeoutException(String? message);
   }
 
-  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public sealed interface ComposeUiTest extends androidx.compose.ui.test.SemanticsNodeInteractionsProvider {
+  @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public sealed exhaustive interface ComposeUiTest extends androidx.compose.ui.test.SemanticsNodeInteractionsProvider {
     method public suspend Object? awaitIdle(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @InaccessibleFromKotlin public androidx.compose.ui.unit.Density getDensity();
     method @InaccessibleFromKotlin public androidx.compose.ui.test.MainTestClock getMainClock();
@@ -579,7 +579,7 @@ package androidx.compose.ui.test {
     method @BytecodeOnly public static void tripleClick-xhG_qxo$default(androidx.compose.ui.test.MouseInjectionScope!, long, int, int, Object!);
   }
 
-  public sealed interface MultiModalInjectionScope extends androidx.compose.ui.test.InjectionScope {
+  public sealed nonexhaustive interface MultiModalInjectionScope extends androidx.compose.ui.test.InjectionScope {
     method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public void key(kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.KeyInjectionScope,kotlin.Unit> block);
     method public void mouse(kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.MouseInjectionScope,kotlin.Unit> block);
     method @SuppressCompatibility @androidx.compose.ui.test.ExperimentalTestApi public void rotary(kotlin.jvm.functions.Function1<? super androidx.compose.ui.test.RotaryInjectionScope,kotlin.Unit> block);

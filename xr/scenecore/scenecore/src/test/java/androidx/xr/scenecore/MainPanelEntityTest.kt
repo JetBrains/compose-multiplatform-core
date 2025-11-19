@@ -21,6 +21,7 @@ import androidx.xr.arcore.testing.FakePerceptionRuntimeFactory
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.IntSize2d
+import androidx.xr.runtime.math.Vector2
 import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.runtime.PixelDimensions as RtPixelDimensions
 import androidx.xr.scenecore.runtime.SceneRuntime
@@ -191,5 +192,21 @@ class MainPanelEntityTest {
 
         verify(mockSceneRuntime)
             .removePerceivedResolutionChangedListener(rtListenerCaptor.firstValue)
+    }
+
+    @Test
+    @OptIn(ExperimentalPanelCoordinateApi::class)
+    fun transformPixelCoordinatesToPose_callsRuntime() {
+        val input = Vector2(100f, 100f)
+        session.scene.mainPanelEntity.transformPixelCoordinatesToPose(input)
+        verify(mockSceneRuntime.mainPanelEntity).transformPixelCoordinatesToPose(input)
+    }
+
+    @Test
+    @OptIn(ExperimentalPanelCoordinateApi::class)
+    fun transformNormalizedCoordinatesToPose_callsRuntime() {
+        val input = Vector2(0.5f, 0.5f)
+        session.scene.mainPanelEntity.transformNormalizedCoordinatesToPose(input)
+        verify(mockSceneRuntime.mainPanelEntity).transformNormalizedCoordinatesToPose(input)
     }
 }

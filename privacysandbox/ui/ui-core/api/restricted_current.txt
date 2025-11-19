@@ -14,7 +14,7 @@ package androidx.privacysandbox.ui.core {
     method @Deprecated public default suspend Object? onDelegateChanged(android.os.Bundle delegate, kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
-  @Deprecated public sealed interface ExperimentalFeatures {
+  @Deprecated public sealed exhaustive interface ExperimentalFeatures {
   }
 
   @Deprecated @SuppressCompatibility @kotlin.RequiresOptIn(message="This API is experimental. It may be changed in the future without notice.", level=kotlin.RequiresOptIn.Level.WARNING) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public static @interface ExperimentalFeatures.ChangingContentUiZOrderApi {

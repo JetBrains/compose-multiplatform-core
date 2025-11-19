@@ -1747,6 +1747,7 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
                     requestLayout()
                 }
                 measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
+                rectManager.dispatchCallbacks()
                 dispatchPendingInteropLayoutCallbacks()
             }
         }
@@ -1760,9 +1761,9 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             // it allows us to not traverse the hierarchy twice.
             if (!measureAndLayoutDelegate.hasPendingMeasureOrLayout) {
                 measureAndLayoutDelegate.dispatchOnPositionedCallbacks()
+                rectManager.dispatchCallbacks()
                 dispatchPendingInteropLayoutCallbacks()
             }
-            rectManager.dispatchCallbacks()
         }
     }
 
@@ -2132,7 +2133,6 @@ internal class AndroidComposeView(context: Context, composeViewContext: ComposeV
             currentFrameRate = Float.NaN
             currentFrameRateCategory = Float.NaN
         }
-        rectManager.dispatchCallbacks()
     }
 
     internal fun notifyLayerIsDirty(layer: OwnedLayer, isDirty: Boolean) {

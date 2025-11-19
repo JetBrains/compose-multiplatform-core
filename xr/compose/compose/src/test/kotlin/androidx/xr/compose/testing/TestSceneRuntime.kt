@@ -27,7 +27,6 @@ import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.impl.extensions.XrExtensionsProvider
 import androidx.xr.scenecore.runtime.ActivitySpace
-import androidx.xr.scenecore.runtime.AnchorPlacement
 import androidx.xr.scenecore.runtime.CameraViewScenePose
 import androidx.xr.scenecore.runtime.CameraViewScenePose.Fov
 import androidx.xr.scenecore.runtime.HeadScenePose
@@ -225,16 +224,10 @@ private constructor(
     override fun createMovableComponent(
         systemMovable: Boolean,
         scaleInZ: Boolean,
-        anchorPlacement: Set<@JvmSuppressWildcards AnchorPlacement>,
-        shouldDisposeParentAnchor: Boolean,
+        userAnchorable: Boolean,
     ): MovableComponent {
         val component =
-            fakeSceneRuntimeBase.createMovableComponent(
-                systemMovable,
-                scaleInZ,
-                anchorPlacement,
-                shouldDisposeParentAnchor,
-            )
+            fakeSceneRuntimeBase.createMovableComponent(systemMovable, scaleInZ, userAnchorable)
         scalesInZ.add(scaleInZ)
         return component
     }

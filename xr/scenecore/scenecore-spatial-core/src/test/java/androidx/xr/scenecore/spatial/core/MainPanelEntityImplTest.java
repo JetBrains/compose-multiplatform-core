@@ -25,6 +25,9 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 
+import androidx.xr.runtime.math.Pose;
+import androidx.xr.runtime.math.Vector2;
+import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
 import androidx.xr.scenecore.runtime.Dimensions;
@@ -117,5 +120,33 @@ public class MainPanelEntityImplTest {
         assertThat(mMainPanelEntity.getCornerRadius()).isEqualTo(32.0f);
         assertThat(NodeRepository.getInstance().getCornerRadius(mMainPanelEntity.getNode()))
                 .isEqualTo(32.0f);
+    }
+
+    @Test
+    public void transformPixelCoordinatesToPose_topLeft_returnsCorrectPose() {
+        Pose pose = mMainPanelEntity.transformPixelCoordinatesToPose(new Vector2(0f, 0f));
+        Vector3 expected =
+                new Vector3(
+                        mMainPanelEntity.getSize().width * -0.5f,
+                        mMainPanelEntity.getSize().height * 0.5f,
+                        0.0f);
+        assertThat(pose.getTranslation()).isEqualTo(expected);
+    }
+
+    @Test
+    public void transformNormalizedCoordinatesToPose_center_returnsIdentity() {
+        Pose pose = mMainPanelEntity.transformNormalizedCoordinatesToPose(new Vector2(0f, 0f));
+        assertThat(pose).isEqualTo(Pose.Identity);
+    }
+
+    @Test
+    public void transformNormalizedCoordinatesToPose_topLeft_returnsCorrectPose() {
+        Pose pose = mMainPanelEntity.transformNormalizedCoordinatesToPose(new Vector2(-1f, 1f));
+        Vector3 expected =
+                new Vector3(
+                        mMainPanelEntity.getSize().width * -0.5f,
+                        mMainPanelEntity.getSize().height * 0.5f,
+                        0.0f);
+        assertThat(pose.getTranslation()).isEqualTo(expected);
     }
 }

@@ -16,44 +16,23 @@
 
 package androidx.xr.scenecore.spatial.core;
 
-import static java.lang.Math.max;
-
-import android.content.Context;
-import android.os.SystemClock;
-import android.util.Pair;
-
 import androidx.xr.runtime.math.Pose;
-import androidx.xr.runtime.math.Quaternion;
 import androidx.xr.runtime.math.Ray;
 import androidx.xr.runtime.math.Vector3;
-import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
-import androidx.xr.scenecore.impl.perception.Plane;
-import androidx.xr.scenecore.impl.perception.Plane.PlaneData;
-import androidx.xr.scenecore.impl.perception.Session;
-import androidx.xr.scenecore.runtime.AnchorEntity;
-import androidx.xr.scenecore.runtime.AnchorPlacement;
 import androidx.xr.scenecore.runtime.Dimensions;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.MovableComponent;
 import androidx.xr.scenecore.runtime.MoveEvent;
 import androidx.xr.scenecore.runtime.MoveEventListener;
-import androidx.xr.scenecore.runtime.PlaneSemantic;
-import androidx.xr.scenecore.runtime.PlaneType;
 import androidx.xr.scenecore.runtime.Space;
 
-import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.function.Consumer;
 import com.android.extensions.xr.node.ReformEvent;
 import com.android.extensions.xr.node.ReformOptions;
 import com.android.extensions.xr.node.Vec3;
 
 import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
@@ -62,22 +41,13 @@ import java.util.concurrent.ScheduledExecutorService;
 @SuppressWarnings("BanConcurrentHashMap")
 class MovableComponentImpl implements MovableComponent {
     private static final String TAG = "MovableComponentImpl";
-    static final float MIN_PLANE_ANCHOR_DISTANCE = .2f;
     private final boolean mSystemMovable;
     private final boolean mScaleInZ;
-    private final boolean mShouldDisposeParentAnchor;
-    private final PerceptionLibrary mPerceptionLibrary;
-    private final XrExtensions mExtensions;
     private final ActivitySpaceImpl mActivitySpaceImpl;
-    private final AndroidXrEntity mActivitySpaceEntity;
-    private final PerceptionSpaceScenePoseImpl mPerceptionSpaceScenePose;
-    private final EntityManager mEntityManager;
     private final PanelShadowRenderer mPanelShadowRenderer;
     private final ScheduledExecutorService mRuntimeExecutor;
     private final ConcurrentHashMap<MoveEventListener, Executor> mMoveEventListenersMap =
             new ConcurrentHashMap<>();
-    private final Map<PlaneType, Map<PlaneSemantic, AnchorPlacementImpl>> mAnchorableFilters =
-            new EnumMap<>(PlaneType.class);
     // Visible for testing.
     Consumer<ReformEvent> mReformEventConsumer;
     private Entity mEntity;
@@ -86,35 +56,66 @@ class MovableComponentImpl implements MovableComponent {
     private Vector3 mLastScale = new Vector3(1f, 1f, 1f);
     private Dimensions mCurrentSize;
     private boolean mUserAnchorable = false;
-    private AnchorEntity mCreatedAnchorEntity;
-    private AnchorPlacementImpl mCreatedAnchorPlacement;
+    private boolean mIsMoving = false;
     @ScaleWithDistanceMode private int mScaleWithDistanceMode = ScaleWithDistanceMode.DEFAULT;
 
     MovableComponentImpl(
             boolean systemMovable,
             boolean scaleInZ,
-            Set<AnchorPlacement> anchorPlacement,
-            boolean shouldDisposeParentAnchor,
-            PerceptionLibrary perceptionLibrary,
-            XrExtensions extensions,
+            boolean userAnchorable,
             ActivitySpaceImpl activitySpaceImpl,
-            AndroidXrEntity activitySpaceEntity,
-            PerceptionSpaceScenePoseImpl perceptionSpaceScenePose,
-            EntityManager entityManager,
             PanelShadowRenderer panelShadowRenderer,
             ScheduledExecutorService runtimeExecutor) {
         mSystemMovable = systemMovable;
         mScaleInZ = scaleInZ;
-        mShouldDisposeParentAnchor = shouldDisposeParentAnchor;
-        mPerceptionLibrary = perceptionLibrary;
-        mExtensions = extensions;
         mActivitySpaceImpl = activitySpaceImpl;
-        mActivitySpaceEntity = activitySpaceEntity;
-        mPerceptionSpaceScenePose = perceptionSpaceScenePose;
-        mEntityManager = entityManager;
         mPanelShadowRenderer = panelShadowRenderer;
         mRuntimeExecutor = runtimeExecutor;
-        setUpAnchorPlacement(anchorPlacement);
+        mUserAnchorable = userAnchorable;
+        mReformEventConsumer = reformEvent -> {
+            if (reformEvent.getType() != ReformEvent.REFORM_TYPE_MOVE) {
+                return;
+            }
+            if (reformEvent.getState() == ReformEvent.REFORM_STATE_START) {
+                mInitialParent = mEntity.getParent() != null ? mEntity.getParent()
+                        : mActivitySpaceImpl;
+                mIsMoving = true;
+            } else if (reformEvent.getState() == ReformEvent.REFORM_STATE_END) {
+                mIsMoving = false;
+                mPanelShadowRenderer.destroy();
+            }
+
+            Pose newPose =
+                    RuntimeUtils.getPose(
+                            reformEvent.getProposedPosition(),
+                            reformEvent.getProposedOrientation());
+            Vector3 newScale =
+                    mScaleInZ ? RuntimeUtils.getVector3(reformEvent.getProposedScale())
+                            : mLastScale;
+
+            mMoveEventListenersMap.forEach(
+                    (listener, listenerExecutor) ->
+                            listenerExecutor.execute(() -> listener.onMoveEvent(new MoveEvent(
+                                    reformEvent.getState(),
+                                    new Ray(
+                                            RuntimeUtils.getVector3(
+                                                    reformEvent.getInitialRayOrigin()),
+                                            RuntimeUtils.getVector3(
+                                                    reformEvent.getInitialRayDirection())),
+                                    new Ray(RuntimeUtils.getVector3(
+                                            reformEvent.getCurrentRayOrigin()),
+                                            RuntimeUtils.getVector3(
+                                                    reformEvent.getCurrentRayDirection())),
+                                    mLastPose,
+                                    newPose,
+                                    mLastScale,
+                                    newScale,
+                                    mInitialParent,
+                                    null,
+                                    null))));
+            mLastPose = newPose;
+            mLastScale = newScale;
+        };
     }
 
     @Override
@@ -124,9 +125,7 @@ class MovableComponentImpl implements MovableComponent {
         }
         mEntity = entity;
         ReformOptions reformOptions = ((AndroidXrEntity) entity).getReformOptions();
-        // The math for anchoring uses the pose relative to the activity space so we should not set
-        // the reform options to be relative to the parent if the entity is anchorable.
-        int reformFlags = mUserAnchorable ? 0 : ReformOptions.FLAG_POSE_RELATIVE_TO_PARENT;
+        int reformFlags = ReformOptions.FLAG_POSE_RELATIVE_TO_PARENT;
         reformFlags =
                 (mSystemMovable && !mUserAnchorable)
                         ? reformFlags | ReformOptions.FLAG_ALLOW_SYSTEM_MOVEMENT
@@ -150,16 +149,10 @@ class MovableComponentImpl implements MovableComponent {
                     reformOptions.setCurrentSize(
                             new Vec3(mCurrentSize.width, mCurrentSize.height, mCurrentSize.depth));
         }
-        if (mUserAnchorable && mSystemMovable && mReformEventConsumer == null) {
-            mReformEventConsumer = this::getUpdatedReformEventPoseAndParent;
-        }
         mLastPose = entity.getPose(Space.PARENT);
         mLastScale = entity.getScale(Space.PARENT);
         ((AndroidXrEntity) entity).updateReformOptions();
-        if (mReformEventConsumer != null) {
-            ((AndroidXrEntity) entity)
-                    .addReformEventConsumer(mReformEventConsumer, mRuntimeExecutor);
-        }
+        ((AndroidXrEntity) mEntity).addReformEventConsumer(mReformEventConsumer, mRuntimeExecutor);
         return true;
     }
 
@@ -179,10 +172,7 @@ class MovableComponentImpl implements MovableComponent {
                 mScaleInZ ? reformFlags & ~ReformOptions.FLAG_SCALE_WITH_DISTANCE : reformFlags;
         unused = reformOptions.setFlags(reformFlags);
         ((AndroidXrEntity) entity).updateReformOptions();
-        if (mReformEventConsumer != null) {
-            ((AndroidXrEntity) entity).removeReformEventConsumer(mReformEventConsumer);
-            mReformEventConsumer = null;
-        }
+        ((AndroidXrEntity) entity).removeReformEventConsumer(mReformEventConsumer);
         mEntity = null;
     }
 
@@ -223,366 +213,15 @@ class MovableComponentImpl implements MovableComponent {
         ((AndroidXrEntity) mEntity).updateReformOptions();
     }
 
-    private MoveEvent createMoveEvent(
-            ReformEvent reformEvent,
-            Pose lastPose,
-            Pose newPose,
-            Vector3 lastScale,
-            Vector3 newScale,
-            Entity initialParent,
-            Entity updatedParent,
-            Entity disposedEntity) {
-        Ray initialRay =
-                new Ray(
-                        RuntimeUtils.getVector3(reformEvent.getInitialRayOrigin()),
-                        RuntimeUtils.getVector3(reformEvent.getInitialRayDirection()));
-        Ray currentRay =
-                new Ray(
-                        RuntimeUtils.getVector3(reformEvent.getCurrentRayOrigin()),
-                        RuntimeUtils.getVector3(reformEvent.getCurrentRayDirection()));
-        return new MoveEvent(
-                reformEvent.getState(),
-                initialRay,
-                currentRay,
-                lastPose,
-                newPose,
-                lastScale,
-                newScale,
-                initialParent,
-                updatedParent,
-                disposedEntity);
-    }
-
     @Override
     public void addMoveEventListener(
             @NonNull Executor executor, @NonNull MoveEventListener moveEventListener) {
-        if (mReformEventConsumer != null) {
-            ((AndroidXrEntity) mEntity).removeReformEventConsumer(mReformEventConsumer);
-        }
-        mReformEventConsumer =
-                reformEvent -> {
-                    if (reformEvent.getType() != ReformEvent.REFORM_TYPE_MOVE) {
-                        return;
-                    }
-                    if (reformEvent.getState() == ReformEvent.REFORM_STATE_START) {
-                        mInitialParent =
-                                mEntity.getParent() != null
-                                        ? mEntity.getParent()
-                                        : mActivitySpaceImpl;
-                    }
-
-                    Pose newPose;
-                    Entity updatedParent = null;
-                    if (mUserAnchorable) {
-                        Pair<Pose, Entity> updatedPoseParentPair =
-                                getUpdatedReformEventPoseAndParent(reformEvent);
-                        newPose = updatedPoseParentPair.first;
-                        updatedParent = updatedPoseParentPair.second;
-                    } else {
-                        newPose =
-                                RuntimeUtils.getPose(
-                                        reformEvent.getProposedPosition(),
-                                        reformEvent.getProposedOrientation());
-                    }
-                    Vector3 newScale =
-                            mScaleInZ
-                                    ? RuntimeUtils.getVector3(reformEvent.getProposedScale())
-                                    : mLastScale;
-                    Entity disposeEntity = null;
-                    Entity parent = updatedParent;
-                    mMoveEventListenersMap.forEach(
-                            (listener, listenerExecutor) ->
-                                    listenerExecutor.execute(
-                                            () ->
-                                                    listener.onMoveEvent(
-                                                            createMoveEvent(
-                                                                    reformEvent,
-                                                                    mLastPose,
-                                                                    newPose,
-                                                                    mLastScale,
-                                                                    newScale,
-                                                                    mInitialParent,
-                                                                    parent,
-                                                                    disposeEntity))));
-                    mLastPose = newPose;
-                    mLastScale = newScale;
-                };
         mMoveEventListenersMap.put(moveEventListener, executor);
-        if (mEntity == null) {
-            return;
-        }
-        ((AndroidXrEntity) mEntity).addReformEventConsumer(mReformEventConsumer, executor);
-    }
-
-    private void setUpAnchorPlacement(Set<AnchorPlacement> anchorPlacement) {
-
-        for (AnchorPlacement placement : anchorPlacement) {
-            if (!(placement instanceof AnchorPlacementImpl)) {
-                continue;
-            }
-            AnchorPlacementImpl placementImpl = (AnchorPlacementImpl) placement;
-            Map<PlaneSemantic, AnchorPlacementImpl> anchorablePlaneSemantic =
-                    new EnumMap<>(PlaneSemantic.class);
-            for (PlaneSemantic planeSemantic : placementImpl.mPlaneSemanticFilter) {
-                anchorablePlaneSemantic.put(planeSemantic, placementImpl);
-            }
-            for (PlaneType planeType : placementImpl.mPlaneTypeFilter) {
-                mAnchorableFilters.put(planeType, anchorablePlaneSemantic);
-            }
-        }
-        if (!mAnchorableFilters.isEmpty()) {
-            mUserAnchorable = true;
-        }
     }
 
     @Override
     public void removeMoveEventListener(@NonNull MoveEventListener moveEventListener) {
         mMoveEventListenersMap.remove(moveEventListener);
-    }
-
-    private Pair<Pose, Entity> getUpdatedReformEventPoseAndParent(ReformEvent reformEvent) {
-        if (reformEvent.getState() == ReformEvent.REFORM_STATE_END && shouldRenderPlaneShadow()) {
-            mPanelShadowRenderer.destroy();
-        }
-        Pose proposedPose =
-                RuntimeUtils.getPose(
-                        reformEvent.getProposedPosition(), reformEvent.getProposedOrientation());
-        Pair<Pose, Entity> updatedEntity = updatePoseWithPlanes(proposedPose, reformEvent);
-        if (mSystemMovable) {
-            mEntity.setPose(updatedEntity.first, Space.PARENT);
-        }
-        return updatedEntity;
-    }
-
-    private Pair<Pose, Entity> updatePoseWithPlanes(Pose proposedPose, ReformEvent reformEvent) {
-        Session session = mPerceptionLibrary.getSession();
-        if (session == null) {
-            return Pair.create(proposedPose, null);
-        }
-        List<Plane> planes = session.getAllPlanes();
-        if (planes.isEmpty()) {
-            return Pair.create(proposedPose, null);
-        }
-
-        // The proposed pose is relative to the activity space, it needs to be updated to be in the
-        // perception reference space to be compared against the planes..
-        Pose updatedPoseInOpenXr =
-                mActivitySpaceImpl.transformPoseTo(proposedPose, mPerceptionSpaceScenePose);
-
-        // Create variables to store the plane in case we need to anchor to it later.
-        Plane anchorablePlane = null;
-        PlaneData anchorablePlaneData = null;
-        AnchorPlacementImpl anchorPlacement = null;
-        Long dataTimeNs = SystemClock.uptimeMillis() * 1000000;
-
-        // Update the pose based on all the known planes.
-        for (Plane plane : planes) {
-
-            PlaneData planeData = plane.getData(dataTimeNs);
-            if (planeData == null) {
-                continue;
-            }
-            // Ignore the plane if the Pose is invalid.
-            if (planeData.centerPose.tx() == 0
-                    && planeData.centerPose.ty() == 0
-                    && planeData.centerPose.tz() == 0
-                    && planeData.centerPose.qx() == 0
-                    && planeData.centerPose.qy() == 0
-                    && planeData.centerPose.qz() == 0
-                    && planeData.centerPose.qw() == 0) {
-                continue;
-            }
-            Pose planePoseUpdate = updatePoseForPlane(planeData, updatedPoseInOpenXr);
-            if (planePoseUpdate == null) {
-                continue;
-            }
-            AnchorPlacementImpl newAnchorPlacement = getAnchorPlacementIfAnchorable(planeData);
-            if (newAnchorPlacement != null) {
-                anchorablePlane = plane;
-                anchorablePlaneData = planeData;
-                anchorPlacement = newAnchorPlacement;
-            }
-            updatedPoseInOpenXr = planePoseUpdate;
-        }
-
-        if (anchorablePlane != null) {
-            // If the reform state is end, we should try to anchor the entity to the plane.
-            if (reformEvent.getState() == ReformEvent.REFORM_STATE_END) {
-                Pair<Pose, AnchorEntity> resultPair =
-                        anchorEntityToPlane(
-                                updatedPoseInOpenXr,
-                                anchorablePlane,
-                                anchorablePlaneData,
-                                anchorPlacement,
-                                dataTimeNs);
-                if (resultPair.second != null) {
-                    return Pair.create(resultPair.first, (Entity) resultPair.second);
-                }
-            } else {
-                // Otherwise, we should try to render the plane shadow onto the plane.
-                tryRenderPlaneShadow(
-                        updatedPoseInOpenXr,
-                        RuntimeUtils.fromPerceptionPose(anchorablePlaneData.centerPose));
-            }
-        } else if (shouldRenderPlaneShadow()) {
-            // If there is nothing to anchor to, hide the plane shadow.
-            mPanelShadowRenderer.hidePlane();
-        }
-
-        // If the entity was anchored and the reform is complete, update the entity to be in the
-        // activity space and remove the previously created anchor data. If
-        // shouldDisposeParentAnchor is true dispose the previously created anchor entity.
-        if (mCreatedAnchorEntity != null
-                && mEntity.getParent() == mCreatedAnchorEntity
-                && reformEvent.getState() == ReformEvent.REFORM_STATE_END) {
-
-            // TODO: b/367754233 - Revisit if this needs to use ActivitySpaceScale or
-            // WorldSpaceScale.
-            mEntity.setScale(
-                    mEntity.getWorldSpaceScale()
-                            .scale(mActivitySpaceImpl.getWorldSpaceScale().inverse()),
-                    Space.PARENT);
-            mEntity.setParent(mActivitySpaceImpl);
-            checkAndDisposeAnchorEntity();
-            mCreatedAnchorEntity = null;
-            mCreatedAnchorPlacement = null;
-
-            // Move the updated pose back to the activity space.
-            Pose updatedPoseInActivitySpace =
-                    mPerceptionSpaceScenePose.transformPoseTo(
-                            updatedPoseInOpenXr, mActivitySpaceImpl);
-            return Pair.create(updatedPoseInActivitySpace, mActivitySpaceImpl);
-        }
-
-        // If the entity has a parent, transform the pose to the parent's space.
-        Entity parent = mEntity.getParent();
-        if (parent == null || parent == mActivitySpaceImpl) {
-            return Pair.create(
-                    mPerceptionSpaceScenePose.transformPoseTo(
-                            updatedPoseInOpenXr, mActivitySpaceImpl),
-                    null);
-        }
-
-        return Pair.create(
-                mPerceptionSpaceScenePose.transformPoseTo(updatedPoseInOpenXr, parent), null);
-    }
-
-    // Gets the anchor placement settings for the given plane data, if it is null the entity should
-    // not be anchored to this plane.
-    private @Nullable AnchorPlacementImpl getAnchorPlacementIfAnchorable(PlaneData planeData) {
-        if (!mUserAnchorable || !mSystemMovable) {
-            return null;
-        }
-        Map<PlaneSemantic, AnchorPlacementImpl> anchorablePlaneSemantic =
-                mAnchorableFilters.get(RuntimeUtils.getPlaneType(planeData.type));
-        if (anchorablePlaneSemantic != null) {
-            if (anchorablePlaneSemantic.containsKey(
-                    RuntimeUtils.getPlaneSemantic(planeData.label))) {
-                return anchorablePlaneSemantic.get(RuntimeUtils.getPlaneSemantic(planeData.label));
-            } else if (anchorablePlaneSemantic.containsKey(PlaneSemantic.ANY)) {
-                return anchorablePlaneSemantic.get(PlaneSemantic.ANY);
-            }
-        }
-        anchorablePlaneSemantic = mAnchorableFilters.get(PlaneType.ANY);
-        if (anchorablePlaneSemantic != null) {
-            if (anchorablePlaneSemantic.containsKey(
-                    RuntimeUtils.getPlaneSemantic(planeData.label))) {
-                return anchorablePlaneSemantic.get(RuntimeUtils.getPlaneSemantic(planeData.label));
-            } else if (anchorablePlaneSemantic.containsKey(PlaneSemantic.ANY)) {
-                return anchorablePlaneSemantic.get(PlaneSemantic.ANY);
-            }
-        }
-        return null;
-    }
-
-    private Pair<Pose, AnchorEntity> anchorEntityToPlane(
-            Pose updatedPose,
-            Plane plane,
-            PlaneData anchorablePlaneData,
-            AnchorPlacementImpl anchorPlacement,
-            Long dataTimeNs) {
-        Context entityContext = null;
-        if (mEntity instanceof AndroidXrEntity) {
-            entityContext = ((AndroidXrEntity) mEntity).getContext();
-        }
-        AnchorEntityImpl anchorEntity =
-                AnchorEntityImpl.createAnchorFromPlane(
-                        entityContext,
-                        mExtensions.createNode(),
-                        plane,
-                        new Pose(),
-                        dataTimeNs,
-                        mActivitySpaceImpl,
-                        mActivitySpaceEntity,
-                        mExtensions,
-                        mEntityManager,
-                        mRuntimeExecutor);
-        if (anchorEntity.getState() != AnchorEntityImpl.State.ANCHORED) {
-            return Pair.create(updatedPose, null);
-        }
-
-        // TODO: b/367754233: Fix the flashing when parented to a new anchor.
-        // Check the scale of the entity before the move so we can rescale when we move it to the
-        // AnchorEntity. Note the AnchorEntity has a scale of 1 so we don't need to also scale by
-        // the anchor entity's scale.
-        Vector3 entityScale = mEntity.getWorldSpaceScale();
-        mEntity.setScale(entityScale, Space.PARENT);
-        Quaternion planeRotation =
-                RuntimeUtils.fromPerceptionPose(anchorablePlaneData.centerPose).getRotation();
-        Pose rotatedPose =
-                new Pose(
-                        updatedPose.getTranslation(),
-                        PlaneUtils.rotateEntityToPlane(updatedPose.getRotation(), planeRotation));
-
-        Pose planeCenterPose = RuntimeUtils.fromPerceptionPose(anchorablePlaneData.centerPose);
-        Pose poseToAnchor = planeCenterPose.getInverse().compose(rotatedPose);
-        poseToAnchor =
-                new Pose(
-                        new Vector3(
-                                poseToAnchor.getTranslation().getX(),
-                                0f,
-                                poseToAnchor.getTranslation().getZ()),
-                        poseToAnchor.getRotation());
-        mEntity.setParent(anchorEntity);
-        // If the anchor placement settings specify that the anchor should be disposed, dispose of
-        // the previously created anchor entity.
-        checkAndDisposeAnchorEntity();
-        mCreatedAnchorEntity = anchorEntity;
-        mCreatedAnchorPlacement = anchorPlacement;
-        return Pair.create(poseToAnchor, anchorEntity);
-    }
-
-    private @Nullable Pose updatePoseForPlane(PlaneData planeData, Pose proposedPoseInOpenXr) {
-        // Get the pose as related to the center of the plane.
-
-        Pose centerPose = RuntimeUtils.fromPerceptionPose(planeData.centerPose);
-        Pose centerPoseToProposedPose = centerPose.getInverse().compose(proposedPoseInOpenXr);
-
-        // The extents of the plane are in the X and Z directions so we can use those to determine
-        // if the point is outside the plane.
-        if (centerPoseToProposedPose.getTranslation().getX() < -planeData.extentWidth
-                || centerPoseToProposedPose.getTranslation().getX() > planeData.extentWidth
-                || centerPoseToProposedPose.getTranslation().getZ() < -planeData.extentHeight
-                || centerPoseToProposedPose.getTranslation().getZ() > planeData.extentHeight) {
-            return null;
-        }
-
-        // The distance between the point and the plane. If it is less than the minimum allowed
-        // distance, move it to the plane. We only need to take the y-value because the y-value is
-        // normal to the plane. We established above that the point is within the extents of the
-        // plane.
-        float distance = centerPoseToProposedPose.getTranslation().getY();
-        if (distance >= MIN_PLANE_ANCHOR_DISTANCE) {
-            return null;
-        }
-        centerPoseToProposedPose =
-                new Pose(
-                        new Vector3(
-                                centerPoseToProposedPose.getTranslation().getX(),
-                                max(0f, distance),
-                                centerPoseToProposedPose.getTranslation().getZ()),
-                        centerPoseToProposedPose.getRotation());
-        return centerPose.compose(centerPoseToProposedPose);
     }
 
     private void tryRenderPlaneShadow(Pose proposedPose, Pose planePose) {
@@ -593,18 +232,7 @@ class MovableComponentImpl implements MovableComponent {
     }
 
     private boolean shouldRenderPlaneShadow() {
-        return mEntity instanceof BasePanelEntity && mSystemMovable;
-    }
-
-    // Checks if there is a created anchor entity and if it should be disposed. If so, disposes of
-    // the anchor entity. Resets the createdAnchorEntity and createdAnchorPlacement to null.
-    private void checkAndDisposeAnchorEntity() {
-        if (mCreatedAnchorEntity != null
-                && mCreatedAnchorEntity.getChildren().isEmpty()
-                && mCreatedAnchorPlacement != null
-                && mShouldDisposeParentAnchor) {
-            mCreatedAnchorEntity.dispose();
-        }
+        return mEntity instanceof BasePanelEntity && mUserAnchorable && mIsMoving;
     }
 
     private static int translateScaleWithDistanceMode(@ScaleWithDistanceMode int scale) {
@@ -613,6 +241,15 @@ class MovableComponentImpl implements MovableComponent {
                 return ReformOptions.SCALE_WITH_DISTANCE_MODE_DMM;
             default:
                 return ReformOptions.SCALE_WITH_DISTANCE_MODE_DEFAULT;
+        }
+    }
+
+    @Override
+    public void setPlanePoseForMoveUpdatePose(Pose planePose, @NonNull Pose moveUpdatePose) {
+        if (planePose == null) {
+            mPanelShadowRenderer.hidePlane();
+        } else {
+            tryRenderPlaneShadow(moveUpdatePose, planePose);
         }
     }
 }

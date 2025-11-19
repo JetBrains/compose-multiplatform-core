@@ -18,7 +18,7 @@ package androidx.compose.remote.integration.view.demos.examples
 
 import android.graphics.Typeface
 import androidx.compose.remote.creation.compose.capture.RecordingCanvas
-import androidx.compose.remote.creation.compose.layout.Alignment
+import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.layout.RemoteRow
@@ -45,7 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 fun SimplePath() {
     RemoteRow(
         modifier = RemoteModifier.fillMaxSize(),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = RemoteAlignment.CenterVertically,
     ) {
         RemoteCanvas(modifier = RemoteModifier.fillMaxWidth().fillMaxHeight()) {
             val rec =

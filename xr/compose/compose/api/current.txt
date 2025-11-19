@@ -53,7 +53,7 @@ package androidx.xr.compose.platform {
 
 package androidx.xr.compose.spatial {
 
-  public sealed interface ContentEdge {
+  public sealed exhaustive interface ContentEdge {
     field public static final androidx.xr.compose.spatial.ContentEdge.Companion Companion;
   }
 
@@ -451,7 +451,7 @@ package androidx.xr.compose.subspace.animation {
     property public androidx.compose.animation.core.Transition<androidx.compose.animation.EnterExitState> transition;
   }
 
-  public abstract sealed class SpatialEnterTransition {
+  public abstract sealed nonexhaustive class SpatialEnterTransition {
     method @androidx.compose.runtime.Stable public final operator androidx.xr.compose.subspace.animation.SpatialEnterTransition plus(androidx.xr.compose.subspace.animation.SpatialEnterTransition enter);
     field public static final androidx.xr.compose.subspace.animation.SpatialEnterTransition.Companion Companion;
   }
@@ -461,7 +461,7 @@ package androidx.xr.compose.subspace.animation {
     property public androidx.xr.compose.subspace.animation.SpatialEnterTransition None;
   }
 
-  public abstract sealed class SpatialExitTransition {
+  public abstract sealed nonexhaustive class SpatialExitTransition {
     method @androidx.compose.runtime.Stable public final operator androidx.xr.compose.subspace.animation.SpatialExitTransition plus(androidx.xr.compose.subspace.animation.SpatialExitTransition exit);
     field public static final androidx.xr.compose.subspace.animation.SpatialExitTransition.Companion Companion;
   }
@@ -542,6 +542,13 @@ package androidx.xr.compose.subspace.layout {
 
   public final class LayoutModifierKt {
     method public static androidx.xr.compose.subspace.layout.SubspaceModifier layout(androidx.xr.compose.subspace.layout.SubspaceModifier, kotlin.jvm.functions.Function3<? super androidx.xr.compose.subspace.layout.SubspaceMeasureScope,? super androidx.xr.compose.subspace.layout.SubspaceMeasurable,? super androidx.xr.compose.unit.VolumeConstraints,? extends androidx.xr.compose.subspace.layout.SubspaceMeasureResult> measure);
+  }
+
+  public final class LookAtUserKt {
+    method public static androidx.xr.compose.subspace.layout.SubspaceModifier billboard(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled);
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier! billboard$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, boolean, int, Object!);
+    method public static androidx.xr.compose.subspace.layout.SubspaceModifier lookAtUser(androidx.xr.compose.subspace.layout.SubspaceModifier, optional boolean enabled, optional androidx.xr.runtime.math.Vector3 up);
+    method @BytecodeOnly public static androidx.xr.compose.subspace.layout.SubspaceModifier! lookAtUser$default(androidx.xr.compose.subspace.layout.SubspaceModifier!, boolean, androidx.xr.runtime.math.Vector3!, int, Object!);
   }
 
   public final class OffsetKt {
@@ -1089,11 +1096,13 @@ package androidx.xr.compose.subspace.layout {
 
   public abstract static class SubspaceModifier.Node implements androidx.xr.compose.subspace.layout.DelegatableSubspaceNode {
     ctor public SubspaceModifier.Node();
+    method @InaccessibleFromKotlin public final kotlinx.coroutines.CoroutineScope getCoroutineScope();
     method @InaccessibleFromKotlin public androidx.xr.compose.subspace.layout.SubspaceModifier.Node getNode();
     method @InaccessibleFromKotlin public boolean getShouldAutoInvalidate();
     method @InaccessibleFromKotlin public final boolean isAttached();
     method public void onAttach();
     method public void onDetach();
+    property public final kotlinx.coroutines.CoroutineScope coroutineScope;
     property public final boolean isAttached;
     property public androidx.xr.compose.subspace.layout.SubspaceModifier.Node node;
     property public boolean shouldAutoInvalidate;
@@ -1156,7 +1165,7 @@ package androidx.xr.compose.subspace.node {
     method public abstract void update(N node);
   }
 
-  public sealed interface SubspaceSemanticsInfo {
+  public sealed nonexhaustive interface SubspaceSemanticsInfo {
     method @InaccessibleFromKotlin public default java.util.List<androidx.xr.scenecore.Component>? getComponents();
     method @InaccessibleFromKotlin public androidx.compose.ui.semantics.SemanticsConfiguration getConfig();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.Pose getPose();

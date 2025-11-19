@@ -226,6 +226,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      *
      * This method should only be called if this view [isAttachedToWindow] or if a parent
      * [CompositionContext] has been [set][setParentCompositionContext] explicitly.
+     *
+     * For best results in composing while the [ComposeView] isn't attached, use the version of this
+     * with [ComposeViewContext] as an argument.
      */
     fun createComposition() {
         check(
@@ -233,8 +236,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
                 isAttachedToWindow ||
                 (composeViewContext != null && composeViewContext?.view?.isAttachedToWindow == true)
         ) {
-            "createComposition requires either a parent reference or the View to be attached" +
-                "to a window. Attach the View or call setParentCompositionReference."
+            "createComposition requires a previous call to createComposition(ComposeViewContext)," +
+                " a parent reference, or the View to be attached to a window. Attach the View or " +
+                "call setParentCompositionReference."
         }
         ensureCompositionCreated()
     }
@@ -254,10 +258,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
      * [LifecycleOwner], [SavedStateRegistryOwner], and window information pulled from the
      * [ComposeViewContext]'s attached View.
      *
+     * @sample androidx.compose.ui.samples.ComposeViewContextPrewarmSample
      * @param composeViewContext The [ComposeViewContext] to use for the composition. The
      *   [ComposeViewContext.view] must be attached to the hierarchy.
      */
-    internal fun createComposition(composeViewContext: ComposeViewContext) {
+    fun createComposition(composeViewContext: ComposeViewContext) {
         check(composeViewContext.view.isAttachedToWindow) {
             "createComposition requires the ComposeViewContext's view to be attached to a window."
         }
@@ -385,7 +390,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
             return existingContext
         }
         val createdContext =
-            ComposeViewContext(
+            existingContext.copy(
                 compositionContext = newContext,
                 lifecycleOwner = lifecycleOwner ?: existingContext.lifecycleOwner,
                 savedStateRegistryOwner =
@@ -675,15 +680,18 @@ private fun View.findDepthToTag(tag: Int): Int {
 /**
  * Returns the [ComposeViewContext] used in this View's part of the hierarchy, or `null` if one
  * cannot be found or it doesn't match the values set for [View.findViewTreeLifecycleOwner] or
- * [View.findViewTreeSavedStateRegistryOwner]. For example, if there is a [View.composeViewContext]
- * set in the hierarchy, [findViewTreeComposeViewContext] on a child of that View will normally
- * return that [ComposeViewContext]. However, if the child is within a Fragment, its
- * [LifecycleOwner] differs from that set in the [View.composeViewContext], so
- * [findViewTreeComposeViewContext] will return `null`.
+ * [View.findViewTreeSavedStateRegistryOwner]. For example, if there is a [ComposeView] set in the
+ * hierarchy, [findViewTreeComposeViewContext] on a child of that View will normally return that
+ * [ComposeViewContext]. However, if the child is within a Fragment, its [LifecycleOwner] differs
+ * from the [ComposeView], so [findViewTreeComposeViewContext] will return `null`.
  *
+ * This can be used with [AbstractComposeView.createComposition] to compose without the
+ * [ComposeView] being attached:
+ *
+ * @sample androidx.compose.ui.samples.ComposeViewContextUnattachedSample
  * @see View.composeViewContext
  */
-internal fun View.findViewTreeComposeViewContext(): ComposeViewContext? {
+fun View.findViewTreeComposeViewContext(): ComposeViewContext? {
     return findViewTreeComposeViewRoot().composeViewContext
 }
 

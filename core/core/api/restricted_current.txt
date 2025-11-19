@@ -1205,6 +1205,7 @@ package androidx.core.app {
     method public androidx.core.app.ShareCompat.IntentBuilder setEmailCc(String![]?);
     method public androidx.core.app.ShareCompat.IntentBuilder setEmailTo(String![]?);
     method public androidx.core.app.ShareCompat.IntentBuilder setHtmlText(String?);
+    method public androidx.core.app.ShareCompat.IntentBuilder setIntentSender(android.content.IntentSender?);
     method public androidx.core.app.ShareCompat.IntentBuilder setStream(android.net.Uri?);
     method public androidx.core.app.ShareCompat.IntentBuilder setSubject(String?);
     method public androidx.core.app.ShareCompat.IntentBuilder setText(CharSequence?);
@@ -2341,7 +2342,7 @@ package androidx.core.net {
 
 package androidx.core.os {
 
-  @RequiresApi(api=35) public abstract sealed class BufferFillPolicy {
+  @RequiresApi(api=35) public abstract sealed nonexhaustive class BufferFillPolicy {
     field public static final androidx.core.os.BufferFillPolicy.Companion Companion;
     field public static final androidx.core.os.BufferFillPolicy DISCARD;
     field public static final androidx.core.os.BufferFillPolicy RING_BUFFER;

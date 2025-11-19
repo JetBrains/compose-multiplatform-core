@@ -98,7 +98,7 @@ package androidx.collection {
     property public int last;
   }
 
-  public abstract sealed class DoubleList {
+  public abstract sealed exhaustive class DoubleList {
     method public final inline boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super java.lang.Double,java.lang.Boolean> predicate);
     method public final int binarySearch(int element);
@@ -174,7 +174,7 @@ package androidx.collection {
     method public static inline androidx.collection.MutableDoubleList mutableDoubleListOf(double... elements);
   }
 
-  public abstract sealed class FloatFloatMap {
+  public abstract sealed exhaustive class FloatFloatMap {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Float,? super java.lang.Float,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Float,? super java.lang.Float,java.lang.Boolean> predicate);
@@ -255,7 +255,7 @@ package androidx.collection {
     field public final long packedValue;
   }
 
-  public abstract sealed class FloatIntMap {
+  public abstract sealed exhaustive class FloatIntMap {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Float,? super java.lang.Integer,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Float,? super java.lang.Integer,java.lang.Boolean> predicate);
@@ -319,7 +319,7 @@ package androidx.collection {
     method public static androidx.collection.MutableFloatIntMap mutableFloatIntMapOf(float key1, int value1, float key2, int value2, float key3, int value3, float key4, int value4, float key5, int value5);
   }
 
-  public abstract sealed class FloatList {
+  public abstract sealed exhaustive class FloatList {
     method public final inline boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super java.lang.Float,java.lang.Boolean> predicate);
     method public final int binarySearch(int element);
@@ -395,7 +395,7 @@ package androidx.collection {
     method public static inline androidx.collection.MutableFloatList mutableFloatListOf(float... elements);
   }
 
-  public abstract sealed class FloatLongMap {
+  public abstract sealed exhaustive class FloatLongMap {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Float,? super java.lang.Long,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Float,? super java.lang.Long,java.lang.Boolean> predicate);
@@ -459,7 +459,7 @@ package androidx.collection {
     method public static androidx.collection.MutableFloatLongMap mutableFloatLongMapOf(float key1, long value1, float key2, long value2, float key3, long value3, float key4, long value4, float key5, long value5);
   }
 
-  public abstract sealed class FloatObjectMap<V> {
+  public abstract sealed exhaustive class FloatObjectMap<V> {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Float,? super V,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Float,? super V,java.lang.Boolean> predicate);
@@ -522,7 +522,7 @@ package androidx.collection {
     method public static <V> androidx.collection.MutableFloatObjectMap<V> mutableFloatObjectMapOf(float key1, V value1, float key2, V value2, float key3, V value3, float key4, V value4, float key5, V value5);
   }
 
-  public abstract sealed class FloatSet {
+  public abstract sealed exhaustive class FloatSet {
     method public final inline boolean all(kotlin.jvm.functions.Function1<? super java.lang.Float,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super java.lang.Float,java.lang.Boolean> predicate);
@@ -576,7 +576,7 @@ package androidx.collection {
     method public static androidx.collection.MutableFloatSet mutableFloatSetOf(float... elements);
   }
 
-  public abstract sealed class IntFloatMap {
+  public abstract sealed exhaustive class IntFloatMap {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Float,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Float,java.lang.Boolean> predicate);
@@ -640,7 +640,7 @@ package androidx.collection {
     method public static androidx.collection.MutableIntFloatMap mutableIntFloatMapOf(int key1, float value1, int key2, float value2, int key3, float value3, int key4, float value4, int key5, float value5);
   }
 
-  public abstract sealed class IntIntMap {
+  public abstract sealed exhaustive class IntIntMap {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Integer,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Integer,java.lang.Boolean> predicate);
@@ -721,7 +721,7 @@ package androidx.collection {
     field public final long packedValue;
   }
 
-  public abstract sealed class IntList {
+  public abstract sealed exhaustive class IntList {
     method public final inline boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super java.lang.Integer,java.lang.Boolean> predicate);
     method public final int binarySearch(int element);
@@ -797,7 +797,7 @@ package androidx.collection {
     method public static inline androidx.collection.MutableIntList mutableIntListOf(int... elements);
   }
 
-  public abstract sealed class IntLongMap {
+  public abstract sealed exhaustive class IntLongMap {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Long,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super java.lang.Long,java.lang.Boolean> predicate);
@@ -861,7 +861,7 @@ package androidx.collection {
     method public static androidx.collection.MutableIntLongMap mutableIntLongMapOf(int key1, long value1, int key2, long value2, int key3, long value3, int key4, long value4, int key5, long value5);
   }
 
-  public abstract sealed class IntObjectMap<V> {
+  public abstract sealed exhaustive class IntObjectMap<V> {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super V,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Integer,? super V,java.lang.Boolean> predicate);
@@ -924,7 +924,7 @@ package androidx.collection {
     method public static <V> androidx.collection.MutableIntObjectMap<V> mutableIntObjectMapOf(int key1, V value1, int key2, V value2, int key3, V value3, int key4, V value4, int key5, V value5);
   }
 
-  public abstract sealed class IntSet {
+  public abstract sealed exhaustive class IntSet {
     method public final inline boolean all(kotlin.jvm.functions.Function1<? super java.lang.Integer,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super java.lang.Integer,java.lang.Boolean> predicate);
@@ -978,7 +978,7 @@ package androidx.collection {
     method public static androidx.collection.MutableIntSet mutableIntSetOf(int... elements);
   }
 
-  public abstract sealed class LongFloatMap {
+  public abstract sealed exhaustive class LongFloatMap {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Long,? super java.lang.Float,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Long,? super java.lang.Float,java.lang.Boolean> predicate);
@@ -1042,7 +1042,7 @@ package androidx.collection {
     method public static androidx.collection.MutableLongFloatMap mutableLongFloatMapOf(long key1, float value1, long key2, float value2, long key3, float value3, long key4, float value4, long key5, float value5);
   }
 
-  public abstract sealed class LongIntMap {
+  public abstract sealed exhaustive class LongIntMap {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Long,? super java.lang.Integer,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Long,? super java.lang.Integer,java.lang.Boolean> predicate);
@@ -1106,7 +1106,7 @@ package androidx.collection {
     method public static androidx.collection.MutableLongIntMap mutableLongIntMapOf(long key1, int value1, long key2, int value2, long key3, int value3, long key4, int value4, long key5, int value5);
   }
 
-  public abstract sealed class LongList {
+  public abstract sealed exhaustive class LongList {
     method public final inline boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super java.lang.Long,java.lang.Boolean> predicate);
     method public final int binarySearch(int element);
@@ -1182,7 +1182,7 @@ package androidx.collection {
     method public static inline androidx.collection.MutableLongList mutableLongListOf(long... elements);
   }
 
-  public abstract sealed class LongLongMap {
+  public abstract sealed exhaustive class LongLongMap {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Long,? super java.lang.Long,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Long,? super java.lang.Long,java.lang.Boolean> predicate);
@@ -1256,7 +1256,7 @@ package androidx.collection {
     property public long second;
   }
 
-  public abstract sealed class LongObjectMap<V> {
+  public abstract sealed exhaustive class LongObjectMap<V> {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super java.lang.Long,? super V,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super java.lang.Long,? super V,java.lang.Boolean> predicate);
@@ -1319,7 +1319,7 @@ package androidx.collection {
     method public static <V> androidx.collection.MutableLongObjectMap<V> mutableLongObjectMapOf(long key1, V value1, long key2, V value2, long key3, V value3, long key4, V value4, long key5, V value5);
   }
 
-  public abstract sealed class LongSet {
+  public abstract sealed exhaustive class LongSet {
     method public final inline boolean all(kotlin.jvm.functions.Function1<? super java.lang.Long,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super java.lang.Long,java.lang.Boolean> predicate);
@@ -2147,7 +2147,7 @@ package androidx.collection {
     method @IntRange(from=0L) public int trim();
   }
 
-  public abstract sealed class ObjectFloatMap<K> {
+  public abstract sealed exhaustive class ObjectFloatMap<K> {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super K,? super java.lang.Float,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super K,? super java.lang.Float,java.lang.Boolean> predicate);
@@ -2211,7 +2211,7 @@ package androidx.collection {
     method public static <K> androidx.collection.ObjectFloatMap<K> objectFloatMapOf(K key1, float value1, K key2, float value2, K key3, float value3, K key4, float value4, K key5, float value5);
   }
 
-  public abstract sealed class ObjectIntMap<K> {
+  public abstract sealed exhaustive class ObjectIntMap<K> {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super K,? super java.lang.Integer,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super K,? super java.lang.Integer,java.lang.Boolean> predicate);
@@ -2275,7 +2275,7 @@ package androidx.collection {
     method public static <K> androidx.collection.ObjectIntMap<K> objectIntMapOf(K key1, int value1, K key2, int value2, K key3, int value3, K key4, int value4, K key5, int value5);
   }
 
-  public abstract sealed class ObjectList<E> {
+  public abstract sealed exhaustive class ObjectList<E> {
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super E,java.lang.Boolean> predicate);
     method public abstract java.util.List<E> asList();
@@ -2347,7 +2347,7 @@ package androidx.collection {
     method public static <E> androidx.collection.ObjectList<E> objectListOf(E... elements);
   }
 
-  public abstract sealed class ObjectLongMap<K> {
+  public abstract sealed exhaustive class ObjectLongMap<K> {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super K,? super java.lang.Long,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super K,? super java.lang.Long,java.lang.Boolean> predicate);
@@ -2411,7 +2411,7 @@ package androidx.collection {
     method public static <K> androidx.collection.ObjectLongMap<K> objectLongMapOf(K key1, long value1, K key2, long value2, K key3, long value3, K key4, long value4, K key5, long value5);
   }
 
-  public abstract sealed class OrderedScatterSet<E> {
+  public abstract sealed exhaustive class OrderedScatterSet<E> {
     method public final inline boolean all(kotlin.jvm.functions.Function1<? super E,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super E,java.lang.Boolean> predicate);
@@ -2471,7 +2471,7 @@ package androidx.collection {
     method public static <E> androidx.collection.OrderedScatterSet<E> orderedScatterSetOf(E... elements);
   }
 
-  public abstract sealed class ScatterMap<K, V> {
+  public abstract sealed exhaustive class ScatterMap<K, V> {
     method public final inline boolean all(kotlin.jvm.functions.Function2<? super K,? super V,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function2<? super K,? super V,java.lang.Boolean> predicate);
@@ -2530,7 +2530,7 @@ package androidx.collection {
     field @kotlin.PublishedApi internal static final long Sentinel = 255L; // 0xffL
   }
 
-  public abstract sealed class ScatterSet<E> {
+  public abstract sealed exhaustive class ScatterSet<E> {
     method public final inline boolean all(kotlin.jvm.functions.Function1<? super E,java.lang.Boolean> predicate);
     method public final boolean any();
     method public final inline boolean any(kotlin.jvm.functions.Function1<? super E,java.lang.Boolean> predicate);

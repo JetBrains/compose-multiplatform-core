@@ -19,6 +19,7 @@
 package androidx.compose.foundation.lazy.staggeredgrid
 
 import androidx.annotation.IntRange as AndroidXIntRange
+import androidx.collection.mutableIntObjectMapOf
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.ScrollIndicatorState
@@ -237,7 +238,7 @@ internal constructor(
 
     /** prefetch state */
     private var prefetchBaseIndex: Int = -1
-    private val currentItemPrefetchHandles = mutableMapOf<Int, PrefetchHandle>()
+    private val currentItemPrefetchHandles = mutableIntObjectMapOf<PrefetchHandle>()
 
     internal val laneCount
         get() = layoutInfoState.value.slots.sizes.size
@@ -548,13 +549,10 @@ internal constructor(
     }
 
     private fun clearLeftoverPrefetchHandles(prefetchHandlesUsed: Set<Int>) {
-        val iterator = currentItemPrefetchHandles.iterator()
-        while (iterator.hasNext()) {
-            val entry = iterator.next()
-            if (entry.key !in prefetchHandlesUsed) {
-                entry.value.cancel()
-                iterator.remove()
-            }
+        currentItemPrefetchHandles.removeIf { key, value ->
+            val used = key in prefetchHandlesUsed
+            if (!used) value.cancel()
+            !used
         }
     }
 
@@ -563,7 +561,7 @@ internal constructor(
         if (prefetchBaseIndex != -1 && items.isNotEmpty()) {
             if (prefetchBaseIndex !in items.first().index..items.last().index) {
                 prefetchBaseIndex = -1
-                currentItemPrefetchHandles.values.forEach { it.cancel() }
+                currentItemPrefetchHandles.forEachValue { it.cancel() }
                 currentItemPrefetchHandles.clear()
             }
         }

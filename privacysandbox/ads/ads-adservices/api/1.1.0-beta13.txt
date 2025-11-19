@@ -254,7 +254,7 @@ package androidx.privacysandbox.ads.adservices.common {
     property public android.net.Uri renderUri;
   }
 
-  public sealed interface ExperimentalFeatures {
+  public sealed exhaustive interface ExperimentalFeatures {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="The Ext10 API is experimental.", level=kotlin.RequiresOptIn.Level.WARNING) public static @interface ExperimentalFeatures.Ext10OptIn {

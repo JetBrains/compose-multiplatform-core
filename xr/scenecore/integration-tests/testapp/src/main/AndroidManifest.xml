@@ -108,6 +108,9 @@
         <activity
             android:name=".memoryleak.MemoryLeakActivity"
             android:exported="true" />
+        <activity
+            android:name=".panelcoordinate.PanelCoordinateActivity"
+            android:exported="true" />
         <property
             android:name="android.window.PROPERTY_XR_ACTIVITY_START_MODE"
             android:value="XR_ACTIVITY_START_MODE_FULL_SPACE_MANAGED" />

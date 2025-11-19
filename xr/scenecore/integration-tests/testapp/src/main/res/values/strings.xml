@@ -53,6 +53,7 @@
     <string name="cuj_surface_entity_playbacktest">Surface Entity Playback Test Case</string>
     <string name="dev_memory_leak_test">Memory Leak (Dev) Test Case</string>
     <string name="cuj_gravity_aligned_pose_test">Gravity Aligned Pose Test</string>
+    <string name="cuj_panel_coordinates_test">Panel Coordinates Test</string>
 
     <string name="recreate_activity" description="button text to recreate current activity [CHAR LIMIT=40]">Recreate Activity</string>
     <string name="panel_text" description="Arbitrary test string which appears in a TestPanel. [CHAR_LIMIT=30]">Dragons!!</string>

@@ -27,7 +27,7 @@ package androidx.glance.appwidget {
     method @BytecodeOnly public static androidx.glance.GlanceModifier background-WkMS-hQ(androidx.glance.GlanceModifier, long, long);
   }
 
-  public abstract sealed class CheckBoxColors {
+  public abstract sealed nonexhaustive class CheckBoxColors {
   }
 
   public final class CheckBoxKt {
@@ -162,7 +162,7 @@ package androidx.glance.appwidget {
     method public void onReceive(android.content.Context? context, android.content.Intent? intent);
   }
 
-  public sealed interface PreviewSizeMode extends androidx.glance.appwidget.SizeMode {
+  public sealed exhaustive interface PreviewSizeMode extends androidx.glance.appwidget.SizeMode {
   }
 
   public final class ProgressIndicatorDefaults {
@@ -201,7 +201,7 @@ package androidx.glance.appwidget {
     property public android.widget.RemoteViews remoteViews;
   }
 
-  public sealed interface SizeMode {
+  public sealed exhaustive interface SizeMode {
   }
 
   public static final class SizeMode.Exact implements androidx.glance.appwidget.SizeMode {
@@ -218,7 +218,7 @@ package androidx.glance.appwidget {
     field public static final androidx.glance.appwidget.SizeMode.Single INSTANCE;
   }
 
-  public abstract sealed class SwitchColors {
+  public abstract sealed nonexhaustive class SwitchColors {
   }
 
   public final class SwitchDefaults {
@@ -338,7 +338,7 @@ package androidx.glance.appwidget.components {
 
 package androidx.glance.appwidget.lazy {
 
-  public abstract sealed class GridCells {
+  public abstract sealed exhaustive class GridCells {
   }
 
   @RequiresApi(31) public static final class GridCells.Adaptive extends androidx.glance.appwidget.lazy.GridCells {

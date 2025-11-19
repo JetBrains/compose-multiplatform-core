@@ -93,7 +93,7 @@ fun RcSimpleClock1(
 
     RemoteRow(
         modifier = RemoteModifier.fillMaxSize(),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = RemoteAlignment.CenterVertically,
     ) {
         //    Box(modifier = Modifier.size(80.dp).background(Color.Blue))
         RemoteCanvas(modifier = RemoteModifier.fillMaxWidth().fillMaxHeight()) {

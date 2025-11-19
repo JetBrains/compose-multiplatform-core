@@ -86,7 +86,7 @@ class ActivityPanelActivity : AppCompatActivity() {
 
                 if (!secondaryPanelLaunched) {
                     // Set the pose for the activity panel
-                    activityPanelEntity.setPose(Pose(Vector3(0f, 0.6f, 0f)))
+                    activityPanelEntity.setPose(Pose(Vector3(0f, 0.6f, .05f)))
                     // Create intent to launch a new activity in the panel
                     val intent = Intent(this, ActivityPanel::class.java)
                     intent.putExtra("NAV_ICON", false)

@@ -62,6 +62,7 @@ internal constructor(
          * @param session The [Session] to subscribe to.
          * @throws IllegalStateException if the given [Session]'s [Config.augmentedObjectCategories]
          *   is empty.
+         * @sample androidx.xr.arcore.samples.getAugmentedObjects
          */
         @JvmStatic
         public fun subscribe(session: Session): StateFlow<Collection<AugmentedObject>> {
@@ -118,7 +119,11 @@ internal constructor(
             )
         )
 
-    /** A [StateFlow] that contains the latest [State] of the [AugmentedObject]. */
+    /**
+     * A [StateFlow] that contains the latest [State] of the [AugmentedObject].
+     *
+     * @sample androidx.xr.arcore.samples.getAugmentedObjects
+     */
     public override val state: StateFlow<State> = _state.asStateFlow()
 
     /**

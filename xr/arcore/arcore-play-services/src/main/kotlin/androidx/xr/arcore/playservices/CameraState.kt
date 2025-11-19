@@ -41,6 +41,7 @@ import kotlin.time.ComparableTimeMark
  * @property hardwareBuffer the hardware buffer of the frame captured by the session.
  * @property transformCoordinates2D a function that transforms coordinates from normalized OpenGL
  *   device coordinates (display-rotated) to normalized texture coordinates.
+ * @sample androidx.xr.arcore.samples.getHardwareBuffer
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class CameraState

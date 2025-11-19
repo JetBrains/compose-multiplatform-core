@@ -130,7 +130,6 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
@@ -1073,7 +1072,7 @@ public class SpatialSceneRuntimeTest {
     @Test
     public void createMovableComponent_returnsComponent() {
         MovableComponent movableComponent =
-                mRuntime.createMovableComponent(true, true, new HashSet<AnchorPlacement>(), true);
+                mRuntime.createMovableComponent(true, true, false);
 
         assertThat(movableComponent).isNotNull();
     }
@@ -2345,8 +2344,7 @@ public class SpatialSceneRuntimeTest {
                                 mRuntime.createMovableComponent(
                                         /* systemMovable= */ true,
                                         /* scaleInZ= */ true,
-                                        /* anchorPlacement= */ ImmutableSet.of(),
-                                        /* shouldDisposeParentAnchor= */ true)))
+                                        /* userAnchorable */ false)))
                 .isTrue();
 
         testEntity.setHidden(true);

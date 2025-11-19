@@ -399,16 +399,14 @@ public interface SceneRuntime : JxrRuntime {
      * @param scaleInZ A [Boolean] which tells the system to update the scale of the Entity as the
      *   user moves it closer and further away. This is mostly useful for Panel auto-rescaling with
      *   Distance
-     * @param anchorPlacement AnchorPlacement information for when to anchor the entity.
-     * @param shouldDisposeParentAnchor A [Boolean] which tells the system to dispose of the parent
-     *   anchor if that entity was created by the moveable component and is moved off of it.
+     * @param userAnchorable A [Boolean] which tells the system that the entity can be anchored to
+     *   planes detected by the system.
      * @return [MovableComponent] instance.
      */
     public fun createMovableComponent(
         systemMovable: Boolean,
         scaleInZ: Boolean,
-        anchorPlacement: Set<@JvmSuppressWildcards AnchorPlacement>,
-        shouldDisposeParentAnchor: Boolean,
+        userAnchorable: Boolean,
     ): MovableComponent
 
     /**

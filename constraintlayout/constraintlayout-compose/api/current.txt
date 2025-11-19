@@ -22,14 +22,14 @@ package androidx.constraintlayout.compose {
     property public androidx.constraintlayout.compose.Arc StartVertical;
   }
 
-  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public abstract sealed class BaseKeyFrameScope {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public abstract sealed nonexhaustive class BaseKeyFrameScope {
     method protected final <E extends androidx.constraintlayout.compose.NamedPropertyOrValue> kotlin.properties.ObservableProperty<E> addNameOnPropertyChange(E initialValue, optional String? nameOverride);
     method @BytecodeOnly public static kotlin.properties.ObservableProperty! addNameOnPropertyChange$default(androidx.constraintlayout.compose.BaseKeyFrameScope!, androidx.constraintlayout.compose.NamedPropertyOrValue!, String!, int, Object!);
     method protected final <T> kotlin.properties.ObservableProperty<T> addOnPropertyChange(T initialValue, optional String? nameOverride);
     method @BytecodeOnly public static kotlin.properties.ObservableProperty! addOnPropertyChange$default(androidx.constraintlayout.compose.BaseKeyFrameScope!, Object!, String!, int, Object!);
   }
 
-  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public abstract sealed class BaseKeyFramesScope {
+  @SuppressCompatibility @androidx.constraintlayout.compose.ExperimentalMotionApi public abstract sealed nonexhaustive class BaseKeyFramesScope {
     method @InaccessibleFromKotlin public final androidx.constraintlayout.compose.Easing getEasing();
     method @InaccessibleFromKotlin public final void setEasing(androidx.constraintlayout.compose.Easing);
     property public final androidx.constraintlayout.compose.Easing easing;

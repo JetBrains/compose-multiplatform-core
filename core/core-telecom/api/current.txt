@@ -36,7 +36,7 @@ package androidx.core.telecom {
     property public static int SUPPORTS_TRANSFER;
   }
 
-  public abstract sealed class CallControlResult {
+  public abstract sealed exhaustive class CallControlResult {
   }
 
   public static final class CallControlResult.Error extends androidx.core.telecom.CallControlResult {

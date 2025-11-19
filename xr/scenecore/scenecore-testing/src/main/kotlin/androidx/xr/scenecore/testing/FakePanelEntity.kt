@@ -20,6 +20,9 @@ import android.content.Context
 import android.view.View
 import android.view.WindowManager
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.math.Pose
+import androidx.xr.runtime.math.Vector2
+import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.PanelEntity
 import androidx.xr.scenecore.runtime.PerceivedResolutionResult
@@ -147,5 +150,17 @@ public open class FakePanelEntity(private val view: View? = null) : FakeEntity()
     private fun PixelDimensions.toMeterDimensions(): Dimensions {
         val pixelsPerMeter = dpPerMeter * density
         return Dimensions(this.width / pixelsPerMeter, this.height / pixelsPerMeter, 0f)
+    }
+
+    override fun transformPixelCoordinatesToPose(coordinates: Vector2): Pose {
+        val u = coordinates.x / sizeInPixels.width
+        val v = coordinates.y / sizeInPixels.height
+        return transformNormalizedCoordinatesToPose(Vector2(u * 2 - 1, (1 - v) * 2 - 1))
+    }
+
+    override fun transformNormalizedCoordinatesToPose(coordinates: Vector2): Pose {
+        val xInLocal3DSpace = coordinates.x * size.width / 2f
+        val yInLocal3DSpace = coordinates.y * size.height / 2f
+        return Pose(Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f))
     }
 }

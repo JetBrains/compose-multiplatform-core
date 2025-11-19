@@ -79,6 +79,7 @@ import androidx.xr.compose.testapp.lifecycle.LifecycleDataStore
 import androidx.xr.compose.testapp.lifecycle.OpenCloseActivity
 import androidx.xr.compose.testapp.lifecycle.ResizeActivity
 import androidx.xr.compose.testapp.lifecycle.RuntimeSessionActivity
+import androidx.xr.compose.testapp.lookatuser.LookAtUserActivity
 import androidx.xr.compose.testapp.modechange.ModeChange
 import androidx.xr.compose.testapp.movable.MovableActivity
 import androidx.xr.compose.testapp.movablescalable.MovableScalable
@@ -307,6 +308,9 @@ class MainActivity : ComponentActivity() {
                     }
                     TestCaseColumnRowItem(getString(R.string.user_subspace_test_case)) {
                         startTest<UserSubspaceActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.lookatuser_test_case)) {
+                        startTest<LookAtUserActivity>()
                     }
                     TestCaseBlankRow("THE FOLLOWING ARE JXR COMPOSE DEVELOPER TESTS")
                     TestCaseColumnRowItem(

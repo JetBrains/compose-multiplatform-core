@@ -17,6 +17,7 @@
 package androidx.xr.scenecore.runtime
 
 import androidx.annotation.RestrictTo
+import androidx.xr.runtime.math.Pose
 import java.util.concurrent.Executor
 
 /** Component to enable a high level user movement affordance. */
@@ -70,4 +71,6 @@ public interface MovableComponent : Component {
             public const val DMM: Int = 2
         }
     }
+
+    public fun setPlanePoseForMoveUpdatePose(planePose: Pose?, moveUpdatePose: Pose)
 }

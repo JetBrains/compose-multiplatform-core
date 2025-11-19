@@ -23,6 +23,8 @@ import android.content.res.Resources;
 import android.util.TypedValue;
 
 import androidx.core.util.TypedValueCompat;
+import androidx.xr.runtime.math.Pose;
+import androidx.xr.runtime.math.Vector2;
 import androidx.xr.runtime.math.Vector3;
 import androidx.xr.scenecore.runtime.CameraViewScenePose;
 import androidx.xr.scenecore.runtime.Dimensions;
@@ -161,5 +163,30 @@ abstract class BasePanelEntity extends AndroidXrEntity implements PanelEntity {
     @Override
     public float getCornerRadius() {
         return mCornerRadius;
+    }
+
+    @Override
+    public @NonNull Pose transformPixelCoordinatesToPose(@NonNull Vector2 coordinates) {
+        // Convert Pixel units to a normalized [0, 1] (x) and [1, 0] (y) range
+        float normalizedPixelWidth = coordinates.getX() / mPixelDimensions.width;
+        float normalizedPixelHeight = coordinates.getY() / mPixelDimensions.height;
+
+        // Subtract the vertical range from one to turn [1,0] into [0,1] since the vertical axis for
+        // pixel coordinates is flipped with respect to the extents coordinate space.
+        float normalizedPixelHeightFlipped = 1 - normalizedPixelHeight;
+
+        // Multiply by 2 to get [0,2] and subtract one to get [-1,1] to match the extents range
+        return transformNormalizedCoordinatesToPose(
+                new Vector2(normalizedPixelWidth * 2 - 1, normalizedPixelHeightFlipped * 2 - 1));
+    }
+
+    @Override
+    public @NonNull Pose transformNormalizedCoordinatesToPose(@NonNull Vector2 coordinates) {
+        // One input unit covers the extent from the center to the edge so we have to multiply by
+        // the half-width or half-height to get the appropriate position in 3D space.
+        Dimensions size = getSize();
+        float xInLocal3DSpace = coordinates.getX() * (size.width / 2f);
+        float yInLocal3DSpace = coordinates.getY() * (size.height / 2f);
+        return new Pose(new Vector3(xInLocal3DSpace, yInLocal3DSpace, 0f));
     }
 }

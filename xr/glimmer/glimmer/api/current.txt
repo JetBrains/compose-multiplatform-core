@@ -279,7 +279,7 @@ package androidx.xr.glimmer.list {
     property public abstract int size;
   }
 
-  @androidx.compose.runtime.Stable public sealed interface ListItemScope {
+  @androidx.compose.runtime.Stable public sealed nonexhaustive interface ListItemScope {
   }
 
   public final class ListKt {
@@ -310,7 +310,7 @@ package androidx.xr.glimmer.list {
     property public abstract java.util.List<androidx.xr.glimmer.list.LazyListItemInfo> visibleItemsInfo;
   }
 
-  public sealed interface ListScope {
+  public sealed nonexhaustive interface ListScope {
     method public void item(optional Object? key, optional Object? contentType, kotlin.jvm.functions.Function1<? super androidx.xr.glimmer.list.ListItemScope,kotlin.Unit> content);
     method @BytecodeOnly public void item(Object?, Object?, kotlin.jvm.functions.Function3<? super androidx.xr.glimmer.list.ListItemScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly public static void item$default(androidx.xr.glimmer.list.ListScope!, Object!, Object!, kotlin.jvm.functions.Function3!, int, Object!);
@@ -358,7 +358,7 @@ package androidx.xr.glimmer.list {
 
 package androidx.xr.glimmer.stack {
 
-  @androidx.compose.runtime.Stable public sealed interface StackItemScope {
+  @androidx.compose.runtime.Stable public sealed nonexhaustive interface StackItemScope {
     method public default androidx.compose.ui.Modifier itemDecoration(androidx.compose.ui.Modifier, androidx.compose.ui.graphics.Shape shape);
   }
 
@@ -367,7 +367,7 @@ package androidx.xr.glimmer.stack {
     method @KotlinOnly @androidx.compose.runtime.Composable public static void VerticalStack(optional androidx.compose.ui.Modifier modifier, optional androidx.xr.glimmer.stack.StackState state, kotlin.jvm.functions.Function1<androidx.xr.glimmer.stack.StackScope,kotlin.Unit> content);
   }
 
-  @androidx.compose.runtime.Stable public sealed interface StackScope {
+  @androidx.compose.runtime.Stable public sealed nonexhaustive interface StackScope {
     method public void item(optional Object? key, kotlin.jvm.functions.Function1<? super androidx.xr.glimmer.stack.StackItemScope,kotlin.Unit> content);
     method @BytecodeOnly public void item(Object?, kotlin.jvm.functions.Function3<? super androidx.xr.glimmer.stack.StackItemScope!,? super androidx.compose.runtime.Composer!,? super java.lang.Integer!,kotlin.Unit!>);
     method @BytecodeOnly public static void item$default(androidx.xr.glimmer.stack.StackScope!, Object!, kotlin.jvm.functions.Function3!, int, Object!);

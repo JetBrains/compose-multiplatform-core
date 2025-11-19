@@ -22,8 +22,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.Log
 import androidx.compose.remote.core.WireBuffer
-import androidx.compose.remote.creation.compose.layout.Alignment
-import androidx.compose.remote.creation.compose.layout.Arrangement
+import androidx.compose.remote.creation.compose.layout.RemoteAlignment
+import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
 import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteColumn
@@ -118,8 +118,8 @@ class BlendModeTest {
             RemoteModifier.size(100.dp)
                 .border(1.dp, androidx.compose.ui.graphics.Color.Black)
                 .padding(8.dp),
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = RemoteAlignment.Start,
+            verticalArrangement = RemoteArrangement.Top,
         ) {
             RemoteCanvas(RemoteModifier.size(100.dp)) {
                 val w = remoteComponentWidth(remoteComposeCreationState)

@@ -72,6 +72,7 @@ class DisplayControllerActivity : ComponentActivity() {
             ) {
                 Text(getScreenOnButtonText(screenOnState.value))
             }
+            Button(onClick = { playSound() }) { Text("Play Display Status Sound") }
         }
     }
 
@@ -99,11 +100,13 @@ class DisplayControllerActivity : ComponentActivity() {
 
     private fun toggleScreenOnState(screenOnState: Boolean) {
         val intent = Intent(this, DisplayControllerProjectedActivity::class.java)
-        if (screenOnState) {
-            intent.putExtra("KEEP_SCREEN_ON", true)
-        } else {
-            intent.putExtra("KEEP_SCREEN_ON", false)
-        }
+        intent.putExtra("KEEP_SCREEN_ON", screenOnState)
+        startActivity(intent, ProjectedContext.createProjectedActivityOptions(this).toBundle())
+    }
+
+    private fun playSound() {
+        val intent = Intent(this, DisplayControllerProjectedActivity::class.java)
+        intent.putExtra("PLAY_SOUND", true)
         startActivity(intent, ProjectedContext.createProjectedActivityOptions(this).toBundle())
     }
 

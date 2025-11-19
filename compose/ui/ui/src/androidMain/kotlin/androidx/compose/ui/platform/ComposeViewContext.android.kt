@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.ProvidedValue
 import androidx.compose.runtime.currentComposer
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.Density
+import androidx.core.viewtree.getParentOrViewTreeDisjointParent
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -70,69 +72,135 @@ import androidx.savedstate.findViewTreeSavedStateRegistryOwner
  * unnecessary. It will start again if the [ComposeView.setContent] is called again, the View is
  * reattached to the hierarchy, or [AbstractComposeView.createComposition] is called again.
  *
- * @param view A [View] attached to the same hierarchy as the [ComposeView]s constructed with this
- *   [ComposeViewContext]. This [View] must be attached before calling this constructor.
- * @param compositionContext The [CompositionContext] used by [ComposeView]s constructed with this
- *   [ComposeViewContext]. The default value is obtained from [View.findViewTreeCompositionContext],
- *   or, if not found from the window [androidx.compose.runtime.Recomposer].
- * @param lifecycleOwner Used to govern the lifecycle-important aspects of [ComposeView]s
- *   constructed with this [ComposeViewContext]. The default value is obtained from
- *   [View.findViewTreeLifecycleOwner]. If not found, [IllegalStateException] will be thrown.
- * @param savedStateRegistryOwner The [SavedStateRegistryOwner] used by [ComposeView]s constructed
- *   with this [ComposeViewContext]. The default value is obtained from
- *   [View.findViewTreeSavedStateRegistryOwner]. If not found, an [IllegalStateException] will be
- *   thrown.
- * @param viewModelStoreOwner [ViewModelStoreOwner] to be used by [ComposeView]s to create
- *   [RetainedValuesStore]s. The default value is obtained from
- *   [View.findViewTreeViewModelStoreOwner].
+ * For example, just composing while not attached:
+ *
+ * @sample androidx.compose.ui.samples.ComposeViewContextUnattachedSample
+ *
+ * Prefetching content:
+ *
+ * @sample androidx.compose.ui.samples.ComposeViewContextPrewarmSample
  */
-internal class ComposeViewContext(
+class ComposeViewContext
+private constructor(
+    composeViewContext: ComposeViewContext?,
     internal val view: View,
-    internal val compositionContext: CompositionContext =
-        view.findViewTreeCompositionContext() ?: view.windowRecomposer,
-    internal val lifecycleOwner: LifecycleOwner =
-        view.findViewTreeLifecycleOwner()
-            ?: throw IllegalStateException(
-                "Composed into a View which doesn't propagate ViewTreeLifecycleOwner!"
-            ),
-    internal val savedStateRegistryOwner: SavedStateRegistryOwner =
-        view.findViewTreeSavedStateRegistryOwner()
-            ?: throw IllegalStateException(
-                "Composed into a View which doesn't propagate ViewTreeSavedStateRegistryOwner!"
-            ),
-    internal val viewModelStoreOwner: ViewModelStoreOwner? = view.findViewTreeViewModelStoreOwner(),
+    internal val compositionContext: CompositionContext,
+    internal val lifecycleOwner: LifecycleOwner,
+    internal val savedStateRegistryOwner: SavedStateRegistryOwner,
+    internal val viewModelStoreOwner: ViewModelStoreOwner?,
+    matchesContext: Boolean = composeViewContext?.view?.context == view.context,
 ) {
+    /**
+     * Constructs a [ComposeViewContext] to be used with [AbstractComposeView.createComposition] to
+     * compose content while the [AbstractComposeView] isn't attached.
+     *
+     * @param view A [View] attached to the same hierarchy as the [ComposeView]s constructed with
+     *   this [ComposeViewContext]. This [View] must be attached before calling this constructor.
+     * @param compositionContext The [CompositionContext] used by [ComposeView]s constructed with
+     *   this [ComposeViewContext]. The default value is obtained from
+     *   [View.findViewTreeCompositionContext], or, if not found from the window
+     *   [androidx.compose.runtime.Recomposer].
+     * @param lifecycleOwner Used to govern the lifecycle-important aspects of [ComposeView]s
+     *   constructed with this [ComposeViewContext]. The default value is obtained from
+     *   [View.findViewTreeLifecycleOwner]. If not found, [IllegalStateException] will be thrown.
+     * @param savedStateRegistryOwner The [SavedStateRegistryOwner] used by [ComposeView]s
+     *   constructed with this [ComposeViewContext]. The default value is obtained from
+     *   [View.findViewTreeSavedStateRegistryOwner]. If not found, an [IllegalStateException] will
+     *   be thrown.
+     * @param viewModelStoreOwner [ViewModelStoreOwner] to be used by [ComposeView]s to create
+     *   [RetainedValuesStore]s. The default value is obtained from
+     *   [View.findViewTreeViewModelStoreOwner].
+     */
+    constructor(
+        view: View,
+        compositionContext: CompositionContext =
+            view.findViewTreeCompositionContext() ?: view.windowRecomposer,
+        lifecycleOwner: LifecycleOwner =
+            view.findViewTreeLifecycleOwner()
+                ?: throw IllegalStateException(
+                    "Composed into a View which doesn't propagate ViewTreeLifecycleOwner!"
+                ),
+        savedStateRegistryOwner: SavedStateRegistryOwner =
+            view.findViewTreeSavedStateRegistryOwner()
+                ?: throw IllegalStateException(
+                    "Composed into a View which doesn't propagate ViewTreeSavedStateRegistryOwner!"
+                ),
+        viewModelStoreOwner: ViewModelStoreOwner? = view.findViewTreeViewModelStoreOwner(),
+    ) : this(
+        findExistingComposeViewContext(view),
+        view,
+        compositionContext,
+        lifecycleOwner,
+        savedStateRegistryOwner,
+        viewModelStoreOwner,
+    )
+
     /** [ImageVectorCache] provided by [LocalImageVectorCache] */
-    internal val imageVectorCache = ImageVectorCache()
+    internal val imageVectorCache: ImageVectorCache =
+        composeViewContext?.imageVectorCache ?: ImageVectorCache()
 
     /** [ResourceIdCache] provided by [LocalResourceIdCache] */
-    internal val resourceIdCache = ResourceIdCache()
+    internal val resourceIdCache: ResourceIdCache =
+        composeViewContext?.resourceIdCache ?: ResourceIdCache()
 
     /**
      * [Configuration] that was last received. Used to determine if there has been an update to the
      * configuration or if we don't have to update the [configuration] instance.
      */
     private val currentConfiguration: Configuration =
-        Configuration(view.context.resources.configuration)
-
+        if (matchesContext) {
+            composeViewContext!!.currentConfiguration
+        } else {
+            Configuration(view.context.resources.configuration)
+        }
     /** [Configuration] provided by [LocalConfiguration] */
-    internal val configuration = mutableStateOf(Configuration(currentConfiguration))
+    internal val configuration: MutableState<Configuration> =
+        if (matchesContext) {
+            composeViewContext!!.configuration
+        } else {
+            mutableStateOf(Configuration(currentConfiguration))
+        }
 
     /** [AccessibilityManager] provided by [LocalAccessibilityManager] */
-    internal val accessibilityManager = AndroidAccessibilityManager(view.context)
+    internal val accessibilityManager: AndroidAccessibilityManager =
+        if (matchesContext) {
+            composeViewContext!!.accessibilityManager
+        } else {
+            AndroidAccessibilityManager(view.context)
+        }
 
     /** [UriHandler] provided by [LocalUriHandler] */
-    internal val uriHandler = AndroidUriHandler(view.context)
+    internal val uriHandler: AndroidUriHandler =
+        if (matchesContext) {
+            composeViewContext!!.uriHandler
+        } else {
+            AndroidUriHandler(view.context)
+        }
 
     /** [ClipboardManager] provided by [LocalClipboardManager] */
-    internal val clipboardManager: AndroidClipboardManager = AndroidClipboardManager(view.context)
+    internal val clipboardManager: AndroidClipboardManager =
+        if (matchesContext) {
+            composeViewContext!!.clipboardManager
+        } else {
+            AndroidClipboardManager(view.context)
+        }
 
     /** [Clipboard] provided by [LocalClipboard] */
-    internal val clipboard: AndroidClipboard = AndroidClipboard(clipboardManager)
+    internal val clipboard: AndroidClipboard =
+        if (matchesContext) {
+            composeViewContext!!.clipboard
+        } else {
+            AndroidClipboard(clipboardManager)
+        }
 
     /** [Font.ResourceLoader] provided by [LocalFontLoader] */
     @Suppress("DEPRECATION")
-    internal val fontLoader: Font.ResourceLoader = AndroidFontResourceLoader(view.context)
+    internal val fontLoader: Font.ResourceLoader =
+        if (matchesContext) {
+            composeViewContext!!.fontLoader
+        } else {
+            AndroidFontResourceLoader(view.context)
+        }
 
     /**
      * [FontFamily.Resolver] provided by [LocalFontFamilyResolver]. This is updated when the
@@ -143,18 +211,25 @@ internal class ComposeViewContext(
 
     /** [HapticFeedback] provided by [LocalHapticFeedback] */
     internal val hapticFeedback: HapticFeedback =
-        if (HapticDefaults.isPremiumVibratorEnabled(view.context)) {
+        if (matchesContext) {
+            composeViewContext!!.hapticFeedback
+        } else if (HapticDefaults.isPremiumVibratorEnabled(view.context)) {
             DefaultHapticFeedback(view)
         } else {
             NoHapticFeedback()
         }
 
     /** [ViewConfiguration] provided by [LocalViewConfiguration] */
-    internal val viewConfiguration =
-        AndroidViewConfiguration(android.view.ViewConfiguration.get(view.context))
+    internal val viewConfiguration: AndroidViewConfiguration =
+        if (matchesContext) {
+            composeViewContext!!.viewConfiguration
+        } else {
+            AndroidViewConfiguration(android.view.ViewConfiguration.get(view.context))
+        }
 
     /** [LayoutNodeDrawScope] shared across all [ComposeView]s using this [ComposeViewContext] */
-    internal val sharedDrawScope = LayoutNodeDrawScope()
+    internal val sharedDrawScope: LayoutNodeDrawScope =
+        composeViewContext?.sharedDrawScope ?: LayoutNodeDrawScope()
 
     /** [Density] provided by [LocalDensity]. This is updated when the configuration changes. */
     internal val density = mutableStateOf(Density(view.context), referentialEqualityPolicy())
@@ -166,7 +241,7 @@ internal class ComposeViewContext(
      * A [CanvasHolder] that can be used for all AndroidComposeViews using this
      * [ComposeViewContext].
      */
-    internal val canvasHolder = CanvasHolder()
+    internal val canvasHolder: CanvasHolder = composeViewContext?.canvasHolder ?: CanvasHolder()
 
     /**
      * [OwnerSnapshotObserver] used internally by all AndroidComposeViews using this
@@ -269,6 +344,37 @@ internal class ComposeViewContext(
             LocalClipboardManager provides clipboardManager,
             LocalClipboard provides clipboard,
         )
+
+    /**
+     * Construct a [ComposeViewContext] sharing parts with another [ComposeViewContext].
+     *
+     * @param view A [View] attached to the same hierarchy as the [ComposeView]s constructed with
+     *   this [ComposeViewContext]. This [View] must be attached before calling this constructor.
+     * @param compositionContext The [CompositionContext] used by [ComposeView]s constructed with
+     *   this [ComposeViewContext].
+     * @param lifecycleOwner Used to govern the lifecycle-important aspects of [ComposeView]s
+     *   constructed with this [ComposeViewContext].
+     * @param savedStateRegistryOwner The [SavedStateRegistryOwner] used by [ComposeView]s
+     *   constructed with this [ComposeViewContext].
+     * @param viewModelStoreOwner [ViewModelStoreOwner] to be used by [ComposeView]s to create
+     *   [RetainedValuesStore]s.
+     */
+    fun copy(
+        view: View = this.view,
+        compositionContext: CompositionContext = this.compositionContext,
+        lifecycleOwner: LifecycleOwner = this.lifecycleOwner,
+        savedStateRegistryOwner: SavedStateRegistryOwner = this.savedStateRegistryOwner,
+        viewModelStoreOwner: ViewModelStoreOwner? = this.viewModelStoreOwner,
+    ): ComposeViewContext {
+        return ComposeViewContext(
+            this,
+            view,
+            compositionContext,
+            lifecycleOwner,
+            savedStateRegistryOwner,
+            viewModelStoreOwner,
+        )
+    }
 
     /**
      * Called when an AndroidComposeView is attached to the window. This will start observation if
@@ -416,3 +522,20 @@ private const val MaskForNonWindowMetricsChanges =
 
 // TODO(b/450557132): Add when compileSdk is bumped to 36
 //   ActivityInfo.CONFIG_ASSETS_PATHS
+
+/** Finds and returns an existing ComposeViewContext that can share context with [view]. */
+private fun findExistingComposeViewContext(view: View): ComposeViewContext? {
+    val existingContext = view.context
+    var currentView: View? = view
+    while (currentView != null) {
+        val composeViewContext = currentView.composeViewContext
+        if (composeViewContext != null) {
+            return composeViewContext
+        }
+        currentView = currentView.getParentOrViewTreeDisjointParent() as? View
+        if (currentView?.context !== existingContext) {
+            return null
+        }
+    }
+    return null
+}

@@ -316,7 +316,6 @@ dependencies {
     docs(project(":recommendation:recommendation"))
     docs(project(":recyclerview:recyclerview"))
     docs(project(":recyclerview:recyclerview-selection"))
-    docs(project(":remotecallback:remotecallback"))
     docs(project(":resourceinspection:resourceinspection-annotation"))
     kmpDocs(project(":room3:room3-common"))
     docs(project(":room3:room3-guava"))

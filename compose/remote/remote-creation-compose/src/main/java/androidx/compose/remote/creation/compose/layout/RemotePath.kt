@@ -89,7 +89,7 @@ public fun RemotePath.quadraticTo(x1: Number, y1: Number, x2: Number, y2: Number
     val iy1: Float = if (y1 is RemoteFloat) y1.internalAsFloat() else y1.toFloat()
     val ix2: Float = if (x2 is RemoteFloat) x2.internalAsFloat() else x2.toFloat()
     val iy2: Float = if (y2 is RemoteFloat) y2.internalAsFloat() else y2.toFloat()
-    this.quadraticTo(ix1, iy1, ix2, iy2)
+    this.quadTo(ix1, iy1, ix2, iy2)
 }
 
 public fun RemotePath.cubicTo(

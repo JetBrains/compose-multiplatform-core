@@ -62,7 +62,7 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_RW)
     public void testStringPropertyConfigDefaultValues_withDeletePropagationType() {
         StringPropertyConfig builder = new StringPropertyConfig.Builder("test").build();
         assertThat(builder.getIndexingType()).isEqualTo(StringPropertyConfig.INDEXING_TYPE_NONE);
@@ -504,7 +504,7 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_RW)
     public void testPropertyConfig_withDeletePropagationType() {
         AppSearchSchema schema =
                 new AppSearchSchema.Builder("Test")
@@ -688,7 +688,7 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_RW)
     public void testSetDeletePropagationTypeWithoutJoinableValueTypeQualifiedId_throwsException() {
         // Setting delete propagation type PROPAGATE_FROM with joinable value type other than
         // QUALIFIED_ID should fail.
@@ -923,7 +923,7 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_RW)
     public void testAppSearchSchema_toString_withDeletePropagationType() {
         AppSearchSchema schema =
                 new AppSearchSchema.Builder("testSchema")
@@ -1045,7 +1045,7 @@ public class AppSearchSchemaCtsTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_TYPE)
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_DELETE_PROPAGATION_RW)
     public void testStringPropertyConfig_setDeletePropagationType() {
         assertThrows(IllegalArgumentException.class, () ->
                 new StringPropertyConfig.Builder("qualifiedId").setDeletePropagationType(5)

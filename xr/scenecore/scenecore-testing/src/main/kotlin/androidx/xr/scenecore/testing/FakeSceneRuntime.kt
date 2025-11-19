@@ -26,7 +26,6 @@ import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.Pose
 import androidx.xr.scenecore.runtime.ActivityPanelEntity
 import androidx.xr.scenecore.runtime.AnchorEntity
-import androidx.xr.scenecore.runtime.AnchorPlacement
 import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper
 import androidx.xr.scenecore.runtime.CameraViewScenePose
 import androidx.xr.scenecore.runtime.Dimensions
@@ -377,8 +376,7 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
     override fun createMovableComponent(
         systemMovable: Boolean,
         scaleInZ: Boolean,
-        anchorPlacement: Set<@JvmSuppressWildcards AnchorPlacement>,
-        shouldDisposeParentAnchor: Boolean,
+        userAnchorable: Boolean,
     ): FakeMovableComponent = FakeMovableComponent()
 
     override fun createResizableComponent(

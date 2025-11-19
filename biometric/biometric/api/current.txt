@@ -118,7 +118,7 @@ package androidx.biometric {
     method public androidx.biometric.AuthenticationRequest.Credential.Builder setSubtitle(String? subtitle);
   }
 
-  public sealed interface AuthenticationResult {
+  public sealed exhaustive interface AuthenticationResult {
     method public default androidx.biometric.AuthenticationResult.Error? error();
     method public default boolean isError();
     method public default boolean isSuccess();

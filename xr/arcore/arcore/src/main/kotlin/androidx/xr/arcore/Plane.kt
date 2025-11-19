@@ -50,6 +50,7 @@ internal constructor(
          *
          * @throws [IllegalStateException] if [Session.config] is set to
          *   [Config.PlaneTrackingMode.DISABLED]
+         *     @sample androidx.xr.arcore.samples.getPlanes
          */
         @JvmStatic
         public fun subscribe(session: Session): StateFlow<Collection<Plane>> {
@@ -184,7 +185,11 @@ internal constructor(
                 subsumedByFromRuntimePlane(),
             )
         )
-    /** The current state of the [Plane]. */
+    /**
+     * The current state of the [Plane].
+     *
+     * @sample androidx.xr.arcore.samples.getPlanes
+     */
     public override val state: StateFlow<Plane.State> = _state.asStateFlow()
 
     /** The [Type] of the [Plane]. */

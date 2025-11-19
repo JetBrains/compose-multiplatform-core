@@ -18,6 +18,7 @@ package androidx.compose.ui.res
 
 import android.content.Context
 import androidx.annotation.GuardedBy
+import androidx.collection.mutableScatterMapOf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
@@ -32,7 +33,8 @@ private val cacheLock = Any()
  * This cache is expected to be used for SystemFontFamily or LoadedFontFamily. FontFamily instance
  * cannot be used as the file based FontFamily.
  */
-@GuardedBy("cacheLock") private val syncLoadedTypefaces = mutableMapOf<FontFamily, Typeface>()
+@GuardedBy("cacheLock")
+private val syncLoadedTypefaces = mutableScatterMapOf<FontFamily, Typeface>()
 
 /**
  * Synchronously load an font from [FontFamily].

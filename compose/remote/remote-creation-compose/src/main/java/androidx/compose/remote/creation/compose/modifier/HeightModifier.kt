@@ -19,7 +19,6 @@ package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
@@ -39,33 +38,33 @@ public class HeightModifier(public val type: Type, public val value: RemoteFloat
     }
 }
 
-public fun RemoteModifier.height(width: RemoteDp): RemoteModifier =
-    then(HeightModifier(Type.EXACT_DP, width.value))
+public fun RemoteModifier.height(height: RemoteDp): RemoteModifier =
+    then(HeightModifier(Type.EXACT_DP, height.value))
 
 public fun RemoteModifier.height(height: RemoteFloat): RemoteModifier =
     then(HeightModifier(Type.EXACT, height))
 
-public fun RemoteModifier.fillMaxHeight(height: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
-    then(HeightModifier(Type.FILL, height))
+public fun RemoteModifier.fillMaxHeight(fraction: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
+    then(HeightModifier(Type.FILL, fraction))
 
-public fun RemoteModifier.fillMaxHeight(height: Float): RemoteModifier =
-    then(HeightModifier(Type.FILL, RemoteFloat(height)))
+public fun RemoteModifier.fillMaxHeight(fraction: Float): RemoteModifier =
+    then(HeightModifier(Type.FILL, RemoteFloat(fraction)))
 
 @Composable
-public fun RemoteModifier.height(value: Dp): RemoteModifier {
-    val valuePx = with(LocalDensity.current) { value.toPx() }
+public fun RemoteModifier.height(height: Dp): RemoteModifier {
+    val valuePx = with(LocalDensity.current) { height.toPx() }
     return then(HeightModifier(Type.EXACT, RemoteFloat(valuePx)))
 }
 
 @Composable
-public fun RemoteModifier.height(value: Int): RemoteModifier =
-    then(HeightModifier(Type.EXACT, RemoteFloat(value.toFloat())))
+public fun RemoteModifier.height(height: Int): RemoteModifier =
+    then(HeightModifier(Type.EXACT, RemoteFloat(height.toFloat())))
 
 @Composable
-public fun RemoteModifier.height(value: IntrinsicSize): RemoteModifier {
-    if (value == IntrinsicSize.Min) {
-        return then(HeightModifier(Type.INTRINSIC_MIN, RemoteFloat(0f)))
+public fun RemoteModifier.height(height: IntrinsicSize): RemoteModifier {
+    return if (height == IntrinsicSize.Min) {
+        then(HeightModifier(Type.INTRINSIC_MIN, RemoteFloat(0f)))
     } else {
-        return then(HeightModifier(Type.INTRINSIC_MAX, RemoteFloat(0f)))
+        then(HeightModifier(Type.INTRINSIC_MAX, RemoteFloat(0f)))
     }
 }

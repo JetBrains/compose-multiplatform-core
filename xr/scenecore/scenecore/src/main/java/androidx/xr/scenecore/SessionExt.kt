@@ -53,18 +53,13 @@ private val Activity.lifecycle: Lifecycle
  * @see Scene
  */
 public val Session.scene: Scene
-    get() = checkAndGetScene(this)
-
-/** Gets the [Scene] associated with the given [Session], using a cache. */
-private fun checkAndGetScene(session: Session): Scene {
-    check(session.activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
-        "Session has been destroyed."
-    }
-    return sceneCache.getOrPut(session) {
-        // This lambda is executed only once per session instance.
-        session.sessionConnectors.filterIsInstance<Scene>().single()
-    }
-}
+    get() =
+        // TODO: b/450009236 - This will return the scene even if the Session's Activity has been
+        //  destroyed, which we may want to change in the future.
+        sceneCache.getOrPut(this) {
+            // This lambda is executed only once per session instance.
+            this.sessionConnectors.filterIsInstance<Scene>().single()
+        }
 
 internal fun removeSceneFromCache(scene: Scene) {
     synchronized(sceneCache) {
