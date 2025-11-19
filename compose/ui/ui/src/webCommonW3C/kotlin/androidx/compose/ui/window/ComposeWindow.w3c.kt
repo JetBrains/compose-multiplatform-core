@@ -72,6 +72,7 @@ import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.WebInteropContainer
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.enableSavedStateHandles
 import kotlin.coroutines.coroutineContext
 import kotlin.math.absoluteValue
 import kotlinx.browser.document
@@ -416,6 +417,7 @@ internal class ComposeWindow(
         canvas.setAttribute("draggable", "true")
 
         scene.density = density
+        archComponentsOwner.enableSavedStateHandles()
 
         val interopContainer = WebInteropContainer(InteropViewGroup(interopContainerElement))
 
