@@ -16,6 +16,7 @@
 
 #import "CMPViewController.h"
 #import <objc/runtime.h>
+#import "CMPComposeContainerLifecycleState.h"
 
 #pragma mark - UIViewController + CMPUIKitUtilsPrivate
 
@@ -65,27 +66,19 @@
 
 @end
 
-#pragma mark - CMPViewControllerLifecycleState
-
-typedef NS_ENUM(NSInteger, CMPViewControllerLifecycleState) {
-    CMPViewControllerLifecycleStateInitialized,
-    CMPViewControllerLifecycleStateStarted,
-    CMPViewControllerLifecycleStateStopped
-};
-
 #pragma mark - CMPViewController
 
 @implementation CMPViewController {
-    CMPViewControllerLifecycleState _lifecycleState;
-    id<CMPViewControllerLifecycleDelegate> _lifecycleDelegate;
+    CMPComposeContainerLifecycleState _lifecycleState;
+    id<CMPComposeContainerLifecycleDelegate> _lifecycleDelegate;
 }
 
-- (instancetype)initWithLifecycleDelegate:(id<CMPViewControllerLifecycleDelegate>)delegate {
+- (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate>)delegate {
     self = [super initWithNibName:nil bundle:nil];
     
     if (self) {
         _lifecycleDelegate = delegate;
-        _lifecycleState = CMPViewControllerLifecycleStateInitialized;
+        _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
     }
     
     return self;
@@ -96,7 +89,7 @@ typedef NS_ENUM(NSInteger, CMPViewControllerLifecycleState) {
     
     if (self) {
         _lifecycleDelegate = nil;
-        _lifecycleState = CMPViewControllerLifecycleStateInitialized;
+        _lifecycleState = CMPComposeContainerLifecycleStateInitialized;
     }
     
     return self;
@@ -106,28 +99,24 @@ typedef NS_ENUM(NSInteger, CMPViewControllerLifecycleState) {
     [self transitLifecycleToStarted];
 
     [super viewWillAppear:animated];
-    [_lifecycleDelegate viewControllerWillAppear];
+    [_lifecycleDelegate composeContainerWillAppear];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
     
-    [_lifecycleDelegate viewControllerDidDisappear];
-}
-
-- (void)viewSafeAreaInsetsDidChange {
-    [super viewSafeAreaInsetsDidChange];
+    [_lifecycleDelegate composeContainerDidDisappear];
 }
 
 - (void)transitLifecycleToStarted {
     switch (_lifecycleState) {
-        case CMPViewControllerLifecycleStateInitialized:
-        case CMPViewControllerLifecycleStateStopped:
-            _lifecycleState = CMPViewControllerLifecycleStateStarted;
+        case CMPComposeContainerLifecycleStateInitialized:
+        case CMPComposeContainerLifecycleStateStopped:
+            _lifecycleState = CMPComposeContainerLifecycleStateStarted;
             [self viewControllerDidEnterWindowHierarchy];
             [self scheduleHierarchyContainmentCheck];
             break;
-        case CMPViewControllerLifecycleStateStarted:
+        case CMPComposeContainerLifecycleStateStarted:
             break;
     }
 }
@@ -137,17 +126,17 @@ typedef NS_ENUM(NSInteger, CMPViewControllerLifecycleState) {
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         switch (self->_lifecycleState) {
-            case CMPViewControllerLifecycleStateInitialized:
-            case CMPViewControllerLifecycleStateStopped:
+            case CMPComposeContainerLifecycleStateInitialized:
+            case CMPComposeContainerLifecycleStateStopped:
                 assert(false);
                 break;
-            case CMPViewControllerLifecycleStateStarted:
+            case CMPComposeContainerLifecycleStateStarted:
                 // perform check
                 if ([self cmp_isInWindowHierarchy]) {
                     // everything is fine, schedule next one
                     [self scheduleHierarchyContainmentCheck];
                 } else {
-                    self->_lifecycleState = CMPViewControllerLifecycleStateStopped;
+                    self->_lifecycleState = CMPComposeContainerLifecycleStateStopped;
                     [self viewControllerDidLeaveWindowHierarchy];
                 }
                 break;
@@ -162,11 +151,11 @@ typedef NS_ENUM(NSInteger, CMPViewControllerLifecycleState) {
 }
 
 - (void)dealloc {
-    if (_lifecycleState == CMPViewControllerLifecycleStateStarted) {
+    if (_lifecycleState == CMPComposeContainerLifecycleStateStarted) {
         [self viewControllerDidLeaveWindowHierarchy];
     }
     
-    [_lifecycleDelegate viewControllerWillDealloc];
+    [_lifecycleDelegate composeContainerWillDealloc];
 }
 
 @end

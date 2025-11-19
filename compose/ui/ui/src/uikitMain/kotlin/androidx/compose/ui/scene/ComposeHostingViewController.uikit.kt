@@ -29,7 +29,6 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.MotionDurationScaleImpl
-import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
@@ -54,7 +53,7 @@ import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.SceneActiveStateListener
-import androidx.compose.ui.window.ViewControllerLifecycleDelegate
+import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.lifecycle.enableSavedStateHandles
 import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
@@ -97,7 +96,7 @@ internal class ComposeHostingViewController(
     private val configuration: ComposeUIViewControllerConfiguration,
     private val content: @Composable () -> Unit,
     coroutineContext: CoroutineContext = Dispatchers.Main,
-    private val lifecycleDelegate: ViewControllerLifecycleDelegate = ViewControllerLifecycleDelegate()
+    private val lifecycleDelegate: ComposeContainerLifecycleDelegate = ComposeContainerLifecycleDelegate()
 ) : CMPViewController(lifecycleDelegate = lifecycleDelegate) {
     private val hapticFeedback = CupertinoHapticFeedback()
 

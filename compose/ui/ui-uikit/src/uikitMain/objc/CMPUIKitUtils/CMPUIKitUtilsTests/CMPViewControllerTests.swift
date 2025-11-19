@@ -321,19 +321,19 @@ final class CMPViewControllerTests: XCTestCase {
     }
 }
 
-private class LifecycleDelegate: CMPViewControllerLifecycleDelegate {
+private class LifecycleDelegate: CMPComposeContainerLifecycleDelegate {
     var viewControllerWillAppearCallsCount = 0
-    func viewControllerWillAppear() {
+    func composeContainerWillAppear() {
         viewControllerWillAppearCallsCount += 1
     }
     
     var viewControllerDidDisappearCallsCount = 0
-    func viewControllerDidDisappear() {
+    func composeContainerDidDisappear() {
         viewControllerDidDisappearCallsCount += 1
     }
     
     var viewControllerWillDeallocCallsCount = 0
-    func viewControllerWillDealloc() {
+    func composeContainerWillDealloc() {
         viewControllerWillDeallocCallsCount += 1
     }
 }
@@ -345,7 +345,7 @@ private class TestViewController: CMPViewController {
     
     public var viewIsInWindowHierarchy: Bool = false
 
-    init(delegate: CMPViewControllerLifecycleDelegate? = nil) {
+    init(delegate: CMPComposeContainerLifecycleDelegate? = nil) {
         id = TestViewController.counter
         TestViewController.counter += 1
         super.init(lifecycleDelegate: delegate)

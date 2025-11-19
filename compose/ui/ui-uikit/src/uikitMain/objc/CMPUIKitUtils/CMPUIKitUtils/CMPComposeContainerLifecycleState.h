@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,9 @@
  */
 
 #import <UIKit/UIKit.h>
-#import "CMPComposeContainerLifecycleDelegate.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
-@interface CMPViewController : UIViewController
-
-- (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate> _Nullable)delegate;
-
-/// Indicates that view controller is considered alive in terms of structural containment
-- (void)viewControllerDidEnterWindowHierarchy;
-
-/// Indicates that view controller is considered closed in terms of structural containment
-- (void)viewControllerDidLeaveWindowHierarchy;
-
-@end
-
-NS_ASSUME_NONNULL_END
+typedef NS_ENUM(NSInteger, CMPComposeContainerLifecycleState) {
+    CMPComposeContainerLifecycleStateInitialized,
+    CMPComposeContainerLifecycleStateStarted,
+    CMPComposeContainerLifecycleStateStopped
+};
