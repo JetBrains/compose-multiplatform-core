@@ -109,7 +109,7 @@
 
     if (@available(iOS 17, *)) {
         // Do nothing
-    } else {
+    } else if (self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle) {
         [self userInterfaceStyleDidChange];
     }
 }
