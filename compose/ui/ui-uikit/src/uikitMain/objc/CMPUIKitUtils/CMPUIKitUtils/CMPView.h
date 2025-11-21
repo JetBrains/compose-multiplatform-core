@@ -23,6 +23,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate> _Nullable)delegate;
 
+/// Notifies the view is added to a view hierarchy
+- (void)viewDidAppear;
+
+/// Notifies the view was removed from a view hierarchy
+- (void)viewDidDisappear;
+
 /// Indicates that view is considered alive in terms of structural containment
 - (void)viewDidEnterWindowHierarchy;
 

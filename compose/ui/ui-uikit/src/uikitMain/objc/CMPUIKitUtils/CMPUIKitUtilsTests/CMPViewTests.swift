@@ -60,6 +60,17 @@ final class CMPViewTests: XCTestCase {
             view.viewIsInWindowHierarchy == inHierarchy
         }
     }
+
+    @MainActor
+    private func expect(
+        view: TestView,
+        toBeAppeared isAppeared: Bool,
+        line: Int = #line
+    ) async {
+        await expect(timeout: 5.0, line: line) {
+            view.isViewAppeared == isAppeared
+        }
+    }
     
     @MainActor
     public func testNotAttached() async {
@@ -110,6 +121,16 @@ final class CMPViewTests: XCTestCase {
         await expect { delegate.containerDidDisappearCallsCount == 1 }
         await expect { delegate.containerWillDeallocCallsCount == 1 }
     }
+    
+    @MainActor
+    public func testViewAppeared() async {
+        let view = TestView()
+        rootView = view
+        await expect(view: view, toBeAppeared: true)
+        
+        rootView = nil
+        await expect(view: view, toBeAppeared: false)
+    }
 }
 
 private class TestView: CMPView {
@@ -118,6 +139,7 @@ private class TestView: CMPView {
     private let id: Int
     
     public var viewIsInWindowHierarchy: Bool = false
+    public var isViewAppeared: Bool = false
 
     init(delegate: CMPComposeContainerLifecycleDelegate? = nil) {
         id = TestView.counter
@@ -127,6 +149,14 @@ private class TestView: CMPView {
     
     required init?(coder: NSCoder) {
         nil
+    }
+    
+    override func viewDidAppear() {
+        isViewAppeared = true
+    }
+    
+    override func viewDidDisappear() {
+        isViewAppeared = false
     }
     
     override func viewDidEnterWindowHierarchy() {

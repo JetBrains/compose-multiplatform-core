@@ -65,7 +65,9 @@
         if (isViewInWindowHierarchy) {
             [_lifecycleDelegate composeContainerWillAppear];
             [self transitViewLifecycleToStarted];
+            [self viewDidAppear];
         } else {
+            [self viewDidDisappear];
             [self scheduleViewHierarchyContainmentCheck];
             [_lifecycleDelegate composeContainerDidDisappear];
         }
@@ -90,8 +92,9 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         switch (self->_lifecycleState) {
             case CMPComposeContainerLifecycleStateInitialized:
+                NSAssert(false, @"Attempt to schedule hierarchy check without starting the container");
+                break;
             case CMPComposeContainerLifecycleStateStopped:
-                assert(false);
                 break;
             case CMPComposeContainerLifecycleStateStarted:
                 // perform check
@@ -112,6 +115,12 @@
     } else if (self.traitCollection.userInterfaceStyle != previousTraitCollection.userInterfaceStyle) {
         [self userInterfaceStyleDidChange];
     }
+}
+
+- (void)viewDidAppear {
+}
+
+- (void)viewDidDisappear {
 }
 
 - (void)viewDidEnterWindowHierarchy {
