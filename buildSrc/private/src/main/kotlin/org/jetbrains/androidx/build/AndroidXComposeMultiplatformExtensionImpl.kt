@@ -92,6 +92,9 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
     override fun js(): Unit = multiplatformExtension.run {
         js(KotlinJsCompilerType.IR) {
             project.configurePinnedKotlinLibraries(PlatformIdentifier.JS)
+            compilerOptions {
+                freeCompilerArgs.add("-XXLanguage:+ExportKlibToOlderAbiVersion")
+            }
             browser {
                 testTask {
                     it.passTestFlagsToEnvironment()
@@ -149,6 +152,9 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
     @OptIn(ExperimentalWasmDsl::class)
     override fun wasm(): Unit = multiplatformExtension.run {
         wasmJs {
+            compilerOptions {
+                freeCompilerArgs.add("-XXLanguage:+ExportKlibToOlderAbiVersion")
+            }
             project.configurePinnedKotlinLibraries(PlatformIdentifier.WASM_JS)
             browser {
                 testTask {
@@ -207,11 +213,31 @@ open class AndroidXComposeMultiplatformExtensionImpl @Inject constructor(
     }
 
     override fun darwin(): Unit = multiplatformExtension.run {
-        macosX64()
-        macosArm64()
-        iosX64("uikitX64")
-        iosArm64("uikitArm64")
-        iosSimulatorArm64("uikitSimArm64")
+        macosX64 {
+            compilerOptions {
+                freeCompilerArgs.add("-XXLanguage:+ExportKlibToOlderAbiVersion")
+            }
+        }
+        macosArm64 {
+            compilerOptions {
+                freeCompilerArgs.add("-XXLanguage:+ExportKlibToOlderAbiVersion")
+            }
+        }
+        iosX64("uikitX64") {
+            compilerOptions {
+                freeCompilerArgs.add("-XXLanguage:+ExportKlibToOlderAbiVersion")
+            }
+        }
+        iosArm64("uikitArm64") {
+            compilerOptions {
+                freeCompilerArgs.add("-XXLanguage:+ExportKlibToOlderAbiVersion")
+            }
+        }
+        iosSimulatorArm64("uikitSimArm64") {
+            compilerOptions {
+                freeCompilerArgs.add("-XXLanguage:+ExportKlibToOlderAbiVersion")
+            }
+        }
 
         val nativeMain = getOrCreateNativeMain()
         val darwinMain = sourceSets.create("darwinMain")

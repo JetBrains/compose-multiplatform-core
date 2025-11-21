@@ -54,6 +54,11 @@ repositories {
 }
 
 kotlin {
+    compilerOptions {
+        // skip prerelase check because `lib` is using -XXLanguage:+ExportKlibToOlderAbiVersion
+        freeCompilerArgs.add("-Xskip-prerelease-check")
+    }
+
     jvm("desktop")
     js(IR) {
         outputModuleName = "mpp-demo"
