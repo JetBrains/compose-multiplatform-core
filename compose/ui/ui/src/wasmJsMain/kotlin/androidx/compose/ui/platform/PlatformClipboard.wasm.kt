@@ -127,6 +127,8 @@ constructor(
     }
 }
 
+actual fun String.toClipEntry(): ClipEntry = ClipEntry.withPlainText(this)
+
 @Suppress("UNUSED_PARAMETER")
 private fun createClipboardItemWithPlainText(text: String): JsArray<ClipboardItem> =
     js("[new ClipboardItem({'text/plain': new Blob([text], { type: 'text/plain' })})]")

@@ -81,3 +81,5 @@ actual class ClipEntry internal constructor() {
         }
     }
 }
+
+actual fun String.toClipEntry(): ClipEntry = ClipEntry.withPlainText(this)

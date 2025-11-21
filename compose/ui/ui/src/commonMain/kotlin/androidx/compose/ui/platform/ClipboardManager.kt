@@ -86,6 +86,8 @@ expect class ClipEntry {
     val clipMetadata: ClipMetadata
 }
 
+expect fun String.toClipEntry(): ClipEntry
+
 /**
  * Platform specific protocol that describes an item in the native Clipboard. This object should not
  * contain any actual piece of data.

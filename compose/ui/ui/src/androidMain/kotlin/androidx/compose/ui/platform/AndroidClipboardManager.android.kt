@@ -108,6 +108,8 @@ actual class ClipEntry(val clipData: ClipData) {
         get() = clipData.description.toClipMetadata()
 }
 
+actual fun String.toClipEntry(): ClipEntry = ClipData.newPlainText(PLAIN_TEXT_LABEL, this).toClipEntry()
+
 fun ClipData.toClipEntry(): ClipEntry = ClipEntry(this)
 
 /**
