@@ -45,7 +45,7 @@ import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
-import androidx.compose.ui.window.ComposeView
+import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.FocusedViewsList
 import androidx.compose.ui.window.MetalView
 import androidx.compose.ui.window.SceneActiveStateListener
@@ -81,7 +81,7 @@ internal class ComposeContainer(
 ) {
     private val hapticFeedback = CupertinoHapticFeedback()
 
-    val composeView = ComposeView(
+    val view = ComposeContainerView(
         transparentForTouches = false,
         useOpaqueConfiguration = configuration.opaque,
     )
@@ -104,7 +104,7 @@ internal class ComposeContainer(
         updateInterfaceOrientationState()
     }
     private val navigationEventInput = UIKitNavigationEventInput(
-        density = composeView.density,
+        density = view.density,
         getTopLeftOffsetInWindow = { IntOffset.Zero }, //full screen
         endEdgePanGestureBehavior = configuration.endEdgePanGestureBehavior
     )
@@ -152,7 +152,7 @@ internal class ComposeContainer(
     }
 
     private fun onDidMoveToWindow(window: UIWindow?) {
-        navigationEventInput.onDidMoveToWindow(window, composeView)
+        navigationEventInput.onDidMoveToWindow(window, view)
         interfaceOrientationObserver.windowScene = window?.windowScene
 
         window ?: return
@@ -160,7 +160,7 @@ internal class ComposeContainer(
         userInterfaceStyleDidChange()
         updateInterfaceOrientationState()
 
-        layersHolder?.layersViewController?.referenceWindow = composeView.window
+        layersHolder?.layersViewController?.referenceWindow = view.window
         windowContext.window = window
         updateMotionSpeed()
         lifecycleDelegate.windowScene = window.windowScene
@@ -177,17 +177,17 @@ internal class ComposeContainer(
 
         // Because the container view can change during the modal transition animation,
         // the gesture handlers and layers view are added back when the animation ends.
-        navigationEventInput.onDidMoveToWindow(composeView.window, composeView)
+        navigationEventInput.onDidMoveToWindow(view.window, view)
     }
 
     fun sceneWillDisappear() {
         mediator?.sceneWillDisappear()
 
-        navigationEventInput.onDidMoveToWindow(null, composeView)
+        navigationEventInput.onDidMoveToWindow(null, view)
     }
 
     fun userInterfaceStyleDidChange() {
-        systemThemeState.value = composeView.traitCollection.userInterfaceStyle
+        systemThemeState.value = view.traitCollection.userInterfaceStyle
             .asComposeSystemTheme()
     }
 
@@ -208,7 +208,7 @@ internal class ComposeContainer(
         val holder = ComposeLayersHolder(
             useSeparateRenderThreadWhenPossible = configuration.parallelRendering,
             context = composeCoroutineContext,
-            getWindow = { composeView.window }
+            getWindow = { view.window }
         ).also {
             layersHolder = it
         }
@@ -230,13 +230,13 @@ internal class ComposeContainer(
             navigationEventInput = navigationEventInput,
             interfaceOrientationState = interfaceOrientationState,
         ).also { mediator ->
-            composeView.embedSubview(mediator.backgroundView)
-            composeView.updateMetalView(
+            view.embedSubview(mediator.backgroundView)
+            view.updateMetalView(
                 metalView = metalView,
                 onDidMoveToWindow = ::onDidMoveToWindow,
                 onLayoutSubviews = ::onLayoutSubviews
             )
-            composeView.embedSubview(mediator.overlayView)
+            view.embedSubview(mediator.overlayView)
 
             mediator.setContent {
                 ProvideContainerCompositionLocals(content)
@@ -255,7 +255,7 @@ internal class ComposeContainer(
 
         architectureComponentsOwner.navigationEventDispatcher.addInput(navigationEventInput)
         lifecycleDelegate.windowScene = windowScene
-        navigationEventInput.onDidMoveToWindow(composeView.window, composeView)
+        navigationEventInput.onDidMoveToWindow(view.window, view)
         onAccessibilityChanged()
     }
 
@@ -266,8 +266,8 @@ internal class ComposeContainer(
         savedState = architectureComponentsOwner.saveState()
         lifecycleDelegate.onLifecycleStateUpdated = null
 
-        composeView.updateMetalView(metalView = null)
-        navigationEventInput.onDidMoveToWindow(null, composeView)
+        view.updateMetalView(metalView = null)
+        navigationEventInput.onDidMoveToWindow(null, view)
         architectureComponentsOwner.navigationEventDispatcher.removeInput(navigationEventInput)
 
         mediator?.dispose()
@@ -329,7 +329,7 @@ internal class ComposeContainer(
         platformContext: PlatformContext,
         layersHolder: ComposeLayersHolder
     ): ComposeScene = PlatformLayersComposeScene(
-        density = composeView.density,
+        density = view.density,
         layoutDirection = layoutDirection,
         coroutineContext = composeCoroutineContext,
         composeSceneContext = createComposeSceneContext(
@@ -355,7 +355,7 @@ internal class ComposeContainer(
     }
 
     private val containingViewController: UIViewController get() {
-        var responder: UIResponder? = composeView
+        var responder: UIResponder? = view
         while (responder != null) {
             if (responder is UIViewController) {
                 return responder
@@ -380,12 +380,12 @@ internal class ComposeContainer(
             // See [MotionDurationScale.scaleFactor] for more details.
             0f
         } else {
-            1f / (composeView.window?.layer?.speed?.takeIf { it > 0 } ?: 1f)
+            1f / (view.window?.layer?.speed?.takeIf { it > 0 } ?: 1f)
         }
     }
 
     private val windowScene: UIWindowScene?
-        get() = composeView.window?.windowScene
+        get() = view.window?.windowScene
 }
 
 private fun UIUserInterfaceStyle.asComposeSystemTheme(): SystemTheme {

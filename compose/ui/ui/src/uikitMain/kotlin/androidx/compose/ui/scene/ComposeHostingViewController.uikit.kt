@@ -25,7 +25,7 @@ import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.utils.CMPViewController
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
-import androidx.compose.ui.window.ComposeView
+import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalRedrawer
 import kotlin.coroutines.CoroutineContext
@@ -60,7 +60,7 @@ internal class ComposeHostingViewController(
     )
 
     // Used for testing
-    val rootRedrawer: MetalRedrawer? get() = container.composeView.redrawer
+    val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
     fun hasInvalidations(): Boolean = container.hasInvalidations()
 
     @Suppress("DEPRECATION")
@@ -79,7 +79,7 @@ internal class ComposeHostingViewController(
             ?: super.prefersStatusBarHidden()
 
     override fun loadView() {
-        view = container.composeView
+        view = container.view
     }
 
     @Suppress("DEPRECATION")
@@ -160,7 +160,7 @@ internal class ComposeHostingViewController(
      * - Before the actual animation starts, all initial parameters should be stored in the
      * corresponding lambdas. See [ComposeSceneMediator.prepareAndGetSizeTransitionAnimation].
      * - At the time of the animation phase, the drawing canvas expands to fit the animated scene
-     * throughout the animation cycle. See [ComposeView.animateSizeTransition].
+     * throughout the animation cycle. See [ComposeContainerView.animateSizeTransition].
      * - The animation phase consists of changing scene and window sizes frame by frame.
      * See [ComposeSceneMediator.prepareAndGetSizeTransitionAnimation] and
      * [PlatformWindowContext.prepareAndGetSizeTransitionAnimation].
@@ -183,7 +183,7 @@ internal class ComposeHostingViewController(
         val animations = container.prepareAndGetSizeTransitionAnimation { onFrame ->
             withAnimationProgress(duration, update = onFrame)
         }
-        container.composeView.animateSizeTransition(sizeTransitionScope) {
+        container.view.animateSizeTransition(sizeTransitionScope) {
             animations()
         }
 
@@ -200,7 +200,7 @@ internal class ComposeHostingViewController(
         transitionCoordinator: UIViewControllerTransitionCoordinatorProtocol
     ) {
         val transitionScope = CoroutineScope(container.composeCoroutineContext)
-        val viewAnimationClosure = container.composeView.animateCrossFadeTransition(transitionScope)
+        val viewAnimationClosure = container.view.animateCrossFadeTransition(transitionScope)
 
         transitionCoordinator.animateAlongsideTransition(
             animation = {

@@ -4478,6 +4478,11 @@ sealed interface androidx.compose.ui.viewinterop/UIKitInteropInteractionMode { /
 }
 
 // Targets: [ios]
+final class androidx.compose.ui.platform/ComposeViewConfiguration : androidx.compose.ui.platform/ComposeContainerConfiguration { // androidx.compose.ui.platform/ComposeViewConfiguration|null[0]
+    constructor <init>() // androidx.compose.ui.platform/ComposeViewConfiguration.<init>|<init>(){}[0]
+}
+
+// Targets: [ios]
 final class androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration { // androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration|null[0]
     constructor <init>() // androidx.compose.ui.uikit/ComposeUIViewControllerConfiguration.<init>|<init>(){}[0]
 
@@ -4541,6 +4546,27 @@ final val androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 
 // Targets: [ios]
 final val androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop|#static{}androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_ComposeContainerConfiguration$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_ComposeContainerConfiguration$stableprop|#static{}androidx_compose_ui_platform_ComposeContainerConfiguration$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_ComposeViewConfiguration$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_ComposeViewConfiguration$stableprop|#static{}androidx_compose_ui_platform_ComposeViewConfiguration$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Back$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Back$stableprop|#static{}androidx_compose_ui_platform_EndEdgePanGestureBehavior_Back$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Disabled$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Disabled$stableprop|#static{}androidx_compose_ui_platform_EndEdgePanGestureBehavior_Disabled$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Forward$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Forward$stableprop|#static{}androidx_compose_ui_platform_EndEdgePanGestureBehavior_Forward$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_OnFocusBehavior_DoNothing$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_OnFocusBehavior_DoNothing$stableprop|#static{}androidx_compose_ui_platform_OnFocusBehavior_DoNothing$stableprop[0]
+
+// Targets: [ios]
+final val androidx.compose.ui.platform/androidx_compose_ui_platform_OnFocusBehavior_FocusableAboveKeyboard$stableprop // androidx.compose.ui.platform/androidx_compose_ui_platform_OnFocusBehavior_FocusableAboveKeyboard$stableprop|#static{}androidx_compose_ui_platform_OnFocusBehavior_FocusableAboveKeyboard$stableprop[0]
 
 // Targets: [ios]
 final val androidx.compose.ui.uikit/LocalUIView // androidx.compose.ui.uikit/LocalUIView|{}LocalUIView[0]
@@ -4626,6 +4652,27 @@ final fun androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeRelea
 
 // Targets: [ios]
 final fun androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop_getter|androidx_compose_ui_platform_CFScopeReleasable_Image$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_ComposeContainerConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_ComposeContainerConfiguration$stableprop_getter|androidx_compose_ui_platform_ComposeContainerConfiguration$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_ComposeViewConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_ComposeViewConfiguration$stableprop_getter|androidx_compose_ui_platform_ComposeViewConfiguration$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Back$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Back$stableprop_getter|androidx_compose_ui_platform_EndEdgePanGestureBehavior_Back$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Disabled$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Disabled$stableprop_getter|androidx_compose_ui_platform_EndEdgePanGestureBehavior_Disabled$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Forward$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_EndEdgePanGestureBehavior_Forward$stableprop_getter|androidx_compose_ui_platform_EndEdgePanGestureBehavior_Forward$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_OnFocusBehavior_DoNothing$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_OnFocusBehavior_DoNothing$stableprop_getter|androidx_compose_ui_platform_OnFocusBehavior_DoNothing$stableprop_getter(){}[0]
+
+// Targets: [ios]
+final fun androidx.compose.ui.platform/androidx_compose_ui_platform_OnFocusBehavior_FocusableAboveKeyboard$stableprop_getter(): kotlin/Int // androidx.compose.ui.platform/androidx_compose_ui_platform_OnFocusBehavior_FocusableAboveKeyboard$stableprop_getter|androidx_compose_ui_platform_OnFocusBehavior_FocusableAboveKeyboard$stableprop_getter(){}[0]
 
 // Targets: [ios]
 final fun androidx.compose.ui.uikit/androidx_compose_ui_uikit_ComposeUIViewControllerConfiguration$stableprop_getter(): kotlin/Int // androidx.compose.ui.uikit/androidx_compose_ui_uikit_ComposeUIViewControllerConfiguration$stableprop_getter|androidx_compose_ui_uikit_ComposeUIViewControllerConfiguration$stableprop_getter(){}[0]

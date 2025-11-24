@@ -54,21 +54,21 @@ internal class ComposeHostingView(
     private val scope = CoroutineScope(container.composeCoroutineContext)
 
     // Used for testing
-    val rootRedrawer: MetalRedrawer? get() = container.composeView.redrawer
+    val rootRedrawer: MetalRedrawer? get() = container.view.redrawer
     fun hasInvalidations(): Boolean = container.hasInvalidations()
 
     init {
-        addSubview(container.composeView)
+        addSubview(container.view)
         clipsToBounds = true
         opaque = configuration.opaque
     }
 
     override fun sizeThatFits(size: CValue<CGSize>): CValue<CGSize> {
-        return container.composeView.sizeThatFits(size)
+        return container.view.sizeThatFits(size)
     }
 
     override fun intrinsicContentSize(): CValue<CGSize> {
-        return container.composeView.intrinsicContentSize
+        return container.view.intrinsicContentSize
     }
 
     override fun layoutSubviews() {
@@ -78,7 +78,7 @@ internal class ComposeHostingView(
 
         val initialSize = layer.presentationLayer()?.bounds?.dpSize()
         if (initialSize == null || initialSize == bounds.dpSize() || container.hasInteropViews) {
-            container.composeView.setFrame(bounds)
+            container.view.setFrame(bounds)
             return
         }
 
@@ -93,7 +93,7 @@ internal class ComposeHostingView(
             if (actualSize != null && actualSize != bounds.dpSize() && !container.hasInteropViews) {
                 animateSizeTransition(initialSize = initialSize)
             } else {
-                container.composeView.setFrame(bounds)
+                container.view.setFrame(bounds)
             }
         }
     }
@@ -121,7 +121,7 @@ internal class ComposeHostingView(
     private var isAnimating = false
     private fun animateSizeTransition(initialSize: DpSize) {
         if (isAnimating) {
-            container.composeView.setFrame(bounds)
+            container.view.setFrame(bounds)
             return
         }
         isAnimating = true
@@ -160,17 +160,17 @@ internal class ComposeHostingView(
                     val progress = progress()
                     onFrame(progress)
                     if (progress >= 1.0f) {
-                        container.composeView.clipsToBounds = true
+                        container.view.clipsToBounds = true
                         isAnimating = false
                         sizeTransitionScope.cancel()
                     }
                 }
             }
         }
-        container.composeView.animateSizeTransition(sizeTransitionScope) {
+        container.view.animateSizeTransition(sizeTransitionScope) {
             animations()
         }
-        container.composeView.clipsToBounds = false
-        container.composeView.setFrame(bounds)
+        container.view.clipsToBounds = false
+        container.view.setFrame(bounds)
     }
 }

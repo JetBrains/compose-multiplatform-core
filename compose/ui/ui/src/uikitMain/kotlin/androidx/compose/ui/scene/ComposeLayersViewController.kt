@@ -23,7 +23,7 @@ import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
-import androidx.compose.ui.window.ComposeView
+import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalView
 import kotlin.coroutines.CoroutineContext
@@ -67,7 +67,7 @@ internal class ComposeLayersViewController(
         canBeOpaque = false
     }
 
-    private val rootView = ComposeView(
+    private val rootView = ComposeContainerView(
         useOpaqueConfiguration = false,
         transparentForTouches = true
     ).also {
