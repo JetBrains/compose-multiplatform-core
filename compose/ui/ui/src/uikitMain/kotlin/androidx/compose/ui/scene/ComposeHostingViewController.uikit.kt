@@ -18,21 +18,8 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.animation.withAnimationProgress
-import androidx.compose.runtime.CompositionContext
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.LocalSystemTheme
-import androidx.compose.ui.SystemTheme
-import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.hapticfeedback.CupertinoHapticFeedback
-import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
-import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.MotionDurationScaleImpl
-import androidx.compose.ui.platform.PlatformContext
-import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.platform.ComposeContainerConfiguration
+import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
 import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.OnFocusBehavior
@@ -41,11 +28,6 @@ import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.ComposeContainerView
 import androidx.compose.ui.window.DisplayLinkListener
 import androidx.compose.ui.window.MetalRedrawer
-import androidx.compose.ui.window.MetalView
-import androidx.compose.ui.window.SceneActiveStateListener
-import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
-import androidx.lifecycle.enableSavedStateHandles
-import androidx.savedstate.SavedState
 import kotlin.coroutines.CoroutineContext
 import kotlin.native.runtime.NativeRuntimeApi
 import kotlin.time.Duration
@@ -60,8 +42,6 @@ import kotlinx.coroutines.cancel
 import platform.CoreGraphics.CGSize
 import platform.UIKit.UIStatusBarAnimation
 import platform.UIKit.UIStatusBarStyle
-import platform.UIKit.UIUserInterfaceLayoutDirection
-import platform.UIKit.UIUserInterfaceStyle
 import platform.UIKit.UIViewControllerTransitionCoordinatorProtocol
 
 @OptIn(BetaInteropApi::class)

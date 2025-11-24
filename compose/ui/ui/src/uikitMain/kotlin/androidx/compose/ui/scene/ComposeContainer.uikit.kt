@@ -127,7 +127,6 @@ internal class ComposeContainer(
         }
     }
 
-
     fun prepareAndGetSizeTransitionAnimation(withProgress: suspend ((Float) -> Unit) -> Unit): suspend () -> Unit {
         return mediator?.prepareAndGetSizeTransitionAnimation(withProgress) ?: {}
     }
