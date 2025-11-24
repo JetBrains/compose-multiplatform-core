@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.findNodeWithLabel
 import androidx.compose.ui.test.findNodeWithLabelOrNull
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.test.waitUntil
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import kotlin.test.Test
@@ -52,11 +53,11 @@ class PopupAppearanceTest {
         // Show and hide modal view controller
         var presented = false
         val safari = SFSafariViewController(uRL = NSURL(string = "https://jb.gg"))
-        hostingViewController.presentViewController(safari, true) {
+        viewController.presentViewController(safari, true) {
             presented = true
         }
         waitUntil { presented }
-        hostingViewController.dismissViewControllerAnimated(true) {
+        viewController.dismissViewControllerAnimated(true) {
             presented = false
         }
         waitUntil { !presented }

@@ -17,7 +17,7 @@
 package androidx.compose.ui.navigationevent
 
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
+import androidx.compose.ui.platform.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.utils.CMPScreenEdgePanGestureRecognizer
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset

@@ -24,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.draganddrop.UIKitDragAndDropManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -48,6 +47,7 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
+import androidx.compose.ui.platform.OnFocusBehavior
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
@@ -62,7 +62,6 @@ import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIView
-import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -70,9 +69,11 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.asDpOffset
+import androidx.compose.ui.unit.asDpRect
 import androidx.compose.ui.unit.asDpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
+import androidx.compose.ui.unit.roundToIntRect
 import androidx.compose.ui.unit.roundToIntSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.unit.toPlatformInsets
@@ -90,7 +91,6 @@ import androidx.compose.ui.window.MetalRedrawer
 import androidx.compose.ui.window.TouchesEventKind
 import androidx.compose.ui.window.OverlayInputView
 import kotlin.coroutines.CoroutineContext
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.CValue
 import kotlinx.cinterop.useContents
@@ -331,7 +331,7 @@ internal class ComposeSceneMediator(
      * @param point Point in the interaction view coordinate space.
      */
     private fun isPointInsideInteractionBounds(point: CValue<CGPoint>) =
-        interactionBounds.contains(point.asDpOffset().toOffset(overlayView.density).round())
+        interactionBounds.contains(point.asDpOffset().toOffset(screenDensity).round())
 
     private val semanticsOwnerListener by lazy {
         SemanticsOwnerListenerImpl(
@@ -553,33 +553,31 @@ internal class ComposeSceneMediator(
     }
 
     private var isLayoutTransitionAnimating = false
-    fun prepareAndGetSizeTransitionAnimation(): suspend (Duration) -> Unit {
+    fun prepareAndGetSizeTransitionAnimation(withProgress: suspend ((Float) -> Unit) -> Unit): suspend () -> Unit {
         isLayoutTransitionAnimating = true
 
         val initialLayoutMargins = windowInsetsManager.layoutMargins.value
         val initialSafeAreaInsets = windowInsetsManager.safeAreaInsets.value
         val initialSize = scene.size?.toSize() ?: return {}
 
-        return { duration ->
+        return {
             try {
-                if (initialSize != currentViewSize) {
-                    withAnimationProgress(duration) { progress ->
-                        windowInsetsManager.layoutMargins.value = lerp(
-                            start = initialLayoutMargins,
-                            stop = _overlayView.layoutMargins.toPlatformInsets(screenDensity),
-                            fraction = progress
-                        )
-                        windowInsetsManager.safeAreaInsets.value = lerp(
-                                start = initialSafeAreaInsets,
-                                stop = _overlayView.safeAreaInsets.toPlatformInsets(screenDensity),
-                                fraction = progress
-                        )
-                        size = lerp(
-                            start = initialSize,
-                            stop = currentViewSize,
-                            fraction = progress
-                        ).roundToIntSize()
-                    }
+                withProgress { progress ->
+                    windowInsetsManager.layoutMargins.value = lerp(
+                        start = initialLayoutMargins,
+                        stop = _overlayView.layoutMargins.toPlatformInsets(screenDensity),
+                        fraction = progress
+                    )
+                    windowInsetsManager.safeAreaInsets.value = lerp(
+                        start = initialSafeAreaInsets,
+                        stop = _overlayView.safeAreaInsets.toPlatformInsets(screenDensity),
+                        fraction = progress
+                    )
+                    size = lerp(
+                        start = initialSize,
+                        stop = currentViewSize,
+                        fraction = progress
+                    ).roundToIntSize()
                 }
             } finally {
                 isLayoutTransitionAnimating = false
@@ -654,6 +652,9 @@ internal class ComposeSceneMediator(
         windowInsetsManager.layoutMargins.value = _overlayView.layoutMargins.toPlatformInsets(_overlayView.density)
         windowInsetsManager.safeAreaInsets.value = _overlayView.safeAreaInsets.toPlatformInsets(_overlayView.density)
         size = currentViewSize.roundToIntSize()
+        interactionBounds = with(screenDensity) {
+            _overlayView.bounds.asDpRect().toRect().roundToIntRect()
+        }
     }
 
     private val currentViewSize: Size get() {

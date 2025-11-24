@@ -19,13 +19,13 @@ package androidx.compose.ui.integrations
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
+import androidx.compose.ui.platform.EndEdgePanGestureBehavior
+import androidx.compose.ui.platform.OnFocusBehavior
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.test.runUIKitInstrumentedTest
-import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.InterfaceOrientation
-import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -54,7 +54,8 @@ class ComposeSceneMediatorTest {
         mediator.compositionLocalContext = null
         mediator.interactionBounds = IntRect.Zero
         mediator.isAccessibilityEnabled = true
-        mediator.prepareAndGetSizeTransitionAnimation().invoke(10.milliseconds)
+        mediator.prepareAndGetSizeTransitionAnimation { onFrame -> onFrame(1.0f) }
+        Unit
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -62,7 +63,7 @@ class ComposeSceneMediatorTest {
     fun testDisposedViewControllerTapNoCrash() = runUIKitInstrumentedTest {
         setContent {}
 
-        hostingViewController.viewControllerDidLeaveWindowHierarchy()
+        stopComposeScene()
 
         tap(screenSize.center)
 
@@ -74,10 +75,10 @@ class ComposeSceneMediatorTest {
     fun testDisposedViewControllerResizeNoCrash() = runUIKitInstrumentedTest {
         setContent {}
 
-        hostingViewController.viewControllerDidLeaveWindowHierarchy()
+        stopComposeScene()
 
-        hostingViewController.view.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
-        hostingViewController.view.layoutIfNeeded()
+        viewController.view.setFrame(CGRectMake(0.0, 0.0, 100.0, 100.0))
+        viewController.view.layoutIfNeeded()
 
         waitForIdle()
     }

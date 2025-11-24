@@ -27,12 +27,12 @@ import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
+import androidx.compose.ui.platform.EndEdgePanGestureBehavior
+import androidx.compose.ui.platform.OnFocusBehavior
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
-import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
-import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.Density
@@ -175,7 +175,8 @@ internal class UIKitComposeSceneLayer(
 
     val hasInteropViews: Boolean get() = mediator.hasInteropViews
 
-    fun prepareAndGetSizeTransitionAnimation() = mediator.prepareAndGetSizeTransitionAnimation()
+    fun prepareAndGetSizeTransitionAnimation(withProgress: suspend ((Float) -> Unit) -> Unit) =
+        mediator.prepareAndGetSizeTransitionAnimation(withProgress)
 
     override fun close() {
         onClosed(this)

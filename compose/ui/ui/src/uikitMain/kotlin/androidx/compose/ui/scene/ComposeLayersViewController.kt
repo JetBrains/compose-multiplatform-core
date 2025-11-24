@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.scene
 
+import androidx.compose.ui.animation.withAnimationProgress
 import androidx.compose.ui.graphics.asComposeCanvas
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.addLayoutConstraintsToMatch
@@ -302,7 +303,13 @@ internal class ComposeLayersViewController(
         val animations = listOf(
             windowContext.prepareAndGetSizeTransitionAnimation()
         ) + this.layers.map {
-            it.prepareAndGetSizeTransitionAnimation()
+            { duration ->
+                it.prepareAndGetSizeTransitionAnimation { onFrame ->
+                    withAnimationProgress(duration) { progress ->
+                        onFrame(progress)
+                    }
+                }
+            }
         }
 
         rootView.animateSizeTransition(scope) {
