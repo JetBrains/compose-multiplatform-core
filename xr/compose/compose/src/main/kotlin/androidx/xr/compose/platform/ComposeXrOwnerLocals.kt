@@ -126,22 +126,31 @@ private fun View.getSession(): Session? {
 }
 
 private fun View.createSession(activity: Activity): Session? {
-    // When the owning lifecycle is destroyed, clear the cached `Session` from the
-    // View's tag. This is critical to prevent crashes from using a stale `Session` after Activity
-    // recreation as `Session` lifecycle is currently tied to the lifecycle of an activity so that
-    // it forces a fresh `Session` instance to be created on next access.
-    if (activity is LifecycleOwner) {
-        activity.lifecycle.addObserver(
-            object : DefaultLifecycleObserver {
-                override fun onDestroy(owner: LifecycleOwner) {
-                    setTag(R.id.compose_xr_session, null)
-                    owner.lifecycle.removeObserver(this)
-                }
-            }
-        )
-    }
+    return try {
+        val session = getSessionFactory(activity).invoke() ?: return null
+        setTag(R.id.compose_xr_session, session)
 
-    return getSessionFactory(activity).invoke()?.also { setTag(R.id.compose_xr_session, it) }
+        // When the owning lifecycle is destroyed, clear the cached `Session` from the View's tag.
+        // This is critical to prevent crashes from using a stale `Session` after Activity
+        // recreation as `Session` lifecycle is currently tied to the lifecycle of an activity so
+        // that it forces a fresh `Session` instance to be created on next access.
+        if (activity is LifecycleOwner) {
+            activity.lifecycle.addObserver(
+                object : DefaultLifecycleObserver {
+                    override fun onDestroy(owner: LifecycleOwner) {
+                        setTag(R.id.compose_xr_session, null)
+                        owner.lifecycle.removeObserver(this)
+                    }
+                }
+            )
+        }
+
+        session
+    } catch (_: Throwable) {
+        // If we fail to create the session then there is nothing that we can do and the app should
+        // fall back to non-XR behavior.
+        null
+    }
 }
 
 private fun View.getSessionFactory(activity: Activity): () -> Session? {

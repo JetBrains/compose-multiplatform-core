@@ -20,13 +20,17 @@ import android.util.Log
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.AspectRatio
+import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.featuregroup.GroupableFeature
+import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
 import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase.*
 import androidx.camera.testing.impl.CameraUtil
+import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
+import androidx.camera.testing.impl.fakes.FakeSurfaceProcessorInternal
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertWithMessage
 import kotlinx.coroutines.CompletableDeferred
@@ -104,6 +108,44 @@ class FeatureCombinationDeviceTest(
                             )
                         }
                 }
+        }
+
+    /**
+     * A [androidx.camera.core.CameraEffect] targeting only one use case with PRIV format should not
+     * change the stream configuration and thus query result should always stay the same.
+     */
+    @Test
+    fun isSessionConfigSupported_effectTargetingPreviewOnly_resultMatchesWithoutEffect(): Unit =
+        runBlocking {
+            val cameraInfo = cameraProvider.getCameraInfo(cameraSelector)
+            val useCases = useCasesToTest.toUseCases()
+            val effect =
+                FakeSurfaceEffect(
+                    CameraEffect.PREVIEW,
+                    FakeSurfaceProcessorInternal(directExecutor()),
+                )
+
+            allFeatures.forEach { feature ->
+                val resultWithoutEffect =
+                    cameraInfo.isSessionConfigSupported(
+                        SessionConfig(useCases = useCases, requiredFeatureGroup = setOf(feature))
+                    )
+
+                val resultWithEffect =
+                    cameraInfo.isSessionConfigSupported(
+                        SessionConfig(
+                            useCases = useCases,
+                            requiredFeatureGroup = setOf(feature),
+                            effects = listOf(effect),
+                        )
+                    )
+
+                assertWithMessage(
+                        "resultWithEffect = $resultWithEffect, resultWithoutEffect = $resultWithoutEffect"
+                    )
+                    .that(resultWithEffect)
+                    .isEqualTo(resultWithoutEffect)
+            }
         }
 
     private suspend fun bindAndVerifyFeatures(

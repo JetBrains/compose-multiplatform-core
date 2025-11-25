@@ -22,6 +22,15 @@ import androidx.annotation.RestrictTo
 /** Factory for creating instances of SceneRuntime. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface SceneRuntimeFactory : Service {
-    /** Creates a [JxrRuntime] instance */
-    public fun create(activity: Activity): JxrRuntime
+    /**
+     * Creates a [JxrRuntime] instance.
+     *
+     * @param activity Current [Activity] instance.
+     * @param unscaledGravityAlignedActivitySpace whether to use the un-scaled & gravity aligned
+     *   activity space. Defaults to false.
+     */
+    public fun create(
+        activity: Activity,
+        unscaledGravityAlignedActivitySpace: Boolean = false,
+    ): JxrRuntime
 }

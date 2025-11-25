@@ -14,12 +14,13 @@ package androidx.xr.scenecore.testing {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeActivitySpace extends androidx.xr.scenecore.testing.FakeSystemSpaceEntity implements androidx.xr.scenecore.runtime.ActivitySpace {
-    ctor public FakeActivitySpace();
+    ctor public FakeActivitySpace(boolean unscaledGravityAlignedActivitySpace);
     method public void addOnBoundsChangedListener(androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener listener);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.HitTestResult getActivitySpaceHitTestResult();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.Dimensions getBounds();
     method @InaccessibleFromKotlin public java.util.Set<androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener> getOnBoundsChangedListeners();
     method @InaccessibleFromKotlin public androidx.xr.runtime.math.BoundingBox getRecommendedContentBoxInFullSpace();
+    method @InaccessibleFromKotlin public boolean getUnscaledGravityAlignedActivitySpace();
     method public com.google.common.util.concurrent.ListenableFuture<androidx.xr.scenecore.runtime.HitTestResult> hitTestRelativeToActivityPose(androidx.xr.runtime.math.Vector3 origin, androidx.xr.runtime.math.Vector3 direction, @androidx.xr.scenecore.runtime.ScenePose.HitTestFilterValue int hitTestFilter, androidx.xr.scenecore.runtime.ScenePose scenePose);
     method public void onBoundsChanged(androidx.xr.scenecore.runtime.Dimensions bounds);
     method public void removeOnBoundsChangedListener(androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener listener);
@@ -28,9 +29,10 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.runtime.Dimensions bounds;
     property public java.util.Set<androidx.xr.scenecore.runtime.ActivitySpace.OnBoundsChangedListener> onBoundsChangedListeners;
     property public androidx.xr.runtime.math.BoundingBox recommendedContentBoxInFullSpace;
+    property public boolean unscaledGravityAlignedActivitySpace;
   }
 
-  @RequiresApi(android.os.Build.VERSION_CODES.O) @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeAnchorEntity extends androidx.xr.scenecore.testing.FakeSystemSpaceEntity implements androidx.xr.scenecore.runtime.AnchorEntity {
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeAnchorEntity extends androidx.xr.scenecore.testing.FakeSystemSpaceEntity implements androidx.xr.scenecore.runtime.AnchorEntity {
     ctor public FakeAnchorEntity();
     method @InaccessibleFromKotlin public int getState();
     method public void onStateChanged(int newState);
@@ -558,9 +560,8 @@ package androidx.xr.scenecore.testing {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntime implements androidx.xr.scenecore.runtime.RenderingEntityFactory androidx.xr.scenecore.runtime.SceneRuntime {
-    ctor public FakeSceneRuntime();
-    ctor public FakeSceneRuntime(optional java.util.concurrent.Executor? executor);
-    ctor @BytecodeOnly public FakeSceneRuntime(java.util.concurrent.Executor!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public FakeSceneRuntime(boolean unscaledGravityAlignedActivitySpace, optional java.util.concurrent.Executor? executor);
+    ctor @BytecodeOnly public FakeSceneRuntime(boolean, java.util.concurrent.Executor!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method public void addPerceivedResolutionChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.PixelDimensions> listener);
     method public void addSpatialCapabilitiesChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<androidx.xr.scenecore.runtime.SpatialCapabilities> listener);
     method public void clearSpatialVisibilityChangedListener();
@@ -640,7 +641,7 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeSceneRuntimeFactory implements androidx.xr.runtime.internal.SceneRuntimeFactory {
     ctor public FakeSceneRuntimeFactory();
-    method public androidx.xr.scenecore.testing.FakeSceneRuntime create(android.app.Activity activity);
+    method public androidx.xr.scenecore.testing.FakeSceneRuntime create(android.app.Activity activity, boolean unscaledGravityAlignedActivitySpace);
     method @InaccessibleFromKotlin public java.util.Set<androidx.xr.runtime.internal.Feature> getRequirements();
     property public java.util.Set<androidx.xr.runtime.internal.Feature> requirements;
   }
@@ -834,8 +835,10 @@ package androidx.xr.scenecore.testing {
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public class FakeSystemSpaceEntity extends androidx.xr.scenecore.testing.FakeEntity implements androidx.xr.scenecore.runtime.SystemSpaceEntity {
     ctor public FakeSystemSpaceEntity();
+    method @InaccessibleFromKotlin public final Runnable? getOnSpaceUpdatedListener();
     method public final void onSpaceUpdated();
     method public void setOnSpaceUpdatedListener(Runnable? listener, java.util.concurrent.Executor? executor);
+    property public final Runnable? onSpaceUpdatedListener;
   }
 
 }

@@ -26,7 +26,9 @@ import java.util.concurrent.Executor
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public open class FakeSystemSpaceEntity() : FakeEntity(), SystemSpaceEntity {
-    private var onSpaceUpdatedListener: Runnable? = null
+    public var onSpaceUpdatedListener: Runnable? = null
+        private set
+
     private var onSpaceUpdatedExecutor: Executor? = null
 
     /**

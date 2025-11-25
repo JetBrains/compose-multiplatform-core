@@ -127,7 +127,7 @@ public constructor(
          *   activity space for the session. When true, causes ActivitySpace for this session to
          *   always be gravity aligned and to have a scale of [1 unit = 1 Meter]. Note that this
          *   might result in visual inconsistencies between HOME_SPACE and FULL_SPACE_MANAGED modes.
-         *   Defaults to True.
+         *   Defaults to false.
          * @return the result of the operation. Can be [SessionCreateSuccess], which contains the
          *   newly created session, or another [SessionCreateResult] if a certain criteria was not
          *   met.
@@ -141,7 +141,7 @@ public constructor(
         public fun create(
             activity: Activity,
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
-            unscaledGravityAlignedActivitySpace: Boolean = true,
+            unscaledGravityAlignedActivitySpace: Boolean = false,
         ): SessionCreateResult {
             check(activity is LifecycleOwner) { "Unsupported Activity type: ${activity.javaClass}" }
             return create(
@@ -191,7 +191,7 @@ public constructor(
             activity: Activity,
             lifecycleOwner: LifecycleOwner,
             coroutineContext: CoroutineContext = EmptyCoroutineContext,
-            unscaledGravityAlignedActivitySpace: Boolean = true,
+            unscaledGravityAlignedActivitySpace: Boolean = false,
         ): SessionCreateResult {
             check(activity is LifecycleOwner) { "Unsupported Activity type: ${activity.javaClass}" }
 
@@ -230,7 +230,8 @@ public constructor(
                     loadProviders(SceneRuntimeFactory::class.java, SCENE_RUNTIME_FACTORY_PROVIDERS),
                     features,
                 )
-            val sceneRuntime = sceneRuntimeFactory?.create(activity)
+            val sceneRuntime =
+                sceneRuntimeFactory?.create(activity, unscaledGravityAlignedActivitySpace)
             sceneRuntime?.let { runtimes.add(it) }
 
             val renderingRuntimeFactory =

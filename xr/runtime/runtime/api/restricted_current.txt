@@ -544,7 +544,8 @@ package androidx.xr.runtime.internal {
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface SceneRuntimeFactory extends androidx.xr.runtime.internal.Service {
-    method public androidx.xr.runtime.internal.JxrRuntime create(android.app.Activity activity);
+    method public androidx.xr.runtime.internal.JxrRuntime create(android.app.Activity activity, optional boolean unscaledGravityAlignedActivitySpace);
+    method @BytecodeOnly public static androidx.xr.runtime.internal.JxrRuntime! create$default(androidx.xr.runtime.internal.SceneRuntimeFactory!, android.app.Activity!, boolean, int, Object!);
   }
 
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public interface Service {

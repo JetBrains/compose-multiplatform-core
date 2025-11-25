@@ -72,8 +72,10 @@ internal const val ALL_SPATIAL_CAPABILITIES: Int =
  * @param executor This used to input [executor] for tests.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-public class FakeSceneRuntime(public val executor: Executor? = null) :
-    SceneRuntime, RenderingEntityFactory {
+public class FakeSceneRuntime(
+    unscaledGravityAlignedActivitySpace: Boolean,
+    public val executor: Executor? = null,
+) : SceneRuntime, RenderingEntityFactory {
 
     /* Tracks the current state of the adapter according to where it is in its lifecycle. */
     public enum class State {
@@ -103,7 +105,8 @@ public class FakeSceneRuntime(public val executor: Executor? = null) :
             }
         }
 
-    override val activitySpace: FakeActivitySpace = FakeActivitySpace()
+    override val activitySpace: FakeActivitySpace =
+        FakeActivitySpace(unscaledGravityAlignedActivitySpace)
 
     override val headActivityPose: HeadScenePose? = FakeHeadScenePose()
 

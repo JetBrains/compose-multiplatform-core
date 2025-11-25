@@ -37,7 +37,7 @@ public class SpatialSceneRuntimeFactoryTest {
         Activity activity = Robolectric.buildActivity(Activity.class).create().start().get();
         SpatialSceneRuntimeFactory factory = new SpatialSceneRuntimeFactory();
 
-        SceneRuntime sceneRuntime = factory.create(activity);
+        SceneRuntime sceneRuntime = factory.create(activity, false);
 
         assertThat(sceneRuntime).isNotNull();
         assertThat(sceneRuntime).isInstanceOf(SpatialSceneRuntime.class);

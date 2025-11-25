@@ -16,15 +16,17 @@
 
 package androidx.xr.scenecore
 
+import android.app.Activity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.ActivitySpace as RtActivitySpace
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.SceneRuntime
+import androidx.xr.scenecore.testing.FakeActivitySpace
+import androidx.xr.scenecore.testing.FakeSceneRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
@@ -32,40 +34,37 @@ import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.robolectric.Robolectric
 
 @RunWith(AndroidJUnit4::class)
 class ActivitySpaceTest {
-    private val mockSceneRuntime = mock<SceneRuntime>()
     private val entityManager = EntityManager()
-    private var mockActivitySpace = mock<RtActivitySpace>()
+    private val activity = Robolectric.buildActivity(Activity::class.java).create().start().get()
+    private lateinit var fakeRuntime: SceneRuntime
 
     @Before
     fun setUp() {
-        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
+        val fakeRuntimeFactory = FakeSceneRuntimeFactory()
+        fakeRuntime = fakeRuntimeFactory.create(activity)
     }
 
     @Test
     fun getBounds_callsImplGetBounds() {
-        whenever(mockActivitySpace.bounds).thenReturn(Dimensions(100f, 200f, 300f))
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
 
         assertThat(activitySpace.bounds).isNotNull()
+
         val bounds = activitySpace.bounds
-        assertThat(bounds.width).isEqualTo(100f)
-        assertThat(bounds.height).isEqualTo(200f)
-        assertThat(bounds.depth).isEqualTo(300f)
+
+        assertThat(bounds.width).isEqualTo(Float.POSITIVE_INFINITY)
+        assertThat(bounds.height).isEqualTo(Float.POSITIVE_INFINITY)
+        assertThat(bounds.depth).isEqualTo(Float.POSITIVE_INFINITY)
     }
 
     @Test
     fun addOnBoundsChangedListener_receivesBoundsChangedCallback() {
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
         val boundsChangedListener =
             Consumer<FloatSize3d> { newBounds ->
                 assertThat(newBounds.width).isEqualTo(0.3f)
@@ -74,62 +73,76 @@ class ActivitySpaceTest {
             }
 
         activitySpace.addOnBoundsChangedListener(directExecutor(), boundsChangedListener)
-        verify(mockActivitySpace)
-            .addOnBoundsChangedListener(any<RtActivitySpace.OnBoundsChangedListener>())
+
+        // Already one listener by default.
+        assertThat((activitySpace.rtEntity as FakeActivitySpace).onBoundsChangedListeners)
+            .hasSize(2)
+
+        // Simulates a runtime callback.
+        rtActivitySpace.onBoundsChanged(Dimensions(0.3f, 0.2f, 0.1f))
 
         activitySpace.removeOnBoundsChangedListener(boundsChangedListener)
-        verify(mockActivitySpace)
-            .removeOnBoundsChangedListener(any<RtActivitySpace.OnBoundsChangedListener>())
+
+        assertThat((activitySpace.rtEntity as FakeActivitySpace).onBoundsChangedListeners)
+            .hasSize(1)
     }
 
     @Test
     fun addOnSpaceUpdatedListener_receivesRuntimeSetOnSpaceUpdatedListenerCallbacks() {
-        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
 
         var listenerCalled = false
-        val captor = argumentCaptor<Runnable>()
         activitySpace.addOnSpaceUpdatedListener(directExecutor()) { listenerCalled = true }
-        verify(mockActivitySpace).setOnSpaceUpdatedListener(captor.capture(), anyOrNull())
-        captor.firstValue.run()
+        // Simulates a runtime callback.
+        rtActivitySpace.onSpaceUpdated()
+
         assertThat(listenerCalled).isTrue()
     }
 
     @Test
     fun addRemoveOnSpaceUpdatedListener_callsRuntimeSetOnSpaceUpdatedListener() {
-        whenever(mockSceneRuntime.activitySpace).thenReturn(mockActivitySpace)
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
 
-        val listener = Runnable { print("Hello, World") }
+        var listenCount = 0
+        val listener = Runnable { listenCount++ }
         activitySpace.addOnSpaceUpdatedListener(listener)
+        // Simulates a runtime callback.
+        rtActivitySpace.onSpaceUpdated()
 
-        verify(mockActivitySpace).setOnSpaceUpdatedListener(any(), eq(null))
+        assertThat(listenCount).isEqualTo(1)
 
         activitySpace.removeOnSpaceUpdatedListener(listener)
-        verify(mockActivitySpace).setOnSpaceUpdatedListener(eq(null), eq(null))
+        // Simulates a runtime callback.
+        rtActivitySpace.onSpaceUpdated()
+
+        assertThat(listenCount).isEqualTo(1)
     }
 
     @Test
     fun recommendedContentBoxInFullSpace_returnsCorrectBoundingBox() {
-        whenever(mockActivitySpace.recommendedContentBoxInFullSpace)
-            .thenReturn(BoundingBox.fromMinMax(Vector3.Zero, Vector3.One))
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val expectedResult: BoundingBox =
+            BoundingBox.fromMinMax(
+                min = Vector3(-1.73f / 2, -1.61f / 2, -0.5f / 2),
+                max = Vector3(1.73f / 2, 1.61f / 2, 0.5f / 2),
+            )
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         val recommendedContentBoxInFullSpace = activitySpace.recommendedContentBoxInFullSpace
-        assertThat(recommendedContentBoxInFullSpace.min).isEqualTo(Vector3.Zero)
-        assertThat(recommendedContentBoxInFullSpace.max).isEqualTo(Vector3.One)
+
+        assertThat(recommendedContentBoxInFullSpace.min).isEqualTo(expectedResult.min)
+        assertThat(recommendedContentBoxInFullSpace.max).isEqualTo(expectedResult.max)
     }
 
     @Test
     fun getParentSpacePose_throwsIllegalArgumentException() {
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         assertThrows(IllegalArgumentException::class.java) { activitySpace.getPose(Space.PARENT) }
     }
 
     @Test
     fun getActivitySpacePose_returnsIdentity() {
-        whenever(mockActivitySpace.getPose(Space.ACTIVITY.toRtSpace()))
-            .thenReturn(Pose(Vector3.Zero, Quaternion.Identity))
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         val pose = activitySpace.getPose(Space.ACTIVITY)
         assertThat(pose.translation).isEqualTo(Vector3.Zero)
         assertThat(pose.rotation).isEqualTo(Quaternion.Identity)
@@ -137,9 +150,7 @@ class ActivitySpaceTest {
 
     @Test
     fun getRealWorldSpacePose_returnsPerceptionSpacePose() {
-        whenever(mockActivitySpace.getPose(Space.REAL_WORLD.toRtSpace()))
-            .thenReturn(Pose(Vector3.Zero, Quaternion.Identity))
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         val pose = activitySpace.getPose(Space.REAL_WORLD)
         assertThat(pose.translation).isEqualTo(Vector3.Zero)
         assertThat(pose.rotation).isEqualTo(Quaternion.Identity)
@@ -148,36 +159,34 @@ class ActivitySpaceTest {
     @Test
     fun setPose_throwsUnsupportedOperationException() {
         assertThrows(UnsupportedOperationException::class.java) {
-            val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+            val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
             activitySpace.setPose(Pose(Vector3.Zero, Quaternion.Identity))
         }
     }
 
     @Test
     fun getParentSpaceScale_throwsIllegalArgumentException() {
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         assertThrows(IllegalArgumentException::class.java) { activitySpace.getScale(Space.PARENT) }
     }
 
     @Test
     fun getActivitySpaceScale_returnsIdentity() {
-        whenever(mockActivitySpace.getScale(Space.ACTIVITY.toRtSpace())).thenReturn(Vector3.One)
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         val scale = activitySpace.getScale(Space.ACTIVITY)
         assertThat(scale).isEqualTo(1f)
     }
 
     @Test
     fun getRealWorldSpaceScale_returnsIdentity() {
-        whenever(mockActivitySpace.getScale(Space.REAL_WORLD.toRtSpace())).thenReturn(Vector3.One)
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         val scale = activitySpace.getScale(Space.REAL_WORLD)
         assertThat(scale).isEqualTo(1f)
     }
 
     @Test
     fun setScale_float_throwsUnsupportedOperationException() {
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         assertThrows(UnsupportedOperationException::class.java) {
             activitySpace.setScale(1f, Space.PARENT)
         }
@@ -185,7 +194,7 @@ class ActivitySpaceTest {
 
     @Test
     fun setScale_vector_throwsUnsupportedOperationException() {
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         assertThrows(UnsupportedOperationException::class.java) {
             activitySpace.setScale(Vector3.One, Space.PARENT)
         }
@@ -193,32 +202,42 @@ class ActivitySpaceTest {
 
     @Test
     fun dispose_removesBoundsChangedListeners() {
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
         val listener = Consumer<FloatSize3d> {}
 
         activitySpace.addOnBoundsChangedListener(listener)
-        val rtListenerCaptor = argumentCaptor<RtActivitySpace.OnBoundsChangedListener>()
-        verify(mockActivitySpace).addOnBoundsChangedListener(rtListenerCaptor.capture())
-        val rtListener = rtListenerCaptor.firstValue
+
+        // Already one listener by default.
+        assertThat(rtActivitySpace.onBoundsChangedListeners).hasSize(2)
 
         activitySpace.dispose()
 
-        verify(mockActivitySpace).removeOnBoundsChangedListener(rtListener)
+        assertThat(rtActivitySpace.onBoundsChangedListeners).hasSize(1)
     }
 
     @Test
     fun dispose_removesSpaceUpdatedListeners() {
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
-        val listener = Runnable {}
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        val rtActivitySpace = activitySpace.rtEntity as FakeActivitySpace
+        var listenCount = 0
+        val listener = Runnable { listenCount++ }
         activitySpace.addOnSpaceUpdatedListener(listener)
-        verify(mockActivitySpace).setOnSpaceUpdatedListener(any(), anyOrNull())
+        // Simulates a runtime callback.
+        rtActivitySpace.onSpaceUpdated()
+
+        assertThat(listenCount).isEqualTo(1) // 0 -> 1
+
         activitySpace.dispose()
-        verify(mockActivitySpace).setOnSpaceUpdatedListener(eq(null), eq(null))
+        // Simulates a runtime callback.
+        rtActivitySpace.onSpaceUpdated()
+
+        assertThat(listenCount).isEqualTo(1)
     }
 
     @Test
     fun dispose_callingTwiceDoesNotCrash() {
-        val activitySpace = ActivitySpace.create(mockSceneRuntime, entityManager)
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         activitySpace.dispose()
         activitySpace.dispose()
     }

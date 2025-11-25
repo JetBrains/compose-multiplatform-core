@@ -51,7 +51,7 @@ class FakeSceneRuntimeTest {
 
     @Before
     fun setUp() {
-        fakeSceneRuntime = FakeSceneRuntime()
+        fakeSceneRuntime = FakeSceneRuntime(unscaledGravityAlignedActivitySpace = false)
     }
 
     @Test

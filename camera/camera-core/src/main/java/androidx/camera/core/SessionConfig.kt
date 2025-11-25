@@ -59,8 +59,7 @@ import java.util.concurrent.Executor
  * **[requiredFeatureGroup] and [preferredFeatureGroup]:**
  * - Avoid using non-groupable APIs for any feature that is groupable (see [GroupableFeature] to
  *   know which features are groupable). Doing so can lead to conflicting configurations.
- * - [CameraEffect] or [ImageAnalysis] use case is currently not supported with these
- *   `GroupableFeature`s.
+ * - [ImageAnalysis] use case is currently not supported with these `GroupableFeature`s.
  * - Avoid setting multiple `GroupableFeature`s with the same [GroupableFeature.featureType] as
  *   required, as they conflict with each other. If they are set as preferred, only one will be
  *   selected according to the feature priorities, which are defined by the ordering in the
@@ -183,8 +182,6 @@ constructor(
 
             useCase.validateDefaultGroupableFeatureValues()
         }
-
-        require(effects.isEmpty()) { "Effects aren't supported with feature group yet" }
     }
 
     /**

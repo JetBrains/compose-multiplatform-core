@@ -65,6 +65,16 @@ class ComposeXrOwnerLocalsKtTest {
     }
 
     @Test
+    fun composeXrOwnerLocals_sessionThrowsException_returnsNull() {
+        composeTestRule.activity.window.decorView.setTag(
+            androidx.xr.compose.R.id.compose_xr_session_factory,
+            { throw IllegalStateException() },
+        )
+
+        composeTestRule.setContent { assertThat(LocalComposeXrOwners.current).isNull() }
+    }
+
+    @Test
     @Ignore("b/454042420 This test is failing randomly")
     fun getOrCreateXrOwnerLocals_isClearedAndRecreated_onActivityRecreation() {
         // Phase 1: Create the initial instance in the first activity.

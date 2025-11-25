@@ -37,7 +37,7 @@ import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
-import androidx.xr.scenecore.runtime.AnchorEntity as RtAnchorEntity
+import androidx.xr.scenecore.testing.FakeAnchorEntity
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors.directExecutor
 import java.util.function.Consumer
@@ -59,18 +59,13 @@ import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.kotlin.any
-import org.mockito.kotlin.argumentCaptor
-import org.mockito.kotlin.eq
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.robolectric.Robolectric
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.android.controller.ActivityController
 
 @RunWith(AndroidJUnit4::class)
 class AnchorEntityTest {
-    private val mockAnchorEntityImpl = mock<RtAnchorEntity>()
+    private val fakeAnchorEntity = FakeAnchorEntity()
     private lateinit var entityManager: EntityManager
     private lateinit var session: Session
     private lateinit var anchor: Anchor
@@ -239,21 +234,23 @@ class AnchorEntityTest {
 
     @Test
     fun setOnSpaceUpdatedListener_withNullParams_callsRuntimeSetOnSpaceUpdatedListener() {
-        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityManager)
         anchorEntity.setOnSpaceUpdatedListener(null)
-        verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(eq(null), eq(null))
+        assertThat(fakeAnchorEntity.onSpaceUpdatedListener).isNull()
     }
 
     @Test
     fun setOnSpaceUpdatedListener_receivesRuntimeSetOnSpaceUpdatedListenerCallbacks() {
         var listenerCalled = false
-        val captor = argumentCaptor<Runnable>()
-        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityManager)
         anchorEntity.setOnSpaceUpdatedListener(directExecutor()) { listenerCalled = true }
 
-        verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(captor.capture(), any())
+        assertThat(fakeAnchorEntity.onSpaceUpdatedListener).isNotNull()
         assertThat(listenerCalled).isFalse()
-        captor.firstValue.run()
+
+        // Simulates a runtime callback.
+        fakeAnchorEntity.onSpaceUpdated()
+
         assertThat(listenerCalled).isTrue()
     }
 
@@ -325,24 +322,24 @@ class AnchorEntityTest {
 
     @Test
     fun dispose_clearsListeners() {
-        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityManager)
 
         anchorEntity.setOnStateChangedListener(directExecutor(), {})
         anchorEntity.setOnSpaceUpdatedListener(directExecutor(), {})
 
-        verify(mockAnchorEntityImpl).setOnStateChangedListener(any())
+        assertThat(fakeAnchorEntity.onSpaceUpdatedListener).isNotNull()
         assertThat(anchorEntity.onStateChangedListener).isNotNull()
 
         anchorEntity.dispose()
         shadowOf(Looper.getMainLooper()).idle()
 
-        verify(mockAnchorEntityImpl).setOnSpaceUpdatedListener(null, null)
+        assertThat(fakeAnchorEntity.onSpaceUpdatedListener).isNull()
         assertThat(anchorEntity.onStateChangedListener).isNull()
     }
 
     @Test
     fun dispose_callingTwiceDoesNotCrash() {
-        val anchorEntity = AnchorEntity.create(mockAnchorEntityImpl, entityManager)
+        val anchorEntity = AnchorEntity.create(fakeAnchorEntity, entityManager)
         anchorEntity.dispose()
         anchorEntity.dispose()
     }

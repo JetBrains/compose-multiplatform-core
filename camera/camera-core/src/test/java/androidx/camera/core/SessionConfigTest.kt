@@ -377,14 +377,11 @@ class SessionConfigTest {
     }
 
     @Test
-    fun sessionConfig_effectAddedWithFeatureParam_illegalArgumentExceptionThrown() {
+    fun sessionConfig_effectAddedWithFeatureParam_noExceptionThrown() {
         // Arrange
         val features = listOf(FPS_60)
 
-        // Act & assert
-        assertThrows<IllegalArgumentException> {
-            SessionConfig(useCases = useCases, preferredFeatureGroup = features, effects = effects)
-        }
+        SessionConfig(useCases = useCases, preferredFeatureGroup = features, effects = effects)
     }
 
     @Test

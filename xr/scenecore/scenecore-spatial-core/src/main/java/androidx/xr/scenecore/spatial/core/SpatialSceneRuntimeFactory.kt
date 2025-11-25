@@ -21,7 +21,6 @@ import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.SceneRuntimeFactory
 import androidx.xr.scenecore.runtime.SceneRuntime
 import java.util.concurrent.Executors
-import java.util.concurrent.ThreadFactory
 
 /**
  * Factory for creating instances of [androidx.xr.scenecore.runtime.SceneRuntime] for devices that
@@ -31,15 +30,13 @@ internal class SpatialSceneRuntimeFactory() : SceneRuntimeFactory {
     override val requirements: Set<Feature> =
         setOf(Feature.FULLSTACK, Feature.OPEN_XR, Feature.SPATIAL)
 
-    override fun create(activity: Activity): SceneRuntime =
+    override fun create(
+        activity: Activity,
+        unscaledGravityAlignedActivitySpace: Boolean,
+    ): SceneRuntime =
         SpatialSceneRuntime.create(
             activity,
-            Executors.newSingleThreadScheduledExecutor(
-                object : ThreadFactory {
-                    override fun newThread(r: Runnable): Thread {
-                        return Thread(r, "JXRRuntimeSession")
-                    }
-                }
-            ),
+            unscaledGravityAlignedActivitySpace,
+            Executors.newSingleThreadScheduledExecutor { r -> Thread(r, "JXRRuntimeSession") },
         )
 }

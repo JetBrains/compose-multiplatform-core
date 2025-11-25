@@ -357,6 +357,13 @@ public final class Flags {
     public static final String FLAG_ENABLE_DELETE_PROPAGATION_RW =
             FLAG_PREFIX + "enable_delete_propagation_rw";
 
+    /**
+     * Whether to enable wipe out documents under specific property paths when an account is
+     * removed.
+     */
+    public static final String FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS =
+            FLAG_PREFIX + "enable_schemas_wipeout_account_property_paths";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -784,6 +791,13 @@ public final class Flags {
      * also be true.
      */
     public static boolean enableDeletePropagationRw() {
+        return true;
+    }
+
+    /**
+     * Whether to enable wipe out document when an account is removed.
+     */
+    public static boolean enableSchemasWipeoutAccountPropertyPaths() {
         return true;
     }
 }

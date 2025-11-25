@@ -90,14 +90,14 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
     private SceneRuntime mTestRuntime;
     private ActivitySpaceImpl mActivitySpace;
 
-    private SceneRuntime createTestSceneRuntime(boolean unScaledGravityAlignedActivitySpace) {
+    private SceneRuntime createTestSceneRuntime(boolean unscaledGravityAlignedActivitySpace) {
         return SpatialSceneRuntime.create(
                 mActivity,
                 mFakeExecutor,
                 mXrExtensions,
                 new EntityManager(),
                 mPerceptionLibrary,
-                unScaledGravityAlignedActivitySpace);
+                unscaledGravityAlignedActivitySpace);
     }
 
     @Before
@@ -106,7 +106,7 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
         when(mPerceptionLibrary.initSession(eq(mActivity), anyInt(), eq(mFakeExecutor)))
                 .thenReturn(immediateFuture(Mockito.mock(Session.class)));
 
-        mTestRuntime = createTestSceneRuntime(/* unScaledGravityAlignedActivitySpace= */ false);
+        mTestRuntime = createTestSceneRuntime(/* unscaledGravityAlignedActivitySpace= */ false);
 
         mActivitySpace = (ActivitySpaceImpl) mTestRuntime.getActivitySpace();
 
@@ -277,7 +277,7 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
     public void
             handleOriginUpdate_unscaledGravityAlignedTrue_scaleAndRotationApplied_handlerCalled() {
         FakeSpatialModeChangeListener handler = new FakeSpatialModeChangeListener();
-        mTestRuntime = createTestSceneRuntime(/* unScaledGravityAlignedActivitySpace= */ true);
+        mTestRuntime = createTestSceneRuntime(/* unscaledGravityAlignedActivitySpace= */ true);
         mActivitySpace = (ActivitySpaceImpl) mTestRuntime.getActivitySpace();
         mActivitySpace.setSpatialModeChangeListener(handler);
 
@@ -313,7 +313,7 @@ public final class ActivitySpaceImplTest extends SystemSpaceEntityImplTest {
     @Test
     public void handleOriginUpdate_noHandler_doesNotCallHandler() {
         FakeSpatialModeChangeListener handler = new FakeSpatialModeChangeListener();
-        mTestRuntime = createTestSceneRuntime(/* unScaledGravityAlignedActivitySpace= */ true);
+        mTestRuntime = createTestSceneRuntime(/* unscaledGravityAlignedActivitySpace= */ true);
         mActivitySpace = (ActivitySpaceImpl) mTestRuntime.getActivitySpace();
         mActivitySpace.setSpatialModeChangeListener(null);
 

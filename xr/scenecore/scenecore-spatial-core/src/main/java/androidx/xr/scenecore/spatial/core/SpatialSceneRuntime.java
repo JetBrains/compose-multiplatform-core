@@ -293,14 +293,16 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
 
     /** Create a new @c SpatialSceneRuntime. */
     public static @NonNull SpatialSceneRuntime create(
-            @NonNull Activity activity, @NonNull ScheduledExecutorService executor) {
+            @NonNull Activity activity,
+            boolean unscaledGravityAlignedActivitySpace,
+            @NonNull ScheduledExecutorService executor) {
         return create(
                 activity,
                 executor,
                 Objects.requireNonNull(XrExtensionsProvider.getXrExtensions()),
                 new EntityManager(),
                 new PerceptionLibrary(),
-                false);
+                unscaledGravityAlignedActivitySpace);
     }
 
     private void initPerceptionLibrary() {
@@ -308,7 +310,8 @@ public class SpatialSceneRuntime implements SceneRuntime, RenderingEntityFactory
         if (mPerceptionLibrary.getSession() != null) return;
 
         ListenableFuture<Session> sessionFuture =
-                mPerceptionLibrary.initSession(mActivity, mOpenXrReferenceSpaceType, mExecutor);
+                mPerceptionLibrary.initSession(
+                        Objects.requireNonNull(mActivity), mOpenXrReferenceSpaceType, mExecutor);
         Objects.requireNonNull(sessionFuture)
                 .addListener(
                         () -> {

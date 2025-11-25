@@ -16,8 +16,6 @@
 
 package androidx.xr.scenecore.testing
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.Anchor
 import androidx.xr.runtime.math.Pose
@@ -26,7 +24,6 @@ import androidx.xr.scenecore.runtime.AnchorEntity.OnStateChangedListener
 
 /** Test-only implementation of [androidx.xr.scenecore.runtime.AnchorEntity] */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
-@RequiresApi(Build.VERSION_CODES.O)
 public class FakeAnchorEntity : FakeSystemSpaceEntity(), AnchorEntity {
     /**
      * The underlying [androidx.xr.arcore.runtime.Anchor] instance that this fake entity represents,
