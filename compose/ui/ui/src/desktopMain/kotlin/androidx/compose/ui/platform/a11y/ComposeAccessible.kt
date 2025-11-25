@@ -259,9 +259,13 @@ internal class ComposeAccessible(
         }
 
         override fun getAccessibleParent(): Accessible? {
-            return semanticsNode.parent?.id?.let { id ->
-                controller.accessibleByNodeId(id)!!
-            } ?: accessibleParent
+            val parentNode = semanticsNode.parent ?: return controller.parent
+            return controller.accessibleByNodeId(parentNode.id)!!
+        }
+
+        override fun getAccessibleIndexInParent(): Int {
+            val parent = semanticsNode.parent ?: return controller.indexInScene()
+            return parent.traversalOrderedChildren().indexOfFirst { it.id == semanticsNode.id }
         }
 
         override fun getAccessibleComponent(): AccessibleComponent? {
@@ -320,11 +324,6 @@ internal class ComposeAccessible(
                 progressBarRangeInfo != null -> ProgressBarAccessibleValue(this)
                 else -> null
             }
-        }
-
-        override fun getAccessibleIndexInParent(): Int {
-            val parentChildren = semanticsNode.parent?.traversalOrderedChildren()
-            return (parentChildren?.indexOfFirst { it.id == semanticsNode.id } ?: -1)
         }
 
         override fun getAccessibleChildrenCount(): Int {

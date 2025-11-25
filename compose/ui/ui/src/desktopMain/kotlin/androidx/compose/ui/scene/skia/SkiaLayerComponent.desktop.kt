@@ -20,7 +20,7 @@ import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import javax.accessibility.Accessible
-import javax.swing.JComponent
+import javax.swing.JPanel
 import org.jetbrains.skiko.ClipRectangle
 import org.jetbrains.skiko.GraphicsApi
 import org.jetbrains.skiko.SkiaLayer
@@ -34,7 +34,7 @@ import org.jetbrains.skiko.swing.SkiaSwingLayer
  * It's implemented as adapter to [SkiaLayer] or [SkiaSwingLayer].
  */
 internal interface SkiaLayerComponent {
-    val contentComponent: JComponent
+    val contentComponent: JPanel
     val interopBlendingSupported: Boolean
     val renderApi: GraphicsApi
     val clipComponents: MutableList<ClipRectangle>

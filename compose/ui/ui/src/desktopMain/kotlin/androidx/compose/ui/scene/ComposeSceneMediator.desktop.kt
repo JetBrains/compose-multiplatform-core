@@ -93,7 +93,6 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
 import java.awt.im.InputMethodRequests
-import javax.accessibility.Accessible
 import javax.swing.JComponent
 import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
@@ -138,9 +137,10 @@ internal class ComposeSceneMediator(
 
     private val semanticsOwnerListener = DesktopSemanticsOwnerListener()
     var rootForTestListener: PlatformContext.RootForTestListener? by DelegateRootForTestListener()
-    val accessible: Accessible = ComposeSceneAccessible {
-        semanticsOwnerListener.accessibilityControllers
-    }
+    val accessible: ComposeSceneAccessible = ComposeSceneAccessible(
+        parent = { contentComponent },
+        accessibilityControllersProvider = { semanticsOwnerListener.accessibilityControllers }
+    )
 
     private val navigationEventInput = BackNavigationEventInput()
 
@@ -767,9 +767,10 @@ internal class ComposeSceneMediator(
             _accessibilityControllers[semanticsOwner] = AccessibilityController(
                 owner = semanticsOwner,
                 desktopComponent = platformComponent,
+                parent = accessible,
                 onFocusReceived = {
                     skiaLayerComponent.requestNativeFocusOnAccessible(it)
-                }
+                },
             ).also {
                 it.launchSyncLoop(coroutineContext)
             }

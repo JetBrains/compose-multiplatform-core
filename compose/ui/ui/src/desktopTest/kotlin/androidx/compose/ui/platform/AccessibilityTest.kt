@@ -60,7 +60,9 @@ import androidx.compose.ui.toDpSize
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.runApplicationTest
 import java.awt.Point
+import javax.accessibility.Accessible
 import javax.accessibility.AccessibleComponent
 import javax.accessibility.AccessibleContext
 import javax.accessibility.AccessibleRole
@@ -484,6 +486,42 @@ class AccessibilityTest {
         assertThat(test.onNodeWithTag("button").fetchAccessible().accessibleContext?.accessibleRole)
             .isEqualTo(AccessibleRole.PUSH_BUTTON)
     }
+
+    @Test
+    fun verifyA11yHierarchy() = runApplicationTest {
+        launchTestWindowApplication {
+            Text("text")
+        }
+        awaitIdle()
+
+        // Relies on ComposeAccessible.getAccessibleName returning the text
+        val textAccessible = window.findAccessibleNamed("text")
+        assertNotNull(textAccessible)
+
+        // Validate the chain from the text accessible to the window
+        var child: Accessible = textAccessible
+        while (true) {
+            val parent = child.accessibleContext.accessibleParent ?: break
+
+            // Check that the index reported by the child matches what the parent says is the
+            // child at that index.
+            val childIndexInParent = child.accessibleContext.accessibleIndexInParent
+            val childAtIndex = parent.accessibleContext.getAccessibleChild(childIndexInParent)
+            // Note that we can't compare child with childAtIndex itself because the
+            // Accessible instances themselves are different at the seam between Swing and Compose.
+            // The child Accessible of SkiaLayer is the Canvas/HardwareLayer inside it, but the
+            // Accessible at the root of the scene is ComposeSceneAccessible. The trick is that they
+            // both return the same AccessibleContext (HardwareLayer does it via
+            // `externalAccessibleFactory`).
+            assertEquals(
+                expected = child.accessibleContext,
+                actual = childAtIndex.accessibleContext
+            )
+
+            child = parent
+        }
+        assertEquals(window, child)
+    }
 }
 
 
@@ -492,6 +530,11 @@ class AccessibilityTest {
  */
 @OptIn(ExperimentalTestApi::class, InternalTestApi::class)
 private fun runDesktopA11yTest(block: ComposeA11yTestScope.() -> Unit) {
+
+    val parentAccessible = Accessible { null }
+
+    lateinit var composeSceneAccessible: ComposeSceneAccessible
+
     // A SemanticsOwnerListener to manage the AccessibilityControllers
     val semanticsOwnerListener = object : PlatformContext.SemanticsOwnerListener {
         private val _accessibilityControllers = linkedMapOf<SemanticsOwner, AccessibilityController>()
@@ -502,6 +545,7 @@ private fun runDesktopA11yTest(block: ComposeA11yTestScope.() -> Unit) {
             _accessibilityControllers[semanticsOwner] = AccessibilityController(
                 owner = semanticsOwner,
                 desktopComponent = PlatformComponent.Empty,
+                parent = composeSceneAccessible,
                 onFocusReceived = { }
             )
         }
@@ -520,9 +564,11 @@ private fun runDesktopA11yTest(block: ComposeA11yTestScope.() -> Unit) {
     }
 
     // The root (scene) accessible
-    val composeSceneAccessible = ComposeSceneAccessible(forceEnableA11y = true) {
-        semanticsOwnerListener.accessibilityControllers
-    }
+    composeSceneAccessible = ComposeSceneAccessible(
+        forceEnableA11y = true,
+        parent = { parentAccessible },
+        accessibilityControllersProvider = { semanticsOwnerListener.accessibilityControllers }
+    )
 
     // Reset the a11y usage, to avoid having one test affect the next
     AccessibilityController.AccessibilityUsage.reset()
@@ -634,4 +680,13 @@ internal class ComposeA11yTestScope(
         assertNotNull(text, "Text is null")
         assertTrue(value in text, "Text does not contain $value")
     }
+}
+
+private fun Accessible.findAccessibleNamed(name: String): Accessible? {
+    if (accessibleContext.accessibleName == name) return this
+    for (index in 0 until accessibleContext.accessibleChildrenCount) {
+        val child = accessibleContext.getAccessibleChild(index)
+        child.findAccessibleNamed(name)?.let { return it }
+    }
+    return null
 }

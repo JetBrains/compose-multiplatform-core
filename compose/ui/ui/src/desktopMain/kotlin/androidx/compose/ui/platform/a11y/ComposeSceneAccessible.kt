@@ -30,9 +30,8 @@ import javax.accessibility.Accessible
 import javax.accessibility.AccessibleComponent
 import javax.accessibility.AccessibleContext
 import javax.accessibility.AccessibleRole
+import javax.accessibility.AccessibleState
 import javax.accessibility.AccessibleStateSet
-import org.jetbrains.skiko.OS
-import org.jetbrains.skiko.hostOs
 
 /**
  * This is a root [Accessible] for a [ComposeScene]
@@ -54,6 +53,7 @@ import org.jetbrains.skiko.hostOs
  */
 internal class ComposeSceneAccessible(
     private val forceEnableA11y: Boolean = false,
+    private val parent: () -> Accessible,
     private val accessibilityControllersProvider: () -> List<AccessibilityController>,
 ) : Accessible {
     private val a11yEnabled by lazy {
@@ -75,6 +75,10 @@ internal class ComposeSceneAccessible(
         return _accessibleContext
     }
 
+    fun indexOfChild(controller: AccessibilityController): Int {
+        return accessibilityControllersProvider().indexOf(controller)
+    }
+
     inner class ComposeSceneAccessibleContext : AccessibleContext(), AccessibleComponent {
         // Internal for testing
         internal val accessibilityControllers: List<AccessibilityController>
@@ -91,10 +95,10 @@ internal class ComposeSceneAccessible(
          * This function is used by Swing accessibility support to get accessible under a [Point]
          * For example, it is used by screen reader to read text under a cursor.
          *
-         * To support that [ComposeSceneAccessibleContext] goes through all skia roots in a [androidx.compose.ui.ComposeScene]
-         * and finds the best [Accessible] under the pointer.
+         * To support that [ComposeSceneAccessibleContext] goes through all skia roots in a
+         * [ComposeScene] and finds the best [Accessible] under the pointer.
          */
-        override fun getAccessibleAt(p: Point): Accessible? {
+        override fun getAccessibleAt(p: Point): Accessible {
             for (controller in accessibilityControllers) {
                 val rootAccessible = controller.rootAccessible
                 val context = rootAccessible.composeAccessibleContext
@@ -109,13 +113,17 @@ internal class ComposeSceneAccessible(
                 }
             }
 
-            return null
+            return this@ComposeSceneAccessible
         }
 
         override fun contains(p: Point): Boolean = true
 
         override fun getAccessibleIndexInParent(): Int {
-            return -1
+            return 0
+        }
+
+        override fun getAccessibleParent(): Accessible {
+            return parent()
         }
 
         override fun getAccessibleChildrenCount(): Int {
@@ -144,10 +152,8 @@ internal class ComposeSceneAccessible(
 
         override fun isShowing(): Boolean = true
 
-        override fun isFocusTraversable(): Boolean = true
-
-        override fun getAccessibleParent(): Accessible? {
-            return null
+        override fun isFocusTraversable(): Boolean {
+            return false
         }
 
         override fun getAccessibleComponent(): AccessibleComponent {
@@ -165,20 +171,17 @@ internal class ComposeSceneAccessible(
         }
 
         override fun getAccessibleRole(): AccessibleRole {
-            // We want to return a role that makes the ComposeScene container "transparent" to
-            // accessibility, as if its contents are inside the parent directly.
-            // On macOS, PANEL is ignored by Java's a11y (see CAccessibility.ignoredRoles), but on
-            // Windows, it makes NVDA read it as "panel".
-            // On Windows, NVDA ignores UNKNOWN, but on macOS UNKNOWN causes VoiceOver to highlight
-            // the entire component when traversing via VoiceOver shortcuts.
-            return when (hostOs) {
-                OS.MacOS -> AccessibleRole.PANEL
-                else -> AccessibleRole.UNKNOWN
-            }
+            return AccessibleRole.UNKNOWN
+        }
+
+        private val _accessibleStateSet = AccessibleStateSet().apply {
+            add(AccessibleState.ENABLED)
+            add(AccessibleState.VISIBLE)
+            add(AccessibleState.SHOWING)
         }
 
         override fun getAccessibleStateSet(): AccessibleStateSet {
-            return AccessibleStateSet()
+            return _accessibleStateSet
         }
 
         override fun setLocation(p: Point?) {

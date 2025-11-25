@@ -53,7 +53,8 @@ import kotlinx.coroutines.launch
 internal class AccessibilityController(
     val owner: SemanticsOwner,
     val desktopComponent: PlatformComponent,
-    private val onFocusReceived: (ComposeAccessible) -> Unit
+    val parent: ComposeSceneAccessible,
+    private val onFocusReceived: (ComposeAccessible) -> Unit,
 ) {
 
     /**
@@ -76,6 +77,13 @@ internal class AccessibilityController(
         }
 
         return accessibleByNodeId[nodeId]
+    }
+
+    /**
+     * Returns the index of this [AccessibilityController]'s root node in the scene.
+     */
+    fun indexInScene(): Int {
+        return parent.indexOfChild(this)
     }
 
     /**
