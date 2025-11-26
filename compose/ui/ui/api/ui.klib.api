@@ -2278,7 +2278,6 @@ final class androidx.compose.ui.spatial/RelativeLayoutBounds { // androidx.compo
 final class androidx.compose.ui.window/DialogProperties { // androidx.compose.ui.window/DialogProperties|null[0]
     constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ...) // androidx.compose.ui.window/DialogProperties.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean){}[0]
     constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., androidx.compose.ui.graphics/Color = ...) // androidx.compose.ui.window/DialogProperties.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;androidx.compose.ui.graphics.Color){}[0]
-    constructor <init>(kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., kotlin/Boolean = ..., androidx.compose.ui.graphics/Color = ..., kotlin/Boolean = ...) // androidx.compose.ui.window/DialogProperties.<init>|<init>(kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;kotlin.Boolean;androidx.compose.ui.graphics.Color;kotlin.Boolean){}[0]
 
     final val dismissOnBackPress // androidx.compose.ui.window/DialogProperties.dismissOnBackPress|{}dismissOnBackPress[0]
         final fun <get-dismissOnBackPress>(): kotlin/Boolean // androidx.compose.ui.window/DialogProperties.dismissOnBackPress.<get-dismissOnBackPress>|<get-dismissOnBackPress>(){}[0]

@@ -99,7 +99,7 @@ private const val AnimatedLayerDisappearanceDuration = 0.1
  * @property animateTransition Whether to animate the appearance and disappearance of the dialog.
  */
 @Immutable
-actual class DialogProperties(
+actual class DialogProperties @ExperimentalComposeUiApi constructor(
     actual val dismissOnBackPress: Boolean = true,
     actual val dismissOnClickOutside: Boolean = true,
     actual val usePlatformDefaultWidth: Boolean = true,
@@ -283,9 +283,7 @@ private class AnimatedDialogAppearanceController(
     private var appearAnimationJob: Job? = null
     private val graphicsLayer = graphicsContext.createGraphicsLayer()
 
-    override var modifier by mutableStateOf(
-        Modifier.drawWithGraphicsLayer(appearanceProgress)
-    )
+    override val modifier = Modifier.drawWithGraphicsLayer(appearanceProgress)
 
     override var scrimColor: Color? = Color.Transparent
         set(value) {
@@ -309,7 +307,6 @@ private class AnimatedDialogAppearanceController(
 
     override fun hideDialog() {
         appearAnimationJob?.cancel()
-        modifier = Modifier
 
         layer.setContent {
             Layout(
