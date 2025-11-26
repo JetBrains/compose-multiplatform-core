@@ -47,6 +47,7 @@ internal actual fun BasicEdgeToEdgeDialog(
             usePlatformInsets = false,
             useSoftwareKeyboardInset = false,
             scrimColor = Color.Transparent,
+            // TODO: animateTransition = false,
         ),
     ) {
         val predictiveBackState = rememberPredictiveBackState()

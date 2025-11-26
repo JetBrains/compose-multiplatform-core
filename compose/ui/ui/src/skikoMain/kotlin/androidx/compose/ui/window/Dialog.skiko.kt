@@ -95,6 +95,7 @@ private const val AnimatedLayerDisappearanceDuration = 0.1
  * @property useSoftwareKeyboardInset Whether the size of the dialog's content should be limited by
  * software keyboard inset.
  * @property scrimColor Color of background fill.
+ * @property animateTransition Whether to animate the appearance and disappearance of the dialog.
  */
 @Immutable
 actual class DialogProperties(
@@ -104,6 +105,7 @@ actual class DialogProperties(
     val usePlatformInsets: Boolean = true,
     val useSoftwareKeyboardInset: Boolean = true,
     val scrimColor: Color = DefaultScrimColor,
+    val animateTransition: Boolean = ComposeUiFlags.isDialogAnimationEnabled,
 ) {
     actual constructor(
         dismissOnBackPress: Boolean,
@@ -116,6 +118,23 @@ actual class DialogProperties(
         usePlatformInsets = true,
         useSoftwareKeyboardInset = true,
         scrimColor = DefaultScrimColor,
+    )
+
+    constructor(
+        dismissOnBackPress: Boolean = true,
+        dismissOnClickOutside: Boolean = true,
+        usePlatformDefaultWidth: Boolean = true,
+        usePlatformInsets: Boolean = true,
+        useSoftwareKeyboardInset: Boolean = true,
+        scrimColor: Color = DefaultScrimColor,
+    ) : this(
+        dismissOnBackPress = dismissOnBackPress,
+        dismissOnClickOutside = dismissOnClickOutside,
+        usePlatformDefaultWidth = usePlatformDefaultWidth,
+        usePlatformInsets = usePlatformInsets,
+        useSoftwareKeyboardInset = useSoftwareKeyboardInset,
+        scrimColor = scrimColor,
+        animateTransition = ComposeUiFlags.isDialogAnimationEnabled,
     )
 
     override fun equals(other: Any?): Boolean {
@@ -201,11 +220,15 @@ private fun DialogLayout(
     val graphicsContext = LocalGraphicsContext.current
 
     val animator = remember {
-        DialogAppearanceController(
-            layer = layer,
-            coroutineContext = compositionContext.effectCoroutineContext,
-            graphicsContext = graphicsContext
-        )
+        if (properties.animateTransition) {
+            AnimatedDialogAppearanceController(
+                layer = layer,
+                coroutineContext = compositionContext.effectCoroutineContext,
+                graphicsContext = graphicsContext
+            )
+        } else {
+            NonAnimatedDialogAppearanceController(layer = layer)
+        }
     }
     animator.scrimColor = properties.scrimColor
 
@@ -248,17 +271,6 @@ private interface DialogAppearanceController {
     fun onDialogShown()
     fun hideDialog()
 }
-
-private fun DialogAppearanceController(
-    layer: ComposeSceneLayer,
-    coroutineContext: CoroutineContext,
-    graphicsContext: GraphicsContext
-): DialogAppearanceController =
-    if (ComposeUiFlags.isDialogAnimationEnabled) {
-        AnimatedDialogAppearanceController(layer, coroutineContext, graphicsContext)
-    } else {
-        NonAnimatedDialogAppearanceController(layer)
-    }
 
 private class AnimatedDialogAppearanceController(
     private val layer: ComposeSceneLayer,
