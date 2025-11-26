@@ -29,6 +29,7 @@ import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.animation.easeOutTimingFunction
@@ -105,6 +106,7 @@ actual class DialogProperties(
     val usePlatformInsets: Boolean = true,
     val useSoftwareKeyboardInset: Boolean = true,
     val scrimColor: Color = DefaultScrimColor,
+    @property:ExperimentalComposeUiApi
     val animateTransition: Boolean = ComposeUiFlags.isDialogAnimationEnabled,
 ) {
     actual constructor(
