@@ -236,7 +236,8 @@ private fun TextFieldSelectionState.textManager(coroutineScope: CoroutineScope):
 private val SelectionManager.textManager: TextManager get() = object : TextManager {
     override val selectedText get() = getSelectedText() ?: AnnotatedString("")
     override val cut = null
-    override val copy = { copy() }
+    override val copy
+        get() = if (selectedText.isNotEmpty()) this@textManager::copy else null
     override val paste = null
     override val selectAll = null
     override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) {

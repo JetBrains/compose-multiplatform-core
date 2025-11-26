@@ -17,8 +17,11 @@
 package androidx.compose.foundation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -46,6 +49,7 @@ import androidx.compose.ui.test.rightClick
 import androidx.compose.ui.test.runComposeUiTest
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import java.awt.datatransfer.StringSelection
@@ -228,13 +232,38 @@ class ContextMenuTest {
             }
         }
 
-        onNodeWithTag("textfield").performMouseInput { rightClick(Offset(1f, height/2f)) }
+        onNodeWithTag("textfield").performMouseInput { rightClick(Offset(1f, height / 2f)) }
         onNodeWithText(localization.copy).apply {
             assertExists()
             performClick()
             assertDoesNotExist()
         }
     }
+
+    // https://youtrack.jetbrains.com/issue/CMP-9329
+    @Test
+    fun `contextMenuArea does not show copy action for SelectionContainer with empty selection`() =
+        runContextMenuTest {
+            val localization = object : PlatformLocalization {
+                override val copy = "copy"
+                override val cut = "cut"
+                override val paste = "paste"
+                override val selectAll = "selectAll"
+            }
+
+            setContent {
+                CompositionLocalProvider(LocalLocalization provides localization) {
+                    SelectionContainer {
+                        BasicText("Hello, row 1")
+                        Box(Modifier.testTag("box").size(16.dp))
+                        BasicText("Hello, row 2")
+                    }
+                }
+            }
+
+            onNodeWithTag("box").performMouseInput { rightClick() }
+            onNodeWithText(localization.copy).assertDoesNotExist()
+        }
 
     private fun runContextMenuTest(block: ComposeUiTest.() -> Unit) = runComposeUiTest {
         DesktopPlatform.withOverriddenCurrent(DesktopPlatform.Unknown) {
