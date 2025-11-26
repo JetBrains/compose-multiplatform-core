@@ -52,7 +52,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
+import java.awt.datatransfer.Transferable
 import kotlin.test.assertEquals
 import org.junit.Test
 
@@ -265,9 +268,133 @@ class ContextMenuTest {
             onNodeWithText(localization.copy).assertDoesNotExist()
         }
 
+    // https://youtrack.jetbrains.com/issue/CMP-9342
+    @Test
+    fun `contextMenuArea does not show context menu for SelectionContainer with empty selection`() =
+        runContextMenuTest {
+            setContent {
+                SelectionContainer {
+                    BasicText("Hello, row 1")
+                    Box(Modifier.testTag("box").size(16.dp))
+                    BasicText("Hello, row 2")
+                }
+            }
+
+            onNodeWithTag("box").performMouseInput { rightClick() }
+            onNodeWithTag(DefaultOpenContextMenuTestTag).assertDoesNotExist()
+        }
+
+    // https://youtrack.jetbrains.com/issue/CMP-9342
+    @Test
+    fun `contextMenuArea does not show context menu for SelectionContainer after changing selection`() =
+        runContextMenuTest {
+            setContent {
+                SelectionContainer {
+                    BasicText("Hello, row 1")
+                    Box(Modifier.testTag("box").size(16.dp))
+                    BasicText("Hello, row 2", Modifier.testTag("text"))
+                }
+            }
+
+            onNodeWithTag("box").performMouseInput { rightClick() }
+            onNodeWithTag(DefaultOpenContextMenuTestTag).assertDoesNotExist()
+
+            // Create a selection by dragging over the second text
+            onNodeWithTag("text").performMouseInput {
+                moveTo(Offset(1f, 5f))
+                press()
+                moveBy(Offset(50f, 5f))
+                release()
+            }
+            onNodeWithTag(DefaultOpenContextMenuTestTag).assertDoesNotExist()
+        }
+
+    // https://youtrack.jetbrains.com/issue/CMP-9342
+    @Test
+    fun `contextMenuArea does not show context menu for BTF with empty selection`() =
+        `contextMenuArea does not show context menu for text field with empty selection`(useBtf2 = false)
+
+    // https://youtrack.jetbrains.com/issue/CMP-9342
+    @Test
+    fun `contextMenuArea does not show context menu for BTF2 with empty selection`() =
+        `contextMenuArea does not show context menu for text field with empty selection`(useBtf2 = true)
+
+    private fun `contextMenuArea does not show context menu for text field with empty selection`(useBtf2: Boolean) = runContextMenuTest {
+        setContent {
+            if (useBtf2) {
+                BasicTextField(
+                    rememberTextFieldState("", initialSelection = TextRange(0, 4)),
+                    Modifier.testTag("textfield")
+                )
+            } else {
+                BasicTextField(
+                    value = TextFieldValue("", selection = TextRange(0, 4)),
+                    onValueChange = {},
+                    modifier = Modifier.testTag("textfield")
+                )
+            }
+        }
+
+        clearAwtClipboard() // Required to force no menu to show up
+
+        onNodeWithTag("textfield").performMouseInput { rightClick() }
+        onNodeWithTag(DefaultOpenContextMenuTestTag).assertDoesNotExist()
+    }
+
+    // https://youtrack.jetbrains.com/issue/CMP-9342
+    @Test
+    fun `contextMenuArea does not show context menu for BTF after changing selection`() =
+        `contextMenuArea does not show context menu for text field after changing selection`(useBtf2 = false)
+
+    // https://youtrack.jetbrains.com/issue/CMP-9342
+    @Test
+    fun `contextMenuArea does not show context menu for BTF2 after changing selection`() =
+        `contextMenuArea does not show context menu for text field after changing selection`(useBtf2 = true)
+
+        private fun `contextMenuArea does not show context menu for text field after changing selection`(useBtf2: Boolean) = runContextMenuTest {
+            setContent {
+                if (useBtf2) {
+                    BasicTextField(
+                        rememberTextFieldState(""),
+                        Modifier.testTag("textfield")
+                    )
+                } else {
+                    BasicTextField(
+                        value = TextFieldValue(""),
+                        onValueChange = {},
+                        modifier = Modifier.testTag("textfield")
+                    )
+                }
+            }
+
+            clearAwtClipboard() // Required to force no menu to show up
+            
+            onNodeWithTag("textfield").performMouseInput { rightClick() }
+            onNodeWithTag(DefaultOpenContextMenuTestTag).assertDoesNotExist()
+
+            // Create a selection by dragging over the second text
+            onNodeWithTag("textfield").performMouseInput {
+                moveTo(Offset(1f, 5f))
+                press()
+                moveBy(Offset(50f, 5f))
+                release()
+            }
+            onNodeWithTag(DefaultOpenContextMenuTestTag).assertDoesNotExist()
+        }
+
     private fun runContextMenuTest(block: ComposeUiTest.() -> Unit) = runComposeUiTest {
         DesktopPlatform.withOverriddenCurrent(DesktopPlatform.Unknown) {
             block()
         }
+    }
+
+    private fun clearAwtClipboard() {
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(object: Transferable {
+            override fun getTransferDataFlavors(): Array<out DataFlavor?>? = null
+
+            override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean = false
+
+            override fun getTransferData(flavor: DataFlavor?): Any = error("not implemented")
+        }, null)
     }
 }

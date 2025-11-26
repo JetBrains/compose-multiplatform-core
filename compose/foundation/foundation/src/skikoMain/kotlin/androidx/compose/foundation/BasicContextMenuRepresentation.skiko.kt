@@ -52,6 +52,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
@@ -104,6 +105,7 @@ internal fun DefaultOpenContextMenu(
                 .padding(vertical = 4.dp)
                 .width(IntrinsicSize.Max)
                 .verticalScroll(rememberScrollState())
+                .testTag(DefaultOpenContextMenuTestTag)
         ) {
             components.forEach { component ->
                 when (component) {
@@ -116,6 +118,8 @@ internal fun DefaultOpenContextMenu(
         }
     }
 }
+
+internal const val DefaultOpenContextMenuTestTag = "__DefaultOpenContextMenu"
 
 @Composable
 private fun MenuSeparator(color: Color) {

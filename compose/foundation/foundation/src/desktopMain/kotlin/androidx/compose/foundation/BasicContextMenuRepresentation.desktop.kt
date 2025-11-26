@@ -104,12 +104,19 @@ class DefaultContextMenuRepresentation(
                     hoverColor = itemHoverColor,
                 )
             }
-            DefaultOpenContextMenu(
-                session = session,
-                components = components,
-                popupPositionProvider = rememberPopupPositionProviderAtPosition(status.rect.center),
-                colors = colors,
-            )
+
+            if (components.isNotEmpty()) {
+                DefaultOpenContextMenu(
+                    session = session,
+                    components = components,
+                    popupPositionProvider = rememberPopupPositionProviderAtPosition(status.rect.center),
+                    colors = colors,
+                )
+            } else {
+                // Prevent the menu from popping up as soon as there is a non-empty menu items list
+                // E.g., if you start typing, or select something.
+                session.close()
+            }
         }
     }
 }
@@ -143,26 +150,31 @@ class JPopupContextMenuRepresentation(
     override fun Representation(state: ContextMenuState, items: () -> List<ContextMenuItem>) {
         val isOpen = state.status is ContextMenuState.Status.Open
         if (isOpen) {
+            // CMP-9343: should we key the remember on state, items, and createMenu?
+            // What about if it does recompute, how do we dismiss the previous menu?
             val menu = remember {
-                createMenu(items()).apply {
-                    addPopupMenuListener(object : PopupMenuListener {
-                        override fun popupMenuWillBecomeVisible(e: PopupMenuEvent?) = Unit
+                val menuItems = items()
+                if (menuItems.isNotEmpty()) {
+                    createMenu(menuItems).apply {
+                        addPopupMenuListener(object : PopupMenuListener {
+                            override fun popupMenuWillBecomeVisible(e: PopupMenuEvent?) = Unit
 
-                        override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
-                            state.status = ContextMenuState.Status.Closed
-                        }
+                            override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent?) {
+                                state.status = ContextMenuState.Status.Closed
+                            }
 
-                        override fun popupMenuCanceled(e: PopupMenuEvent?) = Unit
-                    })
-                }
+                            override fun popupMenuCanceled(e: PopupMenuEvent?) = Unit
+                        })
+                    }
+                } else null
             }
 
             DisposableEffect(Unit) {
                 val mousePosition = MouseInfo.getPointerInfo().location
                 SwingUtilities.convertPointFromScreen(mousePosition, owner)
-                menu.show(owner, mousePosition.x, mousePosition.y)
+                menu?.show(owner, mousePosition.x, mousePosition.y)
                 onDispose {
-                    menu.isVisible = false
+                    menu?.isVisible = false
                 }
             }
         }
