@@ -1037,7 +1037,7 @@ internal class AccessibilityMediator(
     private val accessibilityElementsMap =
         mutableMapOf<AccessibilityElementKey, AccessibilityElement>()
 
-    private var runOnAccessibilityElementsLoaded = {}
+    private var updateFocusOnAccessibilityElementsLoaded = false
 
     var isEnabled: Boolean = false
         set(value) {
@@ -1047,13 +1047,7 @@ internal class AccessibilityMediator(
 
                 UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, null)
 
-                runOnAccessibilityElementsLoaded = if (value) {
-                    {
-                        view.window?.setNeedsFocusUpdate()
-                    }
-                } else {
-                    {}
-                }
+                updateFocusOnAccessibilityElementsLoaded = value
             }
         }
 
@@ -1575,9 +1569,9 @@ internal class AccessibilityMediator(
         }
 
         val isSemanticsTreeLoaded = accessibilityElementsMap.size > 1
-        if (isSemanticsTreeLoaded) {
-            runOnAccessibilityElementsLoaded()
-            runOnAccessibilityElementsLoaded = {}
+        if (isSemanticsTreeLoaded && updateFocusOnAccessibilityElementsLoaded) {
+            view.window?.setNeedsFocusUpdate()
+            updateFocusOnAccessibilityElementsLoaded = false
         }
 
         return updateFocusedElement()
