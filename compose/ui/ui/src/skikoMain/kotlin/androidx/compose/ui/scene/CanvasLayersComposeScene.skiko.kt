@@ -607,7 +607,8 @@ private class CanvasLayersComposeSceneImpl(
         }
 
         override fun setContent(content: @Composable () -> Unit) {
-            check(!isClosed) { "AttachedComposeSceneLayer is closed" }
+            if (isClosed) { return }
+            // TODO: Verify check(!isClosed) { "AttachedComposeSceneLayer is closed" }
             composition?.dispose()
             composition = owner.setContent(
                 parent = this@AttachedComposeSceneLayer.compositionContext,
