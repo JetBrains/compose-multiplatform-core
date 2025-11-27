@@ -1037,6 +1037,8 @@ internal class AccessibilityMediator(
     private val accessibilityElementsMap =
         mutableMapOf<AccessibilityElementKey, AccessibilityElement>()
 
+    private var runOnAccessibilityElementsLoaded = {}
+
     var isEnabled: Boolean = false
         set(value) {
             if (field != value) {
@@ -1044,6 +1046,14 @@ internal class AccessibilityMediator(
                 onSemanticsChange()
 
                 UIAccessibilityPostNotification(UIAccessibilityScreenChangedNotification, null)
+
+                runOnAccessibilityElementsLoaded = if (value) {
+                    {
+                        view.window?.setNeedsFocusUpdate()
+                    }
+                } else {
+                    {}
+                }
             }
         }
 
@@ -1092,7 +1102,6 @@ internal class AccessibilityMediator(
                 )
             }
         }
-
     }
 
     /**
@@ -1563,6 +1572,12 @@ internal class AccessibilityMediator(
             focusedElementKey?.let {
                 focusMode = AccessibilityElementFocusMode.Focus(it)
             }
+        }
+
+        val isSemanticsTreeLoaded = accessibilityElementsMap.size > 1
+        if (isSemanticsTreeLoaded) {
+            runOnAccessibilityElementsLoaded()
+            runOnAccessibilityElementsLoaded = {}
         }
 
         return updateFocusedElement()
