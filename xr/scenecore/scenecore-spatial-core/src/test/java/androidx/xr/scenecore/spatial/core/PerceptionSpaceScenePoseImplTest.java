@@ -129,7 +129,7 @@ public final class PerceptionSpaceScenePoseImplTest {
         Matrix4 activitySpaceMatrix =
                 Matrix4.fromTrs(
                         new Vector3(4.0f, 5.0f, 6.0f),
-                        Quaternion.fromEulerAngles(new Vector3(90f, 0f, 0f)).toNormalized(),
+                        Quaternion.fromEulerAngles(new Vector3(90f, 0f, 0f)),
                         new Vector3(1.0f, 1.0f, 1.0f));
         sendTransformEvent(ShadowNodeTransform.create(new Mat4f(activitySpaceMatrix.getData())));
         mExecutor.runAll();

@@ -27,7 +27,7 @@ import androidx.pdf.content.PdfPageImageContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
-import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
 
@@ -126,14 +126,14 @@ public fun android.graphics.pdf.models.ListItem.toContentClass(): ListItem =
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 @SuppressLint("WrongConstant")
-public fun FormEditRecord.toAndroidClass(): android.graphics.pdf.models.FormEditRecord =
+public fun FormEditInfo.toAndroidClass(): android.graphics.pdf.models.FormEditRecord =
     requireSdkExtensionVersion {
         val builder =
             android.graphics.pdf.models.FormEditRecord.Builder(type, pageNumber, widgetIndex)
         when (type) {
-            FormEditRecord.EDIT_TYPE_CLICK -> builder.setClickPoint(clickPoint)
-            FormEditRecord.EDIT_TYPE_SET_TEXT -> builder.setText(text)
-            FormEditRecord.EDIT_TYPE_SET_INDICES -> builder.setSelectedIndices(selectedIndices)
+            FormEditInfo.EDIT_TYPE_CLICK -> builder.setClickPoint(clickPoint)
+            FormEditInfo.EDIT_TYPE_SET_TEXT -> builder.setText(text)
+            FormEditInfo.EDIT_TYPE_SET_INDICES -> builder.setSelectedIndices(selectedIndices)
             else -> {}
         }
         builder.build()

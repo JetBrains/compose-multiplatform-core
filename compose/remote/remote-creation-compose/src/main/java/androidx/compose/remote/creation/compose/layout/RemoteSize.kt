@@ -19,6 +19,7 @@ package androidx.compose.remote.creation.compose.layout
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.geometry.Size
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -31,6 +32,18 @@ public class RemoteSize {
         this.width = width
         this.height = height
     }
+
+    public constructor(size: Size) {
+        this.width = size.width.rf
+        this.height = size.height.rf
+    }
+
+    public fun offsetSize(offset: RemoteOffset): RemoteSize {
+        return RemoteSize(width - offset.x, height - offset.y)
+    }
+
+    public val minDimension: RemoteFloat
+        get() = width.min(height)
 
     public fun asSize(): Size {
         return Size(width.internalAsFloat(), height.internalAsFloat())

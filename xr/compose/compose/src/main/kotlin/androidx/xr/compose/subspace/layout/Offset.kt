@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
+import androidx.xr.compose.subspace.node.invalidatePlacement
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector3
@@ -38,9 +39,7 @@ private class SubspaceOffsetElement(public val x: Dp, public val y: Dp, public v
     }
 
     override fun update(node: OffsetNode) {
-        node.x = x
-        node.y = y
-        node.z = z
+        node.update(x, y, z)
     }
 
     override fun hashCode(): Int {
@@ -60,6 +59,16 @@ private class SubspaceOffsetElement(public val x: Dp, public val y: Dp, public v
 
 private class OffsetNode(public var x: Dp, public var y: Dp, public var z: Dp) :
     SubspaceLayoutModifierNode, SubspaceModifier.Node() {
+
+    override val shouldAutoInvalidate: Boolean = false
+
+    fun update(x: Dp, y: Dp, z: Dp) {
+        if (this.x != x || this.y != y || this.z != z) invalidatePlacement()
+        this.x = x
+        this.y = y
+        this.z = z
+    }
+
     override fun SubspaceMeasureScope.measure(
         measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,

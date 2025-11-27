@@ -28,7 +28,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -124,11 +123,8 @@ internal class LocalCallSilenceExtensionImpl(
         binder: LocalCallSilenceStateListenerRemote,
     ) {
         Log.d(TAG, "onCreateLocalSilenceExtension: actions=$remoteActions")
-        // Synchronize initial state with remote
-        binder.updateIsLocallySilenced(initialSilenceState)
         // Setup listeners for changes to state
         isLocallySilenced
-            .drop(1) // drop the first value since the sync was already sent out
             .onEach {
                 // send all updates to the remote surfaces
                 // VoIP --> ICS
@@ -147,6 +143,10 @@ internal class LocalCallSilenceExtensionImpl(
      */
     private suspend fun localCallSilenceStateChanged(isSilenced: Boolean) {
         Log.i(TAG, "localCallSilenceStateChanged: isSilenced=[$isSilenced]")
+        // notify the voip application of the remote InCallService update
         onLocalSilenceUpdate(isSilenced)
+        // update all remote surfaces to be in sync with the new state
+        // and the isLocallySilenced state
+        updateIsLocallySilenced(isSilenced)
     }
 }

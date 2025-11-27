@@ -32,5 +32,67 @@ final class ImpressApiTestHelper {
 
     static native void nativeSetLoadGltfAssetFailure(String message);
 
+    static native void nativeSetExpectedLoadGltfAssetTestPattern(int size, String key);
+
+    static native void nativeSetExpectedReleaseGltfAsset(long token);
+
+    static native void nativeSetExpectedInstanceGltfModel(long token, boolean enableCollider);
+
+    static native void nativeSetInstanceGltfModelSuccess(int nodeId);
+
+    static native void nativeSetExpectedSetGltfModelColliderEnabled(
+            int nodeId, boolean enableCollider);
+
+    static native void nativeSetExpectedAnimateGltfModel(
+            int nodeId, String animationName, boolean loop);
+
+    static native void nativeSetAnimateGltfModelSuccess();
+
+    static native void nativeSetAnimateGltfModelFailure(String message);
+
+    static native void nativeSetExpectedStopGltfModelAnimation(int nodeId);
+
+    static native void nativeSetExpectedGetGltfModelLocalBounds(int nodeId);
+
+    static native void nativeSetGetGltfModelLocalBoundsSuccess(float[] center, float[] halfExtents);
+
+    static native void nativeSetExpectedSetMaterialOverride(
+            int nodeId, long materialHandle, String nodeName, int primitiveIndex);
+
+    static native void nativeSetExpectedClearMaterialOverride(
+            int nodeId, String nodeName, int primitiveIndex);
+
+    // Hooks for the skybox operations.
+    static native void nativeSetExpectedLoadIblPath(String path);
+
+    static native void nativeSetLoadIblAssetSuccess(long token);
+
+    static native void nativeSetLoadIblAssetFailure(String message);
+
+    static native void nativeSetExpectedLoadIblAssetTestPattern(int size, String key);
+
+    static native void nativeSetExpectedReleaseIblAsset(long token);
+
+    static native void nativeSetExpectedSetEnvironmentLight(long token);
+
+    static native void nativeSetExpectedClearEnvironmentLight();
+
+    // Hooks for the texture operations.
+    static native void nativeSetExpectedLoadTexturePath(String path);
+
+    static native void nativeSetLoadTextureAssetSuccess(long token);
+
+    static native void nativeSetLoadTextureAssetFailure(String message);
+
+    static native void nativeSetExpectedBorrowReflectionTexture();
+
+    static native void nativeSetBorrowReflectionTextureSuccessToken(long token);
+
+    static native void nativeSetExpectedGetReflectionTextureFromIbl(long iblToken);
+
+    static native void nativeSetGetReflectionTextureFromIblSuccessToken(long textureToken);
+
+    static native void nativeSetExpectedBorrowTexture(long textureHandle);
+
     private ImpressApiTestHelper() {}
 }

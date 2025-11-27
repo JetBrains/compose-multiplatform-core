@@ -27,13 +27,16 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     sourceSets {
-        test.java.srcDirs += "src/test-common/java"
-        androidTest.java.srcDirs += "src/test-common/java"
+        def testDir = "src/test-common/java"
+        test.java.directories.add(testDir)
+        test.kotlin.directories.add(testDir)
+        androidTest.java.directories.add(testDir)
+        androidTest.kotlin.directories.add(testDir)
+
     }
     namespace = "androidx.datastore.rxjava3"
 }

@@ -536,7 +536,7 @@ class SwipeToRevealScreenshotTest {
             moveTo(Offset(center.x - (screenWidthPx!! * 0.25f), center.y))
         }
 
-        rule.verifyScreenshot(testName, screenshotRule, testTag = TEST_TAG)
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     @Test

@@ -11,7 +11,6 @@ import androidx.stableaidl.StableAidlBuildTypeDslExtension
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
     id("androidx.stableaidl")
 }
 
@@ -84,7 +83,11 @@ dependencies {
 }
 
 android {
-    compileSdk = 36
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
     buildFeatures {
         aidl = true
     }

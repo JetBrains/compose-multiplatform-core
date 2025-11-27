@@ -75,6 +75,9 @@ public final class MediaRouteDiscoveryRequest {
 
     private MediaRouteDiscoveryRequest(Bundle bundle) {
         mBundle = bundle;
+        // Scan with screen off is intentionally not bundled to prevent service clients from
+        // requesting screen off scanning. Only MR2 requests are allowed to scan while the screen is
+        // off.
         mShouldScanWithScreenOff = false;
     }
 

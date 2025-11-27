@@ -28,16 +28,18 @@ import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
+    id("AndroidXComposePlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     implementation(project(":xr:arcore:arcore"))
     implementation(project(":xr:assets"))
     implementation(project(":xr:arcore:arcore-projected"))
+    implementation(project(":xr:glimmer:glimmer"))
 
     implementation("androidx.activity:activity:1.9.3")
+    implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.errorprone:error_prone_annotations:2.30.0")
 
@@ -57,6 +59,10 @@ android {
             minifyEnabled = true
             shrinkResources = true
         }
+    }
+
+    adbOptions {
+        installOptions = ["-r", "-d", "-g"]
     }
 }
 

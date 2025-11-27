@@ -41,7 +41,7 @@ internal typealias TransactionWrapper<T> = suspend (suspend () -> T) -> T
 internal class PassthroughConnectionPool(
     private val driver: SQLiteDriver,
     private val fileName: String,
-    private val transactionWrapper: TransactionWrapper<*>? = null,
+    private val transactionWrapper: TransactionWrapper<Any?>? = null,
 ) : ConnectionPool {
 
     private val connection = lazy { driver.open(fileName) }
@@ -75,7 +75,7 @@ internal class PassthroughConnectionPool(
 }
 
 private class PassthroughConnection(
-    val transactionWrapper: TransactionWrapper<*>?,
+    val transactionWrapper: TransactionWrapper<Any?>?,
     val delegate: SQLiteConnection,
 ) : Transactor, RawConnectionAccessor {
 

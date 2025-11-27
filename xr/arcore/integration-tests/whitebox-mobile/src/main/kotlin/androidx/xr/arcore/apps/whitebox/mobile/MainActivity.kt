@@ -43,6 +43,7 @@ import androidx.xr.arcore.apps.whitebox.mobile.facemeshing.FaceMeshActivity
 import androidx.xr.arcore.apps.whitebox.mobile.geospatial.GeospatialActivity
 import androidx.xr.arcore.apps.whitebox.mobile.hittest.HitTestActivity
 import androidx.xr.arcore.apps.whitebox.mobile.planes.PlanesActivity
+import androidx.xr.runtime.Log
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -51,6 +52,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Log.enabled = true
+        Log.level = Log.Level.VERBOSE
 
         setContent { WhiteboxHomeScreen() }
     }

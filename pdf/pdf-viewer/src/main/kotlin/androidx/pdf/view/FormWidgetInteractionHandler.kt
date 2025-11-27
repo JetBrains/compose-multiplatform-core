@@ -19,50 +19,36 @@ package androidx.pdf.view
 import android.content.Context
 import android.graphics.Point
 import android.graphics.PointF
-import android.graphics.RectF
-import android.os.DeadObjectException
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
-import androidx.core.graphics.toRectF
-import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.R
-import androidx.pdf.exceptions.RequestFailedException
-import androidx.pdf.exceptions.RequestMetadata
-import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
-import androidx.pdf.util.FORM_APPLY_EDIT_REQUEST_NAME
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 
 /**
  * Handles user interaction with different types of form widgets in a PDF document and assembles a
- * [FormEditRecord] based on the interaction. The class also handles responsibilities like creating
+ * [FormEditInfo] based on the interaction. The class also handles responsibilities like creating
  * drop-down menus or creating text fields for user input.
  */
 internal class FormWidgetInteractionHandler(
     private val context: Context,
-    private val pdfDocument: PdfDocument,
     private val backgroundScope: CoroutineScope,
-    private val errorFlow: MutableSharedFlow<Throwable>,
     private val placeTextInputInLayout: (FormFillingEditText?) -> Unit,
 ) {
-
-    private val _invalidatedAreas =
-        MutableSharedFlow<Pair<Int, List<RectF>>>(replay = pdfDocument.pageCount)
-
-    val invalidatedAreas: SharedFlow<Pair<Int, List<RectF>>>
-        get() = _invalidatedAreas
-
     private val formFillingTextInputFactory = FormFillingTextInputFactory(context)
 
-    private var currentApplyEditJob: Job? = null
+    internal val formWidgetUpdates: SharedFlow<FormEditInfo>
+        get() = _formWidgetUpdates
+
+    private val _formWidgetUpdates = MutableSharedFlow<FormEditInfo>()
 
     /** Entry point to handle interaction with the formWidget. */
     fun handleInteraction(touchPoint: PdfPoint, formWidgetInfo: FormWidgetInfo) {
@@ -77,9 +63,11 @@ internal class FormWidgetInteractionHandler(
             FormWidgetInfo.WIDGET_TYPE_PUSHBUTTON -> {
                 handleInteractionWithClickTypeWidget(pageNum, pdfCoordinates, formWidgetInfo)
             }
+
             FormWidgetInfo.WIDGET_TYPE_TEXTFIELD -> {
                 handleInteractionWithTextWidget(pageNum, formWidgetInfo)
             }
+
             FormWidgetInfo.WIDGET_TYPE_LISTBOX,
             FormWidgetInfo.WIDGET_TYPE_COMBOBOX -> {
                 handleInteractionWithChoiceSelectionWidget(pageNum, formWidgetInfo)
@@ -88,21 +76,21 @@ internal class FormWidgetInteractionHandler(
     }
 
     /** Implements logic to take user input in a click-type widget. */
-    fun handleInteractionWithClickTypeWidget(
+    private fun handleInteractionWithClickTypeWidget(
         pageNum: Int,
         pdfCoordinates: PointF,
         formWidgetInfo: FormWidgetInfo,
     ) {
-        val formEditRecord =
-            FormEditRecord(
+        val formEditInfo =
+            FormEditInfo(
                 pageNum,
                 formWidgetInfo.widgetIndex,
                 clickPoint = Point(pdfCoordinates.x.roundToInt(), pdfCoordinates.y.roundToInt()),
             )
-        applyEditRecord(pageNum, formEditRecord)
+        relayFormEditInfo(formEditInfo)
     }
 
-    /** Implements logic to take user input in a text field. Once done assembles a FormEditRecord */
+    /** Implements logic to take user input in a text field. Once done assembles a FormEditInfo */
     fun handleInteractionWithTextWidget(
         pageNum: Int,
         formWidgetInfo: FormWidgetInfo,
@@ -139,24 +127,24 @@ internal class FormWidgetInteractionHandler(
 
     fun commitEditTextValue(formFillingEditText: FormFillingEditText) {
         formFillingEditText.editText.clearFocus()
-        // send a signal to PdfView to remove the existing editText
-        placeTextInputInLayout.invoke(null)
-        applyEditRecord(
-            formFillingEditText.pageNum,
-            FormEditRecord(
+        hideKeyboard(formFillingEditText.editText)
+        val formEditInfo =
+            FormEditInfo(
                 formFillingEditText.pageNum,
                 formFillingEditText.formWidget.widgetIndex,
                 formFillingEditText.editText.text.toString(),
-            ),
-        )
-        hideKeyboard(formFillingEditText.editText)
+            )
+        relayFormEditInfo(formEditInfo)
     }
 
     /**
      * Creates a drop-down menu with a list of options. Once option is selected by the user,
-     * assembles a FormEditRecord
+     * assembles a FormEditInfo
      */
-    fun handleInteractionWithChoiceSelectionWidget(pageNum: Int, formWidgetInfo: FormWidgetInfo) {
+    private fun handleInteractionWithChoiceSelectionWidget(
+        pageNum: Int,
+        formWidgetInfo: FormWidgetInfo,
+    ) {
         if (formWidgetInfo.multiSelect) {
             showMultiChoiceSelectMenu(pageNum, formWidgetInfo)
         } else {
@@ -210,44 +198,17 @@ internal class FormWidgetInteractionHandler(
         formWidgetInfo: FormWidgetInfo,
         selectedItemIndices: List<Int>,
     ) {
-        val formEditRecord =
-            FormEditRecord(
+        val formEditInfo =
+            FormEditInfo(
                 pageNum,
                 formWidgetInfo.widgetIndex,
                 selectedIndices = selectedItemIndices.toIntArray(),
             )
 
-        applyEditRecord(pageNum, formEditRecord)
+        relayFormEditInfo(formEditInfo)
     }
 
-    /** Calls pdfDocument.applyEdit inside a CoroutineScope */
-    fun applyEditRecord(pageNum: Int, formEditRecord: FormEditRecord) {
-        val previousApplyEditJob = currentApplyEditJob
-        currentApplyEditJob =
-            backgroundScope.launch {
-                previousApplyEditJob?.join()
-                try {
-                    _invalidatedAreas.emit(
-                        pageNum to
-                            pdfDocument.applyEdit(pageNum, formEditRecord).map { it.toRectF() }
-                    )
-                } catch (error: Exception) {
-                    when (error) {
-                        is DeadObjectException,
-                        is IllegalArgumentException -> {
-                            val exception =
-                                RequestFailedException(
-                                    requestMetadata =
-                                        RequestMetadata(
-                                            requestName = FORM_APPLY_EDIT_REQUEST_NAME,
-                                            pageRange = pageNum..pageNum,
-                                        ),
-                                    throwable = error,
-                                )
-                            errorFlow.emit(exception)
-                        }
-                    }
-                }
-            }
+    private fun relayFormEditInfo(formEditInfo: FormEditInfo) {
+        backgroundScope.launch { _formWidgetUpdates.emit(formEditInfo) }
     }
 }

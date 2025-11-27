@@ -285,7 +285,8 @@ public class ListState(firstVisibleItemIndex: Int = 0, firstVisibleItemScrollOff
 
     override fun dispatchRawDelta(delta: Float): Float = backingState.dispatchRawDelta(delta)
 
-    override val isScrollInProgress: Boolean = backingState.isScrollInProgress
+    override val isScrollInProgress: Boolean
+        get() = backingState.isScrollInProgress
 
     @get:Suppress("GetterSetterNames")
     override var canScrollForward: Boolean by mutableStateOf(false)

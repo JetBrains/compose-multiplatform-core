@@ -19,21 +19,14 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.os.Bundle
-import androidx.compose.remote.core.CoreDocument
-import androidx.compose.remote.core.RcPlatformServices
-import androidx.compose.remote.core.RcProfiles
-import androidx.compose.remote.creation.RemoteComposeWriter
-import androidx.compose.remote.creation.compose.capture.CreationDisplayInfo
-import androidx.compose.remote.creation.compose.capture.PendingIntentAwareWriter
-import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
+import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.PendingIntentWriterCallback
+import androidx.compose.remote.creation.compose.capture.captureRemoteDocument
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
-import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
-import androidx.compose.remote.creation.profile.Profile
+import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.runtime.Composable
 import androidx.glance.wear.WearWidgetRawContent
-import kotlin.coroutines.resume
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.suspendCancellableCoroutine
 
 internal object WearWidgetCapture {
     const val PENDING_INTENT_KEY = "pending_intents"
@@ -47,30 +40,20 @@ internal object WearWidgetCapture {
         context: Context,
         creationDisplayInfo: CreationDisplayInfo,
         content: @Composable @RemoteComposable () -> Unit,
-    ): WearWidgetRawContent = suspendCancellableCoroutine { continuation ->
-        val pendingIntents = WidgetPendingIntents()
-        RemoteComposeCapture(
-            context = context,
-            creationDisplayInfo = creationDisplayInfo,
-            immediateCapture = true,
-            onPaint = { view, writer ->
-                if (continuation.isActive) {
-                    continuation.resume(
-                        WearWidgetRawContent(
-                            rcDocument = writer.buffer().copyOfRange(0, writer.bufferSize()),
-                            extras = Bundle().addPendingIntents(pendingIntents),
-                        )
-                    )
-                }
-                true
-            },
-            onCaptureReady = @Composable {},
-            profile = WearWidgetProfile(pendingIntents),
-            content = content,
+    ): WearWidgetRawContent {
+        val writerCallbacks = WidgetPendingIntents()
+        val remoteDocument =
+            captureRemoteDocument(
+                context,
+                creationDisplayInfo,
+                RcPlatformProfiles.WEAR_WIDGETS,
+                writerCallbacks,
+                content,
+            )
+        return WearWidgetRawContent(
+            rcDocument = remoteDocument,
+            extras = Bundle().addPendingIntents(writerCallbacks),
         )
-        continuation.invokeOnCancellation {
-            // TODO: can we cancel the capture?
-        }
     }
 
     private fun Bundle.addPendingIntents(widgetPendingIntents: WidgetPendingIntents): Bundle {
@@ -80,10 +63,11 @@ internal object WearWidgetCapture {
 }
 
 /** The collected [PendingIntent] on the widget, to be sent as sidecar bundle with the document. */
-internal class WidgetPendingIntents {
+@SuppressLint("RestrictedApiAndroidX")
+internal class WidgetPendingIntents : PendingIntentWriterCallback {
     private val pendingIntentList: MutableList<PendingIntent> = mutableListOf()
 
-    fun store(pendingIntent: PendingIntent): Int {
+    override fun storePendingIntent(pendingIntent: PendingIntent): Int {
         val existingIndex = pendingIntentList.indexOfFirst { it === pendingIntent }
         if (existingIndex != -1) {
             return existingIndex
@@ -103,48 +87,4 @@ internal class WidgetPendingIntents {
                 putParcelable("$i", get(i))
             }
         }
-}
-
-/**
- * A profile that allows us to store the PendingIntents. The idea being we store the [PendingIntent]
- * in a list and store its index in the list into the RemoteCompose document.
- */
-@SuppressLint("RestrictedApiAndroidX")
-internal class WearWidgetProfile(widgetPendingIntents: WidgetPendingIntents) :
-    Profile(
-        CoreDocument.DOCUMENT_API_LEVEL,
-        RcProfiles.PROFILE_WEAR_WIDGETS,
-        AndroidxRcPlatformServices(),
-        { width, height, contentDescription, profile ->
-            WearWidgetRemoteComposeWriter(
-                widgetPendingIntents,
-                width,
-                height,
-                contentDescription,
-                apiLevel = CoreDocument.DOCUMENT_API_LEVEL,
-                profiles = profile.operationsProfiles,
-                platform = profile.platform,
-            )
-        },
-    )
-
-/**
- * A [RemoteComposeWriter] that stores [PendingIntent]s into the provided [WidgetPendingIntents],
- * and returns its stored index for the host to retrieve the corresponding [PendingIntent]
- */
-@SuppressLint("RestrictedApiAndroidX")
-internal class WearWidgetRemoteComposeWriter(
-    val widgetPendingIntents: WidgetPendingIntents,
-    width: Int,
-    height: Int,
-    contentDescription: String,
-    apiLevel: Int,
-    profiles: Int,
-    platform: RcPlatformServices,
-) :
-    RemoteComposeWriter(width, height, contentDescription, apiLevel, profiles, platform),
-    PendingIntentAwareWriter {
-
-    override fun storePendingIntent(pendingIntent: PendingIntent) =
-        widgetPendingIntents.store(pendingIntent)
 }

@@ -16,11 +16,11 @@
 
 package androidx.xr.arcore.apps.whitebox.mobile.common
 
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.SessionCreateApkRequired
 import androidx.xr.runtime.SessionCreateResult
 import com.google.ar.core.ArCoreApk
@@ -133,7 +133,7 @@ class ArCoreVerificationHelper(
                 )
             ) {
                 ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
-                    Log.i(TAG, "ARCore installation requested.")
+                    Log.info { "ARCore installation requested." }
                     installRequested = true
                     return
                 }
@@ -181,7 +181,7 @@ class ArCoreVerificationHelper(
         private val TAG = this::class.simpleName
 
         private fun <F> showErrorMessage(activity: ComponentActivity, error: F) {
-            Log.e(TAG, error.toString())
+            Log.error { error.toString() }
             Toast.makeText(activity, error.toString(), Toast.LENGTH_LONG).show()
         }
 

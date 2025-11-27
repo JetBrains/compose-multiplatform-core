@@ -192,7 +192,7 @@ class PdfViewAccessibilityManagerTest {
             }
 
         val topPageMargin = pdfView.context.getDimensions(R.dimen.top_page_margin)
-        val pageSpacing = pdfView.context.getDimensions(R.dimen.vertical_page_spacing)
+        val pageSpacing = pdfView.context.getDimensions(R.dimen.pdf_vertical_page_spacing)
 
         // Wait until layout completes for the required pages
         pdfDocument.waitForLayout(untilPage = 5)

@@ -17,7 +17,6 @@
 package androidx.xr.arcore.projected.testapp
 
 import android.os.Bundle
-import android.util.Log
 import android.view.KeyEvent
 import android.widget.TextView
 import androidx.activity.ComponentActivity
@@ -27,6 +26,7 @@ import androidx.xr.arcore.CreateGeospatialPoseFromPoseSuccess
 import androidx.xr.arcore.CreatePoseFromGeospatialPoseSuccess
 import androidx.xr.arcore.Geospatial
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
@@ -85,12 +85,12 @@ class ProjectedTestAppActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.i(TAG, "onCreate")
+        Log.info { "onCreate" }
     }
 
     override fun onResume() {
         super.onResume()
-        Log.i(TAG, "onResume")
+        Log.info { "onResume" }
         textView = TextView(this)
         textView.text = "\n\n\n\nWaiting for Geospatial Pose..."
         setContentView(textView)
@@ -98,9 +98,9 @@ class ProjectedTestAppActivity : ComponentActivity() {
             delay(4000) // TODO: b/436981970 - the onResume 2x is happening again with this change.
             tryCreateSession()
             lifecycleScope.launch {
-                Log.i(TAG, "before sessionInitialized.await()")
+                Log.info { "before sessionInitialized.await()" }
                 sessionInitialized.await()
-                Log.i(TAG, "sessionInitialized.await()")
+                Log.info { "sessionInitialized.await()" }
                 geospatial = Geospatial.getInstance(session)
                 // Check VPS availability
                 checkVpsAvailability(37.422, -122.084) // Googleplex coordinates
@@ -114,22 +114,22 @@ class ProjectedTestAppActivity : ComponentActivity() {
 
     override fun onPause() {
         super.onPause()
-        Log.i(TAG, "onPause")
+        Log.info { "onPause" }
     }
 
     override fun onStop() {
         super.onStop()
-        Log.i(TAG, "onStop")
+        Log.info { "onStop" }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.i(TAG, "onDestroy")
+        Log.info { "onDestroy" }
     }
 
     override fun onRestart() {
         super.onRestart()
-        Log.i(TAG, "onRestart")
+        Log.info { "onRestart" }
     }
 
     private fun update() {
@@ -170,7 +170,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
                     currentGeospatialPose.latitude != 0.0 && currentGeospatialPose.longitude != 0.0
 
                 if (!isCurrentPoseValid) {
-                    Log.w(TAG, "Skipping frame due to invalid currentGeospatialPose.")
+                    Log.warn { "Skipping frame due to invalid currentGeospatialPose." }
                     return "\nWaiting for a valid Geospatial Pose..."
                 }
 
@@ -178,7 +178,7 @@ class ProjectedTestAppActivity : ComponentActivity() {
                     initialGeospatialPose = currentGeospatialPose
                 }
 
-                Log.i(TAG, "GeospatialPose from device pose: ${currentGeospatialPose}")
+                Log.info { "GeospatialPose from device pose: ${currentGeospatialPose}" }
 
                 checkVpsAvailability(
                     currentGeospatialPose.latitude,
@@ -192,18 +192,18 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 return text
             }
             else -> {
-                Log.e(TAG, "Failed to get GeospatialPose from device pose: $geospatialPoseResult")
+                Log.error { "Failed to get GeospatialPose from device pose: $geospatialPoseResult" }
                 return "\nError getting GeospatialPose: $geospatialPoseResult"
             }
         }
     }
 
     private fun checkVpsAvailability(latitude: Double, longitude: Double) {
-        Log.i(TAG, "checkVpsAvailability latitude: $latitude, longitude: $longitude")
+        Log.info { "checkVpsAvailability latitude: $latitude, longitude: $longitude" }
         lifecycleScope.launch {
             val vpsAvailabilityResult = geospatial.checkVpsAvailability(latitude, longitude)
             vpsStatusMessage = getVpsMessage(vpsAvailabilityResult)
-            Log.i(TAG, "VPS availability: $vpsStatusMessage ($vpsAvailabilityResult)")
+            Log.info { "VPS availability: $vpsStatusMessage ($vpsAvailabilityResult)" }
         }
     }
 
@@ -270,53 +270,52 @@ class ProjectedTestAppActivity : ComponentActivity() {
                 Z diff: $zDiff
             """
                         .trimIndent()
-                Log.i(TAG, "Conversion comparison:\n$message")
+                Log.info { "Conversion comparison:\n$message" }
                 return message
             } else {
                 val error = "Failed to convert Pose to GeospatialPose for comparison"
-                Log.e(TAG, error)
+                Log.error { error }
                 return error
             }
         } else {
             val error = "Failed to convert GeospatialPose to Pose for comparison"
-            Log.e(TAG, error)
+            Log.error { error }
             return error
         }
     }
 
     public fun tryCreateSession() {
-        Log.i(TAG, "Session.create(this)")
+        Log.info { "Session.create(this)" }
         when (val result = Session.create(this)) {
             is SessionCreateSuccess -> {
                 session = result.session
                 try {
-                    Log.i(TAG, "session.configure(currentConfig)")
+                    Log.info { "session.configure(currentConfig)" }
                     when (val configResult = session.configure(currentConfig)) {
                         is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                            Log.e(
-                                TAG,
-                                "Google Play Services Location Library is not linked, this should not happen.",
-                            )
+                            Log.error {
+                                "Google Play Services Location Library is not linked, this should not happen."
+                            }
                         }
                         is SessionConfigureSuccess -> {
-                            Log.i(TAG, "Session created successfully!!")
+                            Log.info { "Session created successfully!!" }
                         }
                         else -> {
-                            Log.e(TAG, "Session creation error")
+                            Log.error { "Session creation error" }
                         }
                     }
                 } catch (e: UnsupportedOperationException) {
-                    Log.e(TAG, "Session configuration not supported.", e)
+                    Log.error(e) { "Session configuration not supported." }
                     exceptionMessage = e.message
                 } finally {
                     sessionInitialized.complete(Unit)
                 }
             }
             is SessionCreateApkRequired -> {
-                Log.e(TAG, "Can't create session due to apk missing")
+                Log.error { "Can't create session due to apk missing" }
             }
             is SessionCreateUnsupportedDevice -> {
-                Log.e(TAG, "Can't create session, unsupported device")
+                Log.error { "Can't create session, unsupported device" }
                 finish()
             }
         }
@@ -328,30 +327,29 @@ class ProjectedTestAppActivity : ComponentActivity() {
         }
         currentConfigIndex = (currentConfigIndex + 1) % configs.size
         val newConfigName = configs[currentConfigIndex].first
-        Log.i(TAG, "Switching to config: $newConfigName")
+        Log.info { "Switching to config: $newConfigName" }
         exceptionMessage = null
         lifecycleScope.launch {
             sessionInitialized.await()
-            Log.i(TAG, "Reconfiguring session with config: $newConfigName")
+            Log.info { "Reconfiguring session with config: $newConfigName" }
             try {
                 when (val configResult = session.configure(currentConfig)) {
                     is SessionConfigureSuccess -> {
-                        Log.i(TAG, "Session reconfigured successfully!")
+                        Log.info { "Session reconfigured successfully!" }
                         // Reset initial pose when config changes for correct diffs
                         initialGeospatialPose = null
                     }
                     is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                        Log.e(
-                            TAG,
-                            "Google Play Services Location Library is not linked, this should not happen.",
-                        )
+                        Log.error {
+                            "Google Play Services Location Library is not linked, this should not happen."
+                        }
                     }
                     else -> {
-                        Log.e(TAG, "Session reconfigure error: $configResult")
+                        Log.error { "Session reconfigure error: $configResult" }
                     }
                 }
             } catch (e: UnsupportedOperationException) {
-                Log.e(TAG, "Configuration failed: ", e)
+                Log.error(e) { "Configuration failed: " }
                 exceptionMessage = e.message
             }
         }

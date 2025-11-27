@@ -71,6 +71,7 @@ class ExtensionsWindowLayoutInfoAdapterTest {
                 WindowMetricsCalculatorCompat().computeCurrentWindowMetrics(activity).bounds
             val featureBounds = Rect(0, bounds.centerY(), bounds.width(), bounds.centerY())
             val oemFeature = OEMFoldingFeature(featureBounds, TYPE_HINGE, STATE_HALF_OPENED)
+            @Suppress("Deprecation") // OEMWindowLayoutInfo constructor is deprecated
             val oemInfo = OEMWindowLayoutInfo(listOf(oemFeature))
             val localFeature = HardwareFoldingFeature(Bounds(featureBounds), HINGE, HALF_OPENED)
             val expected = WindowLayoutInfo(listOf(localFeature))
@@ -90,6 +91,7 @@ class ExtensionsWindowLayoutInfoAdapterTest {
                 WindowMetricsCalculatorCompat().computeCurrentWindowMetrics(activity).bounds
             val featureBounds = Rect(0, bounds.centerY(), bounds.width(), bounds.centerY())
             val oemFeature = OEMFoldingFeature(featureBounds, TYPE_HINGE, STATE_HALF_OPENED)
+            @Suppress("Deprecation") // OEMWindowLayoutInfo constructor is deprecated
             val oemInfo = OEMWindowLayoutInfo(listOf(oemFeature))
             val localFeature = HardwareFoldingFeature(Bounds(featureBounds), HINGE, HALF_OPENED)
             val expected = WindowLayoutInfo(listOf(localFeature))

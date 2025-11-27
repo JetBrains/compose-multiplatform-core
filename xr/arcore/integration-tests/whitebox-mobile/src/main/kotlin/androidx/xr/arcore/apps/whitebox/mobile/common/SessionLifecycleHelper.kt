@@ -19,12 +19,12 @@ package androidx.xr.arcore.apps.whitebox.mobile.common
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.Manifest.permission.CAMERA
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
 import androidx.xr.runtime.SessionConfigureSuccess
@@ -91,10 +91,9 @@ class SessionLifecycleHelper(
                     try {
                         when (val configResult = session.configure(config)) {
                             is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                                Log.e(
-                                    TAG,
-                                    "Google Play Services Location Library is not linked, this should not happen.",
-                                )
+                                Log.error {
+                                    "Google Play Services Location Library is not linked, this should not happen."
+                                }
                             }
 
                             is SessionConfigureSuccess -> {
@@ -133,7 +132,7 @@ class SessionLifecycleHelper(
     }
 
     private fun <F> showErrorMessage(error: F) {
-        Log.e(TAG, error.toString())
+        Log.error { error.toString() }
         Toast.makeText(activity, error.toString(), Toast.LENGTH_LONG).show()
     }
 }

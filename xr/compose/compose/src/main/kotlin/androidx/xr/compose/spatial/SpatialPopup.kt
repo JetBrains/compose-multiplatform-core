@@ -18,6 +18,7 @@ package androidx.xr.compose.spatial
 
 import android.graphics.Rect
 import android.view.View
+import android.view.ViewParent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.spring
@@ -25,10 +26,10 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
@@ -54,11 +55,11 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import androidx.xr.compose.platform.LocalCoreEntity
-import androidx.xr.compose.platform.LocalCoreMainPanelEntity
-import androidx.xr.compose.platform.LocalOpaqueEntity
+import androidx.core.viewtree.setViewTreeDisjointParent
+import androidx.xr.compose.R
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.platform.findNearestParentEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.rememberComposeView
@@ -167,10 +168,10 @@ private fun LayoutSpatialPopup(
     val fullScreenRect = getWindowVisibleDisplayFrame()
     val windowSize = IntSize(fullScreenRect.width(), fullScreenRect.height())
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val parentEntity = LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current ?: return
+    val parentView = LocalView.current
+    val parentEntity = findNearestParentEntity()
     val view = rememberComposeView()
     val density = LocalDensity.current
-    val parentView = LocalView.current
     val transition = updateTransition(targetState = elevation, label = "restingLevelTransition")
 
     val popupOffset by remember {
@@ -227,32 +228,35 @@ private fun LayoutSpatialPopup(
                     name = "ElevatedPanel:${view.id}",
                 )
             )
-            .also { it.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density) }
+            .also {
+                it.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density)
+                view.setTag(R.id.compose_xr_local_view_entity, it)
+            }
     }
+
+    SideEffect { view.setViewTreeDisjointParent(parentView as? ViewParent ?: parentView.parent) }
 
     LaunchedEffect(density) {
         panelEntity.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density)
     }
 
     view.setContent {
-        CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) {
-            Box(
-                Modifier.onClickOutside(
-                        enabled = properties.dismissOnClickOutside,
-                        onClickOutside = { onDismissRequest?.invoke() },
+        Box(
+            Modifier.onClickOutside(
+                    enabled = properties.dismissOnClickOutside,
+                    onClickOutside = { onDismissRequest?.invoke() },
+                )
+                .constrainTo(
+                    Constraints(
+                        minWidth = 0,
+                        maxWidth = Constraints.Infinity,
+                        minHeight = 0,
+                        maxHeight = Constraints.Infinity,
                     )
-                    .constrainTo(
-                        Constraints(
-                            minWidth = 0,
-                            maxWidth = Constraints.Infinity,
-                            minHeight = 0,
-                            maxHeight = Constraints.Infinity,
-                        )
-                    )
-                    .onSizeChanged { contentSize = it }
-            ) {
-                content()
-            }
+                )
+                .onSizeChanged { contentSize = it }
+        ) {
+            content()
         }
     }
 

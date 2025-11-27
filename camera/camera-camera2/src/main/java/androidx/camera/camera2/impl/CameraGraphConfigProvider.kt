@@ -29,8 +29,6 @@ import androidx.camera.camera2.adapter.ZslControl
 import androidx.camera.camera2.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.compat.quirk.CameraQuirks
 import androidx.camera.camera2.compat.quirk.CaptureSessionStuckQuirk
-import androidx.camera.camera2.compat.quirk.CloseCaptureSessionOnDisconnectQuirk
-import androidx.camera.camera2.compat.quirk.CloseCaptureSessionOnVideoQuirk
 import androidx.camera.camera2.compat.quirk.DeviceQuirks
 import androidx.camera.camera2.compat.quirk.DisableAbortCapturesOnStopQuirk
 import androidx.camera.camera2.compat.quirk.DisableAbortCapturesOnStopWithSessionProcessorQuirk
@@ -114,7 +112,6 @@ constructor(
         val isExtensions = operatingMode == OperatingMode.EXTENSION
         val enableStreamUseCase = !isExtensions // Enable StreamUseCase if not in Extension mode
 
-        var containsVideo = false
         val streamGroupMap = mutableMapOf<Int, MutableList<CameraStream.Config>>()
         val inputStreams = mutableListOf<InputStream.Config>()
         var sessionTemplate = RequestTemplate(TEMPLATE_PREVIEW)
@@ -210,9 +207,6 @@ constructor(
                             streamList.add(stream)
                         }
                     }
-                    if (surface.containerClass == MediaCodec::class.java) {
-                        containsVideo = true
-                    }
                     if (surface != deferrableSurface) continue
                     if (zslControl.isZslSurface(surface, sessionConfig)) {
                         zslStream = stream
@@ -232,7 +226,7 @@ constructor(
             }
         }
 
-        val combinedFlags = createCameraGraphFlags(cameraQuirks, containsVideo, isExtensions)
+        val combinedFlags = createCameraGraphFlags(cameraQuirks, isExtensions)
 
         // Set video stabilization mode to capture request
         var videoStabilizationMode: Int? = null
@@ -382,7 +376,6 @@ constructor(
 
     private fun createCameraGraphFlags(
         cameraQuirks: CameraQuirks,
-        containsVideo: Boolean,
         isExtensions: Boolean,
     ): CameraGraph.Flags {
         if (cameraQuirks.quirks.contains(CaptureSessionStuckQuirk::class.java)) {
@@ -397,18 +390,11 @@ constructor(
         //  which the test is running.
         val shouldFinalizeSessionOnCloseBehavior = FinalizeSessionOnCloseQuirk.getBehavior()
 
-        val shouldCloseCaptureSessionOnDisconnect =
-            when {
-                isExtensions -> true
-                // If we can release Surfaces immediately, we'll finalize the session when the
-                // camera graph is closed (through FinalizeSessionOnCloseQuirk), and thus we
-                // won't need to explicitly close the capture session.
-                CameraQuirks.isImmediateSurfaceReleaseAllowed() -> false
-                cameraQuirks.quirks.contains(CloseCaptureSessionOnVideoQuirk::class.java) &&
-                    containsVideo -> true
-                DeviceQuirks[CloseCaptureSessionOnDisconnectQuirk::class.java] != null -> true
-                else -> false
-            }
+        // SurfaceRequest API documentation stipulates that previous SurfaceRequests are guaranteed
+        // to be detached when a new request is made. This means whenever we need a new session,
+        // all Surfaces should be disconnected. To do this, we need to close the capture session
+        // unconditionally.
+        val shouldCloseCaptureSessionOnDisconnect = true
 
         val shouldCloseCameraDeviceOnClose =
             closeCameraOnCameraGraphClose.shouldCloseCameraDevice(isExtensions)

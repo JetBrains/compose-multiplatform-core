@@ -173,17 +173,6 @@ internal fun getHighlightPaletteItems(context: Context): List<PaletteItem> {
         Color(0x996A5ACD.toInt(), outlineColor = outlineColor, tickColor = getTickColor(context)),
         Color(0x99556B2F.toInt(), outlineColor = outlineColor, tickColor = getTickColor(context)),
         Color(0x99DEB887.toInt(), outlineColor = outlineColor, tickColor = getTickColor(context)),
-        // Row#4 Emojis
-        Emoji(R.drawable.idea_emoji),
-        Emoji(R.drawable.heart_emoji),
-        Emoji(R.drawable.tick_emoji),
-        Emoji(R.drawable.cross_emoji),
-        Emoji(R.drawable.thumbs_up_emoji),
-        Emoji(R.drawable.thumbs_down_emoji),
-        Emoji(R.drawable.pin_emoji),
-        Emoji(R.drawable.poop_emoji),
-        Emoji(R.drawable.star_emoji),
-        Emoji(R.drawable.question_emoji),
     )
 }
 

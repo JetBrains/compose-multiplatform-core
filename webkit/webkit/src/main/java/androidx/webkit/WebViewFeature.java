@@ -133,6 +133,7 @@ public class WebViewFeature {
             ORIGIN_MATCHED_HEADERS,
             CUSTOM_REQUEST_HEADERS,
             ADD_QUIC_HINTS_V1,
+            NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED
     })
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.PARAMETER, ElementType.METHOD})
@@ -844,6 +845,16 @@ public class WebViewFeature {
      * {@link WebSettingsCompat#setHyperlinkContextMenuItems(WebSettings, int)},
      */
     public static final String HYPERLINK_CONTEXT_MENU_ITEMS = "HYPERLINK_CONTEXT_MENU_ITEMS";
+
+    /**
+     * When this feature is enabled, {@link NavigationListener#onNavigationCompleted} will be
+     * called even for navigations that do not commit (eg, results in 204/download/cancelled).
+     * <p>
+     * This will become the default behavior of {@link NavigationListener}.
+     */
+    @WebNavigationClient.ExperimentalNavigationCallback
+    public static final String NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED =
+            "NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED";
 
     /**
      * This is an internal only feature that indicate whether it is safe to cache WebView Provider

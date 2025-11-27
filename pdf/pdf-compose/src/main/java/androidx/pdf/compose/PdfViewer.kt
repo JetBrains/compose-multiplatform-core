@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastRoundToInt
@@ -46,6 +47,9 @@ import kotlin.random.Random
  * @param minZoom the minimum zoom / scaling factor that can be applied to the PDF viewer
  * @param maxZoom the maximum zoom / scaling factor that can be applied to the PDF viewer
  * @param verticalAlignment the alignment of the top page within the view
+ * @param pagesPerRow The number of pages to display in a single row.
+ * @param horizontalPageSpacing The spacing between horizontally adjacent pages.
+ * @param verticalPageSpacing The spacing between vertically adjacent pages.
  * @param fastScrollConfig a [FastScrollConfiguration] instance to customize the fast scoller's
  *   appearance
  * @param onUrlLinkClicked a callback to be invoked when the user taps a URL link in this PDF viewer
@@ -62,6 +66,9 @@ public fun PdfViewer(
     minZoom: Float = PdfView.DEFAULT_MIN_ZOOM,
     maxZoom: Float = PdfView.DEFAULT_MAX_ZOOM,
     verticalAlignment: Int = PdfView.VERTICAL_ALIGNMENT_CENTER,
+    pagesPerRow: Int = PdfView.SINGLE_PAGE,
+    horizontalPageSpacing: Dp = 8.dp,
+    verticalPageSpacing: Dp = 8.dp,
     fastScrollConfig: FastScrollConfiguration =
         FastScrollConfiguration.withDrawableAndDimensionIds(),
     appendContextMenuComponents: (PdfSelectionMenuBuilderScope.() -> Unit)? = null,
@@ -84,6 +91,11 @@ public fun PdfViewer(
         remember(fastScrollConfig, context) { fastScrollConfig.pageIndicatorMarginEnd(context) }
     val verticalThumbMarginEnd =
         remember(fastScrollConfig, context) { fastScrollConfig.verticalThumbMarginEnd(context) }
+    // Convert Dp to Px for the underlying PdfView.
+    val density = LocalDensity.current
+    val horizontalPageSpacingPx = with(density) { horizontalPageSpacing.roundToPx() }
+    val verticalPageSpacingPx = with(density) { verticalPageSpacing.roundToPx() }
+
     AndroidView(
         modifier = modifier,
         factory = { context ->
@@ -113,6 +125,9 @@ public fun PdfViewer(
             view.fastScrollPageIndicatorBackgroundDrawable = pageIndicatorDrawable
             view.fastScrollPageIndicatorMarginEnd = pageIndicatorMarginEnd
             view.fastScrollVerticalThumbMarginEnd = verticalThumbMarginEnd
+            view.pagesPerRow = pagesPerRow
+            view.horizontalPageSpacing = horizontalPageSpacingPx
+            view.verticalPageSpacing = verticalPageSpacingPx
         },
     )
 }

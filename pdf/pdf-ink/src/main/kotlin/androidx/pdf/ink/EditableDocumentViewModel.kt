@@ -18,7 +18,6 @@ package androidx.pdf.ink
 
 import android.graphics.Matrix
 import android.net.Uri
-import android.os.ParcelFileDescriptor
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.SavedStateHandle
@@ -38,17 +37,15 @@ import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.ink.edits.AnnotationEditOperationsHandler
 import androidx.pdf.ink.history.AnnotationEditsHistoryManager
+import androidx.pdf.ink.model.ApplyEditsState
 import androidx.pdf.viewer.fragment.PdfDocumentViewModel
-import androidx.pdf.viewer.fragment.model.PdfFragmentUiState
 import java.util.concurrent.Executors
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public class EditableDocumentViewModel(private val state: SavedStateHandle, loader: PdfLoader) :
@@ -69,6 +66,9 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
         set(value) {
             state[EDIT_MODE_ENABLED_KEY] = value
         }
+
+    private val _applyEditsStatus = MutableStateFlow<ApplyEditsState>(ApplyEditsState.Ready)
+    internal val applyEditsStatus: StateFlow<ApplyEditsState> = _applyEditsStatus.asStateFlow()
 
     // TODO: b/441634479 Refactor to extract the document from `DocumentLoaded` UI state.
     private var editablePdfDocument: EditablePdfDocument? = null
@@ -161,30 +161,38 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
         }
     }
 
-    /** Saves the draft annotations to the PDF document. */
-    internal suspend fun saveEdits(dest: ParcelFileDescriptor) {
+    internal fun applyDraftEdits() {
         val document = editablePdfDocument
         if (document == null) {
-            throw IllegalStateException("Document not available for saving.")
+            _applyEditsStatus.value =
+                ApplyEditsState.Failure(IllegalStateException("Document not available for saving."))
+            return
         }
+        _applyEditsStatus.value = ApplyEditsState.InProgress
 
-        _fragmentUiScreenState.update { PdfFragmentUiState.SavingEdits }
-        try {
-            val annotations =
-                document
-                    .getAllEdits()
-                    .editsByPage
-                    .flatMap { it.value }
-                    .filterIsInstance<PdfAnnotationData>()
+        viewModelScope.launch {
+            try {
+                val annotations =
+                    document
+                        .getAllEdits()
+                        .editsByPage
+                        .flatMap { it.value }
+                        .filterIsInstance<PdfAnnotationData>()
 
-            withContext(Dispatchers.IO) {
                 document.applyEdits(annotations)
-                document.write(dest)
+
+                val handle = document.createWriteHandle()
+
+                editsHistoryManager?.clear()
+                _applyEditsStatus.value = ApplyEditsState.Success(handle)
+            } catch (e: Exception) {
+                _applyEditsStatus.value = ApplyEditsState.Failure(e)
             }
-            isEditModeEnabled = false
-        } finally {
-            _fragmentUiScreenState.update { PdfFragmentUiState.DocumentLoaded(document) }
         }
+    }
+
+    internal fun resetApplyEditsStatus() {
+        _applyEditsStatus.value = ApplyEditsState.Ready
     }
 
     /**
@@ -194,7 +202,7 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
      *   no changes.
      */
     internal fun hasUnsavedChanges(): Boolean =
-        editablePdfDocument != null && editsHistoryManager?.canUndo() ?: false
+        editablePdfDocument != null && editsHistoryManager?.canUndo?.value ?: false
 
     /** Discards all uncommitted edits, reverting the document to its last saved state. */
     internal fun discardUnsavedChanges() {

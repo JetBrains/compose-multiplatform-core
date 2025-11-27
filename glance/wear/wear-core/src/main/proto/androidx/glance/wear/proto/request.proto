@@ -22,7 +22,10 @@ package androidx.glance.wear.proto;
 message WearWidgetRequestProto {
 
   // The ID of the widget instance for which an update is being requested.
-  uint32 instance_id = 1;
+  uint32 id = 1;
+
+  // The namespace for the ID of the widget instance.
+  string id_namespace = 5;
 
   // The width in dp of the container for this widget.
   float width_dp = 2;

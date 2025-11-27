@@ -26,7 +26,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
@@ -41,7 +40,7 @@ dependencies {
     api(project(":datastore:datastore"))
 
     implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
-    testImplementation(libs.guava)
+    api(libs.guava)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.truth)

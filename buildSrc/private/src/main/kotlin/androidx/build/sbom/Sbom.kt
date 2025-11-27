@@ -200,7 +200,7 @@ fun Project.configureSbomPublishing(isolatedProjectsEnabled: Boolean) {
     }
     apply(plugin = "org.spdx.sbom")
     val repos = getRepoPublicUrls()
-    val headShaProvider = getHeadShaProvider(this)
+    val headShaProvider = getHeadShaProvider()
     val supportRootDir = getSupportRootFolder()
 
     val sbomBuiltFile = layout.buildDirectory.file("spdx/release.spdx.json")

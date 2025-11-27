@@ -23,7 +23,6 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -386,10 +385,8 @@ class GlimmerListAutoFocusTest : BaseListTestWithOrientation(Orientation.Vertica
         rule.waitForIdle()
     }
 
-    private fun ComposeContentTestRule.setAutoFocusContent(
-        content: @Composable ColumnScope.() -> Unit
-    ) {
-        setContentWithInitialFocus {
+    private fun ComposeContentTestRule.setAutoFocusContent(content: @Composable () -> Unit) {
+        setContent {
             focusManager = LocalFocusManager.current
             content()
         }

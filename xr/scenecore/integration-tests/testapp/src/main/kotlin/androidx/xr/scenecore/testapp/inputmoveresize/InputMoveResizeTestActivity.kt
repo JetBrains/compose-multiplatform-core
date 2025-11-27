@@ -17,6 +17,7 @@
 package androidx.xr.scenecore.testapp.inputmoveresize
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -47,6 +48,7 @@ import androidx.xr.scenecore.ResizeEvent
 import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.format
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import java.util.concurrent.Executors
@@ -61,6 +63,7 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
     private var resizablePanelActive = false
     private var mainPanelMovableActive = false
     private var mainPanelResizableActive = false
+    private lateinit var defaultPanelSize: FloatSize2d
 
     private val moveListener =
         object : EntityMoveListener {
@@ -264,7 +267,14 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
         // Toolbar action
         val toolbar: Toolbar = findViewById(R.id.toolbar_input_move_resize)
         setSupportActionBar(toolbar)
-        toolbar.setNavigationOnClickListener { this.finish() }
+        toolbar.setNavigationOnClickListener {
+            val resultIntent = Intent()
+            resultIntent.putExtra("defaultPanelSizeWidth", defaultPanelSize.width)
+            resultIntent.putExtra("defaultPanelSizeHeight", defaultPanelSize.height)
+            setResult(RESULT_OK, resultIntent)
+
+            this.finish()
+        }
     }
 
     @SuppressLint("InflateParams")
@@ -274,7 +284,23 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
 
         // Create session
         session = createSession(this)
-        if (session == null) this.finish()
+        if (session == null) {
+            this.finish()
+        } else {
+            if (savedInstanceState != null) {
+                val width = savedInstanceState.getFloat("defaultPanelSizeWidth")
+                val height = savedInstanceState.getFloat("defaultPanelSizeHeight")
+                defaultPanelSize = FloatSize2d(width, height)
+            } else {
+                defaultPanelSize = session!!.scene.mainPanelEntity.size
+            }
+            Log.d(
+                TAG,
+                "defaultPanelSize: " +
+                    "w ${defaultPanelSize.width.format(2)} x " +
+                    "h ${defaultPanelSize.height.format(2)}",
+            )
+        }
 
         if (intent.extras != null) {
             findViewById<Toolbar>(R.id.toolbar_input_move_resize).also {
@@ -506,5 +532,11 @@ class InputMoveResizeTestActivity : AppCompatActivity() {
                     }
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putFloat("defaultPanelSizeWidth", defaultPanelSize.width)
+        outState.putFloat("defaultPanelSizeHeight", defaultPanelSize.height)
     }
 }

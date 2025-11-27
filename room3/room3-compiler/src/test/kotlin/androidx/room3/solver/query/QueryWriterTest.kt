@@ -25,7 +25,6 @@ import androidx.room3.compiler.processing.XTypeElement
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.ext.RoomTypeNames.ROOM_SQL_QUERY
-import androidx.room3.ext.RoomTypeNames.STRING_UTIL
 import androidx.room3.processor.QueryFunctionProcessor
 import androidx.room3.testing.context
 import androidx.room3.writer.QueryWriter
@@ -47,7 +46,7 @@ class QueryWriterTest {
                 abstract class MyClass {
                 """
         const val DAO_SUFFIX = "}"
-        val QUERY = ROOM_SQL_QUERY.toString(CodeLanguage.JAVA)
+        val QUERY = ROOM_SQL_QUERY.toString(CodeLanguage.KOTLIN)
     }
 
     @Test
@@ -60,11 +59,11 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
                 .isEqualTo(
                     """
-                final java.lang.String _sql = "SELECT id FROM users";
-                final $QUERY _stmt = $QUERY.acquire(_sql, 0);
+                val _sql: kotlin.String = "SELECT id FROM users"
+                val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, 0)
                 """
                         .trimIndent()
                 )
@@ -84,18 +83,18 @@ class QueryWriterTest {
             val expectedStringBind =
                 """
                 if (name == null) {
-                  _stmt.bindNull(_argIndex);
+                  _stmt.bindNull(_argIndex)
                 } else {
-                  _stmt.bindText(_argIndex, name);
+                  _stmt.bindText(_argIndex, name)
                 }
                 """
                     .trimIndent()
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
                 .isEqualTo(
                     """
-                |final java.lang.String _sql = "SELECT id FROM users WHERE name LIKE ?";
-                |final $QUERY _stmt = $QUERY.acquire(_sql, 1);
-                |int _argIndex = 1;
+                |val _sql: kotlin.String = "SELECT id FROM users WHERE name LIKE ?"
+                |val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, 1)
+                |var _argIndex: kotlin.Int = 1
                 |$expectedStringBind
                 """
                         .trimMargin()
@@ -113,15 +112,15 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
                 .isEqualTo(
                     """
-                final java.lang.String _sql = "SELECT id FROM users WHERE id IN(?,?)";
-                final $QUERY _stmt = $QUERY.acquire(_sql, 2);
-                int _argIndex = 1;
-                _stmt.bindLong(_argIndex, id1);
-                _argIndex = 2;
-                _stmt.bindLong(_argIndex, id2);
+                val _sql: kotlin.String = "SELECT id FROM users WHERE id IN(?,?)"
+                val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, 2)
+                var _argIndex: kotlin.Int = 1
+                _stmt.bindLong(_argIndex, id1.toLong())
+                _argIndex = 2
+                _stmt.bindLong(_argIndex, id2.toLong())
                 """
                         .trimIndent()
                 )
@@ -138,63 +137,34 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
                 .isEqualTo(
                     """
-                final java.lang.StringBuilder _stringBuilder = new java.lang.StringBuilder();
-                _stringBuilder.append("SELECT id FROM users WHERE id IN(");
-                final int _inputSize = ids == null ? 1 : ids.length;
-                ${STRING_UTIL.canonicalName}.appendPlaceholders(_stringBuilder, _inputSize);
-                _stringBuilder.append(") AND age > ");
-                _stringBuilder.append("?");
-                final java.lang.String _sql = _stringBuilder.toString();
-                final int _argCount = 1 + _inputSize;
-                final $QUERY _stmt = $QUERY.acquire(_sql, _argCount);
-                int _argIndex = 1;
+                val _stringBuilder: kotlin.text.StringBuilder = kotlin.text.StringBuilder()
+                _stringBuilder.append("SELECT id FROM users WHERE id IN(")
+                val _inputSize: kotlin.Int = if (ids == null) 1 else ids.size
+                androidx.room3.util.appendPlaceholders(_stringBuilder, _inputSize)
+                _stringBuilder.append(") AND age > ")
+                _stringBuilder.append("?")
+                val _sql: kotlin.String = _stringBuilder.toString()
+                val _argCount: kotlin.Int = 1 + _inputSize
+                val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, _argCount)
+                var _argIndex: kotlin.Int = 1
                 if (ids == null) {
-                  _stmt.bindNull(_argIndex);
+                  _stmt.bindNull(_argIndex)
                 } else {
-                  for (int _item : ids) {
-                    _stmt.bindLong(_argIndex, _item);
-                    _argIndex++;
+                  for (_item: kotlin.Int in ids) {
+                    _stmt.bindLong(_argIndex, _item.toLong())
+                    _argIndex++
                   }
                 }
-                _argIndex = 1 + _inputSize;
-                _stmt.bindLong(_argIndex, time);
+                _argIndex = 1 + _inputSize
+                _stmt.bindLong(_argIndex, time)
                 """
                         .trimIndent()
                 )
         }
     }
-
-    val collectionOut =
-        """
-        final java.lang.StringBuilder _stringBuilder = new java.lang.StringBuilder();
-        _stringBuilder.append("SELECT id FROM users WHERE id IN(");
-        final int _inputSize = ids == null ? 1 : ids.size();
-        ${STRING_UTIL.canonicalName}.appendPlaceholders(_stringBuilder, _inputSize);
-        _stringBuilder.append(") AND age > ");
-        _stringBuilder.append("?");
-        final java.lang.String _sql = _stringBuilder.toString();
-        final int _argCount = 1 + _inputSize;
-        final $QUERY _stmt = $QUERY.acquire(_sql, _argCount);
-        int _argIndex = 1;
-        if (ids == null) {
-          _stmt.bindNull(_argIndex);
-        } else {
-          for (java.lang.Integer _item : ids) {
-            if (_item == null) {
-              _stmt.bindNull(_argIndex);
-            } else {
-              _stmt.bindLong(_argIndex, _item);
-            }
-            _argIndex++;
-          }
-        }
-        _argIndex = 1 + _inputSize;
-        _stmt.bindLong(_argIndex, time);
-    """
-            .trimIndent()
 
     @Test
     fun aLongAndIntegerList() {
@@ -206,7 +176,36 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim()).isEqualTo(collectionOut)
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
+                .isEqualTo(
+                    """
+                val _stringBuilder: kotlin.text.StringBuilder = kotlin.text.StringBuilder()
+                _stringBuilder.append("SELECT id FROM users WHERE id IN(")
+                val _inputSize: kotlin.Int = if (ids == null) 1 else ids.size
+                androidx.room3.util.appendPlaceholders(_stringBuilder, _inputSize)
+                _stringBuilder.append(") AND age > ")
+                _stringBuilder.append("?")
+                val _sql: kotlin.String = _stringBuilder.toString()
+                val _argCount: kotlin.Int = 1 + _inputSize
+                val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, _argCount)
+                var _argIndex: kotlin.Int = 1
+                if (ids == null) {
+                  _stmt.bindNull(_argIndex)
+                } else {
+                  for (_item: kotlin.Int? in ids) {
+                    if (_item == null) {
+                      _stmt.bindNull(_argIndex)
+                    } else {
+                      _stmt.bindLong(_argIndex, _item.toLong())
+                    }
+                    _argIndex++
+                  }
+                }
+                _argIndex = 1 + _inputSize
+                _stmt.bindLong(_argIndex, time)
+                """
+                        .trimIndent()
+                )
         }
     }
 
@@ -220,7 +219,36 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim()).isEqualTo(collectionOut)
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
+                .isEqualTo(
+                    """
+                val _stringBuilder: kotlin.text.StringBuilder = kotlin.text.StringBuilder()
+                _stringBuilder.append("SELECT id FROM users WHERE id IN(")
+                val _inputSize: kotlin.Int = if (ids == null) 1 else ids.size
+                androidx.room3.util.appendPlaceholders(_stringBuilder, _inputSize)
+                _stringBuilder.append(") AND age > ")
+                _stringBuilder.append("?")
+                val _sql: kotlin.String = _stringBuilder.toString()
+                val _argCount: kotlin.Int = 1 + _inputSize
+                val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, _argCount)
+                var _argIndex: kotlin.Int = 1
+                if (ids == null) {
+                  _stmt.bindNull(_argIndex)
+                } else {
+                  for (_item: kotlin.Int? in ids) {
+                    if (_item == null) {
+                      _stmt.bindNull(_argIndex)
+                    } else {
+                      _stmt.bindLong(_argIndex, _item.toLong())
+                    }
+                    _argIndex++
+                  }
+                }
+                _argIndex = 1 + _inputSize
+                _stmt.bindLong(_argIndex, time)
+                """
+                        .trimIndent()
+                )
         }
     }
 
@@ -234,7 +262,36 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim()).isEqualTo(collectionOut)
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
+                .isEqualTo(
+                    """
+                val _stringBuilder: kotlin.text.StringBuilder = kotlin.text.StringBuilder()
+                _stringBuilder.append("SELECT id FROM users WHERE id IN(")
+                val _inputSize: kotlin.Int = if (ids == null) 1 else ids.size
+                androidx.room3.util.appendPlaceholders(_stringBuilder, _inputSize)
+                _stringBuilder.append(") AND age > ")
+                _stringBuilder.append("?")
+                val _sql: kotlin.String = _stringBuilder.toString()
+                val _argCount: kotlin.Int = 1 + _inputSize
+                val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, _argCount)
+                var _argIndex: kotlin.Int = 1
+                if (ids == null) {
+                  _stmt.bindNull(_argIndex)
+                } else {
+                  for (_item: kotlin.Int? in ids) {
+                    if (_item == null) {
+                      _stmt.bindNull(_argIndex)
+                    } else {
+                      _stmt.bindLong(_argIndex, _item.toLong())
+                    }
+                    _argIndex++
+                  }
+                }
+                _argIndex = 1 + _inputSize
+                _stmt.bindLong(_argIndex, time)
+                """
+                        .trimIndent()
+                )
         }
     }
 
@@ -248,15 +305,15 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
                 .isEqualTo(
                     """
-                final java.lang.String _sql = "SELECT id FROM users WHERE age > ? OR bage > ?";
-                final $QUERY _stmt = $QUERY.acquire(_sql, 2);
-                int _argIndex = 1;
-                _stmt.bindLong(_argIndex, age);
-                _argIndex = 2;
-                _stmt.bindLong(_argIndex, age);
+                val _sql: kotlin.String = "SELECT id FROM users WHERE age > ? OR bage > ?"
+                val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, 2)
+                var _argIndex: kotlin.Int = 1
+                _stmt.bindLong(_argIndex, age.toLong())
+                _argIndex = 2
+                _stmt.bindLong(_argIndex, age.toLong())
                 """
                         .trimIndent()
                 )
@@ -273,32 +330,32 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
                 .isEqualTo(
                     """
-                final java.lang.StringBuilder _stringBuilder = new java.lang.StringBuilder();
-                _stringBuilder.append("SELECT id FROM users WHERE age > ");
-                _stringBuilder.append("?");
-                _stringBuilder.append(" OR bage > ");
-                _stringBuilder.append("?");
-                _stringBuilder.append(" OR fage IN(");
-                final int _inputSize = ages == null ? 1 : ages.length;
-                ${STRING_UTIL.canonicalName}.appendPlaceholders(_stringBuilder, _inputSize);
-                _stringBuilder.append(")");
-                final java.lang.String _sql = _stringBuilder.toString();
-                final int _argCount = 2 + _inputSize;
-                final $QUERY _stmt = $QUERY.acquire(_sql, _argCount);
-                int _argIndex = 1;
-                _stmt.bindLong(_argIndex, age);
-                _argIndex = 2;
-                _stmt.bindLong(_argIndex, age);
-                _argIndex = 3;
+                val _stringBuilder: kotlin.text.StringBuilder = kotlin.text.StringBuilder()
+                _stringBuilder.append("SELECT id FROM users WHERE age > ")
+                _stringBuilder.append("?")
+                _stringBuilder.append(" OR bage > ")
+                _stringBuilder.append("?")
+                _stringBuilder.append(" OR fage IN(")
+                val _inputSize: kotlin.Int = if (ages == null) 1 else ages.size
+                androidx.room3.util.appendPlaceholders(_stringBuilder, _inputSize)
+                _stringBuilder.append(")")
+                val _sql: kotlin.String = _stringBuilder.toString()
+                val _argCount: kotlin.Int = 2 + _inputSize
+                val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, _argCount)
+                var _argIndex: kotlin.Int = 1
+                _stmt.bindLong(_argIndex, age.toLong())
+                _argIndex = 2
+                _stmt.bindLong(_argIndex, age.toLong())
+                _argIndex = 3
                 if (ages == null) {
-                  _stmt.bindNull(_argIndex);
+                  _stmt.bindNull(_argIndex)
                 } else {
-                  for (int _item : ages) {
-                    _stmt.bindLong(_argIndex, _item);
-                    _argIndex++;
+                  for (_item: kotlin.Int in ages) {
+                    _stmt.bindLong(_argIndex, _item.toLong())
+                    _argIndex++
                   }
                 }
                 """
@@ -317,40 +374,40 @@ class QueryWriterTest {
         ) { _, writer ->
             val scope = testCodeGenScope()
             writer.prepareReadAndBind("_sql", "_stmt", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim())
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim())
                 .isEqualTo(
                     """
-                final java.lang.StringBuilder _stringBuilder = new java.lang.StringBuilder();
-                _stringBuilder.append("SELECT id FROM users WHERE age IN (");
-                final int _inputSize = ages == null ? 1 : ages.length;
-                ${STRING_UTIL.canonicalName}.appendPlaceholders(_stringBuilder, _inputSize);
-                _stringBuilder.append(") OR bage > ");
-                _stringBuilder.append("?");
-                _stringBuilder.append(" OR fage IN(");
-                final int _inputSize_1 = ages == null ? 1 : ages.length;
-                ${STRING_UTIL.canonicalName}.appendPlaceholders(_stringBuilder, _inputSize_1);
-                _stringBuilder.append(")");
-                final java.lang.String _sql = _stringBuilder.toString();
-                final int _argCount = 1 + _inputSize + _inputSize_1;
-                final $QUERY _stmt = $QUERY.acquire(_sql, _argCount);
-                int _argIndex = 1;
+                val _stringBuilder: kotlin.text.StringBuilder = kotlin.text.StringBuilder()
+                _stringBuilder.append("SELECT id FROM users WHERE age IN (")
+                val _inputSize: kotlin.Int = if (ages == null) 1 else ages.size
+                androidx.room3.util.appendPlaceholders(_stringBuilder, _inputSize)
+                _stringBuilder.append(") OR bage > ")
+                _stringBuilder.append("?")
+                _stringBuilder.append(" OR fage IN(")
+                val _inputSize_1: kotlin.Int = if (ages == null) 1 else ages.size
+                androidx.room3.util.appendPlaceholders(_stringBuilder, _inputSize_1)
+                _stringBuilder.append(")")
+                val _sql: kotlin.String = _stringBuilder.toString()
+                val _argCount: kotlin.Int = 1 + _inputSize + _inputSize_1
+                val _stmt: $QUERY = $QUERY.Companion.acquire(_sql, _argCount)
+                var _argIndex: kotlin.Int = 1
                 if (ages == null) {
-                  _stmt.bindNull(_argIndex);
+                  _stmt.bindNull(_argIndex)
                 } else {
-                  for (int _item : ages) {
-                    _stmt.bindLong(_argIndex, _item);
-                    _argIndex++;
+                  for (_item: kotlin.Int in ages) {
+                    _stmt.bindLong(_argIndex, _item.toLong())
+                    _argIndex++
                   }
                 }
-                _argIndex = 1 + _inputSize;
-                _stmt.bindLong(_argIndex, age);
-                _argIndex = 2 + _inputSize;
+                _argIndex = 1 + _inputSize
+                _stmt.bindLong(_argIndex, age.toLong())
+                _argIndex = 2 + _inputSize
                 if (ages == null) {
-                  _stmt.bindNull(_argIndex);
+                  _stmt.bindNull(_argIndex)
                 } else {
-                  for (int _item_1 : ages) {
-                    _stmt.bindLong(_argIndex, _item_1);
-                    _argIndex++;
+                  for (_item_1: kotlin.Int in ages) {
+                    _stmt.bindLong(_argIndex, _item_1.toLong())
+                    _argIndex++
                   }
                 }
                 """

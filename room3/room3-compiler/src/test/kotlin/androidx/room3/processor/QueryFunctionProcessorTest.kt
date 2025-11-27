@@ -38,9 +38,7 @@ import androidx.room3.ext.ReactiveStreamsTypeNames
 import androidx.room3.ext.RxJava3TypeNames
 import androidx.room3.parser.QueryType
 import androidx.room3.parser.Table
-import androidx.room3.processor.ProcessorErrors.CANNOT_USE_MAP_COLUMN_AND_MAP_INFO_SIMULTANEOUSLY
 import androidx.room3.processor.ProcessorErrors.DO_NOT_USE_GENERIC_IMMUTABLE_MULTIMAP
-import androidx.room3.processor.ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED
 import androidx.room3.processor.ProcessorErrors.cannotFindQueryResultAdapter
 import androidx.room3.processor.ProcessorErrors.mayNeedMapColumn
 import androidx.room3.solver.query.result.DataClassRowAdapter
@@ -1297,26 +1295,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testUseMapInfoWithBothEmptyColumnsProvided() {
-        if (!enableVerification) {
-            return
-        }
-        singleQueryMethod<ReadQueryFunction>(
-            """
-                @MapInfo
-                @Query("select * from User u JOIN Book b ON u.uid == b.uid")
-                abstract Map<User, Book> getMultimap();
-            """
-        ) { _, invocation ->
-            invocation.assertCompilationResult {
-                hasErrorCount(1)
-                hasErrorContaining(MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED)
-            }
-        }
-    }
-
-    @Test
-    fun testUseMapInfoWithTableAndColumnName() {
+    fun testUseMapColumnWithTableAndColumnName() {
         if (!enableVerification) {
             return
         }
@@ -1325,9 +1304,8 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 @SuppressWarnings(
                     {RoomWarnings.QUERY_MISMATCH, RoomWarnings.AMBIGUOUS_COLUMN_IN_RESULT}
                 )
-                @MapInfo(keyColumn = "uid", keyTable = "u")
                 @Query("SELECT * FROM User u JOIN Book b ON u.uid == b.uid")
-                abstract Map<Integer, Book> getMultimap();
+                abstract Map<@MapColumn(columnName="uid", tableName="u") Integer, Book> getMultimap();
             """
         ) { _, invocation ->
             invocation.assertCompilationResult { hasNoWarnings() }
@@ -1335,7 +1313,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testUseMapInfoWithOriginalTableAndColumnName() {
+    fun testUseMapColumnWithOriginalTableAndColumnName() {
         if (!enableVerification) {
             return
         }
@@ -1344,27 +1322,8 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 @SuppressWarnings(
                     {RoomWarnings.QUERY_MISMATCH, RoomWarnings.AMBIGUOUS_COLUMN_IN_RESULT}
                 )
-                @MapInfo(keyColumn = "uid", keyTable = "User")
                 @Query("SELECT * FROM User u JOIN Book b ON u.uid == b.uid")
-                abstract Map<Integer, Book> getMultimap();
-            """
-        ) { _, invocation ->
-            invocation.assertCompilationResult { hasNoWarnings() }
-        }
-    }
-
-    @Test
-    fun testUseMapInfoWithColumnAlias() {
-        if (!enableVerification) {
-            return
-        }
-        singleQueryMethod<ReadQueryFunction>(
-            """
-                @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-                @MapInfo(keyColumn = "name", valueColumn = "bookCount")
-                @Query("SELECT name, (SELECT count(*) FROM User u JOIN Book b ON u.uid == b.uid) "
-                    + "AS bookCount FROM User")
-                abstract Map<String, Integer> getMultimap();
+                abstract Map<@MapColumn(columnName="uid", tableName="User") Integer, Book> getMultimap();
             """
         ) { _, invocation ->
             invocation.assertCompilationResult { hasNoWarnings() }
@@ -1458,31 +1417,10 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
                 @Query("SELECT name, (SELECT count(*) FROM User u JOIN Book b ON u.uid == b.uid) "
                     + "AS bookCount FROM User")
-                abstract Map<@MapColumn(columnName = "name") String, @MapColumn(columnName = "bookCount") Integer> getMultimap();
+                abstract Map<@MapColumn(columnName="name") String, @MapColumn(columnName="bookCount") Integer> getMultimap();
             """
         ) { _, invocation ->
             invocation.assertCompilationResult { hasNoWarnings() }
-        }
-    }
-
-    @Test
-    fun testCannotHaveMapInfoAndMapColumn() {
-        if (!enableVerification) {
-            return
-        }
-        singleQueryMethod<ReadQueryFunction>(
-            """
-                @SuppressWarnings(
-                    {RoomWarnings.QUERY_MISMATCH, RoomWarnings.AMBIGUOUS_COLUMN_IN_RESULT}
-                )
-                @MapInfo(keyColumn = "uid", keyTable = "u")
-                @Query("SELECT * FROM User u JOIN Book b ON u.uid == b.uid")
-                abstract Map<@MapColumn(columnName = "uid") Integer, Book> getMultimap();
-            """
-        ) { _, invocation ->
-            invocation.assertCompilationResult {
-                hasErrorContaining(CANNOT_USE_MAP_COLUMN_AND_MAP_INFO_SIMULTANEOUSLY)
-            }
         }
     }
 
@@ -1504,7 +1442,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testMissingMapInfoOneToOneString() {
+    fun testMissingMapColumnOneToOneString() {
         singleQueryMethod<ReadQueryFunction>(
             """
                 @Query("select * from Artist JOIN Song ON Artist.mArtistName == Song.mArtist")
@@ -1518,10 +1456,10 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testOneToOneStringMapInfoForKeyInsteadOfColumn() {
+    fun testOneToOneStringMapColumnForKeyInsteadOfColumn() {
         singleQueryMethod<ReadQueryFunction>(
             """
-                @MapInfo(keyColumn = "mArtistName")
+                @MapColumn(keyColumn = "mArtistName")
                 @Query("select * from Artist JOIN Song ON Artist.mArtistName == Song.mArtist")
                 abstract Map<Artist, String> getAllArtistsWithAlbumCoverYear();
             """
@@ -1533,7 +1471,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testMissingMapInfoOneToManyString() {
+    fun testMissingMapColumnOneToManyString() {
         singleQueryMethod<ReadQueryFunction>(
             """
                 @Query("select * from Artist JOIN Song ON Artist.mArtistName == Song.mArtist")
@@ -1547,7 +1485,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testMissingMapInfoImmutableListMultimapOneToOneString() {
+    fun testMissingMapColumnImmutableListMultimapOneToOneString() {
         singleQueryMethod<ReadQueryFunction>(
             """
                 @Query("select * from Artist JOIN Song ON Artist.mArtistName == Song.mArtist")
@@ -1561,7 +1499,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testMissingMapInfoOneToOneLong() {
+    fun testMissingMapColumnOneToOneLong() {
         singleQueryMethod<ReadQueryFunction>(
             """
                 @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
@@ -1575,7 +1513,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testMissingMapInfoOneToManyLong() {
+    fun testMissingMapColumnOneToManyLong() {
         singleQueryMethod<ReadQueryFunction>(
             """
                 @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
@@ -1589,7 +1527,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testMissingMapInfoImmutableListMultimapOneToOneLong() {
+    fun testMissingMapColumnImmutableListMultimapOneToOneLong() {
         singleQueryMethod<ReadQueryFunction>(
             """
                 @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
@@ -1603,7 +1541,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testMissingMapInfoImmutableListMultimapOneToOneTypeConverterKey() {
+    fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterKey() {
         singleQueryMethod<ReadQueryFunction>(
             """
                 @TypeConverters(DateConverter.class)
@@ -1618,7 +1556,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testMissingMapInfoImmutableListMultimapOneToOneTypeConverterValue() {
+    fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterValue() {
         singleQueryMethod<ReadQueryFunction>(
             """
                 @TypeConverters(DateConverter.class)
@@ -1633,15 +1571,14 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testUseMapInfoWithColumnsNotInQuery() {
+    fun testUseMapColumnWithColumnsNotInQuery() {
         if (!enableVerification) {
             return
         }
         singleQueryMethod<ReadQueryFunction>(
             """
-                @MapInfo(keyColumn="cat", valueColumn="dog")
                 @Query("select * from User u JOIN Book b ON u.uid == b.uid")
-                abstract Map<User, Book> getMultimap();
+                abstract Map<@MapColumn(columnName="cat") User, @MapColumn(columnName="dog") Book> getMultimap();
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
@@ -1651,11 +1588,11 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
                 )
                 hasErrorCount(2)
                 hasErrorContaining(
-                    "Column specified in the provided @MapInfo annotation must " +
+                    "Column specified in the provided @MapColumn annotation must " +
                         "be present in the query. Provided: cat."
                 )
                 hasErrorContaining(
-                    "Column specified in the provided @MapInfo annotation must " +
+                    "Column specified in the provided @MapColumn annotation must " +
                         "be present in the query. Provided: dog."
                 )
             }
@@ -1663,7 +1600,7 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
     }
 
     @Test
-    fun testAmbiguousColumnInMapInfo() {
+    fun testAmbiguousColumnInMapColumn() {
         if (!enableVerification) {
             // No warning without verification, avoiding false positives
             return
@@ -1671,16 +1608,15 @@ class QueryFunctionProcessorTest(private val enableVerification: Boolean) {
         singleQueryMethod<ReadQueryFunction>(
             """
                 @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-                @MapInfo(keyColumn = "uid")
                 @Query("SELECT * FROM User u JOIN Book b ON u.uid == b.uid")
-                abstract Map<Integer, Book> getMultimap();
+                abstract Map<@MapColumn(columnName="uid") Integer, Book> getMultimap();
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
                 hasWarning(
                     ProcessorErrors.ambiguousColumn(
                         "uid",
-                        ProcessorErrors.AmbiguousColumnLocation.MAP_INFO,
+                        ProcessorErrors.AmbiguousColumnLocation.MAP_COLUMN,
                         null,
                     )
                 )

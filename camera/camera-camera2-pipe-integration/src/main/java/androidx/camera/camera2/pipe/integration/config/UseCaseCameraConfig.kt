@@ -32,6 +32,7 @@ import androidx.camera.camera2.pipe.integration.impl.UseCaseCameraRequestControl
 import androidx.camera.camera2.pipe.integration.impl.UseCaseSurfaceManager
 import androidx.camera.core.UseCase
 import androidx.camera.core.impl.DeferrableSurface
+import androidx.camera.core.impl.SessionProcessor
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
@@ -71,6 +72,7 @@ public data class UseCaseCameraConfig(
     public val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
     public val sessionConfigAdapter: SessionConfigAdapter,
     public val cameraGraphConfig: CameraGraph.Config,
+    private val sessionProcessor: SessionProcessor? = null,
 ) {
     public val cameraGraph: CameraGraph by lazy { cameraGraphFactory(cameraGraphConfig) }
 
@@ -84,6 +86,12 @@ public data class UseCaseCameraConfig(
     @Provides
     public fun provideSessionConfigAdapter(): SessionConfigAdapter {
         return sessionConfigAdapter
+    }
+
+    @UseCaseCameraScope
+    @Provides
+    public fun provideSessionProcessor(): SessionProcessor? {
+        return sessionProcessor
     }
 
     /**

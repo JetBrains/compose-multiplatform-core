@@ -78,6 +78,16 @@ public class StateLayout extends LayoutManager {
         mIndexId = indexId;
     }
 
+    public StateLayout(
+            int componentId,
+            int animationId,
+            int horizontalPositioning,
+            int verticalPositioning,
+            int indexId) {
+        super(null, componentId, animationId, 0f, 0f, 100f, 100f);
+        mIndexId = indexId;
+    }
+
     @Override
     public void inflate() {
         super.inflate();

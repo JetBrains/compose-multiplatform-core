@@ -43,19 +43,27 @@ public open class RemoteComposeContext {
         mRemoteWriter = writer
     }
 
-    public constructor(width: Int, height: Int, contentDescription: String, profile: Profile) {
-        mRemoteWriter = RemoteComposeWriter.obtain(width, height, contentDescription, profile)
-    }
-
     public constructor(
-        width: Int,
-        height: Int,
+        creationDisplayInfo: CreationDisplayInfo,
         contentDescription: String,
         profile: Profile,
         content: RemoteComposeContext.() -> Unit,
     ) {
-        mRemoteWriter = RemoteComposeWriter.obtain(width, height, contentDescription, profile)
+        mRemoteWriter = profile.create(creationDisplayInfo, null)
         content()
+    }
+
+    public constructor(
+        vararg tags: RemoteComposeWriter.HTag,
+        profile: Profile,
+        content: RemoteComposeContext.() -> Unit,
+    ) {
+        mRemoteWriter = RemoteComposeWriter(profile, *tags)
+        content()
+    }
+
+    public constructor(width: Int, height: Int, contentDescription: String, profile: Profile) {
+        mRemoteWriter = RemoteComposeWriter.obtain(width, height, contentDescription, profile)
     }
 
     public constructor(

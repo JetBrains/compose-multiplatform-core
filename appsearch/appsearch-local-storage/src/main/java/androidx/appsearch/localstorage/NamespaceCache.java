@@ -18,6 +18,7 @@ package androidx.appsearch.localstorage;
 
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
+import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.localstorage.util.PrefixUtil;
 import androidx.collection.ArrayMap;
 import androidx.collection.ArraySet;
@@ -108,7 +109,13 @@ public class NamespaceCache {
         return prefixedBlobNamespaces;
     }
 
-    /**  Removes prefixed document namespaces under the given prefix.  */
+    /**
+     * Removes prefixed document namespaces under the given prefix.
+     *
+     * @return the set of prefixed document namespaces that were removed, or {@code null} if
+     *         the prefix was not found.
+     */
+    @CanIgnoreReturnValue
     public @Nullable Set<String> removeDocumentNamespaces(@NonNull String prefix) {
         return mDocumentNamespaceMap.remove(prefix);
     }

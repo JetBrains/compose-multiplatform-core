@@ -16,7 +16,6 @@
 
 package androidx.room3.solver.prepared.binder
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.XTypeName
@@ -72,11 +71,6 @@ class InstantPreparedQueryResultBinder(adapter: PreparedQueryResultAdapter?) :
                         }
                     },
             )
-        val returnPrefix =
-            when (scope.language) {
-                CodeLanguage.JAVA -> if (returnTypeName == XTypeName.UNIT_VOID) "" else "return "
-                CodeLanguage.KOTLIN -> "return "
-            }
-        scope.builder.add("$returnPrefix%L", performBlock)
+        scope.builder.add("return %L", performBlock)
     }
 }

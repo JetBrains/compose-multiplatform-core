@@ -32,5 +32,5 @@ internal actual fun Modifier.textFieldPointer(
     state: LegacyTextFieldState,
     focusRequester: FocusRequester,
     readOnly: Boolean,
-    offsetMapping: OffsetMapping
+    offsetMapping: OffsetMapping,
 ): Modifier = implementedInJetBrainsFork()

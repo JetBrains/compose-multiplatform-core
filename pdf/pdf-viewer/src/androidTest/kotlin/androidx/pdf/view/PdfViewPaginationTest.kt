@@ -649,7 +649,7 @@ class PdfViewPaginationTest {
     private fun setupPdfView(width: Int, height: Int, fakePdfDocument: FakePdfDocument?) {
         PdfViewTestActivity.onCreateCallback = { activity ->
             with(activity) {
-                pageMarginPx = activity.getDimensions(R.dimen.vertical_page_spacing)
+                pageMarginPx = activity.getDimensions(R.dimen.pdf_vertical_page_spacing)
                 topPageMarginPx = activity.getDimensions(R.dimen.top_page_margin)
                 pdfView = PdfView(activity)
                 container.addView(

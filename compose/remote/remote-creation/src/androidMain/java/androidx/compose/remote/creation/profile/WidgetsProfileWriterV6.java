@@ -21,9 +21,12 @@ import static androidx.compose.remote.creation.Rc.FloatExpression.MUL;
 import android.graphics.Color;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.operations.RootContentBehavior;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
+import androidx.compose.remote.creation.CreationDisplayInfo;
 import androidx.compose.remote.creation.Rc;
+import androidx.compose.remote.creation.RemoteComposeWriter;
 import androidx.compose.remote.creation.RemoteComposeWriterAndroid;
 import androidx.compose.remote.creation.modifiers.RecordingModifier;
 
@@ -33,6 +36,40 @@ import org.jspecify.annotations.Nullable;
 /** RemoteComposeWriter for Widgets in Baklava (Api level 6) */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WidgetsProfileWriterV6 extends RemoteComposeWriterAndroid {
+
+    public WidgetsProfileWriterV6(@NonNull CreationDisplayInfo creationDisplayInfo,
+            @Nullable String contentDescription, @NonNull Profile profile) {
+        super(creationDisplayInfo, contentDescription, profile);
+        mMaxValidFloatExpressionOperation = AnimatedFloatExpression.getMaxOpForLevel(
+                profile.getApiLevel());
+    }
+
+    /**
+     * Creates a {@link RemoteComposeWriter} for widgets on Baklava (API level 6).
+     *
+     * @param creationDisplayInfo Information about the display where the content will be rendered.
+     * @param contentDescription  A content description for the root composable, used for
+     *                            accessibility.
+     * @param profile             The profile defining the capabilities and API level of the
+     *                            remote environment.
+     * @return A new instance of {@link RemoteComposeWriter} configured for widgets.
+     */
+    public static @NonNull RemoteComposeWriter createWriter(
+            @NonNull CreationDisplayInfo creationDisplayInfo,
+            @Nullable String contentDescription, @NonNull Profile profile) {
+        WidgetsProfileWriterV6 widgetsProfileWriterV6 = new WidgetsProfileWriterV6(
+                creationDisplayInfo, contentDescription, profile);
+
+        if (contentDescription != null) {
+            int contentDescriptionId = widgetsProfileWriterV6.addText(contentDescription);
+            widgetsProfileWriterV6.getBuffer().addRootContentDescription(contentDescriptionId);
+        }
+        widgetsProfileWriterV6.setRootContentBehavior(RootContentBehavior.NONE,
+                RootContentBehavior.ALIGNMENT_CENTER, RootContentBehavior.SIZING_SCALE,
+                RootContentBehavior.SCALE_FILL_BOUNDS);
+
+        return widgetsProfileWriterV6;
+    }
 
     public WidgetsProfileWriterV6(
             int width, int height, @NonNull String contentDescription, @NonNull Profile profile) {
@@ -45,6 +82,11 @@ public class WidgetsProfileWriterV6 extends RemoteComposeWriterAndroid {
                 profile.getPlatform());
         mMaxValidFloatExpressionOperation =
                 AnimatedFloatExpression.getMaxOpForLevel(profile.getApiLevel());
+    }
+
+    @Override
+    public void setRootContentBehavior(int scroll, int alignment, int sizing, int mode) {
+        mBuffer.setRootContentBehavior(scroll, alignment, sizing, mode);
     }
 
     /**

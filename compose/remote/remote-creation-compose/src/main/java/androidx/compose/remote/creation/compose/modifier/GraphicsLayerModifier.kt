@@ -21,6 +21,7 @@ import androidx.annotation.RestrictTo
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.remote.core.operations.layout.modifiers.GraphicsLayerModifierOperation
 import androidx.compose.remote.creation.compose.state.RemoteFloat
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.modifiers.CircleShape
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.modifiers.RectShape
@@ -145,71 +146,22 @@ public class GraphicsLayerModifier(
 }
 
 public fun RemoteModifier.graphicsLayer(
-    scaleX: Number = 1f,
-    scaleY: Number = 1f,
-    rotationX: Number = 0f,
-    rotationY: Number = 0f,
-    rotationZ: Number = 0f,
-    shadowElevation: Number = 0f,
-    transformOriginX: Number = 0.5f,
-    transformOriginY: Number = 0.5f,
-    translationX: Number = 0f,
-    translationY: Number = 0f,
-    alpha: Number = 1f,
+    scaleX: RemoteFloat = 1f.rf,
+    scaleY: RemoteFloat = 1f.rf,
+    rotationX: RemoteFloat = 0f.rf,
+    rotationY: RemoteFloat = 0f.rf,
+    rotationZ: RemoteFloat = 0f.rf,
+    shadowElevation: RemoteFloat = 0f.rf,
+    transformOriginX: RemoteFloat = 0.5f.rf,
+    transformOriginY: RemoteFloat = 0.5f.rf,
+    translationX: RemoteFloat = 0f.rf,
+    translationY: RemoteFloat = 0f.rf,
+    alpha: RemoteFloat = 1f.rf,
     shape: Shape = RectangleShape,
     compositingStrategy: CompositingStrategy = Auto,
-    cameraDistance: Number = 8f, // Default Value for Camera Distance
+    cameraDistance: RemoteFloat = 8f.rf, // Default Value for Camera Distance
     renderEffect: RenderEffect? = null,
 ): RemoteModifier {
-
-    val sX =
-        if (scaleX is RemoteFloat) {
-            scaleX.internalAsFloat()
-        } else scaleX.toFloat()
-    val sY =
-        if (scaleY is RemoteFloat) {
-            scaleY.internalAsFloat()
-        } else scaleY.toFloat()
-    val rX =
-        if (rotationX is RemoteFloat) {
-            rotationX.internalAsFloat()
-        } else rotationX.toFloat()
-    val rY =
-        if (rotationY is RemoteFloat) {
-            rotationY.internalAsFloat()
-        } else rotationY.toFloat()
-    val rZ =
-        if (rotationZ is RemoteFloat) {
-            rotationZ.internalAsFloat()
-        } else rotationZ.toFloat()
-    val sE =
-        if (shadowElevation is RemoteFloat) {
-            shadowElevation.internalAsFloat()
-        } else shadowElevation.toFloat()
-    val tOX =
-        if (transformOriginX is RemoteFloat) {
-            transformOriginX.internalAsFloat()
-        } else transformOriginX.toFloat()
-    val tOY =
-        if (transformOriginY is RemoteFloat) {
-            transformOriginY.internalAsFloat()
-        } else transformOriginY.toFloat()
-    val tX =
-        if (translationX is RemoteFloat) {
-            translationX.internalAsFloat()
-        } else translationX.toFloat()
-    val tY =
-        if (translationY is RemoteFloat) {
-            translationY.internalAsFloat()
-        } else translationY.toFloat()
-    val tA =
-        if (alpha is RemoteFloat) {
-            alpha.internalAsFloat()
-        } else alpha.toFloat()
-    val tCD =
-        if (cameraDistance is RemoteFloat) {
-            cameraDistance.internalAsFloat()
-        } else cameraDistance.toFloat()
 
     val cS =
         when (compositingStrategy) {
@@ -220,20 +172,20 @@ public fun RemoteModifier.graphicsLayer(
         }
     return then(
         GraphicsLayerModifier(
-            sX,
-            sY,
-            rX,
-            rY,
-            rZ,
-            sE,
-            tOX,
-            tOY,
-            tX,
-            tY,
+            scaleX.id,
+            scaleY.id,
+            rotationX.id,
+            rotationY.id,
+            rotationZ.id,
+            shadowElevation.id,
+            transformOriginX.id,
+            transformOriginY.id,
+            translationX.id,
+            translationY.id,
             shape,
             cS,
-            tA,
-            tCD,
+            alpha.id,
+            cameraDistance.id,
             renderEffect,
         )
     )

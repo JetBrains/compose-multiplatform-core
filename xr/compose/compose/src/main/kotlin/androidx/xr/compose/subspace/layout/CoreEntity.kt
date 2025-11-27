@@ -612,19 +612,5 @@ internal interface MovableCoreEntity
 /** [CoreEntity] types that implement this interface may have the InteractableComponent attached. */
 internal interface InteractableCoreEntity
 
-/**
- * Check if the current entity is disposed.
- *
- * TODO(b/458159392) This should be removed once isDisposed is surfaced from the SceneCore API.
- */
-private val Entity.isDisposed
-    get() =
-        try {
-            contentDescription
-            false
-        } catch (e: IllegalStateException) {
-            e.message?.contains("disposed") == true
-        }
-
 private fun CoreEntity.requireOwner(): SubspaceOwner =
     checkNotNull(layout?.owner) { "Failed to get SubspaceOwner for CoreEntity." }

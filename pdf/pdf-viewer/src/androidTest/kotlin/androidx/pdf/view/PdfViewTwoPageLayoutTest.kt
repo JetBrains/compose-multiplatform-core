@@ -50,8 +50,8 @@ class PdfViewTwoPageLayoutTest {
     fun testRerenderOnPagesPerRowChange_singleToTwoPage() = runTest {
         // With a 1200x1000 viewport, and pages of 500x200
         val pdfDocument = FakePdfDocument(List(10) { Point(500, 200) })
-        val horizontalSpacing = 15f
-        val verticalSpacing = 20f
+        val horizontalSpacing = 15
+        val verticalSpacing = 20
         // Initial layout is single page
         setupPdfView(
             1200,
@@ -105,8 +105,8 @@ class PdfViewTwoPageLayoutTest {
     fun testRerenderOnPagesPerRowChange_twoToSinglePage() = runTest {
         // With a 1200x1000 viewport, and pages of 500x200
         val pdfDocument = FakePdfDocument(List(10) { Point(500, 200) })
-        val horizontalSpacing = 15f
-        val verticalSpacing = 15f
+        val horizontalSpacing = 15
+        val verticalSpacing = 15
         // Initial layout is two page
         setupPdfView(1200, 1000, pdfDocument, PdfView.TWO_PAGE, horizontalSpacing, verticalSpacing)
 
@@ -152,8 +152,8 @@ class PdfViewTwoPageLayoutTest {
     @Test
     fun testRerenderOnHorizontalSpacingChange() = runTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(500, 200) })
-        val horizontalSpacing = 20f
-        val verticalSpacing = 20f
+        val horizontalSpacing = 20
+        val verticalSpacing = 20
         // Initial layout setup.
         setupPdfView(1200, 1000, pdfDocument, PdfView.TWO_PAGE, horizontalSpacing, verticalSpacing)
 
@@ -173,7 +173,7 @@ class PdfViewTwoPageLayoutTest {
             // Change horizontal spacing
             onActivity {
                 val pdfView = it.findViewById<PdfView>(PDF_VIEW_ID)
-                pdfView.horizontalPageSpacing = 40f
+                pdfView.horizontalPageSpacing = 40
             }
 
             // Verify new layout
@@ -194,7 +194,7 @@ class PdfViewTwoPageLayoutTest {
     @Test
     fun testRerenderOnVerticalSpacingChange() = runTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(500, 200) })
-        setupPdfView(1200, 1000, pdfDocument, PdfView.SINGLE_PAGE, 5f, 10f)
+        setupPdfView(1200, 1000, pdfDocument, PdfView.SINGLE_PAGE, 5, 10)
 
         lateinit var firstPageLocation: RectF
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
@@ -210,7 +210,7 @@ class PdfViewTwoPageLayoutTest {
             // Change vertical spacing
             onActivity {
                 val pdfView = it.findViewById<PdfView>(PDF_VIEW_ID)
-                pdfView.verticalPageSpacing = 30f
+                pdfView.verticalPageSpacing = 30
             }
 
             // Verify new page location
@@ -229,7 +229,7 @@ class PdfViewTwoPageLayoutTest {
     @Test
     fun testOrientationChange_restoresState() = runTest {
         val pdfDocument = FakePdfDocument(List(10) { Point(600, 1000) })
-        setupPdfView(1220, 1000, pdfDocument, PdfView.TWO_PAGE, 20f, 15f)
+        setupPdfView(1220, 1000, pdfDocument, PdfView.TWO_PAGE, 20, 15)
 
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
             // Verify initial layout and go to a page
@@ -273,8 +273,8 @@ class PdfViewTwoPageLayoutTest {
             height: Int,
             fakePdfDocument: FakePdfDocument?,
             pagesPerRow: Int,
-            horizontalPageSpacing: Float,
-            verticalPageSpacing: Float,
+            horizontalPageSpacing: Int,
+            verticalPageSpacing: Int,
         ) {
             PdfViewTestActivity.onCreateCallback = { activity ->
                 with(activity) {

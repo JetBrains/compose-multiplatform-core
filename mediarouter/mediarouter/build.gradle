@@ -36,13 +36,13 @@ dependencies {
     // See b/283315121 for context, However we cannot depend on tip of the tree dependency because
     // it prevents our library releases, so we should update this dependency manually whenever
     // there is a new stable release of it.
-    implementation("androidx.core:core:1.10.1")
+    implementation(project(":core:core"))
     implementation("androidx.appcompat:appcompat:1.1.0")
     implementation("androidx.palette:palette:1.0.0")
     implementation("androidx.recyclerview:recyclerview:1.1.0")
     implementation("androidx.appcompat:appcompat-resources:1.2.0")
 
-    implementation("androidx.annotation:annotation-experimental:1.4.1")
+    implementation(project(":annotation:annotation"))
 
     testImplementation(libs.junit)
     testImplementation(libs.testCore)
@@ -54,12 +54,19 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.espressoCore)
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockito)
     androidTestImplementation(project(":mediarouter:mediarouter-testing"))
 }
 
 android {
     defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.mediarouter"
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
 }
 
 androidx {

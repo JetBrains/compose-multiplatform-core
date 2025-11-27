@@ -19,6 +19,7 @@ package androidx.pdf.annotation
 import android.os.ParcelFileDescriptor
 import androidx.annotation.RestrictTo
 import androidx.pdf.PdfDocument
+import androidx.pdf.PdfWriteHandle
 import androidx.pdf.annotation.models.AnnotationResult
 import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.models.EditsResult
@@ -26,8 +27,9 @@ import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.annotation.models.PdfEdit
 import androidx.pdf.annotation.models.PdfEditEntry
 import androidx.pdf.annotation.models.PdfEdits
+import androidx.pdf.models.FormEditInfo
 
-/** Represents a PDF document that allows for editing of annotations. */
+/** Represents a PDF document that allows for editing. */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
 public abstract class EditablePdfDocument : PdfDocument {
 
@@ -42,6 +44,21 @@ public abstract class EditablePdfDocument : PdfDocument {
     public abstract suspend fun <T : PdfEditEntry<out PdfEdit>> getEditsForPage(
         pageNum: Int
     ): List<T>
+
+    /**
+     * Applies the changes specified by [record] to the form.
+     *
+     * Any areas which are invalidated due to this operation are notified via
+     * [OnPdfContentInvalidatedListener] callback.
+     *
+     * It is recommended to maintain a list of [FormEditInfo] applied to the document so they can be
+     * saved and restored across destructive events like low memory kills or configuration changes.
+     *
+     * @property record The [FormEditInfo] to apply to the form.
+     * @throws IllegalArgumentException if the provided [record] cannot be applied to the widget
+     *   indicated by the index, or if the index does not correspond to a widget on the page.
+     */
+    public abstract suspend fun applyEdit(record: FormEditInfo)
 
     /**
      * Applies a list of annotation edits to the document.
@@ -103,4 +120,10 @@ public abstract class EditablePdfDocument : PdfDocument {
 
     /** Discards all uncommitted edits. */
     public abstract fun clearUncommittedEdits()
+
+    /**
+     * Creates a [PdfWriteHandle] which can be used to save the document to a
+     * [ParcelFileDescriptor].
+     */
+    public abstract fun createWriteHandle(): PdfWriteHandle
 }

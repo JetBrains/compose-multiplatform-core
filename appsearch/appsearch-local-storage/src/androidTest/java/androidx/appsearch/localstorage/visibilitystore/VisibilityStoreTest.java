@@ -212,6 +212,7 @@ public class VisibilityStoreTest {
                 VisibilityStore.DOCUMENT_VISIBILITY_DATABASE_NAME,
                 Collections.singletonList(brokenSchema),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ Collections.emptyMap(),
                 /*forceOverride=*/ true,
                 /*version=*/ VisibilityToDocumentConverter.SCHEMA_VERSION_LATEST,
                 /*setSchemaStatsBuilder=*/ null,
@@ -419,6 +420,7 @@ public class VisibilityStoreTest {
                 VisibilityPermissionConfig.SCHEMA,
                 VisibilityToDocumentConverter.DEPRECATED_PUBLIC_ACL_OVERLAY_SCHEMA),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ Collections.emptyMap(),
                 /*forceOverride=*/ true,
                 /*version=*/ VisibilityToDocumentConverter.SCHEMA_VERSION_LATEST,
                 /*setSchemaStatsBuilder=*/ null,
@@ -492,6 +494,7 @@ public class VisibilityStoreTest {
                 ImmutableList.of(deprecatedOverlaySchema, deprecatedVisibleToConfigSchema,
                         VisibilityPermissionConfig.SCHEMA),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ Collections.emptyMap(),
                 /*forceOverride=*/ true,
                 /*version=*/ VisibilityToDocumentConverter
                         .OVERLAY_SCHEMA_VERSION_PUBLIC_ACL_VISIBLE_TO_CONFIG,

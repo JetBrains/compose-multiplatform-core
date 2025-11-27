@@ -1,0 +1,88 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.webgpu
+
+import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
+import kotlin.annotation.AnnotationRetention
+import kotlin.annotation.Retention
+import kotlin.annotation.Target
+
+@Retention(AnnotationRetention.SOURCE)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@IntDef(
+    value =
+        [
+            CompareFunction.Undefined,
+            CompareFunction.Never,
+            CompareFunction.Less,
+            CompareFunction.Equal,
+            CompareFunction.LessEqual,
+            CompareFunction.Greater,
+            CompareFunction.NotEqual,
+            CompareFunction.GreaterEqual,
+            CompareFunction.Always,
+        ]
+)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE, AnnotationTarget.VALUE_PARAMETER)
+
+/** The comparison function used in depth or sampler comparison operations. */
+public annotation class CompareFunction {
+    public companion object {
+
+        /** An undefined compare function. */
+        public const val Undefined: Int = 0x00000000
+
+        /** Comparison passes if $\text{ref} < \text{value}$. */
+        public const val Never: Int = 0x00000001
+
+        /** Comparison passes if $\text{ref} < \text{value}$. */
+        public const val Less: Int = 0x00000002
+
+        /** Comparison passes if $\text{ref} == \text{value}$. */
+        public const val Equal: Int = 0x00000003
+
+        /** Comparison passes if $\text{ref} \le \text{value}$. */
+        public const val LessEqual: Int = 0x00000004
+
+        /** Comparison passes if $\text{ref} > \text{value}$. */
+        public const val Greater: Int = 0x00000005
+
+        /** Comparison passes if $\text{ref} \ne \text{value}$. */
+        public const val NotEqual: Int = 0x00000006
+
+        /** Comparison passes if $\text{ref} \ge \text{value}$. */
+        public const val GreaterEqual: Int = 0x00000007
+
+        /** Comparison always passes. */
+        public const val Always: Int = 0x00000008
+        internal val names: Map<Int, String> =
+            mapOf(
+                0x00000000 to "Undefined",
+                0x00000001 to "Never",
+                0x00000002 to "Less",
+                0x00000003 to "Equal",
+                0x00000004 to "LessEqual",
+                0x00000005 to "Greater",
+                0x00000006 to "NotEqual",
+                0x00000007 to "GreaterEqual",
+                0x00000008 to "Always",
+            )
+
+        public fun toString(@CompareFunction value: Int): String = names[value] ?: value.toString()
+    }
+}

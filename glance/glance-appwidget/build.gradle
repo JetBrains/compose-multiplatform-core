@@ -26,7 +26,6 @@ import androidx.glance.appwidget.layoutgenerator.gradle.LayoutGeneratorTask
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.experimental.built-in-kotlin")
     id("com.android.library")
     id("AndroidXComposePlugin")
     id("com.google.protobuf")

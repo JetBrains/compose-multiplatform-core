@@ -17,6 +17,7 @@
 package androidx.biometric
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Bitmap
 import androidx.annotation.RestrictTo
 import androidx.biometric.AuthenticationRequest.Biometric
@@ -24,9 +25,9 @@ import androidx.biometric.BiometricPrompt.AuthenticationCallback
 import androidx.biometric.BiometricPrompt.CryptoObject
 import androidx.biometric.BiometricPrompt.LifecycleContainer
 import androidx.biometric.BiometricPrompt.PromptInfo
-import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle.Event.*
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import java.util.concurrent.Executor
 
@@ -39,55 +40,44 @@ public class AuthenticationResultRegistry {
     /**
      * Register a new callback with this registry. This is normally called by a higher level
      * convenience methods like [registerForAuthenticationResult].
-     *
-     * If [lifecycleContainer] is null,you must call [AuthenticationResultLauncher.unregister] on
-     * the returned [AuthenticationResultLauncher] when the launcher is no longer needed to release
-     * any values that might be captured in the registered callback.
      */
     public fun register(
+        context: Context,
+        lifecycleOwner: LifecycleOwner,
         viewModelStoreOwner: ViewModelStoreOwner,
-        fragmentManager: FragmentManager, // TODO(b/178855209): Remove fragmentManager
+        confirmCredentialActivityLauncher: Runnable,
         resultCallback: AuthenticationResultCallback,
-        lifecycleContainer: LifecycleContainer? = null,
         callbackExecutor: Executor? = null,
     ): AuthenticationResultLauncher {
         val callback = createAuthenticationCallback(resultCallback)
         var biometricPrompt: BiometricPrompt? = null
+        val lifecycleContainer = LifecycleContainer(lifecycleOwner.lifecycle)
 
-        fun unregister() {
-            lifecycleContainer?.clearObservers()
-            biometricPrompt?.destroy()
-            biometricPrompt = null
-        }
-
-        if (lifecycleContainer != null) {
-            val lifecycleObserver = LifecycleEventObserver { _, event ->
-                when (event) {
-                    ON_START -> {
-                        biometricPrompt =
-                            BiometricPrompt(
-                                viewModelStoreOwner,
-                                fragmentManager,
-                                callback,
-                                callbackExecutor,
-                            )
-                    }
-                    ON_STOP -> {}
-                    ON_DESTROY -> {
-                        // The authentication should not be canceled here using
-                        // cancelAuthentication().
-                        // Instead, rely on the app to manage cancellation through cancel() calls,
-                        // ensuring the authentication survives configuration changes.
-                        unregister()
-                    }
-                    else -> {}
+        val lifecycleObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                ON_START -> {
+                    biometricPrompt =
+                        BiometricPrompt(
+                            context,
+                            lifecycleOwner,
+                            viewModelStoreOwner,
+                            confirmCredentialActivityLauncher,
+                            callbackExecutor,
+                            callback,
+                        )
                 }
+                ON_STOP -> {}
+                ON_DESTROY -> {
+                    // The authentication should not be canceled here using
+                    // cancelAuthentication().
+                    // Instead, rely on the app to manage cancellation through cancel() calls,
+                    // ensuring the authentication survives configuration changes.
+                    lifecycleContainer.clearObservers()
+                }
+                else -> {}
             }
-            lifecycleContainer.addObserver(lifecycleObserver)
-        } else {
-            biometricPrompt =
-                BiometricPrompt(viewModelStoreOwner, fragmentManager, callback, callbackExecutor)
         }
+        lifecycleContainer.addObserver(lifecycleObserver)
 
         return object : AuthenticationResultLauncher {
             override fun launch(input: AuthenticationRequest) {
@@ -96,11 +86,6 @@ public class AuthenticationResultRegistry {
 
             override fun cancel() {
                 biometricPrompt?.cancelAuthentication()
-                unregister()
-            }
-
-            override fun unregister() {
-                unregister()
             }
         }
     }

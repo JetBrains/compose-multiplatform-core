@@ -201,7 +201,7 @@ abstract class BaseEntity extends BaseScenePose implements Entity {
         return mParent.getActivitySpacePose()
                 .compose(
                         new Pose(
-                                mPose.getTranslation().scale(mParent.getWorldSpaceScale()),
+                                mPose.getTranslation().scale(mParent.getActivitySpaceScale()),
                                 mPose.getRotation()));
     }
 

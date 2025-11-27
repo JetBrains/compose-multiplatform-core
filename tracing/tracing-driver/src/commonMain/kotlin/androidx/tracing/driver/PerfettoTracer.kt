@@ -54,7 +54,7 @@ public class PerfettoTracer(context: TraceContext, name: String) :
             else -> {
                 var track = process.threads[id]
                 if (track == null) {
-                    track = process.getOrCreateThreadTrack(id = id, name = name)
+                    track = process.getOrCreateThreadTrack(id = id, name = current.name)
                     l2ThreadTrack = l1ThreadTrack
                     l1ThreadTrack = track
                 }

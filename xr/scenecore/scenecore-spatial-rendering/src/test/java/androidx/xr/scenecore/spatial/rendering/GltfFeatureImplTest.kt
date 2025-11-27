@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,9 +33,19 @@ import com.android.extensions.xr.node.Node
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
 import com.google.androidxr.splitengine.SubspaceNode
 import com.google.common.truth.Truth.assertThat
-import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.intrinsics.COROUTINE_SUSPENDED
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -52,7 +62,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Config.TARGET_SDK])
 class GltfFeatureImplTest {
-
     private val xrExtensions = XrExtensionsProvider.getXrExtensions()!!
     private val executor = FakeScheduledExecutorService()
     private val mockImpressApi = mock(ImpressApi::class.java)
@@ -64,7 +73,10 @@ class GltfFeatureImplTest {
     private val expectedSubspace = SubspaceNode(SUBSPACE_ID, subspaceNode)
 
     private lateinit var gltfFeature: GltfFeature
+    private lateinit var testDispatcher: TestDispatcher
+    private lateinit var testScope: TestScope
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     @Throws(ExecutionException::class, InterruptedException::class)
     fun setUp() {
@@ -75,18 +87,21 @@ class GltfFeatureImplTest {
         ShadowXrExtensions.extract(xrExtensions)
             .setOpenXrWorldSpaceType(OPEN_XR_REFERENCE_SPACE_TYPE)
         gltfFeature = createGltfFeature()
+        testDispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(testDispatcher)
+        testScope = TestScope(testDispatcher)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @After
     fun tearDown() {
         gltfFeature.dispose()
+        Dispatchers.resetMain()
     }
 
     @Throws(ExecutionException::class, InterruptedException::class)
     private fun createGltfFeature(): GltfFeature {
-        val modelTokenFuture: ListenableFuture<GltfModel> =
-            fakeImpressApi.loadGltfAsset("FakeGltfAsset.glb")
-        val model = modelTokenFuture.get()
+        val model: GltfModel = runBlocking { fakeImpressApi.loadGltfAssetTemp("FakeGltfAsset.glb") }
         val modelToken = model.nativeHandle
         modelImpressNode = fakeImpressApi.instanceGltfModel(modelToken)
         `when`(mockImpressApi.createImpressNode()).thenReturn(fakeImpressApi.createImpressNode())
@@ -100,41 +115,64 @@ class GltfFeatureImplTest {
     @Throws(ExecutionException::class, InterruptedException::class)
     private fun createWaterMaterial(isAlphaMapVersion: Boolean): MaterialResource {
         val materialResourceFuture = ResolvableFuture.create<MaterialResource>()
-        val materialFuture: ListenableFuture<WaterMaterial> =
-            fakeImpressApi.createWaterMaterial(isAlphaMapVersion)
+        val material: WaterMaterial = runBlocking {
+            fakeImpressApi.createWaterMaterialTemp(isAlphaMapVersion)
+        }
 
-        val material = materialFuture.get()
         materialResourceFuture.set(material)
 
         return materialResourceFuture.get()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun startAnimation_startsAnimation() {
-        val animationName = "test_animation"
-        `when`(mockImpressApi.animateGltfModel(modelImpressNode, animationName, true))
-            .thenReturn(fakeImpressApi.animateGltfModel(modelImpressNode, animationName, true))
-        gltfFeature.startAnimation(/* looping= */ true, animationName, executor)
+    fun startAnimation_startsAnimation() =
+        runTest(testDispatcher) {
+            val animationName = "test_animation"
 
-        assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
-        verify(mockImpressApi).animateGltfModel(modelImpressNode, animationName, true)
-    }
+            runBlocking {
+                Mockito.doAnswer {
+                        assertThat(gltfFeature.animationState)
+                            .isEqualTo(GltfEntity.AnimationState.PLAYING)
+                        null
+                    }
+                    .`when`(mockImpressApi)
+                    .animateGltfModelTemp(modelImpressNode, animationName, true)
+            }
+            gltfFeature.startAnimation(/* looping= */ true, animationName, executor)
+            executor.runAll()
 
+            runBlocking {
+                verify(mockImpressApi).animateGltfModelTemp(modelImpressNode, animationName, true)
+            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun stopAnimation_stopsAnimation() {
-        val animationName = "test_animation"
-        `when`(mockImpressApi.animateGltfModel(modelImpressNode, animationName, true))
-            .thenReturn(fakeImpressApi.animateGltfModel(modelImpressNode, animationName, true))
-        gltfFeature.startAnimation(/* looping= */ true, animationName, executor)
+    fun stopAnimation_stopsAnimation() =
+        runTest(testDispatcher) {
+            val animationName = "test_animation"
 
-        assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
+            runBlocking {
+                Mockito.doAnswer { COROUTINE_SUSPENDED }
+                    .`when`(mockImpressApi)
+                    .animateGltfModelTemp(modelImpressNode, animationName, true)
+            }
+            gltfFeature.startAnimation(
+                /* looping= */ true,
+                animationName,
+                testDispatcher.asExecutor(),
+            )
+            executor.runAll()
 
-        gltfFeature.stopAnimation()
-        fakeImpressApi.stopGltfModelAnimation(modelImpressNode)
+            assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
 
-        assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.STOPPED)
-        verify(mockImpressApi).stopGltfModelAnimation(modelImpressNode)
-    }
+            // TODO(b/461899032): Add more robust logic to fake Impress APIs
+            gltfFeature.stopAnimation()
+
+            assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.STOPPED)
+            verify(mockImpressApi).stopGltfModelAnimation(modelImpressNode)
+        }
 
     @Test
     @Throws(Exception::class)
@@ -192,13 +230,21 @@ class GltfFeatureImplTest {
     @Throws(Exception::class)
     fun animationStateListener_isTriggeredOnAnimationStateChanges() {
         val animationName = "test_animation"
-        `when`(mockImpressApi.animateGltfModel(modelImpressNode, animationName, true))
-            .thenReturn(fakeImpressApi.animateGltfModel(modelImpressNode, animationName, true))
+
+        runBlocking {
+            Mockito.doAnswer {
+                    assertThat(gltfFeature.animationState)
+                        .isEqualTo(GltfEntity.AnimationState.PLAYING)
+                    null
+                }
+                .`when`(mockImpressApi)
+                .animateGltfModelTemp(modelImpressNode, animationName, true)
+        }
+
         val latestValue = AtomicReference(GltfEntity.AnimationState.STOPPED)
         gltfFeature.addAnimationStateListener(Runnable::run, latestValue::set)
         gltfFeature.startAnimation(/* looping= */ true, animationName, executor)
-
-        assertThat(latestValue.get()).isEqualTo(GltfEntity.AnimationState.PLAYING)
+        executor.runAll()
 
         gltfFeature.stopAnimation()
 

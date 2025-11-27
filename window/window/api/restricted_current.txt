@@ -794,6 +794,8 @@ package androidx.window.layout {
     method @androidx.window.RequiresWindowSdkExtension(version=9) public default androidx.window.layout.WindowLayoutInfo getCurrentWindowLayoutInfo(@UiContext android.content.Context context);
     method @InaccessibleFromKotlin public static androidx.window.layout.WindowInfoTracker getOrCreate(android.content.Context context);
     method @InaccessibleFromKotlin @androidx.window.RequiresWindowSdkExtension(version=6) public default java.util.List<androidx.window.layout.SupportedPosture> getSupportedPostures();
+    method public default void registerWindowLayoutInfoListener(@UiContext android.content.Context context, java.util.concurrent.Executor executor, androidx.core.util.Consumer<androidx.window.layout.WindowLayoutInfo> listener);
+    method public default void unregisterWindowLayoutInfoListener(androidx.core.util.Consumer<androidx.window.layout.WindowLayoutInfo> listener);
     method public kotlinx.coroutines.flow.Flow<androidx.window.layout.WindowLayoutInfo> windowLayoutInfo(android.app.Activity activity);
     method public default kotlinx.coroutines.flow.Flow<androidx.window.layout.WindowLayoutInfo> windowLayoutInfo(@UiContext android.content.Context context);
     property @androidx.window.RequiresWindowSdkExtension(version=6) public default java.util.List<androidx.window.layout.SupportedPosture> supportedPostures;

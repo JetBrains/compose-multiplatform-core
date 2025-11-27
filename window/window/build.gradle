@@ -28,7 +28,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
@@ -37,9 +36,11 @@ android {
         String testUtilDir = 'src/testUtil/java'
         test {
             java.srcDir testUtilDir
+            kotlin.directories.add(testUtilDir)
         }
         androidTest {
             java.srcDir testUtilDir
+            kotlin.directories.add(testUtilDir)
         }
     }
     namespace = "androidx.window"
@@ -54,7 +55,7 @@ dependencies {
     implementation(project(":window:window-core"))
 
     def extensions_core_version = "androidx.window.extensions.core:core:1.0.0"
-    def extensions_version = "androidx.window.extensions:extensions:1.5.0"
+    def extensions_version = project(":window:extensions:extensions")
     def sidecar_version = "androidx.window.sidecar:sidecar:1.0.0"
     // A compile only dependency on extensions.core so that other libraries do not expose it
     // transitively.

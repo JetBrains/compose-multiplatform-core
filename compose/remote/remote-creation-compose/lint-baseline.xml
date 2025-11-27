@@ -454,8 +454,8 @@
     <issue
         id="UnnecessaryLambdaCreation"
         message="Creating an unnecessary lambda to emit a captured lambda"
-        errorLine1="        @Composable { content() },"
-        errorLine2="                      ~~~~~~~">
+        errorLine1="        content = @Composable { content() },"
+        errorLine2="                                ~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/RemoteComposeCapture.kt"/>
     </issue>
@@ -470,18 +470,9 @@
     </issue>
 
     <issue
-        id="AutoboxingStateValueProperty"
-        message="Reading `value` will cause an autoboxing operation. Use `intValue` to avoid unnecessary allocations."
-        errorLine1="    ) : this(content, { creationState -> id ?: content.value.toLong() })"
-        errorLine2="                                                       ~~~~~">
-        <location
-            file="src/main/java/androidx/compose/remote/creation/compose/state/RemoteInt.kt"/>
-    </issue>
-
-    <issue
         id="PrimitiveInCollection"
         message="field animCache with type HashMap&lt;Integer, AnimatedRemoteFloat>: replace with IntObjectMap"
-        errorLine1="    public val animCache: HashMap&lt;Int, AnimatedRemoteFloat> = HashMap&lt;Int, AnimatedRemoteFloat>()"
+        errorLine1="    public val animCache: HashMap&lt;Int, AnimatedRemoteFloat> = HashMap()"
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/Capture.kt"/>
@@ -490,7 +481,7 @@
     <issue
         id="PrimitiveInCollection"
         message="return type HashMap&lt;Integer, AnimatedRemoteFloat> of getAnimCache: replace with IntObjectMap"
-        errorLine1="    public val animCache: HashMap&lt;Int, AnimatedRemoteFloat> = HashMap&lt;Int, AnimatedRemoteFloat>()"
+        errorLine1="    public val animCache: HashMap&lt;Int, AnimatedRemoteFloat> = HashMap()"
         errorLine2="                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/Capture.kt"/>
@@ -499,7 +490,7 @@
     <issue
         id="PrimitiveInCollection"
         message="field expressionCache with type HashMap&lt;Integer, RemoteFloat>: replace with IntObjectMap"
-        errorLine1="    public val expressionCache: HashMap&lt;Int, RemoteFloat> = HashMap&lt;Int, RemoteFloat>()"
+        errorLine1="    public val expressionCache: HashMap&lt;Int, RemoteFloat> = HashMap()"
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/Capture.kt"/>
@@ -508,7 +499,7 @@
     <issue
         id="PrimitiveInCollection"
         message="return type HashMap&lt;Integer, RemoteFloat> of getExpressionCache: replace with IntObjectMap"
-        errorLine1="    public val expressionCache: HashMap&lt;Int, RemoteFloat> = HashMap&lt;Int, RemoteFloat>()"
+        errorLine1="    public val expressionCache: HashMap&lt;Int, RemoteFloat> = HashMap()"
         errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/Capture.kt"/>
@@ -517,7 +508,7 @@
     <issue
         id="PrimitiveInCollection"
         message="field intExpressionCache with type HashMap&lt;Integer, RemoteInt>: replace with IntObjectMap"
-        errorLine1="    public val intExpressionCache: HashMap&lt;Int, RemoteInt> = HashMap&lt;Int, RemoteInt>()"
+        errorLine1="    public val intExpressionCache: HashMap&lt;Int, RemoteInt> = HashMap()"
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/Capture.kt"/>
@@ -526,7 +517,7 @@
     <issue
         id="PrimitiveInCollection"
         message="return type HashMap&lt;Integer, RemoteInt> of getIntExpressionCache: replace with IntObjectMap"
-        errorLine1="    public val intExpressionCache: HashMap&lt;Int, RemoteInt> = HashMap&lt;Int, RemoteInt>()"
+        errorLine1="    public val intExpressionCache: HashMap&lt;Int, RemoteInt> = HashMap()"
         errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/Capture.kt"/>
@@ -534,18 +525,18 @@
 
     <issue
         id="PrimitiveInCollection"
-        message="field remoteVariableToId with type HashMap&lt;BaseRemoteState, Integer>: replace with ObjectIntMap"
-        errorLine1="    public val remoteVariableToId: HashMap&lt;BaseRemoteState, Int> = HashMap&lt;BaseRemoteState, Int>()"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        message="field remoteVariableToId with type HashMap&lt;RemoteState&lt;?>, Integer>: replace with ObjectIntMap"
+        errorLine1="    public val remoteVariableToId: HashMap&lt;RemoteState&lt;*>, Int> = HashMap()"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/Capture.kt"/>
     </issue>
 
     <issue
         id="PrimitiveInCollection"
-        message="return type HashMap&lt;BaseRemoteState, Integer> of getRemoteVariableToId: replace with ObjectIntMap"
-        errorLine1="    public val remoteVariableToId: HashMap&lt;BaseRemoteState, Int> = HashMap&lt;BaseRemoteState, Int>()"
-        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        message="return type HashMap&lt;RemoteState&lt;?>, Integer> of getRemoteVariableToId: replace with ObjectIntMap"
+        errorLine1="    public val remoteVariableToId: HashMap&lt;RemoteState&lt;*>, Int> = HashMap()"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="src/main/java/androidx/compose/remote/creation/compose/capture/Capture.kt"/>
     </issue>

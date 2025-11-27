@@ -259,8 +259,12 @@ for compact in "--ci" "--strict" "--clean" "--no-ci"; do
     fi
   fi
   if [ "$compact" == "--strict" ]; then
-    expanded="-Pandroidx.validateNoUnrecognizedMessages\
-     -Pandroidx.verifyUpToDate"
+    if [[ " ${@} " =~ " -Pandroidx.useMaxDepVersions " ]]; then
+      expanded="-Pandroidx.validateNoUnrecognizedMessages"
+    else
+      expanded="-Pandroidx.validateNoUnrecognizedMessages\
+       -Pandroidx.verifyUpToDate"
+    fi
     if [ "$USE_ANDROIDX_REMOTE_BUILD_CACHE" == "" -o "$USE_ANDROIDX_REMOTE_BUILD_CACHE" == "false" ]; then
       expanded="$expanded --offline"
     fi

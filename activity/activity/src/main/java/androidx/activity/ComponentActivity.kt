@@ -17,6 +17,7 @@ package androidx.activity
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.PictureInPictureUiState
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
@@ -61,8 +62,10 @@ import androidx.core.app.MultiWindowModeChangedInfo
 import androidx.core.app.OnMultiWindowModeChangedProvider
 import androidx.core.app.OnNewIntentProvider
 import androidx.core.app.OnPictureInPictureModeChangedProvider
+import androidx.core.app.OnPictureInPictureUiStateChangedProvider
 import androidx.core.app.OnUserLeaveHintProvider
 import androidx.core.app.PictureInPictureModeChangedInfo
+import androidx.core.app.PictureInPictureUiStateCompat
 import androidx.core.content.OnConfigurationChangedProvider
 import androidx.core.content.OnTrimMemoryProvider
 import androidx.core.util.Consumer
@@ -124,6 +127,7 @@ open class ComponentActivity() :
     OnNewIntentProvider,
     OnMultiWindowModeChangedProvider,
     OnPictureInPictureModeChangedProvider,
+    OnPictureInPictureUiStateChangedProvider,
     OnUserLeaveHintProvider,
     MenuHost,
     FullyDrawnReporterOwner {
@@ -237,6 +241,8 @@ open class ComponentActivity() :
         CopyOnWriteArrayList<Consumer<MultiWindowModeChangedInfo>>()
     private val onPictureInPictureModeChangedListeners =
         CopyOnWriteArrayList<Consumer<PictureInPictureModeChangedInfo>>()
+    private val onPictureInPictureUiStateChangedListeners =
+        CopyOnWriteArrayList<Consumer<PictureInPictureUiStateCompat>>()
     private val onUserLeaveHintListeners = CopyOnWriteArrayList<Runnable>()
     private var dispatchingOnMultiWindowModeChanged = false
     private var dispatchingOnPictureInPictureModeChanged = false
@@ -988,6 +994,17 @@ open class ComponentActivity() :
         }
     }
 
+    /** {@inheritDoc} */
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    @CallSuper
+    override fun onPictureInPictureUiStateChanged(pipState: PictureInPictureUiState) {
+        super.onPictureInPictureUiStateChanged(pipState)
+        val pipStateCompat = PictureInPictureUiStateCompat.fromPictureInPictureUiState(pipState)
+        for (listener in onPictureInPictureUiStateChangedListeners) {
+            listener.accept(pipStateCompat)
+        }
+    }
+
     final override fun addOnPictureInPictureModeChangedListener(
         listener: Consumer<PictureInPictureModeChangedInfo>
     ) {
@@ -998,6 +1015,18 @@ open class ComponentActivity() :
         listener: Consumer<PictureInPictureModeChangedInfo>
     ) {
         onPictureInPictureModeChangedListeners.remove(listener)
+    }
+
+    final override fun addOnPictureInPictureUiStateChangedListener(
+        listener: Consumer<PictureInPictureUiStateCompat>
+    ) {
+        onPictureInPictureUiStateChangedListeners.add(listener)
+    }
+
+    final override fun removeOnPictureInPictureUiStateChangedListener(
+        listener: Consumer<PictureInPictureUiStateCompat>
+    ) {
+        onPictureInPictureUiStateChangedListeners.remove(listener)
     }
 
     /**

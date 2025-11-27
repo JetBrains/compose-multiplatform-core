@@ -83,6 +83,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class RemoteComposeWriter {
@@ -91,8 +92,8 @@ public class RemoteComposeWriter {
     protected @NonNull RcPlatformServices mPlatform;
     private int mOriginalWidth = 0;
     private int mOriginalHeight = 0;
-    private @NonNull String mContentDescription = "";
-    private boolean mHasForceSendingNewPaint = false;
+    private @Nullable String mContentDescription = null;
+    protected boolean mHasForceSendingNewPaint = false;
 
     public static final float TIME_IN_CONTINUOUS_SEC = RemoteContext.FLOAT_CONTINUOUS_SEC;
     public static final int FONT_TYPE_DEFAULT = PaintBundle.FONT_TYPE_DEFAULT;
@@ -102,12 +103,95 @@ public class RemoteComposeWriter {
 
     protected final @NonNull RcPaint mPainter = new RcPaint(this);
 
+    private @Nullable Object mWriterCallback = null;
+
     /**
      * Returns the paint object
      * @return the paint object
      */
     public @NonNull RcPaint getRcPaint() {
         return mPainter;
+    }
+
+    public @Nullable Object getWriterCallback() {
+        return mWriterCallback;
+    }
+
+    /**
+     * Create a RemoteComposeWriter
+     *
+     * @param creationDisplayInfo original document size
+     * @param contentDescription  content description
+     * @param profile             the platform to use
+     */
+    public RemoteComposeWriter(
+            @NonNull CreationDisplayInfo creationDisplayInfo,
+            @Nullable String contentDescription,
+            @NonNull Profile profile,
+            @Nullable Object writerCallback) {
+        this(
+                profile,
+                hTag(Header.DOC_WIDTH, creationDisplayInfo.getWidth()),
+                hTag(Header.DOC_HEIGHT, creationDisplayInfo.getHeight()),
+                hTag(Header.DOC_CONTENT_DESCRIPTION,
+                        contentDescription != null ? contentDescription : ""),
+                hTag(Header.DOC_PROFILES, profile.getOperationsProfiles()));
+        this.mWriterCallback = writerCallback;
+    }
+
+    /**
+     * Create a RemoteComposeWriter
+     *
+     * @param creationDisplayInfo original document size
+     * @param contentDescription  content description
+     * @param profile             the platform to use
+     */
+    public RemoteComposeWriter(
+            @NonNull CreationDisplayInfo creationDisplayInfo,
+            @Nullable String contentDescription,
+            @NonNull Profile profile) {
+        this(
+                profile,
+                hTag(Header.DOC_WIDTH, creationDisplayInfo.getWidth()),
+                hTag(Header.DOC_HEIGHT, creationDisplayInfo.getHeight()),
+                hTag(Header.DOC_CONTENT_DESCRIPTION,
+                        contentDescription != null ? contentDescription : ""),
+                hTag(Header.DOC_PROFILES, profile.getOperationsProfiles()));
+    }
+
+    /**
+     * create a new RemoteComposeWriter
+     *
+     * @param profile the platform to use
+     * @param tags    properties of the document
+     */
+    public RemoteComposeWriter(@NonNull Profile profile, HTag @NonNull ... tags) {
+        this.mPlatform = profile.getPlatform();
+        mBuffer = new RemoteComposeBuffer(profile.getApiLevel());
+
+        Object w = HTag.getValue(tags, Header.DOC_WIDTH);
+        Object h = HTag.getValue(tags, Header.DOC_HEIGHT);
+        Object d = HTag.getValue(tags, Header.DOC_CONTENT_DESCRIPTION);
+        int profiles = HTag.getProfiles(tags);
+
+        if (w instanceof Integer) {
+            mOriginalWidth = (int) w;
+        }
+        if (h instanceof Integer) {
+            mOriginalHeight = (int) h;
+        }
+        if (d instanceof String) {
+            mContentDescription = (String) d;
+        }
+
+        Set<Integer> supportedOperations = profile.getSupportedOperations();
+        if (supportedOperations != null) {
+            mBuffer.setVersion(profile.getApiLevel(), supportedOperations);
+        } else {
+            mBuffer.setVersion(profile.getApiLevel(), profiles);
+        }
+
+        mBuffer.addHeader(HTag.getTags(tags), HTag.getValues(tags));
     }
 
     /**
@@ -121,7 +205,7 @@ public class RemoteComposeWriter {
      */
     public static @NonNull RemoteComposeWriter obtain(
             int width, int height, @NonNull String contentDescription, @NonNull Profile profile) {
-        return profile.create(width, height, contentDescription);
+        return profile.create(new CreationDisplayInfo(width, height, 1f), null);
     }
 
     /**
@@ -134,7 +218,7 @@ public class RemoteComposeWriter {
      */
     public static @NonNull RemoteComposeWriter obtain(
             int width, int height, @NonNull Profile profile) {
-        return profile.create(width, height, "");
+        return profile.create(new CreationDisplayInfo(width, height, 1f), null);
     }
 
     /**
@@ -146,7 +230,7 @@ public class RemoteComposeWriter {
      * @param platform the platform to use
      */
     public RemoteComposeWriter(
-            int width, int height, @NonNull String contentDescription,
+            int width, int height, @Nullable String contentDescription,
             @NonNull RcPlatformServices platform) {
         this.mPlatform = platform;
         mBuffer = new RemoteComposeBuffer();
@@ -238,7 +322,7 @@ public class RemoteComposeWriter {
      * @param buffer the buffer to use
      * @param tags properties of the document
      */
-    protected RemoteComposeWriter(
+    public RemoteComposeWriter(
             @NonNull Profile profile, @NonNull RemoteComposeBuffer buffer, HTag @NonNull ... tags) {
         this.mPlatform = profile.getPlatform();
         mBuffer = buffer;
@@ -273,8 +357,6 @@ public class RemoteComposeWriter {
 
     /**
      * Validate the float operations also throw exception if NaN
-     *
-     * @param ops
      */
     protected void validateOps(float @NonNull [] ops) {
         for (int i = 0; i < ops.length; i++) {
@@ -298,11 +380,11 @@ public class RemoteComposeWriter {
     /**
      * Insert a header
      *
-     * @param width the width of the document in pixels
-     * @param height the height of the document in pixels
+     * @param width              the width of the document in pixels
+     * @param height             the height of the document in pixels
      * @param contentDescription content description of the document
-     * @param density the density of the document in pixels per device pixel
-     * @param capabilities bitmask indicating needed capabilities (unused for now)
+     * @param density            the density of the document in pixels per device pixel
+     * @param capabilities       bitmask indicating needed capabilities (unused for now)
      */
     public void header(
             int width,
@@ -319,7 +401,7 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * @param tag the tag to use
+     * @param tag   the tag to use
      * @param value the value to use
      * @return a tag
      */
@@ -347,7 +429,7 @@ public class RemoteComposeWriter {
      *
      * @param path1 first path
      * @param path2 second path
-     * @param op operation to apply
+     * @param op    operation to apply
      * @return id of path
      */
     public int pathCombine(int path1, int path2, byte op) {
@@ -367,10 +449,6 @@ public class RemoteComposeWriter {
 
     /**
      * Returns the color attribute
-     *
-     * @param baseColor
-     * @param type
-     * @return
      */
     public float getColorAttribute(int baseColor, short type) {
         int id = mState.createNextAvailableId();
@@ -380,8 +458,6 @@ public class RemoteComposeWriter {
 
     /**
      * Explicitly encode actions in the buffer
-     *
-     * @param actions
      */
     public void addAction(Action @NonNull ... actions) {
         for (int i = 0; i < actions.length; i++) {
@@ -392,11 +468,6 @@ public class RemoteComposeWriter {
 
     /**
      * Returns a substring
-     *
-     * @param txtId
-     * @param start
-     * @param len
-     * @return
      */
     public int textSubtext(int txtId, float start, float len) {
         int id = mState.createNextAvailableId();
@@ -407,9 +478,6 @@ public class RemoteComposeWriter {
     /**
      * Measure bitmap font text dimensions.
      *
-     * @param textId
-     * @param bmFontId
-     * @param measureWidth
      * @return float id of the property
      */
     public float bitmapTextMeasure(int textId, int bmFontId, int measureWidth) {
@@ -422,8 +490,8 @@ public class RemoteComposeWriter {
      * Matrix multiply operation
      *
      * @param matrixId id of the matrix
-     * @param from input vector
-     * @param out output vector
+     * @param from     input vector
+     * @param out      output vector
      */
     public void addMatrixMultiply(float matrixId, float @Nullable [] from, float @Nullable [] out) {
         addMatrixMultiply(matrixId, (short) 0, from, out);
@@ -434,9 +502,9 @@ public class RemoteComposeWriter {
      * multiply with the inverse)
      *
      * @param matrixId id of the matrix
-     * @param type 0 = normal multiply , 1 is multiply with perspective
-     * @param from input vector
-     * @param out output vector
+     * @param type     0 = normal multiply , 1 is multiply with perspective
+     * @param from     input vector
+     * @param out      output vector
      */
     public void addMatrixMultiply(
             float matrixId, short type, float @Nullable [] from, float @NonNull [] out) {
@@ -473,10 +541,10 @@ public class RemoteComposeWriter {
      *
      * @param expressionX the x expression
      * @param expressionY the y expression
-     * @param start the start value
-     * @param end the end value
-     * @param count the number of points
-     * @param flags the flags
+     * @param start       the start value
+     * @param end         the end value
+     * @param count       the number of points
+     * @param flags       the flags
      * @return the id of the path
      */
     public int addPathExpression(
@@ -496,12 +564,12 @@ public class RemoteComposeWriter {
      * Add a polar path expression
      *
      * @param expressionR the radius expression
-     * @param start the start value
-     * @param end the end value
-     * @param count the number of points
-     * @param centerX the center x
-     * @param centerY the center y
-     * @param flags the flags
+     * @param start       the start value
+     * @param end         the end value
+     * @param count       the number of points
+     * @param centerX     the center x
+     * @param centerY     the center y
+     * @param flags       the flags
      * @return the id of the path
      */
     public int addPolarPathExpression(
@@ -517,7 +585,7 @@ public class RemoteComposeWriter {
         mBuffer.addPathExpression(
                 id,
                 expressionR,
-                new float[] {centerX, centerY},
+                new float[]{centerX, centerY},
                 start,
                 end,
                 count,
@@ -528,6 +596,7 @@ public class RemoteComposeWriter {
     /**
      * Get a byte array with the current buffer contents.
      * The array is a copy, so further changes to the buffer don't affect the array.
+     *
      * @return a byte array with the current buffer contents.
      */
     public byte @NonNull [] encodeToByteArray() {
@@ -536,13 +605,15 @@ public class RemoteComposeWriter {
 
     /** Used to create the tag values in the header */
     public static class HTag {
-        @NonNull Short mTag;
-        @NonNull Object mValue;
+        @NonNull
+        Short mTag;
+        @NonNull
+        Object mValue;
 
         /**
          * Create a tag
          *
-         * @param tag the tag to use
+         * @param tag   the tag to use
          * @param value the value to use
          */
         public HTag(@NonNull Short tag, @NonNull Object value) {
@@ -570,7 +641,7 @@ public class RemoteComposeWriter {
          * Returns the integer value
          *
          * @param tags list of tags
-         * @param tag the specific tag to look for
+         * @param tag  the specific tag to look for
          * @return found value, null if not
          */
         static @Nullable Object getValue(HTag @NonNull [] tags, int tag) {
@@ -637,9 +708,9 @@ public class RemoteComposeWriter {
     /**
      * Add a bitmap to the document
      *
-     * @param image a Bitmap object
-     * @param width bitmap width
-     * @param height bitmap height
+     * @param image              a Bitmap object
+     * @param width              bitmap width
+     * @param height             bitmap height
      * @param contentDescription a description for the image
      */
     public void drawBitmap(@NonNull Object image, int width, int height,
@@ -667,16 +738,21 @@ public class RemoteComposeWriter {
     /**
      * Sets the way the player handles the content
      *
-     * @param scroll set the horizontal behavior (NONE|SCROLL_HORIZONTAL|SCROLL_VERTICAL)
+     * @param scroll    set the horizontal behavior (NONE|SCROLL_HORIZONTAL|SCROLL_VERTICAL)
      * @param alignment set the alignment of the content (TOP|CENTER|BOTTOM|START|END)
-     * @param sizing set the type of sizing for the content (NONE|SIZING_LAYOUT|SIZING_SCALE)
-     * @param mode set the mode of sizing, either LAYOUT modes or SCALE modes the LAYOUT modes are:
-     *     - LAYOUT_MATCH_PARENT - LAYOUT_WRAP_CONTENT or adding an horizontal mode and a vertical
-     *     mode: - LAYOUT_HORIZONTAL_MATCH_PARENT - LAYOUT_HORIZONTAL_WRAP_CONTENT -
-     *     LAYOUT_HORIZONTAL_FIXED - LAYOUT_VERTICAL_MATCH_PARENT - LAYOUT_VERTICAL_WRAP_CONTENT -
-     *     LAYOUT_VERTICAL_FIXED The LAYOUT_*_FIXED modes will use the intrinsic document size
+     * @param sizing    set the type of sizing for the content (NONE|SIZING_LAYOUT|SIZING_SCALE)
+     * @param mode      set the mode of sizing, either LAYOUT modes or SCALE modes the LAYOUT
+     *                  modes are:
+     *                  - LAYOUT_MATCH_PARENT - LAYOUT_WRAP_CONTENT or adding an horizontal mode
+     *                  and a vertical
+     *                  mode: - LAYOUT_HORIZONTAL_MATCH_PARENT - LAYOUT_HORIZONTAL_WRAP_CONTENT -
+     *                  LAYOUT_HORIZONTAL_FIXED - LAYOUT_VERTICAL_MATCH_PARENT -
+     *                  LAYOUT_VERTICAL_WRAP_CONTENT -
+     *                  LAYOUT_VERTICAL_FIXED The LAYOUT_*_FIXED modes will use the intrinsic
+     *                  document size
      */
     public void setRootContentBehavior(int scroll, int alignment, int sizing, int mode) {
+        // Deprecated on latest version
         mBuffer.setRootContentBehavior(scroll, alignment, sizing, mode);
     }
 
@@ -686,13 +762,13 @@ public class RemoteComposeWriter {
      * click coordinates will be the one reported; the order of addition of those click areas is
      * therefore meaningful.
      *
-     * @param id the id of the area, which will be reported on click
+     * @param id                 the id of the area, which will be reported on click
      * @param contentDescription the content description of that click area (accessibility)
-     * @param left the left coordinate of the click area (in pixels)
-     * @param top the top coordinate of the click area (in pixels)
-     * @param right the right coordinate of the click area (in pixels)
-     * @param bottom the bottom coordinate of the click area (in pixels)
-     * @param metadata arbitrary metadata associated with the are, also reported on click
+     * @param left               the left coordinate of the click area (in pixels)
+     * @param top                the top coordinate of the click area (in pixels)
+     * @param right              the right coordinate of the click area (in pixels)
+     * @param bottom             the bottom coordinate of the click area (in pixels)
+     * @param metadata           arbitrary metadata associated with the are, also reported on click
      */
     public void addClickArea(
             int id,
@@ -723,10 +799,10 @@ public class RemoteComposeWriter {
      * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
      * degrees (3 o'clock on a watch.) <br>
      *
-     * @param left left coordinate of oval used to define the shape and size of the arc
-     * @param top top coordinate of oval used to define the shape and size of the arc
-     * @param right right coordinate of oval used to define the shape and size of the arc
-     * @param bottom bottom coordinate of oval used to define the shape and size of the arc
+     * @param left       left coordinate of oval used to define the shape and size of the arc
+     * @param top        top coordinate of oval used to define the shape and size of the arc
+     * @param right      right coordinate of oval used to define the shape and size of the arc
+     * @param bottom     bottom coordinate of oval used to define the shape and size of the arc
      * @param startAngle Starting angle (in degrees) where the arc begins
      * @param sweepAngle Sweep angle (in degrees) measured clockwise
      */
@@ -745,10 +821,10 @@ public class RemoteComposeWriter {
      * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
      * degrees (3 o'clock on a watch.) <br>
      *
-     * @param left left coordinate of oval used to define the shape and size of the arc
-     * @param top top coordinate of oval used to define the shape and size of the arc
-     * @param right right coordinate of oval used to define the shape and size of the arc
-     * @param bottom bottom coordinate of oval used to define the shape and size of the arc
+     * @param left       left coordinate of oval used to define the shape and size of the arc
+     * @param top        top coordinate of oval used to define the shape and size of the arc
+     * @param right      right coordinate of oval used to define the shape and size of the arc
+     * @param bottom     bottom coordinate of oval used to define the shape and size of the arc
      * @param startAngle Starting angle (in degrees) where the arc begins
      * @param sweepAngle Sweep angle (in degrees) measured clockwise
      */
@@ -758,11 +834,11 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * @param image The bitmap to be drawn
-     * @param left left coordinate of rectangle that the bitmap will be to fit into
-     * @param top top coordinate of rectangle that the bitmap will be to fit into
-     * @param right right coordinate of rectangle that the bitmap will be to fit into
-     * @param bottom bottom coordinate of rectangle that the bitmap will be to fit into
+     * @param image              The bitmap to be drawn
+     * @param left               left coordinate of rectangle that the bitmap will be to fit into
+     * @param top                top coordinate of rectangle that the bitmap will be to fit into
+     * @param right              right coordinate of rectangle that the bitmap will be to fit into
+     * @param bottom             bottom coordinate of rectangle that the bitmap will be to fit into
      * @param contentDescription content description of the image
      */
     public void drawBitmap(
@@ -781,11 +857,11 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * @param imageId The id of the bitmap to be drawn
-     * @param left left coordinate of rectangle that the bitmap will be to fit into
-     * @param top top coordinate of rectangle that the bitmap will be to fit into
-     * @param right right coordinate of rectangle that the bitmap will be to fit into
-     * @param bottom bottom coordinate of rectangle that the bitmap will be to fit into
+     * @param imageId            The id of the bitmap to be drawn
+     * @param left               left coordinate of rectangle that the bitmap will be to fit into
+     * @param top                top coordinate of rectangle that the bitmap will be to fit into
+     * @param right              right coordinate of rectangle that the bitmap will be to fit into
+     * @param bottom             bottom coordinate of rectangle that the bitmap will be to fit into
      * @param contentDescription content description of the image
      */
     public void drawBitmap(
@@ -803,9 +879,9 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * @param imageId The id of the bitmap to be drawn
-     * @param left left coordinate of rectangle that the bitmap will be to fit into
-     * @param top top coordinate of rectangle that the bitmap will be to fit into
+     * @param imageId            The id of the bitmap to be drawn
+     * @param left               left coordinate of rectangle that the bitmap will be to fit into
+     * @param top                top coordinate of rectangle that the bitmap will be to fit into
      * @param contentDescription content description of the image
      */
     public void drawBitmap(
@@ -842,17 +918,17 @@ public class RemoteComposeWriter {
     public static final int IMAGE_REFERENCE = 1 << 8;
 
     /**
-     * @param image The bitmap to be drawn
-     * @param srcLeft left coordinate of rectangle that the bitmap will be to fit into
-     * @param srcTop top coordinate of rectangle that the bitmap will be to fit into
-     * @param srcRight right coordinate of rectangle that the bitmap will be to fit into
-     * @param srcBottom bottom coordinate of rectangle that the bitmap will be to fit into
-     * @param dstLeft left coordinate of rectangle that the bitmap will be to fit into
-     * @param dstTop top coordinate of rectangle that the bitmap will be to fit into
-     * @param dstRight right coordinate of rectangle that the bitmap will be to fit into
-     * @param dstBottom bottom coordinate of rectangle that the bitmap will be to fit into
-     * @param scaleType Scale TYPE IMAGE_SCALE_NONE, IMAGE_SCALE_INSIDE etc.
-     * @param scaleFactor scale image when ScaleType is IMAGE_SCALE_FIXED_SCALE
+     * @param image              The bitmap to be drawn
+     * @param srcLeft            left coordinate of rectangle that the bitmap will be to fit into
+     * @param srcTop             top coordinate of rectangle that the bitmap will be to fit into
+     * @param srcRight           right coordinate of rectangle that the bitmap will be to fit into
+     * @param srcBottom          bottom coordinate of rectangle that the bitmap will be to fit into
+     * @param dstLeft            left coordinate of rectangle that the bitmap will be to fit into
+     * @param dstTop             top coordinate of rectangle that the bitmap will be to fit into
+     * @param dstRight           right coordinate of rectangle that the bitmap will be to fit into
+     * @param dstBottom          bottom coordinate of rectangle that the bitmap will be to fit into
+     * @param scaleType          Scale TYPE IMAGE_SCALE_NONE, IMAGE_SCALE_INSIDE etc.
+     * @param scaleFactor        scale image when ScaleType is IMAGE_SCALE_FIXED_SCALE
      * @param contentDescription content description of the image
      */
     public void drawScaledBitmap(
@@ -889,17 +965,17 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * @param imageId The id of the bitmap to be drawn
-     * @param srcLeft left coordinate of rectangle that the bitmap will be to fit into
-     * @param srcTop top coordinate of rectangle that the bitmap will be to fit into
-     * @param srcRight right coordinate of rectangle that the bitmap will be to fit into
-     * @param srcBottom bottom coordinate of rectangle that the bitmap will be to fit into
-     * @param dstLeft left coordinate of rectangle that the bitmap will be to fit into
-     * @param dstTop top coordinate of rectangle that the bitmap will be to fit into
-     * @param dstRight right coordinate of rectangle that the bitmap will be to fit into
-     * @param dstBottom bottom coordinate of rectangle that the bitmap will be to fit into
-     * @param scaleType Scale TYPE
-     * @param scaleFactor scale image when ScaleType is IMAGE_SCALE_FIXED_SCALE
+     * @param imageId            The id of the bitmap to be drawn
+     * @param srcLeft            left coordinate of rectangle that the bitmap will be to fit into
+     * @param srcTop             top coordinate of rectangle that the bitmap will be to fit into
+     * @param srcRight           right coordinate of rectangle that the bitmap will be to fit into
+     * @param srcBottom          bottom coordinate of rectangle that the bitmap will be to fit into
+     * @param dstLeft            left coordinate of rectangle that the bitmap will be to fit into
+     * @param dstTop             top coordinate of rectangle that the bitmap will be to fit into
+     * @param dstRight           right coordinate of rectangle that the bitmap will be to fit into
+     * @param dstBottom          bottom coordinate of rectangle that the bitmap will be to fit into
+     * @param scaleType          Scale TYPE
+     * @param scaleFactor        scale image when ScaleType is IMAGE_SCALE_FIXED_SCALE
      * @param contentDescription content description of the image
      */
     public void drawScaledBitmap(
@@ -940,7 +1016,7 @@ public class RemoteComposeWriter {
      *
      * @param centerX The x-coordinate of the center of the circle to be drawn
      * @param centerY The y-coordinate of the center of the circle to be drawn
-     * @param radius The radius of the circle to be drawn
+     * @param radius  The radius of the circle to be drawn
      */
     public void drawCircle(float centerX, float centerY, float radius) {
         mBuffer.addDrawCircle(centerX, centerY, radius);
@@ -962,9 +1038,9 @@ public class RemoteComposeWriter {
     /**
      * Draw the specified oval using the specified paint.
      *
-     * @param left left coordinate of oval
-     * @param top top coordinate of oval
-     * @param right right coordinate of oval
+     * @param left   left coordinate of oval
+     * @param top    top coordinate of oval
+     * @param right  right coordinate of oval
      * @param bottom bottom coordinate of oval
      */
     public void drawOval(float left, float top, float right, float bottom) {
@@ -999,9 +1075,9 @@ public class RemoteComposeWriter {
     /**
      * Draw the specified Rect
      *
-     * @param left left coordinate of rectangle to be drawn
-     * @param top top coordinate of rectangle to be drawn
-     * @param right right coordinate of rectangle to be drawn
+     * @param left   left coordinate of rectangle to be drawn
+     * @param top    top coordinate of rectangle to be drawn
+     * @param right  right coordinate of rectangle to be drawn
      * @param bottom bottom coordinate of rectangle to be drawn
      */
     public void drawRect(float left, float top, float right, float bottom) {
@@ -1011,10 +1087,10 @@ public class RemoteComposeWriter {
     /**
      * Draw the specified round-rect
      *
-     * @param left left coordinate of rectangle to be drawn
-     * @param top left coordinate of rectangle to be drawn
-     * @param right left coordinate of rectangle to be drawn
-     * @param bottom left coordinate of rectangle to be drawn
+     * @param left    left coordinate of rectangle to be drawn
+     * @param top     left coordinate of rectangle to be drawn
+     * @param right   left coordinate of rectangle to be drawn
+     * @param bottom  left coordinate of rectangle to be drawn
      * @param radiusX The x-radius of the oval used to round the corners
      * @param radiusY The y-radius of the oval used to round the corners
      */
@@ -1048,8 +1124,8 @@ public class RemoteComposeWriter {
     /**
      * Draw the text, with origin at (x,y) along the specified path.
      *
-     * @param text The text to be drawn
-     * @param path The path the text should follow for its baseline
+     * @param text    The text to be drawn
+     * @param path    The path the text should follow for its baseline
      * @param hOffset The distance along the path to add to the text's starting position
      * @param vOffset The distance above(-) or below(+) the path to position the text
      */
@@ -1062,8 +1138,8 @@ public class RemoteComposeWriter {
     /**
      * Draw the text, with origin at (x,y) along the specified path.
      *
-     * @param textId The text to be drawn
-     * @param path The path the text should follow for its baseline
+     * @param textId  The text to be drawn
+     * @param path    The path the text should follow for its baseline
      * @param hOffset The distance along the path to add to the text's starting position
      * @param vOffset The distance above(-) or below(+) the path to position the text
      */
@@ -1098,14 +1174,14 @@ public class RemoteComposeWriter {
      * Draw the text, with origin at (x,y). The origin is interpreted based on the Align setting in
      * the paint.
      *
-     * @param text The text to be drawn
-     * @param start The index of the first character in text to draw
-     * @param end (end - 1) is the index of the last character in text to draw
+     * @param text         The text to be drawn
+     * @param start        The index of the first character in text to draw
+     * @param end          (end - 1) is the index of the last character in text to draw
      * @param contextStart the start of the context
-     * @param contextEnd the end of the context
-     * @param x The x-coordinate of the origin of the text being drawn
-     * @param y The y-coordinate of the baseline of the text being drawn
-     * @param rtl Draw RTTL
+     * @param contextEnd   the end of the context
+     * @param x            The x-coordinate of the origin of the text being drawn
+     * @param y            The y-coordinate of the baseline of the text being drawn
+     * @param rtl          Draw RTTL
      */
     public void drawTextRun(
             @NonNull String text,
@@ -1124,14 +1200,14 @@ public class RemoteComposeWriter {
      * Draw the text, with origin at (x,y). The origin is interpreted based on the Align setting in
      * the paint.
      *
-     * @param textId The id of the text to be drawn
-     * @param start The index of the first character in text to draw
-     * @param end (end - 1) is the index of the last character in text to draw
+     * @param textId       The id of the text to be drawn
+     * @param start        The index of the first character in text to draw
+     * @param end          (end - 1) is the index of the last character in text to draw
      * @param contextStart the start of the context
-     * @param contextEnd the end of the context
-     * @param x The x-coordinate of the origin of the text being drawn
-     * @param y The y-coordinate of the baseline of the text being drawn
-     * @param rtl Draw RTTL
+     * @param contextEnd   the end of the context
+     * @param x            The x-coordinate of the origin of the text being drawn
+     * @param y            The y-coordinate of the baseline of the text being drawn
+     * @param rtl          Draw RTTL
      */
     public void drawTextRun(
             int textId,
@@ -1149,12 +1225,12 @@ public class RemoteComposeWriter {
      * Draw the text, with origin at (x,y). The origin is interpreted based on the Align setting in
      * the paint.
      *
-     * @param textId The id of the text to be drawn
+     * @param textId       The id of the text to be drawn
      * @param bitmapFontId The id of the bitmap font to draw with
-     * @param start The index of the first character in text to draw
-     * @param end (end - 1) is the index of the last character in text to draw
-     * @param x The x-coordinate of the origin of the text being drawn
-     * @param y The y-coordinate of the baseline of the text being drawn
+     * @param start        The index of the first character in text to draw
+     * @param end          (end - 1) is the index of the last character in text to draw
+     * @param x            The x-coordinate of the origin of the text being drawn
+     * @param y            The y-coordinate of the baseline of the text being drawn
      */
     public void drawBitmapFontTextRun(
             int textId, int bitmapFontId, int start, int end, float x, float y) {
@@ -1164,12 +1240,12 @@ public class RemoteComposeWriter {
     /**
      * Draw the text along the path.
      *
-     * @param textId The id of the text to be drawn
+     * @param textId       The id of the text to be drawn
      * @param bitmapFontId The id of the bitmap font to draw with
-     * @param path The path to draw along
-     * @param start The index of the first character in text to draw
-     * @param end (end - 1) is the index of the last character in text to draw
-     * @param yAdj Adjustment away from the path along the normal at that point
+     * @param path         The path to draw along
+     * @param start        The index of the first character in text to draw
+     * @param end          (end - 1) is the index of the last character in text to draw
+     * @param yAdj         Adjustment away from the path along the normal at that point
      */
     public void drawBitmapFontTextRunOnPath(
             int textId, int bitmapFontId, @NonNull Object path, int start, int end, float yAdj) {
@@ -1190,11 +1266,11 @@ public class RemoteComposeWriter {
      *
      * <p>Setting panY to NaN results in y being the baseline of the text.
      *
-     * @param str text to draw
-     * @param x Coordinate of the Anchor
-     * @param y Coordinate of the Anchor
-     * @param panX justifies the text -1.0=right, 0.0=center, 1.0=left
-     * @param panY position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
+     * @param str   text to draw
+     * @param x     Coordinate of the Anchor
+     * @param y     Coordinate of the Anchor
+     * @param panX  justifies the text -1.0=right, 0.0=center, 1.0=left
+     * @param panY  position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
      * @param flags 1 = RTL
      */
     public void drawTextAnchored(
@@ -1214,10 +1290,10 @@ public class RemoteComposeWriter {
      * <p>Setting panY to NaN results in y being the baseline of the text.
      *
      * @param strId text to draw
-     * @param x Coordinate of the Anchor
-     * @param y Coordinate of the Anchor
-     * @param panX justifies the text -1.0=right, 0.0=center, 1.0=left
-     * @param panY position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
+     * @param x     Coordinate of the Anchor
+     * @param y     Coordinate of the Anchor
+     * @param panX  justifies the text -1.0=right, 0.0=center, 1.0=left
+     * @param panY  position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
      * @param flags 1 = RTL 2 = MONOSPACE_MEASURE
      */
     public void drawTextAnchored(int strId, float x, float y, float panX, float panY, int flags) {
@@ -1233,7 +1309,7 @@ public class RemoteComposeWriter {
      * @param path2 The path2 to be drawn between
      * @param tween The ratio of path1 and path2 to 0 = all path 1, 1 = all path2
      * @param start The start of the subrange of paths to draw 0 = start form start 0.5 is half way
-     * @param stop The end of the subrange of paths to draw 1 = end at the end 0.5 is end half way
+     * @param stop  The end of the subrange of paths to draw 1 = end at the end 0.5 is end half way
      */
     public void drawTweenPath(
             @NonNull Object path1, @NonNull Object path2, float tween, float start, float stop) {
@@ -1261,14 +1337,14 @@ public class RemoteComposeWriter {
      *
      * <p>Setting panY to NaN results in y being the baseline of the text.
      *
-     * @param text text to draw
+     * @param text         text to draw
      * @param bitmapFontId The id of the bitmap font to draw with
-     * @param x Coordinate of the Anchor
-     * @param y Coordinate of the Anchor
-     * @param start The index of the first character in text to draw
-     * @param end (end - 1) is the index of the last character in text to draw
-     * @param panX justifies text -1.0=right, 0.0=center, 1.0=left
-     * @param panY position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
+     * @param x            Coordinate of the Anchor
+     * @param y            Coordinate of the Anchor
+     * @param start        The index of the first character in text to draw
+     * @param end          (end - 1) is the index of the last character in text to draw
+     * @param panX         justifies text -1.0=right, 0.0=center, 1.0=left
+     * @param panY         position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
      */
     public void drawBitmapTextAnchored(
             @NonNull String text,
@@ -1296,14 +1372,14 @@ public class RemoteComposeWriter {
      *
      * <p>Setting panY to NaN results in y being the baseline of the text.
      *
-     * @param textId id of text to draw
+     * @param textId       id of text to draw
      * @param bitmapFontId The id of the bitmap font to draw with
-     * @param x Coordinate of the Anchor
-     * @param y Coordinate of the Anchor
-     * @param start The index of the first character in text to draw
-     * @param end (end - 1) is the index of the last character in text to draw
-     * @param panX justifies text -1.0=right, 0.0=center, 1.0=left
-     * @param panY position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
+     * @param x            Coordinate of the Anchor
+     * @param y            Coordinate of the Anchor
+     * @param start        The index of the first character in text to draw
+     * @param end          (end - 1) is the index of the last character in text to draw
+     * @param panX         justifies text -1.0=right, 0.0=center, 1.0=left
+     * @param panY         position text -1.0=above, 0.0=center, 1.0=below, Nan=baseline
      */
     public void drawBitmapTextAnchored(
             int textId,
@@ -1322,9 +1398,11 @@ public class RemoteComposeWriter {
      *
      * @param path1Id The path1 to be drawn between
      * @param path2Id The path2 to be drawn between
-     * @param tween The ratio of path1 and path2 to 0 = all path 1, 1 = all path2
-     * @param start The start of the subrange of paths to draw 0 = start form start 0.5 is half way
-     * @param stop The end of the subrange of paths to draw 1 = end at the end 0.5 is end half way
+     * @param tween   The ratio of path1 and path2 to 0 = all path 1, 1 = all path2
+     * @param start   The start of the subrange of paths to draw 0 = start form start 0.5 is half
+     *               way
+     * @param stop    The end of the subrange of paths to draw 1 = end at the end 0.5 is end half
+     *               way
      */
     public void drawTweenPath(int path1Id, int path2Id, float tween, float start, float stop) {
         mBuffer.addDrawTweenPath(path1Id, path2Id, tween, start, stop);
@@ -1363,8 +1441,8 @@ public class RemoteComposeWriter {
     /**
      * interpolate the two paths to produce a 3rd
      *
-     * @param pid1 the first path
-     * @param pid2 the second path
+     * @param pid1  the first path
+     * @param pid2  the second path
      * @param tween path is the path1+(pat2-path1)*tween
      * @return id of the tweened path
      */
@@ -1377,8 +1455,6 @@ public class RemoteComposeWriter {
      * create a path object.
      *
      * @param x the initial p
-     * @param y
-     * @return
      */
     public int pathCreate(float x, float y) {
         int out = mState.createNextAvailableId();
@@ -1387,18 +1463,13 @@ public class RemoteComposeWriter {
 
     /**
      * append to the path object
-     *
-     * @param pathId
-     * @param path
      */
     public void pathAppend(int pathId, float @NonNull ... path) {
         mBuffer.pathAppend(pathId, path);
     }
 
     /**
-     * @param pathId
-     * @param x
-     * @param y
+     *
      */
     public void pathAppendLineTo(int pathId, float x, float y) {
         mBuffer.pathAppend(pathId, PathAppend.LINE_NAN, 0, 0, x, y);
@@ -1409,10 +1480,10 @@ public class RemoteComposeWriter {
      * (x2,y2).
      *
      * @param pathId the path id
-     * @param x1 The x-coordinate of the control point on a quadratic curve
-     * @param y1 The y-coordinate of the control point on a quadratic curve
-     * @param x2 The x-coordinate of the end point on a quadratic curve
-     * @param y2 The y-coordinate of the end point on a quadratic curve
+     * @param x1     The x-coordinate of the control point on a quadratic curve
+     * @param y1     The y-coordinate of the control point on a quadratic curve
+     * @param x2     The x-coordinate of the end point on a quadratic curve
+     * @param y2     The y-coordinate of the end point on a quadratic curve
      */
     public void pathAppendQuadTo(int pathId, float x1, float y1, float x2, float y2) {
         mBuffer.pathAppend(pathId, PathAppend.QUADRATIC_NAN, 0, 0, x1, y1, x2, y2);
@@ -1422,24 +1493,24 @@ public class RemoteComposeWriter {
      * add a MoveTo to the path
      *
      * @param pathId the path id
-     * @param x The amount to add to the x-coordinate of the previous point on this contour, to
-     *     specify a line
-     * @param y The amount to add to the x-coordinate of the previous point on this contour, to
-     *     specify a line
+     * @param x      The amount to add to the x-coordinate of the previous point on this contour, to
+     *               specify a line
+     * @param y      The amount to add to the x-coordinate of the previous point on this contour, to
+     *               specify a line
      */
     public void pathAppendMoveTo(int pathId, float x, float y) {
         mBuffer.pathAppend(pathId, PathAppend.MOVE_NAN, x, y);
     }
 
     /**
-     * @param pathId
+     *
      */
     public void pathAppendClose(int pathId) {
         mBuffer.pathAppend(pathId, PathAppend.CLOSE_NAN);
     }
 
     /**
-     * @param pathId
+     *
      */
     public void pathAppendReset(int pathId) {
         mBuffer.pathAppend(pathId, PathAppend.RESET_NAN);
@@ -1468,7 +1539,7 @@ public class RemoteComposeWriter {
     /**
      * Pre-concat the current matrix with the specified rotation.
      *
-     * @param angle The amount to rotate, in degrees
+     * @param angle   The amount to rotate, in degrees
      * @param centerX The x-coord for the pivot point (unchanged by the rotation)
      * @param centerY The y-coord for the pivot point (unchanged by the rotation)
      */
@@ -1488,10 +1559,10 @@ public class RemoteComposeWriter {
     /**
      * set the Matrix relative to the path
      *
-     * @param pathId the id of the path object
+     * @param pathId   the id of the path object
      * @param fraction the position on path
-     * @param vOffset the vertical offset to position the string
-     * @param flags flags to set path 1=position only , 2 = Tangent
+     * @param vOffset  the vertical offset to position the string
+     * @param flags    flags to set path 1=position only , 2 = Tangent
      */
     public void matrixFromPath(int pathId, float fraction, float vOffset, int flags) {
         mBuffer.setMatrixFromPath(pathId, fraction, vOffset, flags);
@@ -1530,8 +1601,8 @@ public class RemoteComposeWriter {
     /**
      * Preconcat the current matrix with the specified scale.
      *
-     * @param scaleX The amount to scale in X = 1.0f
-     * @param scaleY The amount to scale in Y = 1.0f
+     * @param scaleX  The amount to scale in X = 1.0f
+     * @param scaleY  The amount to scale in Y = 1.0f
      * @param centerX The x-coord for the pivot point (unchanged by the scale) = Float.NaN
      * @param centerY The y-coord for the pivot point (unchanged by the scale) = Float.NaN
      */
@@ -1563,9 +1634,9 @@ public class RemoteComposeWriter {
      * Sets the clip. Subsequent draw calls will be clipped by this rect clip is removed by
      * matrixClear
      *
-     * @param left the left of the rectangle
-     * @param top the top of the rectangle
-     * @param right the right of the rectangle
+     * @param left   the left of the rectangle
+     * @param top    the top of the rectangle
+     * @param right  the right of the rectangle
      * @param bottom the bottom of the rectangle
      */
     public void clipRect(float left, float top, float right, float bottom) {
@@ -1594,9 +1665,11 @@ public class RemoteComposeWriter {
         return Utils.asNan(id);
     }
 
-    @NonNull HashMap<@NonNull Integer, @NonNull Float> mCacheComponentWidthValues =
+    @NonNull
+    HashMap<@NonNull Integer, @NonNull Float> mCacheComponentWidthValues =
             new HashMap<Integer, Float>();
-    @NonNull HashMap<@NonNull Integer, @NonNull Float> mCacheComponentHeightValues =
+    @NonNull
+    HashMap<@NonNull Integer, @NonNull Float> mCacheComponentHeightValues =
             new HashMap<Integer, Float>();
 
     /**
@@ -1643,7 +1716,7 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * @param name The String representing the name of the color
+     * @param name  The String representing the name of the color
      * @param color the ARGB int of the color
      * @return the id of the Color
      */
@@ -1656,7 +1729,7 @@ public class RemoteComposeWriter {
     /**
      * set the name of a color associated with an ID
      *
-     * @param id the id to name
+     * @param id   the id to name
      * @param name the name of the color
      */
     public void setColorName(int id, @NonNull String name) {
@@ -1666,7 +1739,7 @@ public class RemoteComposeWriter {
     /**
      * Set the name of the string associated with the id
      *
-     * @param id of the string
+     * @param id   of the string
      * @param name name of the string
      */
     public void setStringName(int id, @NonNull String name) {
@@ -1676,7 +1749,7 @@ public class RemoteComposeWriter {
     /**
      * Adds a named string with an initial value.
      *
-     * @param name The String representing the name of the String
+     * @param name         The String representing the name of the String
      * @param initialValue The initial value of the String
      * @return a float encoding the id
      */
@@ -1690,7 +1763,7 @@ public class RemoteComposeWriter {
     /**
      * Adds a named int with an initial value.
      *
-     * @param name The String representing the name of the float
+     * @param name         The String representing the name of the float
      * @param initialValue The initial value of the float
      * @return a float encoding the id
      */
@@ -1705,7 +1778,7 @@ public class RemoteComposeWriter {
     /**
      * Adds a named float with an initial value.
      *
-     * @param name The String representing the name of the float
+     * @param name         The String representing the name of the float
      * @param initialValue The initial value of the float
      * @return a float encoding the id
      */
@@ -1718,7 +1791,7 @@ public class RemoteComposeWriter {
     }
 
     /**
-     * @param name The String representing the name of the Bitmap.
+     * @param name         The String representing the name of the Bitmap.
      * @param initialValue the initial Bitmap
      * @return the id of the Bitmap
      */
@@ -1731,7 +1804,7 @@ public class RemoteComposeWriter {
 
     /**
      * @param name The String representing the name of the url.
-     * @param url the initial url
+     * @param url  the initial url
      * @return the id of the RemoteBitmap
      */
     public int addNamedBitmapUrl(@NonNull String name, @NonNull String url) {
@@ -1743,7 +1816,7 @@ public class RemoteComposeWriter {
     /**
      * Set the name of the long associated with the id
      *
-     * @param name the name of the long
+     * @param name         the name of the long
      * @param initialValue The initial value of the named long
      * @return the id of the named long
      */
@@ -1759,7 +1832,7 @@ public class RemoteComposeWriter {
      *
      * @param color1 First color
      * @param color2 Second color
-     * @param tween the ratio between the first and the second color
+     * @param tween  the ratio between the first and the second color
      * @return id of a color
      */
     public short addColorExpression(int color1, int color2, float tween) {
@@ -1772,8 +1845,8 @@ public class RemoteComposeWriter {
      * Add a color expression that is an interpolation between two colors
      *
      * @param colorId1 First color as an id
-     * @param color2 Second color
-     * @param tween the ratio between the first and the second color
+     * @param color2   Second color
+     * @param tween    the ratio between the first and the second color
      * @return id of a color
      */
     public short addColorExpression(short colorId1, int color2, float tween) {
@@ -1785,9 +1858,9 @@ public class RemoteComposeWriter {
     /**
      * Add a color expression that is an interpolation between two colors
      *
-     * @param color1 First color
+     * @param color1   First color
      * @param colorId2 Second color as an id
-     * @param tween interpolate between the two colors
+     * @param tween    interpolate between the two colors
      * @return The id of the color
      */
     public short addColorExpression(int color1, short colorId2, float tween) {
@@ -1801,7 +1874,7 @@ public class RemoteComposeWriter {
      *
      * @param colorId1 First color as an id
      * @param colorId2 Second color as an id
-     * @param tween the ratio between the first and the second color
+     * @param tween    the ratio between the first and the second color
      * @return the id of the color
      */
     public short addColorExpression(short colorId1, short colorId2, float tween) {
@@ -1813,8 +1886,8 @@ public class RemoteComposeWriter {
     /**
      * Add a color expression that is based on HSV
      *
-     * @param hue the color hue
-     * @param sat the color saturation
+     * @param hue   the color hue
+     * @param sat   the color saturation
      * @param value the color value
      * @return the id of the color
      */
@@ -1828,8 +1901,8 @@ public class RemoteComposeWriter {
      * Add a color expression from HSV and Alpha
      *
      * @param alpha the transparency of the color 0 is transparent
-     * @param hue the color hue
-     * @param sat the color saturation
+     * @param hue   the color hue
+     * @param sat   the color saturation
      * @param value the color value
      * @return the id of the color
      */
@@ -1843,9 +1916,9 @@ public class RemoteComposeWriter {
      * Add a color expression from RGB and Alpha
      *
      * @param alpha the transparency of the color 0 is transparent
-     * @param red the color hue
+     * @param red   the color hue
      * @param green the color saturation
-     * @param blue the color value
+     * @param blue  the color value
      * @return the id of the color
      */
     public short addColorExpression(float alpha, float red, float green, float blue) {
@@ -1869,7 +1942,7 @@ public class RemoteComposeWriter {
     /**
      * Add a float expression that is a computation based on variables. see packAnimation
      *
-     * @param value A RPN style float operation i.e. "4, 3, ADD" outputs 7
+     * @param value     A RPN style float operation i.e. "4, 3, ADD" outputs 7
      * @param animation Array of floats that represents animation
      * @return NaN id of the result of the calculation
      */
@@ -1882,7 +1955,6 @@ public class RemoteComposeWriter {
     /**
      * Add and integer constant
      *
-     * @param value
      * @return id of integer as a long to prevent accidental miss use
      */
     public long addInteger(int value) {
@@ -1919,7 +1991,7 @@ public class RemoteComposeWriter {
      * look up map and return the id of the object looked up
      *
      * @param mapId the map to access
-     * @param str the string to lookup
+     * @param str   the string to lookup
      * @return id containing the result of the lookup
      */
     public int mapLookup(int mapId, @NonNull String str) {
@@ -1963,8 +2035,7 @@ public class RemoteComposeWriter {
      * measure the text and return a measure as a float
      *
      * @param textId id of the text
-     * @param mode the mode 0 is the width
-     * @return
+     * @param mode   the mode 0 is the width
      */
     public float textMeasure(int textId, int mode) {
         int id = mState.cacheData(textId + mode * 31);
@@ -1996,14 +2067,9 @@ public class RemoteComposeWriter {
 
     /**
      * Encode an easing as a float array
-     *
-     * @param maxTime
-     * @param maxAcceleration
-     * @param maxVelocity
-     * @return
      */
     public float @NonNull [] easing(float maxTime, float maxAcceleration, float maxVelocity) {
-        return new float[] {Float.intBitsToFloat(0), maxTime, maxAcceleration, maxVelocity};
+        return new float[]{Float.intBitsToFloat(0), maxTime, maxAcceleration, maxVelocity};
     }
 
     public static final int ID_REFERENCE = 1 << 15;
@@ -2011,15 +2077,15 @@ public class RemoteComposeWriter {
     /**
      * Add touch handling on canvas
      *
-     * @param defValue the default value
-     * @param min the minimum value if set to NaN it wraps around max
-     * @param max the maximum value
-     * @param touchMode the touch Mode STOP_*
-     * @param velocityId This indicates that it is moving
+     * @param defValue     the default value
+     * @param min          the minimum value if set to NaN it wraps around max
+     * @param max          the maximum value
+     * @param touchMode    the touch Mode STOP_*
+     * @param velocityId   This indicates that it is moving
      * @param touchEffects This contains effect currently only haptic feedback
-     * @param touchSpec with touchMode configure types of stopping behaviour
-     * @param easingSpec the configuration how it will slow down on touch up
-     * @param exp the float expression that maps the touches to the path
+     * @param touchSpec    with touchMode configure types of stopping behaviour
+     * @param easingSpec   the configuration how it will slow down on touch up
+     * @param exp          the float expression that maps the touches to the path
      * @return touch
      */
     public float addTouch(
@@ -2049,24 +2115,18 @@ public class RemoteComposeWriter {
 
     /**
      * Create a spring encoded as a float array
-     *
-     * @param stiffness
-     * @param damping
-     * @param stopThreshold
-     * @param boundaryMode
-     * @return
      */
     public float @NonNull [] spring(
             float stiffness, float damping, float stopThreshold, int boundaryMode) {
-        return new float[] {
-            0, stiffness, damping, stopThreshold, Float.intBitsToFloat(boundaryMode)
+        return new float[]{
+                0, stiffness, damping, stopThreshold, Float.intBitsToFloat(boundaryMode)
         };
     }
 
     /**
      * Represent a map of data ids
      *
-     * @param bitmapId the id of the bitmap
+     * @param bitmapId  the id of the bitmap
      * @param attribute the attribute to get
      * @return the value of the attribute as a NaN float
      */
@@ -2079,7 +2139,7 @@ public class RemoteComposeWriter {
     /**
      * get an attribute of a text
      *
-     * @param textId the id of the bitmap
+     * @param textId    the id of the bitmap
      * @param attribute the attribute to get
      * @return the value of the attribute as a NaN float
      */
@@ -2090,9 +2150,10 @@ public class RemoteComposeWriter {
     }
 
     public static class DataMap {
-        @NonNull String mName;
+        @NonNull
+        String mName;
 
-        enum Types {
+        public enum Types {
             STRING(DataMapIds.TYPE_STRING),
             INT(DataMapIds.TYPE_INT),
             FLOAT(DataMapIds.TYPE_FLOAT),
@@ -2110,8 +2171,10 @@ public class RemoteComposeWriter {
             }
         }
 
-        @NonNull Types mType;
-        @NonNull String mTextValue;
+        @NonNull
+        Types mType;
+        @NonNull
+        String mTextValue;
         float mFloatValue;
         boolean mBooleanValue;
         long mLongValue;
@@ -2152,8 +2215,6 @@ public class RemoteComposeWriter {
      * Create a map entry for a float
      *
      * @param name name of the value
-     * @param value
-     * @return
      */
     public static @NonNull DataMap map(@NonNull String name, float value) {
         return new DataMap(name, value);
@@ -2163,8 +2224,6 @@ public class RemoteComposeWriter {
      * Create a map entry for an int
      *
      * @param name name of the value
-     * @param value
-     * @return
      */
     public static @NonNull DataMap map(@NonNull String name, int value) {
         return new DataMap(name, value);
@@ -2174,8 +2233,6 @@ public class RemoteComposeWriter {
      * Create a map entry for a long
      *
      * @param name name of the value
-     * @param value
-     * @return
      */
     public static @NonNull DataMap map(@NonNull String name, long value) {
         return new DataMap(name, value);
@@ -2185,8 +2242,6 @@ public class RemoteComposeWriter {
      * Create a map entry for a String
      *
      * @param name name of the value
-     * @param value
-     * @return
      */
     public static @NonNull DataMap map(@NonNull String name, @NonNull String value) {
         return new DataMap(name, value);
@@ -2196,8 +2251,6 @@ public class RemoteComposeWriter {
      * Create a map entry for a boolean
      *
      * @param name name of the value
-     * @param value
-     * @return
      */
     public static @NonNull DataMap map(@NonNull String name, boolean value) {
         return new DataMap(name, value);
@@ -2239,9 +2292,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add map of ids
-     *
-     * @param data
-     * @return
      */
     public int addDataMap(DataMap @NonNull ... data) {
         return encodeData(data);
@@ -2249,10 +2299,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add a map of ids
-     *
-     * @param keys
-     * @param ids
-     * @return
      */
     public float addDataMap(String @NonNull [] keys, int @NonNull [] ids) {
         int id = mState.cacheData(ids, NanMap.TYPE_ARRAY);
@@ -2263,9 +2309,8 @@ public class RemoteComposeWriter {
     /**
      * Create an integer expression
      *
-     * @param mask sets the bits the are expressions
+     * @param mask  sets the bits the are expressions
      * @param value values in the expression maximum 32
-     * @return
      */
     public long integerExpression(int mask, int @NonNull ... value) {
         int id = mState.cacheData(value);
@@ -2277,7 +2322,6 @@ public class RemoteComposeWriter {
      * Create an integer expression
      *
      * @param v values in the expression as long ids
-     * @return
      */
     public long integerExpression(long @NonNull ... v) {
         int mask = 0;
@@ -2296,9 +2340,6 @@ public class RemoteComposeWriter {
 
     /**
      * Converts a integer ID to a float ID.
-     *
-     * @param id
-     * @return
      */
     public float asFloatId(long id) {
         return mBuffer.asFloatId((int) (id & 0xFFFFFFFL));
@@ -2308,8 +2349,8 @@ public class RemoteComposeWriter {
      * Create a time attribute
      *
      * @param longID the id of the time to be compared
-     * @param type the type of comparison
-     * @param args the additional arguments for the comparison
+     * @param type   the type of comparison
+     * @param args   the additional arguments for the comparison
      * @return float value
      */
     public float timeAttribute(int longID, short type, int @NonNull ... args) {
@@ -2340,11 +2381,11 @@ public class RemoteComposeWriter {
     /**
      * Bundle Animation Expressions as a compacted array of floats
      *
-     * @param duration The duration of the animation
-     * @param type The type of the animation
-     * @param spec The parameters of the animation if it is custom spec
+     * @param duration     The duration of the animation
+     * @param type         The type of the animation
+     * @param spec         The parameters of the animation if it is custom spec
      * @param initialValue the initial value if animation is on first use
-     * @param wrap The value about witch it wraps e.g. 360 and rotation
+     * @param wrap         The value about witch it wraps e.g. 360 and rotation
      * @return Float array representing the animation
      */
     public float @NonNull [] anim(
@@ -2355,9 +2396,9 @@ public class RemoteComposeWriter {
     /**
      * Bundle Animation Expressions as a compacted array of floats
      *
-     * @param duration The duration of the animation
-     * @param type The type of the animation
-     * @param spec The parameters of the animation if it is custom spec
+     * @param duration     The duration of the animation
+     * @param type         The type of the animation
+     * @param spec         The parameters of the animation if it is custom spec
      * @param initialValue the initial value if animation is on first use
      * @return Float array representing the animation
      */
@@ -2370,8 +2411,8 @@ public class RemoteComposeWriter {
      * Bundle Animation Expressions as a compacted array of floats
      *
      * @param duration The duration of the animation
-     * @param type The type of the animation
-     * @param spec The parameters of the animation if it is custom spec
+     * @param type     The type of the animation
+     * @param spec     The parameters of the animation if it is custom spec
      * @return Float array representing the animation
      */
     public float @NonNull [] anim(float duration, int type, float @Nullable [] spec) {
@@ -2382,7 +2423,7 @@ public class RemoteComposeWriter {
      * Bundle Animation Expressions as a compacted array of floats
      *
      * @param duration The duration of the animation
-     * @param type The type of the animation
+     * @param type     The type of the animation
      * @return Float array representing the animation
      */
     public float @NonNull [] anim(float duration, int type) {
@@ -2402,10 +2443,6 @@ public class RemoteComposeWriter {
 
     /**
      * This looks up an entry in a id array
-     *
-     * @param arrayId
-     * @param index
-     * @return
      */
     public int idLookup(float arrayId, float index) {
         int id = mState.createNextAvailableId();
@@ -2417,14 +2454,14 @@ public class RemoteComposeWriter {
      * This looks up a entry in a text array
      *
      * @param arrayId the Nan encoded id of the array
-     * @param index the index Passed as a float for integration into float system
+     * @param index   the index Passed as a float for integration into float system
      * @return id of text object that can be use in drawText operations
      */
     public int textLookup(float arrayId, float index) {
         long hash =
                 (((long) Float.floatToRawIntBits(arrayId)) << 32)
                         + Float.floatToRawIntBits(
-                                index); // TODO: is this the correct ()s? -- bbade@
+                        index); // TODO: is this the correct ()s? -- bbade@
         int id = mState.cacheData(hash);
         mBuffer.textLookup(id, arrayId, index);
         return id;
@@ -2449,10 +2486,10 @@ public class RemoteComposeWriter {
     /**
      * Convert a float to a string for drawing
      *
-     * @param value The value to convert (typically a Nan ID)
+     * @param value  The value to convert (typically a Nan ID)
      * @param before digits before the decimal point
-     * @param after digits after the decimal point
-     * @param flags configure the behaviour using PAD_PRE_* and PAD_AFTER* flags
+     * @param after  digits after the decimal point
+     * @param flags  configure the behaviour using PAD_PRE_* and PAD_AFTER* flags
      * @return id of string
      */
     public int createTextFromFloat(float value, int before, int after, int flags) {
@@ -2529,9 +2566,9 @@ public class RemoteComposeWriter {
      * Start a loop component
      *
      * @param indexId the index id
-     * @param from from index
-     * @param step step increment of the index
-     * @param until loop till
+     * @param from    from index
+     * @param step    step increment of the index
+     * @param until   loop till
      */
     public void startLoop(int indexId, float from, float step, float until) {
         mBuffer.addLoopStart(indexId, from, step, until);
@@ -2540,10 +2577,9 @@ public class RemoteComposeWriter {
     /**
      * Start a loop component
      *
-     * @param from from index
-     * @param step step increment of the index
+     * @param from  from index
+     * @param step  step increment of the index
      * @param until loop till
-     * @return
      */
     public float startLoopVar(float from, float step, float until) {
         int indexId = createID(0);
@@ -2571,9 +2607,9 @@ public class RemoteComposeWriter {
      * Add a Loop
      *
      * @param indexId the index id
-     * @param from the index starting value as a float
-     * @param step step increment of the index as a float
-     * @param until loop until the index hit this value
+     * @param from    the index starting value as a float
+     * @param step    step increment of the index as a float
+     * @param until   loop until the index hit this value
      * @param content the content to loop
      */
     public void loop(
@@ -2590,9 +2626,9 @@ public class RemoteComposeWriter {
     /**
      * Add a Loop
      *
-     * @param until loop until the index hit this value
-     * @param from the index starting value
-     * @param step step increment of the index
+     * @param until   loop until the index hit this value
+     * @param from    the index starting value
+     * @param step    step increment of the index
      * @param indexId the index id
      * @param content the content to loop
      */
@@ -2610,9 +2646,9 @@ public class RemoteComposeWriter {
     /**
      * Add a conditional block
      *
-     * @param type type of conditional block
-     * @param a the first variable
-     * @param b the second variable
+     * @param type    type of conditional block
+     * @param a       the first variable
+     * @param b       the second variable
      * @param content content of the conditional block
      */
     public void conditionalOperations(
@@ -2626,8 +2662,8 @@ public class RemoteComposeWriter {
      * Add a conditional block
      *
      * @param type type of conditional block
-     * @param a the first variable
-     * @param b the second variable
+     * @param a    the first variable
+     * @param b    the second variable
      */
     public void conditionalOperations(byte type, float a, float b) {
         mBuffer.addConditionalOperations(type, a, b);
@@ -2635,7 +2671,7 @@ public class RemoteComposeWriter {
 
     /** End a conditional block */
     public void endConditionalOperations() {
-        mBuffer.addContainerEnd();
+        mBuffer.endConditionalOperations();
     }
 
     /** Call addContentStart on buffer */
@@ -2647,10 +2683,10 @@ public class RemoteComposeWriter {
     /**
      * Add a column layout
      *
-     * @param modifier list of modifiers for the layout
+     * @param modifier   list of modifiers for the layout
      * @param horizontal horizontal positioning
-     * @param vertical vertical positioning
-     * @param content content of the layout
+     * @param vertical   vertical positioning
+     * @param content    content of the layout
      */
     public void column(
             @NonNull RecordingModifier modifier,
@@ -2664,10 +2700,6 @@ public class RemoteComposeWriter {
 
     /**
      * Start a column layout
-     *
-     * @param modifier
-     * @param horizontal
-     * @param vertical
      */
     public void startColumn(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         int componentId = modifier.getComponentId();
@@ -2688,10 +2720,10 @@ public class RemoteComposeWriter {
     /**
      * Add a collapsible column layout
      *
-     * @param modifier list of modifiers for the layout
+     * @param modifier   list of modifiers for the layout
      * @param horizontal horizontal positioning
-     * @param vertical vertical positioning
-     * @param content content of the layout
+     * @param vertical   vertical positioning
+     * @param content    content of the layout
      */
     public void collapsibleColumn(
             @NonNull RecordingModifier modifier,
@@ -2705,10 +2737,6 @@ public class RemoteComposeWriter {
 
     /**
      * Start a collapsible column layout
-     *
-     * @param modifier
-     * @param horizontal
-     * @param vertical
      */
     public void startCollapsibleColumn(
             @NonNull RecordingModifier modifier, int horizontal, int vertical) {
@@ -2730,10 +2758,10 @@ public class RemoteComposeWriter {
     /**
      * Add a row layout
      *
-     * @param modifier list of modifiers for the layout
+     * @param modifier   list of modifiers for the layout
      * @param horizontal horizontal positioning
-     * @param vertical vertical positioning
-     * @param content content of the layout
+     * @param vertical   vertical positioning
+     * @param content    content of the layout
      */
     public void row(
             @NonNull RecordingModifier modifier,
@@ -2747,10 +2775,6 @@ public class RemoteComposeWriter {
 
     /**
      * Start a row layout
-     *
-     * @param modifier
-     * @param horizontal
-     * @param vertical
      */
     public void startRow(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         int componentId = modifier.getComponentId();
@@ -2771,10 +2795,10 @@ public class RemoteComposeWriter {
     /**
      * Add a collapsible row layout
      *
-     * @param modifier list of modifiers for the layout
+     * @param modifier   list of modifiers for the layout
      * @param horizontal horizontal positioning
-     * @param vertical vertical positioning
-     * @param content content of the layout
+     * @param vertical   vertical positioning
+     * @param content    content of the layout
      */
     public void collapsibleRow(
             @NonNull RecordingModifier modifier,
@@ -2788,10 +2812,6 @@ public class RemoteComposeWriter {
 
     /**
      * Start a collapsible row layout
-     *
-     * @param modifier
-     * @param horizontal
-     * @param vertical
      */
     public void startCollapsibleRow(
             @NonNull RecordingModifier modifier, int horizontal, int vertical) {
@@ -2814,7 +2834,7 @@ public class RemoteComposeWriter {
      * Add a Canvas
      *
      * @param modifier list of modifiers for the layout
-     * @param content content of the layout
+     * @param content  content of the layout
      */
     public void canvas(
             @NonNull RecordingModifier modifier, @NonNull RemoteComposeWriterInterface content) {
@@ -2830,8 +2850,6 @@ public class RemoteComposeWriter {
 
     /**
      * Start a canvas
-     *
-     * @param modifier
      */
     public void startCanvas(@NonNull RecordingModifier modifier) {
         mBuffer.addCanvasStart(modifier.getComponentId(), -1);
@@ -2872,10 +2890,10 @@ public class RemoteComposeWriter {
     /**
      * Add a box layout
      *
-     * @param modifier list of modifiers for the layout
+     * @param modifier   list of modifiers for the layout
      * @param horizontal horizontal positioning
-     * @param vertical vertical positioning
-     * @param content content of the layout
+     * @param vertical   vertical positioning
+     * @param content    content of the layout
      */
     public void box(
             @NonNull RecordingModifier modifier,
@@ -2889,10 +2907,6 @@ public class RemoteComposeWriter {
 
     /**
      * Start a box layout
-     *
-     * @param modifier
-     * @param horizontal
-     * @param vertical
      */
     public void startBox(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         mBuffer.addBoxStart(modifier.getComponentId(), -1, horizontal, vertical);
@@ -2905,8 +2919,6 @@ public class RemoteComposeWriter {
 
     /**
      * Start a box layout
-     *
-     * @param modifier
      */
     public void startBox(@NonNull RecordingModifier modifier) {
         startBox(modifier, BoxLayout.START, BoxLayout.TOP);
@@ -2920,10 +2932,6 @@ public class RemoteComposeWriter {
 
     /**
      * Start a fitbox layout
-     *
-     * @param modifier
-     * @param horizontal
-     * @param vertical
      */
     public void startFitBox(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         mBuffer.addFitBoxStart(modifier.getComponentId(), -1, horizontal, vertical);
@@ -2961,9 +2969,6 @@ public class RemoteComposeWriter {
 
     /**
      * Start a state layout
-     *
-     * @param modifier
-     * @param indexId
      */
     public void startStateLayout(@NonNull RecordingModifier modifier, int indexId) {
         mBuffer.addStateLayout(modifier.getComponentId(), -1, 0, 0, indexId);
@@ -2982,7 +2987,7 @@ public class RemoteComposeWriter {
     /**
      * Add a scroll modifier
      *
-     * @param direction HORIZONTAL(0) or VERTICAL(1)
+     * @param direction  HORIZONTAL(0) or VERTICAL(1)
      * @param positionId the position id as a NaN
      */
     public void addModifierScroll(int direction, float positionId) {
@@ -2999,8 +3004,8 @@ public class RemoteComposeWriter {
                 max,
                 0f,
                 3,
-                new float[] {
-                    touchExpressionDirection, -1, MUL,
+                new float[]{
+                        touchExpressionDirection, -1, MUL,
                 },
                 TouchExpression.STOP_GENTLY,
                 null,
@@ -3011,9 +3016,8 @@ public class RemoteComposeWriter {
     /**
      * Add a scroll modifier
      *
-     * @param direction HORIZONTAL(0) or VERTICAL(1)
+     * @param direction  HORIZONTAL(0) or VERTICAL(1)
      * @param positionId the position id as a NaN
-     * @param notches
      */
     public void addModifierScroll(int direction, float positionId, int notches) {
         // TODO: add support for non-notch behaviors etc.
@@ -3031,11 +3035,11 @@ public class RemoteComposeWriter {
                 max,
                 0f,
                 3,
-                new float[] {
-                    touchExpressionDirection, -1, MUL,
+                new float[]{
+                        touchExpressionDirection, -1, MUL,
                 },
                 TouchExpression.STOP_NOTCHES_EVEN,
-                new float[] {notches, notchMax},
+                new float[]{notches, notchMax},
                 null);
 
         mBuffer.addContainerEnd();
@@ -3186,9 +3190,9 @@ public class RemoteComposeWriter {
     /**
      * Add a box layout with no content
      *
-     * @param modifier list of modifiers for the layout
+     * @param modifier   list of modifiers for the layout
      * @param horizontal horizontal positioning
-     * @param vertical vertical positioning
+     * @param vertical   vertical positioning
      */
     public void box(@NonNull RecordingModifier modifier, int horizontal, int vertical) {
         mBuffer.addBoxStart(modifier.getComponentId(), -1, horizontal, vertical);
@@ -3211,7 +3215,6 @@ public class RemoteComposeWriter {
      * Creates and id for each string and makes a list of those ids
      *
      * @param strs varargs of strings
-     * @return
      */
     public float addStringList(String @NonNull ... strs) {
         int[] ids = new int[strs.length];
@@ -3225,7 +3228,6 @@ public class RemoteComposeWriter {
      * Creates a list of id's
      *
      * @param strIds id's of the strings
-     * @return
      */
     public float addStringList(int @NonNull ... strIds) {
         int id = mState.cacheData(strIds, NanMap.TYPE_ARRAY);
@@ -3246,9 +3248,6 @@ public class RemoteComposeWriter {
 
     /**
      * add an array of float
-     *
-     * @param values
-     * @return
      */
     public float addFloatArray(float @NonNull [] values) {
         int id = mState.cacheData(values, NanMap.TYPE_ARRAY);
@@ -3258,8 +3257,6 @@ public class RemoteComposeWriter {
 
     /**
      * add an array of float
-     * @param size
-     * @return
      */
     public float addFloatArray(float size) {
         // TODO: add resolution if size is NaN
@@ -3271,9 +3268,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add an array of float with the given size
-     * @param id
-     * @param size
-     * @return
      */
     public float addFloatArray(int id, float size) {
         float[] values = new float[(int) size];
@@ -3284,7 +3278,8 @@ public class RemoteComposeWriter {
 
     /**
      * Set a new value at the given index in the array
-     * @param id the array id
+     *
+     * @param id    the array id
      * @param index the index
      * @param value the new value
      */
@@ -3306,10 +3301,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add a dynamic array
-     *
-     * @param id
-     * @param size
-     * @return
      */
     public float addDynamicFloatArray(int id, float size) {
         mBuffer.addDynamicFloatArray(id, size);
@@ -3318,9 +3309,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add a list of float
-     *
-     * @param values
-     * @return
      */
     public float addFloatList(float @NonNull [] values) {
         // return mBuffer.addFloatList(values);
@@ -3334,10 +3322,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add a map of float values
-     *
-     * @param keys
-     * @param values
-     * @return
      */
     public float addFloatMap(String @NonNull [] keys, float @NonNull [] values) {
         int[] listId = new int[values.length];
@@ -3393,7 +3377,6 @@ public class RemoteComposeWriter {
      * Add a bitmap to the buffer
      *
      * @param image the bitmap
-     * @return
      */
     public int addBitmap(@NonNull Object image) {
         return storeBitmap(image);
@@ -3403,8 +3386,7 @@ public class RemoteComposeWriter {
      * Add a named bitmap to the buffer
      *
      * @param image the bitmap
-     * @param name the bitmap name
-     * @return
+     * @param name  the bitmap name
      */
     public int addBitmap(@NonNull Object image, @NonNull String name) {
         int id = storeBitmap(image);
@@ -3416,7 +3398,6 @@ public class RemoteComposeWriter {
      * Add a bitmap font
      *
      * @param glyphs array of glyphs
-     * @return
      */
     public int addBitmapFont(BitmapFontData.Glyph @NonNull [] glyphs) {
         int id = mState.createNextAvailableId();
@@ -3426,10 +3407,10 @@ public class RemoteComposeWriter {
     /**
      * Add a bitmap font
      *
-     * @param glyphs array of glyphs
+     * @param glyphs       array of glyphs
      * @param kerningTable The kerning table, where the key is pairs of glyphs (literally $1$2) and
-     *     the value is the horizontal adjustment in pixels for that glyph pair. Can be empty.
-     * @return
+     *                     the value is the horizontal adjustment in pixels for that glyph pair.
+     *                     Can be empty.
      */
     public int addBitmapFont(
             BitmapFontData.Glyph @NonNull [] glyphs, @NonNull Map<String, Short> kerningTable) {
@@ -3440,7 +3421,7 @@ public class RemoteComposeWriter {
     /**
      * Associate a name to a bitmap
      *
-     * @param id the bitmap id
+     * @param id      the bitmap id
      * @param omicron the bitmap name
      */
     public void nameBitmapId(int id, @NonNull String omicron) {
@@ -3450,8 +3431,6 @@ public class RemoteComposeWriter {
     /**
      * Create a slot for an id but do not fill it. TODO do we need this? + it does not waste an
      * command - you can have unfilled slots
-     *
-     * @return
      */
     public float createFloatId() {
         return asFloatId(createID(0));
@@ -3459,9 +3438,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add an impulse container
-     *
-     * @param duration
-     * @param start
      */
     public void impulse(float duration, float start) {
         mBuffer.addImpulse(duration, start);
@@ -3469,10 +3445,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add an impulse container
-     *
-     * @param duration
-     * @param start
-     * @param run
      */
     public void impulse(float duration, float start, @NonNull Runnable run) {
         mBuffer.addImpulse(duration, start);
@@ -3482,8 +3454,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add an impulse process container
-     *
-     * @param run
      */
     public void impulseProcess(@NonNull Runnable run) {
         mBuffer.addImpulseProcess();
@@ -3503,11 +3473,6 @@ public class RemoteComposeWriter {
 
     /**
      * Add a particle system definition
-     *
-     * @param variables
-     * @param initialExpressions
-     * @param particleCount
-     * @return
      */
     public float createParticles(
             float @NonNull [] variables,
@@ -3528,9 +3493,6 @@ public class RemoteComposeWriter {
      * Add a particle loop
      *
      * @param id id of the particle system (encoded as NaN)
-     * @param restart
-     * @param expressions
-     * @param r
      */
     public void particlesLoop(
             float id,
@@ -3545,14 +3507,15 @@ public class RemoteComposeWriter {
     /**
      * Add a particle - particle comparison.
      * such as 2 particles collision detection
-     * @param id the id of the particle system
-     * @param flags configuration flags
-     * @param min minimum index to process
-     * @param max maximum index to process
+     *
+     * @param id        the id of the particle system
+     * @param flags     configuration flags
+     * @param min       minimum index to process
+     * @param max       maximum index to process
      * @param condition run if > 0
-     * @param then1 apply to the first particle
-     * @param then2 apply to the second particle
-     * @param r the code to run
+     * @param then1     apply to the first particle
+     * @param then2     apply to the second particle
+     * @param r         the code to run
      */
     public void particlesComparison(
             float id,
@@ -3572,13 +3535,14 @@ public class RemoteComposeWriter {
     /**
      * Add a particle test.
      * such as collision with walls etc.
-     * @param id the id of the particle system
-     * @param flags configuration flags
-     * @param min minimum index to process
-     * @param max maximum index to process
+     *
+     * @param id        the id of the particle system
+     * @param flags     configuration flags
+     * @param min       minimum index to process
+     * @param max       maximum index to process
      * @param condition run if > 0
-     * @param then modify the particle values
-     * @param r the code to run
+     * @param then      modify the particle values
+     * @param r         the code to run
      */
     public void particlesComparison(
             float id,
@@ -3620,7 +3584,7 @@ public class RemoteComposeWriter {
     /**
      * add a function call
      *
-     * @param id The id of the function to call
+     * @param id   The id of the function to call
      * @param args The arguments of the function
      */
     public void callFloatFunction(int id, float @NonNull ... args) {
@@ -3651,7 +3615,7 @@ public class RemoteComposeWriter {
      * Add a debug message. Outputs to standard out. Remove this in production.
      *
      * @param message the message to add
-     * @param value the value to add
+     * @param value   the value to add
      */
     public void addDebugMessage(@NonNull String message, float value) {
         int textId = addText(message);
@@ -3662,8 +3626,8 @@ public class RemoteComposeWriter {
      * Add a debug message. Outputs to standard out. Remove this in production.
      *
      * @param message the message to add
-     * @param value the value to add
-     * @param flag the flag to add
+     * @param value   the value to add
+     * @param flag    the flag to add
      */
     public void addDebugMessage(@NonNull String message, float value, int flag) {
         int textId = addText(message);
@@ -3674,8 +3638,8 @@ public class RemoteComposeWriter {
      * Add a debug message. Outputs to standard out. Remove this in production.
      *
      * @param textId the message to add
-     * @param value the value to add
-     * @param flag the flag to add
+     * @param value  the value to add
+     * @param flag   the flag to add
      */
     public void addDebugMessage(int textId, float value, int flag) {
         mBuffer.addDebugMessage(textId, value, flag);
@@ -3710,7 +3674,7 @@ public class RemoteComposeWriter {
     /**
      * Create a bitmap
      *
-     * @param width the width of the bitmap
+     * @param width  the width of the bitmap
      * @param height the height of the bitmap
      * @return id of bitmap
      */
@@ -3723,8 +3687,8 @@ public class RemoteComposeWriter {
      * Draw on a bitmap, all subsequent operations will be applied to the bitmap
      *
      * @param bitmapId if 0 draw on main canvas
-     * @param mode to support various mode if 1 do not erase the bitmap
-     * @param color the color to fill the bitmap
+     * @param mode     to support various mode if 1 do not erase the bitmap
+     * @param color    the color to fill the bitmap
      */
     public void drawOnBitmap(int bitmapId, int mode, int color) {
         mBuffer.drawOnBitmap(bitmapId, mode, color);
@@ -3795,11 +3759,11 @@ public class RemoteComposeWriter {
      * @param velocity           the velocity
      */
     public void addModifierMarquee(int iterations,
-                                   int animationMode,
-                                   float repeatDelayMillis,
-                                   float initialDelayMillis,
-                                   float spacing,
-                                   float velocity) {
+            int animationMode,
+            float repeatDelayMillis,
+            float initialDelayMillis,
+            float spacing,
+            float velocity) {
         mBuffer.addModifierMarquee(iterations,
                 animationMode,
                 repeatDelayMillis,
@@ -3911,9 +3875,9 @@ public class RemoteComposeWriter {
      * @param bottomEnd   the bottom end value
      */
     public void addRoundClipRectModifier(float topStart,
-                                         float topEnd,
-                                         float bottomStart,
-                                         float bottomEnd) {
+            float topEnd,
+            float bottomStart,
+            float bottomEnd) {
         mBuffer.addRoundClipRectModifier(topStart, topEnd, bottomStart, bottomEnd);
     }
 
@@ -3974,12 +3938,12 @@ public class RemoteComposeWriter {
      * @param clickable            the clickable
      */
     public void addSemanticsModifier(int contentDescriptionId,
-                                     byte role,
-                                     int textId,
-                                     int stateDescriptionId,
-                                     int mode,
-                                     boolean enabled,
-                                     boolean clickable) {
+            byte role,
+            int textId,
+            int stateDescriptionId,
+            int mode,
+            boolean enabled,
+            boolean clickable) {
 
         mBuffer.addSemanticsModifier(contentDescriptionId,
                 role,
@@ -4019,12 +3983,12 @@ public class RemoteComposeWriter {
      * @param exitAnimation        the exit animation
      */
     public void addAnimationSpecModifier(int animationId,
-                                         float motionDuration,
-                                         int motionEasingType,
-                                         float visibilityDuration,
-                                         int visibilityEasingType,
-                                         int enterAnimation,
-                                         int exitAnimation) {
+            float motionDuration,
+            int motionEasingType,
+            float visibilityDuration,
+            int visibilityEasingType,
+            int enterAnimation,
+            int exitAnimation) {
         mBuffer.addAnimationSpecModifier(
                 animationId,
                 motionDuration,

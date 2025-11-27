@@ -19,12 +19,10 @@ package androidx.room3.writer
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XTypeSpec
-import androidx.room3.compiler.codegen.compat.XConverters.applyToJavaPoet
 import androidx.room3.compiler.processing.XProcessingEnv.Platform
 import androidx.room3.compiler.processing.util.Source
 import androidx.room3.compiler.processing.util.XTestInvocation
 import androidx.room3.processor.BaseEntityParserTest
-import javax.lang.model.element.Modifier
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -34,16 +32,18 @@ class EntityStatementConverterWriterTest : BaseEntityParserTest() {
     companion object {
         val OUT_PREFIX =
             """
-            package foo.bar;
-            import androidx.annotation.NonNull;
-            import androidx.room3.util.SQLiteStatementUtil;
-            import androidx.sqlite.SQLiteStatement;
-            import java.lang.SuppressWarnings;
-            import javax.annotation.processing.Generated;
-            @Generated("androidx.room3.RoomProcessor")
-            @SuppressWarnings({"unchecked", "deprecation", "removal"})
-            public final class MyContainerClass {
-        """
+            package foo.bar
+            
+            import androidx.room3.util.getColumnIndex
+            import androidx.sqlite.SQLiteStatement
+            import javax.`annotation`.processing.Generated
+            import kotlin.Int
+            import kotlin.Suppress
+            
+            @Generated(value = ["androidx.room3.RoomProcessor"])
+            @Suppress(names = ["UNCHECKED_CAST", "DEPRECATION", "REDUNDANT_PROJECTION", "REMOVAL"])
+            public class MyContainerClass {
+            """
                 .trimIndent()
         const val OUT_SUFFIX = "}"
     }
@@ -63,39 +63,37 @@ class EntityStatementConverterWriterTest : BaseEntityParserTest() {
                 """
                     .trimIndent(),
             output = {
-                fun stringAdapterCode(out: String, indexVar: String) =
-                    """
-                    if (statement.isNull($indexVar)) {
-                      $out = null;
-                    } else {
-                      $out = statement.getText($indexVar);
-                    }
-                    """
-                        .trimIndent()
                 """
-                |private MyEntity __entityStatementConverter_fooBarMyEntity(
-                |@NonNull final SQLiteStatement statement) {
-                |  final MyEntity _entity;
-                |  final int _columnIndexOfId = SQLiteStatementUtil.getColumnIndex(statement, "id");
-                |  final int _columnIndexOfName = SQLiteStatementUtil.getColumnIndex(statement, "name");
-                |  final int _columnIndexOfLastName = SQLiteStatementUtil.getColumnIndex(statement, "lastName");
-                |  final int _columnIndexOfAge = SQLiteStatementUtil.getColumnIndex(statement, "age");
-                |  _entity = new MyEntity();
+                |private fun __entityStatementConverter_fooBarMyEntity(statement: SQLiteStatement): MyEntity {
+                |  val _entity: MyEntity
+                |  val _columnIndexOfId: Int = getColumnIndex(statement, "id")
+                |  val _columnIndexOfName: Int = getColumnIndex(statement, "name")
+                |  val _columnIndexOfLastName: Int = getColumnIndex(statement, "lastName")
+                |  val _columnIndexOfAge: Int = getColumnIndex(statement, "age")
+                |  _entity = MyEntity()
                 |  if (_columnIndexOfId != -1) {
-                |    final int _tmpId;
-                |    _tmpId = (int) (statement.getLong(_columnIndexOfId));
-                |    _entity.setId(_tmpId);
+                |    val _tmpId: Int
+                |    _tmpId = statement.getLong(_columnIndexOfId).toInt()
+                |    _entity.setId(_tmpId)
                 |  }
                 |  if (_columnIndexOfName != -1) {
-                |    ${stringAdapterCode("_entity.name", "_columnIndexOfName")}
+                |    if (statement.isNull(_columnIndexOfName)) {
+                |      _entity.name = null
+                |    } else {
+                |      _entity.name = statement.getText(_columnIndexOfName)
+                |    }
                 |  }
                 |  if (_columnIndexOfLastName != -1) {
-                |    ${stringAdapterCode("_entity.lastName", "_columnIndexOfLastName")}
+                |    if (statement.isNull(_columnIndexOfLastName)) {
+                |      _entity.lastName = null
+                |    } else {
+                |      _entity.lastName = statement.getText(_columnIndexOfLastName)
+                |    }
                 |  }
                 |  if (_columnIndexOfAge != -1) {
-                |    _entity.age = (int) (statement.getLong(_columnIndexOfAge));
+                |    _entity.age = statement.getLong(_columnIndexOfAge).toInt()
                 |  }
-                |  return _entity;
+                |  return _entity
                 |}
                 """
                     .trimMargin()
@@ -107,8 +105,8 @@ class EntityStatementConverterWriterTest : BaseEntityParserTest() {
         generate(input) {
             it.assertCompilationResult {
                 generatedSource(
-                    Source.java(
-                        qName = "foo.bar.MyContainerClass",
+                    Source.kotlin(
+                        filePath = "foo/bar/MyContainerClass.kt",
                         code = listOf(OUT_PREFIX, output(it.isKsp), OUT_SUFFIX).joinToString("\n"),
                     )
                 )
@@ -120,14 +118,12 @@ class EntityStatementConverterWriterTest : BaseEntityParserTest() {
         singleEntity(input) { entity, invocation ->
             val className = XClassName.get("foo.bar", "MyContainerClass")
             val writer =
-                object : TypeWriter(WriterContext(CodeLanguage.JAVA, setOf(Platform.JVM), true)) {
+                object : TypeWriter(WriterContext(CodeLanguage.KOTLIN, setOf(Platform.JVM), true)) {
                     override val packageName = className.packageName
 
                     override fun createTypeSpecBuilder(): XTypeSpec.Builder {
                         getOrCreateFunction(EntityStatementConverterWriter(entity))
-                        return XTypeSpec.classBuilder(className).applyToJavaPoet {
-                            addModifiers(Modifier.PUBLIC)
-                        }
+                        return XTypeSpec.classBuilder(className)
                     }
                 }
             writer.write(invocation.processingEnv)

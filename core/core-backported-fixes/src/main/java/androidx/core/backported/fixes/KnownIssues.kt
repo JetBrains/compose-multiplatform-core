@@ -91,6 +91,19 @@ public sealed class KnownIssues {
                         "google/komodo/komodo:16/BP3A.250905.014/13873947:user/release-keys",
                         "google/mustang/mustang:16/BD3A.250721.001.B7/13955164:user/release-keys",
                         "google/tokay/tokay:16/BP3A.250905.014/13873947:user/release-keys",
+                        // Oct Release
+                        "google/blazer/blazer:16/BD3A.251005.003.W3/14147046:user/release-keys",
+                        "google/blazer/blazer:16/BD3A.251005.003.J5/14147083:user/release-keys",
+                        "google/caiman/caiman:16/BP3A.251005.004.B1/14042072:user/release-keys",
+                        "google/comet/comet:16/BP3A.251005.004.B1/14042072:user/release-keys",
+                        "google/frankel/frankel:16/BD3A.251005.003.W3/14147046:user/release-keys",
+                        "google/frankel/frankel:16/BD3A.251005.003.J5/14147083:user/release-keys",
+                        "google/komodo/komodo:16/BP3A.251005.004.B1/14042072:user/release-keys",
+                        "google/mustang/mustang:16/BD3A.251005.003.J5/14147083:user/release-keys",
+                        "google/mustang/mustang:16/BD3A.251005.003.W3/14147046:user/release-keys",
+                        "google/rango/rango:16/BD3A.251005.003.W3/14147046:user/release-keys",
+                        "google/rango/rango:16/BD3A.251005.003.J5/14147083:user/release-keys",
+                        "google/tokay/tokay:16/BP3A.251005.004.B1/14042072:user/release-keys",
                     ),
             ) {
                 // This known issue only applies to Pixel devices.

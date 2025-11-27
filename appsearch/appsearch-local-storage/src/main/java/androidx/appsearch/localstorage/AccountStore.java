@@ -25,8 +25,16 @@ import androidx.appsearch.app.AppSearchAccount;
 import androidx.appsearch.app.AppSearchResult;
 import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.app.GenericDocument;
+import androidx.appsearch.app.PropertyPath;
+import androidx.appsearch.app.SearchSpec;
+import androidx.appsearch.ast.Node;
+import androidx.appsearch.ast.TextNode;
+import androidx.appsearch.ast.operators.AndNode;
+import androidx.appsearch.ast.operators.OrNode;
+import androidx.appsearch.ast.operators.PropertyRestrictNode;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.localstorage.converter.AccountToProtoConverter;
+import androidx.appsearch.localstorage.util.PrefixUtil;
 import androidx.collection.ArraySet;
 
 import com.google.android.appsearch.proto.AccountProto;
@@ -41,6 +49,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -89,8 +98,7 @@ public class AccountStore {
      * <p>This set is loaded from the system account manager and is NOT persisted to disk by
      * {@link AccountStore}. It is used to verify that an account exists before indexing.
      */
-    @VisibleForTesting
-    @Nullable Set<Account> mAllExistingAccounts;
+    private @Nullable Set<Account> mAllExistingAccounts;
 
     /**
      * Flag indicating whether the file of {@link #ACCOUNT_FILE_NAME} has been mutated (added,
@@ -109,6 +117,12 @@ public class AccountStore {
             @NonNull Set<AccountProto> appSearchAccountProtos) {
         mAccountDir = accountDir;
         mAppSearchAccountProtos = appSearchAccountProtos;
+    }
+
+    /**  Get the current set of {@link Account} objects existing on the system.  */
+    @Nullable
+    public Set<Account> getAllExistingAccounts() {
+        return mAllExistingAccounts;
     }
 
     /**
@@ -180,28 +194,30 @@ public class AccountStore {
      *
      * <p>New, valid accounts are added to the {@code newlyAddedAccounts} set for later persistence.
      *
+     * @param allExistingAccounts          The current set of {@link Account} objects existing on
+     *                                     the system.
      * @param prefixedAccountPropertyPaths The map of prefixed schema types that point to all its
      *                                     account property paths
      * @param prefix                       The package name prefix for the document's schema.
      * @param document                     The {@link GenericDocument} being verified.
-     * @param newlyAddedAccounts           The set to collect newly found, valid
-     *                                     {@link AccountProto}s.
+     * @return  A set to collect newly found, valid {@link AccountProto}s. Or {@code null} if the
+     * document's schema doesn't contains wipeout account property paths or the document contains no
+     * Account property.
      * @throws AppSearchException          if the account name or type is missing in the document,
      *                                     or if the account does not exist in the system.
      */
-    public void verifyAccountExists(@NonNull Map<String, Set<String>> prefixedAccountPropertyPaths,
-            @NonNull String prefix, @NonNull GenericDocument document,
-            @NonNull Set<AccountProto> newlyAddedAccounts)
+    @Nullable
+    public static Set<AccountProto> verifyAccountExists(
+            @NonNull Set<Account> allExistingAccounts,
+            @NonNull Map<String, Set<String>> prefixedAccountPropertyPaths,
+            @NonNull String prefix, @NonNull GenericDocument document)
             throws AppSearchException {
-        if (mAllExistingAccounts == null) {
-            // We don't have account information in this storage, skip the verification.
-            return;
-        }
+        Set<AccountProto> newlyAddedAccounts = null;
         Set<String> accountPropertyPaths = prefixedAccountPropertyPaths.get(
                 prefix + document.getSchemaType());
         if (accountPropertyPaths == null) {
             // This schema type doesn't have account properties.
-            return;
+            return newlyAddedAccounts;
         }
         for (String accountPropertyPath : accountPropertyPaths) {
             GenericDocument[] accountDocuments =
@@ -224,14 +240,18 @@ public class AccountStore {
                                     + " is missing.");
                 }
                 Account account = new Account(accountName, accountType);
-                if (!mAllExistingAccounts.contains(account)) {
+                if (!allExistingAccounts.contains(account)) {
                     throw new AppSearchException(AppSearchResult.RESULT_INVALID_ARGUMENT,
                             "The account at " + i +  " of " + accountPropertyPath
                                     + " doesn't exist on this device.");
                 }
+                if (newlyAddedAccounts == null) {
+                    newlyAddedAccounts = new ArraySet<>();
+                }
                 newlyAddedAccounts.add(AccountToProtoConverter.toAccountProto(appSearchAccount));
             }
         }
+        return newlyAddedAccounts;
     }
 
     /**
@@ -265,6 +285,8 @@ public class AccountStore {
      * @throws AppSearchException if an IO error occurs during update or conversion.
      */
     @NonNull
+    // TODO(b/413089233) handle remove and reindex document for renaming case in the following CL
+    //TODO(b/413089233) add log stats for this method.
     public Set<AccountProto> updateAccounts(@NonNull Set<Account> allExistingAccounts,
             @NonNull Map<Account, Account> renamedAccounts) throws AppSearchException {
         mAllExistingAccounts = allExistingAccounts;
@@ -303,6 +325,127 @@ public class AccountStore {
             mFileNeedsPersist = true;
         }
         return deletedAccounts;
+    }
+
+    /**
+     * Removes documents from AppSearch's index that reference accounts which have been deleted
+     * in the system.
+     *
+     * <p>This method iterates through all known schema types that contain an account property.
+     * For each such schema, it constructs a specialized query and executes removeByQuery to
+     * efficiently delete the affected documents.
+     *
+     * <p>Documents are targeted based on matching the {@code accountType} and either the
+     * {@code accountId} (preferred) or the old {@code accountName} of the deleted accounts.
+     *
+     * @param prefixedAccountPropertyPaths The map of prefixed schema types that point to all its
+     *                                     account property paths
+     * @param appSearchImpl                The implementation core of AppSearch used to execute the
+     *                                     deletion.
+     * @param deletedAccounts              The set of {@link AccountProto} objects representing
+     *                                     accounts that are no longer present in the system.
+     * @throws AppSearchException if an error occurs during the {@code removeByQuery} operation.
+     */
+    //TODO(b/413089233) add log stats for this method.
+    public void removeAccountDocuments(
+            @NonNull Map<String, Set<String>> prefixedAccountPropertyPaths,
+            @NonNull AppSearchImpl appSearchImpl,
+            @NonNull Set<AccountProto> deletedAccounts) throws AppSearchException {
+        if (deletedAccounts.isEmpty() || prefixedAccountPropertyPaths.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, Set<String>> entry : prefixedAccountPropertyPaths.entrySet()) {
+            if (entry.getValue().isEmpty()) {
+                // This should never happened, we should already move empty set from the
+                // prefixedAccountPropertyPaths. In case we didn't something wrong, we should avoid
+                // to trigger a removal by empty query.
+                continue;
+            }
+            String prefixSchemaType = entry.getKey();
+            SearchSpec searchSpec = new SearchSpec.Builder()
+                    .addFilterSchemas(PrefixUtil.removePrefix(entry.getKey()))
+                    .setVerbatimSearchEnabled(true)
+                    .setTermMatch(SearchSpec.TERM_MATCH_EXACT_ONLY)
+                    .build();
+            String query = buildRemovalQuery(deletedAccounts, entry.getValue());
+            if (query.isEmpty()) {
+                // This should never happened, In case we didn't something wrong, we should avoid
+                // to trigger a removal by empty query.
+                throw new AppSearchException(AppSearchResult.RESULT_INTERNAL_ERROR,
+                        "Built an empty removal query");
+            }
+            appSearchImpl.removeByQuery(PrefixUtil.getPackageName(prefixSchemaType),
+                    PrefixUtil.getDatabaseName(prefixSchemaType),
+                    query,
+                    searchSpec,
+                    /*deletedIds=*/null,
+                    /*removeStatsBuilder=*/null,
+                    /*callStatsBuilder=*/null);
+        }
+    }
+
+    /**
+     * Constructs a verbatim search query string used by {@code removeByQuery} to identify
+     * documents that reference the given set of deleted accounts.
+     *
+     * @param deletedAccounts The set of deleted {@link AccountProto}, used to identify reference
+     *                        documents.
+     * @param accountPropertyPaths A set of account property paths within the current schema type.
+     * @return A search query string that, when executed, will match documents referencing
+     * any of the {@code deletedAccounts}.
+     */
+    @VisibleForTesting
+    static String buildRemovalQuery(@NonNull Set<AccountProto> deletedAccounts,
+            @NonNull Set<String> accountPropertyPaths) {
+        if (deletedAccounts.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Cannot build remove query if the deletedAccount is empty.");
+        }
+        if (accountPropertyPaths.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Cannot build remove query if the accountPropertyPaths is empty.");
+        }
+        Node finalNode = null;
+        for (AccountProto deletedAccount : deletedAccounts) {
+            Node perAccountNode;
+            for (String accountPropertyPath : accountPropertyPaths) {
+                TextNode accountType = new TextNode(deletedAccount.getAccountType());
+                accountType.setVerbatim(true);
+                perAccountNode = new PropertyRestrictNode(
+                        getFullAccountPropertyPath(accountPropertyPath,
+                                AppSearchAccount.PROPERTY_ACCOUNT_TYPE),
+                        accountType);
+                // Use the Id to remove account first since account name may be changed.
+                if (deletedAccount.hasAccountId()) {
+                    TextNode accountId = new TextNode(deletedAccount.getAccountId());
+                    accountId.setVerbatim(true);
+                    perAccountNode = new AndNode(perAccountNode, new PropertyRestrictNode(
+                            getFullAccountPropertyPath(accountPropertyPath,
+                                    AppSearchAccount.PROPERTY_ACCOUNT_ID),
+                            accountId));
+                } else {
+                    TextNode accountName = new TextNode(deletedAccount.getAccountName());
+                    accountName.setVerbatim(true);
+                    perAccountNode = new AndNode(perAccountNode, new PropertyRestrictNode(
+                            getFullAccountPropertyPath(accountPropertyPath,
+                                    AppSearchAccount.PROPERTY_ACCOUNT_ID),
+                            accountName));
+                }
+                if (finalNode == null) {
+                    finalNode = perAccountNode;
+                } else {
+                    finalNode = new OrNode(finalNode, perAccountNode);
+                }
+            }
+        }
+        // Both deletedAccount and accountPropertyPaths are not empty, finalNode should never be
+        // null.
+        return Objects.requireNonNull(finalNode).toString();
+    }
+
+    private static PropertyPath getFullAccountPropertyPath(@NonNull String accountPropertyPath,
+            @NonNull String propertyName) {
+        return new PropertyPath(accountPropertyPath + "." + propertyName);
     }
 
     /**

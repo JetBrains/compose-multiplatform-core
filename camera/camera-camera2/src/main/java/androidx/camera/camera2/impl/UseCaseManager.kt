@@ -18,12 +18,10 @@ package androidx.camera.camera2.impl
 
 import android.content.Context
 import android.graphics.ImageFormat
-import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.params.SessionConfiguration.SESSION_HIGH_SPEED
 import android.hardware.camera2.params.SessionConfiguration.SESSION_REGULAR
 import android.media.MediaCodec
 import android.os.Build
-import android.util.Pair
 import androidx.annotation.GuardedBy
 import androidx.annotation.OptIn
 import androidx.annotation.VisibleForTesting
@@ -46,7 +44,6 @@ import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.StreamFormat
-import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange
 import androidx.camera.core.ImageCapture
@@ -418,6 +415,7 @@ constructor(
                 cameraGraphConfig = creationResult.config,
                 graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
                 cameraGraphFactory = { config -> cameraPipe.createCameraGraph(config) },
+                sessionProcessor = sessionProcessor,
             )
         )
     }
@@ -435,10 +433,7 @@ constructor(
                 }
             }
         }
-        sessionProcessor?.apply {
-            setCaptureSessionRequestProcessor(null)
-            deInitSession()
-        }
+        sessionProcessor?.deInitSession()
     }
 
     @GuardedBy("lock")
@@ -474,11 +469,6 @@ constructor(
             control.requestControl = newUseCaseCamera.requestControl
         }
 
-        setCaptureSessionRequestProcessor(
-            useCaseCameraConfig.sessionConfigAdapter,
-            useCaseCameraConfig.cameraGraph,
-        )
-
         newUseCaseCamera.setActiveResumeMode(activeResumeEnabled)
 
         refreshRunningUseCases()
@@ -495,49 +485,6 @@ constructor(
     private fun UseCaseCameraConfig.configureCameraStateListener() {
         graphStateToCameraStateAdapter.cameraGraph = cameraGraph
         cameraStateAdapter.onGraphUpdated(cameraGraph)
-    }
-
-    private fun setCaptureSessionRequestProcessor(
-        sessionConfigAdapter: SessionConfigAdapter,
-        cameraGraph: CameraGraph,
-    ) {
-        val stillCaptureStreamId: StreamId? =
-            sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
-                val repeatingSurfaces = sessionConfig.repeatingCaptureConfig.surfaces
-                sessionConfig.surfaces
-                    .find { surface ->
-                        surface !in repeatingSurfaces
-                    } // Find the first non-repeating surface (nullable)
-                    ?.let { surface -> // If found...
-                        useCaseGraphConfig?.getStreamIdsFromSurfaces(
-                            listOf(surface)
-                        ) // Get its StreamIds (nullable list)
-                    }
-                    ?.firstOrNull() // Get the first StreamId or null
-            }
-
-        sessionProcessor?.setCaptureSessionRequestProcessor(
-            object : SessionProcessor.CaptureSessionRequestProcessor {
-                override fun getRealtimeStillCaptureLatency(): Pair<Long, Long>? {
-                    val outputLatency =
-                        cameraGraph.streams.getOutputLatency(stillCaptureStreamId!!) ?: return null
-                    val captureLatencyMs = outputLatency.estimatedCaptureLatencyNs.div(1_000_000)
-                    val processingLatencyMs =
-                        outputLatency.estimatedProcessingLatencyNs.div(1_000_000)
-                    return Pair.create(captureLatencyMs, processingLatencyMs)
-                }
-
-                override fun setExtensionStrength(strength: Int) {
-                    if (Build.VERSION.SDK_INT >= 34) {
-                        camera
-                            ?.requestControl
-                            ?.setParametersAsync(
-                                values = mutableMapOf(CaptureRequest.EXTENSION_STRENGTH to strength)
-                            )
-                    }
-                }
-            }
-        )
     }
 
     @GuardedBy("lock")

@@ -62,10 +62,6 @@ public value class AeMode(public val value: Int) {
     }
 
     public companion object {
-        // TODO: Use CameraMetadata value directly after updating compile Sdk to 35
-        // Temporarily defines the constant for LOW LIGHT BOOST before compileSdk is updated to 35
-        public const val CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY: Int = 6
-
         public val OFF: AeMode = AeMode(CameraMetadata.CONTROL_AE_MODE_OFF)
         public val ON: AeMode = AeMode(CameraMetadata.CONTROL_AE_MODE_ON)
         public val ON_ALWAYS_FLASH: AeMode = AeMode(CameraMetadata.CONTROL_AE_MODE_ON_ALWAYS_FLASH)
@@ -75,7 +71,7 @@ public value class AeMode(public val value: Int) {
         public val ON_EXTERNAL_FLASH: AeMode =
             AeMode(CameraMetadata.CONTROL_AE_MODE_ON_EXTERNAL_FLASH)
         public val ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY: AeMode =
-            AeMode(CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
+            AeMode(CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
 
         public val values: List<AeMode> =
             listOf(

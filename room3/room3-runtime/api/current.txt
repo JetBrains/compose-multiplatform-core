@@ -39,18 +39,10 @@ package androidx.room3 {
   }
 
   public class InvalidationTracker {
-    method @WorkerThread public void addObserver(androidx.room3.InvalidationTracker.Observer observer);
     method public final kotlinx.coroutines.flow.Flow<java.util.Set<java.lang.String>> createFlow(java.lang.String... tables);
     method public final kotlinx.coroutines.flow.Flow<java.util.Set<java.lang.String>> createFlow(String[] tables, optional boolean emitInitialState);
     method @BytecodeOnly public static kotlinx.coroutines.flow.Flow! createFlow$default(androidx.room3.InvalidationTracker!, String![]!, boolean, int, Object!);
     method public final void refreshAsync();
-    method @WorkerThread public void removeObserver(androidx.room3.InvalidationTracker.Observer observer);
-  }
-
-  public abstract static class InvalidationTracker.Observer {
-    ctor protected InvalidationTracker.Observer(String firstTable, java.lang.String... rest);
-    ctor public InvalidationTracker.Observer(String[] tables);
-    method public abstract void onInvalidated(java.util.Set<java.lang.String> tables);
   }
 
   @SuppressCompatibility @androidx.room3.ExperimentalRoomApi public final class MultiInstanceInvalidationService extends android.app.Service {

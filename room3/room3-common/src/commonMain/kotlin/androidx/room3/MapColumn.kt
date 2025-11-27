@@ -30,11 +30,15 @@ package androidx.room3
  * ```
  *   @Query("SELECT * FROM Artist JOIN Song ON Artist.artistName = Song.artist")
  *   fun getArtistNameToSongNames():
- *   Map<@MapColumn(columnName = "artistName") String,
- *   @MapColumn(columnName = "songName") List<String>>
+ *     Map<@MapColumn(columnName = "artistName") String,
+ *         @MapColumn(columnName = "songName") List<String>>
  *
- *   @Query("SELECT *, COUNT(mSongId) as songCount FROM Artist JOIN Song ON
- *   Artist.artistName = Song.artist GROUP BY artistName")
+ *   @Query(
+ *     """
+ *     SELECT *, COUNT(mSongId) as songCount
+ *     FROM Artist JOIN Song ON  Artist.artistName = Song.artist GROUP BY artistName
+ *     """
+ *   )
  *   fun getArtistAndSongCounts(): Map<Artist, @MapColumn(columnName = "songCount") Integer>
  * ```
  *

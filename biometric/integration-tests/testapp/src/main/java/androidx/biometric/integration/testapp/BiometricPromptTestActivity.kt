@@ -18,6 +18,7 @@ package androidx.biometric.integration.testapp
 
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.TextView
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators
@@ -75,6 +76,8 @@ class BiometricPromptTestActivity : FragmentActivity() {
         setContentView(binding.root)
 
         // Set button callbacks.
+        binding.common.secondAuthenticateButton.visibility = View.GONE
+        binding.common.thirdAuthenticateButton.visibility = View.GONE
         binding.common.canAuthenticateButton.setOnClickListener { canAuthenticate() }
         binding.common.authenticateButton.setOnClickListener { authenticate() }
         binding.common.clearLogButton.setOnClickListener { clearLog() }

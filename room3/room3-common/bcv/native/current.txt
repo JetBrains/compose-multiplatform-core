@@ -295,19 +295,6 @@ open annotation class androidx.room3/MapColumn : kotlin/Annotation { // androidx
         final fun <get-tableName>(): kotlin/String // androidx.room3/MapColumn.tableName.<get-tableName>|<get-tableName>(){}[0]
 }
 
-open annotation class androidx.room3/MapInfo : kotlin/Annotation { // androidx.room3/MapInfo|null[0]
-    constructor <init>(kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/String = ...) // androidx.room3/MapInfo.<init>|<init>(kotlin.String;kotlin.String;kotlin.String;kotlin.String){}[0]
-
-    final val keyColumn // androidx.room3/MapInfo.keyColumn|{}keyColumn[0]
-        final fun <get-keyColumn>(): kotlin/String // androidx.room3/MapInfo.keyColumn.<get-keyColumn>|<get-keyColumn>(){}[0]
-    final val keyTable // androidx.room3/MapInfo.keyTable|{}keyTable[0]
-        final fun <get-keyTable>(): kotlin/String // androidx.room3/MapInfo.keyTable.<get-keyTable>|<get-keyTable>(){}[0]
-    final val valueColumn // androidx.room3/MapInfo.valueColumn|{}valueColumn[0]
-        final fun <get-valueColumn>(): kotlin/String // androidx.room3/MapInfo.valueColumn.<get-valueColumn>|<get-valueColumn>(){}[0]
-    final val valueTable // androidx.room3/MapInfo.valueTable|{}valueTable[0]
-        final fun <get-valueTable>(): kotlin/String // androidx.room3/MapInfo.valueTable.<get-valueTable>|<get-valueTable>(){}[0]
-}
-
 open annotation class androidx.room3/OnConflictStrategy : kotlin/Annotation { // androidx.room3/OnConflictStrategy|null[0]
     constructor <init>() // androidx.room3/OnConflictStrategy.<init>|<init>(){}[0]
 

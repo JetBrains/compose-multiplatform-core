@@ -16,11 +16,10 @@
 
 package androidx.xr.runtime
 
+import android.app.Activity
 import android.content.Context
-import android.content.Intent
-import android.content.pm.ApplicationInfo
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.content.pm.ResolveInfo
 import android.os.Build
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.Service
@@ -70,31 +69,45 @@ internal fun <S : Any> loadProviders(
     return providers + filteredServiceLoaderClasses
 }
 
-internal fun findProjectedSystemService(context: Context, intent: Intent): ResolveInfo? {
-    val resolveInfoList: List<ResolveInfo> =
-        context.packageManager.queryIntentServices(intent, PackageManager.GET_RESOLVED_FILTER)
+private const val REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED = "xr_projected"
 
-    val resolveInfoSystemApps =
-        resolveInfoList.filter {
-            val applicationInfo =
-                context.packageManager.getApplicationInfo(
-                    it.serviceInfo.packageName,
-                    /* flags= */ 0,
-                )
-            (applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+private fun hasXrProjectedDisplayCategory(activityInfo: ActivityInfo): Boolean {
+    // TODO b/460536048 - Remove reflection once requiredDisplayCategory is public in SDK 36
+    // Use reflection to access requiredDisplayCategory to avoid compile errors
+    // when using an older compileSdkVersion.
+    return try {
+        val field = ActivityInfo::class.java.getField("requiredDisplayCategory")
+        val category = field.get(activityInfo) as? String
+        category == REQUIRED_DISPLAY_CATEGORY_XR_PROJECTED
+    } catch (e: Exception) {
+        false
+    }
+}
+
+/**
+ * Returns true if the activity associated with the [context] is a projected activity.
+ *
+ * This is determined by checking if the activity's requiredDisplayCategory is set to "xr_projected"
+ * in the AndroidManifest.xml See example at
+ * https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:xr/arcore/integration-tests/projected-testapp/src/main/AndroidManifest.xml
+ */
+internal fun isProjectedActivity(context: Context): Boolean {
+    if (context !is Activity) {
+        return false
+    }
+    return try {
+        val packageManager = context.packageManager
+        val componentName = context.componentName
+        val activityInfo =
+            packageManager.getActivityInfo(componentName, PackageManager.GET_META_DATA)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            hasXrProjectedDisplayCategory(activityInfo)
+        } else {
+            false
         }
-    println("findProjectedSystemService: apps = $resolveInfoSystemApps")
-
-    if (resolveInfoSystemApps.isEmpty()) {
-        println("System doesn't include a service supporting Projected XR devices.")
-        return null
+    } catch (e: PackageManager.NameNotFoundException) {
+        false
     }
-    if (resolveInfoSystemApps.size > 1) {
-        println("More than one system service found for action: $intent.")
-        return null
-    }
-
-    return resolveInfoSystemApps.first()
 }
 
 /**
@@ -104,17 +117,15 @@ internal fun findProjectedSystemService(context: Context, intent: Intent): Resol
 internal fun <S : Service> selectProvider(providers: List<S>, features: Set<Feature>): S? =
     providers.firstOrNull { features.containsAll(it.requirements) }
 
-/** Returns the features that this device supports. */
-internal fun getDeviceFeatures(context: Context): Set<Feature> {
-    val ACTION_PERCEPTION_BIND: String = "androidx.xr.projected.ACTION_PERCEPTION_BIND"
-
+/** Returns the set of features available for the current activity on this device. */
+internal fun getDeviceActivityFeatures(context: Context): Set<Feature> {
     // Short-circuit for unit tests environments.
     if (Build.FINGERPRINT.contains("robolectric")) return emptySet()
 
     val features = mutableSetOf<Feature>(Feature.FULLSTACK)
     val packageManager = context.packageManager
 
-    if (findProjectedSystemService(context, Intent(ACTION_PERCEPTION_BIND)) != null) {
+    if (isProjectedActivity(context)) {
         features.add(Feature.PROJECTED)
     }
 

@@ -129,18 +129,6 @@ constructor(x: Float = 0F, y: Float = 0F, z: Float = 0F, w: Float = 1F) {
         )
     }
 
-    /** Returns a new quaternion with the product of this quaternion and a scalar amount. */
-    public operator fun times(c: Float): Quaternion = Quaternion(x * c, y * c, z * c, w * c)
-
-    /** Returns a new quaternion with this quaternion divided by a scalar amount. */
-    public operator fun div(c: Float): Quaternion = Quaternion(x / c, y / c, z / c, w / c)
-
-    /** Returns a new quaternion with a normalized rotation. */
-    public fun toNormalized(): Quaternion {
-        val norm = rsqrt(x * x + y * y + z * z + w * w)
-        return this * norm
-    }
-
     /** Returns the dot product of this quaternion and the [other] quaternion. */
     public inline infix fun dot(other: Quaternion): Float =
         x * other.x + y * other.y + z * other.z + w * other.w
@@ -171,18 +159,13 @@ constructor(x: Float = 0F, y: Float = 0F, z: Float = 0F, w: Float = 1F) {
 
     /** Returns a Pair containing the axis of rotation and the angle of rotation in degrees. */
     private fun toAxisAngle(): Pair<Vector3, Float> {
-        val normalized = this.toNormalized()
-        val angleRadians = 2 * acos(normalized.w)
+        val angleRadians = 2 * acos(this.w)
         val sinHalfAngle = sin(angleRadians / 2)
         val axis =
             if (sinHalfAngle < 0.0001f) {
                 Vector3.Right // Default axis when angle is 0
             } else {
-                Vector3(
-                    normalized.x / sinHalfAngle,
-                    normalized.y / sinHalfAngle,
-                    normalized.z / sinHalfAngle,
-                )
+                Vector3(this.x / sinHalfAngle, this.y / sinHalfAngle, this.z / sinHalfAngle)
             }
 
         return Pair(axis, toDegrees(angleRadians))
@@ -245,13 +228,12 @@ constructor(x: Float = 0F, y: Float = 0F, z: Float = 0F, w: Float = 1F) {
             val rotationAxis = startNorm.cross(endNorm)
 
             return Quaternion(rotationAxis.x, rotationAxis.y, rotationAxis.z, 1 + cosTheta)
-                .toNormalized()
         }
 
         /** Returns a new quaternion representing the rotation from one quaternion to another. */
         @JvmStatic
         public fun fromRotation(start: Quaternion, end: Quaternion): Quaternion =
-            Quaternion(end * start.inverse).toNormalized()
+            Quaternion(end * start.inverse)
 
         /** Returns a new quaternion with the specified forward and upward directions. */
         @JvmStatic

@@ -76,7 +76,9 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresAconfigFlag;
 import androidx.annotation.RequiresApi;
+import androidx.core.flagging.Flags;
 import androidx.mediarouter.media.MediaRouter.RouteInfo;
 
 import java.util.ArrayList;
@@ -151,6 +153,12 @@ class MediaRouter2Utils {
             Api34Impl.setDeviceType(
                     builder, androidXDeviceTypeToFwkDeviceType(descriptor.getDeviceType()));
         }
+        if (Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1
+                && Flags.getBooleanFlagValue(MediaRouterFlags.NAMESPACE,
+                MediaRouterFlags.ENABLE_ROUTE_VISIBILITY_CONTROL_API)) {
+            FlagEnableRouteVisibilityControlApiImpl.copyRequiredPermissionsToBuilder(builder,
+                    descriptor);
+        }
 
         switch (descriptor.getDeviceType()) {
             case DEVICE_TYPE_TV:
@@ -211,6 +219,12 @@ class MediaRouter2Utils {
             builder.setDeduplicationIds(Api34Impl.getDeduplicationIds(fwkMediaRoute2Info));
             deviceTypeInRouteInfo =
                     fwkDeviceTypeToAndroidXDeviceType(Api34Impl.getType(fwkMediaRoute2Info));
+        }
+        if (Build.VERSION.SDK_INT_FULL >= Build.VERSION_CODES_FULL.BAKLAVA_1
+                && Flags.getBooleanFlagValue(MediaRouterFlags.NAMESPACE,
+                MediaRouterFlags.ENABLE_ROUTE_VISIBILITY_CONTROL_API)) {
+            FlagEnableRouteVisibilityControlApiImpl.copyFwkRequiredPermissionsToBuilder(builder,
+                    fwkMediaRoute2Info);
         }
 
         CharSequence description = fwkMediaRoute2Info.getDescription();
@@ -514,6 +528,22 @@ class MediaRouter2Utils {
 
         public static int getType(MediaRoute2Info fwkMediaRoute2Info) {
             return fwkMediaRoute2Info.getType();
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    @RequiresAconfigFlag("com.android.media.flags.enable_route_visibility_control_api")
+    private static final class FlagEnableRouteVisibilityControlApiImpl {
+        private FlagEnableRouteVisibilityControlApiImpl() {}
+
+        static void copyRequiredPermissionsToBuilder(MediaRoute2Info.Builder builder,
+                MediaRouteDescriptor descriptor) {
+            builder.setRequiredPermissions(descriptor.getRequiredPermissions());
+        }
+
+        static void copyFwkRequiredPermissionsToBuilder(MediaRouteDescriptor.Builder builder,
+                MediaRoute2Info info) {
+            builder.setRequiredPermissions(info.getRequiredPermissions());
         }
     }
 }

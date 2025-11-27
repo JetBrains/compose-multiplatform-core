@@ -30,9 +30,9 @@ import androidx.compose.remote.creation.compose.modifier.semantics
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 
 /**
  * Composable function that displays an icon using an [RemoteImageVector].
@@ -60,5 +60,5 @@ public fun RemoteIcon(
 }
 
 // Default icon size
-internal val DefaultIconDimension = 24f.dp
+internal val DefaultIconDimension = 24.rdp
 internal val DefaultTint = Color.White

@@ -19,7 +19,6 @@ package androidx.room3.compiler.processing.ksp
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.processing.XAnnotated
 import androidx.room3.compiler.processing.XConstructorElement
-import androidx.room3.compiler.processing.XEnumEntry
 import androidx.room3.compiler.processing.XEnumTypeElement
 import androidx.room3.compiler.processing.XFieldElement
 import androidx.room3.compiler.processing.XHasModifiers
@@ -156,7 +155,7 @@ internal sealed class KspTypeElement(
     override fun getAllFieldsIncludingPrivateSupers() = allFieldsIncludingPrivateSupers
 
     @OptIn(KspExperimental::class)
-    private val _enclosedElements: List<KspElement> by lazy {
+    protected val _enclosedElements: List<KspElement> by lazy {
         env.resolver
             .getDeclarationsInSourceOrder(declaration)
             .map { env.wrapDeclaration(it) }
@@ -343,17 +342,14 @@ internal sealed class KspTypeElement(
 
     override fun getSuperInterfaceElements() = superInterfaces.mapNotNull { it.typeElement }
 
-    override val companionObject: KspTypeElement? =
+    override val companionObject: KspTypeElement? by lazy {
         getEnclosedTypeElements().filterIsInstance<KspTypeElement>().firstOrNull {
             it.isCompanionObject()
         }
+    }
 
     override fun getEnclosedTypeElements(): List<XTypeElement> {
-        return declaration.declarations
-            .filterIsInstance<KSClassDeclaration>()
-            .filterNot { it.classKind == ClassKind.ENUM_ENTRY }
-            .map { env.wrapClassDeclarationForNonEnumEntry(it) }
-            .toList()
+        return _enclosedElements.filterIsInstance<KspTypeElement>()
     }
 
     override fun isFromJava(): Boolean {
@@ -377,11 +373,8 @@ internal sealed class KspTypeElement(
 
     private class KspEnumTypeElement(env: KspProcessingEnv, declaration: KSClassDeclaration) :
         KspTypeElement(env, declaration), XEnumTypeElement {
-        override val entries: Set<XEnumEntry> by lazy {
-            declaration.declarations
-                .filterIsInstance<KSClassDeclaration>()
-                .filter { it.classKind == ClassKind.ENUM_ENTRY }
-                .mapTo(mutableSetOf()) { KspEnumEntry(env, it, this) }
+        override val entries: Set<KspEnumEntry> by lazy {
+            _enclosedElements.filterIsInstance<KspEnumEntry>().toSet()
         }
     }
 

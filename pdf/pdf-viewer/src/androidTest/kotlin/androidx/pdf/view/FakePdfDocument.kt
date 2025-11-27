@@ -24,7 +24,6 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
-import android.os.ParcelFileDescriptor
 import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.OpenForTesting
@@ -36,7 +35,7 @@ import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
-import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
 import kotlinx.coroutines.CancellationException
@@ -82,9 +81,6 @@ internal open class FakePdfDocument(
 
     @get:Synchronized @set:Synchronized internal var layoutReach: Int = 0
 
-    override val formEditRecords: List<FormEditRecord>
-        get() = editHistory.toList()
-
     private val bitmapRequestsLock = Any()
     private val _bitmapRequests = mutableMapOf<Int, SizeParams>()
     internal val bitmapRequests
@@ -102,7 +98,7 @@ internal open class FakePdfDocument(
         _formWidgetRequests.clear()
     }
 
-    internal var editHistory: MutableList<FormEditRecord> = mutableListOf()
+    internal var editHistory: MutableList<FormEditInfo> = mutableListOf()
 
     override fun getPageBitmapSource(pageNumber: Int): PdfDocument.BitmapSource {
         return FakeBitmapSource(pageNumber)
@@ -121,12 +117,15 @@ internal open class FakePdfDocument(
         return pageFormWidgetInfos[pageNum]?.filter { it.widgetType in types } ?: emptyList()
     }
 
-    override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
-        editHistory.add(record)
-        return listOf()
+    override fun addOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        return
     }
 
-    override suspend fun write(destination: ParcelFileDescriptor) {
+    override fun removeOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
         return
     }
 

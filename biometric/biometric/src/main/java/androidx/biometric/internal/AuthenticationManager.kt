@@ -61,6 +61,13 @@ internal class AuthenticationManager(
     clientExecutor: Executor,
     clientAuthenticationCallback: AuthenticationCallback,
 ) {
+    /**
+     * A unique identifier for [AuthenticationManager] used to filter callbacks and events.
+     *
+     * @see [AuthenticationViewModel.authManagerKey]
+     */
+    private val key = viewModel.generateNextManagerKey()
+
     /** The dispatcher responsible for sending authentication results to the client's callback. */
     var resultDispatcher: AuthenticationResultDispatcher =
         object :
@@ -129,11 +136,12 @@ internal class AuthenticationManager(
             when (event) {
                 Lifecycle.Event.ON_START ->
                     if (viewModel.isPromptShowing) {
-                        prepareAuth()
+                        startObservingAuth()
                     }
 
                 Lifecycle.Event.ON_DESTROY -> {
-                    destroy()
+                    stopObservingAuth()
+                    viewModel.resetManagerKey()
                     lifecycleContainer.clearObservers()
                 }
 
@@ -158,13 +166,14 @@ internal class AuthenticationManager(
         crypto: BiometricPrompt.CryptoObject?,
         showAuthentication: () -> Unit,
     ) {
-        prepareAuth()
+        // currentAuthenticationKey must be set prior to observing for correct validation.
+        viewModel.currentAuthenticationKey = key
+        startObservingAuth()
+
         // PromptInfo has to be set prior to others.
         viewModel.setPromptInfo(info)
-
         viewModel.isIdentityCheckAvailable =
             BiometricManager.from(context).isIdentityCheckAvailable()
-
         viewModel.cryptoObject = crypto
 
         viewModel.setNegativeButtonTextOverride(
@@ -206,6 +215,7 @@ internal class AuthenticationManager(
 
     /** Removes any associated UI from the client activity/fragment. */
     fun dismiss() {
+        viewModel.currentAuthenticationKey = 0
         viewModel.isPromptShowing = false
         viewModel.isConfirmingDeviceCredential = false
 
@@ -214,16 +224,15 @@ internal class AuthenticationManager(
             viewModel.isDelayingPrompt = true
             viewModel.setDelayedDelayingPrompt(false, SHOW_PROMPT_DELAY_MS.toLong())
         }
-        destroy()
+        stopObservingAuth()
     }
 
     /** Prepares the authentication, setting up view model observers. */
-    private fun prepareAuth() {
-        if (isAuthenticationPrepared) {
+    private fun startObservingAuth() {
+        if (isAuthenticationPrepared || key != viewModel.currentAuthenticationKey) {
             return
         }
         isAuthenticationPrepared = true
-
         connectCallbackObservers()
         uiStateObserver?.connectObservers()
 
@@ -249,12 +258,10 @@ internal class AuthenticationManager(
      * Cleans up resources and unregisters any view model observers associated with the
      * authentication session.
      */
-    private fun destroy() {
+    private fun stopObservingAuth() {
         isAuthenticationPrepared = false
         disconnectCallbackObservers()
         uiStateObserver?.disconnectObservers()
-
-        lifecycleContainer.clearObservers()
 
         // TODO(b/263800618): Remove lifecycle observer
         // ProcessLifecycleOwner.get().lifecycle.removeObserver(processObserver)

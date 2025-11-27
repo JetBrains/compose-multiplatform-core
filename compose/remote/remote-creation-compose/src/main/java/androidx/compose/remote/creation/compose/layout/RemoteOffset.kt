@@ -38,6 +38,11 @@ public class RemoteOffset {
 
     public constructor(x: RemoteFloat, y: Float) : this(x, RemoteFloat(y))
 
+    public constructor(offset: Offset) {
+        this.x = offset.x.rf
+        this.y = offset.y.rf
+    }
+
     public val minDimension: RemoteFloat
         get() = x.min(y)
 

@@ -48,13 +48,14 @@ import androidx.pdf.annotation.processor.PdfAnnotationsProcessor
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.SelectionBoundary
-import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
-import java.util.Collections
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -102,17 +103,17 @@ public class SandboxedPdfDocument(
     private val annotationsProcessor: PdfAnnotationsProcessor,
 ) : EditablePdfDocument() {
 
+    private val refCount = AtomicInteger(1)
+
     private val annotationsManager =
         InMemoryAnnotationsManager(::getAnnotationsForPage, annotationsProcessor)
 
-    public override val formEditRecords: List<FormEditRecord>
-        get() = _formEditRecords.toList()
-
-    private val _formEditRecords: MutableList<FormEditRecord> =
-        Collections.synchronizedList(mutableListOf<FormEditRecord>())
-
     /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
     private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
+
+    private val onPdfContentInvalidatedListeners:
+        CopyOnWriteArrayList<PdfDocument.OnPdfContentInvalidatedListener> =
+        CopyOnWriteArrayList()
 
     /**
      * Indicates whether this [androidx.pdf.SandboxedPdfDocument] is closed explicitly by calling
@@ -243,22 +244,31 @@ public class SandboxedPdfDocument(
         }
     }
 
-    override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
-        val invalidatedAreas = withDocument { document ->
-            document.applyEdit(pageNum, record.toAndroidClass())
-        }
-        _formEditRecords.add(record)
-        return invalidatedAreas
+    override fun addOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        onPdfContentInvalidatedListeners.add(listener)
     }
 
-    override suspend fun write(destination: ParcelFileDescriptor) {
-        return withDocument { document ->
-            document.write(destination, /* removePasswordProtection= */ false)
+    override fun removeOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        onPdfContentInvalidatedListeners.remove(listener)
+    }
+
+    override suspend fun applyEdit(record: FormEditInfo) {
+        val dirtyAreas = withDocument { document ->
+            document.applyEdit(record.pageNumber, record.toAndroidClass())
+        }
+        onPdfContentInvalidatedListeners.forEach {
+            it.onPdfContentInvalidated(record.pageNumber, dirtyAreas)
         }
     }
 
     @WorkerThread
     override fun close() {
+        if (refCount.decrementAndGet() > 0) return
+
         isDocumentClosedExplicitly = true
 
         connection.disconnect()
@@ -323,7 +333,7 @@ public class SandboxedPdfDocument(
         }
     }
 
-    private suspend fun <T> withDocument(block: (PdfDocumentRemote) -> T): T {
+    internal suspend fun <T> withDocument(block: (PdfDocumentRemote) -> T): T {
         var trial = 1
         while (true) {
             try {
@@ -444,6 +454,16 @@ public class SandboxedPdfDocument(
 
     override fun clearUncommittedEdits() {
         return annotationsManager.clearUncommittedEdits()
+    }
+
+    /**
+     * Generates a handle for writing the document. This handle should be closed after use.
+     *
+     * @return A [PdfWriteHandle] for the document.
+     */
+    override fun createWriteHandle(): PdfWriteHandle {
+        refCount.incrementAndGet()
+        return PdfWriteHandleImpl(this)
     }
 
     // TODO: b/438309514 - Remove GetAnnotationsFromDraftState from SandboxPdfDocument

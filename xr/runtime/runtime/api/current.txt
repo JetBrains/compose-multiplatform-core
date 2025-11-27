@@ -545,7 +545,6 @@ package androidx.xr.runtime.math {
     method public androidx.xr.runtime.math.Quaternion copy(optional float x, optional float y, optional float z);
     method public androidx.xr.runtime.math.Quaternion copy(optional float x, optional float y, optional float z, optional float w);
     method @BytecodeOnly public static androidx.xr.runtime.math.Quaternion! copy$default(androidx.xr.runtime.math.Quaternion!, float, float, float, float, int, Object!);
-    method public operator androidx.xr.runtime.math.Quaternion div(float c);
     method public inline infix float dot(androidx.xr.runtime.math.Quaternion other);
     method public static float dot(androidx.xr.runtime.math.Quaternion lhs, androidx.xr.runtime.math.Quaternion rhs);
     method public static androidx.xr.runtime.math.Quaternion fromAxisAngle(androidx.xr.runtime.math.Vector3 axis, float degrees);
@@ -567,8 +566,6 @@ package androidx.xr.runtime.math {
     method public static androidx.xr.runtime.math.Quaternion slerp(androidx.xr.runtime.math.Quaternion start, androidx.xr.runtime.math.Quaternion end, float ratio);
     method public inline operator androidx.xr.runtime.math.Quaternion times(androidx.xr.runtime.math.Quaternion other);
     method public inline operator androidx.xr.runtime.math.Vector3 times(androidx.xr.runtime.math.Vector3 src);
-    method public operator androidx.xr.runtime.math.Quaternion times(float c);
-    method public androidx.xr.runtime.math.Quaternion toNormalized();
     method public inline operator androidx.xr.runtime.math.Quaternion unaryMinus();
     property public kotlin.Pair<androidx.xr.runtime.math.Vector3,java.lang.Float> axisAngle;
     property public androidx.xr.runtime.math.Vector3 eulerAngles;

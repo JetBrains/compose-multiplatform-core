@@ -28,7 +28,9 @@ import androidx.pdf.annotation.models.PathPdfObject
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.annotation.models.StampAnnotation
+import androidx.pdf.coroutines.collectTill
 import androidx.pdf.ink.EditableDocumentViewModel
+import androidx.pdf.ink.model.ApplyEditsState
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -36,8 +38,11 @@ import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.concurrent.Executors
 import kotlin.collections.first
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -212,6 +217,62 @@ class EditableDocumentViewModelTest {
             .isEqualTo(initialEdits)
         assertThat(savedStateHandle.get<Uri>(EditableDocumentViewModel.LOADED_DOCUMENT_URI_KEY))
             .isEqualTo(docUri)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun applyDraftEdits_updatesStatusFlow_onSuccess() = runTest {
+        val annotation = createAnnotation(pageNum = 0)
+        annotationsViewModel.addDraftAnnotation(annotation)
+
+        val applyStates = mutableListOf<ApplyEditsState>()
+        val collectJob =
+            launch(UnconfinedTestDispatcher(testScheduler)) {
+                annotationsViewModel.applyEditsStatus.collectTill(applyStates) { state ->
+                    state is ApplyEditsState.Success
+                }
+            }
+        // Force the collector to start and capture the initial 'Ready' state
+        testScheduler.advanceUntilIdle()
+
+        annotationsViewModel.applyDraftEdits()
+
+        collectJob.join()
+
+        assertThat(applyStates).isNotEmpty()
+        assertThat(applyStates.first()).isEqualTo(ApplyEditsState.Ready)
+        assertThat(applyStates).contains(ApplyEditsState.InProgress)
+        assertThat(applyStates.last()).isInstanceOf(ApplyEditsState.Success::class.java)
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun applyDraftEdits_updatesStatusFlow_onFailure_whenDocumentIsNull() = runTest {
+        // Reset state forces editablePdfDocument to be null and throw exception when trying to
+        // apply edits
+        annotationsViewModel.resetState()
+
+        val applyStates = mutableListOf<ApplyEditsState>()
+        val collectJob =
+            launch(UnconfinedTestDispatcher(testScheduler)) {
+                annotationsViewModel.applyEditsStatus.collectTill(applyStates) { state ->
+                    state is ApplyEditsState.Failure
+                }
+            }
+
+        // Force the collector to start and capture the initial 'Ready' state
+        testScheduler.advanceUntilIdle()
+
+        annotationsViewModel.applyDraftEdits()
+
+        collectJob.join()
+
+        // Verify the sequence of states
+        assertThat(applyStates).isNotEmpty()
+        assertThat(applyStates.first()).isEqualTo(ApplyEditsState.Ready)
+        assertThat(applyStates.last()).isInstanceOf(ApplyEditsState.Failure::class.java)
+        assertThat((applyStates.last() as ApplyEditsState.Failure).error.message)
+            .isEqualTo("Document not available for saving.")
     }
 
     fun createAnnotation(

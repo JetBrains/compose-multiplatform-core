@@ -17,6 +17,7 @@
 
 package androidx.compose.ui
 
+import androidx.compose.ui.node.findNearestAncestor
 import kotlin.jvm.JvmField
 import kotlin.jvm.JvmName
 
@@ -179,11 +180,10 @@ object ComposeUiFlags {
     var isPinningFocusedAndroidViewsEnabled: Boolean = true
 
     /**
-     * This flag enables ComposeViewContext to be created automatically and used across ComposeViews
-     * within the same hierarchy. With the flag disabled, ComposeViewContext will only be created
-     * when explicitly provided to a ComposeView.
+     * Enables a fix where [TraversableNode] traversal method [findNearestAncestor] will take into
+     * consideration any delegates that might also be traversable.
      */
     @field:Suppress("MutableBareField")
     @JvmField
-    var isSharedComposeViewContextEnabled: Boolean = true
+    var isTraversableDelegatesFixEnabled: Boolean = true
 }

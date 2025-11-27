@@ -16,9 +16,7 @@
 
 package androidx.room3.vo
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room3.compiler.processing.XType
 import androidx.room3.ext.capitalize
 import androidx.room3.solver.CodeGenScope
@@ -35,31 +33,15 @@ data class PropertySetter(
         if (callType == CallType.CONSTRUCTOR) {
             return
         }
-        builder.applyTo { language ->
-            when (language) {
-                CodeLanguage.JAVA -> {
-                    val stmt =
-                        when (callType) {
-                            CallType.PROPERTY -> "%L.%L = %L"
-                            CallType.FUNCTION,
-                            CallType.SYNTHETIC_FUNCTION -> "%L.%L(%L)"
-                            else -> error("Unknown call type: $callType")
-                        }
-                    addStatement(stmt, ownerVar, jvmName, inVar)
-                }
-                CodeLanguage.KOTLIN -> {
-                    when (callType) {
-                        CallType.PROPERTY,
-                        CallType.SYNTHETIC_FUNCTION -> {
-                            addStatement("%L.%L = %L", ownerVar, propertyName, inVar)
-                        }
-                        CallType.FUNCTION -> {
-                            addStatement("%L.%L(%L)", ownerVar, jvmName, inVar)
-                        }
-                        else -> error("Unknown call type: $callType")
-                    }
-                }
+        when (callType) {
+            CallType.PROPERTY,
+            CallType.SYNTHETIC_FUNCTION -> {
+                builder.addStatement("%L.%L = %L", ownerVar, propertyName, inVar)
             }
+            CallType.FUNCTION -> {
+                builder.addStatement("%L.%L(%L)", ownerVar, jvmName, inVar)
+            }
+            else -> error("Unknown call type: $callType")
         }
     }
 
@@ -70,47 +52,23 @@ data class PropertySetter(
         reader: StatementValueReader,
         scope: CodeGenScope,
     ) {
-        when (scope.language) {
-            CodeLanguage.JAVA ->
-                when (callType) {
-                    CallType.PROPERTY -> {
-                        val outPropertyName = "$ownerVar.$jvmName"
-                        reader.readFromStatement(outPropertyName, stmtVar, indexVar, scope)
-                    }
-                    CallType.FUNCTION,
-                    CallType.SYNTHETIC_FUNCTION -> {
-                        val tmpProperty =
-                            scope.getTmpVar("_tmp${propertyName.capitalize(Locale.US)}")
-                        scope.builder.apply {
-                            addLocalVariable(tmpProperty, type.asTypeName())
-                            reader.readFromStatement(tmpProperty, stmtVar, indexVar, scope)
-                            addStatement("%L.%L(%L)", ownerVar, jvmName, tmpProperty)
-                        }
-                    }
-                    CallType.CONSTRUCTOR -> {
-                        // no code, property is set via constructor
-                    }
+        when (callType) {
+            CallType.PROPERTY,
+            CallType.SYNTHETIC_FUNCTION -> {
+                val outPropertyName = "$ownerVar.$propertyName"
+                reader.readFromStatement(outPropertyName, stmtVar, indexVar, scope)
+            }
+            CallType.FUNCTION -> {
+                val tmpProperty = scope.getTmpVar("_tmp${propertyName.capitalize(Locale.US)}")
+                scope.builder.apply {
+                    addLocalVariable(tmpProperty, type.asTypeName())
+                    reader.readFromStatement(tmpProperty, stmtVar, indexVar, scope)
+                    addStatement("%L.%L(%L)", ownerVar, jvmName, tmpProperty)
                 }
-            CodeLanguage.KOTLIN ->
-                when (callType) {
-                    CallType.PROPERTY,
-                    CallType.SYNTHETIC_FUNCTION -> {
-                        val outPropertyName = "$ownerVar.$propertyName"
-                        reader.readFromStatement(outPropertyName, stmtVar, indexVar, scope)
-                    }
-                    CallType.FUNCTION -> {
-                        val tmpProperty =
-                            scope.getTmpVar("_tmp${propertyName.capitalize(Locale.US)}")
-                        scope.builder.apply {
-                            addLocalVariable(tmpProperty, type.asTypeName())
-                            reader.readFromStatement(tmpProperty, stmtVar, indexVar, scope)
-                            addStatement("%L.%L(%L)", ownerVar, jvmName, tmpProperty)
-                        }
-                    }
-                    CallType.CONSTRUCTOR -> {
-                        // no code, property is set via constructor
-                    }
-                }
+            }
+            CallType.CONSTRUCTOR -> {
+                // no code, property is set via constructor
+            }
         }
     }
 }

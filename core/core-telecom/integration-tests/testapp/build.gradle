@@ -17,12 +17,12 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     namespace = "androidx.core.telecom.test"
-
+    compileSdk = 36
+    compileSdkMinor = 1
     defaultConfig {
         applicationId = "androidx.core.telecom.test"
         minSdk = 26

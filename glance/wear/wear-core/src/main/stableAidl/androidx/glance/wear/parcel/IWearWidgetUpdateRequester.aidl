@@ -17,6 +17,7 @@ package androidx.glance.wear.parcel;
 
 import androidx.glance.wear.parcel.IExecutionCallback;
 import androidx.glance.wear.parcel.WearWidgetRawContentParcel;
+import androidx.glance.wear.parcel.WearWidgetUpdateRequestParcel;
 
 /**
   * Interface, implemented by Widget renderers, which allows Widget Providers to push updates.
@@ -38,15 +39,14 @@ interface IWearWidgetUpdateRequester {
     /**
       * Request that the Widget Renderer updates the Widget with the given contents.
       *
-      * {@param instanceId} the instance id of the widget being updated. The Widget with the
-      *   specified {@code instanceId} must be owned by the calling package.
+      * {@param request} the request containing necessary data to idenfity the widget instance being updated.
       * {@param contentParcel} contains the Widget contents to be used in the update.
       * {@param callback} called when this request update succeeds or fails.
       *
       * @since version 1
       */
     oneway void requestUpdate(
-        in int instanceId,
+        in WearWidgetUpdateRequestParcel requestParcel,
         in WearWidgetRawContentParcel contentParcel,
         in IExecutionCallback callback
     ) = 1;

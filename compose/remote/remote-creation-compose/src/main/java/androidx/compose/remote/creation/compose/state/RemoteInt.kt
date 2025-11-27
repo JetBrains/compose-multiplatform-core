@@ -83,7 +83,7 @@ public abstract class RemoteInt
 internal constructor(
     public override val constantValue: Int?,
     internal val arrayProvider: (creationState: RemoteComposeCreationState) -> LongArray,
-) : RemoteState<Int> {
+) : BaseRemoteState<Int>() {
 
     // @Deprecated("Use getLongIdForCreationState instead")
     // TODO: re-enable asap

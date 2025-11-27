@@ -70,12 +70,27 @@
         android:orientation="horizontal"
         app:layout_constraintGuide_end="88dp" />
 
+    <!-- Two Page Layout FAB -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/two_page_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/fab_margin_right"
+        android:layout_marginBottom="@dimen/fab_margin_bottom"
+        android:contentDescription="@string/two_page_layout"
+        android:visibility="gone"
+        android:src="@drawable/two_page_layout"
+        app:backgroundTint="?attr/colorSecondaryContainer"
+        app:tint="?attr/colorOnSecondaryContainer"
+        app:layout_constraintBottom_toTopOf="@id/host_Search"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <!-- Search FAB -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/host_Search"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="@dimen/viewer_edit_fab_margin_right"
+        android:layout_marginEnd="@dimen/fab_margin_right"
         android:contentDescription="@string/action_search"
         android:visibility="gone"
         android:src="@drawable/ic_action_search"

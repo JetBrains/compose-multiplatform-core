@@ -41,17 +41,16 @@ class AfRegionFlipHorizontallyQuirkTest(
     private val quirkEnablingExpected: Boolean,
 ) {
     companion object {
-        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "Brand: {0}, LensFacing = {1}")
         fun data() =
             listOf(
-                arrayOf("Samsung", CameraCharacteristics.LENS_FACING_BACK, false),
-                arrayOf("Samsung", CameraCharacteristics.LENS_FACING_FRONT, true),
-                arrayOf("SAMSUNG", CameraCharacteristics.LENS_FACING_FRONT, true),
-                arrayOf("Google", CameraCharacteristics.LENS_FACING_BACK, false),
-                arrayOf("Google", CameraCharacteristics.LENS_FACING_FRONT, false),
-                arrayOf("Moto", CameraCharacteristics.LENS_FACING_BACK, false),
+                arrayOf<Any>("Samsung", CameraCharacteristics.LENS_FACING_BACK, false),
+                arrayOf<Any>("Samsung", CameraCharacteristics.LENS_FACING_FRONT, true),
+                arrayOf<Any>("SAMSUNG", CameraCharacteristics.LENS_FACING_FRONT, true),
+                arrayOf<Any>("Google", CameraCharacteristics.LENS_FACING_BACK, false),
+                arrayOf<Any>("Google", CameraCharacteristics.LENS_FACING_FRONT, false),
+                arrayOf<Any>("Moto", CameraCharacteristics.LENS_FACING_BACK, false),
             )
     }
 

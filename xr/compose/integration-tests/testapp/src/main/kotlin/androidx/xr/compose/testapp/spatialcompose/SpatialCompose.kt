@@ -248,7 +248,7 @@ class SpatialCompose : ComponentActivity() {
 
                     AppPanel(modifier = sidePanelModifier, text = "Panel Top Left")
                     AnchorPanel(
-                        modifier = SubspaceModifier.height(200.dp),
+                        modifier = sidePanelModifier.height(200.dp),
                         text = "Anchorable Panel",
                     )
                     ViewBasedAppPanel(

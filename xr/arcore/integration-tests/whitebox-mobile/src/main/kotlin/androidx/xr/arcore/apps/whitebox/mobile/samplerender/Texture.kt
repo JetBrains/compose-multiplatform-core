@@ -20,7 +20,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.opengl.GLES11Ext
 import android.opengl.GLES30
-import android.util.Log
+import androidx.xr.runtime.Log
 import java.io.Closeable
 import java.nio.ByteBuffer
 
@@ -184,7 +184,7 @@ class Texture(
     override fun close() {
         if (_textureId[0] != 0) {
             GLES30.glDeleteTextures(1, _textureId, 0)
-            maybeLogGLError(Log.WARN, "Texture", "Failed to free texture", "glDeleteTextures")
+            maybeLogGLError(Log.Level.WARN, "Failed to free texture", "glDeleteTextures")
             _textureId[0] = 0
         }
     }

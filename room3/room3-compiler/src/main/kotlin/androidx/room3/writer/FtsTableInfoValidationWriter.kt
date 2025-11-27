@@ -16,9 +16,7 @@
 
 package androidx.room3.writer
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.compiler.codegen.buildCodeBlock
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.KotlinCollectionMemberNames
 import androidx.room3.ext.RoomMemberNames
@@ -38,19 +36,7 @@ class FtsTableInfoValidationWriter(val entity: FtsEntity) : ValidationWriter() {
             addLocalVariable(
                 name = columnSetVar,
                 typeName = columnsSetType,
-                assignExpr =
-                    buildCodeBlock { language ->
-                        when (language) {
-                            CodeLanguage.JAVA ->
-                                add(
-                                    "new %T(%L)",
-                                    CommonTypeNames.HASH_SET.parametrizedBy(CommonTypeNames.STRING),
-                                    entity.properties.size,
-                                )
-                            CodeLanguage.KOTLIN ->
-                                add("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF)
-                        }
-                    },
+                assignExpr = XCodeBlock.of("%M()", KotlinCollectionMemberNames.MUTABLE_SET_OF),
             )
             entity.nonHiddenProperties.forEach {
                 addStatement("%L.add(%S)", columnSetVar, it.columnName)

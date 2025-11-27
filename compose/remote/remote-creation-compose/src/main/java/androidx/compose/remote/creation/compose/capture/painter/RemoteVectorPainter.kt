@@ -23,11 +23,12 @@ import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.compose.capture.RemoteDrawScope
 import androidx.compose.remote.creation.compose.capture.RemoteImageVector
 import androidx.compose.remote.creation.compose.capture.scale
-import androidx.compose.remote.creation.compose.layout.ROffset
+import androidx.compose.remote.creation.compose.layout.RemoteOffset
 import androidx.compose.remote.creation.compose.layout.RemoteSize
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.ui.unit.LayoutDirection
 
 /**
@@ -57,8 +58,8 @@ public class RemoteVectorPainter(
         val scaleX = if (shouldAutoMirror) -scale else scale
         val scaleY = scale
 
-        val pivotX = if (shouldAutoMirror) viewportSize / (-scale + 1f) else 0f
-        val pivot = ROffset(pivotX, 0f)
+        val pivotX = if (shouldAutoMirror) viewportSize / (-scale + 1f) else 0f.rf
+        val pivot = RemoteOffset(pivotX, 0f)
 
         val paint = RemotePaint(vector.paint()).apply { remoteColor = tintColor }
 

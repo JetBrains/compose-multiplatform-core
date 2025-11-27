@@ -57,6 +57,8 @@ public actual sealed class ScatterSet<E> {
     // every time we need to look at the size
     @JvmField internal var _size: Int = 0
 
+    @JvmField internal var mutableSetWrapper: MutableSet<E>? = null
+
     @get:IntRange(from = 0)
     public actual val size: Int
         get() = _size
@@ -249,7 +251,9 @@ public actual sealed class ScatterSet<E> {
         return -1
     }
 
-    public actual fun asSet(): Set<E> = SetWrapper(this)
+    public actual fun asSet(): Set<E> =
+        mutableSetWrapper
+            ?: MutableSetWrapper(this as MutableScatterSet).also { mutableSetWrapper = it }
 }
 
 public actual class MutableScatterSet<E> @JvmOverloads actual constructor(initialCapacity: Int) :
@@ -716,7 +720,8 @@ public actual class MutableScatterSet<E> @JvmOverloads actual constructor(initia
         }
     }
 
-    public actual fun asMutableSet(): MutableSet<E> = MutableSetWrapper(this)
+    public actual fun asMutableSet(): MutableSet<E> =
+        mutableSetWrapper ?: MutableSetWrapper(this).also { mutableSetWrapper = it }
 }
 
 private open class SetWrapper<E>(private val parent: ScatterSet<E>) : Set<E> {

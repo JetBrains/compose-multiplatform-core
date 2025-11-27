@@ -127,4 +127,28 @@ class AuthenticationViewModelTest {
             assertThat(moreOptionsPressPending).isTrue()
             job.cancel()
         }
+
+    @Test
+    fun testGenerateNextManagerKey() {
+        assertThat(viewModel.generateNextManagerKey()).isEqualTo(1)
+        assertThat(viewModel.generateNextManagerKey()).isEqualTo(2)
+    }
+
+    @Test
+    fun testResetManagerKey() {
+        viewModel.generateNextManagerKey()
+        viewModel.generateNextManagerKey()
+
+        viewModel.resetManagerKey()
+
+        assertThat(viewModel.generateNextManagerKey()).isEqualTo(1)
+    }
+
+    @Test
+    fun testCurrentAuthenticationKey() {
+        assertThat(viewModel.currentAuthenticationKey).isEqualTo(0)
+
+        viewModel.currentAuthenticationKey = 1
+        assertThat(viewModel.currentAuthenticationKey).isEqualTo(1)
+    }
 }

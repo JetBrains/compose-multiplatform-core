@@ -115,7 +115,7 @@ constructor(private val workerExecutor: WorkerExecutor) : DefaultTask() {
         val compatVersion = location.version()!!
 
         if (!tryRegenerate(projectPrebuiltsDir, groupId, artifactId, compatVersion, location)) {
-            val stable = compatVersion.copy(extra = null)
+            val stable = compatVersion.copy(preRelease = null)
             logger.warn("No prebuilts for version $compatVersion, trying with $stable")
             if (!tryRegenerate(projectPrebuiltsDir, groupId, artifactId, stable, location)) {
                 logger.error("Could not regenerate $compatVersion")

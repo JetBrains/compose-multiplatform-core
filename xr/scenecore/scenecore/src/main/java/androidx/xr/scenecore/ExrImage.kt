@@ -32,8 +32,25 @@ import java.nio.file.Path
  */
 // TODO(b/319269278): Make this and GltfModel derive from a common Resource base class which has
 //                    async helpers.
+// TODO(b/461909954): Add AutoCloseable interface when it is approved.
 public class ExrImage
-internal constructor(internal val image: RtExrImage, internal val session: Session? = null) {
+internal constructor(internal val session: Session?, internal val image: RtExrImage) {
+
+    /**
+     * Closes the given [ExrImage].
+     *
+     * The [ExrImage] can be explicitly closed at any time or garbage collected. When either
+     * happens, its resources are freed. An [IllegalStateException] will be thrown if the [ExrImage]
+     * is used after being closed.
+     *
+     * The If close() is not explicitly invoked by the client, the [ExrImage] will be automatically
+     * closed when the [ExrImage] is garbage collected.
+     */
+    @MainThread
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun close() {
+        session?.renderingRuntime?.destroyExrImage(image)
+    }
 
     /**
      * Returns the reflection texture from a preprocessed EXR image.
@@ -64,27 +81,27 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
 
     public companion object {
         internal suspend fun createFromZip(
+            session: Session,
             renderingRuntime: RenderingRuntime,
             name: String,
-            session: Session,
         ): ExrImage {
             require(name.endsWith(".zip", ignoreCase = true)) {
                 "Only preprocessed skybox files with the .zip extension are supported."
             }
 
-            return createExrImage(renderingRuntime.loadExrImageByAssetNameAsync(name), session)
+            return createExrImage(session, renderingRuntime.loadExrImageByAssetNameAsync(name))
         }
 
         @SuppressWarnings("RestrictTo")
         internal suspend fun createFromZip(
+            session: Session,
             renderingRuntime: RenderingRuntime,
             byteArray: ByteArray,
             assetKey: String,
-            session: Session,
         ): ExrImage {
             return createExrImage(
-                renderingRuntime.loadExrImageByByteArrayAsync(byteArray, assetKey),
                 session,
+                renderingRuntime.loadExrImageByByteArrayAsync(byteArray, assetKey),
             )
         }
 
@@ -111,7 +128,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             require(!path.isAbsolute) {
                 "ExrImage.createFromZip() expects a path relative to `assets/`, received absolute path $path."
             }
-            return createFromZip(session.renderingRuntime, path.toString(), session)
+            return createFromZip(session, session.renderingRuntime, path.toString())
         }
 
         /**
@@ -130,7 +147,7 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
         @MainThread
         @JvmStatic
         public suspend fun createFromZip(session: Session, uri: Uri): ExrImage =
-            createFromZip(session.renderingRuntime, uri.toString(), session)
+            createFromZip(session, session.renderingRuntime, uri.toString())
 
         /**
          * Public factory function for a preprocessed EXRImage, where the preprocessed EXRImage is
@@ -153,11 +170,11 @@ internal constructor(internal val image: RtExrImage, internal val session: Sessi
             assetData: ByteArray,
             assetKey: String,
         ): ExrImage {
-            return createFromZip(session.renderingRuntime, assetData, assetKey, session)
+            return createFromZip(session, assetData, assetKey)
         }
 
-        private fun createExrImage(exrImageResource: RtExrImage, session: Session): ExrImage =
-            ExrImage(exrImageResource, session)
+        private fun createExrImage(session: Session, exrImageResource: RtExrImage): ExrImage =
+            ExrImage(session, exrImageResource)
     }
 
     override fun equals(other: Any?): Boolean {

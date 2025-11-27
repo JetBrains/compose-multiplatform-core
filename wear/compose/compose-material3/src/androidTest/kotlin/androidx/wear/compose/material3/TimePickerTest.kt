@@ -545,6 +545,78 @@ class TimePickerTest {
     }
 
     @Test
+    fun parsing_quotedLiterals_isCorrect() {
+        val pattern = "HH 'h' mm 'min' ss 's'" // fr-CA
+
+        val parsed = parsePattern(pattern)
+        val grouped = groupTimeParts(parsed)
+
+        assertThat(parsed)
+            .containsExactly(
+                TimePatternPart.ComponentPart(TimePickerSelection.Hour),
+                TimePatternPart.SeparatorPart(" "),
+                TimePatternPart.ComponentPart(TimePickerSelection.Minute),
+                TimePatternPart.SeparatorPart(" "),
+                TimePatternPart.ComponentPart(TimePickerSelection.Second),
+            )
+            .inOrder()
+
+        assertThat(grouped).containsExactly(TimeLayoutElement.TimeGroup(parsed)).inOrder()
+    }
+
+    @Test
+    fun parsing_quotedSuffix_isCorrect() {
+        val pattern = "H:mm 'hodź'." // hsb
+
+        val parsed = parsePattern(pattern)
+        val grouped = groupTimeParts(parsed)
+
+        assertThat(parsed)
+            .containsExactly(
+                TimePatternPart.ComponentPart(TimePickerSelection.Hour),
+                TimePatternPart.SeparatorPart(":"),
+                TimePatternPart.ComponentPart(TimePickerSelection.Minute),
+            )
+            .inOrder()
+
+        assertThat(grouped).containsExactly(TimeLayoutElement.TimeGroup(parsed)).inOrder()
+    }
+
+    @Test
+    fun parsing_unquotedLiteral_isCorrect() {
+        val pattern = "ཆུ་ཚོད་ h སྐར་མ་ mm a" // dz
+
+        val parsed = parsePattern(pattern)
+        val grouped = groupTimeParts(parsed)
+
+        assertThat(parsed)
+            .containsExactly(
+                TimePatternPart.ComponentPart(TimePickerSelection.Hour),
+                TimePatternPart.SeparatorPart(" "),
+                TimePatternPart.ComponentPart(TimePickerSelection.Minute),
+                TimePatternPart.SeparatorPart(" "),
+                TimePatternPart.ComponentPart(TimePickerSelection.Period),
+            )
+            .inOrder()
+
+        assertThat(grouped)
+            .containsExactly(
+                TimeLayoutElement.TimeGroup(
+                    listOf(
+                        TimePatternPart.ComponentPart(TimePickerSelection.Hour),
+                        TimePatternPart.SeparatorPart(" "),
+                        TimePatternPart.ComponentPart(TimePickerSelection.Minute),
+                    )
+                ),
+                TimeLayoutElement.Standalone(TimePatternPart.SeparatorPart(" ")),
+                TimeLayoutElement.Standalone(
+                    TimePatternPart.ComponentPart(TimePickerSelection.Period)
+                ),
+            )
+            .inOrder()
+    }
+
+    @Test
     fun unspecified_initial_selection_is_first_focusable_element(
         @TestParameter layoutDirection: LayoutDirection,
         @TestParameter isAmPmFirst: Boolean,

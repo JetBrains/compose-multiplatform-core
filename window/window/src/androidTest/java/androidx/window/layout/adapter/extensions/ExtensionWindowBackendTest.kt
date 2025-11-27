@@ -263,6 +263,7 @@ class ExtensionWindowBackendTest {
                 } doAnswer
                     { invocation ->
                         val consumer = invocation.getArgument(1) as OEMConsumer<OEMWindowLayoutInfo>
+                        @Suppress("Deprecation") // OEMWindowLayoutInfo constructor is deprecated
                         consumer.accept(OEMWindowLayoutInfo(emptyList()))
                     }
             }
@@ -728,6 +729,7 @@ class ExtensionWindowBackendTest {
             val featureBounds = Rect(0, bounds.centerY(), bounds.width(), bounds.centerY())
             val feature = OEMFoldingFeature(featureBounds, TYPE_HINGE, STATE_FLAT)
             val displayFeatures = listOf(feature)
+            @Suppress("Deprecation") // OEMWindowLayoutInfo constructor is deprecated
             return OEMWindowLayoutInfo(displayFeatures)
         }
 
@@ -742,6 +744,7 @@ class ExtensionWindowBackendTest {
             val featureBounds = Rect(0, bounds.centerY(), bounds.width(), bounds.centerY())
             val feature = OEMFoldingFeature(featureBounds, TYPE_HINGE, STATE_FLAT)
             val displayFeatures = listOf(feature)
+            @Suppress("Deprecation") // OEMWindowLayoutInfo constructor is deprecated
             return OEMWindowLayoutInfo(displayFeatures)
         }
     }
@@ -777,6 +780,7 @@ class ExtensionWindowBackendTest {
 
     private class FakeWindowComponent(
         private val windowFeatures: SupportedWindowFeatures? = null,
+        @Suppress("Deprecation") // OEMWindowLayoutInfo constructor is deprecated
         private val currentWindowLayoutInfo: OEMWindowLayoutInfo = OEMWindowLayoutInfo(emptyList()),
     ) : WindowLayoutComponent {
 

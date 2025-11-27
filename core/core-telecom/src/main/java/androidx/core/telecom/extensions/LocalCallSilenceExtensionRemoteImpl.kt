@@ -28,10 +28,6 @@ import androidx.core.telecom.util.ExperimentalAppActions
 import kotlin.coroutines.resume
 import kotlin.properties.Delegates
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 
@@ -47,7 +43,6 @@ internal class LocalCallSilenceExtensionRemoteImpl(
     }
 
     override var isSupported: Boolean by Delegates.notNull()
-    private val isLocallySilenced = MutableStateFlow(false)
     private var remoteActions: ILocalSilenceActions? = null
 
     /**
@@ -82,15 +77,6 @@ internal class LocalCallSilenceExtensionRemoteImpl(
         }
         isSupported = true
         Log.i(TAG, "onExchangeComplete: isSupported=[true]")
-        isLocallySilenced
-            .drop(1) // ignore the first default value
-            .onEach {
-                // This updates external extension block that the InCallService implements.
-                // see [CallExtensionScopeImpl#addLocalCallSilenceExtension] for more.
-                onLocalSilenceStateUpdated(it)
-            }
-            .launchIn(callScope)
-
         remoteActions = connectToRemote(negotiatedCapability, remote)
     }
 
@@ -110,7 +96,7 @@ internal class LocalCallSilenceExtensionRemoteImpl(
                         // This updates external extension block that the InCallService implements.
                         // see [CallExtensionScopeImpl#addLocalCallSilenceExtension] for more.
                         Log.i(TAG, "LCS_SL: updateLocalCallSilence: isSilenced=[$it]")
-                        isLocallySilenced.emit(it)
+                        onLocalSilenceStateUpdated(it)
                     }
                 },
                 finishSync = { remoteBinder ->

@@ -36,8 +36,10 @@ import androidx.pdf.annotation.models.StampAnnotation
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor
 import androidx.pdf.annotation.processor.BatchPdfAnnotationsProcessor.Companion.parcelSizeInBytes
 import androidx.pdf.content.PdfPageTextContent
-import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
+import androidx.pdf.service.connect.FakePdfServiceConnection
+import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.AnnotationUtilsTest.Companion.isRequiredSdkExtensionAvailable
 import androidx.pdf.utils.TestUtils
 import androidx.pdf.utils.assertStampAnnotationEquals
@@ -358,7 +360,7 @@ class SandboxedPdfDocumentTest {
         assertThat(editableFormWidget.textValue).isEqualTo("false")
 
         val editRecord =
-            FormEditRecord(
+            FormEditInfo(
                 pageNumber = pageNum,
                 widgetIndex = editableFormWidget.widgetIndex,
                 clickPoint =
@@ -369,7 +371,7 @@ class SandboxedPdfDocumentTest {
             )
 
         // Apply edit to select the check-box
-        document.applyEdit(pageNum, editRecord)
+        document.applyEdit(editRecord)
 
         val context = ApplicationProvider.getApplicationContext<Context>()
         val editedPdfFile = File(context.cacheDir, "edited_test_pdf.pdf")
@@ -380,7 +382,10 @@ class SandboxedPdfDocumentTest {
             }
             pfd = ParcelFileDescriptor.open(editedPdfFile, ParcelFileDescriptor.MODE_READ_WRITE)
 
-            document.write(pfd!!)
+            val pdfWriteHandle = document.createWriteHandle()
+            pdfWriteHandle.write(pfd)
+            pdfWriteHandle.close()
+
             document.close()
 
             val editedDocumentUri = Uri.fromFile(editedPdfFile)
@@ -726,6 +731,38 @@ class SandboxedPdfDocumentTest {
         assertThat(annotationsAfterClear.size).isEqualTo(0)
     }
 
+    @Test
+    fun documentClosesConnection_whenAllHandlesAreClosed() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        var isServiceConnected = false
+
+        val fakeConnection =
+            FakePdfServiceConnection(
+                context,
+                isConnected = false,
+                onServiceConnected = { isServiceConnected = true },
+                onServiceDisconnected = { isServiceConnected = false },
+            )
+        val document =
+            openDocument(PDF_DOCUMENT, fakeServiceConnection = fakeConnection)
+                as SandboxedPdfDocument
+
+        val handle1 = document.createWriteHandle()
+        val handle2 = document.createWriteHandle()
+
+        // Close one handle, connection should remain open.
+        handle1.close()
+        assertThat(isServiceConnected).isTrue()
+
+        // Close the document itself, connection should still remain open as one handle is alive.
+        document.close()
+        assertThat(isServiceConnected).isTrue()
+
+        // Close the final handle, now the connection should be disconnected.
+        handle2.close()
+        assertThat(isServiceConnected).isFalse()
+    }
+
     companion object {
         private const val PDF_DOCUMENT = "sample.pdf"
         private const val PDF_ANNOTATION_DOCUMENT = "annotation_sample.json"
@@ -744,9 +781,28 @@ class SandboxedPdfDocumentTest {
             }
         }
 
-        private suspend fun openDocument(filename: String): EditablePdfDocument {
+        internal suspend fun withEditableDocument(
+            filename: String,
+            block: suspend (EditablePdfDocument) -> Unit,
+        ) {
+            val document = openDocument(filename)
+            try {
+                block(document)
+            } catch (exception: Exception) {
+                throw exception
+            } finally {
+                runTest { document.close() }
+            }
+        }
+
+        private suspend fun openDocument(
+            filename: String,
+            fakeServiceConnection: PdfServiceConnection? = null,
+        ): EditablePdfDocument {
             val context = ApplicationProvider.getApplicationContext<Context>()
             val loader = SandboxedPdfLoader(context, Dispatchers.Main)
+
+            fakeServiceConnection?.let { loader.testingConnection = it }
             val uri = TestUtils.openFile(context, filename)
 
             val document = loader.openDocument(uri)

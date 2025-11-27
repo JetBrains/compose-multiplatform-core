@@ -543,8 +543,8 @@ internal class CompositionImpl(
     private val rememberManager = RememberEventDispatcher()
 
     /** The [Composer] to use to create and update the tree managed by this composition. */
-    internal val composer: ComposerImpl =
-        ComposerImpl(
+    internal val composer: GapComposer =
+        GapComposer(
                 applier = applier,
                 parentContext = parent,
                 slotTable = slotTable,

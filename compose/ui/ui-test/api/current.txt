@@ -205,6 +205,8 @@ package androidx.compose.ui.test {
     method public static androidx.compose.ui.test.DeviceConfigurationOverride Touchscreen(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, boolean isTouchScreen);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride UiMode(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, int uiModeType);
     method public static androidx.compose.ui.test.DeviceConfigurationOverride WindowInsets(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, androidx.core.view.WindowInsetsCompat windowInsets);
+    method @KotlinOnly public static androidx.compose.ui.test.DeviceConfigurationOverride WindowSize(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, androidx.compose.ui.unit.DpSize size);
+    method @BytecodeOnly public static androidx.compose.ui.test.DeviceConfigurationOverride WindowSize-6HolHcs(androidx.compose.ui.test.DeviceConfigurationOverride.Companion, long);
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This testing API is experimental and is likely to be changed or removed entirely") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalTestApi {

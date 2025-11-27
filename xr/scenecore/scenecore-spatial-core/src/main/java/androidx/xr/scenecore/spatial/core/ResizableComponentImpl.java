@@ -21,6 +21,7 @@ import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.ResizableComponent;
 import androidx.xr.scenecore.runtime.ResizeEvent;
 import androidx.xr.scenecore.runtime.ResizeEventListener;
+import androidx.xr.scenecore.runtime.SurfaceEntity;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.function.Consumer;
@@ -40,9 +41,6 @@ import java.util.function.BiConsumer;
 /** Implementation of ResizableComponent. */
 @SuppressWarnings({"BanConcurrentHashMap"})
 class ResizableComponentImpl implements ResizableComponent {
-
-    private static final String TAG = "ResizableComponentImpl";
-
     private final XrExtensions mExtensions;
     private final ExecutorService mExecutor;
     private final ConcurrentHashMap<ResizeEventListener, Executor> mResizeEventListenerMap =
@@ -51,45 +49,36 @@ class ResizableComponentImpl implements ResizableComponent {
     Consumer<ReformEvent> mReformEventConsumer;
     private Entity mEntity = null;
     private Dimensions mCurrentSize = null;
-
-    /** Follows scenecore/ResizableComponent.create document, the default minimum size is 0. */
-    private final Dimensions mMinimumSize = new Dimensions(0.0f, 0.0f, 0.0f);
-
-    private @NonNull Dimensions mMinSize = mMinimumSize;
-
-    /** Follows scenecore/ResizableComponent.create document, the default maximum size is 10. */
-    private final Dimensions mMaximumSize = new Dimensions(10.0f, 10.0f, 10.0f);
-
-    private @NonNull Dimensions mMaxSize = mMaximumSize;
+    private @NonNull Dimensions mMinSize;
+    private @NonNull Dimensions mMaxSize;
     private float mFixedAspectRatio = 0.0f;
     private boolean mAutoHideContent = true;
     private boolean mAutoUpdateSize = true;
     private boolean mForceShowResizeOverlay = false;
 
     private final AtomicBoolean mIsContentHidden = new AtomicBoolean(false);
-    private final Dimensions mMinimumValidSize = new Dimensions(0.01f, 0.01f, 0.0f);
 
     /**
-     * Follows scenecore/ResizableComponent.size document, the default size is 1. If
-     * ResizableComponent is attached to a panel, use the panel size as default size.
+     * The constructor sanitizes the provided minimum and maximum sizes to ensure they are valid.
+     * Any negative values in {@code minSize} and {@code maxSize} are clamped to 0. Any {@code
+     * Float.NaN} values are replaced with 0 for {@code minSize} and {@link Float#POSITIVE_INFINITY}
+     * for {@code maxSize}.
+     *
+     * <p>Furthermore, it ensures that the maximum size is always greater than or equal to the
+     * minimum size for each dimension. If any dimension of the provided {@code maxSize} is smaller
+     * than the corresponding dimension of {@code minSize} after sanitization, that dimension of the
+     * maximum size will be adjusted to be equal to the minimum size's dimension.
      */
-    private Dimensions mDefaultSize = new Dimensions(1f, 1f, 1f);
-
-    private Dimensions mLastValidSizeForResize = mDefaultSize;
-
     ResizableComponentImpl(
             ExecutorService executor,
             XrExtensions extensions,
             @NonNull Dimensions minSize,
             @NonNull Dimensions maxSize) {
-        if (isSizeWellFormed(minSize)
-                && isSizeWellFormed(maxSize)
-                && minSize.width < maxSize.width
-                && minSize.height < maxSize.height
-                && minSize.depth <= maxSize.depth) { // allows min/max depth to be equal
-            mMinSize = minSize;
-            mMaxSize = maxSize;
-        } // else use default initial value.
+        mMinSize = dimsClampPositive(minSize, DIMS_ZERO);
+        mMaxSize = dimsClampPositive(maxSize, DIMS_INF);
+        if (dimsAnyLessThen(mMaxSize, mMinSize)) {
+            mMaxSize = dimsMax(mMinSize, mMaxSize);
+        }
         mExtensions = extensions;
         mExecutor = executor;
     }
@@ -99,50 +88,47 @@ class ResizableComponentImpl implements ResizableComponent {
         if (mEntity != null) {
             return false;
         }
-        mEntity = entity;
+
+        // TODO: b/348037292 - Remove this special case for PanelEntityImpl.
+        // Update the current size with entity size.
+        Dimensions entitySize = null;
+        if (entity instanceof PanelEntityImpl) {
+            entitySize = ((PanelEntityImpl) entity).getSize();
+        } else if (entity instanceof SurfaceEntityImpl) {
+            SurfaceEntity.Shape shape = ((SurfaceEntityImpl) entity).getShape();
+            if (shape instanceof SurfaceEntity.Shape.Quad) {
+                entitySize = shape.getDimensions();
+            }
+        }
+
         ReformOptions reformOptions = ((AndroidXrEntity) entity).getReformOptions();
         ReformOptions unused =
                 reformOptions.setEnabledReform(
                         reformOptions.getEnabledReform() | ReformOptions.ALLOW_RESIZE);
 
-        // Update the current size if it's not set.
-        // TODO: b/348037292 - Remove this special case for PanelEntityImpl.
-        if (entity instanceof PanelEntityImpl && mCurrentSize == null) {
-            mCurrentSize = ((PanelEntityImpl) entity).getSize();
-            // If the entity is a panel, use the panel size as default size.
-            if (isSizeValid(mCurrentSize)) {
-                mDefaultSize = mCurrentSize;
-            }
-            if (mCurrentSize.width < mMinSize.width
-                    || mCurrentSize.width > mMaxSize.width
-                    || mCurrentSize.height < mMinSize.height
-                    || mCurrentSize.height > mMaxSize.height) {
-                return false;
-            }
-            if (mFixedAspectRatio != 0) {
-                updateFixedAspectRatio(true);
-            }
+        if (entitySize != null) {
+            updateAndSanitizeCurrentSize(entitySize);
+            unused = reformOptions.setCurrentSize(dimsToVec3(mCurrentSize));
         }
-        if (isSizeWellFormed(mCurrentSize)) { // allows set (0, 0, 0) in onAttach
-            unused =
-                    reformOptions.setCurrentSize(
-                            new Vec3(mCurrentSize.width, mCurrentSize.height, mCurrentSize.depth));
-        }
+
         unused =
                 reformOptions
-                        .setMinimumSize(new Vec3(mMinSize.width, mMinSize.height, mMinSize.depth))
-                        .setMaximumSize(new Vec3(mMaxSize.width, mMaxSize.height, mMaxSize.depth))
+                        .setMinimumSize(dimsToVec3(mMinSize))
+                        .setMaximumSize(dimsToVec3(mMaxSize))
                         .setFixedAspectRatio(mFixedAspectRatio)
                         .setForceShowResizeOverlay(mForceShowResizeOverlay);
         ((AndroidXrEntity) entity).updateReformOptions();
         if (mReformEventConsumer != null) {
             ((AndroidXrEntity) entity).addReformEventConsumer(mReformEventConsumer, mExecutor);
         }
+
+        mEntity = entity;
         return true;
     }
 
     @Override
     public void onDetach(@NonNull Entity entity) {
+        restoreEntityContent();
         ReformOptions reformOptions = ((AndroidXrEntity) entity).getReformOptions();
         ReformOptions unused =
                 reformOptions.setEnabledReform(
@@ -158,30 +144,45 @@ class ResizableComponentImpl implements ResizableComponent {
     @Override
     public Dimensions getSize() {
         if (mCurrentSize == null) {
-            return mDefaultSize;
+            return DIMS_ONE;
         }
         return mCurrentSize;
+    }
+
+    /**
+     * Sanitizes and sets the internal current size.
+     *
+     * <p>Any {@code NaN} dimension in the input is replaced with the corresponding value from the
+     * existing component size. Also updates the fixed aspect ratio if enabled.
+     *
+     * @param size The new dimensions to set.
+     */
+    private boolean updateAndSanitizeCurrentSize(@NonNull Dimensions size) {
+        size = dimsClampPositive(size, getSize());
+
+        if (size.equals(mCurrentSize)) {
+            return false;
+        }
+
+        mCurrentSize = size;
+        // Update the fixed aspect ratio if it is enabled.
+        if (mFixedAspectRatio != 0) {
+            updateFixedAspectRatio(true);
+        }
+        return true;
     }
 
     @Override
     public void setSize(@NonNull Dimensions size) {
         // TODO: b/350821054 - Implement synchronization policy around Entity/Component updates.
-        if (!isSizeValid(size)) {
-            size = isSizeValid(mCurrentSize) ? mCurrentSize : mDefaultSize;
-            // Even if the provided size is invalid, do not return. Instead, proceed with a
-            // valid fallback size. This ensures that ReformOptions are always updated, which
-            // is an expectation of the layout system (e.g., Compose) to prevent stale states.
-        }
-        mCurrentSize = size;
-        if (mEntity == null) {
+        boolean outOfDate = updateAndSanitizeCurrentSize(size);
+        if (!outOfDate || mEntity == null) {
             return;
         }
+
         ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
-        ReformOptions unused =
-                reformOptions.setCurrentSize(new Vec3(size.width, size.height, size.depth));
-        // Update the fixed aspect ratio if it is enabled.
+        ReformOptions unused = reformOptions.setCurrentSize(dimsToVec3(mCurrentSize));
         if (mFixedAspectRatio != 0) {
-            updateFixedAspectRatio(true);
             unused = reformOptions.setFixedAspectRatio(mFixedAspectRatio);
         }
         ((AndroidXrEntity) mEntity).updateReformOptions();
@@ -194,19 +195,31 @@ class ResizableComponentImpl implements ResizableComponent {
 
     @Override
     public void setMinimumSize(@NonNull Dimensions minSize) {
-        if (!isMinSizeValid(minSize)) {
-            minSize = isMinSizeValid(mMinSize) ? mMinSize : mMinimumSize;
-            // Similar logic to setSize
+        minSize = dimsClampPositive(minSize, mMinSize);
+        boolean updateMin = false;
+        if (!mMinSize.equals(minSize)) {
+            mMinSize = minSize;
+            updateMin = true;
         }
-        mMinSize = minSize;
+
+        boolean updateMax = false;
+        if (updateMin && dimsAnyLessThen(mMaxSize, mMinSize)) {
+            mMaxSize = dimsMax(mMaxSize, mMinSize);
+            updateMax = true;
+        }
+
         if (mEntity == null) {
             return;
         }
-        ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
-        ReformOptions unused =
-                reformOptions.setMinimumSize(
-                        new Vec3(minSize.width, minSize.height, minSize.depth));
-        ((AndroidXrEntity) mEntity).updateReformOptions();
+
+        if (updateMin) {
+            ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
+            ReformOptions unused = reformOptions.setMinimumSize(dimsToVec3(mMinSize));
+            if (updateMax) {
+                unused = reformOptions.setMaximumSize(dimsToVec3(mMaxSize));
+            }
+            ((AndroidXrEntity) mEntity).updateReformOptions();
+        }
     }
 
     @Override
@@ -216,19 +229,31 @@ class ResizableComponentImpl implements ResizableComponent {
 
     @Override
     public void setMaximumSize(@NonNull Dimensions maxSize) {
-        if (!isMaxSizeValid(maxSize)) {
-            maxSize = isMaxSizeValid(mMaxSize) ? mMaxSize : mMaximumSize;
-            // Similar logic to setSize
+        maxSize = dimsClampPositive(maxSize, mMaxSize);
+        boolean updateMax = false;
+        if (!mMaxSize.equals(maxSize)) {
+            mMaxSize = maxSize;
+            updateMax = true;
         }
-        mMaxSize = maxSize;
+
+        boolean updateMin = false;
+        if (updateMax && dimsAnyLessThen(mMaxSize, mMinSize)) {
+            mMinSize = dimsMin(mMaxSize, mMinSize);
+            updateMin = true;
+        }
+
         if (mEntity == null) {
             return;
         }
-        ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
-        ReformOptions unused =
-                reformOptions.setMaximumSize(
-                        new Vec3(maxSize.width, maxSize.height, maxSize.depth));
-        ((AndroidXrEntity) mEntity).updateReformOptions();
+
+        if (updateMax) {
+            ReformOptions reformOptions = ((AndroidXrEntity) mEntity).getReformOptions();
+            ReformOptions unused = reformOptions.setMaximumSize(dimsToVec3(mMaxSize));
+            if (updateMin) {
+                unused = reformOptions.setMinimumSize(dimsToVec3(mMinSize));
+            }
+            ((AndroidXrEntity) mEntity).updateReformOptions();
+        }
     }
 
     @Override
@@ -257,11 +282,8 @@ class ResizableComponentImpl implements ResizableComponent {
         // Update the fixed aspect ratio based on the current size, or the default size if no
         // current size was set.
         if (fixedAspectRatioEnabled) {
-            if (mCurrentSize == null) {
-                updatedFixedAspectRatio = mDefaultSize.width / mDefaultSize.height;
-            } else {
-                updatedFixedAspectRatio = mCurrentSize.width / mCurrentSize.height;
-            }
+            Dimensions size = getSize();
+            updatedFixedAspectRatio = size.width / size.height;
         }
         mFixedAspectRatio = updatedFixedAspectRatio;
     }
@@ -331,15 +353,11 @@ class ResizableComponentImpl implements ResizableComponent {
             }
             return;
         }
-        Dimensions newSize =
-                getSanitizedSizeForResize(
-                        new Dimensions(
-                                reformEvent.getProposedSize().x,
-                                reformEvent.getProposedSize().y,
-                                reformEvent.getProposedSize().z));
+        Dimensions proposedSize =
+                dimsClamp(vec3ToDims(reformEvent.getProposedSize()), mMinSize, mMaxSize, getSize());
         if (mAutoUpdateSize) {
             // Update the resize affordance size.
-            setSize(newSize);
+            setSize(proposedSize);
         }
 
         BiConsumer<ResizeEventListener, Executor> resizeEventListenerAction =
@@ -359,7 +377,7 @@ class ResizableComponentImpl implements ResizableComponent {
                                             new ResizeEvent(
                                                     RuntimeUtils.getResizeEventState(
                                                             reformEvent.getState()),
-                                                    newSize));
+                                                    proposedSize));
                                     if (mAutoHideContent
                                             && reformState == ReformEvent.REFORM_STATE_END) {
                                         // Restore the entity alpha to its original value after the
@@ -395,87 +413,67 @@ class ResizableComponentImpl implements ResizableComponent {
         }
     }
 
-    /**
-     * Checks that the Dimensions object is not null, its values are not NaN, and it meets a minimum
-     * system-level size.
-     */
-    private boolean isSizeWellFormed(Dimensions size) {
-        return size != null
-                && !Float.isNaN(size.width)
-                && !Float.isNaN(size.height)
-                && !Float.isNaN(size.depth)
-                && size.width >= 0
-                && size.height >= 0
-                && size.depth >= 0;
+    private static final @NonNull Dimensions DIMS_ZERO = new Dimensions(0f, 0f, 0f);
+    private static final @NonNull Dimensions DIMS_ONE = new Dimensions(1f, 1f, 1f);
+    private static final @NonNull Dimensions DIMS_INF =
+            new Dimensions(
+                    Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
+
+    private static @NonNull Dimensions dimsClampPositive(
+            @NonNull Dimensions dimValue, @NonNull Dimensions nanFallback) {
+        return new Dimensions(
+                clampPositive(dimValue.width, nanFallback.width),
+                clampPositive(dimValue.height, nanFallback.height),
+                clampPositive(dimValue.depth, nanFallback.depth));
     }
 
-    /**
-     * Checks if the given {@code Dimensions} object is a valid minimum size.
-     *
-     * <p>A minimum size is considered valid if it is well-formed (not null, not NaN, and
-     * non-negative) and its dimensions are smaller than the current maximum size. Specifically, the
-     * width and height must be strictly less than the maximum, while the depth can be less than or
-     * equal.
-     *
-     * @param minSize The {@code Dimensions} to validate.
-     * @return {@code true} if the provided minimum size is valid, {@code false} otherwise.
-     */
-    private boolean isMinSizeValid(Dimensions minSize) {
-        return isSizeWellFormed(minSize)
-                && minSize.width < mMaxSize.width
-                && minSize.height < mMaxSize.height
-                && minSize.depth <= mMaxSize.depth; // allows min/max depth to be equal
+    private static @NonNull Dimensions dimsClamp(
+            @NonNull Dimensions dimValue,
+            @NonNull Dimensions min,
+            @NonNull Dimensions max,
+            @NonNull Dimensions nanFallback) {
+        return new Dimensions(
+                clamp(dimValue.width, min.width, max.width, nanFallback.width),
+                clamp(dimValue.height, min.height, max.height, nanFallback.height),
+                clamp(dimValue.depth, min.depth, max.depth, nanFallback.depth));
     }
 
-    /**
-     * Checks if the given {@code Dimensions} object is a valid maximum size.
-     *
-     * <p>A maximum size is considered valid if it is well-formed (not null, not NaN, and
-     * non-negative) and its dimensions are larger than the current minimum size. Specifically, the
-     * width and height must be strictly greater than the minimum, while the depth can be greater
-     * than or equal.
-     *
-     * @param maxSize The {@code Dimensions} to validate.
-     * @return {@code true} if the provided maximum size is valid, {@code false} otherwise.
-     */
-    private boolean isMaxSizeValid(Dimensions maxSize) {
-        return isSizeWellFormed(maxSize)
-                && maxSize.width > mMinSize.width
-                && maxSize.height > mMinSize.height
-                && maxSize.depth >= mMinSize.depth; // allows min/max depth to be equal
+    private static @NonNull Dimensions dimsMin(@NonNull Dimensions a, @NonNull Dimensions b) {
+        return new Dimensions(
+                Math.min(a.width, b.width),
+                Math.min(a.height, b.height),
+                Math.min(a.depth, b.depth));
     }
 
-    /**
-     * Checks that the Dimensions object is well-formed and within the user-defined minimum and
-     * maximum size bounds.
-     */
-    private boolean isSizeValid(Dimensions size) {
-        return isSizeWellFormed(size)
-                && size.width >= mMinimumValidSize.width
-                && size.height >= mMinimumValidSize.height
-                && size.depth >= mMinimumValidSize.depth
-                && size.width >= mMinSize.width
-                && size.height >= mMinSize.height
-                && size.depth >= mMinSize.depth
-                && size.width <= mMaxSize.width
-                && size.height <= mMaxSize.height
-                && size.depth <= mMaxSize.depth;
+    private static @NonNull Dimensions dimsMax(@NonNull Dimensions a, @NonNull Dimensions b) {
+        return new Dimensions(
+                Math.max(a.width, b.width),
+                Math.max(a.height, b.height),
+                Math.max(a.depth, b.depth));
     }
 
-    /**
-     * Validates the incoming {@code size} and, if valid, caches it as the last known valid size.
-     *
-     * <p>This method always returns the last known valid size. This provides a stable, valid value
-     * for resizing operations, even if the incoming size is invalid (e.g., outside the minimum or
-     * maximum bounds).
-     *
-     * @param size The proposed new size to validate.
-     * @return The last known valid size.
-     */
-    private Dimensions getSanitizedSizeForResize(Dimensions size) {
-        if (isSizeValid(size)) {
-            mLastValidSizeForResize = size;
+    private static boolean dimsAnyLessThen(@NonNull Dimensions a, @NonNull Dimensions b) {
+        return a.width < b.width || a.height < b.height || a.depth < b.depth;
+    }
+
+    private static @NonNull Vec3 dimsToVec3(@NonNull Dimensions value) {
+        return new Vec3(value.width, value.height, value.depth);
+    }
+
+    private static @NonNull Dimensions vec3ToDims(Vec3 value) {
+        if (value == null) {
+            return new Dimensions(Float.NaN, Float.NaN, Float.NaN);
         }
-        return mLastValidSizeForResize;
+        return new Dimensions(value.x, value.y, value.z);
+    }
+
+    private static float clampPositive(float value, float nanReplace) {
+        return clamp(value, 0f, Float.POSITIVE_INFINITY, nanReplace);
+    }
+
+    private static float clamp(float value, float min, float max, float nanFallback) {
+        if (Float.isNaN(value)) value = nanFallback;
+        if (value < min) return min;
+        return Math.min(value, max);
     }
 }

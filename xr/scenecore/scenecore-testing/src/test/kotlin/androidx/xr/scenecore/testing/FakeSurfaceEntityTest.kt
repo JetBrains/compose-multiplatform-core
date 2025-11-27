@@ -90,7 +90,7 @@ class FakeSurfaceEntityTest {
 
     @Test
     fun getPerceivedResolution_setEntityTooCloseResult_returnsEntityTooClose() {
-        underTest.perceivedResolutionResult = PerceivedResolutionResult.EntityTooClose()
+        underTest.setPerceivedResolution(PerceivedResolutionResult.EntityTooClose())
 
         assertThat(underTest.getPerceivedResolution())
             .isInstanceOf(PerceivedResolutionResult.EntityTooClose::class.java)
@@ -98,8 +98,9 @@ class FakeSurfaceEntityTest {
 
     @Test
     fun getPerceivedResolution_setSuccessResult_returnsSuccessValue() {
-        underTest.perceivedResolutionResult =
+        underTest.setPerceivedResolution(
             PerceivedResolutionResult.Success(PixelDimensions(640, 480))
+        )
 
         assertThat(underTest.getPerceivedResolution())
             .isInstanceOf(PerceivedResolutionResult.Success::class.java)

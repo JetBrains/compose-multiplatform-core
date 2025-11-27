@@ -64,7 +64,6 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.viewinterop.InteropView
 import androidx.compose.ui.viewinterop.InteropViewFactoryHolder
@@ -100,10 +99,15 @@ internal class LayoutNode(
 
     // Params managed by RectManager start:
     internal var hasPositionalLayerTransformationsInOffsetFromRoot: Boolean = false
-    internal var lastOffsetFromParent: IntOffset = IntOffset.Max
-    internal var lastSize: IntSize = IntSize.Zero
+    // this offset contains the combined offset accumulated by the coordinators attached to
+    // this node, not including the offset of the outer one, as the outer offset is part of the
+    // offsetFromRoot of this node, and the rest of the modifiers are affecting offsetFromRoot
+    // for the children.
     internal var outerToInnerOffset: IntOffset = IntOffset.Max
     internal var outerToInnerOffsetDirty: Boolean = true
+    // rect in parent is the sum of transformations for parent's coordinators not including the
+    // outer one, and the transformations on this node's outer coordinator.
+    internal var rectInParentDirty: Boolean = true
     internal var addedToRectList: Boolean = false
     // Params managed by RectManager end.
 
@@ -519,7 +523,7 @@ internal class LayoutNode(
             measurePassDelegate.isPlaced = true
             // regular nodes go through markNodeAndSubtreeAsPlaced(), from where we call this
             // function on rectManager. as root marked as placed here, we need to call it.
-            owner.rectManager.onLayoutPositionChanged(this)
+            owner.rectManager.recalculateRectIfDirty(this)
             lookaheadPassDelegate?.onAttachedToNullParent()
         }
 
@@ -1203,15 +1207,42 @@ internal class LayoutNode(
         requireOwner().requestOnPositionedCallback(this)
     }
 
-    internal fun onCoordinatorPositionChanged() {
-        outerToInnerOffsetDirty = true
+    internal fun onCoordinatorRectChanged(coordinator: NodeCoordinator) {
+        val rectManager = owner?.rectManager
+        val placementPending = layoutState != Idle || measurePending || layoutPending
+        if (addedToRectList && rectManager != null) {
+            if (coordinator === outerCoordinator) {
+                // transformations on the outer coordinator update the offset from parent
+                rectInParentDirty = true
+                if (!placementPending) {
+                    // during placement we get it called right after
+                    rectManager.recalculateRectIfDirty(this)
+                }
+            } else {
+                // transformations on other coordinators invalidate outerToInnerOffset
+                // and offset from parent for each child
+                outerToInnerOffsetDirty = true
+                forEachChild {
+                    it.rectInParentDirty = true
+                    // during placement it is guaranteed to get recalculateRectIfDirty() call on
+                    // each child after the parent finish its placement. we don't want to call it
+                    // straight away, as there are might be multiple changes on the same layout
+                    // node, and we want to apply them once in batch.
+                    if (!placementPending) {
+                        rectManager.recalculateRectIfDirty(it)
+                    }
+                }
 
-        // Since there has been an update to a coordinator somewhere in the
-        // modifier chain of this layout node, we might have onRectChanged
-        // callbacks that need to be notified of that change. As a result, even
-        // if the outer rect of this layout node hasn't changed, we want to
-        // invalidate the callbacks for them
-        owner?.rectManager?.invalidateCallbacksFor(this)
+                // Since there has been an update to a coordinator somewhere in the
+                // modifier chain of this layout node, we might have onRectChanged
+                // callbacks that need to be notified of that change. As a result, even
+                // if the outer rect of this layout node hasn't changed, we want to
+                // invalidate the callbacks for them
+                rectManager.invalidateCallbacksFor(this)
+            }
+        }
+
+        layoutDelegate.measurePassDelegate.requestLayoutIfCoordinatesAreUsedAndNotifyChildren()
     }
 
     internal inline fun <T> ignoreRemeasureRequests(block: () -> T): T {
@@ -1478,7 +1509,7 @@ internal class LayoutNode(
         // Sometimes, while scrolling with reuse, a child LayoutNode, might not
         // require measure or layout at all, but at a minimum we need to update RectManager with
         // the correct information.
-        owner?.rectManager?.onLayoutPositionChanged(this, forceUpdate = true)
+        owner?.rectManager?.recalculateRectIfDirty(this)
     }
 
     override fun onDeactivate() {

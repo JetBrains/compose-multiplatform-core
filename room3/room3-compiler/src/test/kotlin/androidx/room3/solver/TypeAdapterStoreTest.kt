@@ -399,7 +399,7 @@ class TypeAdapterStoreTest {
 
     @Test
     fun testVia1TypeAdapter() {
-        runProcessorTest { invocation ->
+        runKspTest(sources = emptyList()) { invocation ->
             val store =
                 TypeAdapterStore.create(
                     Context(invocation.processingEnv),
@@ -413,11 +413,11 @@ class TypeAdapterStoreTest {
             val bindScope = testCodeGenScope()
             adapter!!.bindToStmt("stmt", "41", "fooVar", bindScope)
             assertThat(
-                bindScope.generate().toString(CodeLanguage.JAVA).trim(),
+                bindScope.generate().toString(CodeLanguage.KOTLIN).trim(),
                 `is`(
                     """
-                    final int ${tmp(0)} = fooVar ? 1 : 0;
-                    stmt.bindLong(41, ${tmp(0)});
+                    val ${tmp(0)}: kotlin.Int = if (fooVar) 1 else 0
+                    stmt.bindLong(41, ${tmp(0)}.toLong())
                     """
                         .trimIndent()
                 ),
@@ -426,12 +426,12 @@ class TypeAdapterStoreTest {
             val cursorScope = testCodeGenScope()
             adapter.readFromStatement("res", "curs", "7", cursorScope)
             assertThat(
-                cursorScope.generate().toString(CodeLanguage.JAVA).trim(),
+                cursorScope.generate().toString(CodeLanguage.KOTLIN).trim(),
                 `is`(
                     """
-                    final int ${tmp(0)};
-                    ${tmp(0)} = (int) (curs.getLong(7));
-                    res = ${tmp(0)} != 0;
+                    val ${tmp(0)}: kotlin.Int
+                    ${tmp(0)} = curs.getLong(7).toInt()
+                    res = ${tmp(0)} != 0
                     """
                         .trimIndent()
                 ),
@@ -483,12 +483,12 @@ class TypeAdapterStoreTest {
             val bindScope = testCodeGenScope()
             adapter!!.bindToStmt("stmt", "41", "fooVar", bindScope)
             assertThat(
-                bindScope.generate().toString(CodeLanguage.JAVA).trim(),
+                bindScope.generate().toString(CodeLanguage.KOTLIN).trim(),
                 `is`(
                     """
-                    final boolean ${tmp(0)} = foo.bar.Point.toBoolean(fooVar);
-                    final int ${tmp(1)} = ${tmp(0)} ? 1 : 0;
-                    stmt.bindLong(41, ${tmp(1)});
+                    val ${tmp(0)}: kotlin.Boolean = foo.bar.Point.toBoolean(fooVar)
+                    val ${tmp(1)}: kotlin.Int = if (${tmp(0)}) 1 else 0
+                    stmt.bindLong(41, ${tmp(1)}.toLong())
                     """
                         .trimIndent()
                 ),
@@ -497,13 +497,13 @@ class TypeAdapterStoreTest {
             val cursorScope = testCodeGenScope()
             adapter.readFromStatement("res", "curs", "11", cursorScope).toString()
             assertThat(
-                cursorScope.generate().toString(CodeLanguage.JAVA).trim(),
+                cursorScope.generate().toString(CodeLanguage.KOTLIN).trim(),
                 `is`(
                     """
-                    final int ${tmp(0)};
-                    ${tmp(0)} = (int) (curs.getLong(11));
-                    final boolean ${tmp(1)} = ${tmp(0)} != 0;
-                    res = foo.bar.Point.fromBoolean(${tmp(1)});
+                    val ${tmp(0)}: kotlin.Int
+                    ${tmp(0)} = curs.getLong(11).toInt()
+                    val ${tmp(1)}: kotlin.Boolean = ${tmp(0)} != 0
+                    res = foo.bar.Point.fromBoolean(${tmp(1)})
                     """
                         .trimIndent()
                 ),

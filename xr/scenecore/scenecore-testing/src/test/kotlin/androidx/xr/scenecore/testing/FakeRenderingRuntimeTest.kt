@@ -366,7 +366,7 @@ class FakeRenderingRuntimeTest {
     @Test
     fun createGltfEntity_returnsInitialValue() {
         val pose = Pose.Identity
-        val loadedGltf = FakeResource(0)
+        val loadedGltf = FakeGltfModelResource(0)
         val parentEntity = FakeEntity()
         val gltfEntity = fakeRenderingRuntime.createGltfEntity(pose, loadedGltf, parentEntity)
 

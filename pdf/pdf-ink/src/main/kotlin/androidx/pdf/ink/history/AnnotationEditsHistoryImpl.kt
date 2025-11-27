@@ -21,11 +21,22 @@ import androidx.pdf.annotation.models.EditOperation.Companion.invert
 import java.util.LinkedList
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 internal class AnnotationEditsHistoryImpl(internal val maxSize: Int) : AnnotationEditsHistory {
     private val undoStack: LinkedList<AnnotationEditOperation> = LinkedList()
     private val redoStack: LinkedList<AnnotationEditOperation> = LinkedList()
     private val lock = ReentrantLock()
+
+    // Private mutable state flows
+    private val _canUndo = MutableStateFlow(false)
+    private val _canRedo = MutableStateFlow(false)
+
+    // Publicly exposed immutable state flows
+    override val canUndo: StateFlow<Boolean> = _canUndo.asStateFlow()
+    override val canRedo: StateFlow<Boolean> = _canRedo.asStateFlow()
 
     init {
         require(maxSize > 0) { "maxSize must be a positive integer." }
@@ -40,6 +51,9 @@ internal class AnnotationEditsHistoryImpl(internal val maxSize: Int) : Annotatio
                 undoStack.removeLast()
             }
             redoStack.clear()
+
+            _canUndo.value = undoStack.isNotEmpty()
+            _canRedo.value = redoStack.isNotEmpty()
         }
     }
 
@@ -48,6 +62,10 @@ internal class AnnotationEditsHistoryImpl(internal val maxSize: Int) : Annotatio
             if (undoStack.isEmpty()) return null
             val editOperation = undoStack.pop()
             redoStack.push(editOperation)
+
+            _canUndo.value = undoStack.isNotEmpty()
+            _canRedo.value = redoStack.isNotEmpty()
+
             // Invert the operation before returning
             editOperation.copy(op = editOperation.op.invert())
         }
@@ -58,19 +76,22 @@ internal class AnnotationEditsHistoryImpl(internal val maxSize: Int) : Annotatio
             if (redoStack.isEmpty()) return null
             val editOperation = redoStack.pop()
             undoStack.push(editOperation)
+
+            _canUndo.value = undoStack.isNotEmpty()
+            _canRedo.value = redoStack.isNotEmpty()
+
             // No inversion is required
             editOperation
         }
     }
 
-    override fun canUndo(): Boolean = lock.withLock { undoStack.isNotEmpty() }
-
-    override fun canRedo(): Boolean = lock.withLock { redoStack.isNotEmpty() }
-
     override fun clear() {
         lock.withLock {
             undoStack.clear()
             redoStack.clear()
+
+            _canUndo.value = false
+            _canRedo.value = false
         }
     }
 }

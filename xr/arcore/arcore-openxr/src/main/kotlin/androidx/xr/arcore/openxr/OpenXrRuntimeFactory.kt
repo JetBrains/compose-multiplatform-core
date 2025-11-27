@@ -18,6 +18,7 @@ package androidx.xr.arcore.openxr
 import android.app.Activity
 import androidx.annotation.RestrictTo
 import androidx.xr.arcore.runtime.PerceptionRuntime
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.internal.Feature
 import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import kotlin.coroutines.CoroutineContext
@@ -26,12 +27,13 @@ import kotlin.coroutines.CoroutineContext
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public class OpenXrRuntimeFactory() : PerceptionRuntimeFactory {
     public companion object {
+        private const val LIBRARY_NAME: String = "androidx.xr.runtime.openxr"
+
         init {
             try {
-                System.loadLibrary("androidx.xr.runtime.openxr")
+                System.loadLibrary(LIBRARY_NAME)
             } catch (e: UnsatisfiedLinkError) {
-                // TODO: b/344962771 - Use Flogger instead of println.
-                println("Failed to load library: $e")
+                Log.error(e) { "Failed to load library $LIBRARY_NAME" }
             }
         }
     }

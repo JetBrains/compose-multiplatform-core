@@ -18,12 +18,9 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
-import androidx.compose.foundation.layout.offset
 import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.modifiers.RecordingModifier
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.Dp
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class OffsetModifier(public val x: RemoteFloat, public val y: RemoteFloat) :
@@ -35,11 +32,6 @@ public class OffsetModifier(public val x: RemoteFloat, public val y: RemoteFloat
             y.internalAsFloat(),
         )
     }
-}
-
-@Composable
-public fun RemoteModifier.offset(x: Dp, y: Dp): RemoteModifier {
-    return offset(RemoteFloat(x.value).asRemoteDp(), RemoteFloat(y.value).asRemoteDp())
 }
 
 public fun RemoteModifier.offset(x: RemoteDp, y: RemoteDp): RemoteModifier =

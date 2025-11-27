@@ -45,7 +45,8 @@ import kotlinx.coroutines.launch
  */
 internal class AndroidComposeSpatialElement :
     SpatialElement(), SubspaceOwner, DefaultLifecycleObserver {
-    override val root: SubspaceLayoutNode = SubspaceLayoutNode()
+    override val root: SubspaceLayoutNode =
+        SubspaceLayoutNode().apply { measurePolicy = SubspaceLayoutNode.RootMeasurePolicy }
 
     // For debug output set this to androidx.xr.compose.subspace.node.DebugLogger().
     override var logger: Logger? = null

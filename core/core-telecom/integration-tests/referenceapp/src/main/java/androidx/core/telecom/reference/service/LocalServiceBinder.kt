@@ -31,7 +31,11 @@ interface LocalServiceBinder {
     /** the state of active calls on this device */
     val callDataUpdates: StateFlow<List<CallData>>
 
-    fun addCall(callAttributes: CallAttributesCompat, notificationId: Int)
+    fun addCall(
+        callAttributes: CallAttributesCompat,
+        notificationId: Int,
+        isInitiallyMuted: Boolean,
+    )
 
     fun setCallActive(callId: String)
 

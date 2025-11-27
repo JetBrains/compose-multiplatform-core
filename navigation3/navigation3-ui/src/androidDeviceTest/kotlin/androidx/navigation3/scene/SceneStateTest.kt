@@ -174,7 +174,7 @@ internal class SceneStateTest {
                 @Suppress("UNUSED_VARIABLE") val unused = tick
             }
 
-            rememberSceneState(entries, strategy, unstableOnBack)
+            rememberSceneState(entries, strategy, onBack = unstableOnBack)
         }
 
         // First composition should call calculate once.

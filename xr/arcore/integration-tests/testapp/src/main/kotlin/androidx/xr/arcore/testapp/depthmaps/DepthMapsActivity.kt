@@ -19,7 +19,6 @@ package androidx.xr.arcore.testapp.depthmaps
 import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -54,6 +53,7 @@ import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
@@ -148,7 +148,7 @@ class DepthMapActivity : ComponentActivity(), GLSurfaceView.Renderer {
             depthMapRenderer.createDepthGradientTexture(/* context= */ this)
             depthMapRenderer.createDepthShaders(/* context= */ this, depthTexture.depthTextureId)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to read an asset file", e)
+            Log.error(e) { "Failed to read an asset file" }
         }
     }
 

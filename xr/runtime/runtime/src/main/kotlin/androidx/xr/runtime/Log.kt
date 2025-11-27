@@ -75,6 +75,13 @@ public object Log {
     }
 
     /**
+     * Error logs are reserved for something unexpected that will lead to a crash or data loss.
+     *
+     * @param message The message you want logged.
+     */
+    public fun error(message: String): Unit = error { message }
+
+    /**
      * Warning logs are used when something unexpected may lead to a crash or fatal exception later
      * on as a result of the unusual circumstances.
      *
@@ -86,6 +93,14 @@ public object Log {
             AndroidLog.w(TAG, message(), throwable)
         }
     }
+
+    /**
+     * Warning logs are used when something unexpected may lead to a crash or fatal exception later
+     * on as a result of the unusual circumstances.
+     *
+     * @param message The message you want logged.
+     */
+    public fun warn(message: String): Unit = warn { message }
 
     /**
      * Info messages log standard, useful information about the state of the system.
@@ -100,6 +115,13 @@ public object Log {
     }
 
     /**
+     * Info messages log standard, useful information about the state of the system.
+     *
+     * @param message The message you want logged.
+     */
+    public fun info(message: String): Unit = info { message }
+
+    /**
      * Debug functions log noisy information related to the internals of the system.
      *
      * @param throwable An optional exception for Android to log in addition to your message.
@@ -112,6 +134,13 @@ public object Log {
     }
 
     /**
+     * Debug functions log noisy information related to the internals of the system.
+     *
+     * @param message The message you want logged.
+     */
+    public fun debug(message: String): Unit = debug { message }
+
+    /**
      * Verbose messages contain extra noisy information, often used for detailed tracing.
      *
      * @param throwable An optional exception for Android to log in addition to your message.
@@ -122,6 +151,13 @@ public object Log {
             AndroidLog.v(TAG, message(), throwable)
         }
     }
+
+    /**
+     * Verbose messages contain extra noisy information, often used for detailed tracing.
+     *
+     * @param message The message you want logged.
+     */
+    public fun verbose(message: String): Unit = verbose { message }
 
     private fun isLoggable(level: Level): Boolean = level >= Log.level
 }

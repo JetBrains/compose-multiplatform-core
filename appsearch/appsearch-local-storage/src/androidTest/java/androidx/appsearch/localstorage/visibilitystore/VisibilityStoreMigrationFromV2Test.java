@@ -105,6 +105,7 @@ public class VisibilityStoreMigrationFromV2Test {
                 // no overlay schema
                 ImmutableList.of(),
                 /*prefixedVisibilityBundles=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ Collections.emptyMap(),
                 /*forceOverride=*/ true, // force push the old version into disk
                 VisibilityToDocumentConverter.ANDROID_V_OVERLAY_SCHEMA_VERSION_LATEST,
                 /*setSchemaStatsBuilder=*/ null,
@@ -154,6 +155,7 @@ public class VisibilityStoreMigrationFromV2Test {
                 ImmutableList.of(
                         new AppSearchSchema.Builder("Schema").build()),
                 /*visibilityDocuments=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ Collections.emptyMap(),
                 /*forceOverride=*/ false,
                 /*schemaVersion=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,

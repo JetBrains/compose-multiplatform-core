@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("RestrictedApiAndroidX")
 
 package androidx.compose.remote.integration.view.demos.examples
 
@@ -40,6 +41,7 @@ import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.width
 import androidx.compose.remote.creation.compose.modifier.widthIn
 import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.integration.view.demos.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -52,7 +54,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-@Suppress("RestrictedApiAndroidX")
 @RemoteComposable
 @Composable
 @Preview
@@ -94,7 +95,7 @@ fun WeatherDemo() {
                 ) {
                     RemoteColumn(
                         modifier =
-                            RemoteModifier.height(120.dp)
+                            RemoteModifier.height(120.rdp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(Color(219, 247, 239))
                                 //                            .background(Color.Blue)
@@ -104,7 +105,7 @@ fun WeatherDemo() {
                     ) {
                         RemoteText("Rio de Janeiro")
                         RemoteText("100º", fontSize = 26.sp, fontWeight = FontWeight.Medium)
-                        RemoteImage(image, RemoteString(""), modifier = RemoteModifier.size(48.dp))
+                        RemoteImage(image, RemoteString(""), modifier = RemoteModifier.size(48.rdp))
                         RemoteText("H: 62º - L: 54º", fontSize = 10.sp)
                     }
                 }
@@ -113,7 +114,6 @@ fun WeatherDemo() {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 @RemoteComposable
 @Composable
 @Preview
@@ -126,8 +126,8 @@ fun WeatherHeader() {
     RemoteRow(
         modifier =
             RemoteModifier.widthIn(min = 180.dp)
-                .width(400.dp)
-                .heightIn(min = rowHeight)
+                .width(400.rdp)
+                .heightIn(min = rowHeightDp)
                 .padding(8.dp), // .background(Color.Red),
         verticalAlignment = RemoteAlignment.CenterVertically,
     ) {
@@ -137,10 +137,10 @@ fun WeatherHeader() {
     }
 }
 
-val rowHeight = 90.dp
+val rowHeight = 90.rdp
+val rowHeightDp = 90.dp
 val rowHeight2 = 122.dp
 
-@Suppress("RestrictedApiAndroidX")
 @RemoteComposable
 @Composable
 @Preview
@@ -155,7 +155,6 @@ fun WeatherBox() {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 @RemoteComposable
 @Composable
 @Preview
@@ -174,13 +173,12 @@ fun WeatherBox2() {
         verticalArrangement = RemoteArrangement.Center,
         horizontalAlignment = RemoteAlignment.End,
     ) {
-        RemoteImage(refresh, RemoteString(""), modifier = RemoteModifier.size(20.dp))
-        RemoteImage(image, RemoteString(""), modifier = RemoteModifier.size(48.dp))
+        RemoteImage(refresh, RemoteString(""), modifier = RemoteModifier.size(20.rdp))
+        RemoteImage(image, RemoteString(""), modifier = RemoteModifier.size(48.rdp))
         RemoteText("Mostly cloudy", fontSize = 10.sp)
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 @RemoteComposable
 @Composable
 @Preview
@@ -199,7 +197,6 @@ fun WeatherRow() {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 @RemoteComposable
 @Composable
 fun Weather(temperature: String, hour: String, resource: Int) {
@@ -213,12 +210,11 @@ fun Weather(temperature: String, hour: String, resource: Int) {
             fontWeight = FontWeight.SemiBold,
             modifier = RemoteModifier.padding(bottom = 4.dp),
         )
-        RemoteImage(image, RemoteString(""), RemoteModifier.size(24.dp))
+        RemoteImage(image, RemoteString(""), RemoteModifier.size(24.rdp))
         RemoteText(hour, modifier = RemoteModifier.padding(top = 4.dp))
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 @RemoteComposable
 @Composable
 @Preview
@@ -243,7 +239,6 @@ fun WeatherDays() {
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 @RemoteComposable
 @Composable
 fun WeatherDay(day: String, precipitation: String, image: Int, temperature: String) {
@@ -257,11 +252,11 @@ fun WeatherDay(day: String, precipitation: String, image: Int, temperature: Stri
             verticalAlignment = RemoteAlignment.CenterVertically,
         ) {
             RemoteBox(
-                RemoteModifier.width(70.dp),
+                RemoteModifier.width(70.rdp),
                 horizontalAlignment = RemoteAlignment.Start,
                 verticalArrangement = RemoteArrangement.Center,
             ) {
-                RemoteText(day, RemoteModifier.width(70.dp))
+                RemoteText(day, RemoteModifier.width(70.rdp))
             }
             val modWeight = RemoteModifier.weight(1f)
             Temp(modWeight, precipitation, image, temperature)
@@ -271,11 +266,11 @@ fun WeatherDay(day: String, precipitation: String, image: Int, temperature: Stri
             verticalAlignment = RemoteAlignment.CenterVertically,
         ) {
             RemoteBox(
-                RemoteModifier.width(26.dp),
+                RemoteModifier.width(26.rdp),
                 horizontalAlignment = RemoteAlignment.Start,
                 verticalArrangement = RemoteArrangement.Center,
             ) {
-                RemoteText(day.substring(IntRange(0, 2)), RemoteModifier.width(100.dp))
+                RemoteText(day.substring(IntRange(0, 2)), RemoteModifier.width(100.rdp))
             }
             val modWeight = RemoteModifier.weight(1f)
             Temp(modWeight, precipitation, image, temperature)
@@ -283,7 +278,6 @@ fun WeatherDay(day: String, precipitation: String, image: Int, temperature: Stri
     }
 }
 
-@Suppress("RestrictedApiAndroidX")
 @Composable
 private fun Temp(
     modWeight: RemoteModifier,
@@ -293,18 +287,18 @@ private fun Temp(
 ) {
     RemoteBox(modWeight.widthIn(min = 0.dp))
     RemoteRow(
-        modifier = RemoteModifier.width(70.dp),
+        modifier = RemoteModifier.width(70.rdp),
         horizontalArrangement = RemoteArrangement.End,
         verticalAlignment = RemoteAlignment.CenterVertically,
     ) {
-        RemoteBox(modifier = RemoteModifier.width(30.dp)) {
+        RemoteBox(modifier = RemoteModifier.width(30.rdp)) {
             RemoteText(precipitation, RemoteModifier.padding(right = 4.dp))
         }
-        RemoteImage(image, RemoteString(""), RemoteModifier.size(24.dp))
+        RemoteImage(image, RemoteString(""), RemoteModifier.size(24.rdp))
     }
     RemoteBox(modWeight.widthIn(min = 0.dp))
     RemoteBox(
-        modifier = RemoteModifier.width(60.dp),
+        modifier = RemoteModifier.width(60.rdp),
         horizontalAlignment = RemoteAlignment.CenterHorizontally,
         verticalArrangement = RemoteArrangement.Center,
     ) {

@@ -191,9 +191,9 @@ public class RemoteComposeBuffer {
     private @NonNull WireBuffer mBuffer = new WireBuffer();
     private static final boolean DEBUG = false;
 
-    private int mLastComponentId = 0;
+    protected int mLastComponentId = 0;
     private int mGeneratedComponentId = -1;
-    private int mApiLevel = CoreDocument.DOCUMENT_API_LEVEL;
+    protected int mApiLevel = CoreDocument.DOCUMENT_API_LEVEL;
 
     Operations.UniqueIntMap<CompanionOperation> mMap = new Operations.UniqueIntMap<>();
 
@@ -1514,7 +1514,7 @@ public class RemoteComposeBuffer {
      * @param id the current component id (if -1, we'll generate a new one)
      * @return a usable component id
      */
-    private int getComponentId(int id) {
+    protected int getComponentId(int id) {
         int resolvedId = 0;
         if (id != -1) {
             resolvedId = id;
@@ -2188,6 +2188,13 @@ public class RemoteComposeBuffer {
      */
     public void addConditionalOperations(byte type, float a, float b) {
         ConditionalOperations.apply(mBuffer, type, a, b);
+    }
+
+    /**
+     * Ends the current conditional operation stared by {@link #addConditionalOperations}.
+     */
+    public void endConditionalOperations() {
+        addContainerEnd();
     }
 
     /**

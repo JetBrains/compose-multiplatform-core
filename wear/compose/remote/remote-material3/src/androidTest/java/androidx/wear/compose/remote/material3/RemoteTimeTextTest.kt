@@ -17,20 +17,16 @@
 package androidx.wear.compose.remote.material3
 
 import android.content.Context
-import androidx.compose.remote.core.CoreDocument
-import androidx.compose.remote.core.Operations
-import androidx.compose.remote.core.RcProfiles
 import androidx.compose.remote.creation.compose.capture.captureRemoteDocument
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.state.RemoteString
-import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
-import androidx.compose.remote.creation.profile.Profile
-import androidx.compose.remote.creation.profile.RcPlatformProfiles
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.sp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -75,25 +71,24 @@ class RemoteTimeTextTest {
         }
     }
 
+    @Test
+    fun withFontConfigured() = runTest {
+        runDocumentTest {
+            RemoteTimeText(
+                modifier = RemoteModifier.fillMaxSize(),
+                time = RemoteString("10:09"),
+                fontSize = 15.sp,
+                fontFamily = FontFamily.SansSerif,
+            )
+        }
+    }
+
     suspend fun runDocumentTest(content: @Composable @RemoteComposable () -> Unit) {
-        val customProfile =
-            Profile(
-                CoreDocument.DOCUMENT_API_LEVEL,
-                RcProfiles.PROFILE_ANDROID_NATIVE,
-                AndroidxRcPlatformServices(),
-            ) { width, height, contentDescription, profile ->
-                RcPlatformProfiles.ANDROIDX.profileFactory
-                    .create(width, height, contentDescription, profile)
-                    .apply {
-                        buffer.setVersion(
-                            CoreDocument.DOCUMENT_API_LEVEL,
-                            setOf(Operations.DRAW_TEXT_ON_CIRCLE),
-                        )
-                    }
-            }
         val bytes =
             withContext(Dispatchers.Main) {
-                captureRemoteDocument(context, profile = customProfile) { content() }
+                captureRemoteDocument(context, profile = TestProfiles.androidNativeProfile) {
+                    content()
+                }
             }
         assertTrue(bytes.isNotEmpty())
     }

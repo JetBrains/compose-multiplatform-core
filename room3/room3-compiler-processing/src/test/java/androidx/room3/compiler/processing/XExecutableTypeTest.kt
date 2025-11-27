@@ -637,16 +637,13 @@ class XExecutableTypeTest {
                                     listOf(
                                         List::class.asMutableClassName()
                                             .parametrizedBy(XTypeName.ANY_WILDCARD)
-                                            .copy(nullable = isKsp2 && subjectFqn == "JavaSubject")
                                     ),
                             )
                         )
                     assertThat(typeVar.superTypes.map { it.asTypeName() })
                         .containsExactly(
                             XTypeName.ANY_OBJECT.copy(nullable = true),
-                            List::class.asMutableClassName()
-                                .parametrizedBy(XTypeName.ANY_WILDCARD)
-                                .copy(nullable = isKsp2 && subjectFqn == "JavaSubject"),
+                            List::class.asMutableClassName().parametrizedBy(XTypeName.ANY_WILDCARD),
                         )
                         .inOrder()
                     assertThat(typeVar.typeArguments).isEmpty()
@@ -658,20 +655,11 @@ class XExecutableTypeTest {
                         .isEqualTo(
                             XTypeName.getTypeVariableName(
                                 name = "T",
-                                bounds =
-                                    listOf(
-                                        XTypeName.ANY_OBJECT.copy(
-                                            nullable = isKsp2 && subjectFqn == "JavaSubject"
-                                        )
-                                    ),
+                                bounds = listOf(XTypeName.ANY_OBJECT),
                             )
                         )
                     assertThat(typeVar.superTypes.map { it.asTypeName() })
-                        .containsExactly(
-                            XTypeName.ANY_OBJECT.copy(
-                                nullable = isKsp2 && subjectFqn == "JavaSubject"
-                            )
-                        )
+                        .containsExactly(XTypeName.ANY_OBJECT)
                         .inOrder()
                     assertThat(typeVar.superTypes.single().nullability).equals(XNullability.NONNULL)
                     assertThat(typeVar.typeArguments).isEmpty()

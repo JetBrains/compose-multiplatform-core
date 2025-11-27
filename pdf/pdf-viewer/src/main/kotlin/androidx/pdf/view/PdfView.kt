@@ -41,8 +41,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.accessibility.AccessibilityManager
 import android.view.inputmethod.InputMethodManager
-import androidx.annotation.FloatRange
 import androidx.annotation.IntDef
+import androidx.annotation.IntRange
 import androidx.annotation.MainThread
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
@@ -62,6 +62,7 @@ import androidx.pdf.event.PdfTrackingEvent
 import androidx.pdf.event.RequestFailureEvent
 import androidx.pdf.exceptions.RequestFailedException
 import androidx.pdf.formfilling.FormFillingEditTextState
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.selection.ContextMenuComponent
 import androidx.pdf.selection.Selection
@@ -158,18 +159,21 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     /**
      * The number of pages displayed side-by-side in a single row.
      *
-     * This property controls the layout mode:
-     * - [SINGLE_PAGE]: Displays one page per row (standard display).
-     * - [TWO_PAGE]: Displays two pages per row (like an open book).
+     * This property controls the layout mode and can be set to either 1 or 2.
+     * - 1: Displays one page per row (standard display).
+     * - 2: Displays two pages per row (like an open book).
+     *
+     * @throws IllegalArgumentException if the value is not either 1 or 2.
      */
-    @PagesPerRow
-    internal var pagesPerRow: Int = SINGLE_PAGE
+    @IntRange(from = 1, to = 2)
+    public var pagesPerRow: Int = 1
         set(value) {
             checkMainThread()
-            // If pagesPerRow anything other than two pages default it to single page.
-            val validPagesPerRow = if (value == TWO_PAGE) TWO_PAGE else SINGLE_PAGE
-            if (field == validPagesPerRow) return
-            field = validPagesPerRow
+            require(value == SINGLE_PAGE || value == TWO_PAGE) {
+                "pagesPerRow must be either 1 or 2."
+            }
+            if (field == value) return
+            field = value
             pageLayoutManager?.let {
                 val lastVisiblePage = fullyVisiblePages.lower
                 updateLayoutStrategy()
@@ -181,14 +185,14 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     /**
      * The spacing between two horizontally adjacent pages in pixels.
      *
-     * Note: This value is only relevant when [pagesPerRow] is set to [TWO_PAGE].
+     * Note: This value is only relevant when [pagesPerRow] is set to 2.
      */
-    @FloatRange(from = 0.0)
-    internal var horizontalPageSpacing: Float =
-        context.getDimensions(R.dimen.horizontal_page_spacing)
+    @IntRange(from = 0)
+    public var horizontalPageSpacing: Int =
+        context.resources.getDimensionPixelSize(R.dimen.pdf_horizontal_page_spacing)
         set(value) {
             checkMainThread()
-            val validHorizontalPageSpacing = value.coerceAtLeast(0f)
+            val validHorizontalPageSpacing = value.coerceAtLeast(0)
             if (field == validHorizontalPageSpacing) return
             field = validHorizontalPageSpacing
             // horizontal page spacing does not affect single page layout strategy.
@@ -197,11 +201,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
 
     /** The spacing between vertically adjacent pages in pixels. */
-    @FloatRange(from = 0.0)
-    internal var verticalPageSpacing: Float = context.getDimensions(R.dimen.vertical_page_spacing)
+    @IntRange(from = 0)
+    public var verticalPageSpacing: Int =
+        context.resources.getDimensionPixelSize(R.dimen.pdf_vertical_page_spacing)
         set(value) {
             checkMainThread()
-            val validVerticalPageSpacing = value.coerceAtLeast(0f)
+            val validVerticalPageSpacing = value.coerceAtLeast(0)
             if (field == validVerticalPageSpacing) return
             field = validVerticalPageSpacing
             updateLayoutStrategy()
@@ -210,7 +215,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     /** Updates the page layout strategy and triggers a viewport refresh. */
     private fun updateLayoutStrategy() {
         pageLayoutManager?.let {
-            it.updateLayoutStrategy(pagesPerRow, horizontalPageSpacing, verticalPageSpacing)
+            it.updateLayoutStrategy(
+                pagesPerRow,
+                horizontalPageSpacing.toFloat(),
+                verticalPageSpacing.toFloat(),
+            )
             onViewportChanged()
         }
     }
@@ -297,14 +306,12 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     fastScrollVerticalThumbMarginEnd,
                 )
         }
-        if (typedArray.hasValue(R.styleable.PdfView_horizontalPageSpacing)) {
+        if (typedArray.hasValue(R.styleable.PdfView_pdfHorizontalPageSpacing)) {
             horizontalPageSpacing =
-                typedArray
-                    .getDimensionPixelSize(
-                        R.styleable.PdfView_horizontalPageSpacing,
-                        horizontalPageSpacing.toInt(),
-                    )
-                    .toFloat()
+                typedArray.getDimensionPixelSize(
+                    R.styleable.PdfView_pdfHorizontalPageSpacing,
+                    horizontalPageSpacing,
+                )
         }
         if (typedArray.hasValue(R.styleable.PdfView_isFormFillingEnabled)) {
             isFormFillingEnabled =
@@ -316,21 +323,19 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         if (typedArray.hasValue(R.styleable.PdfView_maxZoom)) {
             maxZoom = typedArray.getFloat(R.styleable.PdfView_maxZoom, maxZoom)
         }
-        if (typedArray.hasValue(R.styleable.PdfView_pagesPerRow)) {
-            pagesPerRow = typedArray.getInt(R.styleable.PdfView_pagesPerRow, SINGLE_PAGE)
+        if (typedArray.hasValue(R.styleable.PdfView_pdfPagesPerRow)) {
+            pagesPerRow = typedArray.getInt(R.styleable.PdfView_pdfPagesPerRow, SINGLE_PAGE)
         }
         if (typedArray.hasValue(R.styleable.PdfView_verticalAlignment)) {
             verticalAlignment =
                 typedArray.getInt(R.styleable.PdfView_verticalAlignment, VERTICAL_ALIGNMENT_CENTER)
         }
-        if (typedArray.hasValue(R.styleable.PdfView_verticalPageSpacing)) {
+        if (typedArray.hasValue(R.styleable.PdfView_pdfVerticalPageSpacing)) {
             verticalPageSpacing =
-                typedArray
-                    .getDimensionPixelSize(
-                        R.styleable.PdfView_verticalPageSpacing,
-                        verticalPageSpacing.toInt(),
-                    )
-                    .toFloat()
+                typedArray.getDimensionPixelSize(
+                    R.styleable.PdfView_pdfVerticalPageSpacing,
+                    verticalPageSpacing,
+                )
         }
         typedArray.recycle()
     }
@@ -436,6 +441,44 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
 
     private val onViewportChangedListeners = mutableListOf<OnViewportChangedListener>()
 
+    /** Listener interface for handling form edits on a PDF Document. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public interface OnFormWidgetInfoUpdatedListener {
+        /**
+         * Called when a user interacts with a form widget which leads to the change in state of the
+         * widget i.e. [FormWidgetInfo]
+         *
+         * @param formEditInfo The edit to be applied to the [PdfDocument] Note: In order to
+         *   correctly update the state the formEditInfo at the document the [formEditInfo] must be
+         *   applied to the document via [androidx.pdf.annotation.EditablePdfDocument.applyEdit].
+         */
+        public fun onFormWidgetInfoUpdated(formEditInfo: FormEditInfo)
+    }
+
+    private val onFormWidgetInfoUpdatedListeners = mutableListOf<OnFormWidgetInfoUpdatedListener>()
+
+    /**
+     * Adds the specified listener to the list of listeners that is notified when any form widget is
+     * updated due to an edit action on a widget e.g. click on a radio button.
+     *
+     * @param listener The listener to add
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun addOnFormWidgetInfoUpdatedListener(listener: OnFormWidgetInfoUpdatedListener) {
+        onFormWidgetInfoUpdatedListeners.add(listener)
+    }
+
+    /**
+     * Adds the specified listener to the list of listeners that is notified when any form widget is
+     * updated due to an edit action on the widget e.g. click on a radio button.
+     *
+     * @param listener The listener to remove
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public fun removeOnFormWidgetInfoUpdatedListener(listener: OnFormWidgetInfoUpdatedListener) {
+        onFormWidgetInfoUpdatedListeners.remove(listener)
+    }
+
     /** Listener interface for handling clicks on links in a PDF document. */
     public interface LinkClickListener {
         /**
@@ -533,7 +576,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private val selectionMenuManager: SelectionMenuManager = SelectionMenuManager(context)
     private var formWidgetInteractionHandler: FormWidgetInteractionHandler? = null
     private var formWidgetMetadataLoader: FormWidgetMetadataLoader? = null
-    private var pdfFormFillingStateManager: PdfFormFillingStateManager? = null
     private var layoutInfoCollector: Job? = null
     private var pageSignalCollector: Job? = null
     private var selectionStateCollector: Job? = null
@@ -1045,6 +1087,23 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         }
     }
 
+    private val onPdfContentInvalidatedListener =
+        object : PdfDocument.OnPdfContentInvalidatedListener {
+            override fun onPdfContentInvalidated(pageNumber: Int, dirtyAreas: List<Rect>) {
+                val localPageLayoutManager = pageLayoutManager ?: return
+                pageManager?.maybeInvalidateAreas(
+                    pageNum = pageNumber,
+                    visibleArea = localPageLayoutManager.visiblePageAreas[pageNumber],
+                    currentZoom = zoom,
+                    areasToUpdate = dirtyAreas.map { it.toRectF() },
+                )
+                formWidgetMetadataLoader?.let { loader ->
+                    pageManager?.maybeUpdateFormWidgetMetadata(pageNumber, loader)
+                }
+                formFillingEditText = null
+            }
+        }
+
     override fun onGenericMotionEvent(event: MotionEvent?): Boolean {
         return event?.let { externalInputManager.handleMouseEvent(event) } ?: false ||
             super.onGenericMotionEvent(event)
@@ -1323,6 +1382,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         awaitingFirstLayout = true
         pageManager?.cleanup()
 
+        pdfDocument?.removeOnPdfContentInvalidatedListener(onPdfContentInvalidatedListener)
         accessibilityManager.removeAccessibilityStateChangeListener(accessibilityStateChangeHandler)
     }
 
@@ -1346,7 +1406,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         state.paginationModel = pageLayoutManager?.paginationModel
         state.layoutStrategy = pageLayoutManager?.layoutStrategy
         state.pdfFormFillingState = pageLayoutManager?.pdfFormFillingState
-        state.pdfFormEditRecords = pdfDocument?.formEditRecords
         state.selectionModel = selectionStateManager?.selectionModel?.value
         state.pdfFormFillingEditTextState = getFormFillingEditTextState()
 
@@ -1463,8 +1522,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                     backgroundScope,
                     topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
                     pagesPerRow = pagesPerRow,
-                    horizontalPageSpacingPx = horizontalPageSpacing,
-                    verticalPageSpacingPx = verticalPageSpacing,
+                    horizontalPageSpacingPx = horizontalPageSpacing.toFloat(),
+                    verticalPageSpacingPx = verticalPageSpacing.toFloat(),
                     paginationModel = requireNotNull(localStateToRestore.paginationModel),
                     layoutStrategy = requireNotNull(localStateToRestore.layoutStrategy),
                     pdfFormFillingState = requireNotNull(localStateToRestore.pdfFormFillingState),
@@ -1499,22 +1558,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         isFormFillingTooltipEnabled = localStateToRestore.isFormFillingTooltipEnabled
         setAccessibility()
 
-        restoreFormFillingState()
         restoreFormFillingEditText()
 
         stateToRestore = null
         return true
-    }
-
-    private fun restoreFormFillingState() {
-        val localPdfDocument = pdfDocument ?: return
-        val localStateToRestore = stateToRestore ?: return
-
-        if (localPdfDocument.formEditRecords == localStateToRestore.pdfFormEditRecords) {
-            return
-        }
-
-        pdfFormFillingStateManager?.restoreFormFillingState(localStateToRestore.pdfFormEditRecords)
     }
 
     private fun restoreFormFillingEditText() {
@@ -1595,18 +1642,9 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                 mainScope.launch(start = CoroutineStart.UNDISPATCHED) {
                     formEditActionToJoin?.join()
                     launch {
-                        handler.invalidatedAreas.collect {
-                            val localPageLayoutManager = pageLayoutManager ?: return@collect
-                            if (localPageLayoutManager.visiblePageAreas[it.first] == null)
-                                return@collect
-                            pageManager?.maybeInvalidateAreas(
-                                pageNum = it.first,
-                                visibleArea = localPageLayoutManager.visiblePageAreas[it.first],
-                                currentZoom = zoom,
-                                areasToUpdate = it.second,
-                            )
-                            formWidgetMetadataLoader?.let { loader ->
-                                pageManager?.maybeUpdateFormWidgetMetadata(it.first, loader)
+                        handler.formWidgetUpdates.collect {
+                            onFormWidgetInfoUpdatedListeners.forEach { listener ->
+                                listener.onFormWidgetInfoUpdated(it)
                             }
                         }
                     }
@@ -1715,36 +1753,11 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
             )
 
         formWidgetInteractionHandler =
-            FormWidgetInteractionHandler(context, localPdfDocument, backgroundScope, errorFlow) {
-                formFillingEditText ->
+            FormWidgetInteractionHandler(context, backgroundScope) { formFillingEditText ->
                 this.formFillingEditText = formFillingEditText
             }
 
-        pdfFormFillingStateManager =
-            PdfFormFillingStateManager(
-                localPdfDocument,
-                backgroundScope,
-                errorFlow,
-                onRestoreTaskStarted = { isFormEditStateBeingRestored = true },
-                onRestoreTaskComplete = { pagesInvalidatedAreas ->
-                    if (!isAttachedToVisibleWindow) return@PdfFormFillingStateManager
-
-                    val visiblePageAreas = pageLayoutManager?.visiblePageAreas
-                    visiblePageAreas?.keyIterator()?.forEach { pageNum ->
-                        pagesInvalidatedAreas[pageNum]
-                            ?.map { it.toRectF() }
-                            ?.let { areasToUpdateInPage ->
-                                pageManager?.maybeInvalidateAreas(
-                                    pageNum,
-                                    visiblePageAreas.get(pageNum),
-                                    zoom,
-                                    areasToUpdateInPage,
-                                )
-                            }
-                    }
-                    isFormEditStateBeingRestored = false
-                },
-            )
+        localPdfDocument.addOnPdfContentInvalidatedListener(onPdfContentInvalidatedListener)
 
         val fastScrollCalculator = FastScrollCalculator(context)
         val fastScrollDrawer =
@@ -1782,8 +1795,8 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
                         backgroundScope,
                         topPageMarginPx = context.getDimensions(R.dimen.top_page_margin),
                         pagesPerRow = pagesPerRow,
-                        horizontalPageSpacingPx = horizontalPageSpacing,
-                        verticalPageSpacingPx = verticalPageSpacing,
+                        horizontalPageSpacingPx = horizontalPageSpacing.toFloat(),
+                        verticalPageSpacingPx = verticalPageSpacing.toFloat(),
                         errorFlow = errorFlow,
                         isFormFillingEnabled = isFormFillingEnabled,
                     )
@@ -1972,6 +1985,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         formFillingEditText = null
         startedFetchingAllDimensions = false
         backgroundScope.coroutineContext.cancelChildren()
+        pdfDocument?.removeOnPdfContentInvalidatedListener(onPdfContentInvalidatedListener)
         stopCollectingData()
 
         // Reset zoom and scroll after clearing pageMetadata loader, otherwise they can trigger
@@ -2219,9 +2233,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     @Retention(AnnotationRetention.SOURCE)
     @IntDef(GESTURE_STATE_IDLE, GESTURE_STATE_INTERACTING, GESTURE_STATE_SETTLING)
     public annotation class GestureState
-
-    /** Defines the allowed values for the number of pages displayed per row in the [PdfView]. */
-    @IntDef(SINGLE_PAGE, TWO_PAGE) internal annotation class PagesPerRow
 
     /** Adjusts the position of [PdfView] in response to gestures detected by [GestureTracker] */
     private inner class ZoomScrollGestureHandler : GestureTracker.GestureHandler() {
@@ -2542,10 +2553,10 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
         public const val GESTURE_STATE_SETTLING: Int = 2
 
         /** Represents the configuration for displaying a single page per row (standard display). */
-        internal const val SINGLE_PAGE: Int = 1
+        @RestrictTo(RestrictTo.Scope.LIBRARY) public const val SINGLE_PAGE: Int = 1
 
         /** Represents the configuration for displaying two pages per row (like an open book). */
-        internal const val TWO_PAGE: Int = 2
+        @RestrictTo(RestrictTo.Scope.LIBRARY) public const val TWO_PAGE: Int = 2
 
         /**
          * Vertically aligns the page to the top of the PdfView.

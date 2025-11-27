@@ -2143,9 +2143,11 @@ public final class CustomTabsIntent {
         }
         List<CustomContentAction> actions = new ArrayList<>(bundles.size());
         for (Bundle bundle : bundles) {
-            CustomContentAction action = CustomContentAction.fromBundle(bundle);
-            if (action != null) {
+            try {
+                CustomContentAction action = CustomContentAction.fromBundle(bundle);
                 actions.add(action);
+            } catch (IllegalArgumentException e) {
+                // Ignoring malformed bundles on purpose.
             }
         }
         return Collections.unmodifiableList(actions);

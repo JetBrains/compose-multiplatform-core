@@ -232,7 +232,7 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
     private val movableContentNestedExtractionsPending =
         MultiValueMap<MovableContentStateReference, MovableContentStateReference>()
     private var failedCompositions: MutableList<ControlledComposition>? = null
-    private var compositionsRemoved: MutableSet<ControlledComposition>? = null
+    private var compositionsRemoved: MutableScatterSet<ControlledComposition>? = null
     private var workContinuation: CancellableContinuation<Unit>? = null
     private var concurrentCompositionsOutstanding = 0
     private var isClosed: Boolean = false
@@ -1588,7 +1588,9 @@ public class Recomposer(effectCoroutineContext: CoroutineContext) : CompositionC
         synchronized(stateLock) {
             val compositionsRemoved =
                 compositionsRemoved
-                    ?: mutableSetOf<ControlledComposition>().also { compositionsRemoved = it }
+                    ?: mutableScatterSetOf<ControlledComposition>().also {
+                        compositionsRemoved = it
+                    }
             compositionsRemoved.add(composition)
         }
     }

@@ -27,12 +27,12 @@ import androidx.compose.remote.creation.compose.modifier.background
 import androidx.compose.remote.creation.compose.modifier.height
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.modifier.width
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.player.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import org.junit.Rule
@@ -179,9 +179,9 @@ private fun Container(modifier: RemoteModifier = RemoteModifier, content: @Compo
 @Composable
 @RemoteComposable
 private fun Content(modifier: RemoteModifier = RemoteModifier) {
-    RemoteBox(modifier = modifier.size(48.dp).background(Color(0xFF6200EE)))
-    RemoteBox(modifier = modifier.size(24.dp).background(Color(0xFF03DAC6)))
+    RemoteBox(modifier = modifier.size(48.rdp).background(Color(0xFF6200EE)))
+    RemoteBox(modifier = modifier.size(24.rdp).background(Color(0xFF03DAC6)))
 }
 
-private val Padding = 24.dp
-private val ContainerSize = 100.dp
+private val Padding = 24.rdp
+private val ContainerSize = 100.rdp

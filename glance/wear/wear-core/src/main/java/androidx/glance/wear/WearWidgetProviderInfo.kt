@@ -125,15 +125,6 @@ public constructor(
             "androidx.glance.wear.action.BIND_WIDGET_PROVIDER"
 
         /**
-         * Extra boolean in the intent to signal support for
-         * [androidx.glance.wear.parcel.IWearWidgetProvider] interface.
-         */
-        // TODO: b/459463712 - Remove this when not used anymore.
-        @RestrictTo(LIBRARY_GROUP)
-        public const val EXTRA_KEY_WEAR_WIDGET_PROVIDER_SUPPORTED: String =
-            "androidx.glance.wear.extra.WEAR_WIDGET_PROVIDER_SUPPORTED"
-
-        /**
          * Intent identifier to signal support for [androidx.glance.wear.parcel.IWearWidgetProvider]
          * interface.
          */
@@ -247,5 +238,30 @@ public constructor(
          * Represents a small widget container. Support for this container type is device dependent.
          */
         public const val CONTAINER_TYPE_SMALL: Int = 2
+
+        private const val STRING_CONTAINER_TYPE_FULLSCREEN = "FULLSCREEN"
+        private const val STRING_CONTAINER_TYPE_LARGE = "LARGE"
+        private const val STRING_CONTAINER_TYPE_SMALL = "SMALL"
+
+        @RestrictTo(LIBRARY_GROUP)
+        @JvmStatic
+        public fun containerTypeToString(@ContainerType containerType: Int): String =
+            when (containerType) {
+                CONTAINER_TYPE_FULLSCREEN -> STRING_CONTAINER_TYPE_FULLSCREEN
+                CONTAINER_TYPE_SMALL -> STRING_CONTAINER_TYPE_SMALL
+                CONTAINER_TYPE_LARGE -> STRING_CONTAINER_TYPE_LARGE
+                else -> containerType.toString()
+            }
+
+        @RestrictTo(LIBRARY_GROUP)
+        @JvmStatic
+        @ContainerType
+        public fun containerTypeFromString(input: String): Int? =
+            when (input.uppercase()) {
+                STRING_CONTAINER_TYPE_FULLSCREEN -> CONTAINER_TYPE_FULLSCREEN
+                STRING_CONTAINER_TYPE_SMALL -> CONTAINER_TYPE_SMALL
+                STRING_CONTAINER_TYPE_LARGE -> CONTAINER_TYPE_LARGE
+                else -> null
+            }
     }
 }

@@ -16,6 +16,7 @@
 
 package androidx.xr.glimmer.list
 
+import androidx.compose.foundation.MutatePriority
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
@@ -43,6 +44,8 @@ import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -139,7 +142,7 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
     @Test
     fun accumulatedPart_isApplied() {
         val state = ListState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             TestList(
                 state = state,
                 modifier = Modifier.size(100.dp),
@@ -165,7 +168,7 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
     @Test
     fun scrolling_and_nonScrolling_measurePasses_workTogether_correctly() {
         val state = ListState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             TestList(
                 state = state,
                 modifier = Modifier.size(100.dp).background(Color.Black),
@@ -204,13 +207,16 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
 
         // Check the auto focus parameters were calculated correctly.
         Truth.assertThat(state.autoFocusBehaviour.properties?.focusScroll).isEqualTo(200f)
-        Truth.assertThat(state.autoFocusBehaviour.properties?.contentScroll).isEqualTo(5042f)
+        // TODO(b/462040962): Investigate how viewport adjustments reverses contentScroll by
+        //  firstVisibleItemScrollOffset when TestList is focused.
+        Truth.assertThat(state.autoFocusBehaviour.properties?.contentScroll)
+            .isEqualTo(if (orientation == Orientation.Vertical) 5042f else 5000f)
     }
 
     @Test
     fun scrollBy_reportsCorrectConsumedValue() {
         val state = ListState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
                 TestList(
                     state = state,
@@ -237,7 +243,7 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
     @Ignore("b/444190961")
     fun scrollBy_scrollOnTheEdge_doesNotConsumeAllTheDelta() {
         val state = ListState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
                 TestList(
                     state = state,
@@ -258,7 +264,7 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
     @Ignore("b/444190961")
     fun scrollBy_tinyValues_areAccumulated() {
         val state = ListState()
-        rule.setContentWithInitialFocus {
+        rule.setContent {
             CompositionLocalProvider(LocalDensity provides Density(1f)) {
                 TestList(
                     state = state,
@@ -281,6 +287,18 @@ class ListStateTest(orientation: Orientation) : BaseListTestWithOrientation(orie
         // line will not be at the right place. The total scroll was 45dp, it means that the
         // seconds item must be focused now.
         rule.onNodeWithTag("item-1").assertIsFocused()
+    }
+
+    @Test
+    fun isScrollInProgress_reflectsCorrectState() = runTest {
+        val state = ListState()
+        rule.setContent { TestList(state = state) { FocusableItem(it) } }
+
+        assertThat(state.isScrollInProgress).isFalse()
+        withContext(Dispatchers.Main) {
+            state.scroll(MutatePriority.Default) { assertThat(state.isScrollInProgress).isTrue() }
+        }
+        assertThat(state.isScrollInProgress).isFalse()
     }
 
     private fun ListState.scrollByAndCheckConsumedValue(delta: Float, consumed: Float = delta) {

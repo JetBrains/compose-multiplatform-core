@@ -40,7 +40,7 @@ internal actual class RoomConnectionManager : BaseRoomConnectionManager {
     constructor(
         config: DatabaseConfiguration,
         openDelegate: RoomOpenDelegate,
-        transactionWrapper: TransactionWrapper<*>,
+        transactionWrapper: TransactionWrapper<Any?>,
     ) {
         this.configuration = config
         this.openDelegate = openDelegate

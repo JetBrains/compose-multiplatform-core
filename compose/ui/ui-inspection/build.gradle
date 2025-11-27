@@ -29,7 +29,6 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
     id("androidx.inspection")
 }
 
@@ -105,11 +104,6 @@ android {
 
 inspection {
     name = "compose-ui-inspection.jar"
-    excludedModules.addAll(
-            "org.jetbrains.kotlin:*",
-            "org.jetbrains:annotations",
-            "org.intellij.lang:annotations"
-    )
     allowedModules.addAll(
             "org.jetbrains.kotlin:kotlin-reflect"
     )

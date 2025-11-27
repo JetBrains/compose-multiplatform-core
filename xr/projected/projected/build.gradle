@@ -27,7 +27,6 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.library")
     id("androidx.stableaidl")
-    id("com.android.experimental.built-in-kotlin")
     id("AndroidXComposePlugin")
 }
 

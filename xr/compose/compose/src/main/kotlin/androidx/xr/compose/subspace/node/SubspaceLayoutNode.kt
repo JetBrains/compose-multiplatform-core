@@ -52,10 +52,21 @@ internal fun generateSemanticsId() = lastIdentifier.incrementAndGet()
 private val DefaultDensity = Density(1f)
 
 /**
- * An element in the Subspace layout hierarchy (spatial scene graph), built with Compose UI for
- * subspace.
+ * An element in the Subspace layout hierarchy, representing a node in the spatial scene graph.
+ *
+ * SubspaceLayoutNode is the fundamental building block for creating 3D user interfaces. It is
+ * analogous to `LayoutNode` in the traditional 2D Compose UI system. Each node can have zero or
+ * more children, a [SubspaceModifier], and a [SubspaceMeasurePolicy] that defines its sizing and
+ * layout logic.
+ *
+ * The node manages its lifecycle through [attach] and [detach] methods, which connect it to a
+ * [SubspaceOwner].
  *
  * This class is based on [androidx.compose.ui.node.LayoutNode].
+ *
+ * @see SubspaceOwner
+ * @see SubspaceMeasurePolicy
+ * @see SubspaceModifier
  */
 internal class SubspaceLayoutNode : ComposeSubspaceNode {
     /**
@@ -96,10 +107,10 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
     /**
      * The depth of this node in the [SubspaceLayoutNode] tree hierarchy. The root node has a depth
-     * of 0. Its direct children have a depth of 1, and so on.
+     * of 0.
      *
-     * This value is calculated by traversing up the [parent] chain and is used to sort invalidated
-     * nodes, ensuring parents are processed before their children during measure and layout passes.
+     * This value is calculated when the node is [attach]ed and is used to sort invalidated nodes,
+     * ensuring parents are measured and laid out before their children.
      */
     internal var depth: Int = 0
 
@@ -148,14 +159,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
     private var ignoreMeasureRequests = false
 
-    /**
-     * This function sets up CoreEntity parent/child relationships that reflect the parent/child
-     * relationships of the corresponding SubspaceLayoutNodes. This should be called any time the
-     * `parent` or `coreEntity` fields are updated.
-     */
-    private fun syncCoreEntityHierarchy() {
-        coreEntity?.parent = findCoreEntityParent(this)
-    }
+    private val outerCoordinator
+        get() = nodes.getAll<SubspaceLayoutModifierNode>().firstOrNull()?.requireCoordinator()
 
     /** Inserts a child [SubspaceLayoutNode] at the given [index]. */
     internal fun insertAt(index: Int, instance: SubspaceLayoutNode) {
@@ -243,7 +248,7 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
      * [parent]'s [subspaceOwner].
      */
     internal fun attach(subspaceOwner: SubspaceOwner) {
-        check(this.owner == null) {
+        check(owner == null) {
             "Cannot attach $this as it already is attached. Tree: " + debugTreeToString()
         }
         check(parent == null || parent?.owner == subspaceOwner) {
@@ -255,14 +260,8 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
                 parent?.debugTreeToString()
         }
 
-        this.owner = subspaceOwner
-        var calculatedDepth = 0
-        var nodeParent = parent
-        while (nodeParent != null) {
-            calculatedDepth++
-            nodeParent = nodeParent.parent
-        }
-        this.depth = calculatedDepth
+        owner = subspaceOwner
+        depth = ancestors().fold(0) { i, _ -> i + 1 }
 
         subspaceOwner.onAttach(this)
         syncCoreEntityHierarchy()
@@ -276,6 +275,15 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
     }
 
     /**
+     * This function sets up CoreEntity parent/child relationships that reflect the parent/child
+     * relationships of the corresponding SubspaceLayoutNodes. This should be called any time the
+     * `parent` or `coreEntity` fields are updated.
+     */
+    private fun syncCoreEntityHierarchy() {
+        coreEntity?.parent = findCoreEntityParent()
+    }
+
+    /**
      * Detaches this node from the [owner].
      *
      * The [owner] must not be `null` when this method is called.
@@ -283,13 +291,11 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
      * This will also [detach] all children. After executing, the [owner] will be `null`.
      */
     internal fun detach() {
-        val owner = owner
-
         checkNotNull(owner) {
             "Cannot detach node that is already detached!  Tree: " + parent?.debugTreeToString()
         }
 
-        this.depth = 0
+        depth = 0
         parent?.requestMeasure()
 
         nodes.runOnDetach()
@@ -297,15 +303,17 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         nodes.markAsDetached()
         coreEntity?.dispose()
 
-        owner.onDetach(this)
-        this.owner = null
+        owner?.onDetach(this)
+        owner = null
     }
 
     private inline fun <T> ignoreMeasureRequests(block: () -> T): T {
-        ignoreMeasureRequests = true
-        val result = block()
-        ignoreMeasureRequests = false
-        return result
+        try {
+            ignoreMeasureRequests = true
+            return block()
+        } finally {
+            ignoreMeasureRequests = false
+        }
     }
 
     internal fun requestMeasure() {
@@ -318,59 +326,6 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         owner?.requestLayout(this)
     }
 
-    override fun toString(): String {
-        return measurableLayout.config.getOrElse(SemanticsProperties.TestTag) { super.toString() }
-    }
-
-    /** Call this method to see a dump of the SpatialLayoutNode tree structure. */
-    @Suppress("unused")
-    internal fun debugTreeToString(depth: Int = 0): String {
-        val tree = StringBuilder()
-        val depthString = "  ".repeat(depth)
-        tree.append("$depthString|-${toString()}\n")
-
-        var currentNode: SubspaceModifier.Node? = nodes.head
-        while (currentNode != null && currentNode != nodes.tail) {
-            tree.append("$depthString  *-$currentNode\n")
-            currentNode = currentNode.child
-        }
-
-        children.forEach { child -> tree.append(child.debugTreeToString(depth + 1)) }
-
-        var treeString = tree.toString()
-        if (depth == 0) {
-            // Delete trailing newline
-            treeString = treeString.substring(0, treeString.length - 1)
-        }
-
-        return treeString
-    }
-
-    /** Call this method to see a dump of the Jetpack XR node hierarchy. */
-    @Suppress("unused")
-    internal fun debugEntityTreeToString(depth: Int = 0): String {
-        val tree = StringBuilder()
-        val depthString = "  ".repeat(depth)
-        var nextDepth = depth
-        if (entity != null) {
-            tree.append("$depthString|-$coreEntity -> ${findCoreEntityParent(this)}\n")
-            nextDepth++
-        }
-
-        children.forEach { child -> tree.append(child.debugEntityTreeToString(nextDepth)) }
-
-        var treeString = tree.toString()
-        if (depth == 0 && treeString.isNotEmpty()) {
-            // Delete trailing newline
-            treeString = treeString.substring(0, treeString.length - 1)
-        }
-
-        return treeString
-    }
-
-    private val outerCoordinator
-        get() = nodes.getAll<SubspaceLayoutModifierNode>().firstOrNull()?.requireCoordinator()
-
     /**
      * Measures this layout node using the most recently provided constraints.
      *
@@ -381,6 +336,10 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
     /** Places this layout node using the most recently provided pose. */
     internal fun replace() = outerCoordinator?.replace() ?: measurableLayout.replace()
+
+    override fun toString(): String {
+        return measurableLayout.config.getOrElse(SemanticsProperties.TestTag) { super.toString() }
+    }
 
     /**
      * A [SubspaceMeasurable] and [SubspacePlaceable] object that is used to measure and lay out the
@@ -408,17 +367,94 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
         val isPlaced
             get() = layoutPose != null
 
+        override val pose: Pose
+            get() = layoutPose ?: Pose.Identity
+
+        override val poseInParentEntity: Pose
+            get() = coordinatesInParentEntity?.poseInParentEntity?.compose(pose) ?: pose
+
+        /** The position of this node relative to the root of this Compose hierarchy, in pixels. */
+        override val poseInRoot: Pose
+            get() = parentCoordinates?.poseInRoot?.compose(pose) ?: pose
+
+        /**
+         * The coordinates of the immediate parent in the layout hierarchy.
+         *
+         * It includes application from any [SubspaceLayoutModifierNode] instances in the modifier
+         * chain of this node. This property first checks for any layout modifiers on the current
+         * node. If modifiers are present, it returns the coordinates of the outermost modifier. If
+         * no modifiers are present, it falls back to returning the coordinates of the parent
+         * layout.
+         *
+         * Returns `null` only for the root of the hierarchy.
+         */
+        override val parentCoordinates: SubspaceLayoutCoordinates?
+            get() =
+                nodes.getLast<SubspaceLayoutModifierNode>()?.requireCoordinator()
+                    ?: parentLayoutCoordinates
+
+        /**
+         * The coordinates of the parent layout, skipping any modifiers on this node.
+         *
+         * Returns `null` only for the root of the hierarchy.
+         */
+        override val parentLayoutCoordinates: SubspaceLayoutCoordinates?
+            get() = parent?.measurableLayout
+
+        /**
+         * The layout coordinates up to the nearest parent [CoreEntity], including mutations from
+         * any [SubspaceLayoutModifierNode] instances applied to this node.
+         *
+         * This applies the layout changes of all [SubspaceLayoutModifierNode] instances in the
+         * modifier chain.
+         *
+         * This property continues the coordinate search up the hierarchy, starting with any local
+         * layout modifiers.
+         *
+         * It returns `null` only under a specific condition: when there are no layout modifiers on
+         * the current node AND its immediate parent either is the root or has a `CoreEntity`.
+         */
+        private val coordinatesInParentEntity: SubspaceLayoutCoordinates?
+            get() =
+                nodes.getLast<SubspaceLayoutModifierNode>()?.requireCoordinator()
+                    ?: parentCoordinatesInParentEntity
+
+        /** Traverse up the parent hierarchy until we reach a node with an entity. */
+        internal val parentCoordinatesInParentEntity: SubspaceLayoutCoordinates?
+            get() = if (parent?.entity == null) parent?.measurableLayout else null
+
+        override val semanticsChildren: MutableList<SubspaceSemanticsInfo>
+            get() = mutableListOf<SubspaceSemanticsInfo>().also(::fillOneLayerOfSemanticsWrappers)
+
+        override val semanticsParent: SubspaceSemanticsInfo?
+            get() = ancestors().firstOrNull { it.hasSemantics }?.measurableLayout
+
+        override val semanticsEntity: Entity?
+            get() = coreEntity?.semanticsEntity
+
+        override val size: IntVolumeSize
+            get() = IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
+
+        /**
+         * The semantics configuration of this node.
+         *
+         * This includes all properties attached as modifiers to the current layout node.
+         */
+        override val config: SemanticsConfiguration
+            get() =
+                SemanticsConfiguration().apply {
+                    nodes.getAll<SubspaceSemanticsModifierNode>().forEach { semanticsModifierNode ->
+                        with(semanticsModifierNode) { applySemantics() }
+                    }
+                }
+
         override fun measure(constraints: VolumeConstraints): SubspacePlaceable {
             layoutState = LayoutState.Measuring
-            val placeable = nodes.measureChain(constraints, ::measureJustThis)
+            val placeable = nodes.measureChain(constraints) ?: measureJustThis(constraints)
             lastConstraints = constraints
             layoutState = LayoutState.Idle
             this@SubspaceLayoutNode.measurePending = false
             return placeable
-        }
-
-        override fun adjustParams(params: ParentLayoutParamsAdjustable) {
-            nodes.getAll<ParentLayoutParamsModifier>().forEach { it.adjustParams(params) }
         }
 
         private fun measureJustThis(constraints: VolumeConstraints): SubspacePlaceable {
@@ -489,119 +525,13 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
             layoutPose?.let { placeAt(it) }
         }
 
-        override val pose: Pose
-            get() = layoutPose ?: Pose.Identity
-
-        override val poseInParentEntity: Pose
-            get() = coordinatesInParentEntity?.poseInParentEntity?.compose(pose) ?: pose
-
-        /** The position of this node relative to the root of this Compose hierarchy, in pixels. */
-        override val poseInRoot: Pose
-            get() = parentCoordinates?.poseInRoot?.compose(pose) ?: pose
-
-        /**
-         * The coordinates of the immediate parent in the layout hierarchy.
-         *
-         * It includes application from any [SubspaceLayoutModifierNode] instances in the modifier
-         * chain of this node. This property first checks for any layout modifiers on the current
-         * node. If modifiers are present, it returns the coordinates of the outermost modifier. If
-         * no modifiers are present, it falls back to returning the coordinates of the parent
-         * layout.
-         *
-         * Returns `null` only for the root of the hierarchy.
-         */
-        override val parentCoordinates: SubspaceLayoutCoordinates?
-            get() =
-                nodes.getLast<SubspaceLayoutModifierNode>()?.requireCoordinator()
-                    ?: parentLayoutCoordinates
-
-        /**
-         * The coordinates of the parent layout, skipping any modifiers on this node.
-         *
-         * Returns `null` only for the root of the hierarchy.
-         */
-        override val parentLayoutCoordinates: SubspaceLayoutCoordinates?
-            get() = parent?.measurableLayout
-
-        /**
-         * The layout coordinates up to the nearest parent [CoreEntity], including mutations from
-         * any [SubspaceLayoutModifierNode] instances applied to this node.
-         *
-         * This applies the layout changes of all [SubspaceLayoutModifierNode] instances in the
-         * modifier chain.
-         *
-         * This property continues the coordinate search up the hierarchy, starting with any local
-         * layout modifiers.
-         *
-         * It returns `null` only under a specific condition: when there are no layout modifiers on
-         * the current node AND its immediate parent either is the root or has a `CoreEntity`.
-         */
-        private val coordinatesInParentEntity: SubspaceLayoutCoordinates?
-            get() =
-                nodes.getLast<SubspaceLayoutModifierNode>()?.requireCoordinator()
-                    ?: parentCoordinatesInParentEntity
-
-        /** Traverse up the parent hierarchy until we reach a node with an entity. */
-        internal val parentCoordinatesInParentEntity: SubspaceLayoutCoordinates?
-            get() = if (parent?.entity == null) parent?.measurableLayout else null
-
-        override val semanticsChildren: MutableList<SubspaceSemanticsInfo>
-            get() {
-                val list: MutableList<SubspaceSemanticsInfo> = mutableListOf()
-                fillOneLayerOfSemanticsWrappers(list)
-                return list
-            }
-
-        override val semanticsParent: SubspaceSemanticsInfo?
-            get() {
-                var node: SubspaceLayoutNode? = parent
-                while (node != null) {
-                    if (node.hasSemantics) {
-                        return node.measurableLayout
-                    }
-                    node = node.parent
-                }
-                return null
-            }
-
-        private fun SubspaceLayoutNode.fillOneLayerOfSemanticsWrappers(
-            list: MutableList<SubspaceSemanticsInfo>
-        ) {
-            children.fastForEach { child ->
-                if (child.hasSemantics) {
-                    list.add(child.measurableLayout)
-                } else {
-                    child.fillOneLayerOfSemanticsWrappers(list)
-                }
-            }
+        override fun adjustParams(params: ParentLayoutParamsAdjustable) {
+            nodes.getAll<ParentLayoutParamsModifier>().forEach { it.adjustParams(params) }
         }
-
-        private val SubspaceLayoutNode.hasSemantics: Boolean
-            get() = nodes.getLast<SubspaceSemanticsModifierNode>() != null
-
-        override val semanticsEntity: Entity?
-            get() = coreEntity?.semanticsEntity
-
-        override val size: IntVolumeSize
-            get() = IntVolumeSize(measuredWidth, measuredHeight, measuredDepth)
 
         override fun toString(): String {
             return this@SubspaceLayoutNode.toString()
         }
-
-        /**
-         * The semantics configuration of this node.
-         *
-         * This includes all properties attached as modifiers to the current layout node.
-         */
-        override val config: SemanticsConfiguration
-            get() {
-                val config = SemanticsConfiguration()
-                nodes.getAll<SubspaceSemanticsModifierNode>().forEach {
-                    with(config) { with(it) { applySemantics() } }
-                }
-                return config
-            }
     }
 
     /** Companion object for [SubspaceLayoutNode]. */
@@ -620,10 +550,6 @@ internal class SubspaceLayoutNode : ComposeSubspaceNode {
 
         /** A constructor that creates a new [SubspaceLayoutNode]. */
         val Constructor: () -> SubspaceLayoutNode = { SubspaceLayoutNode() }
-
-        /** Walk up the parent hierarchy to find the closest ancestor attached to a [CoreEntity]. */
-        private fun findCoreEntityParent(node: SubspaceLayoutNode) =
-            generateSequence(node.parent) { it.parent }.firstNotNullOfOrNull { it.coreEntity }
     }
 
     internal enum class LayoutState {
@@ -646,3 +572,61 @@ internal class TailModifierNode : SubspaceModifier.Node() {
         return "<tail>"
     }
 }
+
+/** Walk up the parent hierarchy to find the closest ancestor attached to a [CoreEntity]. */
+private fun SubspaceLayoutNode.findCoreEntityParent() =
+    ancestors().firstNotNullOfOrNull { it.coreEntity }
+
+internal fun SubspaceLayoutNode.ancestors(): Sequence<SubspaceLayoutNode> =
+    generateSequence(parent) { it.parent }
+
+/** Call this method to see a dump of the SpatialLayoutNode tree structure. */
+internal fun SubspaceLayoutNode.debugTreeToString(depth: Int = 0): String = buildString {
+    val depthString = "  ".repeat(depth)
+    append("$depthString|-${toString()}\n")
+
+    var currentNode: SubspaceModifier.Node? = nodes.head
+    while (currentNode != null && currentNode != nodes.tail) {
+        append("$depthString  *-$currentNode\n")
+        currentNode = currentNode.child
+    }
+
+    children.forEach { child -> append(child.debugTreeToString(depth + 1)) }
+
+    if (depth == 0 && isNotEmpty()) {
+        // Delete trailing newline
+        dropLast(1)
+    }
+}
+
+/** Call this method to see a dump of the Jetpack XR node hierarchy. */
+internal fun SubspaceLayoutNode.debugEntityTreeToString(depth: Int = 0): String = buildString {
+    val depthString = "  ".repeat(depth)
+    var nextDepth = depth
+    if (entity != null) {
+        append("$depthString|-$coreEntity -> ${findCoreEntityParent()}\n")
+        nextDepth++
+    }
+
+    children.forEach { child -> append(child.debugEntityTreeToString(nextDepth)) }
+
+    if (depth == 0 && isNotEmpty()) {
+        // Delete trailing newline
+        dropLast(1)
+    }
+}
+
+private fun SubspaceLayoutNode.fillOneLayerOfSemanticsWrappers(
+    list: MutableList<SubspaceSemanticsInfo>
+) {
+    children.fastForEach { child ->
+        if (child.hasSemantics) {
+            list.add(child.measurableLayout)
+        } else {
+            child.fillOneLayerOfSemanticsWrappers(list)
+        }
+    }
+}
+
+private val SubspaceLayoutNode.hasSemantics: Boolean
+    get() = nodes.getLast<SubspaceSemanticsModifierNode>() != null

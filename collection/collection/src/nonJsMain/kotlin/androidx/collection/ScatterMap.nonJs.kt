@@ -182,6 +182,8 @@ public actual sealed class ScatterMap<K, V> {
     public actual val size: Int
         get() = _size
 
+    private var mapWrapper: Map<K, V>? = null
+
     public actual fun any(): Boolean = _size != 0
 
     public actual fun none(): Boolean = _size == 0
@@ -433,13 +435,15 @@ public actual sealed class ScatterMap<K, V> {
         return -1
     }
 
-    public actual fun asMap(): Map<K, V> = MapWrapper(this)
+    public actual fun asMap(): Map<K, V> = mapWrapper ?: MapWrapper(this).also { mapWrapper = it }
 }
 
 public actual class MutableScatterMap<K, V> @JvmOverloads actual constructor(initialCapacity: Int) :
     ScatterMap<K, V>() {
     // Number of entries we can add before we need to grow
     private var growthLimit = 0
+
+    private var mutableMapWrapper: MutableMap<K, V>? = null
 
     init {
         requirePrecondition(initialCapacity >= 0) { "Capacity must be a positive value." }
@@ -853,7 +857,8 @@ public actual class MutableScatterMap<K, V> @JvmOverloads actual constructor(ini
         }
     }
 
-    public actual fun asMutableMap(): MutableMap<K, V> = MutableMapWrapper(this)
+    public actual fun asMutableMap(): MutableMap<K, V> =
+        mutableMapWrapper ?: MutableMapWrapper(this).also { mutableMapWrapper = it }
 }
 
 private class MapEntry<K, V>(override val key: K, override val value: V) : Map.Entry<K, V>

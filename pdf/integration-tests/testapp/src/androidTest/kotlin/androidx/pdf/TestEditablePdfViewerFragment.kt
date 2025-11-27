@@ -43,11 +43,18 @@ internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
 
     val pdfLoadingIdlingResource = PdfIdlingResource(PDF_LOAD_RESOURCE_NAME)
     val pdfScrollIdlingResource = PdfIdlingResource(PDF_SCROLL_RESOURCE_NAME)
+    val pdfApplyEditsIdlingResource = PdfIdlingResource(APPLY_EDITS_RESOURCE_NAME)
 
     var pdfDocument: PdfDocument? = null
     var documentLoaded = false
     var documentError: Throwable? = null
     private var hostView: ConstraintLayout? = null
+
+    var onApplyEditsSuccessCalled = false
+    var onApplyEditsFailedCalled = false
+
+    var onEnterEditModeCalled = false
+    var onExitEditModeCalled = false
 
     private var gestureStateChangedListener: PdfView.OnGestureStateChangedListener? = null
 
@@ -101,6 +108,28 @@ internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
         pdfLoadingIdlingResource.decrement()
     }
 
+    override fun onApplyEditsSuccess(handle: PdfWriteHandle) {
+        super.onApplyEditsSuccess(handle)
+        onApplyEditsSuccessCalled = true
+        pdfApplyEditsIdlingResource.decrement()
+    }
+
+    override fun onApplyEditsFailed(error: Throwable) {
+        super.onApplyEditsFailed(error)
+        onApplyEditsFailedCalled = true
+        pdfApplyEditsIdlingResource.decrement()
+    }
+
+    override fun onEnterEditMode() {
+        super.onEnterEditMode()
+        onEnterEditModeCalled = true
+    }
+
+    override fun onExitEditMode() {
+        super.onExitEditMode()
+        onExitEditModeCalled = true
+    }
+
     fun setIsAnnotationIntentResolvable(value: Boolean) {
         setAnnotationIntentResolvability(value)
     }
@@ -109,6 +138,7 @@ internal class TestEditablePdfViewerFragment : EditablePdfViewerFragment {
         // Resource name must be unique to avoid conflicts while running multiple test scenarios
         private val PDF_LOAD_RESOURCE_NAME = "PdfLoad-${UUID.randomUUID()}"
         private val PDF_SCROLL_RESOURCE_NAME = "PdfScroll-${UUID.randomUUID()}"
+        private val APPLY_EDITS_RESOURCE_NAME = "ApplyEdits-${UUID.randomUUID()}"
 
         fun handleInsets(hostView: View) {
             ViewCompat.setOnApplyWindowInsetsListener(hostView) { view, insets ->

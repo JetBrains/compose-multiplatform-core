@@ -60,30 +60,17 @@ abstract class VerifyDependencyVersionsTask : DefaultTask() {
     }
 
     private fun verifyDependencyVersion(dependency: AndroidXDependency) {
-        // If the version is unspecified then treat as an alpha version. If the depending project's
-        // version is unspecified then it won't matter, and if the dependency's version is
-        // unspecified then any non alpha project won't be able to depend on it to ensure safety.
-        val projectVersionExtra =
-            if (version.get() == AndroidXExtension.DEFAULT_UNSPECIFIED_VERSION) {
-                "-alpha01"
-            } else {
-                Version(version.get()).extra ?: ""
-            }
-        val dependencyVersionExtra =
-            if (dependency.version == AndroidXExtension.DEFAULT_UNSPECIFIED_VERSION) {
-                "-alpha01"
-            } else {
-                Version(dependency.version).extra ?: ""
-            }
-        val projectReleasePhase = releasePhase(projectVersionExtra)
+        val projectVersion = version.get()
+        val dependencyVersion = dependency.version
+        val projectReleasePhase = releasePhase(projectVersion)
         if (projectReleasePhase < 0) {
-            throw GradleException("Project has unexpected release phase $projectVersionExtra")
+            throw GradleException("Project has unexpected release phase $projectVersion")
         }
-        val dependencyReleasePhase = releasePhase(dependencyVersionExtra)
+        val dependencyReleasePhase = releasePhase(dependencyVersion)
         if (dependencyReleasePhase < 0) {
             throw GradleException(
                 "Dependency ${dependency.group}:${dependency.name}" +
-                    ":${dependency.version} has unexpected release phase $dependencyVersionExtra"
+                    ":${dependency.version} has unexpected release phase $dependencyVersion"
             )
         }
         if (dependencyReleasePhase < projectReleasePhase) {
@@ -97,21 +84,22 @@ abstract class VerifyDependencyVersionsTask : DefaultTask() {
         }
     }
 
-    private fun releasePhase(versionExtra: String): Int {
-        return if (versionExtra == "") {
-            4
-        } else if (versionExtra.startsWith("-rc")) {
-            3
-        } else if (versionExtra.startsWith("-beta")) {
-            2
-        } else if (
-            versionExtra.startsWith("-alpha") ||
-                versionExtra.startsWith("-qpreview") ||
-                versionExtra.startsWith("-dev")
-        ) {
-            1
-        } else {
-            -1
+    private fun releasePhase(versionString: String): Int {
+        // If the version is unspecified then treat as an alpha version. If the depending project's
+        // version is unspecified then it won't matter, and if the dependency's version is
+        // unspecified then any non alpha project won't be able to depend on it to ensure safety.
+        val version =
+            if (versionString != AndroidXExtension.DEFAULT_UNSPECIFIED_VERSION) {
+                Version(versionString)
+            } else {
+                return 1
+            }
+        return when {
+            version.isStable() -> 4
+            version.isRC() -> 3
+            version.isBeta() -> 2
+            version.isAlpha() || version.isDev() || version.isPrereleasePrefix("qpreview") -> 1
+            else -> -1
         }
     }
 }

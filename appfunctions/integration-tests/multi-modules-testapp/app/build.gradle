@@ -19,8 +19,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    // Remove when b/442128557 is fixed
-    id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
 
@@ -28,21 +26,7 @@ android {
     namespace = "androidx.appfunctions.integration.testapp"
     compileSdk = 36
     defaultConfig {
-        applicationId = "androidx.appfunctions.integration.testapp"
         minSdk = 33
-        ksp {
-            arg("appfunctions:aggregateAppFunctions", "true")
-            arg("appfunctions:generateMetadataFromSchema", "true")
-        }
-    }
-    buildTypes {
-        // Release build is not used when running AndroidX Test. This is only used to
-        // manually examine the output APK.
-        release {
-            minifyEnabled = true
-            shrinkResources = true
-            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
-        }
     }
     // Prevent assets file from being compressed. This is for Uri access test.
     aaptOptions {
@@ -51,9 +35,14 @@ android {
 }
 
 dependencies {
-    androidTestImplementation(libs.kotlinCoroutinesAndroid)
-    androidTestImplementation(project(":appfunctions:appfunctions"))
-    androidTestImplementation(project(":appfunctions:appfunctions-service"))
+    implementation(libs.kotlinCoroutinesAndroid)
+    implementation(project(":appfunctions:appfunctions"))
+    implementation(project(":appfunctions:appfunctions-service"))
+    implementation(project(":appfunctions:integration-tests:multi-modules-testapp:shared-library"))
+    implementation("androidx.appsearch:appsearch:1.1.0-rc01")
+    implementation("androidx.appsearch:appsearch-platform-storage:1.1.0-rc01")
+    implementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
+    ksp(project(":appfunctions:appfunctions-compiler"))
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.kotlinCoroutinesTest)
@@ -61,31 +50,11 @@ dependencies {
     androidTestImplementation(libs.guavaAndroid)
     androidTestImplementation(libs.testMonitor)
     androidTestImplementation(libs.kotlinTest)
-    androidTestImplementation("androidx.appsearch:appsearch:1.1.0-rc01")
-    androidTestImplementation("androidx.appsearch:appsearch-platform-storage:1.1.0-rc01")
-    androidTestImplementation('androidx.concurrent:concurrent-futures-ktx:1.1.0')
-    androidTestImplementation(project(":appfunctions:integration-tests:multi-modules-testapp:shared-library"))
-   kspAndroidTest(project(":appfunctions:appfunctions-compiler"))
 }
 
-// TODO(b/452807124): Remove when we migrate to built-in-kotlin.
-// Work-around for b/452908579. We "undo" the change that the org.jetbrains.kotlin.android plugin
-// applies when configuring the default stdlib:
-// https://github.com/JetBrains/kotlin/blob/master/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/stdlibDependencyManagement.kt
-kotlin.target.compilations.configureEach { compilation ->
-    compilation.kotlinSourceSets.forAll { sourceSet ->
-        if (sourceSet.name != "main") return
-
-        project.configurations.named(sourceSet.apiConfigurationName).configure { config ->
-            config.withDependencies { dependencySet ->
-                dependencySet.remove(
-                        project.dependencies.create(
-                                "org.jetbrains.kotlin:kotlin-stdlib:${kotlin.coreLibrariesVersion}"
-                        )
-                )
-            }
-        }
-    }
+ksp {
+    arg("appfunctions:aggregateAppFunctions", "true")
+    arg("appfunctions:generateMetadataFromSchema", "true")
 }
 
 // TODO(b/456071824): Remove this workaround

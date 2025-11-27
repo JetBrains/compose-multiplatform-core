@@ -33,6 +33,7 @@ import androidx.xr.scenecore.runtime.KhronosPbrMaterialSpec
 import androidx.xr.scenecore.runtime.TextureSampler
 import com.google.ar.imp.view.View
 import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.CompletableDeferred
 
 /**
  * Fake implementation of the JNI API for communicating with the Impress Split Engine instance for
@@ -42,7 +43,7 @@ import com.google.common.util.concurrent.ListenableFuture
 public class FakeImpressApiImpl : ImpressApi {
     internal data class AnimationInProgress(
         var name: String?,
-        var fireOnDone: ResolvableFuture<Void?>,
+        var fireOnDone: ResolvableFuture<Void?>?,
     )
 
     /** Test bookkeeping data for a Android Surface */
@@ -128,6 +129,7 @@ public class FakeImpressApiImpl : ImpressApi {
     private var nextTextureId: Long = 1
     private var nextMaterialId: Long = 1
     private var currentEnvironmentLightId: Long = -1
+    private val activeAnimations = mutableMapOf<ImpressNode, CompletableDeferred<Unit>>()
 
     override fun setup(view: View?) {}
 
@@ -259,23 +261,16 @@ public class FakeImpressApiImpl : ImpressApi {
         animationName: String?,
         looping: Boolean,
     ): Void? {
-        val future = ResolvableFuture.create<Void?>()
         if (getGltfNodeData(impressNode) == null) {
             throw IllegalArgumentException("Impress node not found")
         }
-        val animationInProgress = AnimationInProgress(animationName, future)
+        val animationInProgress = AnimationInProgress(animationName, null)
         if (looping) {
             impressLoopAnimatedNodes[impressNode] = animationInProgress
         } else {
             impressAnimatedNodes[impressNode] = animationInProgress
         }
-        try {
-            return future.get()
-        } catch (e: Exception) {
-            impressLoopAnimatedNodes.remove(impressNode)
-            impressAnimatedNodes.remove(impressNode)
-            throw e
-        }
+        return null
     }
 
     @Suppress("RestrictTo", "AsyncSuffixFuture")
@@ -299,6 +294,8 @@ public class FakeImpressApiImpl : ImpressApi {
     }
 
     override fun stopGltfModelAnimation(impressNode: ImpressNode) {
+        activeAnimations[impressNode]?.complete(Unit)
+
         when {
             getGltfNodeData(impressNode) == null ->
                 throw IllegalArgumentException("Impress node not found")

@@ -28,7 +28,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -46,6 +45,8 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(project(":xr:runtime:runtime-testing"))
     testImplementation(project(":xr:scenecore:scenecore-testing"))
+    testImplementation( "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation(libs.mockitoKotlin)
 
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testExtJunit)

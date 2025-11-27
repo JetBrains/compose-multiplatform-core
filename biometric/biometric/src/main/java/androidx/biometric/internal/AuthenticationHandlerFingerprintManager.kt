@@ -88,22 +88,13 @@ internal class AuthenticationHandlerFingerprintManager(
         }
 
     private val uiStateObserver =
-        object : AuthenticationUiStateObserver {
-            private var negativeButtonJob: Job? = null
-
-            override fun connectObservers() {
-                negativeButtonJob =
-                    lifecycleOwner.lifecycleScope.launch {
-                        viewModel.isNegativeButtonPressPending.collect {
-                            authenticationManager.isNegativeButtonPressPendingObserver()
-                        }
+        object : AuthenticationUiStateObserver() {
+            override fun createObserverJob(): Job =
+                lifecycleOwner.lifecycleScope.launch {
+                    viewModel.isNegativeButtonPressPending.collect {
+                        authenticationManager.isNegativeButtonPressPendingObserver()
                     }
-            }
-
-            override fun disconnectObservers() {
-                negativeButtonJob?.cancel()
-                negativeButtonJob = null
-            }
+                }
         }
 
     init {

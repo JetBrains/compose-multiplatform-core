@@ -172,8 +172,18 @@ public class FakeSurfaceEntity(private val feature: SurfaceFeature? = null) :
      * [getPerceivedResolution]. This can be modified in tests to simulate different perceived
      * resolution.
      */
-    public var perceivedResolutionResult: PerceivedResolutionResult =
+    private var perceivedResolutionResult: PerceivedResolutionResult =
         PerceivedResolutionResult.InvalidCameraView()
+
+    /**
+     * For test purposes only.
+     *
+     * Sets the [androidx.xr.scenecore.runtime.PerceivedResolutionResult] that will be returned by
+     * [getPerceivedResolution].
+     */
+    public fun setPerceivedResolution(perceivedResolution: PerceivedResolutionResult) {
+        this.perceivedResolutionResult = perceivedResolution
+    }
 
     /**
      * Gets the perceived resolution of the entity in the camera view.

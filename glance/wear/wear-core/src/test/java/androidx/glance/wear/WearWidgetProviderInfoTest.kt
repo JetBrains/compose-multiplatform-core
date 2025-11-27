@@ -231,6 +231,51 @@ class WearWidgetProviderInfoTest {
     }
 
     @Test
+    fun parseFromStringType_parseProviderInfo() {
+        val serviceInfo = createServiceInfo(service)
+        val info =
+            getXml(R.xml.wear_widget_provider_info_string_type)
+                .parseWearWidgetProviderInfo(
+                    context.resources,
+                    context.packageManager,
+                    service,
+                    serviceInfo,
+                    defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_FULLSCREEN,
+                    defaultGroup = "default.group",
+                )
+
+        assertThat(info.preferredContainerType).isEqualTo(ContainerInfo.CONTAINER_TYPE_LARGE)
+        assertThat(info.containers).hasSize(2)
+        assertThat(info.containers)
+            .containsExactlyElementsIn(
+                listOf(
+                    ContainerInfo(
+                        ContainerInfo.CONTAINER_TYPE_SMALL,
+                        android.R.drawable.ic_menu_add,
+                    ),
+                    ContainerInfo(
+                        ContainerInfo.CONTAINER_TYPE_LARGE,
+                        android.R.drawable.ic_menu_send,
+                    ),
+                )
+            )
+    }
+
+    @Test(expected = XmlPullParserException::class)
+    fun parseFromInvalidStringType_throwsException() {
+        val serviceInfo = createServiceInfo(service)
+        getXml(R.xml.wear_widget_provider_info_invalid_string_type)
+            .parseWearWidgetProviderInfo(
+                context.resources,
+                context.packageManager,
+                service,
+                serviceInfo,
+                defaultPreferredContainerType = ContainerInfo.CONTAINER_TYPE_SMALL,
+                defaultGroup = "default.group",
+            )
+    }
+
+    @Test
     fun parseWearWidgetProviderInfo_whenInvalidPreferredType_forcesFirstType() {
         val serviceInfo = createServiceInfo(service)
 

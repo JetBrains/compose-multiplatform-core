@@ -475,6 +475,7 @@ public class VisibilityStore {
                 Arrays.asList(VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_SCHEMA,
                         VisibilityPermissionConfig.SCHEMA),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ Collections.emptyMap(),
                 /*forceOverride=*/ true,
                 /*version=*/ VisibilityToDocumentConverter.SCHEMA_VERSION_LATEST,
                 /*setSchemaStatsBuilder=*/ null,
@@ -492,6 +493,7 @@ public class VisibilityStore {
                         Collections.singletonList(
                                 VisibilityToDocumentConverter.ANDROID_V_OVERLAY_SCHEMA),
                         /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ Collections.emptyMap(),
                         /*forceOverride=*/ true,
                         /*version=*/ VisibilityToDocumentConverter
                                 .ANDROID_V_OVERLAY_SCHEMA_VERSION_LATEST,
@@ -555,6 +557,7 @@ public class VisibilityStore {
                         Collections.singletonList(
                                 VisibilityToDocumentConverter.ANDROID_V_OVERLAY_SCHEMA),
                         /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ Collections.emptyMap(),
                         /*forceOverride=*/ true,  // force update to nest version.
                         VisibilityToDocumentConverter.ANDROID_V_OVERLAY_SCHEMA_VERSION_LATEST,
                         /*setSchemaStatsBuilder=*/ null,
@@ -607,6 +610,7 @@ public class VisibilityStore {
                     Arrays.asList(VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_SCHEMA,
                             VisibilityPermissionConfig.SCHEMA),
                     /*visibilityConfigs=*/ Collections.emptyList(),
+                    /*accountPropertyPaths=*/ Collections.emptyMap(),
                     /*forceOverride=*/ true,
                     /*version=*/ VisibilityToDocumentConverter.SCHEMA_VERSION_LATEST,
                     /*setSchemaStatsBuilder=*/ null,
@@ -626,6 +630,7 @@ public class VisibilityStore {
                     Arrays.asList(VisibilityToDocumentConverter.VISIBILITY_DOCUMENT_SCHEMA,
                             VisibilityPermissionConfig.SCHEMA),
                     /*visibilityConfigs=*/ Collections.emptyList(),
+                    /*accountPropertyPaths=*/ Collections.emptyMap(),
                     /*forceOverride=*/ false,
                     /*version=*/ VisibilityToDocumentConverter.SCHEMA_VERSION_LATEST,
                     /*setSchemaStatsBuilder=*/ null,
@@ -666,6 +671,7 @@ public class VisibilityStore {
                     Collections.singletonList(
                             VisibilityToDocumentConverter.ANDROID_V_OVERLAY_SCHEMA),
                     /*visibilityConfigs=*/ Collections.emptyList(),
+                    /*accountPropertyPaths=*/ Collections.emptyMap(),
                     /*forceOverride=*/ false,
                     VisibilityToDocumentConverter.ANDROID_V_OVERLAY_SCHEMA_VERSION_LATEST,
                     /*setSchemaStatsBuilder=*/ null,

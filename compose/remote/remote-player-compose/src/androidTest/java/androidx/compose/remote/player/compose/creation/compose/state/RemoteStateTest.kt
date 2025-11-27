@@ -23,12 +23,12 @@ import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberRemoteFloat
 import androidx.compose.remote.creation.compose.state.rememberRemoteString
 import androidx.compose.remote.player.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
-import androidx.compose.ui.unit.dp
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
@@ -55,7 +55,7 @@ class RemoteStateTest {
         var configurableWidth2Id = 0
 
         composeTestRule.runTest {
-            RemoteColumn(modifier = RemoteModifier.size(100.dp)) {
+            RemoteColumn(modifier = RemoteModifier.size(100.rdp)) {
                 val width = rememberRemoteFloat { componentWidth() }
 
                 val configurableWidth = rememberRemoteFloat(name = "configurableWidth") { width }
@@ -87,7 +87,7 @@ class RemoteStateTest {
         var namedId2 = 0
 
         composeTestRule.runTest {
-            RemoteColumn(modifier = RemoteModifier.size(100.dp)) {
+            RemoteColumn(modifier = RemoteModifier.size(100.rdp)) {
                 val valString = rememberRemoteString { "Hello" }
 
                 val namedString1 = rememberRemoteString(name = "named1") { "Hello" }

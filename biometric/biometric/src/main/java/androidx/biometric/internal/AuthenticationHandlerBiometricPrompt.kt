@@ -109,29 +109,20 @@ internal class AuthenticationHandlerBiometricPrompt(
             }
 
         val uiStateObserver =
-            object : AuthenticationUiStateObserver {
-                private var uiStateObserverJob: Job? = null
-
-                override fun connectObservers() {
-                    uiStateObserverJob =
-                        lifecycleOwner.lifecycleScope.launch {
-                            launch {
-                                viewModel.isNegativeButtonPressPending.collect {
-                                    authenticationManager.isNegativeButtonPressPendingObserver()
-                                }
-                            }
-                            launch {
-                                viewModel.isMoreOptionsButtonPressPending.collect {
-                                    isMoreOptionsButtonPressPendingObserver()
-                                }
+            object : AuthenticationUiStateObserver() {
+                override fun createObserverJob(): Job =
+                    lifecycleOwner.lifecycleScope.launch {
+                        launch {
+                            viewModel.isNegativeButtonPressPending.collect {
+                                authenticationManager.isNegativeButtonPressPendingObserver()
                             }
                         }
-                }
-
-                override fun disconnectObservers() {
-                    uiStateObserverJob?.cancel()
-                    uiStateObserverJob = null
-                }
+                        launch {
+                            viewModel.isMoreOptionsButtonPressPending.collect {
+                                isMoreOptionsButtonPressPendingObserver()
+                            }
+                        }
+                    }
             }
         authenticationManager.initialize(resultDispatcher, uiStateObserver)
     }

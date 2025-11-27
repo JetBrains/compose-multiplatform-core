@@ -1916,20 +1916,16 @@ class DaoKotlinCodeGenTest : BaseDaoKotlinCodeGenTest() {
                 @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
                 fun getArtistWithSongsSet(): Map<Artist, Set<Song>>
 
-                @Suppress("DEPRECATION") // For @MapInfo
-                @MapInfo(valueColumn = "songCount")
                 @Query(
                     "SELECT Artist.*, COUNT(songId) as songCount " +
                     "FROM Artist JOIN Song ON Artist.artistId = Song.artistKey " +
                     "GROUP BY artistId"
                 )
-                fun getArtistSongCount(): Map<Artist, Int>
+                fun getArtistSongCount(): Map<Artist, @MapColumn("songCount") Int>
 
                 @SuppressWarnings(RoomWarnings.QUERY_MISMATCH)
-                @Suppress("DEPRECATION") // For @MapInfo
-                @MapInfo(valueColumn = "songId")
                 @Query("SELECT * FROM Artist JOIN Song ON Artist.artistId = Song.artistKey")
-                fun getArtistWithSongIds(): Map<Artist, List<String>>
+                fun getArtistWithSongIds(): Map<Artist, List<@MapColumn("songId") String>>
             }
 
             @Entity

@@ -18,6 +18,7 @@ package androidx.credentials.registry.provider
 
 import android.content.Context
 import android.os.CancellationSignal
+import androidx.annotation.RestrictTo
 import androidx.credentials.CredentialManagerCallback
 import java.util.concurrent.Executor
 import kotlin.coroutines.resume
@@ -56,6 +57,23 @@ public abstract class RegistryManager internal constructor() {
          */
         public const val ACTION_GET_CREDENTIAL: String =
             "androidx.credentials.registry.provider.action.GET_CREDENTIAL"
+
+        /**
+         * The intent action name that the Credential Manager used to find and invoke your activity
+         * when the user attempts to create a credential through your application. Your activity
+         * will be launched and you should use the
+         * [androidx.credentials.provider.PendingIntentHandler.retrieveProviderCreateCredentialRequest]
+         * API to retrieve information contained in
+         * [androidx.credentials.provider.ProviderCreateCredentialRequest].
+         *
+         * Next, perform the necessary steps to generate a response for the given request. Pass the
+         * result back using one of the
+         * [androidx.credentials.provider.PendingIntentHandler.setCreateCredentialResponse] and
+         * [androidx.credentials.provider.PendingIntentHandler.setCreateCredentialException] APIs.
+         */
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+        public const val ACTION_CREATE_CREDENTIAL: String =
+            "androidx.credentials.registry.provider.action.CREATE_CREDENTIAL"
     }
 
     /**
@@ -107,6 +125,55 @@ public abstract class RegistryManager internal constructor() {
     }
 
     /**
+     * Registers creation options with the Credential Manager.
+     *
+     * The registries will then be used by the Credential Manager when handling an app calling
+     * request (see [androidx.credentials.CredentialManager]). The Credential Manager will determine
+     * if the registry contains some data qualified as a candidate to fulfill the given request, and
+     * if so it will surface a user selector UI to collect the user decision for whether to proceed
+     * with the operation.
+     *
+     * @param request the request containing the creation options to register
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public suspend fun registerCreationOptions(
+        request: RegisterCreationOptionsRequest
+    ): RegisterCreationOptionsResponse = suspendCancellableCoroutine { continuation ->
+        // Any Android API that supports cancellation should be configured to propagate
+        // coroutine cancellation as follows:
+        val canceller = CancellationSignal()
+        continuation.invokeOnCancellation { canceller.cancel() }
+
+        val callback =
+            object :
+                CredentialManagerCallback<
+                    RegisterCreationOptionsResponse,
+                    RegisterCreationOptionsException,
+                > {
+                override fun onResult(result: RegisterCreationOptionsResponse) {
+                    if (continuation.isActive) {
+                        continuation.resume(result)
+                    }
+                }
+
+                override fun onError(e: RegisterCreationOptionsException) {
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(e)
+                    }
+                }
+            }
+
+        registerCreationOptionsAsync(
+            request,
+            canceller,
+            // Use a direct executor to avoid extra dispatch. Resuming the continuation will
+            // handle getting to the right thread or pool via the ContinuationInterceptor.
+            Runnable::run,
+            callback,
+        )
+    }
+
+    /**
      * Clear registries that were registered using the [registerCredentials] (Kotlin) or
      * [registerCredentialsAsync] (Java) API.
      *
@@ -144,6 +211,44 @@ public abstract class RegistryManager internal constructor() {
     }
 
     /**
+     * Clear creation options that were registered using the [registerCreationOptions] (Kotlin) or
+     * [registerCreationOptionsAsync] (Java) API.
+     *
+     * @param request the request to specify clearing configurations
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public suspend fun clearCreationOptions(
+        request: ClearCreationOptionsRequest
+    ): ClearCreationOptionsResponse = suspendCancellableCoroutine { continuation ->
+        val callback =
+            object :
+                CredentialManagerCallback<
+                    ClearCreationOptionsResponse,
+                    ClearCreationOptionsException,
+                > {
+                override fun onResult(result: ClearCreationOptionsResponse) {
+                    if (continuation.isActive) {
+                        continuation.resume(result)
+                    }
+                }
+
+                override fun onError(e: ClearCreationOptionsException) {
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(e)
+                    }
+                }
+            }
+
+        clearCreationOptionsAsync(
+            request,
+            // Use a direct executor to avoid extra dispatch. Resuming the continuation will
+            // handle getting to the right thread or pool via the ContinuationInterceptor.
+            Runnable::run,
+            callback,
+        )
+    }
+
+    /**
      * Registers credentials with the Credential Manager.
      *
      * This API uses callbacks instead of Kotlin coroutines.
@@ -168,6 +273,34 @@ public abstract class RegistryManager internal constructor() {
     )
 
     /**
+     * Registers creation options with the Credential Manager.
+     *
+     * This API uses callbacks instead of Kotlin coroutines.
+     *
+     * The registries will then be used by the Credential Manager when handling an app calling
+     * request (see [androidx.credentials.CredentialManager]). The Credential Manager will determine
+     * if the registry contains some data qualified as a candidate to fulfill the given request, and
+     * if so it will surface a user selector UI to collect the user decision for whether to proceed
+     * with the operation.
+     *
+     * @param request the request containing the creation options to register
+     * @param cancellationSignal an optional signal that allows for cancelling this call
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract fun registerCreationOptionsAsync(
+        request: RegisterCreationOptionsRequest,
+        cancellationSignal: CancellationSignal?,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<
+                RegisterCreationOptionsResponse,
+                RegisterCreationOptionsException,
+            >,
+    )
+
+    /**
      * Clear registries that were registered using the [registerCredentials] (Kotlin) or
      * [registerCredentialsAsync] (Java) API.
      *
@@ -185,5 +318,23 @@ public abstract class RegistryManager internal constructor() {
                 ClearCredentialRegistryResponse,
                 ClearCredentialRegistryException,
             >,
+    )
+
+    /**
+     * Clear creation options that were registered using the [registerCreationOptions] (Kotlin) or
+     * [registerCreationOptionsAsync] (Java) API.
+     *
+     * This API uses callbacks instead of Kotlin coroutines.
+     *
+     * @param request the request to specify clearing configurations
+     * @param executor the callback will take place on this executor
+     * @param callback the callback invoked when the request succeeds or fails
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public abstract fun clearCreationOptionsAsync(
+        request: ClearCreationOptionsRequest,
+        executor: Executor,
+        callback:
+            CredentialManagerCallback<ClearCreationOptionsResponse, ClearCreationOptionsException>,
     )
 }

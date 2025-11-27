@@ -43,8 +43,10 @@ import java.util.function.Consumer
  * Widget panels and geometric models, set the background environment, and anchor content to the
  * real world.
  */
+// TODO: b/455593773 - Restrict ctor once YTXR ports to JXR proper, and is no longer a chimeric app.
 @Suppress("NotCloseable")
-public class Scene internal constructor() : SessionConnector {
+public class Scene @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public constructor() :
+    SessionConnector {
 
     internal val entityManager = EntityManager()
 
@@ -201,6 +203,7 @@ public class Scene internal constructor() : SessionConnector {
         entityManager.clear()
         sceneRuntime.removeSpatialCapabilitiesChangedListener(rtSpatialCapabilitiesListener)
         spatialCapabilitiesListeners.keys.forEach { removeSpatialCapabilitiesChangedListener(it) }
+        keyEntity = null
         clearSpatialModeChangedListener()
         clearSpatialVisibilityChangedListener()
         removeSceneFromCache(this)

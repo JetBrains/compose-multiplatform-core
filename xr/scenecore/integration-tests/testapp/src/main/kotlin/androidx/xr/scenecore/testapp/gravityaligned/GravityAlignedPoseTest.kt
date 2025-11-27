@@ -107,21 +107,25 @@ class GravityAlignedPoseTest : AppCompatActivity() {
         // Panel pose relative to PARENT.
         val childPanelPoseParent =
             Pose(Vector3(0.4f, 0f, 0.1f), Quaternion.fromAxisAngle(Vector3.Forward, 15f))
+        // Panel pose relative to ACTIVITY.
+        val childPanelPoseActivity =
+            Pose(Vector3(0.4f, 0f, 0.1f), Quaternion.fromAxisAngle(Vector3.Forward, 15f))
+        // Panel pose relative to REAL_WORLD.
+        var childPanelPoseWorld: Pose? = null
 
         val childPanel = createChildPanel(session!!, parentPanelEntity, childPanelPoseParent)
 
-        // Panel pose relative to ACTIVITY.
-        val childPanelPoseActivity =
-            childPanel.transformPoseTo(childPanelPoseParent, session!!.scene.activitySpace)
-
-        // Panel pose relative to REAL_WORLD.
-        val childPanelPoseWorld = childPanel.getPose(Space.REAL_WORLD)
-
         parentPanelView.findViewById<Button>(R.id.default_pose_button).setOnClickListener {
+            // Get the initial pose of childPanel in REAL_WORLD space.
+            childPanelPoseWorld = getPanelInitialPoseInRealWorld(childPanel, childPanelPoseWorld)
+
             childPanel.setPose(childPanelPoseParent, Space.PARENT)
         }
 
         parentPanelView.findViewById<Button>(R.id.gravity_aligned_pose_button).setOnClickListener {
+            // Get the initial pose of childPanel in REAL_WORLD space.
+            childPanelPoseWorld = getPanelInitialPoseInRealWorld(childPanel, childPanelPoseWorld)
+
             val childPanelGravityAlignedPoseParent =
                 childPanel.getGravityAlignedPose(childPanelPoseParent)
 
@@ -129,29 +133,46 @@ class GravityAlignedPoseTest : AppCompatActivity() {
         }
 
         parentPanelView.findViewById<Button>(R.id.default_pose_button_activity).setOnClickListener {
-            childPanel.setPose(childPanelPoseActivity)
+            // Get the initial pose of childPanel in REAL_WORLD space.
+            childPanelPoseWorld = getPanelInitialPoseInRealWorld(childPanel, childPanelPoseWorld)
+
+            childPanel.setPose(childPanelPoseActivity, Space.ACTIVITY)
         }
 
         parentPanelView
             .findViewById<Button>(R.id.gravity_aligned_pose_button_activity)
             .setOnClickListener {
-                val childPanelGravityAlignedPoseActivity =
-                    childPanel.getGravityAlignedPose(childPanelPoseActivity)
+                // Get the initial pose of childPanel in REAL_WORLD space.
+                childPanelPoseWorld =
+                    getPanelInitialPoseInRealWorld(childPanel, childPanelPoseWorld)
 
-                childPanel.setPose(childPanelGravityAlignedPoseActivity)
+                val parentPoseInActivitySpace = childPanel.parent!!.getPose(Space.ACTIVITY)
+                val inverseParentPose = parentPoseInActivitySpace.inverse
+                val childPanelPoseParent = inverseParentPose.compose(childPanelPoseActivity)
+                val childPanelGravityAlignedPoseParent =
+                    childPanel.getGravityAlignedPose(childPanelPoseParent)
+
+                childPanel.setPose(childPanelGravityAlignedPoseParent)
             }
 
         parentPanelView.findViewById<Button>(R.id.default_pose_button_world).setOnClickListener {
-            childPanel.setPose(childPanelPoseWorld)
+            // Get the initial pose of childPanel in REAL_WORLD space.
+            childPanelPoseWorld = getPanelInitialPoseInRealWorld(childPanel, childPanelPoseWorld)
+
+            childPanel.setPose(childPanelPoseWorld!!, Space.REAL_WORLD)
         }
 
         parentPanelView
             .findViewById<Button>(R.id.gravity_aligned_pose_button_world)
             .setOnClickListener {
-                val childPanelGravityAlignedPoseWorld =
-                    childPanel.getGravityAlignedPose(childPanelPoseWorld)
+                // Get the initial pose of childPanel in REAL_WORLD space.
+                childPanelPoseWorld =
+                    getPanelInitialPoseInRealWorld(childPanel, childPanelPoseWorld)
 
-                childPanel.setPose(childPanelGravityAlignedPoseWorld)
+                childPanel.setPose(childPanelPoseWorld, Space.REAL_WORLD)
+                val childPanelPose = childPanel.getPose()
+                val childPanelGravityAlignedPose = childPanel.getGravityAlignedPose(childPanelPose)
+                childPanel.setPose(childPanelGravityAlignedPose)
             }
 
         parentPanelView.findViewById<Button>(R.id.create_surface_entity_button).setOnClickListener {
@@ -181,6 +202,10 @@ class GravityAlignedPoseTest : AppCompatActivity() {
                 surfaceEntity?.dispose()
                 surfaceEntity = null
             }
+    }
+
+    private fun getPanelInitialPoseInRealWorld(panel: PanelEntity, pose: Pose?): Pose {
+        return pose ?: panel.getPose(Space.REAL_WORLD)
     }
 
     private fun createChildPanel(

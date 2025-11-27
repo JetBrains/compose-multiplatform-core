@@ -41,8 +41,10 @@ import androidx.compose.remote.creation.compose.modifier.visibility
 import androidx.compose.remote.creation.compose.modifier.wrapContentSize
 import androidx.compose.remote.creation.compose.state.MutableRemoteInt
 import androidx.compose.remote.creation.compose.state.RemoteInt
+import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberRemoteInt
 import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -64,9 +66,9 @@ fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) 
             horizontalAlignment = RemoteAlignment.End,
             verticalArrangement = RemoteArrangement.Center,
         ) {
-            Canvas(modifier = RemoteModifier.size(32.dp)) {
+            Canvas(modifier = RemoteModifier.size(32.rdp)) {
                 val color = Color(255, 255, 255)
-                drawCircle(color = color, radius = 34f)
+                drawCircle(color = color, radius = 34f.rf)
             }
         }
     }
@@ -89,9 +91,9 @@ fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier, id: Int = 0)
             horizontalAlignment = RemoteAlignment.Start,
             verticalArrangement = RemoteArrangement.Center,
         ) {
-            Canvas(modifier = RemoteModifier.size(20.dp)) {
+            Canvas(modifier = RemoteModifier.size(20.rdp)) {
                 val color = Color(220, 220, 220)
-                drawCircle(color = color, radius = 30f)
+                drawCircle(color = color, radius = 30f.rf)
             }
         }
     }
@@ -146,7 +148,7 @@ fun SwitchWidget(value: MutableRemoteInt) {
             modifier = RemoteModifier.padding(4.dp),
             verticalArrangement = RemoteArrangement.Center,
         ) {
-            val modifierSize = RemoteModifier.size(60.dp, 36.dp)
+            val modifierSize = RemoteModifier.size(60.rdp, 36.rdp)
             StateLayout(modifier = RemoteModifier.wrapContentSize(), stateMachine = fsm) { state ->
                 Box {
                     when (state) {
@@ -201,7 +203,7 @@ fun Divider(modifier: RemoteModifier = RemoteModifier) {
             modifier =
                 modifier
                     .padding(left = 8.dp, right = 8.dp)
-                    .size(2.dp, 8.dp)
+                    .size(2.rdp, 8.rdp)
                     .background(Color.LightGray)
         )
     }

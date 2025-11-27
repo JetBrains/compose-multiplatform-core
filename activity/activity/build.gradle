@@ -10,7 +10,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
     id("androidx.baselineprofile")
 }
 
@@ -23,7 +22,7 @@ dependencies {
 
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core-viewtree:1.0.0")
-    api("androidx.core:core-ktx:1.16.0")
+    api(project(":core:core-ktx"))
     api("androidx.lifecycle:lifecycle-common:2.6.1")
     api("androidx.lifecycle:lifecycle-runtime:2.6.1")
     api("androidx.lifecycle:lifecycle-viewmodel:2.6.1")

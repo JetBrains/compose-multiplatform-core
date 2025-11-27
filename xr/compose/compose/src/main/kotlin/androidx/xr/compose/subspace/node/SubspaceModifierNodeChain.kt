@@ -143,19 +143,18 @@ internal class SubspaceModifierNodeChain(private val subspaceLayoutNode: Subspac
 
     internal fun runOnDetach() = tailToHead { if (it.isAttached) it.onDetach() }
 
-    internal fun measureChain(
-        constraints: VolumeConstraints,
-        wrappedMeasureBlock: (VolumeConstraints) -> SubspacePlaceable,
-    ): SubspacePlaceable {
+    internal fun measureChain(constraints: VolumeConstraints): SubspacePlaceable? {
         val layoutNode = getAll<SubspaceLayoutModifierNode>().firstOrNull()
         if (layoutNode == null || inMeasurePass) {
             inMeasurePass = false
-            return wrappedMeasureBlock(constraints)
+            return null
         }
-        inMeasurePass = true
-        val placeable = layoutNode.requireCoordinator().measure(constraints)
-        inMeasurePass = false
-        return placeable
+        try {
+            inMeasurePass = true
+            return layoutNode.requireCoordinator().measure(constraints)
+        } finally {
+            inMeasurePass = false
+        }
     }
 
     /** Executes [block] for each modifier in the chain starting at the head. */

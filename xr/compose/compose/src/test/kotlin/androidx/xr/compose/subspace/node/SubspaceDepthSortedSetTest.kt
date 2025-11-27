@@ -95,19 +95,51 @@ class SubspaceDepthSortedSetTest {
         subspaceDepthSortedSet.add(parentNode)
         subspaceDepthSortedSet.add(childNode)
 
-        assertThat(subspaceDepthSortedSet.pollFirst()).isEqualTo(parentNode)
-        assertThat(subspaceDepthSortedSet.pollFirst()).isEqualTo(childNode)
+        assertThat(subspaceDepthSortedSet.removeFirst()).isEqualTo(parentNode)
+        assertThat(subspaceDepthSortedSet.removeFirst()).isEqualTo(childNode)
 
         subspaceDepthSortedSet.add(childNode)
         subspaceDepthSortedSet.add(parentNode)
 
-        assertThat(subspaceDepthSortedSet.pollFirst()).isEqualTo(parentNode)
-        assertThat(subspaceDepthSortedSet.pollFirst()).isEqualTo(childNode)
+        assertThat(subspaceDepthSortedSet.removeFirst()).isEqualTo(parentNode)
+        assertThat(subspaceDepthSortedSet.removeFirst()).isEqualTo(childNode)
         assertThat(subspaceDepthSortedSet.isEmpty()).isTrue()
     }
 
     @Test
-    fun pollFirst_removesAndReturnsSmallestElement() {
+    fun drain_processesAllElementsInOrderAndEmptiesSet() {
+        val owner = AndroidComposeSpatialElement()
+        val rootNode = SubspaceLayoutNode()
+        val parentNode = SubspaceLayoutNode()
+        val childNode = SubspaceLayoutNode()
+        val set = SubspaceDepthSortedSet()
+
+        // Create a hierarchy: root (depth 0) -> parent (depth 1) -> child (depth 2)
+        rootNode.attach(owner)
+        rootNode.insertAt(0, parentNode)
+        parentNode.insertAt(0, childNode)
+
+        // Add nodes in a non-sorted order to ensure drain respects the sorting
+        set.add(childNode)
+        set.add(rootNode)
+        set.add(parentNode)
+
+        assertThat(set.size).isEqualTo(3)
+
+        val processedNodes = mutableListOf<SubspaceLayoutNode>()
+
+        // Act: Drain the set, collecting each node as it's processed.
+        set.drain { node -> processedNodes.add(node) }
+
+        // Assert: The set should now be empty.
+        assertThat(set.isEmpty()).isTrue()
+
+        // Assert: The nodes should have been processed in depth-sorted order.
+        assertThat(processedNodes).containsExactly(rootNode, parentNode, childNode).inOrder()
+    }
+
+    @Test
+    fun removeFirst_removesAndReturnsSmallestElement() {
         val owner = AndroidComposeSpatialElement()
         val rootNode = SubspaceLayoutNode()
         val parentNode = SubspaceLayoutNode()
@@ -125,20 +157,20 @@ class SubspaceDepthSortedSetTest {
         assertThat(subspaceDepthSortedSet.size).isEqualTo(3)
 
         // pollFirst should return the root node (depth 0) and remove it.
-        val first = subspaceDepthSortedSet.pollFirst()
+        val first = subspaceDepthSortedSet.removeFirst()
         assertThat(first).isEqualTo(rootNode)
         assertThat(subspaceDepthSortedSet.size).isEqualTo(2)
         assertThat(subspaceDepthSortedSet.contains(rootNode)).isFalse()
 
         // The next pollFirst should return the parent node (depth 1).
-        val second = subspaceDepthSortedSet.pollFirst()
+        val second = subspaceDepthSortedSet.removeFirst()
         assertThat(second).isEqualTo(parentNode)
         assertThat(subspaceDepthSortedSet.size).isEqualTo(1)
         assertThat(subspaceDepthSortedSet.contains(parentNode)).isFalse()
     }
 
     @Test
-    fun pollLast_removesAndReturnsLargestElement() {
+    fun removeLast_removesAndReturnsLargestElement() {
         val owner = AndroidComposeSpatialElement()
         val rootNode = SubspaceLayoutNode()
         val parentNode = SubspaceLayoutNode()
@@ -156,31 +188,16 @@ class SubspaceDepthSortedSetTest {
         assertThat(subspaceDepthSortedSet.size).isEqualTo(3)
 
         // pollLast should return the child node (deepest) and remove it.
-        val last = subspaceDepthSortedSet.pollLast()
+        val last = subspaceDepthSortedSet.removeLast()
         assertThat(last).isEqualTo(childNode)
         assertThat(subspaceDepthSortedSet.size).isEqualTo(2)
         assertThat(subspaceDepthSortedSet.contains(childNode)).isFalse()
 
         // The next pollLast should return the parent node.
-        val secondLast = subspaceDepthSortedSet.pollLast()
+        val secondLast = subspaceDepthSortedSet.removeLast()
         assertThat(secondLast).isEqualTo(parentNode)
         assertThat(subspaceDepthSortedSet.size).isEqualTo(1)
         assertThat(subspaceDepthSortedSet.contains(parentNode)).isFalse()
-    }
-
-    @Test
-    fun pollFirstAndLast_onEmptySet_returnsNull() {
-        val subspaceDepthSortedSet = SubspaceDepthSortedSet()
-        assertThat(subspaceDepthSortedSet.isEmpty()).isTrue()
-
-        // Polling from an empty set should return null, not throw.
-        val first = subspaceDepthSortedSet.pollFirst()
-        assertThat(first).isNull()
-
-        val last = subspaceDepthSortedSet.pollLast()
-        assertThat(last).isNull()
-
-        assertThat(subspaceDepthSortedSet.isEmpty()).isTrue()
     }
 
     @Test

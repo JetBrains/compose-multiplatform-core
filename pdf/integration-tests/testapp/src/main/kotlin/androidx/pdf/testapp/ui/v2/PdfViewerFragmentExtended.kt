@@ -63,6 +63,7 @@ class PdfViewerFragmentExtended : PdfViewerFragment(), FeatureFlagListener {
     private lateinit var hostView: ConstraintLayout
     private lateinit var pdfContainerFrame: FrameLayout
     private var searchFAB: FloatingActionButton? = null
+    private var twoPageLayoutFAB: FloatingActionButton? = null
     private var lastClickedLinkUri: String? = null
 
     private lateinit var pdfThumbnailToggleButton: ImageButton
@@ -87,14 +88,19 @@ class PdfViewerFragmentExtended : PdfViewerFragment(), FeatureFlagListener {
         pdfContainerFrame.addView(pdfContentView, 0)
 
         searchFAB = hostView.findViewById(R.id.host_Search)
+        twoPageLayoutFAB = hostView.findViewById(R.id.two_page_layout)
         pdfThumbnailToggleButton = hostView.findViewById(R.id.pdf_thumbnail_toggle_button)
         pdfThumbnailRecyclerView = hostView.findViewById(R.id.pdf_thumbnail_recycler_view)
 
         setupThumbnailView()
 
-        searchFAB?.apply {
-            visibility = View.VISIBLE
-            setOnClickListener { isTextSearchActive = true }
+        searchFAB?.setOnClickListener { isTextSearchActive = true }
+        twoPageLayoutFAB?.setOnClickListener {
+            pdfView.pagesPerRow =
+                when (pdfView.pagesPerRow) {
+                    PdfView.SINGLE_PAGE -> PdfView.TWO_PAGE
+                    else -> PdfView.SINGLE_PAGE
+                }
         }
 
         return hostView
@@ -221,6 +227,7 @@ class PdfViewerFragmentExtended : PdfViewerFragment(), FeatureFlagListener {
     override fun onRequestImmersiveMode(enterImmersive: Boolean) {
         super.onRequestImmersiveMode(enterImmersive)
         searchFAB?.visibility = if (enterImmersive) View.GONE else View.VISIBLE
+        twoPageLayoutFAB?.visibility = if (enterImmersive) View.GONE else View.VISIBLE
         // Toggle thumbnail button visibility only if the feature is enabled
         if (PdfFeatureFlags.isThumbnailPreviewEnabled) {
             pdfThumbnailToggleButton.visibility = if (enterImmersive) View.GONE else View.VISIBLE

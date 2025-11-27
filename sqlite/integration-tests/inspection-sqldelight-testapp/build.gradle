@@ -18,7 +18,6 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -35,12 +34,15 @@ dependencies {
 }
 
 android {
-    sourceSets {
-        main.java.srcDirs += ["src/main/generated"]
-    }
     defaultConfig {
         // studio pipeline works only starting with Android O
         minSdk = 26
     }
     namespace = "androidx.sqlite.inspection.sqldeligttestapp"
+}
+
+androidComponents {
+    onVariants(selector().all(), { variant ->
+        variant.sources.java.addStaticSourceDirectory("src/main/generated")
+    })
 }

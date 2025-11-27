@@ -6,9 +6,7 @@ package androidx.compose.ui.unit {
   }
 
   @SuppressCompatibility @androidx.compose.ui.unit.ExperimentalUnitApi public final class ComposeUiUnitFlags {
-    property public boolean isDpCompareToChanged;
     field public static final androidx.compose.ui.unit.ComposeUiUnitFlags INSTANCE;
-    field public static boolean isDpCompareToChanged;
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public final value class Constraints {

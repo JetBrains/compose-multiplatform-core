@@ -182,7 +182,7 @@ class MainActivity : AppCompatActivity() {
 
             Tests.FSM_HSM_TRANSITION_TEST.test -> {
                 val intent = Intent(this@MainActivity, FsmHsmTransitionActivity::class.java)
-                fsmHsmTransitionLauncher.launch(intent)
+                activityLauncher.launch(intent)
             }
 
             Tests.GRAVITY_ALIGNED_POSE_TEST.test ->
@@ -220,12 +220,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             Tests.INPUT_MOVE_RESIZE_3_TEST.test -> {
-                val intent = createIntent<InputMoveResizeTestActivity>()
+                val intent = Intent(this@MainActivity, InputMoveResizeTestActivity::class.java)
                 intent.putExtra(
                     "MAIN_PANEL_TITLE",
                     getString(R.string.cuj_resizeable_component_test),
                 )
-                startActivity(intent)
+                activityLauncher.launch(intent)
             }
 
             Tests.SPATIAL_AUDIO_1_TEST.test -> {
@@ -284,7 +284,7 @@ class MainActivity : AppCompatActivity() {
 
     // TODO: b/451293148 - Main Panel size is changed after a child activity with a resizable
     //  component resized the panel and finished.
-    private val fsmHsmTransitionLauncher =
+    private val activityLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             run {
                 if (result.resultCode == RESULT_OK) {
@@ -300,10 +300,7 @@ class MainActivity : AppCompatActivity() {
                             FloatSize2d(defaultPanelSizeWidth, defaultPanelSizeHeight)
                         session?.scene?.mainPanelEntity?.size = defaultPanelSize
 
-                        Log.d(
-                            "MainActivity",
-                            "FsmHsmTransitionActivity finished, defaultPanelSize: $defaultPanelSize",
-                        )
+                        Log.d(ACTIVITY_NAME, "Recover defaultPanelSize: $defaultPanelSize")
                     }
                 }
             }

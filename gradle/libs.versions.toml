@@ -8,7 +8,7 @@ androidGradlePlugin = "8.12.0"
 androidLint = "31.12.0"
 # Once you have a chosen version of AGP to upgrade to, go to
 # https://developer.android.com/studio/archive and find the matching version of Studio.
-androidStudio = "2025.2.2.3"
+androidStudio = "2025.2.3.2"
 # -----------------------------------------------------------------------------
 
 androidLintMin = "31.1.1"
@@ -62,7 +62,7 @@ kotlinCoroutines = "1.9.0"
 kotlinNativeUtils = "2.2.21"
 kotlinSerialization = "1.8.0"
 kotlinToolingCore = "2.2.21"
-ksp = "2.2.21-2.0.4"
+ksp = "2.3.2"
 ktfmt = "0.54"
 # Version format is: 1.KOTLIN_MAJOR_VERSION.0.KTFMT_VERSION
 # When updated, the id and checksum in StudioTask needs to be updated too
@@ -86,7 +86,6 @@ yarn = "1.22.17"
 [libraries]
 agpTestingPlatformCoreProto =  { module = "com.google.testing.platform:core-proto", version = "0.0.8-alpha08" }
 androidAccessibilityFramework = { module = "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework", version = { strictly = "2.1" } }
-androidExperimentalBuiltInKotlinPlugin = { module = "com.android.experimental.built-in-kotlin:com.android.experimental.built-in-kotlin.gradle.plugin", version.ref = "androidGradlePlugin" }
 androidGradlePluginApi = { module = "com.android.tools.build:gradle-api", version.ref = "androidGradlePlugin" }
 androidGradlePlugin = { module = "com.android.tools.build:gradle", version.ref = "androidGradlePlugin" }
 androidGradleSettingsPlugin = { module = "com.android.tools.build:gradle-settings", version.ref = "androidGradlePlugin" }

@@ -79,21 +79,23 @@ class FsmHsmTransitionActivity : AppCompatActivity() {
         setContentView(R.layout.activity_fsm_hsm_transition)
 
         session = createSession(this)
-        if (session == null) this.finish()
-
-        if (savedInstanceState != null) {
-            val width = savedInstanceState.getFloat("defaultPanelSizeWidth")
-            val height = savedInstanceState.getFloat("defaultPanelSizeHeight")
-            defaultPanelSize = FloatSize2d(width, height)
+        if (session == null) {
+            this.finish()
         } else {
-            defaultPanelSize = session!!.scene.mainPanelEntity.size
+            if (savedInstanceState != null) {
+                val width = savedInstanceState.getFloat("defaultPanelSizeWidth")
+                val height = savedInstanceState.getFloat("defaultPanelSizeHeight")
+                defaultPanelSize = FloatSize2d(width, height)
+            } else {
+                defaultPanelSize = session!!.scene.mainPanelEntity.size
+            }
+            Log.d(
+                TAG,
+                "defaultPanelSize: " +
+                    "w ${defaultPanelSize.width.format(2)} x " +
+                    "h ${defaultPanelSize.height.format(2)}",
+            )
         }
-        Log.d(
-            TAG,
-            "defaultPanelSize: " +
-                "w ${defaultPanelSize.width.format(2)} x " +
-                "h ${defaultPanelSize.height.format(2)}",
-        )
 
         // Set visibility of components per mode
         componentVisibility()

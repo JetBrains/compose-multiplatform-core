@@ -23,7 +23,7 @@
         <!-- Relative end margin for FastScroll's vertical thumb from container bounds. -->
         <attr name="fastScrollVerticalThumbMarginEnd" format="dimension" />
         <!-- Value that represents spacing between horizontally adjacent pages in dp. -->
-        <attr name="horizontalPageSpacing" format="dimension"/>
+        <attr name="pdfHorizontalPageSpacing" format="dimension"/>
         <!-- Flag dictating whether the form filling feature is enabled. -->
         <attr name="isFormFillingEnabled" format="boolean"/>
         <!-- Floating point value that represents the minimum scaling factor of the PDF content -->
@@ -31,11 +31,11 @@
         <!-- Floating point value that represents the maximum scaling factor of the PDF content -->
         <attr name="maxZoom" format="float"/>
         <!-- Integer value that represents the number of pages per row within the view. -->
-        <attr name="pagesPerRow" format="integer"/>
+        <attr name="pdfPagesPerRow" format="integer"/>
         <!-- Integer value that represents the alignment of the content within the view. -->
         <attr name="verticalAlignment" format="integer"/>
         <!-- Value that represents spacing between vertically adjacent pages in dp. -->
-        <attr name="verticalPageSpacing" format="dimension"/>
+        <attr name="pdfVerticalPageSpacing" format="dimension"/>
     </declare-styleable>
 
     <declare-styleable name="FastScrollView">

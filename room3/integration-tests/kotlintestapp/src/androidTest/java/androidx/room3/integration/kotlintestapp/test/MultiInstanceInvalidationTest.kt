@@ -17,6 +17,7 @@
 package androidx.room3.integration.kotlintestapp.test
 
 import android.app.ActivityManager
+import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import android.os.Process
@@ -27,6 +28,7 @@ import androidx.room3.Entity
 import androidx.room3.ExperimentalRoomApi
 import androidx.room3.Fts4
 import androidx.room3.Insert
+import androidx.room3.MultiInstanceInvalidationService
 import androidx.room3.PrimaryKey
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
@@ -53,6 +55,7 @@ import org.junit.AssumptionViolatedException
 import org.junit.Before
 import org.junit.Rule
 
+@OptIn(ExperimentalRoomApi::class)
 class MultiInstanceInvalidationTest {
     @Entity data class SampleEntity(@PrimaryKey val pk: Int)
 
@@ -86,7 +89,6 @@ class MultiInstanceInvalidationTest {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun invalidateInAnotherInstanceFlow() = runTest {
         val databaseOne =
             Room.databaseBuilder<SampleDatabase>(context, "test.db")
@@ -118,10 +120,12 @@ class MultiInstanceInvalidationTest {
         channel.cancel()
         databaseOne.close()
         databaseTwo.close()
+
+        // Assert multi-instance invalidation service is not running.
+        awaitService(isRunning = false)
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     fun invalidateInAnotherInstanceFtsFlow() = runTest {
         val databaseOne =
             Room.databaseBuilder<SampleDatabase>(context, "test.db")
@@ -150,6 +154,9 @@ class MultiInstanceInvalidationTest {
         channel.cancel()
         databaseOne.close()
         databaseTwo.close()
+
+        // Assert multi-instance invalidation service is not running.
+        awaitService(isRunning = false)
     }
 
     @Test
@@ -191,7 +198,6 @@ class MultiInstanceInvalidationTest {
     }
 
     @Test
-    @OptIn(ExperimentalRoomApi::class)
     @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
     fun autoCloseDatabaseStopsService() = runTest {
         val autoCloseDb =
@@ -212,23 +218,30 @@ class MultiInstanceInvalidationTest {
         awaitService(isRunning = false)
 
         autoCloseDb.close()
+
+        // Assert multi-instance invalidation service is still not running.
+        awaitService(isRunning = false)
     }
 
     @Suppress("DEPRECATION") // For getRunningServices()
     private suspend fun awaitService(isRunning: Boolean) {
         val manager = context.getSystemService(ActivityManager::class.java)
+        val serviceComponentName =
+            ComponentName(context, MultiInstanceInvalidationService::class.java)
         withContext(Dispatchers.Main) {
             withTimeoutOrNull(10.seconds) {
                 while (true) {
-                    val hasRunningServices = manager.getRunningServices(100).isNotEmpty()
-                    if (hasRunningServices == isRunning) {
+                    val hasRunningService =
+                        manager.getRunningServices(100).any { it.service == serviceComponentName }
+                    if (hasRunningService == isRunning) {
                         return@withTimeoutOrNull
                     }
                     delay(200.milliseconds)
                 }
             }
                 ?: throw AssumptionViolatedException(
-                    "Could not validate multi-instance service isRunning to be $isRunning."
+                    "Could not validate multi-instance service state. " +
+                        "Expected for isRunning to be '$isRunning' but it was the opposite."
                 )
         }
     }

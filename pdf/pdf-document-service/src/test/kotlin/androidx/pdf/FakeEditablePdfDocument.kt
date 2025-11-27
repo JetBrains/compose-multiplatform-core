@@ -17,7 +17,6 @@
 package androidx.pdf
 
 import android.graphics.PointF
-import android.graphics.Rect
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.SparseArray
@@ -32,7 +31,7 @@ import androidx.pdf.annotation.models.PdfEditEntry
 import androidx.pdf.annotation.models.PdfEdits
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
-import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import java.util.UUID
 
@@ -42,7 +41,6 @@ internal class FakeEditablePdfDocument(
     override val pageCount: Int,
     override val isLinearized: Boolean = false,
     override val formType: Int = -1,
-    override val formEditRecords: List<FormEditRecord> = listOf(),
 ) : EditablePdfDocument() {
     private val annotationsByPage = mutableMapOf<Int, MutableList<PdfEditEntry<out PdfEdit>>>()
 
@@ -59,6 +57,18 @@ internal class FakeEditablePdfDocument(
         getAnnotationsForPageCallCount[pageNum] =
             getAnnotationsForPageCallCount.getOrDefault(pageNum, 0) + 1
         return (annotationsByPage[pageNum] ?: emptyList()).toList() as List<T>
+    }
+
+    override fun addOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun removeOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        TODO("Not yet implemented")
     }
 
     override suspend fun applyEdits(annotations: List<PdfAnnotationData>): AnnotationResult {
@@ -94,6 +104,10 @@ internal class FakeEditablePdfDocument(
     }
 
     override fun clearUncommittedEdits() {
+        TODO("Not yet implemented")
+    }
+
+    override fun createWriteHandle(): PdfWriteHandle {
         TODO("Not yet implemented")
     }
 
@@ -158,11 +172,7 @@ internal class FakeEditablePdfDocument(
         TODO("Not yet implemented")
     }
 
-    override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
-        TODO("Not yet implemented")
-    }
-
-    override suspend fun write(destination: ParcelFileDescriptor) {
+    override suspend fun applyEdit(record: FormEditInfo) {
         TODO("Not yet implemented")
     }
 

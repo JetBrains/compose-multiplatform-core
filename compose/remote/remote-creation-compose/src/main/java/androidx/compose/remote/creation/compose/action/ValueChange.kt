@@ -37,7 +37,6 @@ import androidx.compose.remote.creation.compose.state.RemoteState
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.isLiteral
 import androidx.compose.runtime.MutableState
-import androidx.compose.ui.unit.Dp
 
 // TODO fix up types after RemoteType refactor
 /** Update a value on click. */
@@ -127,13 +126,6 @@ public fun ValueChange(
     updatedValue: Int,
 ): androidx.compose.remote.creation.compose.action.Action {
     return ValueFloatDpChangeAction(value, updatedValue.toFloat())
-}
-
-public fun ValueChange(
-    value: RemoteDp,
-    updatedValue: Dp,
-): androidx.compose.remote.creation.compose.action.Action {
-    return ValueFloatDpChangeAction(value, updatedValue.value)
 }
 
 public fun ValueChange(remoteState: MutableRemoteInt, updatedValue: Int): ValueChangeAction<Int> =

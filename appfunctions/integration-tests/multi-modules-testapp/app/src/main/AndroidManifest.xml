@@ -17,4 +17,13 @@
     <queries>
         <package android:name="com.google.android.app.notes" />
     </queries>
+    <application
+        android:name=".TestApplication"
+        android:supportsRtl="true">
+        <provider
+            android:name=".TestContentProvider"
+            android:authorities="androidx.appfunctions.integration.testapp.provider"
+            android:exported="false"
+            android:grantUriPermissions="true" />
+    </application>
 </manifest>

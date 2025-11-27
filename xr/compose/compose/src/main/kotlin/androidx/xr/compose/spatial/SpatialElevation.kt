@@ -17,9 +17,10 @@
 package androidx.xr.compose.spatial
 
 import android.view.View
+import android.view.ViewParent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
@@ -32,11 +33,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.util.fastFold
 import androidx.compose.ui.util.fastMap
-import androidx.xr.compose.platform.LocalCoreEntity
-import androidx.xr.compose.platform.LocalCoreMainPanelEntity
-import androidx.xr.compose.platform.LocalOpaqueEntity
+import androidx.core.viewtree.setViewTreeDisjointParent
+import androidx.xr.compose.R
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.platform.findNearestParentEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.rememberComposeView
 import androidx.xr.compose.unit.IntVolumeSize
@@ -85,7 +86,8 @@ private fun LayoutSpatialElevation(elevation: Dp, content: @Composable () -> Uni
      * Unlike [Orbiter], [SpatialElevation] may only be used in a 2D context (i.e. in a
      * [androidx.xr.compose.subspace.SpatialPanel] or in `setContent`).
      */
-    val parentEntity = LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current ?: return
+    val parentView = LocalView.current
+    val parentEntity = findNearestParentEntity()
     val view = rememberComposeView()
     val panelEntity = remember {
         CorePanelEntity(
@@ -96,15 +98,16 @@ private fun LayoutSpatialElevation(elevation: Dp, content: @Composable () -> Uni
                     name = "SpatialElevation:${view.id}",
                 )
             )
-            .apply { enabled = false }
+            .apply {
+                enabled = false
+                view.setTag(R.id.compose_xr_local_view_entity, this)
+            }
     }
-    val parentView = LocalView.current
+
+    SideEffect { view.setViewTreeDisjointParent(parentView as? ViewParent ?: parentView.parent) }
+
     var parentViewSize by remember { mutableStateOf(parentView.size) }
-    val movableContent = remember {
-        movableContentOf {
-            CompositionLocalProvider(LocalOpaqueEntity provides panelEntity, content = content)
-        }
-    }
+    val movableContent = remember { movableContentOf(content) }
 
     DisposableEffect(panelEntity) { onDispose { panelEntity.dispose() } }
     DisposableEffect(parentView) {
