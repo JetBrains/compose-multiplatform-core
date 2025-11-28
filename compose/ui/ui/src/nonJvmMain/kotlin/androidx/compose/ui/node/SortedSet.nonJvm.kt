@@ -112,6 +112,12 @@ internal actual class SortedSet<E> actual constructor(
             }
         }
 
+        // FIXME: https://youtrack.jetbrains.com/issue/KT-82783
+        if (indexByElement.size != itemTree.size) {
+            indexByElement.clear()
+            itemTree.forEachIndexed { index, element -> indexByElement[element] = index }
+        }
+
         return true
     }
 
