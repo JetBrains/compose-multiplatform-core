@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -65,9 +66,8 @@ import androidx.compose.ui.util.fastMap
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 
 /**
  * The default scrim opacity.
@@ -77,8 +77,8 @@ private val DefaultScrimColor = Color.Black.copy(alpha = DefaultScrimOpacity)
 private const val AnimatedLayerOffsetDp = 10f
 private const val AnimatedLayerInitialAlpha = 0.2f
 private const val AnimatedLayerScale = 0.05f
-private const val AnimatedLayerAppearanceDuration = 0.2
-private const val AnimatedLayerDisappearanceDuration = 0.1
+private const val AnimatedLayerAppearanceDuration = 2.0//0.2
+private const val AnimatedLayerDisappearanceDuration = 2.0//0.1
 
 /**
  * Properties used to customize the behavior of a [Dialog].
@@ -214,7 +214,6 @@ private fun DialogLayout(
     onOutsidePointerEvent: ((eventType: PointerEventType, button: PointerButton?) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    val compositionContext = rememberCompositionContext()
     val layer = rememberComposeSceneLayer(focusable = true)
     layer.setOutsidePointerEventListener(onOutsidePointerEvent)
     val currentContent by rememberUpdatedState(content)
@@ -222,18 +221,16 @@ private fun DialogLayout(
 
     val animator = remember {
         if (properties.animateTransition) {
-            AnimatedDialogAppearanceController(
-                layer = layer,
-                coroutineContext = compositionContext.effectCoroutineContext,
-                graphicsContext = graphicsContext
-            )
+            AnimatedDialogAppearanceController(layer = layer, graphicsContext = graphicsContext)
         } else {
             NonAnimatedDialogAppearanceController(layer = layer)
         }
     }
     animator.scrimColor = properties.scrimColor
+    var layerScope: CoroutineScope? = null
 
     layer.Content {
+        layerScope = rememberCoroutineScope()
         LaunchedEffect(Unit) {
             animator.onDialogShown()
         }
@@ -261,7 +258,9 @@ private fun DialogLayout(
 
     DisposableEffect(Unit) {
         onDispose {
-            animator.hideDialog()
+            if (layerScope?.isActive == true) {
+                animator.hideDialog()
+            }
         }
     }
 }
@@ -269,17 +268,15 @@ private fun DialogLayout(
 private interface DialogAppearanceController {
     var scrimColor: Color?
     val modifier: Modifier
-    fun onDialogShown()
+    suspend fun onDialogShown()
     fun hideDialog()
 }
 
 private class AnimatedDialogAppearanceController(
     private val layer: ComposeSceneLayer,
-    private val coroutineContext: CoroutineContext,
     private val graphicsContext: GraphicsContext
 ) : DialogAppearanceController {
     private var appearanceProgress = mutableStateOf(0f)
-    private var appearAnimationJob: Job? = null
     private val graphicsLayer = graphicsContext.createGraphicsLayer()
 
     override val modifier = Modifier.drawWithGraphicsLayer(appearanceProgress)
@@ -290,53 +287,49 @@ private class AnimatedDialogAppearanceController(
             updateScrimLayerColor()
         }
 
-    override fun onDialogShown() {
-        appearAnimationJob =
-            CoroutineScope(coroutineContext).launch(start = CoroutineStart.UNDISPATCHED) {
-                withAnimationProgress(
-                    duration = (durationScale() * AnimatedLayerAppearanceDuration).seconds,
-                    timingFunction = ::easeOutTimingFunction
-                ) { progress ->
-                    appearanceProgress.value = progress
-                    updateScrimLayerColor()
-                }
-                layer.scrimColor = scrimColor
-            }
+    override suspend fun onDialogShown() {
+        val durationScale = currentCoroutineContext().durationScale()
+        withAnimationProgress(
+            duration = (durationScale * AnimatedLayerAppearanceDuration).seconds,
+            timingFunction = ::easeOutTimingFunction
+        ) { progress ->
+            appearanceProgress.value = progress
+            updateScrimLayerColor()
+        }
+        layer.scrimColor = scrimColor
     }
 
     override fun hideDialog() {
-        appearAnimationJob?.cancel()
-
-        CoroutineScope(coroutineContext).launch(start = CoroutineStart.UNDISPATCHED) {
-            layer.setContent {
-                Layout(
-                    content = {},
-                    modifier = Modifier.drawBehind {
-                        graphicsLayer.applyAnimationProgress(appearanceProgress.value, density)
-                        drawLayer(graphicsLayer)
-                    },
-                    measurePolicy = { measurables, constraints ->
-                        val placeables = measurables.fastMap { it.measure(constraints) }
-                        layout(constraints.maxWidth, constraints.maxHeight) {
-                            placeables.fastForEach {
-                                it.place(IntOffset.Zero)
-                            }
+        layer.setContent {
+            Layout(
+                content = {},
+                modifier = Modifier.drawBehind {
+                    graphicsLayer.applyAnimationProgress(appearanceProgress.value, density)
+                    drawLayer(graphicsLayer)
+                },
+                measurePolicy = { measurables, constraints ->
+                    val placeables = measurables.fastMap { it.measure(constraints) }
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        placeables.fastForEach {
+                            it.place(IntOffset.Zero)
                         }
                     }
-                )
+                }
+            )
+            LaunchedEffect(Unit) {
+                val durationScale = currentCoroutineContext().durationScale()
+                val initialProgress = appearanceProgress.value
+                val duration = durationScale * initialProgress * AnimatedLayerDisappearanceDuration
+                withAnimationProgress(
+                    duration = duration.seconds,
+                    timingFunction = ::easeOutTimingFunction
+                ) { progress ->
+                    appearanceProgress.value = (1f - progress) * initialProgress
+                    updateScrimLayerColor()
+                }
+                graphicsContext.releaseGraphicsLayer(graphicsLayer)
+                layer.close()
             }
-
-            val initialProgress = appearanceProgress.value
-            val duration = durationScale() * initialProgress * AnimatedLayerDisappearanceDuration
-            withAnimationProgress(
-                duration = duration.seconds,
-                timingFunction = ::easeOutTimingFunction
-            ) { progress ->
-                appearanceProgress.value = (1f - progress) * initialProgress
-                updateScrimLayerColor()
-            }
-            graphicsContext.releaseGraphicsLayer(graphicsLayer)
-            layer.close()
         }
     }
 
@@ -348,9 +341,6 @@ private class AnimatedDialogAppearanceController(
 
     private fun contentAlpha(progress: Float): Float =
         AnimatedLayerInitialAlpha + (1f - AnimatedLayerInitialAlpha) * progress
-
-    private fun durationScale(): Float =
-        coroutineContext[MotionDurationScale]?.scaleFactor ?: 1f
 
     private fun GraphicsLayer.applyAnimationProgress(progress: Float, density: Float) {
         alpha = contentAlpha(progress)
@@ -375,7 +365,7 @@ private class NonAnimatedDialogAppearanceController(
 ) : DialogAppearanceController {
     override val modifier: Modifier = Modifier
     override var scrimColor: Color? by layer::scrimColor
-    override fun onDialogShown() {}
+    override suspend fun onDialogShown() {}
     override fun hideDialog() = layer.close()
 }
 
@@ -423,3 +413,7 @@ internal fun getDialogScrimBlendMode(isWindowTransparent: Boolean) =
     } else {
         BlendMode.SrcOver
     }
+
+private fun CoroutineContext.durationScale(): Float {
+    return this[MotionDurationScale]?.scaleFactor ?: 1f
+}
