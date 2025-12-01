@@ -148,6 +148,7 @@ androidXMultiplatform {
                 // Keep in sync with :ui:ui module
                 implementation(project(":lifecycle:lifecycle-runtime-compose"))
                 implementation(project(":lifecycle:lifecycle-viewmodel"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-savedstate"))
                 implementation(project(":navigationevent:navigationevent"))
             }
         }
@@ -157,6 +158,7 @@ androidXMultiplatform {
             dependencies {
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:foundation:foundation"))
+                implementation(project(":lifecycle:lifecycle-viewmodel-compose"))
                 implementation(project(":kruth:kruth"))
             }
         }

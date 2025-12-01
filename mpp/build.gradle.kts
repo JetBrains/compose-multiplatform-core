@@ -51,7 +51,7 @@ val libraries = project.findProperty("jetbrains.publication.libraries")
 
 tasks.register("testDesktop") {
     group = "Compose Multiplatform"
-    dependsOn(allTasksWith(name = "desktopTest"))
+    dependsOn(allTasksForPublishingProjectsWith(name = "desktopTest"))
     dependsOn(":collection:collection:jvmTest")
 }
 
@@ -151,10 +151,10 @@ fun apiValidationTasks(suffix: String) = buildSet<Task> {
     fun Iterable<Task>.filterComposePlatforms(platforms: Set<ComposePlatforms>) =
         filterComposePlatforms(*platforms.toTypedArray())
 
-    this += allTasksWith(name = "desktop$suffix")
+    this += allTasksForPublishingProjectsWith(name = "desktop$suffix")
         .filterComposePlatforms(ComposePlatforms.Desktop)
 
-    this += allTasksWith(name = "android$suffix")
+    this += allTasksForPublishingProjectsWith(name = "android$suffix")
         .filterComposePlatforms(ComposePlatforms.ANDROID)
 
     val klibPlatforms = if (System.getProperty("os.name") == "Mac OS X") {
@@ -162,13 +162,17 @@ fun apiValidationTasks(suffix: String) = buildSet<Task> {
     } else {
         ComposePlatforms.GENERATE_KLIB - ComposePlatforms.DARWIN
     }
-    this += allTasksWith(name = "klib$suffix")
+    this += allTasksForPublishingProjectsWith(name = "klib$suffix")
         .filterComposePlatforms(klibPlatforms)
 }
 
-fun allTasksWith(name: String): List<Task> =
+fun allTasksForPublishingProjectsWith(name: String): List<Task> =
     rootProject.subprojects.mapNotNull { project ->
-        project.tasks.findByName(name)
+         if (JetBrainsPublication.shouldPublish(project)) {
+             project.tasks.findByName(name)
+         } else {
+             null
+         }
     }
 
 // ./gradlew printAllArtifactRedirectionVersions -PfilterProjectPath=lifecycle

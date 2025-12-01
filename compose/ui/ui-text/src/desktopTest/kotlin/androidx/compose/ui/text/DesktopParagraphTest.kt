@@ -53,7 +53,7 @@ class DesktopParagraphTest {
     private val fontFamilyMeasureFont =
         FontFamily(
             Font(
-                "font/sample_font.ttf",
+                "font/sample_font_fork.ttf",
                 weight = FontWeight.Normal,
                 style = FontStyle.Normal
             )
