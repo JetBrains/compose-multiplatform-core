@@ -77,8 +77,8 @@ private val DefaultScrimColor = Color.Black.copy(alpha = DefaultScrimOpacity)
 private const val AnimatedLayerOffsetDp = 10f
 private const val AnimatedLayerInitialAlpha = 0.2f
 private const val AnimatedLayerScale = 0.05f
-private const val AnimatedLayerAppearanceDuration = 2.0//0.2
-private const val AnimatedLayerDisappearanceDuration = 2.0//0.1
+private const val AnimatedLayerAppearanceDuration = 0.2
+private const val AnimatedLayerDisappearanceDuration = 0.1
 
 /**
  * Properties used to customize the behavior of a [Dialog].
