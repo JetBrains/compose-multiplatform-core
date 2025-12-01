@@ -307,24 +307,25 @@ private class AnimatedDialogAppearanceController(
     override fun hideDialog() {
         appearAnimationJob?.cancel()
 
-        layer.setContent {
-            Layout(
-                content = {},
-                modifier = Modifier.drawBehind {
-                    graphicsLayer.applyAnimationProgress(appearanceProgress.value, density)
-                    drawLayer(graphicsLayer)
-                },
-                measurePolicy = { measurables, constraints ->
-                    val placeables = measurables.fastMap { it.measure(constraints) }
-                    layout(constraints.maxWidth, constraints.maxHeight) {
-                        placeables.fastForEach {
-                            it.place(IntOffset.Zero)
+        CoroutineScope(coroutineContext).launch(start = CoroutineStart.UNDISPATCHED) {
+            layer.setContent {
+                Layout(
+                    content = {},
+                    modifier = Modifier.drawBehind {
+                        graphicsLayer.applyAnimationProgress(appearanceProgress.value, density)
+                        drawLayer(graphicsLayer)
+                    },
+                    measurePolicy = { measurables, constraints ->
+                        val placeables = measurables.fastMap { it.measure(constraints) }
+                        layout(constraints.maxWidth, constraints.maxHeight) {
+                            placeables.fastForEach {
+                                it.place(IntOffset.Zero)
+                            }
                         }
                     }
-                }
-            )
-        }
-        CoroutineScope(coroutineContext).launch(start = CoroutineStart.UNDISPATCHED) {
+                )
+            }
+
             val initialProgress = appearanceProgress.value
             val duration = durationScale() * initialProgress * AnimatedLayerDisappearanceDuration
             withAnimationProgress(
