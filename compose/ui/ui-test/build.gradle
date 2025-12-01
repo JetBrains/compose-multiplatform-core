@@ -194,20 +194,28 @@ androidXMultiplatform {
             dependsOn(nonJvmTest)
         }
 
-        macosMain {
+        darwinMain {
             dependsOn(nativeMain)
+        }
+
+        darwinTest {
+            dependsOn(nativeTest)
+        }
+
+        macosMain {
+            dependsOn(darwinMain)
         }
 
         macosTest {
-            dependsOn(nativeTest)
+            dependsOn(darwinTest)
         }
 
         uikitMain {
-            dependsOn(nativeMain)
+            dependsOn(darwinMain)
         }
 
         uikitTest {
-            dependsOn(nativeTest)
+            dependsOn(darwinTest)
         }
 
         webMain {
@@ -230,6 +238,9 @@ androidXMultiplatform {
                 } else if (target.konanTarget.family == Family.OSX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
+                } else if (target.konanTarget.family.appleFamily) {
+                    target.compilations["main"].defaultSourceSet.dependsOn(darwinMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(darwinTest)
                 } else {
                     target.compilations["main"].defaultSourceSet.dependsOn(nativeMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(nativeTest)
