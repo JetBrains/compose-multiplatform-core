@@ -50,9 +50,6 @@ androidXMultiplatform {
     js()
     wasmJs()
 
-    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
-    linuxX64Stubs()
-
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
@@ -271,15 +268,6 @@ androidXMultiplatform {
 
         configureEach {
             languageSettings.optIn("androidx.compose.foundation.ExperimentalFoundationApi")
-        }
-
-        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
         }
     }
 }
