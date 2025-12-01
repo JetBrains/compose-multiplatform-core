@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
-import kotlin.jvm.JvmSuppressWildcards
 
 @Composable
 public actual fun NavHost(
@@ -34,11 +33,11 @@ public actual fun NavHost(
     graph: NavGraph,
     modifier: Modifier,
     contentAlignment: Alignment,
-    enterTransition: (@JvmSuppressWildcards AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition),
-    exitTransition: (@JvmSuppressWildcards AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition),
-    popEnterTransition: (@JvmSuppressWildcards AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition),
-    popExitTransition: (@JvmSuppressWildcards AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition),
-    sizeTransform: (@JvmSuppressWildcards AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)?
+    enterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition),
+    exitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition),
+    popEnterTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition),
+    popExitTransition: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition),
+    sizeTransform: (AnimatedContentTransitionScope<NavBackStackEntry>.() -> SizeTransform?)?
 ) {
     NavHost(
         navController,
