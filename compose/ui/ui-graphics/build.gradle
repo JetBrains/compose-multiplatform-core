@@ -49,9 +49,6 @@ androidXMultiplatform {
     js()
     wasmJs()
 
-    // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
-    linuxX64Stubs()
-
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
@@ -203,14 +200,6 @@ androidXMultiplatform {
                 target.compilations["main"].defaultSourceSet.dependsOn(webMain)
                 target.compilations["test"].defaultSourceSet.dependsOn(webTest)
             }
-        }
-
-        // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
-        commonStubsMain {
-            dependsOn(commonMain)
-        }
-        linuxx64StubsMain {
-            dependsOn(commonStubsMain)
         }
     }
 }
