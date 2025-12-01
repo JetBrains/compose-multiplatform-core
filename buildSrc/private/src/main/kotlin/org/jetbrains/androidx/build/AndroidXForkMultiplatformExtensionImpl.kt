@@ -223,12 +223,12 @@ abstract class AndroidXForkMultiplatformExtensionImpl @Inject constructor(
                 }
             }
             testableTargets.getByName(
-                "uikitX64",
+                "iosX64",
                 KotlinNativeTargetWithSimulatorTests::class,
                 KotlinNativeTargetWithSimulatorTests::configureTestRun
             )
             testableTargets.getByName(
-                "uikitSimArm64",
+                "iosSimArm64",
                 KotlinNativeTargetWithSimulatorTests::class,
                 KotlinNativeTargetWithSimulatorTests::configureTestRun
             )
