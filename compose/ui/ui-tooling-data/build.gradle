@@ -69,12 +69,6 @@ androidXMultiplatform {
             }
         }
 
-        jvmStubsMain {
-            dependsOn(jvmMain)
-            dependencies {
-            }
-        }
-
         androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
