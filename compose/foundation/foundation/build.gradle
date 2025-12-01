@@ -148,6 +148,9 @@ androidXMultiplatform {
 
         skikoTest {
             dependsOn(commonTest)
+            dependencies {
+                implementation(project(":compose:ui:ui-test"))
+            }
         }
 
         desktopMain {

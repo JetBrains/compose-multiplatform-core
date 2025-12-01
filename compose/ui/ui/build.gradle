@@ -309,10 +309,6 @@ androidXMultiplatform {
             dependsOn(nonJvmMain)
         }
 
-        webTest {
-            dependsOn(nonJvmTest)
-        }
-
         jsMain {
             kotlin.srcDir("src/webCommonW3C/kotlin")
             dependsOn(webMain)
@@ -320,7 +316,7 @@ androidXMultiplatform {
 
         jsTest {
             kotlin.srcDir("src/webTest/kotlin")
-            dependsOn(webTest)
+            dependsOn(skikoTest)
         }
 
         wasmJsMain {
@@ -335,7 +331,7 @@ androidXMultiplatform {
 
         wasmJsTest {
             kotlin.srcDir("src/webTest/kotlin")
-            dependsOn(webTest)
+            dependsOn(skikoTest)
         }
 
         targets.configureEach { target ->
