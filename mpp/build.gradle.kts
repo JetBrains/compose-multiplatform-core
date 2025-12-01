@@ -86,7 +86,7 @@ val testWebWasm = tasks.register("testWebWasm") {
 
 tasks.register("testUIKit") {
     group = "Compose Multiplatform"
-    val suffix = if (System.getProperty("os.arch") == "aarch64") "SimArm64Test" else "X64Test"
+    val suffix = if (System.getProperty("os.arch") == "aarch64") "SimulatorArm64Test" else "X64Test"
     val iosTestSubtaskName = "ios$suffix"
 
     dependsOn(":compose:runtime:runtime:$iosTestSubtaskName")
