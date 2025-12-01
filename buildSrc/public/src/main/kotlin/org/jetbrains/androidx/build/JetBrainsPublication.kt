@@ -66,7 +66,7 @@ object JetBrainsPublication {
             ComposeComponent(":compose:ui:ui-tooling-preview"),
             ComposeComponent(
                 ":compose:ui:ui-uikit",
-                supportedPlatforms = ComposePlatforms.UI_KIT
+                supportedPlatforms = ComposePlatforms.IOS
             ),
             ComposeComponent(":compose:ui:ui-unit"),
             ComposeComponent(":compose:ui:ui-util"),
@@ -117,8 +117,8 @@ object JetBrainsPublication {
         ),
         "NAVIGATION" to listOf(
             ComposeComponent(":navigation:navigation-compose"),
-            ComposeComponent(":navigation:navigation-common", supportedPlatforms = ComposePlatforms.ALL_AOSP - ComposePlatforms.WINDOWS_NATIVE),
-            ComposeComponent(":navigation:navigation-runtime", supportedPlatforms = ComposePlatforms.ALL_AOSP - ComposePlatforms.WINDOWS_NATIVE),
+            ComposeComponent(":navigation:navigation-common", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.WINDOWS_NATIVE),
+            ComposeComponent(":navigation:navigation-runtime", supportedPlatforms = ComposePlatforms.ALL - ComposePlatforms.WINDOWS_NATIVE),
         ),
         "NAVIGATION_3" to listOf(
             ComposeComponent(":navigation3:navigation3-ui"),
