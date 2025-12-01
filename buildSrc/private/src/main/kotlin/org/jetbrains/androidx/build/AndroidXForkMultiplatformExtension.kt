@@ -16,16 +16,18 @@
 
 package org.jetbrains.androidx.build
 
-import androidx.build.AndroidXExtension
-import androidx.build.Version
-import org.gradle.api.Project
+/**
+ * This extension provides additional configuration needed for some modules of the
+ * fork
+ */
+interface AndroidXForkMultiplatformExtension {
+    /**
+     * Configures native compilation tasks with flags to link required frameworks
+     */
+    fun configureDarwinFlags()
 
-fun Project.changeMavenCoordinatesToJetBrains() {
-    // we are interested in changing coordinates only for what we publish
-    val component = JetBrainsPublication.projectPathToComponent[path] ?: return
-    val versions = JetBrainsVersionsService.versions(project)
-    val androidxExtension = project.extensions.getByType(AndroidXExtension::class.java)
-
-    group = JetBrainsPublication.mavenGroupFor(path, androidxExtension.mavenGroup?.group) ?: group
-    version = Version(versions.versionOf(component.library()))
+    /**
+     * Configure instrumented tests to run on an actual iOS simulator.
+     */
+    fun iosInstrumentedTest()
 }

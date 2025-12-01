@@ -71,15 +71,13 @@ import org.gradle.api.internal.artifacts.DefaultModuleIdentifier
 import org.w3c.dom.Node
 
 fun Project.configureMavenArtifactUpload(
-    extension: AndroidXExtension,
-    kmpExtension: AndroidXMultiplatformExtension,
     componentFactory: SoftwareComponentFactory
 ) {
     apply(mapOf("plugin" to "maven-publish"))
     var registered = false
     fun registerOnFirstPublishableArtifact(component: SoftwareComponent) {
         if (!registered) {
-            configureComponentPublishing(extension, kmpExtension, component, componentFactory)
+            configureComponentPublishing(component, componentFactory)
             registered = true
         }
     }
@@ -99,11 +97,13 @@ fun Project.configureMavenArtifactUpload(
  * Configure publishing for a [SoftwareComponent].
  */
 private fun Project.configureComponentPublishing(
-    extension: AndroidXExtension,
-    kmpExtension: AndroidXMultiplatformExtension,
     component: SoftwareComponent,
     componentFactory: SoftwareComponentFactory
 ) {
+    val extension = project.extensions.getByType(AndroidXExtension::class.java)
+    val kmpExtension =
+        project.extensions.getByType(AndroidXMultiplatformExtension::class.java)
+
     val projectArchiveDir = File(
         getRepositoryDirectory(),
         "${group.toString().replace('.', '/')}/$name"

@@ -65,14 +65,6 @@ androidXMultiplatform {
     js()
     wasmJs()
 
-    // TODO: Migrate iosInstrumentedTest to kotlin 2.1.0
-    //  https://youtrack.jetbrains.com/issue/CMP-7390/Migrate-iosInstrumentedTest-target-to-kotlin-2.1.0
-    //  Kotlin 2.1.0 doesn't support declaring multiple targets of the same type
-    // iosInstrumentedTest()
-
-    // TODO: apply linker flags
-    // configureDarwinFlags()
-
     // TODO: Needs to be removed. Keep it for correct configuration of dependent modules.
     linuxX64Stubs()
 
@@ -382,6 +374,12 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
     }
+}
+
+androidXForkMultiplatform {
+    // TODO: fix iosInstrumentedTest
+    //iosInstrumentedTest()
+    configureDarwinFlags()
 }
 
 dependencies {
