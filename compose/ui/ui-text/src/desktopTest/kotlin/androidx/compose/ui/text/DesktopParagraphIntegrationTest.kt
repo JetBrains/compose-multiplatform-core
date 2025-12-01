@@ -67,7 +67,7 @@ class DesktopParagraphIntegrationTest {
     private val fontFamilyMeasureFont =
         FontFamily(
             Font(
-                "font/sample_font.ttf",
+                "font/sample_font_fork.ttf",
                 weight = FontWeight.Normal,
                 style = FontStyle.Normal
             )
@@ -2888,7 +2888,7 @@ class DesktopParagraphIntegrationTest {
         // First/last line is influenced by top/bottom padding
         for (i in 1 until paragraph.lineCount - 1) {
             val actualHeight = paragraph.getLineHeight(i)
-            // In the sample_font.ttf, the height of the line should be
+            // In the sample_font_fork.ttf, the height of the line should be
             // fontSize + 0.2f * fontSize(line gap)
             assertWithMessage("line number $i").that(actualHeight).isEqualToWithTolerance(lineHeight)
         }
@@ -2913,7 +2913,7 @@ class DesktopParagraphIntegrationTest {
         // First/last line is influenced by top/bottom padding
         for (i in 1 until paragraph.lineCount - 1) {
             val actualHeight = paragraph.getLineHeight(i)
-            // In the sample_font.ttf, the height of the line should be
+            // In the sample_font_fork.ttf, the height of the line should be
             // fontSize + 0.2f * fontSize(line gap)
             assertWithMessage("line number $i").that(actualHeight).isEqualToWithTolerance(lineHeight * fontSize)
         }

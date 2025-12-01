@@ -41,7 +41,7 @@ class DesktopFontTest {
     private val fontListFontFamily by lazy {
         FontFamily(
             Font(
-                "font/sample_font.ttf"
+                "font/sample_font_fork.ttf"
             ),
             Font(
                 "font/test_400_italic.ttf",
@@ -54,7 +54,7 @@ class DesktopFontTest {
         val bytes = Thread
             .currentThread()
             .contextClassLoader
-            .getResourceAsStream("font/sample_font.ttf")!!
+            .getResourceAsStream("font/sample_font_fork.ttf")!!
             .readAllBytes()
         FontMgr.default.makeFromData(Data.makeFromBytes(bytes))
             ?: error("loadedTypeface failed: FontMgr.default.makeFromData returned null")
