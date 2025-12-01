@@ -43,6 +43,7 @@ kotlin {
         def iosArm64Main = sourceSets.getByName("iosArm64Main")
         def iosSimArm64Main = sourceSets.getByName("iosSimulatorArm64Main")
 
+        darwinMain.dependsOn(commonMain)
         uikitMain.dependsOn(darwinMain)
         iosX64Main.dependsOn(uikitMain)
         iosArm64Main.dependsOn(uikitMain)
