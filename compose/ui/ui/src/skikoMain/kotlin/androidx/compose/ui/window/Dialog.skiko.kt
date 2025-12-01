@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.PlatformInsets
 import androidx.compose.ui.platform.exclude
+import androidx.compose.ui.platform.excludeWindowInsets
 import androidx.compose.ui.platform.findDefaultNavigationEventDispatcherOwner
 import androidx.compose.ui.platform.union
 import androidx.compose.ui.scene.ComposeSceneLayer
@@ -188,7 +189,8 @@ private fun DialogLayout(
         ) {
             Layout(
                 content = currentContent,
-                modifier = modifier,
+                modifier = modifier
+                    .excludeWindowInsets(properties.usePlatformInsets, properties.useSoftwareKeyboardInset),
                 measurePolicy = measurePolicy
             )
         }

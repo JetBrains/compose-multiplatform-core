@@ -70,6 +70,8 @@ interface PlatformWindowInsets {
     ): PlatformWindowInsets = this
 }
 
+internal object EmptyPlatformWindowInsets: PlatformWindowInsets
+
 @Composable
 internal fun PlatformWindowInsets.exclude(
     safeInsets: Boolean,

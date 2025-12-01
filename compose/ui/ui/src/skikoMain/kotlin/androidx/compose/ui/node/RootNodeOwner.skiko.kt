@@ -61,7 +61,6 @@ import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.PositionCalculator
 import androidx.compose.ui.input.rotary.RotaryScrollEvent
-import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.RootMeasurePolicy
 import androidx.compose.ui.layout.RulerProviderModifierElement
 import androidx.compose.ui.modifier.ModifierLocalManager
@@ -77,6 +76,7 @@ import androidx.compose.ui.platform.PlatformRootForTest
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformTextInputSessionScope
 import androidx.compose.ui.platform.PlatformWindowInsets
+import androidx.compose.ui.platform.PlatformWindowInsetsProviderNode
 import androidx.compose.ui.platform.createPlatformClipboard
 import androidx.compose.ui.platform.setLightingInfo
 import androidx.compose.ui.scene.ComposeScene
@@ -399,7 +399,7 @@ internal class RootNodeOwner(
         override val focusOwner: FocusOwner = FocusOwnerImpl(platformFocusOwner, this)
 
         val rootModifier = Modifier
-            .then(WindowInsetsProviderModifierElement(platformContext.windowInsets))
+            .then(RootWindowInsetsProviderModifierElement(platformContext.windowInsets))
             .then(
                 if (ComposeUiFlags.areWindowInsetsRulersEnabled) {
                     RulerProviderModifierElement(platformContext.windowInsets)
@@ -1005,48 +1005,29 @@ private object IdentityPositionCalculator: PositionCalculator {
     override fun localToScreen(localPosition: Offset): Offset = localPosition
 }
 
-private class WindowInsetsProviderModifierElement(
+private class RootWindowInsetsProviderModifierElement(
     val windowInsets: PlatformWindowInsets,
-): ModifierNodeElement<WindowInsetsProviderModifierNode>() {
-    override fun create(): WindowInsetsProviderModifierNode = WindowInsetsProviderModifierNode(windowInsets)
-
-    override fun update(node: WindowInsetsProviderModifierNode) {
-        if (node.windowInsets !== windowInsets) {
-            node.windowInsets = windowInsets
-        }
-    }
-
+): ModifierNodeElement<RootPlatformWindowInsetsProviderNode>() {
+    override fun create(): RootPlatformWindowInsetsProviderNode = RootPlatformWindowInsetsProviderNode(windowInsets)
+    override fun update(node: RootPlatformWindowInsetsProviderNode) = node.update(windowInsets)
     override fun hashCode(): Int = windowInsets.hashCode()
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other !is WindowInsetsProviderModifierElement) return false
+        if (other !is RootWindowInsetsProviderModifierElement) return false
         return windowInsets == other.windowInsets
     }
 }
 
-private class WindowInsetsProviderModifierNode(
-    var windowInsets: PlatformWindowInsets
-): Modifier.Node(), TraversableNode {
-    override val traverseKey: Any = TraverseKey
+private class RootPlatformWindowInsetsProviderNode(
+    private var insets: PlatformWindowInsets,
+): PlatformWindowInsetsProviderNode(insets) {
+    override fun calculatePlatformInsets(ancestorWindowInsets: PlatformWindowInsets): PlatformWindowInsets =
+        insets
 
-    companion object TraverseKey
-}
-
-@OptIn(InternalComposeUiApi::class)
-fun DelegatableNode.requireWindowInsets(): PlatformWindowInsets {
-    var windowInsets: PlatformWindowInsets? = null
-    traverseAncestors(WindowInsetsProviderModifierNode.TraverseKey) { node ->
-        when(node) {
-            is WindowInsetsProviderModifierNode -> windowInsets = node.windowInsets
-            else -> throw IllegalStateException(
-                "WindowInsetsProviderModifierNode.TraverseKey key must only be attached" +
-                    " to instances of WindowInsetsProviderModifierNode.")
+    fun update(windowInsets: PlatformWindowInsets) {
+        if (insets !== windowInsets) {
+            insets = windowInsets
+            windowInsetsInvalidated()
         }
-        false
-    }
-    return checkPreconditionNotNull(windowInsets) {
-        "WindowInsetsProviderModifierNode is not attached to any of ancestor nodes"
     }
 }
-
