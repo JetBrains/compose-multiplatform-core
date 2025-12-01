@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalContext
 import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.ui.ComposeFeatureFlags
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.awt.AwtEventListener
 import androidx.compose.ui.awt.AwtEventListeners
 import androidx.compose.ui.awt.DebouncingEdtExecutor
@@ -42,6 +43,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.PointerKeyboardModifiers
 import androidx.compose.ui.input.pointer.PointerType
+import androidx.compose.ui.isClearFocusOnMouseDownEnabled
 import androidx.compose.ui.navigationevent.BackNavigationEventInput
 import androidx.compose.ui.platform.AwtDragAndDropManager
 import androidx.compose.ui.platform.DefaultInputModeManager
@@ -323,6 +325,12 @@ internal class ComposeSceneMediator(
     var compositionLocalContext: CompositionLocalContext?
         get() = scene.compositionLocalContext
         set(value) { scene.compositionLocalContext = value }
+    var showLayoutBounds: Boolean
+        get() = scene.showLayoutBounds
+        set(value) {
+            scene.showLayoutBounds = value
+        }
+
 
     /**
      * Provides the size of ComposeScene content inside infinity constraints
@@ -366,6 +374,8 @@ internal class ComposeSceneMediator(
     )
 
     private val composeInvalidationExecutor = DebouncingEdtExecutor()
+
+    var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
 
     init {
         // Transparency is used during redrawer creation that triggered by [addNotify], so
@@ -828,6 +838,8 @@ internal class ComposeSceneMediator(
             get() = this@ComposeSceneMediator.rootForTestListener
         override val semanticsOwnerListener
             get() = this@ComposeSceneMediator.semanticsOwnerListener
+        override val isClearFocusOnMouseDownEnabled: Boolean
+            get() = this@ComposeSceneMediator.isClearFocusOnMouseDownEnabled
     }
 
     private inner class DesktopPlatformComponent : PlatformComponent {

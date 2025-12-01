@@ -18,11 +18,15 @@ package androidx.compose.ui.awt
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ComposeFeatureFlags
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LayerType
 import androidx.compose.ui.awt.RenderSettings.SkiaSurface
 import androidx.compose.ui.awt.RenderSettings.SwingGraphics
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.isClearFocusOnMouseDownEnabled
+import androidx.compose.ui.node.InternalCoreApi
 import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.window.WindowExceptionHandler
@@ -121,6 +125,16 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     private var _composeContent: (@Composable () -> Unit)? = null
 
     /**
+     * Controls whether mouse-down on an unfocusable element clears focus.
+     */
+    @ExperimentalComposeUiApi
+    var isClearFocusOnMouseDownEnabled: Boolean = ComposeUiFlags.isClearFocusOnMouseDownEnabled
+        set(value) {
+            field = value
+            _composeContainer?.isClearFocusOnMouseDownEnabled = value
+        }
+
+    /**
      * Determines whether the Compose state in [ComposePanel] should be disposed
      * when panel is detached from Swing hierarchy (when [removeNotify] is called).
      *
@@ -171,7 +185,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
 
     override fun getPreferredSize(): Dimension? = if (isPreferredSizeSet) {
         super.getPreferredSize()
-    } else  {
+    } else {
         _composeContainer?.preferredSize ?: Dimension(0, 0)
     }
 
@@ -240,6 +254,8 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
         // content.
         val composeContainer = _composeContainer ?: createComposeContainer().also {
             _composeContainer = it
+            @OptIn(InternalCoreApi::class)
+            it.showLayoutBounds = showLayoutBounds
             val composeContent = _composeContent
             if (composeContent != null) {
                 it.setContent(composeContent)
@@ -272,6 +288,7 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
                                     focusManager.takeFocus(FocusDirection.Next)
                                 }
                             }
+
                             else -> Unit
                         }
                     }
@@ -279,6 +296,8 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
 
                 override fun focusLost(e: FocusEvent) = Unit
             })
+
+            isClearFocusOnMouseDownEnabled = this@ComposePanel.isClearFocusOnMouseDownEnabled
         }
     }
 
@@ -378,4 +397,17 @@ class ComposePanel @ExperimentalComposeUiApi constructor(
     fun renderImmediately() {
         _composeContainer?.renderImmediately()
     }
+
+    /**
+     * Set the visual debug option that shows bounds for all nodes in the hierarchy.
+     */
+    @InternalComposeUiApi
+    var showLayoutBounds: Boolean = _composeContainer?.showLayoutBounds ?: false
+        set(value) {
+            // We're assuming we own the scene and thus this value, and nobody
+            // else will change it from under us, so we never get out of sync.
+            field = value
+            @OptIn(InternalCoreApi::class)
+            _composeContainer?.showLayoutBounds = value
+        }
 }

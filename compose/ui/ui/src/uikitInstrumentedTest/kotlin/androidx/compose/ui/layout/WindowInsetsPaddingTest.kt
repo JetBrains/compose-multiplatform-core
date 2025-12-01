@@ -51,8 +51,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.useContents
+import org.jetbrains.skiko.OS
+import org.jetbrains.skiko.OSVersion
+import org.jetbrains.skiko.available
+import platform.UIKit.UIDevice
 import platform.UIKit.UIInterfaceOrientationMaskLandscapeLeft
 import platform.UIKit.UIInterfaceOrientationMaskLandscapeRight
+import platform.UIKit.UIUserInterfaceIdiomPad
 
 class WindowInsetsPaddingTest {
     @Test
@@ -80,7 +85,10 @@ class WindowInsetsPaddingTest {
 
     @OptIn(ExperimentalForeignApi::class)
     @Test
-    fun testDisplayCutoutPadding_InterfaceOrientationLandscapeLeft() = runUIKitInstrumentedTest {
+    fun testDisplayCutoutPadding_InterfaceOrientationLandscapeLeft() = runUIKitInstrumentedTest(
+        ignoreIf = !available(OS.Ios to OSVersion(16)) || UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad,
+        ignoreNotes = "Device rotation does not work for iOS < 16 and iPad"
+    ) {
         var boxRect = DpRectZero()
 
         setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeLeft) {
@@ -108,7 +116,10 @@ class WindowInsetsPaddingTest {
 
     @OptIn(ExperimentalForeignApi::class)
     @Test
-    fun testDisplayCutoutPadding_InterfaceOrientationLandscapeRight() = runUIKitInstrumentedTest {
+    fun testDisplayCutoutPadding_InterfaceOrientationLandscapeRight() = runUIKitInstrumentedTest(
+        ignoreIf = !available(OS.Ios to OSVersion(16)) || UIDevice.currentDevice.userInterfaceIdiom == UIUserInterfaceIdiomPad,
+        ignoreNotes = "Device rotation does not work for iOS < 16 and iPad"
+    ) {
         var boxRect = DpRectZero()
 
         setContent(interfaceOrientation = UIInterfaceOrientationMaskLandscapeRight) {

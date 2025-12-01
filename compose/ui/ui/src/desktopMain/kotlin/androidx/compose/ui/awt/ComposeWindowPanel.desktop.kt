@@ -81,6 +81,8 @@ internal class ComposeWindowPanel(
     val renderApi by composeContainer::renderApi
     val semanticsOwners by composeContainer::semanticsOwners
 
+    var isClearFocusOnMouseDownEnabled: Boolean by composeContainer::isClearFocusOnMouseDownEnabled
+
     var isWindowTransparent: Boolean = false
         set(value) {
             if (field != value) {
@@ -190,4 +192,12 @@ internal class ComposeWindowPanel(
     override fun removeMouseMotionListener(listener: MouseMotionListener) {
         contentComponent.removeMouseMotionListener(listener)
     }
+
+    var showLayoutBounds: Boolean
+        get() {
+            return _composeContainer?.showLayoutBounds ?: false
+        }
+        set(value) {
+            _composeContainer?.showLayoutBounds = value
+        }
 }

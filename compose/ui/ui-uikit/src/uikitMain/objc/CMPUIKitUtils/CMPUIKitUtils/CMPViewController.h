@@ -15,35 +15,22 @@
  */
 
 #import <UIKit/UIKit.h>
+#import "CMPComposeContainerLifecycleDelegate.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol CMPViewControllerLifecycleDelegate
-
-- (void)viewControllerWillAppear;
-- (void)viewControllerDidDisappear;
-- (void)viewControllerWillDealloc;
-
-@end
-
 @interface CMPViewController : UIViewController
 
-- (id)initWithLifecycleDelegate:(id<CMPViewControllerLifecycleDelegate> _Nullable)delegate;
-
-/// Indicates that view controller is considered alive in terms of structural containment.
-/// Overriding classes should call super.
-- (void)viewControllerDidEnterWindowHierarchy;
+- (id)initWithLifecycleDelegate:(id<CMPComposeContainerLifecycleDelegate> _Nullable)delegate;
 
 /// Indicates that view controller is considered alive in terms of structural containment
-/// Overriding classes should call super.
+- (void)viewControllerDidEnterWindowHierarchy;
+
+/// Indicates that view controller is considered closed in terms of structural containment
 - (void)viewControllerDidLeaveWindowHierarchy;
 
-
-// MARK: Unexported methods redeclaration block
-// Redeclared to make it visible to Kotlin for override purposes, workaround for the following issue:
-// https://youtrack.jetbrains.com/issue/KT-56001/Kotlin-Native-import-Objective-C-category-members-as-class-members-if-the-category-is-located-in-the-same-file
-
-- (void)viewSafeAreaInsetsDidChange;
+/// Indicates that trait interface style trait changed
+- (void)userInterfaceStyleDidChange;
 
 @end
 
