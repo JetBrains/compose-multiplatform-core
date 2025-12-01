@@ -26,6 +26,15 @@ fun Project.changeMavenCoordinatesToJetBrains() {
     val versions = JetBrainsVersionsService.versions(project)
     val androidxExtension = project.extensions.getByType(AndroidXExtension::class.java)
 
-    group = JetBrainsPublication.mavenGroupFor(path, androidxExtension.mavenGroup?.group) ?: group
-    version = Version(versions.versionOf(component.library()))
+    val group = JetBrainsPublication.mavenGroupFor(path, androidxExtension.mavenGroup?.group) ?: group
+    val version = Version(versions.versionOf(component.library()))
+    this.group = group
+    this.version = version
+
+    // we need to set them again in case they are overridden in build.gradle
+    // for example, version can be overriden via `androidx { mavenVersion = ... }`
+    afterEvaluate {
+        this.group = group
+        this.version = version
+    }
 }
