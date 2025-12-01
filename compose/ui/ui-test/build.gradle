@@ -203,6 +203,22 @@ androidXMultiplatform {
         }
 
         macosMain {
+            dependsOn(nativeMain)
+        }
+
+        macosTest {
+            dependsOn(nativeTest)
+        }
+
+        uikitMain {
+            dependsOn(nativeMain)
+        }
+
+        uikitTest {
+            dependsOn(nativeTest)
+        }
+
+        macosMain {
             dependsOn(darwinMain)
         }
 
