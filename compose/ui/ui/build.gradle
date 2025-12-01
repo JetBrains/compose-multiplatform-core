@@ -65,14 +65,6 @@ androidXMultiplatform {
     js()
     wasmJs()
 
-    // TODO: Migrate iosInstrumentedTest to kotlin 2.1.0
-    //  https://youtrack.jetbrains.com/issue/CMP-7390/Migrate-iosInstrumentedTest-target-to-kotlin-2.1.0
-    //  Kotlin 2.1.0 doesn't support declaring multiple targets of the same type
-    // iosInstrumentedTest()
-
-    // TODO: apply linker flags
-    // configureDarwinFlags()
-
     defaultPlatform(PlatformIdentifier.ANDROID)
 
     sourceSets {
@@ -371,6 +363,12 @@ androidXMultiplatform {
             languageSettings.optIn("androidx.compose.ui.InternalComposeUiApi")
         }
     }
+}
+
+androidXForkMultiplatform {
+    // TODO: fix iosInstrumentedTest
+    //iosInstrumentedTest()
+    configureDarwinFlags()
 }
 
 dependencies {

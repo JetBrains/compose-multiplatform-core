@@ -208,6 +208,10 @@ androidXMultiplatform {
     }
 }
 
+androidXForkMultiplatform {
+    configureDarwinFlags()
+}
+
 dependencies {
     lintPublish(project(":compose:ui:ui-graphics-lint"))
 }

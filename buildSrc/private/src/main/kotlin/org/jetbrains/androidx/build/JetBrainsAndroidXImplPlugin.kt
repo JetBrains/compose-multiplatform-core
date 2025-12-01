@@ -141,19 +141,9 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
     @Suppress("UNREACHABLE_CODE", "UNUSED_VARIABLE")
     override fun apply(project: Project) {
-        check(project.plugins.hasPlugin("AndroidXPlugin")) {
-            "JetBrainsAndroidXPlugin should be applied after AndroidXPlugin"
-        }
-
         if (isJetBrainsForkStructureEnabled(project)) {
-            val androidxExtension =
-                project.extensions.getByType(AndroidXExtension::class.java)
-            val androidxMultiplatformExtension =
-                project.extensions.getByType(AndroidXMultiplatformExtension::class.java)
-            project.changeMavenCoordinatesToJetBrains(androidxExtension)
-            project.configureMavenArtifactUpload(
-                androidxExtension, androidxMultiplatformExtension, componentFactory
-            )
+            project.changeMavenCoordinatesToJetBrains()
+            project.configureMavenArtifactUpload(componentFactory)
             project.configureDependencyVerification()
 
             project.plugins.all { plugin ->
@@ -166,13 +156,14 @@ class JetBrainsAndroidXImplPlugin @Inject constructor(
 
     private fun onKotlinMultiplatformPluginApplied(project: Project) {
         project.extensions.create(
-            AndroidXComposeMultiplatformExtension::class.java,
-            "androidXComposeMultiplatform",
-            AndroidXComposeMultiplatformExtensionImpl::class.java
+            AndroidXForkMultiplatformExtension::class.java,
+            "androidXForkMultiplatform",
+            AndroidXForkMultiplatformExtensionImpl::class.java
         )
 
         enableArtifactRedirectionPublishing(project)
         enableBinaryCompatibilityValidator(project)
+        project.configureTargetsForComposeMultiplatform()
         val multiplatformExtension =
             project.extensions.getByType(KotlinMultiplatformExtension::class.java)
 
