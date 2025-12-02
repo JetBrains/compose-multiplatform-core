@@ -514,17 +514,16 @@ tasks.register("desktopHeadlessTest", Test) {
     testClassesDirs = sourceSets.desktopTest.output.classesDirs
     classpath = sourceSets.desktopTest.runtimeClasspath
 
-    filter {
-        includeTestsMatching("androidx.compose.ui.platform.HeadlessClipboardTest")
+    useJUnit {
+        includeCategories("androidx.compose.ui.HeadlessTest")
     }
     systemProperty("java.awt.headless", "true")
 }
 
 tasks.desktopTest {
-    filter {
-        excludeTestsMatching("androidx.compose.ui.platform.HeadlessClipboardTest")
+    useJUnit {
+        excludeCategories("androidx.compose.ui.HeadlessTest")
     }
-
     finalizedBy("desktopHeadlessTest")
 }
 

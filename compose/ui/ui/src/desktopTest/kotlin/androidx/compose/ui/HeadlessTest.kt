@@ -14,46 +14,23 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.platform
+package androidx.compose.ui
 
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
 import java.awt.GraphicsEnvironment
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import org.junit.BeforeClass
-import org.junit.Test
+
+/**
+ * Marker interface for tests that should be run in headless mode.
+ */
+interface HeadlessTest
 
 
-@OptIn(ExperimentalTestApi::class)
-class HeadlessClipboardTest {
-
-    companion object {
-
-        // Typically this is set in Gradle, but also set it here to allow adhoc running the tests
-        // from the IDE
-        @JvmStatic
-        @BeforeClass
-        fun setUpHeadless() {
-            System.setProperty("java.awt.headless", "true")
-        }
-
-    }
-
-    @Test
-    fun nativeClipboardDoesNotCrash() = runHeadlessComposeUiTest {
-        lateinit var clipboard: Clipboard
-        setContent {
-            clipboard = LocalClipboard.current
-        }
-
-        clipboard.nativeClipboard  // Just check it doesn't crash
-        assertEquals(null, clipboard.awtClipboard)
-    }
-}
-
-
+/**
+ * Runs [runComposeUiTest] but first verifies that the test is executed in headless mode.
+ */
 @OptIn(ExperimentalTestApi::class)
 internal fun runHeadlessComposeUiTest(block: suspend ComposeUiTest.() -> Unit) = runComposeUiTest {
     assertTrue(GraphicsEnvironment.isHeadless(), "This is a headless test, but it's run not in headless mode")
