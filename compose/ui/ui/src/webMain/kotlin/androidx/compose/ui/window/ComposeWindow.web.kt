@@ -18,6 +18,9 @@ package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
+import kotlinx.browser.document
+import org.w3c.dom.DocumentReadyState
+import org.w3c.dom.LOADING
 
 /**
  * EXPERIMENTAL! Might be deleted or changed in the future!
@@ -44,14 +47,20 @@ fun ComposeViewport(
     )
 }
 
-internal expect fun InternalComposeViewport(
-    viewportContainerId: String? = null,
-    configure: ComposeViewportConfiguration.() -> Unit = {},
-    content: @Composable () -> Unit = { }
-)
-
 // In K/JS target, an application can't start right away. We should wait until skiko.wasm is ready.
 // We'll do it implicitly, rather than asking the app developers to call it.
-internal expect fun onSkikoReady(block: () -> Unit)
+internal fun onSkikoReady(block: () -> Unit) {
+    @Suppress("INVISIBLE_REFERENCE")
+    org.jetbrains.skiko.wasm.onWasmReady { block() }
+}
 
-internal expect fun onDomReady(block: () -> Unit)
+internal fun onDomReady(block: () -> Unit) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/Document/DOMContentLoaded_event
+    if (document.readyState == DocumentReadyState.Companion.LOADING) {
+        document.addEventListener("DOMContentLoaded", {
+            block()
+        })
+    } else {
+        block()
+    }
+}
