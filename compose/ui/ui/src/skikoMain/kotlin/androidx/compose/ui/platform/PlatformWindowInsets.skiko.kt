@@ -70,8 +70,6 @@ interface PlatformWindowInsets {
     ): PlatformWindowInsets = this
 }
 
-internal object EmptyPlatformWindowInsets: PlatformWindowInsets
-
 @Composable
 internal fun PlatformWindowInsets.exclude(
     safeInsets: Boolean,
@@ -83,6 +81,9 @@ internal fun PlatformWindowInsets.exclude(
         content = content
     )
 }
+
+@InternalComposeUiApi
+internal object EmptyPlatformWindowInsets: PlatformWindowInsets
 
 @InternalComposeUiApi
 val PlatformWindowInsets.safeDrawing: PlatformInsets get() = object : PlatformInsets {
