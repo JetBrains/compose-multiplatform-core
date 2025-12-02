@@ -23,10 +23,10 @@ Run tests for Web:
 ./gradlew :mpp:testWeb
 ```
 
-Run tests for UIKit:
+Run tests for iOS:
 
 ```bash
-./gradlew :mpp:testUIKit'
+./gradlew :mpp:testIos'
 ```
 
 Run iOS instrumented tests.
