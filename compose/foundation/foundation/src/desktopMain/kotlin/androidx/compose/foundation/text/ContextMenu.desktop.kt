@@ -237,7 +237,7 @@ private val SelectionManager.textManager: TextManager get() = object : TextManag
     override val selectedText get() = getSelectedText() ?: AnnotatedString("")
     override val cut = null
     override val copy
-        get() = if (selectedText.isNotEmpty()) this@textManager::copy else null
+        get() = if (isNonEmptySelection()) this@textManager::copy else null
     override val paste = null
     override val selectAll = null
     override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) {
