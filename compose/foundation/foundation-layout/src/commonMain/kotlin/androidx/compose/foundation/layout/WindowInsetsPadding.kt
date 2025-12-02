@@ -19,6 +19,8 @@
 package androidx.compose.foundation.layout
 
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.IntrinsicMeasurable
@@ -481,6 +483,7 @@ internal open class InsetsPaddingModifierNode(private var insets: WindowInsets) 
         measurable: Measurable,
         constraints: Constraints,
     ): MeasureResult {
+
         val left =
             consumedInsets.getLeft(this, layoutDirection) -
                 ancestorConsumedInsets.getLeft(this, layoutDirection)
