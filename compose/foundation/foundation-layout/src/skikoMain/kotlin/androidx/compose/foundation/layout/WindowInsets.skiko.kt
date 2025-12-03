@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import kotlin.jvm.JvmName
 
+// TODO: https://youtrack.jetbrains.com/issue/CMP-9379
+
 actual val WindowInsets.Companion.captionBar: WindowInsets
     @Composable
     get() = LocalPlatformWindowInsets.current.captionBar.toWindowInsets()

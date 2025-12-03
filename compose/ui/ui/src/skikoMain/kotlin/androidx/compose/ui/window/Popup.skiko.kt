@@ -462,6 +462,7 @@ private fun PopupLayout(
             layoutDirection = layoutDirection,
             parentBoundsInWindow = parentBoundsInWindow
         )
+        // TODO: remove exclude in favor of excludeWindowInsets https://youtrack.jetbrains.com/issue/CMP-9379
         LocalPlatformWindowInsets.current.exclude(
             properties.usePlatformInsets,
             false

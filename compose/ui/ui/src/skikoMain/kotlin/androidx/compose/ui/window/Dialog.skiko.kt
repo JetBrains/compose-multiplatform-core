@@ -183,6 +183,7 @@ private fun DialogLayout(
             platformInsets = platformInsets
         )
 
+        // TODO: remove exclude in favor of excludeWindowInsets https://youtrack.jetbrains.com/issue/CMP-9379
         LocalPlatformWindowInsets.current.exclude(
             safeInsets = properties.usePlatformInsets,
             ime = properties.useSoftwareKeyboardInset
