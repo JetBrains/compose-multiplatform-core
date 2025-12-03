@@ -82,6 +82,8 @@ internal fun PlatformWindowInsets.exclude(
     )
 }
 
+internal object EmptyPlatformWindowInsets : PlatformWindowInsets
+
 @InternalComposeUiApi
 val PlatformWindowInsets.safeDrawing: PlatformInsets get() = object : PlatformInsets {
     override val left: Int get() = maxOf(displayCutout.left, ime.left, systemBars.left)

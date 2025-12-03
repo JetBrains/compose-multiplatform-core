@@ -67,8 +67,6 @@ abstract class PlatformWindowInsetsProviderNode(
     }
 }
 
-private object EmptyPlatformWindowInsets : PlatformWindowInsets
-
 internal fun Modifier.excludeWindowInsets(safeInsets: Boolean, ime: Boolean) = this.then(
     ExcludedWindowInsetsProviderModifierElement(safeInsets, ime))
 
