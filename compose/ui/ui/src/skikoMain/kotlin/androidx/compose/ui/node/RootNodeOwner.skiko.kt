@@ -1016,7 +1016,7 @@ private class RootPlatformWindowInsetsProviderNode(
         insets
 
     fun update(windowInsets: PlatformWindowInsets) {
-        if (insets !== windowInsets) {
+        if (insets != windowInsets) {
             insets = windowInsets
             windowInsetsInvalidated()
         }
