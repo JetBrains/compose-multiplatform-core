@@ -297,6 +297,14 @@ public interface ImpressApi {
      */
     public fun stopGltfModelAnimation(impressNode: ImpressNode)
 
+    /**
+     * Toggles the playback of a glTF model's animation to pause or resume.
+     *
+     * @param impressNode The object of the Impress node for the instance of the GLTF
+     * @param playing `true` to resume the animation, `false` to pause it.
+     */
+    public fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean)
+
     /** This method creates an Impress node and returns its impress node object. */
     public fun createImpressNode(): ImpressNode
 

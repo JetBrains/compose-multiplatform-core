@@ -60,7 +60,7 @@ package androidx.glance.wear {
     method @InaccessibleFromKotlin public int getPreferredContainerType();
     method @InaccessibleFromKotlin public android.content.ComponentName getProviderService();
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.String> getUnrecognisedAttributes();
-    method @kotlin.jvm.Throws(exceptionClasses=XmlPullParserException::class) public static androidx.glance.wear.WearWidgetProviderInfo parseFromService(android.content.Context context, android.content.ComponentName providerService) throws org.xmlpull.v1.XmlPullParserException;
+    method @kotlin.jvm.Throws(exceptionClasses={PackageManager.NameNotFoundException::class, XmlPullParserException::class}) public static androidx.glance.wear.WearWidgetProviderInfo parseFromService(android.content.Context context, android.content.ComponentName providerService) throws android.content.pm.PackageManager.NameNotFoundException, org.xmlpull.v1.XmlPullParserException;
     property public String? configIntentAction;
     property public java.util.List<androidx.glance.wear.ContainerInfo> containers;
     property public String description;
@@ -74,7 +74,7 @@ package androidx.glance.wear {
   }
 
   public static final class WearWidgetProviderInfo.Companion {
-    method @kotlin.jvm.Throws(exceptionClasses=XmlPullParserException::class) public androidx.glance.wear.WearWidgetProviderInfo parseFromService(android.content.Context context, android.content.ComponentName providerService) throws org.xmlpull.v1.XmlPullParserException;
+    method @kotlin.jvm.Throws(exceptionClasses={PackageManager.NameNotFoundException::class, XmlPullParserException::class}) public androidx.glance.wear.WearWidgetProviderInfo parseFromService(android.content.Context context, android.content.ComponentName providerService) throws android.content.pm.PackageManager.NameNotFoundException, org.xmlpull.v1.XmlPullParserException;
   }
 
   public final class WidgetInstanceId {

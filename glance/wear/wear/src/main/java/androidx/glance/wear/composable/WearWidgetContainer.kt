@@ -17,7 +17,9 @@
 package androidx.glance.wear.composable
 
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.remote.creation.compose.capture.painter.RemotePainter
 import androidx.compose.remote.creation.compose.layout.RemoteBox
+import androidx.compose.remote.creation.compose.layout.RemoteCanvas
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clip
@@ -38,13 +40,22 @@ internal fun WearWidgetContainer(
     horizontalPadding: Dp,
     verticalPadding: Dp,
     cornerRadius: Dp,
+    backgroundPainter: RemotePainter,
     content: @RemoteComposable @Composable () -> Unit,
 ) {
+
     RemoteBox(
         modifier =
-            RemoteModifier.fillMaxSize()
-                .padding(horizontal = horizontalPadding, vertical = verticalPadding)
-                .clip(shape = RoundedCornerShape(size = cornerRadius)),
-        content = content,
-    )
+            RemoteModifier.fillMaxSize().clip(shape = RoundedCornerShape(size = cornerRadius))
+    ) {
+        RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
+            with(backgroundPainter) { onDraw() }
+        }
+        RemoteBox(
+            modifier =
+                RemoteModifier.fillMaxSize()
+                    .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+            content = content,
+        )
+    }
 }

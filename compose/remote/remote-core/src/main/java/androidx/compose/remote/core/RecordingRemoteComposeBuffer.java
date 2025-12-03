@@ -873,12 +873,12 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
         float g = (color >> 8 & 0xff) / 255.0f;
         float b = (color & 0xff) / 255.0f;
         float a = (color >> 24 & 0xff) / 255.0f;
-        addOperation(new BackgroundModifierOperation(0f, 0f, 0f, 0f, r, g, b, a, shape));
+        addOperation(new BackgroundModifierOperation(0, 0, 0, 0, r, g, b, a, shape));
     }
 
     @Override
     public void addModifierBackground(float r, float g, float b, float a, int shape) {
-        addOperation(new BackgroundModifierOperation(0f, 0f, 0f, 0f, r, g, b, a, shape));
+        addOperation(new BackgroundModifierOperation(0, 0, 0, 0, r, g, b, a, shape));
     }
 
     @Override
@@ -895,7 +895,7 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
         float a = (color >> 24 & 0xff) / 255.0f;
         addOperation(
                 new BorderModifierOperation(
-                        0f, 0f, 0f, 0f, borderWidth, borderRoundedCorner, r, g, b, a, shape));
+                        0, 0, 0, 0, borderWidth, borderRoundedCorner, r, g, b, a, shape));
     }
 
     @Override

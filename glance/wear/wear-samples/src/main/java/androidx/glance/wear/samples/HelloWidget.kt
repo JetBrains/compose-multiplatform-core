@@ -17,6 +17,7 @@
 package androidx.glance.wear.samples
 
 import android.content.Context
+import androidx.compose.remote.creation.compose.capture.painter.painterRemoteColor
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -42,7 +43,10 @@ class HelloWidget : GlanceWearWidget() {
     override suspend fun provideWidgetData(
         context: Context,
         params: WearWidgetParams,
-    ): WearWidgetData = WearWidgetDocument { HelloWidgetContent() }
+    ): WearWidgetData =
+        WearWidgetDocument(backgroundPainter = painterRemoteColor(Color.Red)) {
+            HelloWidgetContent()
+        }
 }
 
 @RemoteComposable

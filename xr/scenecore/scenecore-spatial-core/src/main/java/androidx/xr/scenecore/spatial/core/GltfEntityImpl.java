@@ -18,6 +18,7 @@ package androidx.xr.scenecore.spatial.core;
 
 import android.content.Context;
 
+import androidx.annotation.RestrictTo;
 import androidx.xr.runtime.math.BoundingBox;
 import androidx.xr.scenecore.runtime.Entity;
 import androidx.xr.scenecore.runtime.GltfEntity;
@@ -67,6 +68,18 @@ class GltfEntityImpl extends BaseRenderingEntity implements GltfEntity {
     @Override
     public void stopAnimation() {
         mFeature.stopAnimation();
+    }
+
+    @Override
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public void pauseAnimation() {
+        mFeature.pauseAnimation();
+    }
+
+    @Override
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public void resumeAnimation() {
+        mFeature.resumeAnimation();
     }
 
     @Override

@@ -120,7 +120,8 @@ public open class FakeGltfEntity(
         feature?.startAnimation(loop, animationName, executor!!)
         if (
             supportedAnimationNames.contains(animationName) &&
-                _animationState == GltfEntity.AnimationState.STOPPED
+                (_animationState == GltfEntity.AnimationState.STOPPED ||
+                    _animationState == GltfEntity.AnimationState.PAUSED)
         ) {
 
             _animationState = GltfEntity.AnimationState.PLAYING
@@ -133,11 +134,32 @@ public open class FakeGltfEntity(
     /** Stops the animation of the glTF entity. */
     override fun stopAnimation() {
         feature?.stopAnimation()
-        if (_animationState == GltfEntity.AnimationState.PLAYING) {
+        if (
+            _animationState == GltfEntity.AnimationState.PLAYING ||
+                _animationState == GltfEntity.AnimationState.PAUSED
+        ) {
             _animationState = GltfEntity.AnimationState.STOPPED
 
             isLooping = false
             currentAnimationName = null
+        }
+    }
+
+    /* Pause the animation of the glTF entity. */
+    override fun pauseAnimation() {
+        feature?.pauseAnimation()
+
+        if (_animationState == GltfEntity.AnimationState.PLAYING) {
+            _animationState = GltfEntity.AnimationState.PAUSED
+        }
+    }
+
+    /* Resume the animation of the glTF entity. */
+    override fun resumeAnimation() {
+        feature?.resumeAnimation()
+
+        if (_animationState == GltfEntity.AnimationState.PAUSED) {
+            _animationState = GltfEntity.AnimationState.PLAYING
         }
     }
 

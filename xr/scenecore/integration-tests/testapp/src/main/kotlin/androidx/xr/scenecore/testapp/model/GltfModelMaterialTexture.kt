@@ -47,8 +47,8 @@ import java.nio.file.Paths
 import kotlinx.coroutines.launch
 
 @SuppressLint("SetTextI18n")
-class GltfModelActivity : AppCompatActivity() {
-    private val TAG = "GltfModelActivity"
+class GltfModelMaterialTexture : AppCompatActivity() {
+    private val TAG = "GltfModelMaterialTexture"
     private val ANIMATION_NAME = "Fast_Flying"
     private val MESH_NAME = "Dragon"
     private val DRAGON_SCALE = 0.2f
@@ -64,7 +64,7 @@ class GltfModelActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_gltf_model)
+        setContentView(R.layout.activity_gltf_model_material_texture)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -77,13 +77,13 @@ class GltfModelActivity : AppCompatActivity() {
 
         findViewById<Toolbar>(R.id.gltf_model_topAppBar).also {
             setSupportActionBar(it)
-            it.setNavigationOnClickListener { this@GltfModelActivity.finish() }
-            it.setTitle(getString(R.string.cuj_gltf_model_test))
+            it.setNavigationOnClickListener { this@GltfModelMaterialTexture.finish() }
+            it.setTitle(getString(R.string.cuj_gltf_model_material_texture_test))
         }
 
         findViewById<FloatingActionButton>(R.id.bottomCenterFab).also {
             it.tooltipText = getString(R.string.fab_recreate_activity_tooltip)
-            it.setOnClickListener { ActivityCompat.recreate(this@GltfModelActivity) }
+            it.setOnClickListener { ActivityCompat.recreate(this@GltfModelMaterialTexture) }
         }
 
         findViewById<Button>(R.id.gltf_model_toggle_hsm_fsm).also { button ->

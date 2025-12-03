@@ -33,6 +33,7 @@ import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -70,7 +71,6 @@ const val androidShapeString =
 
 @Suppress("RestrictedApiAndroidX") val androidPath = RemotePath(androidShapeString)
 
-@Preview
 @Composable
 @RemoteComposable
 @Suppress("RestrictedApiAndroidX")
@@ -328,3 +328,5 @@ fun RcSimpleClock1(
         }
     }
 }
+
+@Preview @Composable fun RcSimpleClock1Preview() = RemotePreview { RcSimpleClock1() }

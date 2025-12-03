@@ -285,6 +285,52 @@ class FakeImpressApiImplTest {
     }
 
     @Test
+    fun toggleGltfModelAnimation_pauseModelWithoutLooping() {
+        val entityNode = fakeImpressApi.createImpressNode()
+        val future = fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = false)
+        assertThat(future).isNotNull()
+        val pausingSize: Int = fakeImpressApi.impressNodeAnimationPausingSize()
+        fakeImpressApi.toggleGltfModelAnimation(entityNode, false)
+        val pausingSize2: Int = fakeImpressApi.impressNodeAnimationPausingSize()
+        assertThat(pausingSize2).isEqualTo(pausingSize + 1)
+    }
+
+    @Test
+    fun toggleGltfModelAnimation_pauseModelWithLooping() {
+        val entityNode = fakeImpressApi.createImpressNode()
+        val future = fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = true)
+        assertThat(future).isNotNull()
+        val pausingSize: Int = fakeImpressApi.impressNodeAnimationPausingSize()
+        fakeImpressApi.toggleGltfModelAnimation(entityNode, false)
+        val pausingSize2: Int = fakeImpressApi.impressNodeAnimationPausingSize()
+        assertThat(pausingSize2).isEqualTo(pausingSize + 1)
+    }
+
+    @Test
+    fun toggleGltfModelAnimation_resumeModelWithoutLooping() {
+        val entityNode = fakeImpressApi.createImpressNode()
+        val future = fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = false)
+        assertThat(future).isNotNull()
+        fakeImpressApi.toggleGltfModelAnimation(entityNode, false)
+        val pausingSize: Int = fakeImpressApi.impressNodeAnimationPausingSize()
+        fakeImpressApi.toggleGltfModelAnimation(entityNode, true)
+        val pausingSize2: Int = fakeImpressApi.impressNodeAnimationPausingSize()
+        assertThat(pausingSize2).isEqualTo(pausingSize - 1)
+    }
+
+    @Test
+    fun toggleGltfModelAnimation_resumeModelWithLooping() {
+        val entityNode = fakeImpressApi.createImpressNode()
+        val future = fakeImpressApi.animateGltfModel(entityNode, "animation_name", looping = true)
+        assertThat(future).isNotNull()
+        fakeImpressApi.toggleGltfModelAnimation(entityNode, false)
+        val pausingSize: Int = fakeImpressApi.impressNodeAnimationPausingSize()
+        fakeImpressApi.toggleGltfModelAnimation(entityNode, true)
+        val pausingSize2: Int = fakeImpressApi.impressNodeAnimationPausingSize()
+        assertThat(pausingSize2).isEqualTo(pausingSize - 1)
+    }
+
+    @Test
     fun impressNodeHasParent_byDefault_returnsFalse() {
         val entityNode = fakeImpressApi.createImpressNode()
         val hasParent = fakeImpressApi.impressNodeHasParent(entityNode)

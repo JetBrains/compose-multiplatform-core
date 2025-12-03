@@ -337,7 +337,7 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
             Logger.get().debug(TAG, "NetworkRequestConstraintController send initial capabilities")
             val currentCapabilities = connManager.getCurrentNetworkCapabilities()
             onConstraintState(
-                if (networkRequest.canBeSatisfiedBy(currentCapabilities)) {
+                if (areNetworkConstraintsSatisfied(networkRequest, currentCapabilities)) {
                     ConstraintsMet
                 } else {
                     ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY)
@@ -351,6 +351,7 @@ private object SharedNetworkCallback : ConnectivityManager.NetworkCallback() {
                     Logger.get()
                         .debug(TAG, "NetworkRequestConstraintController unregister shared callback")
                     connManager.unregisterNetworkCallback(this)
+                    isBlocked = false
                     cachedCapabilities = null
                     capabilitiesInitialized = false
                 }

@@ -40,6 +40,12 @@ public interface GltfEntity : Entity {
     /** Stops the animation of the glTF entity. */
     public fun stopAnimation()
 
+    /* Pause the animation of the glTF entity. */
+    public fun pauseAnimation()
+
+    /* Resume the animation of the glTF entity. */
+    public fun resumeAnimation()
+
     /**
      * Sets a material override for a specific mesh of a node.
      *
@@ -90,5 +96,6 @@ public interface GltfEntity : Entity {
     public object AnimationState {
         public const val PLAYING: Int = 0
         public const val STOPPED: Int = 1
+        public const val PAUSED: Int = 2
     }
 }

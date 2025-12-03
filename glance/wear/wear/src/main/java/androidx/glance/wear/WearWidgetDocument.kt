@@ -19,7 +19,10 @@ package androidx.glance.wear
 import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.CreationDisplayInfo
+import androidx.compose.remote.creation.compose.capture.painter.RemotePainter
+import androidx.compose.remote.creation.compose.capture.painter.painterRemoteColor
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.glance.wear.composable.WearWidgetContainer
 import androidx.glance.wear.parcel.WearWidgetCapture
@@ -29,10 +32,20 @@ import androidx.glance.wear.parcel.WearWidgetCapture
  *
  * The content provided will be captured into a Remote Compose document.
  *
- * @property content The RemoteComposable corresponding to contents of the widget.
+ * @param content The RemoteComposable corresponding to contents of the widget.
  */
 // TODO: Add @RemoteComposable annotation to content parameter once it's public.
-public class WearWidgetDocument(public val content: @Composable () -> Unit) : WearWidgetData {
+public class WearWidgetDocument
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+constructor(
+    private val backgroundPainter: RemotePainter,
+    public val content: @Composable () -> Unit,
+) : WearWidgetData {
+
+    // TODO: Remove this when RemotePainter it's public.
+    public constructor(
+        content: @Composable () -> Unit
+    ) : this(backgroundPainter = painterRemoteColor(Color.Transparent), content = content)
 
     @Suppress("RestrictedApiAndroidX")
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -52,6 +65,7 @@ public class WearWidgetDocument(public val content: @Composable () -> Unit) : We
                 horizontalPadding = params.horizontalPaddingDp.dp,
                 verticalPadding = params.verticalPaddingDp.dp,
                 cornerRadius = params.cornerRadiusDp.dp,
+                backgroundPainter = backgroundPainter,
                 content = content,
             )
         }

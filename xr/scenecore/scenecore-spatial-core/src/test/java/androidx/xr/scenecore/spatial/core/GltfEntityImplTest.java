@@ -139,6 +139,28 @@ public class GltfEntityImplTest {
     }
 
     @Test
+    public void pauseAnimation_pauseAnimation() {
+        mGltfEntity.startAnimation(/* looping= */ true, "test_animation");
+        verify(mMockGltfFeature).startAnimation(true, "test_animation", mExecutor);
+
+        mGltfEntity.pauseAnimation();
+
+        verify(mMockGltfFeature).pauseAnimation();
+    }
+
+    @Test
+    public void resumeAnimation_resumeAnimation() {
+        mGltfEntity.startAnimation(/* looping= */ true, "test_animation");
+        verify(mMockGltfFeature).startAnimation(true, "test_animation", mExecutor);
+        mGltfEntity.pauseAnimation();
+        verify(mMockGltfFeature).pauseAnimation();
+
+        mGltfEntity.resumeAnimation();
+
+        verify(mMockGltfFeature).resumeAnimation();
+    }
+
+    @Test
     public void setMaterialOverrideGltfEntity_materialOverridesNode() throws Exception {
         MaterialResource material = Mockito.mock(MaterialResource.class);
         String nodeName = "fake_node_name";

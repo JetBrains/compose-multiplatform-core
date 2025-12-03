@@ -49,7 +49,7 @@ public abstract class RemotePainter {
      * The intrinsic size of the painter. This is the size of the painter before any scaling or
      * transformations are applied.
      */
-    public abstract val intrinsicSize: RemoteSize
+    public abstract val intrinsicSize: RemoteSize?
 
     /**
      * Lazily create a [RemotePaint] object or return the existing instance if it is already

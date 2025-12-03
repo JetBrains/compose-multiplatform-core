@@ -18,6 +18,7 @@ package androidx.xr.scenecore.spatial.rendering
 
 import android.util.Log
 import androidx.annotation.MainThread
+import androidx.annotation.RestrictTo
 import androidx.xr.runtime.math.BoundingBox
 import androidx.xr.runtime.math.FloatSize3d
 import androidx.xr.scenecore.impl.impress.GltfModel
@@ -118,9 +119,30 @@ internal class GltfFeatureImpl(
 
     @MainThread
     override fun stopAnimation() {
-        if (animationState == GltfEntity.AnimationState.PLAYING) {
+        if (
+            animationState == GltfEntity.AnimationState.PLAYING ||
+                animationState == GltfEntity.AnimationState.PAUSED
+        ) {
             impressApi.stopGltfModelAnimation(modelImpressNode)
             animationState = GltfEntity.AnimationState.STOPPED
+        }
+    }
+
+    @MainThread
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override fun pauseAnimation() {
+        if (animationState == GltfEntity.AnimationState.PLAYING) {
+            impressApi.toggleGltfModelAnimation(modelImpressNode, /* playing= */ false)
+            animationState = GltfEntity.AnimationState.PAUSED
+        }
+    }
+
+    @MainThread
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override fun resumeAnimation() {
+        if (animationState == GltfEntity.AnimationState.PAUSED) {
+            impressApi.toggleGltfModelAnimation(modelImpressNode, /* playing= */ true)
+            animationState = GltfEntity.AnimationState.PLAYING
         }
     }
 

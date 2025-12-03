@@ -52,6 +52,7 @@
         android:layout_width="@dimen/annotation_tool_width"
         android:layout_height="@dimen/annotation_tool_height"
         android:layout_marginEnd="@dimen/margin_4dp"
+        android:contentDescription="@string/annotation_color_palette_button_content_desc"
         app:cornerRadius="@dimen/color_palette_icon_corner_radius"
         app:backgroundTint="?attr/colorSurfaceContainerLowest"
         app:iconTint="@color/default_palette_color"

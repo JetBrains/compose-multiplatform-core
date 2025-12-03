@@ -134,7 +134,7 @@ constructor(
     private val useTorchAsFlash: UseTorchAsFlash,
     cameraProperties: CameraProperties,
     private val useCaseCameraState: UseCaseCameraState,
-    useCaseGraphConfig: UseCaseGraphConfig,
+    private val useCaseGraphConfig: UseCaseGraphConfig,
 ) : CapturePipeline {
     private enum class PipelineTask {
         PRE_CAPTURE,
@@ -147,8 +147,6 @@ constructor(
         val requestTemplate: RequestTemplate,
         val sessionConfigOptions: Config,
     )
-
-    private val graph = useCaseGraphConfig.graph
 
     // If there is no flash unit, skip the flash related task instead of failing the pipeline.
     private val hasFlashUnit = cameraProperties.isFlashAvailable()
@@ -411,7 +409,7 @@ constructor(
                 if (triggerAePreCapture) {
                     debug { "CapturePipeline#torchApplyCapture: Locking 3A for capture" }
                     val result3A =
-                        graph.acquireSession().use {
+                        useCaseGraphConfig.useGraphSession {
                             it.lock3AForCapture(
                                     timeLimitNs = timeLimitNs,
                                     triggerAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY,
@@ -458,7 +456,7 @@ constructor(
                 if (triggerAePreCapture) {
                     debug { "CapturePipeline#torchApplyCapture: Unlocking 3A for capture" }
                     @Suppress("DeferredResultUnused")
-                    graph.acquireSession().use {
+                    useCaseGraphConfig.useGraphSession {
                         it.unlock3APostCapture(
                             cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY
                         )
@@ -488,7 +486,7 @@ constructor(
                 debug {
                     "CapturePipeline#aePreCaptureApplyCapture: Acquiring session for locking 3A"
                 }
-                graph.acquireSession().use {
+                useCaseGraphConfig.useGraphSession {
                     debug { "CapturePipeline#aePreCaptureApplyCapture: Locking 3A for capture" }
                     it.lock3AForCapture(
                             timeLimitNs = timeLimitNs,
@@ -505,7 +503,7 @@ constructor(
                 debug {
                     "CapturePipeline#aePreCaptureApplyCapture: Acquiring session for unlocking 3A"
                 }
-                graph.acquireSession().use {
+                useCaseGraphConfig.useGraphSession {
                     debug { "CapturePipeline#aePreCaptureApplyCapture: Unlocking 3A" }
                     @Suppress("DeferredResultUnused")
                     it.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
@@ -542,7 +540,7 @@ constructor(
     public suspend fun invokeScreenFlashPreCaptureTasks(@CaptureMode captureMode: Int) {
         flashControl.startScreenFlashCaptureTasks()
 
-        graph.acquireSession().use { session ->
+        useCaseGraphConfig.useGraphSession { session ->
             // Trigger AE precapture & wait for 3A converge
             debug { "screenFlashPreCapture: Locking 3A for capture" }
             val result3A =
@@ -563,7 +561,7 @@ constructor(
 
         // Unlock 3A
         debug { "screenFlashPostCapture: Acquiring session for unlocking 3A" }
-        graph.acquireSession().use { session ->
+        useCaseGraphConfig.useGraphSession { session ->
             debug { "screenFlashPostCapture: Unlocking 3A" }
             @Suppress("DeferredResultUnused")
             session.unlock3APostCapture(cancelAf = captureMode == CAPTURE_MODE_MAXIMIZE_QUALITY)
@@ -579,9 +577,8 @@ constructor(
      * condition is used (i.e. [ConvergenceUtils.is3AConverged]).
      */
     private suspend fun lockAf(convergedTimeLimitNs: Long, isTorchAsFlash: Boolean): Result3A =
-        graph
-            .acquireSession()
-            .use {
+        useCaseGraphConfig
+            .useGraphSession {
                 it.lock3A(
                     aeLockBehavior = null,
                     afLockBehavior = Lock3ABehavior.AFTER_CURRENT_SCAN,
@@ -644,7 +641,9 @@ constructor(
 
     /** Unlocks any active AF lock by triggering an AF cancel. */
     private suspend fun unlockAf(timeLimitNs: Long): Result3A =
-        graph.acquireSession().use { it.unlock3A(af = true, timeLimitNs = timeLimitNs) }.await()
+        useCaseGraphConfig
+            .useGraphSession { it.unlock3A(af = true, timeLimitNs = timeLimitNs) }
+            .await()
 
     private fun submitRequestInternal(params: MainCaptureParams): List<Deferred<Void?>> {
         debug {
@@ -652,11 +651,12 @@ constructor(
         }
         val deferredList = mutableListOf<CompletableDeferred<Void?>>()
         val requests =
-            params.configs.mapNotNull {
-                val completeSignal = CompletableDeferred<Void?>().also { deferredList.add(it) }
+            params.configs.mapNotNull { captureConfig ->
+                val completeSignal = CompletableDeferred<Void?>()
+                deferredList.add(completeSignal)
                 try {
                     configAdapter.mapToRequest(
-                        it,
+                        captureConfig,
                         params.requestTemplate,
                         params.sessionConfigOptions,
                         listOf(
@@ -717,14 +717,23 @@ constructor(
             return deferredList
         }
 
-        threads.sequentialScope.launch {
+        threads.confineLaunch {
             debug {
                 "CapturePipeline#submitRequestInternal: Acquiring session for submitting requests"
             }
             // graph.acquireSession may fail if camera has entered closing stage
-            var cameraGraphSession: CameraGraph.Session? = null
+            var requiresStopRepeating = false
+
             try {
-                cameraGraphSession = graph.acquireSession()
+                useCaseGraphConfig.useGraphSession { session ->
+                    requiresStopRepeating = requests.shouldStopRepeatingBeforeCapture()
+                    if (requiresStopRepeating) {
+                        session.stopRepeating()
+                    }
+
+                    debug { "CapturePipeline#submitRequestInternal: Submitting $requests" }
+                    session.submit(requests)
+                }
             } catch (_: CancellationException) {
                 Camera2Logger.info {
                     "CapturePipeline#submitRequestInternal: " +
@@ -741,21 +750,12 @@ constructor(
                         )
                     )
                 }
+                return@confineLaunch
             }
 
-            cameraGraphSession?.use {
-                val requiresStopRepeating = requests.shouldStopRepeatingBeforeCapture()
-                if (requiresStopRepeating) {
-                    it.stopRepeating()
-                }
-
-                debug { "CapturePipeline#submitRequestInternal: Submitting $requests" }
-                it.submit(requests)
-
-                if (requiresStopRepeating) {
-                    deferredList.joinAll()
-                    useCaseCameraState.tryStartRepeating()
-                }
+            if (requiresStopRepeating) {
+                deferredList.joinAll()
+                useCaseCameraState.tryStartRepeating()
             }
         }
 

@@ -199,11 +199,11 @@ internal class AugmentedObjectRenderer {
             mapOf("Keyboard" to .05f, "Mouse" to .25f, "Laptop" to .1f)
         private val SUPPORTED_OBJECT_MODELS =
             mapOf(
-                "Keyboard" to "BoundingBoxKeyboard.glb",
-                "Mouse" to "BoundingBoxMouse.glb",
-                "Laptop" to "BoundingBoxLaptop.glb",
+                "Keyboard" to "BoundingBoxGreen.glb",
+                "Mouse" to "BoundingBoxBlue.glb",
+                "Laptop" to "BoundingBoxYellow.glb",
             )
-        private const val DEFAULT_OBJECT_MODEL = "BoundingBoxKeyboard.glb"
+        private const val DEFAULT_OBJECT_MODEL = "BoundingBoxGreen.glb"
         private const val TRACKED_ALPHA_DEFAULT = .5f
         private const val PAUSED_ALPHA = 0.25f
 

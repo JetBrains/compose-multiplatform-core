@@ -341,16 +341,21 @@ class CaptureConfigAdapterTest {
 
     private fun createConfigAdapter(
         templateParamsOverride: TemplateParamsOverride = NoOpTemplateParamsOverride
-    ) =
-        CaptureConfigAdapter(
+    ): CaptureConfigAdapter {
+        val cameraStateAdapter = CameraStateAdapter()
+        return CaptureConfigAdapter(
             useCaseGraphConfig =
                 UseCaseGraphConfig(
-                    graph = FakeCameraGraph(),
-                    surfaceToStreamMap = mapOf(surface to StreamId(0)),
+                    cameraGraphProvider = { FakeCameraGraph() },
+                    cameraStateAdapter = cameraStateAdapter,
+                    graphStateToCameraStateAdapter =
+                        GraphStateToCameraStateAdapter(cameraStateAdapter),
+                    defaultSurfaceToStreamMap = mapOf(surface to StreamId(0)),
                 ),
             cameraProperties = fakeCameraProperties,
             zslControl = ZslControlNoOpImpl(),
             threads = fakeUseCaseThreads,
             templateParamsOverride = templateParamsOverride,
         )
+    }
 }

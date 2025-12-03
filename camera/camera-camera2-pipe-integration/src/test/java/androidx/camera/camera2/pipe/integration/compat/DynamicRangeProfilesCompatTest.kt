@@ -18,8 +18,8 @@ package androidx.camera.camera2.pipe.integration.compat
 
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.params.DynamicRangeProfiles
+import android.hardware.camera2.params.DynamicRangeProfiles.HLG10
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.integration.internal.DOLBY_VISION_10B_UNCONSTRAINED
 import androidx.camera.camera2.pipe.integration.internal.DOLBY_VISION_10B_UNCONSTRAINED_SLOW
@@ -36,10 +36,11 @@ import com.google.common.truth.Truth
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
-import org.robolectric.shadows.ShadowCameraCharacteristics
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
@@ -298,11 +299,34 @@ class DynamicRangeProfilesCompatTest {
             )
             .containsExactly(DynamicRange.SDR)
     }
-}
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
-fun ShadowCameraCharacteristics.addDynamicRangeProfiles(
-    dynamicRangeProfiles: DynamicRangeProfiles
-) {
-    set(CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES, dynamicRangeProfiles)
+    /**
+     * Verifies that the [DynamicRangeProfilesCompat] utility filters out unrecognized dynamic range
+     * profile constants reported by the device (e.g., simulating future profile IDs).
+     *
+     * This ensures **forward compatibility** and prevents application crashes when a device reports
+     * profiles not yet known to the current CameraX version. See b/463465353.
+     */
+    @Config(minSdk = Build.VERSION_CODES.TIRAMISU)
+    @Test
+    fun filtersOutUnknownDynamicRangeProfiles() {
+        // The DynamicRangeProfiles constructor validates profile values and throws exception if
+        // unknown values are used. Use mock instead.
+        val mockDynamicRangeProfiles = mock(DynamicRangeProfiles::class.java)
+        val unknownProfile = 99999L
+        `when`(mockDynamicRangeProfiles.supportedProfiles).thenReturn(setOf(HLG10, unknownProfile))
+
+        val characteristics = mutableMapOf<CameraCharacteristics.Key<*>, Any?>()
+        characteristics[CameraCharacteristics.REQUEST_AVAILABLE_DYNAMIC_RANGE_PROFILES] =
+            mockDynamicRangeProfiles
+
+        val cameraMetadata =
+            FakeCameraMetadata(cameraId = cameraId, characteristics = characteristics)
+        val dynamicRangeProfilesCompat =
+            DynamicRangeProfilesCompat.fromCameraMetaData(cameraMetadata)
+
+        // The compat layer should filter out the 'unknownProfile' and only return the HLG_10_BIT.
+        Truth.assertThat(dynamicRangeProfilesCompat.supportedDynamicRanges)
+            .containsExactly(DynamicRange.HLG_10_BIT)
+    }
 }

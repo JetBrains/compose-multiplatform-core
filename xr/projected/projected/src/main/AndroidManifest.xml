@@ -26,7 +26,7 @@
             android:name="androidx.xr.projected.permissions.GoToHostProjectedActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.NoActionBar"
-            android:requiredDisplayCategory="@string/display_category_xr_projected" />
+            android:requiredDisplayCategory="xr_projected" />
     </application>
 
     <queries>

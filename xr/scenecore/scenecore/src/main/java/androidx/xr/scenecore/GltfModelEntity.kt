@@ -52,6 +52,10 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             @JvmField public val PLAYING: AnimationState = AnimationState("PLAYING")
             /** The animation is currently stopped. */
             @JvmField public val STOPPED: AnimationState = AnimationState("STOPPED")
+            /** The animation is currently paused. */
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+            @JvmField
+            public val PAUSED: AnimationState = AnimationState("PAUSED")
         }
 
         public override fun toString(): String = name
@@ -68,6 +72,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             return when (rtEntity!!.animationState) {
                 RtGltfEntity.AnimationState.PLAYING -> AnimationState.PLAYING
                 RtGltfEntity.AnimationState.STOPPED -> AnimationState.STOPPED
+                RtGltfEntity.AnimationState.PAUSED -> AnimationState.PAUSED
                 else -> AnimationState.STOPPED
             }
         }
@@ -126,6 +131,9 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
      * This method must be called from the main thread.
      * https://developer.android.com/guide/components/processes-and-threads
      *
+     * If this GltfModelEntity currently has an animation that is playing or paused, that animation
+     * will be stopped.
+     *
      * @param loop If true, the animation plays in a loop indefinitely until [stopAnimation] is
      *   called. If false, the animation plays once and then stops.
      * @param animationName The name of the animation to start.
@@ -173,6 +181,37 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
     public fun stopAnimation() {
         checkNotDisposed()
         rtEntity!!.stopAnimation()
+    }
+
+    /**
+     * Pauses the currently playing animation.
+     *
+     * This method must be called from the main thread.
+     * https://developer.android.com/guide/components/processes-and-threads
+     *
+     * Use [resumeAnimation] to continue playing. If the AnimationState is not
+     * [AnimationState.PLAYING], this method has no effect.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @MainThread
+    public fun pauseAnimation() {
+        checkNotDisposed()
+        rtEntity!!.pauseAnimation()
+    }
+
+    /**
+     * Resumes the currently active animation.
+     *
+     * This method must be called from the main thread.
+     * https://developer.android.com/guide/components/processes-and-threads
+     *
+     * If the AnimationState is not [AnimationState.PAUSED], this method has no effect.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @MainThread
+    public fun resumeAnimation() {
+        checkNotDisposed()
+        rtEntity!!.resumeAnimation()
     }
 
     /**
@@ -287,6 +326,7 @@ private constructor(rtEntity: RtGltfEntity, entityManager: EntityManager) :
             when (animationState) {
                 RtGltfEntity.AnimationState.PLAYING -> AnimationState.PLAYING
                 RtGltfEntity.AnimationState.STOPPED -> AnimationState.STOPPED
+                RtGltfEntity.AnimationState.PAUSED -> AnimationState.PAUSED
                 else -> AnimationState.STOPPED
             }
         for ((listener, executor) in mAnimationStateListeners.entries) {

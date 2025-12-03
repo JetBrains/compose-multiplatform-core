@@ -22,6 +22,8 @@ import android.util.Range
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
+import androidx.camera.camera2.pipe.integration.adapter.CameraStateAdapter
+import androidx.camera.camera2.pipe.integration.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
@@ -68,8 +70,14 @@ class UseCaseCameraRequestControlTest {
         UseCaseThreads(cameraScope, dispatcher.asExecutor(), dispatcher)
     }
     private val fakeCameraGraph = FakeCameraGraph()
-    private val fakeUseCaseGraphConfig =
-        UseCaseGraphConfig(graph = fakeCameraGraph, surfaceToStreamMap = surfaceToStreamMap)
+    val cameraStateAdapter = CameraStateAdapter()
+    val fakeUseCaseGraphConfig =
+        UseCaseGraphConfig(
+            cameraGraphProvider = { fakeCameraGraph },
+            cameraStateAdapter = cameraStateAdapter,
+            graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            defaultSurfaceToStreamMap = surfaceToStreamMap,
+        )
     private val fakeUseCaseCameraState =
         UseCaseCameraState(
             useCaseGraphConfig = fakeUseCaseGraphConfig,

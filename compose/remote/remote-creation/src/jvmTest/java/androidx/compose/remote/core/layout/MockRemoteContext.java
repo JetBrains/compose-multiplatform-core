@@ -166,6 +166,29 @@ public class MockRemoteContext extends RemoteContext {
                         start).append(", ").append(end).append(")\n");
             }
 
+            class MockComputedTextLayout implements
+                    RcPlatformServices.ComputedTextLayout {
+                private int mWidth;
+                private int mHeight;
+                MockComputedTextLayout(int width, int height) {
+                    mWidth = width;
+                    mHeight = height;
+                }
+                @Override
+                public float getWidth() {
+                    return mWidth;
+                }
+
+                @Override
+                public float getHeight() {
+                    return mHeight;
+                }
+
+                @Override
+                public boolean isHyphenatedText() {
+                    return false;
+                }
+            }
             @Override
             public RcPlatformServices.ComputedTextLayout layoutComplexText(int textId, int start,
                     int end, int alignment, int overflow, int maxLines, float maxWidth,
@@ -174,7 +197,10 @@ public class MockRemoteContext extends RemoteContext {
                     boolean useUnderline, boolean strikethrough, int flags) {
                 stringBuilder.append("layoutComplexText(").append(textId).append(", ").append(
                         start).append(", ").append(end).append(")\n");
-                return null;
+                String text = getText(textId);
+                int width = text.length() * 30;
+                int height = 40;
+                return new MockComputedTextLayout(width, height);
             }
 
             @Override
@@ -188,7 +214,7 @@ public class MockRemoteContext extends RemoteContext {
 
             @Override
             public void drawComplexText(RcPlatformServices.ComputedTextLayout computedTextLayout) {
-                throw new UnsupportedOperationException("Not yet implemented");
+                stringBuilder.append("drawComplexText");
             }
 
             @Override

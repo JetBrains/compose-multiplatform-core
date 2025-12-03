@@ -659,6 +659,9 @@ public class ImpressApiImpl : ImpressApi {
     override fun stopGltfModelAnimation(impressNode: ImpressNode): Unit =
         nStopGltfModelAnimation(getViewNativeHandle(view), impressNode.handle)
 
+    override fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean): Unit =
+        nToggleGltfModelAnimation(getViewNativeHandle(view), impressNode.handle, playing)
+
     override fun createImpressNode(): ImpressNode =
         ImpressNode(nCreateImpressNode(getViewNativeHandle(view)))
 
@@ -1833,6 +1836,8 @@ public class ImpressApiImpl : ImpressApi {
     )
 
     private external fun nStopGltfModelAnimation(view: Long, impressNode: Int)
+
+    private external fun nToggleGltfModelAnimation(view: Long, impressNode: Int, toggle: Boolean)
 
     private external fun nGetGltfModelLocalBounds(
         view: Long,

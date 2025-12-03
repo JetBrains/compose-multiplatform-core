@@ -299,8 +299,8 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             int justificationMode,
             boolean useUnderline,
             boolean strikethrough,
-            int @NonNull [] fontAxis,
-            float @NonNull [] fontAxisValues,
+            int @Nullable [] fontAxis,
+            float @Nullable [] fontAxisValues,
             boolean autosize,
             int flags) {
         super(parent, componentId, animationId, x, y, width, height);
@@ -358,8 +358,8 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             int justificationMode,
             boolean useUnderline,
             boolean strikethrough,
-            int @NonNull [] fontAxis,
-            float @NonNull [] fontAxisValues,
+            int @Nullable [] fontAxis,
+            float @Nullable [] fontAxisValues,
             boolean autosize,
             int flags) {
         this(
@@ -630,9 +630,12 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             while (max - min >= stepSize) {
                 mPaint.setTextSize(current);
                 context.replacePaint(mPaint);
-                textLayout(context, maxWidth, bounds, true);
+                textLayout(context, maxWidth, bounds, true, true);
+                boolean hasHyphenation =
+                        mComputedTextLayout != null && mComputedTextLayout.isHyphenatedText();
+                boolean invalid = mHyphenationFrequency == 0 && hasHyphenation;
                 float h = bounds[3] - bounds[1];
-                if (h >= maxHeight) {
+                if (invalid || h >= maxHeight) {
                     max = current;
                 } else {
                     min = current;
@@ -643,9 +646,12 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             if ((current + stepSize) < maxFontSize) {
                 mPaint.setTextSize(current + stepSize);
                 context.replacePaint(mPaint);
-                textLayout(context, maxWidth, bounds, true);
+                textLayout(context, maxWidth, bounds, true, true);
+                boolean hasHyphenation =
+                        mComputedTextLayout != null && mComputedTextLayout.isHyphenatedText();
+                boolean invalid = mHyphenationFrequency == 0 && hasHyphenation;
                 float h = bounds[3] - bounds[1];
-                if (h < maxHeight) {
+                if (!invalid && h < maxHeight) {
                     current += stepSize;
                 }
             }
@@ -653,7 +659,7 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             mMeasureFontSize = current;
             mPaint.setTextSize(mFontSizeValue);
             context.replacePaint(mPaint);
-            textLayout(context, maxWidth, bounds, true);
+            textLayout(context, maxWidth, bounds, true, true);
         } else {
             textLayout(context, maxWidth, bounds);
         }
@@ -671,11 +677,11 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
 
     private void textLayout(@NonNull PaintContext context, float maxWidth,
             float @NonNull [] bounds) {
-        textLayout(context, maxWidth, bounds, false);
+        textLayout(context, maxWidth, bounds, false, false);
     }
 
     private void textLayout(@NonNull PaintContext context, float maxWidth,
-            float @NonNull [] bounds, boolean forceComplex) {
+            float @NonNull [] bounds, boolean forceComplex, boolean inAutosize) {
         int flags = PaintContext.TEXT_MEASURE_FONT_HEIGHT | PaintContext.TEXT_MEASURE_SPACES;
         if (forceComplex) {
             flags |= PaintContext.TEXT_COMPLEX;
@@ -687,7 +693,9 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             forceComplex = true;
         }
         if (mLetterSpacing > 0f || mLineHeightMultiplier != 1f || mLineHeightAdd > 0f
-                || mUnderline || mStrikethrough) {
+                || mUnderline || mStrikethrough
+                || mJustificationMode > 0 || mLineBreakStrategy > 0
+                || mHyphenationFrequency > 0) {
             flags |= PaintContext.TEXT_COMPLEX;
             forceComplex = true;
         }
@@ -706,6 +714,9 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             mBaseline = -bounds[1];
         }
         if (forceComplex || (bounds[2] - bounds[1] > maxWidth && mMaxLines > 1 && maxWidth > 0f)) {
+            if (inAutosize) {
+                flags |= PaintContext.TEXT_MEASURE_AUTOSIZE;
+            }
             mComputedTextLayout =
                     context.layoutComplexText(
                             mTextId,
@@ -718,9 +729,9 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
                             mLetterSpacing,
                             mLineHeightAdd,
                             mLineHeightMultiplier,
-                            0,
-                            0,
-                            0,
+                            mLineBreakStrategy,
+                            mHyphenationFrequency,
+                            mJustificationMode,
                             mUnderline,
                             mStrikethrough,
                             flags);
@@ -800,8 +811,8 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             int justificationMode,
             boolean underline,
             boolean strikethrough,
-            int @NonNull [] fontAxis,
-            float @NonNull [] fontAxisValues,
+            int @Nullable [] fontAxis,
+            float @Nullable [] fontAxisValues,
             boolean autosize,
             int flags) {
         buffer.start(id());
@@ -831,6 +842,7 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
                 && fontAxis.length > 0 && fontAxis.length == fontAxisValues.length) {
             count += 2;
         }
+        count += PARAMETERS.countIfNotDefault(P_FLAGS, flags);
         // TODO: text style id
         buffer.writeShort(count);
         PARAMETERS.write(buffer, P_COMPONENT_ID, componentId);
@@ -857,6 +869,7 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
             PARAMETERS.write(buffer, P_FONT_AXIS_VALUES, fontAxisValues);
         }
         PARAMETERS.write(buffer, P_AUTOSIZE, autosize);
+        PARAMETERS.write(buffer, P_FLAGS, flags);
     }
 
     /**
@@ -996,7 +1009,7 @@ public class CoreText extends LayoutManager implements VariableSupport, Accessib
         }
         int[] fontAxis = null;
         float[] fontAxisValues = null;
-        if (fontAxisList.size() > 0 && fontAxisValuesList.size() == fontAxisList.size()) {
+        if (!fontAxisList.isEmpty() && fontAxisValuesList.size() == fontAxisList.size()) {
             fontAxis = new int[fontAxisList.size()];
             fontAxisValues = new float[fontAxisList.size()];
             for (int i = 0; i < fontAxisList.size(); i++) {

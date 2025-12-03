@@ -532,7 +532,7 @@ public object RemoteButtonDefaults {
     @Composable
     public fun containerPainter(
         image: RemotePainter,
-        scrim: RemoteBrush? = scrimBrush(image.intrinsicSize),
+        scrim: RemoteBrush? = image.intrinsicSize?.let { scrimBrush(it) },
         alpha: RemoteFloat = DefaultAlpha.rf,
     ): RemotePainter {
         return remoteContainerPainter(image, scrim, alpha)
@@ -619,7 +619,7 @@ public class RemoteButtonColors(
 }
 
 /** Draws a colored and shaped background with when clipping is not supported. */
-private fun RemoteDrawScope.drawShapedBackground(
+internal fun RemoteDrawScope.drawShapedBackground(
     shape: RemoteShape,
     color: RemoteColor,
     borderColor: RemoteColor?,

@@ -17,6 +17,7 @@
 package androidx.pdf.ink
 
 import android.graphics.Matrix
+import android.graphics.Path
 import android.graphics.RectF
 import android.os.Build
 import android.os.Bundle
@@ -101,7 +102,6 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         get() = documentViewModel.isEditModeEnabled
         set(value) {
             documentViewModel.isEditModeEnabled = value
-            updateUiForEditMode(value)
             if (value) onEnterEditMode() else onExitEditMode()
         }
 
@@ -245,21 +245,6 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         super.onViewCreated(view, savedInstanceState)
 
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    documentViewModel.isEditModeEnabledFlow.collect { isEnabled ->
-                        isEditModeEnabled = isEnabled
-                    }
-                }
-                launch {
-                    documentViewModel.annotationsDisplayStateFlow.collect { displayState ->
-                        updateAnnotationsView(displayState)
-                    }
-                }
-            }
-        }
-
-        viewLifecycleOwner.lifecycleScope.launch {
             documentViewModel.applyEditsStatus.collect { status ->
                 when (status) {
                     is ApplyEditsState.Success -> {
@@ -270,21 +255,48 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                         onApplyEditsFailed(status.error)
                         documentViewModel.resetApplyEditsStatus()
                     }
-                    is ApplyEditsState.InProgress -> {
-                        if (isEditModeEnabled) setAnnotationInteraction(false)
-                    }
-                    is ApplyEditsState.Ready -> {
-                        if (isEditModeEnabled) setAnnotationInteraction(true)
+                    else -> {
+                        /* No-Op */
                     }
                 }
             }
         }
 
+        setupUiStateCollectors()
         setupTouchListeners()
         setupBackPressedCallback()
         attachOnViewportChangedListener()
         setupDiscardChangesDialogListener()
         setupAnnotationToolbar()
+    }
+
+    private fun setupUiStateCollectors() {
+        collectFlowOnLifecycleScope {
+            documentViewModel.isEditModeEnabledFlow.collect { isEnabled ->
+                updateUiForEditMode(isEnabled)
+            }
+        }
+
+        collectFlowOnLifecycleScope {
+            documentViewModel.annotationsDisplayStateFlow.collect { displayState ->
+                updateAnnotationsView(displayState)
+            }
+        }
+
+        collectFlowOnLifecycleScope {
+            documentViewModel.areAnnotationsVisibleFlow.collect { areVisible ->
+                annotationView.visibility = if (areVisible) VISIBLE else GONE
+            }
+        }
+
+        collectFlowOnLifecycleScope {
+            documentViewModel.isAnnotationInteractionEnabled.collect { isEnabled ->
+                // Update visibility of any wet view here to avoid letting it ingest touch events
+                // when annotation interaction is disabled.
+                wetStrokesView.visibility = if (isEnabled) VISIBLE else GONE
+                pdfContainer.isAnnotationInteractionEnabled = isEnabled
+            }
+        }
     }
 
     /**
@@ -307,18 +319,20 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     }
 
     private fun updateUiForEditMode(isEnabled: Boolean) {
-        setAnnotationInteraction(isEnabled)
-        backPressedCallback.isEnabled = isEnabled
-        toolboxView.visibility = if (isEnabled) GONE else VISIBLE
-    }
-
-    /** Updates the UI interactions and visibility related to annotation components. */
-    private fun setAnnotationInteraction(isEnabled: Boolean) {
         PdfFeatureFlags.isMultiTouchScrollEnabled = isEnabled
-        wetStrokesView.visibility = if (isEnabled) VISIBLE else GONE
+        backPressedCallback.isEnabled = isEnabled
+
+        toolboxView.visibility = if (isEnabled) GONE else VISIBLE
         annotationToolbar.visibility = if (isEnabled) VISIBLE else GONE
-        if (!isEnabled) {
-            annotationToolbar.reset()
+
+        if (isEnabled) {
+            // Wait for the toolbar to be laid out, as we need to utilize its width and height
+            annotationToolbar.post { wetStrokesView.maskPath = createToolbarMaskPath() }
+        } else {
+            annotationToolbar.apply {
+                reset()
+                post { wetStrokesView.maskPath = null }
+            }
         }
     }
 
@@ -494,32 +508,21 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
                 }
 
                 override fun onAnnotationVisibilityChanged(isVisible: Boolean) {
-                    documentViewModel.setAnnotationVisibility(isVisible)
+                    documentViewModel.areAnnotationsVisible = isVisible
                 }
             }
         )
 
-        lifecycleScope.apply {
-            collectFlowOnLifecycleScope {
-                documentViewModel.canUndo.collect { annotationToolbar.canUndo = it }
-            }
+        collectFlowOnLifecycleScope {
+            documentViewModel.canUndo.collect { annotationToolbar.canUndo = it }
+        }
 
-            collectFlowOnLifecycleScope {
-                documentViewModel.canRedo.collect { annotationToolbar.canRedo = it }
-            }
+        collectFlowOnLifecycleScope {
+            documentViewModel.canRedo.collect { annotationToolbar.canRedo = it }
+        }
 
-            collectFlowOnLifecycleScope {
-                documentViewModel.drawingMode.collect { updateDrawingMode(it) }
-            }
-
-            collectFlowOnLifecycleScope {
-                documentViewModel.areAnnotationsEnabled.collect { isEnabled ->
-                    annotationView.visibility = if (isEnabled) VISIBLE else GONE
-                    // Disable touch listener to short-circuit touch events to PdfView.
-                    val touchListener = if (isEnabled) annotationsViewOnTouchListener else null
-                    pdfContainer.setOnTouchListener(touchListener)
-                }
-            }
+        collectFlowOnLifecycleScope {
+            documentViewModel.drawingMode.collect { updateDrawingMode(it) }
         }
     }
 
@@ -547,6 +550,27 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
              */
             repeatOnLifecycle(Lifecycle.State.STARTED) { block() }
         }
+    }
+
+    /**
+     * Creates a [android.graphics.Path] that encapsulate [AnnotationToolbar] and set it as a
+     * [InProgressStrokesView.maskPath] where no ink should be visible.
+     *
+     * @return [Path] surrounding [AnnotationToolbar].
+     */
+    private fun createToolbarMaskPath(): Path {
+        val toolbarLocation = IntArray(2)
+        annotationToolbar.getLocationOnScreen(toolbarLocation)
+
+        val wetStrokesLocation = IntArray(2)
+        wetStrokesView.getLocationOnScreen(wetStrokesLocation)
+
+        val left = (toolbarLocation[0] - wetStrokesLocation[0]).toFloat()
+        val top = (toolbarLocation[1] - wetStrokesLocation[1]).toFloat()
+        val right = left + annotationToolbar.width
+        val bottom = top + annotationToolbar.height
+
+        return Path().apply { addRect(left, top, right, bottom, Path.Direction.CW) }
     }
 
     /**

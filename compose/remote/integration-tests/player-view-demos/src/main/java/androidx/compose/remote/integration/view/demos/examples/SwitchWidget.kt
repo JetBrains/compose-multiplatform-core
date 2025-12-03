@@ -45,6 +45,7 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberRemoteInt
 import androidx.compose.remote.creation.compose.state.rememberRemoteIntValue
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -52,7 +53,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
 @Suppress("RestrictedApiAndroidX")
-@Preview
 @Composable
 @RemoteComposable
 fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) {
@@ -74,8 +74,9 @@ fun SwitchWidgetOnState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) 
     }
 }
 
+@Preview @Composable fun SwitchWidgetOnStatePreview() = RemotePreview { SwitchWidgetOnState() }
+
 @Suppress("RestrictedApiAndroidX")
-@Preview
 @Composable
 @RemoteComposable
 fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier, id: Int = 0) {
@@ -98,6 +99,8 @@ fun SwitchWidgetOffState(modifier: RemoteModifier = RemoteModifier, id: Int = 0)
         }
     }
 }
+
+@Preview @Composable fun SwitchWidgetOffStatePreview() = RemotePreview { SwitchWidgetOffState() }
 
 @Suppress("RestrictedApiAndroidX")
 @Composable
@@ -210,7 +213,6 @@ fun Divider(modifier: RemoteModifier = RemoteModifier) {
 }
 
 @Suppress("RestrictedApiAndroidX")
-@Preview
 @Composable
 @RemoteComposable
 fun SwitchWidgetDemo() {
@@ -240,3 +242,5 @@ fun SwitchWidgetDemo() {
         }
     }
 }
+
+@Preview @Composable fun SwitchWidgetDemoPreview() = RemotePreview { SwitchWidgetDemo() }

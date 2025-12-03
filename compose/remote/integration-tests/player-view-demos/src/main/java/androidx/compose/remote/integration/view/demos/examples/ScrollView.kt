@@ -46,6 +46,7 @@ import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.creation.compose.state.rememberRemoteDpValue
 import androidx.compose.remote.creation.compose.state.rememberRemoteFloat
 import androidx.compose.remote.creation.compose.state.rf
+import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -58,7 +59,6 @@ import androidx.compose.ui.unit.sp
 
 @Suppress("RestrictedApiAndroidX")
 @Composable
-@Preview
 fun CanvasCalendarMonth(modifier: RemoteModifier = RemoteModifier, month: Int = 0) {
 
     val numDays = arrayOf(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
@@ -268,3 +268,7 @@ fun ScrollViewDemo() {
         //            RemoteText(value, fontSize = 34.sp, color = Color.Blue)
     }
 }
+
+@Preview @Composable fun CanvasCalendarMonthPreview() = RemotePreview { CanvasCalendarMonth() }
+
+@Preview @Composable fun ScrollViewDemoPreview() = RemotePreview { ScrollViewDemo() }

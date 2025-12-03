@@ -86,6 +86,27 @@ class FakeGltfEntityTest {
     }
 
     @Test
+    fun startAnimationWithSupportedAnimation_setsAnimationStateToPlayingAfterPause() {
+        check(underTest.supportedAnimationNames.contains("animation_name"))
+
+        underTest.startAnimation(loop = true, animationName = "animation_name")
+
+        assertThat(underTest.isLooping).isTrue()
+        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
+        assertThat(underTest.currentAnimationName).isEqualTo("animation_name")
+
+        underTest.pauseAnimation()
+
+        // Verifies that pauseAnimation works by the animation state.
+        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.PAUSED)
+
+        underTest.resumeAnimation()
+
+        // Verifies that resumeAnimation works by the animation state.
+        assertThat(underTest.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
+    }
+
+    @Test
     fun setMaterialOverride_setMaterialCorrectly() {
         val material = FakeResource(123)
         val nodeName = "glTF node"

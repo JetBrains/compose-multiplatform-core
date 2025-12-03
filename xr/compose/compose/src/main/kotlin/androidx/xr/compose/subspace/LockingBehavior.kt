@@ -26,8 +26,12 @@ import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.scene
 import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * A LockingBehavior controls the motion of content as it is following (or "locked" to) another
@@ -80,17 +84,18 @@ public abstract class LockingBehavior internal constructor() {
  * through the public interface as LockingBehavior.lazy()
  *
  * @param durationMs Amount of milliseconds it takes for the content to catch up to the user.
- *   Default is 1500 milliseconds. A value less than 100 will be rounded up to 100 to allow enough
- *   time to complete the content movement.
+ *   Default is [DEFAULT_LAZY_DURATION_MS] milliseconds. A value less than [MIN_LAZY_DURATION_MS]
+ *   will be rounded up to [MIN_LAZY_DURATION_MS] to allow enough time to complete the content
+ *   movement.
  */
 @OptIn(ExperimentalUserSubspaceApi::class)
 internal class LazyLockingBehavior(private val durationMs: Int = DEFAULT_LAZY_DURATION_MS) :
     LockingBehavior() {
 
+    private var currentAnimationJob: Job? = null
     private var trailingEntity: CoreGroupEntity? = null
     private var startPose: Pose = Pose.Identity
-    // TODO(b/451647909): Investigate if Compose's built in animation APIs could handle the logic.
-    private var isAnimating: Boolean = false
+    private var endPose: Pose = Pose.Identity
     // Ensure at least one frame of animation
     private val totalFrames: Int =
         (durationMs / TIME_BETWEEN_ANIMATION_TICKS).toInt().coerceAtLeast(1)
@@ -101,13 +106,15 @@ internal class LazyLockingBehavior(private val durationMs: Int = DEFAULT_LAZY_DU
         trailingEntity: CoreGroupEntity,
         lockTo: BodyPart,
         lockDimensions: LockDimensions,
-    ) {
-        this.trailingEntity = trailingEntity
-        if (lockTo != BodyPart.Head) return
+    ) = coroutineScope {
+        this@LazyLockingBehavior.trailingEntity = trailingEntity
+        if (lockTo != BodyPart.Head) return@coroutineScope
 
         // TODO(b/448689233): Initial head pose data is not reliable.
         // Skipping over it with delay.
         delay(1000)
+
+        val initialPose = trailingEntity.poseInMeters
 
         val arDevice = ArDevice.getInstance(session)
         arDevice.state.collect { state ->
@@ -124,102 +131,99 @@ internal class LazyLockingBehavior(private val durationMs: Int = DEFAULT_LAZY_DU
                     translation =
                         Vector3(
                             x =
-                                if (lockDimensions.isTranslationXTracked) {
-                                    headPose.translation.x
-                                } else {
-                                    0f
-                                },
+                                getTrackedValue(
+                                    lockDimensions.isTranslationXTracked,
+                                    headPose.translation.x,
+                                    initialPose.translation.x,
+                                ),
                             y =
-                                if (lockDimensions.isTranslationYTracked) {
-                                    headPose.translation.y
-                                } else {
-                                    0f
-                                },
+                                getTrackedValue(
+                                    lockDimensions.isTranslationYTracked,
+                                    headPose.translation.y,
+                                    initialPose.translation.y,
+                                ),
                             z =
-                                if (lockDimensions.isTranslationZTracked) {
-                                    headPose.translation.z
-                                } else {
-                                    0f
-                                },
+                                getTrackedValue(
+                                    lockDimensions.isTranslationZTracked,
+                                    headPose.translation.z,
+                                    initialPose.translation.z,
+                                ),
                         ),
                     rotation =
                         Quaternion(
                             x =
-                                if (lockDimensions.isRotationXTracked) {
-                                    headPose.rotation.x
-                                } else {
-                                    0f
-                                },
+                                getTrackedValue(
+                                    lockDimensions.isRotationXTracked,
+                                    headPose.rotation.x,
+                                    initialPose.rotation.x,
+                                ),
                             y =
-                                if (lockDimensions.isRotationYTracked) {
-                                    headPose.rotation.y
-                                } else {
-                                    0f
-                                },
+                                getTrackedValue(
+                                    lockDimensions.isRotationYTracked,
+                                    headPose.rotation.y,
+                                    initialPose.rotation.y,
+                                ),
                             z =
-                                if (lockDimensions.isRotationZTracked) {
-                                    headPose.rotation.z
-                                } else {
-                                    0f
-                                },
+                                getTrackedValue(
+                                    lockDimensions.isRotationZTracked,
+                                    headPose.rotation.z,
+                                    initialPose.rotation.z,
+                                ),
                             w = headPose.rotation.w,
                         ),
                 )
-            handleNewPose()
+            handleNewPose(this)
         }
     }
 
-    private suspend fun handleNewPose() {
-        // If animation is in progress in another thread, do nothing.
-        if (isAnimating) {
-            return
-        }
+    /*
+     * Helper to return the tracked value if enabled, otherwise the fallback (initial) value.
+     */
+    private fun getTrackedValue(
+        isTracked: Boolean,
+        currentValue: Float,
+        fallbackValue: Float,
+    ): Float {
+        return if (isTracked) currentValue else fallbackValue
+    }
 
+    private suspend fun handleNewPose(scope: CoroutineScope) {
         // If the target has moved significantly enough, start the animation over.
         if (shouldStartAnimation()) {
-            // The current pose of the trailingEntity
+            currentAnimationJob?.cancel()
             startPose = trailingEntity?.poseInMeters ?: Pose.Identity
+            endPose = targetCurrentPose
             currentFrame = 1
-            isAnimating = true
-            animate()
+            currentAnimationJob = scope.launch { animate() }
         }
     }
 
+    // TODO(b/451647909): Investigate if Compose's built in animation APIs could handle the logic.
     private suspend fun animate() {
-        // If the animation has finished, update state and stop.
-        if (currentFrame > totalFrames) {
-            isAnimating = false
-            return
+        while (currentFrame <= totalFrames) {
+            // Calculate the raw and linear progress of the animation (a value from 0.0 to 1.0).
+            val linearProgress: Float = currentFrame.toFloat() / totalFrames
+            val easedProgress: Float = smoothstep(linearProgress)
+
+            val nextPose = Pose.lerp(startPose, endPose, easedProgress)
+            trailingEntity?.poseInMeters = nextPose
+            currentFrame++
+
+            delay(TIME_BETWEEN_ANIMATION_TICKS)
         }
-
-        // Calculate the raw and linear progress of the animation (a value from 0.0 to 1.0).
-        val linearProgress: Float = currentFrame.toFloat() / totalFrames
-        val easedProgress: Float = smoothstep(linearProgress)
-
-        val nextPose = Pose.lerp(startPose, targetCurrentPose, easedProgress)
-        trailingEntity?.poseInMeters = nextPose
-        currentFrame++
-
-        // TODO(b/451648700): Should consider locking onto the animation cycle that already
-        // exists instead of creating a new one.
-        delay(TIME_BETWEEN_ANIMATION_TICKS)
-        // A recursive suspend call.
-        animate()
     }
 
-    private suspend fun shouldStartAnimation(): Boolean {
-        val trailingEntityCurrentPose = trailingEntity?.poseInMeters ?: Pose.Identity
-
-        val translationDelta =
-            (trailingEntityCurrentPose.translation - targetCurrentPose.translation).length
-        val rotationDelta =
-            Quaternion.angle(trailingEntityCurrentPose.rotation, targetCurrentPose.rotation)
+    private fun shouldStartAnimation(): Boolean {
+        // Check the current position of the target entity compared to where the trailingEntity
+        // is planning to be (endPose).
+        val translationDelta = (endPose.translation - targetCurrentPose.translation).length
+        val rotationDelta = Quaternion.angle(endPose.rotation, targetCurrentPose.rotation)
 
         return translationDelta > TRANSLATION_THRESHOLD || rotationDelta > ROTATION_THRESHOLD
     }
 
     private companion object {
-        private const val TIME_BETWEEN_ANIMATION_TICKS: Long = 50
+        private const val TIME_BETWEEN_ANIMATION_TICKS: Long = 10
         private const val TRANSLATION_THRESHOLD: Float = 0.1f
         private const val ROTATION_THRESHOLD: Float = 3f
 

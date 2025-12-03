@@ -104,7 +104,8 @@ public class RemoteComposeWriter {
     protected final @NonNull RcPaint mPainter = new RcPaint(this);
 
     private @Nullable Object mWriterCallback = null;
-
+    private int mInsertPoint = -1;
+    private int mStartGlobalSection = -1;
     /**
      * Returns the paint object
      * @return the paint object
@@ -2605,6 +2606,7 @@ public class RemoteComposeWriter {
      * @param content content of the layout
      */
     public void root(@NonNull RemoteComposeWriterInterface content) {
+        mInsertPoint = mBuffer.getBuffer().size();
         mBuffer.addRootStart();
         content.run();
         mBuffer.addContainerEnd();
@@ -4005,6 +4007,17 @@ public class RemoteComposeWriter {
     /**
      * Add a modifier background
      *
+     * @param colorId the color to set
+     * @param shape the shape to set
+     */
+    public void addDynamicModifierBackground(int colorId, int shape) {
+        mBuffer.addDynamicModifierBackground(colorId, shape);
+    }
+
+
+    /**
+     * Add a modifier background
+     *
      * @param r the red value, possibly a remote float
      * @param g the green value, possibly a remote float
      * @param b the blue value, possibly a remote float
@@ -4175,6 +4188,22 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Add a modifier border
+     *
+     * @param width         the width
+     * @param roundedCorner the rounded corner
+     * @param colorId         the color
+     * @param shapeType     the shape type
+     */
+    public void addModifierDynamicBorder(
+            float width,
+            float roundedCorner,
+            int colorId,
+            int shapeType) {
+        mBuffer.addModifierDynamicBorder(width, roundedCorner, colorId, shapeType);
+    }
+
+    /**
      * Add a value string change action operation
      *
      * @param destTextId the text id to change
@@ -4224,6 +4253,33 @@ public class RemoteComposeWriter {
      */
     public void addValueFloatExpressionChangeActionOperation(int mValueId, int mValue) {
         mBuffer.addValueFloatExpressionChangeActionOperation(mValueId, mValue);
+    }
+
+    /**
+     * begin a section of global commands.
+     * Theses commands will be moved to before the root
+     */
+    public void beginGlobal() {
+        if (mStartGlobalSection != -1) {
+            throw new RuntimeException("Trying to start a global section twice");
+        }
+        mStartGlobalSection = mBuffer.getBuffer().size();
+    }
+
+    /**
+     * end a section of global commands.
+     * The section will be moved to before the root
+     */
+    public void endGlobal() {
+        if (mStartGlobalSection == -1) {
+            throw new RuntimeException("Trying to end a global section without a begin");
+        }
+        int bytes = mBuffer.getBuffer().size() - mStartGlobalSection;
+        mBuffer.getBuffer().moveBlock(mStartGlobalSection, mInsertPoint);
+        if (mInsertPoint != -1) {
+            mInsertPoint += bytes;
+        }
+        mStartGlobalSection = -1;
     }
 
     /**

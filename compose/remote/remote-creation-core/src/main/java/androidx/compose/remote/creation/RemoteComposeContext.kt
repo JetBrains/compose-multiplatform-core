@@ -415,6 +415,14 @@ public open class RemoteComposeContext {
         return mRemoteWriter.textMerge(id1, id2)
     }
 
+    public fun textMerge(vararg id: Int): Int {
+        var ret = id[0]
+        for (i in id.drop(1)) {
+            ret = mRemoteWriter.textMerge(ret, i)
+        }
+        return ret
+    }
+
     public fun drawTextOnPath(text: String, path: Any, hOffset: Float, vOffset: Float) {
         mRemoteWriter.drawTextOnPath(text, path, hOffset, vOffset)
     }

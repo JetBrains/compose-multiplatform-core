@@ -139,7 +139,14 @@ class RequestProcessorAdapterTest {
                     checkNotNull(simulator.streams[imageCaptureStreamConfig]).id,
                 )
             }
-        val useCaseGraphConfig = UseCaseGraphConfig(simulator, surfaceToStreamMap)
+        val cameraStateAdapter = CameraStateAdapter()
+        val useCaseGraphConfig =
+            UseCaseGraphConfig(
+                cameraGraphProvider = { simulator },
+                defaultSurfaceToStreamMap = surfaceToStreamMap,
+                cameraStateAdapter = cameraStateAdapter,
+                graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            )
 
         val executor = MoreExecutors.directExecutor()
         val dispatcher = executor.asCoroutineDispatcher()

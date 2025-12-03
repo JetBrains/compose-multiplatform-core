@@ -44,18 +44,28 @@ androidXMultiplatform {
         commonMain {
             dependencies {
                 api(libs.jspecify)
+                api("androidx.annotation:annotation:1.9.1")
+            }
+        }
+
+        commonJvmAndroidMain {
+            dependsOn(commonMain)
+            dependencies {
+                api(project(":compose:remote:remote-core"))
+                api(project(":compose:remote:remote-creation-core"))
             }
         }
 
         jvmMain {
-            dependsOn(commonMain)
+            dependsOn(commonJvmAndroidMain)
             dependencies {
                 api(project(":compose:remote:remote-core"))
+                api(project(":compose:remote:remote-creation-core"))
             }
         }
 
         androidMain {
-            dependsOn(commonMain)
+            dependsOn(commonJvmAndroidMain)
             dependencies {
                 api(project(":compose:remote:remote-core"))
                 api(project(":compose:remote:remote-creation-core"))

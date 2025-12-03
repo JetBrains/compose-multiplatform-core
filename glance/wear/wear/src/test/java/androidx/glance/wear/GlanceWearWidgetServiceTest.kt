@@ -19,7 +19,9 @@ package androidx.glance.wear
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import androidx.compose.remote.creation.compose.capture.painter.painterRemoteColor
 import androidx.compose.remote.creation.compose.layout.RemoteText
+import androidx.compose.ui.graphics.Color
 import androidx.glance.wear.parcel.IWearWidgetProvider
 import androidx.glance.wear.parcel.legacy.TileProvider
 import com.google.common.truth.Truth.assertThat
@@ -93,7 +95,9 @@ class GlanceWearWidgetServiceTest {
             params: WearWidgetParams,
         ): WearWidgetDocument {
             instanceId = params.instanceId
-            return WearWidgetDocument { RemoteText("Testing...") }
+            return WearWidgetDocument(backgroundPainter = painterRemoteColor(Color.Transparent)) {
+                RemoteText("Testing...")
+            }
         }
     }
 

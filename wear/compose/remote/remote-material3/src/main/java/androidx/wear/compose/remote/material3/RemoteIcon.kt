@@ -51,7 +51,7 @@ public fun RemoteIcon(
     imageVector: RemoteImageVector,
     contentDescription: RemoteString?,
     modifier: RemoteModifier = RemoteModifier.size(DefaultIconDimension),
-    tint: RemoteColor = RemoteColor(DefaultTint),
+    tint: RemoteColor = LocalRemoteContentColor.current,
 ) {
     RemoteBox(modifier.semantics { this.contentDescription = contentDescription }) {
         val painter = painterRemoteVector(imageVector, tint)

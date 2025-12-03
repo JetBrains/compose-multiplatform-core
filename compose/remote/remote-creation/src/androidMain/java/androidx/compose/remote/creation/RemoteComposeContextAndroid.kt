@@ -222,4 +222,12 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
     public fun createTextFromFloat(value: RFloat, before: Int, after: Int, flags: Int): Int {
         return mRemoteWriter.createTextFromFloat(value.toFloat(), before, after, flags)
     }
+
+    public fun beginGlobal() {
+        mRemoteWriter.beginGlobal()
+    }
+
+    public fun endGlobal() {
+        mRemoteWriter.endGlobal()
+    }
 }

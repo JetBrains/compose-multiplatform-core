@@ -32,6 +32,8 @@ import androidx.compose.remote.creation.plus
 import androidx.compose.remote.creation.sign
 import androidx.compose.remote.creation.sin
 import androidx.compose.remote.creation.times
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 
 @Suppress("RestrictedApiAndroidX")
 fun plot1(): RemoteComposeWriter {
@@ -307,3 +309,12 @@ fun plot4(): RemoteComposeWriter {
         }
     return rc.writer
 }
+
+// Failing to display due to b/450104887
+@Preview @Composable fun Plot1Preview() = RemoteDocPreview(plot1())
+
+@Preview @Composable fun Plot2Preview() = RemoteDocPreview(plot2())
+
+@Preview @Composable fun Plot3Preview() = RemoteDocPreview(plot3())
+
+@Preview @Composable fun Plot4Preview() = RemoteDocPreview(plot4())

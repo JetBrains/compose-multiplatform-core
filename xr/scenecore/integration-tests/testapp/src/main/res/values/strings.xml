@@ -35,7 +35,7 @@
     <string name="cuj_transformation_test">Transformation APIs Test Case</string>
     <string name="cuj_scene_viewer_test">3D Model Viewer - SceneViewer XR Test Case</string>
     <string name="cuj_standalone_test">Positional Test Case</string>
-    <string name="cuj_gltf_model_test">GLTF Model Test Case</string>
+    <string name="cuj_gltf_model_material_texture_test">GLTF Model Material Texture Test Case</string>
     <string name="cuj_movable_test">AnchorPlacement Test Case</string>
     <string name="cuj_panel_rounded_corner">Rounded Corners Test Case</string>
     <string name="cuj_head_locked_ui_test">Headlocked UI Test Case </string>
@@ -54,6 +54,7 @@
     <string name="dev_memory_leak_test">Memory Leak (Dev) Test Case</string>
     <string name="cuj_gravity_aligned_pose_test">Gravity Aligned Pose Test</string>
     <string name="cuj_panel_coordinates_test">Panel Coordinates Test</string>
+    <string name="cuj_gltf_model_animation_test">GLTF Model Animation Test Case</string>
 
     <string name="recreate_activity" description="button text to recreate current activity [CHAR LIMIT=40]">Recreate Activity</string>
     <string name="panel_text" description="Arbitrary test string which appears in a TestPanel. [CHAR_LIMIT=30]">Dragons!!</string>

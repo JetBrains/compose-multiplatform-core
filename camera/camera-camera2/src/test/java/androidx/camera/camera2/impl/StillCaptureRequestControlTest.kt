@@ -16,7 +16,9 @@
 
 package androidx.camera.camera2.impl
 
+import androidx.camera.camera2.adapter.CameraStateAdapter
 import androidx.camera.camera2.adapter.CaptureConfigAdapter
+import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
@@ -75,6 +77,7 @@ class StillCaptureRequestControlTest {
     }
     private val fakeCameraProperties = FakeCameraProperties()
     private val fakeSurface = FakeSurface()
+    private val cameraStateAdapter = CameraStateAdapter()
 
     private lateinit var fakeCameraGraphSession: FakeCameraGraphSession
     private lateinit var fakeCameraGraph: FakeCameraGraph
@@ -433,8 +436,10 @@ class StillCaptureRequestControlTest {
         fakeCameraGraph = FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession)
         fakeUseCaseGraphConfig =
             UseCaseGraphConfig(
-                graph = fakeCameraGraph,
-                surfaceToStreamMap = mapOf(fakeSurface to StreamId(0)),
+                cameraGraphProvider = { fakeCameraGraph },
+                cameraStateAdapter = cameraStateAdapter,
+                graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+                defaultSurfaceToStreamMap = mapOf(fakeSurface to StreamId(0)),
             )
         fakeConfigAdapter =
             CaptureConfigAdapter(

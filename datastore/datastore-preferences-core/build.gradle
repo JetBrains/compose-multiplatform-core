@@ -23,6 +23,7 @@
  */
 
 import androidx.build.SoftwareType
+import androidx.build.KotlinTarget
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
@@ -48,6 +49,7 @@ androidXMultiplatform {
         }
     }
     wasmJs()
+    js()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -58,6 +60,7 @@ androidXMultiplatform {
 
         commonMain {
             dependencies {
+                api(libs.atomicFu)
                 api(libs.okio)
                 api(project(":datastore:datastore-core"))
                 api(project(":datastore:datastore-core-okio"))
@@ -103,12 +106,20 @@ androidXMultiplatform {
             }
         }
 
-        wasmJsMain {
+        webCommonMain {
             dependsOn(commonMain)
             dependencies {
                 implementation(libs.kotlinSerializationJson)
-                implementation("org.jetbrains.kotlinx:kotlinx-browser:0.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-browser:0.5.0")
             }
+        }
+
+        wasmJsMain {
+            dependsOn(webCommonMain)
+        }
+
+        jsMain {
+            dependsOn(webCommonMain)
         }
 
         wasmJsTest {
@@ -145,4 +156,5 @@ androidx {
     inceptionYear = "2020"
     description = "Android Preferences DataStore without the Android Dependencies"
     legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

@@ -75,6 +75,7 @@ import androidx.compose.remote.integration.view.demos.examples.RcSimpleClock1
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo2
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo3
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo3b
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo4
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo5
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo6
@@ -294,6 +295,7 @@ class ExperimentActivity : ComponentActivity() {
                     getpc("Dynamic Size Text") { RcTextDemo6() },
                     getpc("Ellipses Text") { RcTextDemo5() },
                     getpc("Variable fonts Text") { RcTextDemo4() },
+                    getpc("Alignment & Justification") { RcTextDemo3b() },
                     getpc("Line height Text") { RcTextDemo3() },
                     getpc("Autosize Text") { RcTextDemo2() },
                     getpc("Text baseline") { RcTextDemo() },

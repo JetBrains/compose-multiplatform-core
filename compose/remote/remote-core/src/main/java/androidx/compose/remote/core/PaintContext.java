@@ -31,7 +31,7 @@ public abstract class PaintContext {
     public static final int TEXT_MEASURE_FONT_HEIGHT = 0x02;
     public static final int TEXT_MEASURE_SPACES = 0x04;
     public static final int TEXT_COMPLEX = 0x08;
-    public static final int TEXT_USE_CORE_TEXT = 0x10;
+    public static final int TEXT_MEASURE_AUTOSIZE = 0x10;
     protected @NonNull RemoteContext mContext;
     private boolean mNeedsRepaint = false;
 

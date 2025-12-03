@@ -81,8 +81,8 @@ internal class AnchorRenderer(
 
     private fun attachInteractableComponents(planeModels: Collection<PlaneModel>) {
         for (planeModel in planeModels) {
-            if (planeModel.entity.getComponents().isEmpty()) {
-                planeModel.entity.addComponent(
+            if (planeModel.modelEntity.getComponents().isEmpty()) {
+                planeModel.modelEntity.addComponent(
                     InteractableComponent.create(session, activity.mainExecutor) { event ->
                         if (event.action.equals(InputEvent.Action.DOWN)) {
                             val headScenePose =

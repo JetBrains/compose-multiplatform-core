@@ -17,7 +17,7 @@
 package androidx.xr.arcore.testapp.helloar.rendering
 
 import androidx.xr.arcore.Plane
-import androidx.xr.scenecore.Entity
+import androidx.xr.scenecore.GltfModelEntity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 
@@ -25,6 +25,6 @@ data class PlaneModel(
     val id: Int,
     val type: Plane.Type,
     val stateFlow: StateFlow<Plane.State>,
-    internal val entity: Entity,
+    internal val modelEntity: GltfModelEntity,
     internal val renderJob: Job?,
 ) {}

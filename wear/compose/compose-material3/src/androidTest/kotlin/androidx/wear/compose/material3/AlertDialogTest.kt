@@ -49,6 +49,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
@@ -388,6 +389,80 @@ class AlertDialogTest(@TestParameter private val contentContainer: ContentContai
         }
 
         rule.onNodeWithContentDescription(description).assertExists().assertHasClickAction()
+    }
+
+    @Test
+    fun alert_dialog_title_exists_once_only() {
+        // Adding this test because we saw client tests failing with the title being found twice.
+        val title = "Test Title"
+        val description = "Test Description"
+
+        rule.setContentWithTheme {
+            AlertDialogHelper(
+                contentContainer = contentContainer,
+                title = { Text(title) },
+                dismissButton = {},
+                confirmButton = {
+                    AlertDialogDefaults.ConfirmButton(
+                        onClick = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                    ) {
+                        Icon(imageVector = Icons.Outlined.Add, contentDescription = description)
+                    }
+                },
+                onDismissRequest = {},
+                visible = true,
+            )
+        }
+
+        rule.onNodeWithText(title).assertExists()
+    }
+
+    @Test
+    fun alert_dialog_confirm_button_exists_once_only() {
+        // Adding this test because we saw client tests failing with button being found twice.
+        val confirm = "Confirm"
+
+        rule.setContentWithTheme {
+            AlertDialogHelper(
+                contentContainer = contentContainer,
+                title = {},
+                dismissButton = {},
+                confirmButton = {
+                    AlertDialogDefaults.ConfirmButton(
+                        onClick = {},
+                        modifier = Modifier.testTag(TEST_TAG),
+                    ) {
+                        Text(confirm)
+                    }
+                },
+                onDismissRequest = {},
+                visible = true,
+            )
+        }
+
+        rule.onNodeWithText(confirm).assertExists()
+    }
+
+    @Test
+    fun alert_dialog_dismiss_button_exists_once_only() {
+        // Adding this test because we saw client tests failing with button being found twice.
+        val dismiss = "Dismiss"
+
+        rule.setContentWithTheme {
+            AlertDialogHelper(
+                contentContainer = contentContainer,
+                title = {},
+                dismissButton = {
+                    AlertDialogDefaults.DismissButton(onClick = {}) { Text(dismiss) }
+                },
+                confirmButton = {},
+                onDismissRequest = {},
+                visible = true,
+            )
+        }
+
+        rule.onNodeWithText(dismiss).assertExists()
     }
 
     @Test

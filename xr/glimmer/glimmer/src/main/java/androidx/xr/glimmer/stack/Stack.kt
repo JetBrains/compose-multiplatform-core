@@ -17,6 +17,8 @@
 package androidx.xr.glimmer.stack
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.runtime.Composable
@@ -37,6 +39,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastFirstOrNull
@@ -81,12 +84,24 @@ public fun VerticalStack(
                 }
         }
 
+    val singleItemScrollConstraintConnection =
+        remember(state.pagerState) { SingleItemScrollConstraintConnection(state.pagerState) }
+
     VerticalPager(
         state = state.pagerState,
-        modifier = modifier.onFocusChanged(state::onTopLevelFocusChanged).stackScrim(),
+        modifier =
+            modifier
+                .onFocusChanged(state::onTopLevelFocusChanged)
+                .stackScrim()
+                .nestedScroll(singleItemScrollConstraintConnection),
         contentPadding = PaddingValues(bottom = RevealAreaSize),
         key = { page -> stackItemHolderState.value.getKey(page) },
         beyondViewportPageCount = MaxNextVisibleItemCount,
+        flingBehavior =
+            PagerDefaults.flingBehavior(
+                state = state.pagerState,
+                pagerSnapDistance = PagerSnapDistance.atMost(1),
+            ),
     ) { page ->
         val stackItemHolder = stackItemHolderState.value
         stackItemHolder.withInterval(page) { localIndex, itemInterval ->

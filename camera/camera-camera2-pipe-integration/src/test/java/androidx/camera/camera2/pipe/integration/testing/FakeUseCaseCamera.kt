@@ -82,6 +82,14 @@ class FakeUseCaseCameraComponentBuilder : UseCaseCameraComponent.Builder {
 class FakeUseCaseCameraComponent() : UseCaseCameraComponent {
     private val fakeUseCaseCamera = FakeUseCaseCamera()
     private val cameraGraph = FakeCameraGraph()
+    private val cameraStateAdapter = CameraStateAdapter()
+    private val useCaseGraphConfig =
+        UseCaseGraphConfig(
+            cameraGraphProvider = { cameraGraph },
+            cameraStateAdapter = cameraStateAdapter,
+            graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
+            defaultSurfaceToStreamMap = emptyMap(),
+        )
 
     override fun getUseCaseCamera(): UseCaseCamera {
         return fakeUseCaseCamera
@@ -89,7 +97,7 @@ class FakeUseCaseCameraComponent() : UseCaseCameraComponent {
 
     override fun getUseCaseGraphConfig(): UseCaseGraphConfig {
         // TODO: Implement this properly once we need to use it with SessionProcessor enabled.
-        return UseCaseGraphConfig(cameraGraph, emptyMap())
+        return useCaseGraphConfig
     }
 }
 

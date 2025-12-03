@@ -43,9 +43,13 @@ import kotlinx.coroutines.launch
  * permission be granted by the calling application. `session.configure( config =
  * session.config.copy(headTracking = Config.HeadTrackingMode.LAST_KNOWN) )`
  *
+ * This modifier might not work as expected when used on content within a
+ * [androidx.xr.compose.spatial.UserSubspace].
+ *
  * @param enabled true if this composable should always face the user.
  * @see lookAtUser modifier for making content that will tilt in all directions to face the user.
  */
+// TODO(b/461808266): LookAtUser and UserSubspace not compatible with each other
 public fun SubspaceModifier.billboard(enabled: Boolean = true): SubspaceModifier =
     this.then(SubspaceModifier.lookAtUser(enabled).gravityAligned())
 
@@ -57,6 +61,9 @@ public fun SubspaceModifier.billboard(enabled: Boolean = true): SubspaceModifier
  * permission be granted by the calling application. `session.configure( config =
  * session.config.copy(headTracking = Config.HeadTrackingMode.LAST_KNOWN) )`
  *
+ * This modifier might not work as expected when used on content within a
+ * [androidx.xr.compose.spatial.UserSubspace].
+ *
  * @param enabled true if this composable should always face the user.
  * @param up Indicates which direction is "up" when orienting the content upright. LookAtUser makes
  *   the front of the content face the user. But this can be accomplished with the content sitting
@@ -65,6 +72,7 @@ public fun SubspaceModifier.billboard(enabled: Boolean = true): SubspaceModifier
  * @see billboard modifier for making content that will generally face the user's direction but
  *   keeps the content in an upright position.
  */
+// TODO(b/461808266): LookAtUser and UserSubspace not compatible with each other
 public fun SubspaceModifier.lookAtUser(
     enabled: Boolean = true,
     up: Vector3 = Vector3(0f, 1f, 0f),

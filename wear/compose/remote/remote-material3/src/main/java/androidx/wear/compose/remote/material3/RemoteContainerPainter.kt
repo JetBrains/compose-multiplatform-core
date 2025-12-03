@@ -34,7 +34,7 @@ private class DefaultRemoteContainerPainter(
     private val painter: RemotePainter,
     private val scrim: RemoteBrush?,
     private val alpha: RemoteFloat,
-    override val intrinsicSize: RemoteSize = painter.intrinsicSize,
+    override val intrinsicSize: RemoteSize? = painter.intrinsicSize,
 ) : RemotePainter() {
     override fun RemoteDrawScope.onDraw() {
         with(painter) { draw(alpha = alpha) }
@@ -52,7 +52,7 @@ internal fun disabledRemoteContainerPainter(
 private class DefaultDisabledRemoteContainerPainter(
     private val painter: RemotePainter,
     private val alpha: RemoteFloat,
-    override val intrinsicSize: RemoteSize = painter.intrinsicSize,
+    override val intrinsicSize: RemoteSize? = painter.intrinsicSize,
 ) : RemotePainter() {
     override fun RemoteDrawScope.onDraw() {
         with(painter) { draw(alpha = alpha) }

@@ -35,6 +35,7 @@ androidXMultiplatform {
     watchos()
     tvos()
     wasmJs()
+    js()
 
     sourceSets {
         commonMain {
@@ -50,6 +51,7 @@ androidXMultiplatform {
         nonWebCommonMain {
             dependsOn(commonMain)
         }
+
         nativeMain {
             dependsOn(nonWebCommonMain)
         }
@@ -68,8 +70,12 @@ androidXMultiplatform {
         nonWebCommonTest {
             dependsOn(commonTest)
         }
-        wasmJsTest {
+
+        webCommonTest {
             dependsOn(commonTest)
+        }
+        wasmJsTest {
+            dependsOn(webCommonTest)
         }
         jvmTest {
             dependsOn(nonWebCommonTest)

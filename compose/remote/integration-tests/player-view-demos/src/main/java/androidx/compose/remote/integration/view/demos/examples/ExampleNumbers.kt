@@ -26,6 +26,9 @@ import androidx.compose.remote.creation.min
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.creation.sin
+import androidx.compose.remote.tooling.preview.RemoteDocPreview
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 
 @Suppress("RestrictedApiAndroidX")
 fun spreadSheet(): RemoteComposeWriter {
@@ -200,3 +203,5 @@ fun spreadSheet(): RemoteComposeWriter {
         }
     return rc.writer
 }
+
+@Preview @Composable fun SpreadSheetPreview() = RemoteDocPreview(spreadSheet())

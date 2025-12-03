@@ -28,6 +28,7 @@ import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.fillMaxHeight
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
 import androidx.compose.remote.creation.compose.modifier.fillMaxWidth
+import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -41,7 +42,6 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
 
 @Suppress("RestrictedApiAndroidX")
-@Preview
 @Composable
 @RemoteComposable
 fun SimplePath() {
@@ -91,3 +91,5 @@ fun SimplePath() {
         }
     }
 }
+
+@Preview @Composable fun SimplePathPreview() = RemotePreview { SimplePath() }

@@ -18,9 +18,11 @@ package androidx.glance.wear.parcel
 
 import android.content.ComponentName
 import android.content.Context
+import androidx.compose.remote.creation.compose.capture.painter.painterRemoteColor
 import androidx.compose.remote.creation.compose.layout.RemoteText
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.glance.wear.ActiveWearWidgetHandle
 import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_LARGE
 import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_SMALL
@@ -100,10 +102,17 @@ class WearWidgetProviderImplTest {
             ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
               BOX [-3:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 MODIFIERS
-                  PADDING = [0.0, 0.0, 0.0, 0.0]
                   ROUNDED_CLIP_RECT = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                TEXT_LAYOUT [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+                CANVAS [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                   MODIFIERS
+                  CANVAS_CONTENT [-7:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
+                    ComponentValue value 43 set to WIDTH of Component -7
+                    ComponentValue value 44 set to HEIGHT of Component -7
+                BOX [-8:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
+                  MODIFIERS
+                    PADDING = [0.0, 0.0, 0.0, 0.0]
+                  TEXT_LAYOUT [-10:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+                    MODIFIERS
             """
                 .trimIndent()
         val provider = WearWidgetProviderImpl(context, testName, mainScope, testWidget)
@@ -215,7 +224,9 @@ class WearWidgetProviderImplTest {
             if (enableFailureMode) {
                 throw Exception("Test exception")
             }
-            return WearWidgetDocument { content() }
+            return WearWidgetDocument(backgroundPainter = painterRemoteColor(Color.Transparent)) {
+                content()
+            }
         }
 
         override suspend fun onAdded(context: Context, widgetHandle: ActiveWearWidgetHandle) {

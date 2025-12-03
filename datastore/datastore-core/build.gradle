@@ -23,6 +23,7 @@
  */
 
 import androidx.build.SoftwareType
+import androidx.build.KotlinTarget
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.konan.target.KonanTarget
@@ -88,6 +89,8 @@ androidXMultiplatform {
     watchos()
     tvos()
     wasmJs()
+    js()
+
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -111,8 +114,16 @@ androidXMultiplatform {
             dependsOn(jvmAndroidMain)
         }
 
-        wasmJsMain {
+        webCommonMain {
             dependsOn(commonMain)
+        }
+
+        wasmJsMain {
+            dependsOn(webCommonMain)
+        }
+
+        jsMain {
+            dependsOn(webCommonMain)
         }
 
         jvmMain {
@@ -212,4 +223,5 @@ androidx {
     inceptionYear = "2020"
     description = "Android DataStore Core - contains the underlying store used by each serialization method"
     legacyDisableKotlinStrictApiMode = true
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

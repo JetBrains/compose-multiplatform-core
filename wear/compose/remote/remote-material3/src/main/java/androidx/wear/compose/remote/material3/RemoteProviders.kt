@@ -25,6 +25,18 @@ import androidx.wear.compose.material3.LocalTextConfiguration
 import androidx.wear.compose.material3.LocalTextStyle
 import androidx.wear.compose.material3.TextConfiguration
 
+internal fun provideScopeContent(
+    contentColor: RemoteColor,
+    textStyle: TextStyle,
+    content: (@Composable () -> Unit),
+): (@Composable () -> Unit) = {
+    CompositionLocalProvider(
+        LocalRemoteContentColor provides contentColor,
+        LocalTextStyle provides textStyle,
+        content = content,
+    )
+}
+
 internal fun <T> provideScopeContent(
     contentColor: RemoteColor,
     textStyle: TextStyle,

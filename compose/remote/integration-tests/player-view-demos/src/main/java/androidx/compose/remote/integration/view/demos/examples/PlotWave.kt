@@ -33,10 +33,12 @@ import androidx.compose.remote.creation.log
 import androidx.compose.remote.creation.minus
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
-import androidx.compose.remote.creation.plus
 import androidx.compose.remote.creation.pow
 import androidx.compose.remote.creation.sin
 import androidx.compose.remote.creation.times
+import androidx.compose.remote.tooling.preview.RemoteDocPreview
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 
 @Suppress("RestrictedApiAndroidX")
 fun plotWave(): RemoteComposeWriter {
@@ -185,6 +187,91 @@ fun plot(
 // ========================================================================================
 // ========================================================================================
 // ========================================================================================
+@Suppress("RestrictedApiAndroidX")
+fun basicPlot4(): RemoteComposeWriter {
+    val rc =
+        RemoteComposeContextAndroid(
+            width = 500,
+            height = 500,
+            contentDescription = "Simple Timer",
+            apiLevel = 7,
+            profiles = RcProfiles.PROFILE_ANDROIDX,
+            platform = AndroidxRcPlatformServices(),
+        ) {
+            root {
+                box(RecordingModifier().fillMaxSize(), BoxLayout.START, BoxLayout.START) {
+                    canvas(RecordingModifier().fillMaxSize().background(0xFF127799.toInt())) {
+                        painter.setColor(0xFFFF9966.toInt()).setTextSize(64f).commit()
+                        val minX = -10f
+                        val maxX = 10f
+                        val scale = (((Seconds() / 2f) % 2f) + 1f).anim(0.5f)
+                        val scaleY = scale * (ComponentHeight() - 100f) / -10f
+                        val offsetY = ComponentHeight() / 2f
+                        val scaleX = (ComponentWidth() - 100f) / (maxX - minX)
+                        val offsetX = 50f - minX * scaleX
+                        val id = scale.genTextId(1, 1)
+                        drawTextAnchored(id, ComponentWidth() / 2f, 100f, 0, 0, 0)
+                        painter.setStrokeWidth(10f).setStyle(Paint.Style.STROKE).commit()
+                        val equ = rFun { x -> sin(x + ContinuousSec() * 3f) }
+                        val pathId =
+                            addPathExpression(
+                                rFun { x -> x * scaleX + offsetX },
+                                equ * scaleY + offsetY,
+                                minX,
+                                maxX,
+                                64,
+                                Rc.PathExpression.SPLINE_PATH,
+                            )
+                        drawPath(pathId)
+                    }
+                }
+            }
+        }
+    return rc.writer
+}
+
+@Suppress("RestrictedApiAndroidX")
+fun basicPlot1(): RemoteComposeWriter {
+    val rc =
+        RemoteComposeContextAndroid(
+            width = 500,
+            height = 500,
+            contentDescription = "Simple Timer",
+            apiLevel = 7,
+            profiles = RcProfiles.PROFILE_ANDROIDX,
+            platform = AndroidxRcPlatformServices(),
+        ) {
+            root {
+                box(RecordingModifier().fillMaxSize(), BoxLayout.START, BoxLayout.START) {
+                    canvas(RecordingModifier().fillMaxSize().background(0xFF122334.toInt())) {
+                        painter.setColor(0xFFFFAABB.toInt()).setTextSize(64f).commit()
+                        val minX = -10f
+                        val maxX = 10f
+                        val scale = (((Seconds() / 2f) % 2f) + 1f).anim(0.5f).flush()
+                        val scaleY = scale * (ComponentHeight() - 100f) / -10f
+                        val offsetY = ComponentHeight() / 2f
+                        val scaleX = (ComponentWidth() - 100f) / (maxX - minX)
+                        val offsetX = 50f - minX * scaleX
+                        val id = createTextFromFloat(scale, 1, 1, Rc.TextFromFloat.PAD_AFTER_ZERO)
+                        drawTextAnchored(id, ComponentWidth() / 2f, 100f, 0, 0, 0)
+                        painter.setStrokeWidth(10f).setStyle(Paint.Style.STROKE).commit()
+                        val equ = rFun { x -> sin(x + ContinuousSec() * 3f) }
+                        val pathId =
+                            addPathExpression(
+                                rFun { x -> x * scaleX + offsetX },
+                                equ * scaleY + offsetY,
+                                minX,
+                                maxX,
+                                64,
+                                Rc.PathExpression.SPLINE_PATH,
+                            )
+                        drawPath(pathId)
+                    }
+                }
+            }
+        }
+    return rc.writer
+}
 
 @Suppress("RestrictedApiAndroidX")
 fun basicPlot(): RemoteComposeWriter {
@@ -340,3 +427,7 @@ fun niceIncrement(range: RFloat, minSteps: Int): RFloat {
         )
     return ret
 }
+
+@Preview @Composable fun PlotWavePreview() = RemoteDocPreview(plotWave())
+
+@Preview @Composable fun BasicPlotPreview() = RemoteDocPreview(basicPlot())

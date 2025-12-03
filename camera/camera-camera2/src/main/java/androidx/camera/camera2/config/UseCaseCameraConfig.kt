@@ -16,6 +16,7 @@
 
 package androidx.camera.camera2.config
 
+import androidx.camera.camera2.adapter.CameraStateAdapter
 import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.compat.workaround.CapturePipelineTorchCorrection
@@ -26,7 +27,6 @@ import androidx.camera.camera2.impl.CapturePipelineImpl
 import androidx.camera.camera2.impl.UseCaseCamera
 import androidx.camera.camera2.impl.UseCaseCameraImpl
 import androidx.camera.camera2.impl.UseCaseCameraRequestControlImpl
-import androidx.camera.camera2.impl.UseCaseSurfaceManager
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.CameraStream
 import androidx.camera.camera2.pipe.StreamId
@@ -36,6 +36,7 @@ import androidx.camera.core.impl.SessionProcessor
 import dagger.Module
 import dagger.Provides
 import dagger.Subcomponent
+import javax.inject.Provider
 import javax.inject.Scope
 
 @Scope public annotation class UseCaseCameraScope
@@ -74,7 +75,11 @@ public data class UseCaseCameraConfig(
     public val cameraGraphConfig: CameraGraph.Config,
     private val sessionProcessor: SessionProcessor? = null,
 ) {
-    public val cameraGraph: CameraGraph by lazy { cameraGraphFactory(cameraGraphConfig) }
+    @UseCaseCameraScope
+    @Provides
+    public fun provideCameraGraph(): CameraGraph {
+        return cameraGraphFactory(cameraGraphConfig)
+    }
 
     @UseCaseCameraScope
     @Provides
@@ -101,27 +106,52 @@ public data class UseCaseCameraConfig(
     @UseCaseCameraScope
     @Provides
     public fun provideUseCaseGraphConfig(
-        useCaseSurfaceManager: UseCaseSurfaceManager,
+        cameraStateAdapter: CameraStateAdapter,
         cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository,
+        cameraGraphProvider: Provider<CameraGraph>,
     ): UseCaseGraphConfig {
         sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
             cameraInteropStateCallbackRepository.updateCallbacks(sessionConfig)
         }
 
-        val surfaceToStreamMap = mutableMapOf<DeferrableSurface, StreamId>()
-        streamConfigMap.forEach { (streamConfig, deferrableSurface) ->
-            cameraGraph.streams[streamConfig]?.let { surfaceToStreamMap[deferrableSurface] = it.id }
-        }
-
-        Camera2Logger.debug { "Prepared UseCaseGraphConfig: $cameraGraph " }
-        return UseCaseGraphConfig(graph = cameraGraph, surfaceToStreamMap = surfaceToStreamMap)
+        Camera2Logger.debug { "Prepared UseCaseGraphConfig (Deferred)" }
+        return UseCaseGraphConfig(
+            cameraGraphProvider = cameraGraphProvider,
+            cameraStateAdapter = cameraStateAdapter,
+            streamConfigMap = streamConfigMap,
+            graphStateToCameraStateAdapter = graphStateToCameraStateAdapter,
+        )
     }
 }
 
-public data class UseCaseGraphConfig(
-    val graph: CameraGraph,
-    val surfaceToStreamMap: Map<DeferrableSurface, StreamId>,
+public class UseCaseGraphConfig(
+    private val cameraGraphProvider: Provider<CameraGraph>,
+    private val cameraStateAdapter: CameraStateAdapter,
+    private val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
+    private val streamConfigMap: Map<CameraStream.Config, DeferrableSurface> = emptyMap(),
+    defaultSurfaceToStreamMap: Map<DeferrableSurface, StreamId>? = null,
 ) {
+    private val _graph = lazy { cameraGraphProvider.get() }
+
+    public val graph: CameraGraph by _graph
+
+    public val surfaceToStreamMap: Map<DeferrableSurface, StreamId> by lazy {
+        defaultSurfaceToStreamMap
+            ?: run {
+                val map = mutableMapOf<DeferrableSurface, StreamId>()
+                streamConfigMap.forEach { (streamConfig, deferrableSurface) ->
+                    graph.streams[streamConfig]?.let { map[deferrableSurface] = it.id }
+                }
+                map.toMap()
+            }
+    }
+
+    public fun closeGraph() {
+        if (_graph.isInitialized()) {
+            graph.close()
+        }
+    }
+
     public fun getStreamIdsFromSurfaces(
         deferrableSurfaces: Collection<DeferrableSurface>
     ): Set<StreamId> {
@@ -130,6 +160,15 @@ public data class UseCaseGraphConfig(
             surfaceToStreamMap[it]?.let { streamId -> streamIds.add(streamId) }
         }
         return streamIds
+    }
+
+    public fun configureCameraStateListener() {
+        graphStateToCameraStateAdapter.cameraGraph = graph
+        cameraStateAdapter.onGraphUpdated(graph)
+    }
+
+    public suspend inline fun <T> useGraphSession(block: (CameraGraph.Session) -> T): T {
+        return graph.acquireSession().use { block(it) }
     }
 }
 

@@ -461,7 +461,6 @@ constructor(
     private fun beginComponentCreation(useCaseCameraConfig: UseCaseCameraConfig) {
         // Create and configure the new camera component.
         _activeComponent = builder.config(useCaseCameraConfig).build()
-        useCaseCameraConfig.configureCameraStateListener()
 
         val newUseCaseCamera = checkNotNull(camera)
         newUseCaseCamera.start()
@@ -481,11 +480,6 @@ constructor(
             useCase.onCameraControlReady()
         }
         pendingUseCasesToNotifyCameraControlReady.clear()
-    }
-
-    private fun UseCaseCameraConfig.configureCameraStateListener() {
-        graphStateToCameraStateAdapter.cameraGraph = cameraGraph
-        cameraStateAdapter.onGraphUpdated(cameraGraph)
     }
 
     @GuardedBy("lock")

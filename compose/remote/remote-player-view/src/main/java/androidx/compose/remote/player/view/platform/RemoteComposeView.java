@@ -747,7 +747,7 @@ public class RemoteComposeView extends FrameLayout implements View.OnAttachState
                                 : Theme.LIGHT;
                 theme = mode;
             }
-        }
+        } // REMOVE IN PLATFORM
         try {
             long nanoStart = nanoTime(mClock);
             long start = mEvalTime ? nanoStart : 0; // measure execution of commands

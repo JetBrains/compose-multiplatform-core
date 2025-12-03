@@ -285,6 +285,73 @@ class NetworkRequestConstraintControllerTest {
 
     @Test
     @Config(minSdk = 30)
+    fun testBlockedStatus_secondTrackerGetsCachedBlockedState() = runTest {
+        val connectivityManager =
+            getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+        val connManagerShadow =
+            Shadow.extract<ExtendedShadowConnectivityManager>(connectivityManager)
+
+        val capabilities = ShadowNetworkCapabilities.newInstance()
+        shadowOf(capabilities).apply {
+            addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+            addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        }
+        connManagerShadow.setNetworkCapabilities(connectivityManager.activeNetwork, capabilities)
+
+        val controller = NetworkRequestConstraintController(connectivityManager)
+
+        val request =
+            NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
+        val constraints =
+            Constraints.Builder().setRequiredNetworkRequest(request, NetworkType.CONNECTED).build()
+
+        val results1 = mutableListOf<ConstraintsState>()
+        val deferredMet1 = CompletableDeferred<Unit>()
+        val deferredNotMet1 = CompletableDeferred<Unit>()
+        val deferredMetAgain1 = CompletableDeferred<Unit>()
+        val job1 = launch {
+            controller.track(constraints).distinctUntilChanged().collectIndexed { index, value ->
+                results1.add(value)
+                when (index) {
+                    0 -> deferredMet1.complete(Unit)
+                    1 -> deferredNotMet1.complete(Unit)
+                    2 -> deferredMetAgain1.complete(Unit)
+                }
+            }
+        }
+
+        withTimeout(TEST_TIMEOUT_MS) {
+            deferredMet1.await()
+            connManagerShadow.networkCallbacks.forEach {
+                it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, true)
+            }
+            deferredNotMet1.await()
+
+            val initialState = controller.track(constraints).first()
+            assertThat(initialState)
+                .isEqualTo(ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY))
+
+            connManagerShadow.networkCallbacks.forEach {
+                it.onBlockedStatusChanged(connectivityManager.activeNetwork!!, false)
+            }
+            deferredMetAgain1.await()
+        }
+        job1.cancel()
+
+        val expectedSequence =
+            listOf(
+                ConstraintsMet,
+                ConstraintsNotMet(STOP_REASON_CONSTRAINT_CONNECTIVITY),
+                ConstraintsMet,
+            )
+        assertThat(results1).isEqualTo(expectedSequence)
+    }
+
+    @Test
+    @Config(minSdk = 30)
     fun testTrackerAfterNetworkCapabilitiesInitialized() = runTest {
         val connectivityManager =
             getApplicationContext<Context>().getSystemService(Context.CONNECTIVITY_SERVICE)

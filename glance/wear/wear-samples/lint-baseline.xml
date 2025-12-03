@@ -10,4 +10,13 @@
             file="src/main/AndroidManifest.xml"/>
     </issue>
 
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteColorPainterKt.painterRemoteColor-8_81llA can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="        WearWidgetDocument(backgroundPainter = painterRemoteColor(Color.Red)) {"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/wear/samples/HelloWidget.kt"/>
+    </issue>
+
 </issues>

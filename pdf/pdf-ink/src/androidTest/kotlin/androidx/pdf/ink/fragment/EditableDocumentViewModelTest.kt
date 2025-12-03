@@ -42,7 +42,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.concurrent.Executors
-import kotlin.collections.first
+import junit.framework.TestCase.assertFalse
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
@@ -241,7 +241,8 @@ class EditableDocumentViewModelTest {
         testScheduler.advanceUntilIdle()
 
         annotationsViewModel.applyDraftEdits()
-
+        // Assert annotation interactions is disabled while applying edits
+        assertFalse(annotationsViewModel.isAnnotationInteractionEnabled.value)
         collectJob.join()
 
         assertThat(applyStates).isNotEmpty()
@@ -269,7 +270,8 @@ class EditableDocumentViewModelTest {
         testScheduler.advanceUntilIdle()
 
         annotationsViewModel.applyDraftEdits()
-
+        // Assert annotation interactions is disabled while applying edits
+        assertFalse(annotationsViewModel.isAnnotationInteractionEnabled.value)
         collectJob.join()
 
         // Verify the sequence of states
@@ -312,12 +314,28 @@ class EditableDocumentViewModelTest {
     }
 
     @Test
-    fun setAnnotationVisibility_updatesAreAnnotationsEnabled() = runTest {
-        annotationsViewModel.setAnnotationVisibility(false)
-        assertThat(annotationsViewModel.areAnnotationsEnabled.first()).isFalse()
+    fun setAnnotationVisibility_updatesIsAnnotationInteractionEnabled() = runTest {
+        // Enable edit mode for this test
+        annotationsViewModel.isEditModeEnabled = true
+        // Hide annotations
+        annotationsViewModel.areAnnotationsVisible = false
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.first()).isFalse()
 
-        annotationsViewModel.setAnnotationVisibility(true)
-        assertThat(annotationsViewModel.areAnnotationsEnabled.first()).isTrue()
+        annotationsViewModel.areAnnotationsVisible = true
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.first()).isTrue()
+    }
+
+    @Test
+    fun updateEditMode_updatesIsAnnotationInteractionEnabled() = runTest {
+        // Mark annotations visible throughout test
+        annotationsViewModel.areAnnotationsVisible = true
+
+        // Exit edit mode
+        annotationsViewModel.isEditModeEnabled = false
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.first()).isFalse()
+        // Enter edit mode
+        annotationsViewModel.isEditModeEnabled = true
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.first()).isTrue()
     }
 
     @Test
@@ -328,7 +346,10 @@ class EditableDocumentViewModelTest {
 
     @Test
     fun initialAreAnnotationsEnabled_isTrue() = runTest {
-        assertThat(annotationsViewModel.areAnnotationsEnabled.first()).isTrue()
+        // Enter edit mode
+        annotationsViewModel.isEditModeEnabled = true
+
+        assertThat(annotationsViewModel.isAnnotationInteractionEnabled.first()).isTrue()
     }
 
     fun createAnnotation(

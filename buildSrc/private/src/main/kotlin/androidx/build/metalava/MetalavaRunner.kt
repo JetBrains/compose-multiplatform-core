@@ -223,7 +223,7 @@ internal fun getGenerateApiLevelsArgs(
     return buildList {
         add("--generate-api-version-history")
         add(outputLocation.absolutePath)
-        add("--current-version")
+        add("--api-version-for-sources")
         add(currentVersion.toString())
         if (apiFiles.isNotEmpty()) {
             add("--api-version-signature-files")

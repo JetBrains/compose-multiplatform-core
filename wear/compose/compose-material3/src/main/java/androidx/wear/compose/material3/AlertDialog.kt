@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.onClick as semanticOnClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -1378,7 +1379,11 @@ private fun DynamicScrollableOrFixedLayout(
     fixedContent: @Composable (measureStep: Boolean) -> Unit,
 ) {
     val measurableContentLambda =
-        @Composable { Box(modifier = Modifier.wrapContentHeight()) { fixedContent(true) } }
+        @Composable {
+            Box(modifier = Modifier.wrapContentHeight().clearAndSetSemantics {}) {
+                fixedContent(true)
+            }
+        }
     val fixedContentLambda = @Composable { fixedContent(false) }
     SubcomposeLayout { constraints ->
         val fixedMeasurable =

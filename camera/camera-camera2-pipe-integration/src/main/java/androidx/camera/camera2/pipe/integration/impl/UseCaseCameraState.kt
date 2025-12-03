@@ -55,12 +55,10 @@ import kotlinx.coroutines.Deferred
 public class UseCaseCameraState
 @Inject
 constructor(
-    useCaseGraphConfig: UseCaseGraphConfig,
+    private val useCaseGraphConfig: UseCaseGraphConfig,
     private val templateParamsOverride: TemplateParamsOverride,
 ) {
     private val lock = Any()
-
-    private val cameraGraph = useCaseGraphConfig.graph
 
     @GuardedBy("lock") private var updateSignal: CompletableDeferred<Unit>? = null
 
@@ -209,20 +207,19 @@ constructor(
         // synchronously with the latest values. The startRepeating/stopRepeating call happens
         // outside of the synchronized block to avoid holding a lock while updating the camera
         // state.
-        val result: CompletableDeferred<Unit>?
-        val request: Request?
+        var signalToComplete: CompletableDeferred<Unit>? = null
+
         try {
-                cameraGraph.acquireSession()
-            } catch (e: CancellationException) {
-                Camera2Logger.debug(e) { "Cannot acquire session at ${this@UseCaseCameraState}" }
-                null
-            }
-            .let { session ->
+            useCaseGraphConfig.useGraphSession { session ->
+                val request: Request?
+                val result: CompletableDeferred<Unit>?
+
+                // Synchronize state reads and signal resets
                 synchronized(lock) {
-                    request =
-                        if (currentStreams.isEmpty() || session == null) {
-                            null
-                        } else {
+                    if (currentStreams.isEmpty()) {
+                        request = null
+                    } else {
+                        request =
                             Request(
                                 template = currentTemplate,
                                 streams = currentStreams.toList(),
@@ -239,37 +236,42 @@ constructor(
                                         listeners.add(requestListener)
                                     },
                             )
-                        }
+                    }
                     result = updateSignal
                     updating = false
                     updateSignal = null
                 }
-                session?.use {
-                    if (request == null) {
-                        it.stopRepeating()
-                    } else {
-                        result?.let { result ->
-                            synchronized(lock) {
-                                updateSignals.add(
-                                    RequestSignal(submittedRequestCounter.value, result)
-                                )
-                                pendingSignalCount.incrementAndGet()
-                            }
-                        }
-                        Camera2Logger.debug { "Update RepeatingRequest: $request" }
-                        it.startRepeating(request)
-                        it.update3A(request.parameters)
-                    }
-                }
 
-                // complete the result instantly only when the request was not submitted
                 if (request == null) {
-                    // Complete the result after the session closes to allow other threads to
-                    // acquire a lock. This also avoids cases where complete() synchronously
-                    // invokes expensive calls.
-                    result?.complete(Unit)
+                    session.stopRepeating()
+                    signalToComplete = result
+                } else {
+                    result?.let { res ->
+                        synchronized(lock) {
+                            updateSignals.add(RequestSignal(submittedRequestCounter.value, res))
+                            pendingSignalCount.incrementAndGet()
+                        }
+                    }
+                    Camera2Logger.debug { "Update RepeatingRequest: $request" }
+                    session.startRepeating(request)
+                    session.update3A(request.parameters)
                 }
             }
+        } catch (e: CancellationException) {
+            Camera2Logger.debug(e) { "Cannot acquire session at ${this@UseCaseCameraState}" }
+            synchronized(lock) {
+                if (updating) {
+                    updating = false
+                    signalToComplete = updateSignal
+                    updateSignal = null
+                }
+            }
+        }
+
+        // Complete the result after the session closes to allow other threads to
+        // acquire a lock. This also avoids cases where complete() synchronously
+        // invokes expensive calls.
+        signalToComplete?.complete(Unit)
     }
 
     private fun CameraGraph.Session.update3A(parameters: Map<CaptureRequest.Key<*>, Any>?) {

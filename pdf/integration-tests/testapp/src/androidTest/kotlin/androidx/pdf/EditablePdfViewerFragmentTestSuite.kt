@@ -30,11 +30,13 @@ import androidx.pdf.ink.R as InkR
 import androidx.pdf.ink.R as PdfInkR
 import androidx.pdf.ink.model.ApplyInProgressException
 import androidx.pdf.util.Preconditions
+import androidx.pdf.view.PdfView
 import androidx.pdf.viewer.fragment.R as PdfR
 import androidx.test.espresso.Espresso.onIdle
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.IdlingRegistry
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.doubleClick
 import androidx.test.espresso.action.ViewActions.pressBack
 import androidx.test.espresso.action.ViewActions.swipeDown
 import androidx.test.espresso.action.ViewActions.swipeLeft
@@ -49,6 +51,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNotEquals
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.greaterThan
@@ -384,6 +387,8 @@ class EditablePdfViewerFragmentTestSuite {
         if (!isRequiredSdkExtensionAvailable()) return
 
         loadDocumentAndSetupFragment()
+        var pdfView: PdfView? = null
+        scenario.onFragment { fragment -> pdfView = fragment.view?.findViewById(R.id.pdfView) }
 
         enterEditMode()
         // Draw an annotation on the content view
@@ -395,9 +400,23 @@ class EditablePdfViewerFragmentTestSuite {
         // Assert AnnotationView is hidden
         onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(not(isDisplayed())))
 
+        val fitToScreenZoom = pdfView?.zoom
+        // try interacting with the content rendered on the pdf view
+        onView(withId(R.id.pdfView)).check(matches(isDisplayed()))
+        onView(withId(PdfR.id.pdfContentLayout)).perform(doubleClick())
+        // wait for gesture to complete
+        onIdle()
+        // assert interaction actually occurred on PdfView
+        assertThat(pdfView?.zoom).isGreaterThan(fitToScreenZoom)
+
         // Toggle once again to enable annotations
         onView(withId(PdfInkR.id.toggle_annotation_button)).perform(click())
         onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(isDisplayed()))
+        // Try same interaction when annotation interaction is enabled
+        onView(withId(PdfR.id.pdfContentLayout)).perform(doubleClick())
+        // assert double tapping again doesn't fit to screen as touch is consumed by wet stroke's
+        // view
+        assertNotEquals(fitToScreenZoom, pdfView?.zoom)
     }
 
     private fun enterEditMode() {

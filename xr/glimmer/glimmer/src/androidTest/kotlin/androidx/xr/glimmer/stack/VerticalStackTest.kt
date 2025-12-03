@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.indirect.IndirectPointerEvent
+import androidx.compose.ui.input.indirect.IndirectPointerEventPrimaryDirectionalMotionAxis
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
@@ -405,7 +406,7 @@ class VerticalStackTest {
     }
 
     @Test
-    fun increaseItemCount_updatesItems() {
+    fun increaseItemCount_updatesItems() = runTest {
         var itemHeight = 0
         val state = StackState()
         var itemCount by mutableStateOf(3)
@@ -414,7 +415,7 @@ class VerticalStackTest {
                 items(itemCount) { index -> StackItem("Item $index") { itemHeight = it } }
             }
         }
-        performIndirectSwipe(itemHeight * 2)
+        runOnUiThread { state.scrollToItem(2) }
         rule.onNodeWithText("Item 2").assertIsDisplayed()
         assertThat(state.topItem).isEqualTo(2)
         performIndirectSwipe(itemHeight)
@@ -434,7 +435,7 @@ class VerticalStackTest {
     }
 
     @Test
-    fun decreaseItemCount_updatesItems() {
+    fun decreaseItemCount_updatesItems() = runTest {
         var itemHeight = 0
         val state = StackState()
         var itemCount by mutableStateOf(3)
@@ -443,7 +444,7 @@ class VerticalStackTest {
                 items(itemCount) { index -> StackItem("Item $index") { itemHeight = it } }
             }
         }
-        performIndirectSwipe(itemHeight * 2)
+        runOnUiThread { state.scrollToItem(2) }
         rule.onNodeWithText("Item 2").assertIsDisplayed()
         assertThat(state.topItem).isEqualTo(2)
         performIndirectSwipe(itemHeight)
@@ -460,7 +461,7 @@ class VerticalStackTest {
     }
 
     @Test
-    fun reorderItems_withKeys_preservesScrollPosition() {
+    fun reorderItems_withKeys_preservesScrollPosition() = runTest {
         var itemHeight = 0
         val state = StackState()
         var items by mutableStateOf(listOf("A", "B", "C", "D"))
@@ -471,7 +472,7 @@ class VerticalStackTest {
                 items(1, key = { "Last" }) { StackItem("Last") }
             }
         }
-        performIndirectSwipe(itemHeight * 2)
+        runOnUiThread { state.scrollToItem(2) }
         rule.onNodeWithText("B").assertIsDisplayed()
         assertThat(state.topItem).isEqualTo(2)
 
@@ -1540,7 +1541,7 @@ class VerticalStackTest {
                 .isEqualTo(Color.Green)
         }
 
-        performIndirectPress()
+        val press = performIndirectPress()
 
         rule.onRoot().captureToImage().run {
             val pixels = toPixelMap()
@@ -1556,7 +1557,7 @@ class VerticalStackTest {
                 .isZero()
         }
 
-        performIndirectRelease()
+        performIndirectRelease(previousMotionEvent = press)
 
         rule.onRoot().captureToImage().run {
             val pixels = toPixelMap()
@@ -1611,6 +1612,158 @@ class VerticalStackTest {
         }
     }
 
+    @Test
+    fun swipeForward_largeDistance_stopsAtNextItem() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        assertThat(state.topItem).isEqualTo(0)
+
+        performIndirectSwipe(itemHeight * 3)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(1)
+        rule.onNodeWithText("Item 0").assertIsNotDisplayed()
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 3").assertIsDisplayed()
+        rule.onNodeWithText("Item 4").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun swipeBackward_largeDistance_stopsAtPreviousItem() = runTest {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        runOnUiThread { state.scrollToItem(3) }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(3)
+
+        performIndirectSwipe(-itemHeight * 3)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(2)
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 1").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun flingForward_highVelocity_stopsAtNextItem() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(10) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+
+        performIndirectSwipe(itemHeight, durationMillis = FlingDuration)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(1)
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+    }
+
+    @Test
+    fun twoFlingsForward_stopsAtNextNextItem() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(10) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+
+        performIndirectSwipe(itemHeight, durationMillis = FlingDuration)
+        performIndirectSwipe(itemHeight, durationMillis = FlingDuration)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(2)
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+    }
+
+    @Test
+    fun flingBackward_highVelocity_stopsAtPreviousItem() = runTest {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(10) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        runOnUiThread { state.scrollToItem(3) }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(3)
+
+        performIndirectSwipe(-itemHeight, durationMillis = FlingDuration)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(2)
+        rule.onNodeWithText("Item 2").assertIsDisplayed()
+        rule.onNodeWithText("Item 1").assertIsNotDisplayed()
+    }
+
+    @Test
+    fun dragForwardAndBackward_sameGesture_restoresPosition() {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+
+        val press = performIndirectPress()
+        val moveForward =
+            performIndirectMove(distancePx = itemHeight.toFloat(), previousMotionEvent = press)
+        val moveBackward =
+            performIndirectMove(
+                distancePx = -itemHeight.toFloat() * 2,
+                previousMotionEvent = moveForward,
+            )
+        performIndirectRelease(previousMotionEvent = moveBackward)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(0)
+        rule.onNodeWithText("Item 0").assertIsDisplayed()
+    }
+
+    @Test
+    fun dragForwardAndBackward_sameGesture_canReachPreviousItem() = runTest {
+        var itemHeight = 0
+        val state = StackState()
+        rule.setContent {
+            VerticalStack(state = state) {
+                items(5) { index -> StackItem("Item $index") { itemHeight = it } }
+            }
+        }
+        runOnUiThread { state.scrollToItem(2) }
+        rule.waitForIdle()
+        assertThat(state.topItem).isEqualTo(2)
+
+        val press = performIndirectPress()
+        val moveForward =
+            performIndirectMove(distancePx = itemHeight.toFloat(), previousMotionEvent = press)
+        val moveBackward =
+            performIndirectMove(
+                distancePx = -itemHeight.toFloat() * 4,
+                previousMotionEvent = moveForward,
+            )
+        performIndirectRelease(previousMotionEvent = moveBackward)
+        rule.waitForIdle()
+
+        assertThat(state.topItem).isEqualTo(1)
+        rule.onNodeWithText("Item 1").assertIsDisplayed()
+    }
+
     @Composable
     private fun StackItem(
         text: String,
@@ -1629,7 +1782,7 @@ class VerticalStackTest {
     }
 
     @OptIn(ExperimentalIndirectPointerApi::class)
-    private fun performIndirectPress() {
+    private fun performIndirectPress(): MotionEvent {
         val currentTime = uptimeMillis()
         val down =
             MotionEvent.obtain(
@@ -1641,28 +1794,79 @@ class VerticalStackTest {
                 /* metaState = */ 0,
             )
         down.source = SOURCE_TOUCH_NAVIGATION
-        rule.onRoot().performIndirectPointerEvent(rule, IndirectPointerEvent(motionEvent = down))
+        rule
+            .onRoot()
+            .performIndirectPointerEvent(
+                rule,
+                IndirectPointerEvent(
+                    motionEvent = down,
+                    primaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                ),
+            )
+        return down
     }
 
     @OptIn(ExperimentalIndirectPointerApi::class)
-    private fun performIndirectRelease() {
-        val currentTime = uptimeMillis()
+    private fun performIndirectMove(
+        distancePx: Float,
+        previousMotionEvent: MotionEvent,
+        durationMillis: Long = 200L,
+    ): MotionEvent {
+        val move =
+            MotionEvent.obtain(
+                /* downTime = */ previousMotionEvent.downTime,
+                /* eventTime = */ previousMotionEvent.eventTime + durationMillis,
+                /* action = */ MotionEvent.ACTION_MOVE,
+                /* x = */ previousMotionEvent.x + distancePx,
+                /* y = */ 0f,
+                /* metaState = */ 0,
+            )
+        move.source = SOURCE_TOUCH_NAVIGATION
+        rule
+            .onRoot()
+            .performIndirectPointerEvent(
+                rule,
+                IndirectPointerEvent(
+                    motionEvent = move,
+                    primaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                    previousMotionEvent = previousMotionEvent,
+                ),
+            )
+        return move
+    }
+
+    @OptIn(ExperimentalIndirectPointerApi::class)
+    private fun performIndirectRelease(previousMotionEvent: MotionEvent) {
         val up =
             MotionEvent.obtain(
-                /* downTime = */ currentTime,
-                /* eventTime = */ currentTime,
+                /* downTime = */ previousMotionEvent.downTime,
+                /* eventTime = */ previousMotionEvent.eventTime + 20,
                 /* action = */ MotionEvent.ACTION_UP,
-                /* x = */ 0f,
+                /* x = */ previousMotionEvent.x,
                 /* y = */ 0f,
                 /* metaState = */ 0,
             )
         up.source = SOURCE_TOUCH_NAVIGATION
-        rule.onRoot().performIndirectPointerEvent(rule, IndirectPointerEvent(motionEvent = up))
+        rule
+            .onRoot()
+            .performIndirectPointerEvent(
+                rule,
+                IndirectPointerEvent(
+                    motionEvent = up,
+                    primaryDirectionalMotionAxis =
+                        IndirectPointerEventPrimaryDirectionalMotionAxis.X,
+                    previousMotionEvent = previousMotionEvent,
+                ),
+            )
     }
 
-    private fun performIndirectSwipe(distancePx: Int) {
+    private fun performIndirectSwipe(distancePx: Int, durationMillis: Long = 200L) {
         require(distancePx != 0)
-        rule.onRoot().performIndirectSwipe(rule, distancePx.toFloat())
+        rule
+            .onRoot()
+            .performIndirectSwipe(rule, distancePx.toFloat(), moveDuration = durationMillis)
     }
 
     suspend fun runOnUiThread(action: suspend () -> Unit) {
@@ -1672,3 +1876,6 @@ class VerticalStackTest {
 
     private fun Color.toOpaque(): Color = copy(alpha = 1.0f)
 }
+
+/** A short swipe duration to trigger a fling. */
+private const val FlingDuration: Long = 50L

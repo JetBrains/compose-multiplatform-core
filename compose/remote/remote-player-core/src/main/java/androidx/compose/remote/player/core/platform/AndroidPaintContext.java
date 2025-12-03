@@ -465,15 +465,24 @@ public class AndroidPaintContext extends PaintContext {
         if (end == -1 || end > str.length()) {
             end = str.length();
         }
-        boolean useAdvancedFeatures = (flags & PaintContext.TEXT_USE_CORE_TEXT) != 0;
 
         TextPaint textPaint = new TextPaint();
-        if (useAdvancedFeatures) {
+
+        boolean useAdvancedFeatures = (flags & PaintContext.TEXT_MEASURE_AUTOSIZE) != 0;
+
+        if (letterSpacing > 0f) {
             textPaint.setLetterSpacing(letterSpacing);
-            mPaint.setLetterSpacing(letterSpacing);
-            mPaint.setUnderlineText(underline);
-            mPaint.setStrikeThruText(strikethrough);
+            useAdvancedFeatures = true;
         }
+        if (underline) {
+            mPaint.setUnderlineText(underline);
+            useAdvancedFeatures = true;
+        }
+        if (strikethrough) {
+            mPaint.setStrikeThruText(strikethrough);
+            useAdvancedFeatures = true;
+        }
+
         textPaint.set(mPaint);
         StaticLayout.Builder staticLayoutBuilder =
                 StaticLayout.Builder.obtain(str, start, end, textPaint, (int) maxWidth);
@@ -503,13 +512,21 @@ public class AndroidPaintContext extends PaintContext {
         staticLayoutBuilder.setMaxLines(maxLines);
         staticLayoutBuilder.setIncludePad(false);
 
-        if (useAdvancedFeatures) {
+        if (lineBreakStrategy > 0) {
             staticLayoutBuilder.setBreakStrategy(lineBreakStrategy);
+            useAdvancedFeatures = true;
+        }
+        if (hyphenationFrequency > 0) {
             staticLayoutBuilder.setHyphenationFrequency(hyphenationFrequency);
+            useAdvancedFeatures = true;
+        }
+        if (justificationMode > 0) {
             staticLayoutBuilder.setJustificationMode(justificationMode);
-            if (lineHeightAdd > 0f || lineHeightMultiplier != 1f) {
-                staticLayoutBuilder.setLineSpacing(lineHeightAdd, lineHeightMultiplier);
-            }
+            useAdvancedFeatures = true;
+        }
+        if (lineHeightAdd > 0f || lineHeightMultiplier != 1f) {
+            staticLayoutBuilder.setLineSpacing(lineHeightAdd, lineHeightMultiplier);
+            useAdvancedFeatures = true;
         }
 
         StaticLayout staticLayout = staticLayoutBuilder.build();

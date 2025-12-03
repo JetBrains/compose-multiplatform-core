@@ -191,6 +191,28 @@ public class RecordingModifier {
         return this;
     }
 
+
+    /**
+     * Add a background modifier (flat color background)
+     *
+     * @param color color of the background
+     * @return RecordingModifier
+     */
+    public @NonNull RecordingModifier backgroundId(int color) {
+        mList.add(new DynamicSolidBackgroundModifier(color));
+        return this;
+    }
+
+    /**
+     * Add a background modifier (flat color background)
+     *
+     * @param color color of the background
+     * @return RecordingModifier
+     */
+    public @NonNull RecordingModifier backgroundId(short color) {
+        mList.add(new DynamicSolidBackgroundModifier(color));
+        return this;
+    }
     /**
      * Add an align by baseline modifier
      *
@@ -461,6 +483,22 @@ public class RecordingModifier {
         mList.add(new BorderModifier(width, roundedCorner, color, shape));
         return this;
     }
+
+    /**
+     * Add a border modifier
+     *
+     * @param width
+     * @param roundedCorner
+     * @param color
+     * @param shape
+     * @return
+     */
+    public @NonNull RecordingModifier dynamicBorder(
+            float width, float roundedCorner, short color, int shape) {
+        mList.add(new DynamicBorderModifier(width, roundedCorner, color, shape));
+        return this;
+    }
+
 
     /**
      * Adds a click modifier

@@ -46,8 +46,11 @@ import androidx.compose.remote.creation.rf
 import androidx.compose.remote.creation.sign
 import androidx.compose.remote.creation.sin
 import androidx.compose.remote.creation.times
+import androidx.compose.remote.tooling.preview.RemoteDocPreview
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.tooling.preview.Preview
 import kotlin.random.Random
 
 @Suppress("RestrictedApiAndroidX")
@@ -704,3 +707,7 @@ fun RemoteComposeWriterAndroid.lookup2(
         (clamp(0f, max, floor(x / gap)) + clamp(0f, max, floor(y / gap)) * dim.toFloat()),
     )
 }
+
+@Preview @Composable fun BallPreview() = RemoteDocPreview(ball())
+
+@Preview @Composable fun MazePreview() = RemoteDocPreview(maze())

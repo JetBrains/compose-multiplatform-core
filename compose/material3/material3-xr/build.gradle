@@ -103,7 +103,8 @@ androidXMultiplatform {
 
 androidx {
     name = "androidx.compose.material3:material3-xr"
-    type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
+    // TODO(kmost): Change back to PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS before publishing
+    type = SoftwareType.INTERNAL_LIBRARY_WITH_API_TASKS
     inceptionYear = "2025"
     description = "Enables the use of XR libraries in Material3"
 }

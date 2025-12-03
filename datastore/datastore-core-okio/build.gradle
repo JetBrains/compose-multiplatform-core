@@ -23,6 +23,7 @@
  */
 
 import androidx.build.SoftwareType
+import androidx.build.KotlinTarget
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 
@@ -39,6 +40,7 @@ androidXMultiplatform {
     watchos()
     tvos()
     wasmJs()
+    js()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -80,15 +82,27 @@ androidXMultiplatform {
             }
         }
 
-        wasmJsMain {
+        webCommonMain {
             dependsOn(commonMain)
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-browser:0.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-browser:0.5.0")
             }
         }
 
-        wasmJsTest {
+        wasmJsMain {
+            dependsOn(webCommonMain)
+        }
+
+        jsMain {
+            dependsOn(webCommonMain)
+        }
+
+        webCommonTest {
             dependsOn(commonTest)
+        }
+
+        wasmJsTest {
+            dependsOn(webCommonTest)
         }
 
         targets.configureEach { target ->
@@ -106,4 +120,5 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2020"
     description = "Android DataStore Core Okio- contains APIs to use datastore-core in multiplatform via okio"
+    kotlinTarget = KotlinTarget.KOTLIN_2_2
 }

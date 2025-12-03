@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,39 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package androidx.compose.remote.creation;
+
+package androidx.compose.remote.core;
 
 import static androidx.compose.remote.core.operations.Utils.idFromNan;
-
-import android.graphics.Matrix;
-import android.graphics.Path;
-import android.graphics.PathMeasure;
-import android.graphics.RectF;
-import android.os.Build;
 
 import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.PathData;
 import androidx.compose.remote.core.operations.Utils;
-import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 
 import org.jspecify.annotations.NonNull;
 
 import java.util.Arrays;
 
+/**
+ * Common RemotePath implementation that manages the path buffer.
+ */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemotePath {
+public class RemotePathBase {
     private static final int DEFAULT_BUFFER_SIZE = 1024;
     int mMaxSize = DEFAULT_BUFFER_SIZE;
     float[] mPath = new float[mMaxSize];
     float mCx = 0, mCy = 0;
     int mSize = 0;
 
-    RemotePath(int bufferSize) {
-        mPath = new float[mMaxSize = bufferSize];
+    public RemotePathBase(int bufferSize) {
+        mMaxSize = bufferSize;
+        mPath = new float[mMaxSize];
     }
 
-    public RemotePath() {
+    public RemotePathBase() {
         mPath = new float[mMaxSize];
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public RemotePathBase(@NonNull String pathData) {
+        mPath = new float[mMaxSize];
+        parsePathData(pathData);
     }
 
     /** Reset the path */
@@ -59,6 +63,16 @@ public class RemotePath {
 
     public float getCurrentY() {
         return mCy;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public int getSize() {
+        return mSize;
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public float @NonNull[] getPath() {
+        return mPath;
     }
 
     private void resize(int need) {
@@ -75,12 +89,16 @@ public class RemotePath {
         mSize = 0;
     }
 
-    private void add(int type) {
+    /** Adds type to the path. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void add(int type) {
         resize(1);
         mPath[mSize++] = Utils.asNan(type);
     }
 
-    private void addMove(int type, float a1, float a2) {
+    /** Adds type, a1, a2 to the path. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void addMove(int type, float a1, float a2) {
 
         resize(3);
         mPath[mSize++] = Utils.asNan(type);
@@ -88,7 +106,9 @@ public class RemotePath {
         mPath[mSize++] = a2;
     }
 
-    private void add(int type, float a1, float a2) {
+    /** Adds type, a1, a2 to the path. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void add(int type, float a1, float a2) {
 
         resize(3);
         mPath[mSize++] = Utils.asNan(type);
@@ -97,7 +117,9 @@ public class RemotePath {
         mPath[mSize++] = a2;
     }
 
-    private void add(int type, float a1, float a2, float a3, float a4) {
+    /** Adds type, a1, a2, a3, a4 to the path. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void add(int type, float a1, float a2, float a3, float a4) {
 
         resize(5);
 
@@ -110,7 +132,9 @@ public class RemotePath {
         mPath[mSize++] = a4;
     }
 
-    private void add(int type, float a1, float a2, float a3, float a4, float a5) {
+    /** Adds type, a1, a2, a3, a4, a5 to the path. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void add(int type, float a1, float a2, float a3, float a4, float a5) {
 
         resize(6);
         mPath[mSize++] = Utils.asNan(type);
@@ -123,7 +147,9 @@ public class RemotePath {
         mPath[mSize++] = a5;
     }
 
-    private void add(int type, float a1, float a2, float a3, float a4, float a5, float a6) {
+    /** Adds type, a1, a2, a3, a4, a5, a6 to the path. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    public void add(int type, float a1, float a2, float a3, float a4, float a5, float a6) {
 
         resize(7);
         mPath[mSize++] = Utils.asNan(type);
@@ -329,54 +355,6 @@ public class RemotePath {
     }
 
     /**
-     * Append the specified arc to the path as a new contour. If the start of the path is different
-     * from the path's current last point, then an automatic lineTo() is added to connect the
-     * current contour to the start of the arc. However, if the path is empty, then we call moveTo()
-     * with the first point of the arc.
-     */
-    public void addArc(
-            float left, float top, float right, float bottom, float startAngle, float sweepAngle) {
-        addArc(left, top, right, bottom, startAngle, sweepAngle, false);
-    }
-
-    /**
-     * Append the specified arc to the path as a new contour. If the start of the path is different
-     * from the path's current last point, then an automatic lineTo() is added to connect the
-     * current contour to the start of the arc. However, if the path is empty, then we call moveTo()
-     * with the first point of the arc.
-     *
-     * @param oval       The bounds of oval defining shape and size of the arc
-     * @param startAngle Starting angle (in degrees) where the arc begins
-     * @param sweepAngle Sweep angle (in degrees) measured clockwise, treated mod 360.
-     */
-    public void addArc(@NonNull RectF oval, float startAngle, float sweepAngle) {
-        addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
-    }
-
-    /**
-     * Append the specified arc to the path as a new contour. If the start of the path is different
-     * from the path's current last point, then an automatic lineTo() is added to connect the
-     * current contour to the start of the arc. However, if the path is empty, then we call moveTo()
-     * with the first point of the arc.
-     */
-    public void arcTo(@NonNull RectF oval, float startAngle, float sweepAngle) {
-        addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle, false);
-    }
-
-    /**
-     * Append the specified arc to the path as a new contour. If the start of the path is different
-     * from the path's current last point, then an automatic lineTo() is added to connect the
-     * current contour to the start of the arc. However, if the path is empty, then we call moveTo()
-     * with the first point of the arc.
-     *
-     * @param forceMoveTo If true, always begin a new contour with the arc
-     */
-    public void arcTo(
-            @NonNull RectF oval, float startAngle, float sweepAngle, boolean forceMoveTo) {
-        addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle, forceMoveTo);
-    }
-
-    /**
      * Add the specified arc to the path as a new contour.
      *
      * @param left        left most bounds of the oval
@@ -407,6 +385,7 @@ public class RemotePath {
      * @param bottom     lowest bound of the oval
      * @param startAngle Starting angle (in degrees) where the arc begins
      * @param sweepAngle Sweep angle (in degrees) measured clockwise
+     * @param forceMoveTo If true, always begin a new contour with the arc
      */
     public void addArc(
             float left,
@@ -416,112 +395,12 @@ public class RemotePath {
             float startAngle,
             float sweepAngle,
             boolean forceMoveTo) {
-        // ??? add(ARC, left, top, right, bottom, startAngle, sweepAngle);
-
+        // TODO: Implement arc serialization if needed, or rely on platform implementation via
+        // extensions
+        throw new UnsupportedOperationException("Not implemented in Java Base");
     }
 
-    /**
-     * get the path version of this remote path
-     *
-     * @return the RemotePath data as a Android path
-     */
-    public @NonNull Path getPath() {
-        Path path = new Path();
-        genPath(path, mPath, mSize, Float.NaN, Float.NaN);
-        return path;
-    }
-
-    Path mCachePath = new Path();
-    PathMeasure mCacheMeasure = new PathMeasure();
-
-    private void genPath(
-            Path retPath, float[] floatPath, int length, float startSection, float stopSection) {
-        int i = 0;
-        mCachePath = (mCachePath == null) ? new Path() : mCachePath;
-
-        while (i < length) {
-            switch (idFromNan(floatPath[i])) {
-                case PathData.MOVE:
-                    i++;
-                    mCachePath.moveTo(floatPath[i + 0], floatPath[i + 1]);
-                    i += 2;
-                    break;
-                case PathData.LINE:
-                    i += 3;
-                    mCachePath.lineTo(floatPath[i + 0], floatPath[i + 1]);
-                    i += 2;
-                    break;
-                case PathData.QUADRATIC:
-                    i += 3;
-                    mCachePath.quadTo(
-                            floatPath[i + 0], floatPath[i + 1], floatPath[i + 2], floatPath[i + 3]);
-                    i += 4;
-                    break;
-                case PathData.CONIC:
-                    i += 3;
-                    if (Build.VERSION.SDK_INT >= 34) { // REMOVE IN PLATFORM
-                        mCachePath.conicTo(
-                                floatPath[i + 0],
-                                floatPath[i + 1],
-                                floatPath[i + 2],
-                                floatPath[i + 3],
-                                floatPath[i + 4]);
-                    }
-                    i += 5;
-                    break;
-                case PathData.CUBIC:
-                    i += 3;
-                    mCachePath.cubicTo(
-                            floatPath[i + 0], floatPath[i + 1],
-                            floatPath[i + 2], floatPath[i + 3],
-                            floatPath[i + 4], floatPath[i + 5]);
-                    i += 6;
-                    break;
-                case PathData.CLOSE:
-                    mCachePath.close();
-                    i++;
-                    break;
-                case PathData.DONE:
-                    i++;
-                    break;
-                default:
-                    System.err.println("RemotePath Odd command " + idFromNan(floatPath[i]));
-            }
-        }
-
-        retPath.reset();
-        if (Float.isNaN(startSection) && Float.isNaN(stopSection)) {
-            retPath.addPath(mCachePath);
-            return;
-        }
-        float start = Float.isNaN(startSection) ? 0f : startSection;
-        float stop = Float.isNaN(stopSection) ? 1f : stopSection;
-
-        if (start > stop) {
-            retPath.addPath(mCachePath);
-            return;
-        }
-        mCacheMeasure = (mCacheMeasure == null) ? new PathMeasure() : mCacheMeasure;
-        if (stop > 1) {
-            float seg = Math.min(stop, 1);
-            mCacheMeasure.setPath(mCachePath, false);
-            float len = mCacheMeasure.getLength();
-            float scaleStart = ((start + 1) % 1) * len;
-            float scaleStop = ((seg + 1) % 1) * len; // TODO
-            mCacheMeasure.getSegment(scaleStart, scaleStop, retPath, true);
-            retPath.addPath(mCachePath);
-            return;
-        }
-
-        mCacheMeasure.setPath(mCachePath, false);
-        float len = mCacheMeasure.getLength();
-        float scaleStart = Math.max(start, 0f) * len;
-        float scaleStop = Math.min(stop, 1f) * len;
-        mCacheMeasure.getSegment(scaleStart, scaleStop, retPath, true);
-        retPath.addPath(mCachePath);
-    }
-
-    public RemotePath(@NonNull String pathData) {
+    private void parsePathData(@NonNull String pathData) {
 
         float[] cords = new float[6];
 
@@ -614,20 +493,18 @@ public class RemotePath {
                     break;
                 case PathData.CONIC:
                     i += 3;
-                    if (Build.VERSION.SDK_INT >= 34) { // REMOVE IN PLATFORM
-                        builder.append(
-                                "conicTo("
-                                        + floatPath[i + 0]
-                                        + ", "
-                                        + floatPath[i + 1]
-                                        + ", "
-                                        + floatPath[i + 2]
-                                        + ", "
-                                        + floatPath[i + 3]
-                                        + ", "
-                                        + floatPath[i + 4]
-                                        + " )\n");
-                    }
+                    builder.append(
+                            "conicTo("
+                                    + floatPath[i + 0]
+                                    + ", "
+                                    + floatPath[i + 1]
+                                    + ", "
+                                    + floatPath[i + 2]
+                                    + ", "
+                                    + floatPath[i + 3]
+                                    + ", "
+                                    + floatPath[i + 4]
+                                    + " )\n");
                     i += 5;
                     break;
                 case PathData.CUBIC:
@@ -671,55 +548,6 @@ public class RemotePath {
      */
     public float @NonNull [] createFloatArray() {
         return Arrays.copyOf(mPath, mSize);
-    }
-
-    /**
-     * Transform the array applying the matrix to each point
-     *
-     * @param matrix matrix to transform the array by
-     */
-    public void transform(@NonNull Matrix matrix) {
-        float[] floatPath = mPath;
-        int i = 0;
-        while (i < mSize) {
-            switch (idFromNan(floatPath[i])) {
-                case PathData.MOVE:
-                    i++;
-                    matrix.mapPoints(floatPath, i, floatPath, i, 1);
-                    i += 2;
-                    break;
-                case PathData.LINE:
-                    i += 3;
-                    matrix.mapPoints(floatPath, i, floatPath, i, 1);
-                    i += 2;
-                    break;
-                case PathData.QUADRATIC:
-                    i += 3;
-                    matrix.mapPoints(floatPath, i, floatPath, i, 2);
-                    i += 4;
-                    break;
-                case PathData.CONIC:
-                    i += 3;
-                    if (Build.VERSION.SDK_INT >= 34) { // REMOVE IN PLATFORM
-                        matrix.mapPoints(floatPath, i, floatPath, i, 2);
-                    }
-                    i += 5;
-                    break;
-                case PathData.CUBIC:
-                    i += 3;
-                    matrix.mapPoints(floatPath, i, floatPath, i, 3);
-
-                    i += 6;
-                    break;
-                case PathData.CLOSE:
-                case PathData.DONE:
-                    i++;
-                    break;
-
-                default:
-                    System.err.println(" Odd command " + idFromNan(floatPath[i]));
-            }
-        }
     }
 
     public static final int MOVE = 10;
@@ -776,39 +604,4 @@ public class RemotePath {
         public void addRoundRect(float left, float top, float right, float bottom,
          float rx, float ry, Path.Direction dir) {
     */
-
-    /** This is useful to create an approximate circle using remote float */
-    @SuppressWarnings("FloatingPointLiteralPrecision")
-    public static @NonNull RemotePath createCirclePath(
-            @NonNull RemoteComposeWriter rc, float x, float y, float rad) {
-        float k = 0.5522847498f;
-        boolean clockwise = true;
-        float c = rc.floatExpression(rad, k, AnimatedFloatExpression.MUL);
-        RemotePath path = new RemotePath();
-        float xc = rc.floatExpression(x, c, AnimatedFloatExpression.ADD);
-        float yc = rc.floatExpression(y, c, AnimatedFloatExpression.ADD);
-        float xr = rc.floatExpression(x, rad, AnimatedFloatExpression.ADD);
-        float yr = rc.floatExpression(y, rad, AnimatedFloatExpression.ADD);
-
-        float x_c = rc.floatExpression(x, c, AnimatedFloatExpression.SUB);
-        float y_c = rc.floatExpression(y, c, AnimatedFloatExpression.SUB);
-        float x_r = rc.floatExpression(x, rad, AnimatedFloatExpression.SUB);
-        float y_r = rc.floatExpression(y, rad, AnimatedFloatExpression.SUB);
-        path.moveTo(xr, y);
-        if (clockwise) {
-            path.cubicTo(xr, yc, xc, yr, x, yr);
-            path.cubicTo(x_c, yr, x_r, yc, x_r, y);
-            path.cubicTo(x_r, y_c, x_c, y_r, x, y_r);
-            path.cubicTo(xc, y_r, xr, y_c, xr, y);
-        } else {
-            path.moveTo(xr, y);
-            path.cubicTo(xr, y_c, xc, y_r, x, y_r);
-            path.cubicTo(x_c, y_r, x_r, y_c, x_r, y);
-            path.cubicTo(x_r, yc, x_c, yr, x, yr);
-            path.cubicTo(xc, yr, xr, yc, xr, y);
-        }
-
-        path.close();
-        return path;
-    }
 }

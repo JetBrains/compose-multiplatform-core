@@ -23,8 +23,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.remote.creation.compose.capture.RememberRemoteDocumentInline
 import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.player.compose.ExperimentalRemoteComposePlayerApi
-import androidx.compose.remote.player.compose.RemoteComposePlayerFlags
-import androidx.compose.remote.player.compose.RemoteDocumentPlayer
 import androidx.compose.remote.player.core.RemoteDocument
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,14 +30,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalWindowInfo
 
 /** Display a Remote Compose Composable in the Android Studio Preview. */
 @OptIn(ExperimentalRemoteComposePlayerApi::class)
 @Composable
 @Suppress("RestrictedApiAndroidX")
 public fun RemotePreview(content: @RemoteComposable @Composable () -> Unit) {
-    RemoteComposePlayerFlags.isViewPlayerEnabled = false
     var documentState by remember { mutableStateOf<RemoteDocument?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -56,16 +52,6 @@ public fun RemotePreview(content: @RemoteComposable @Composable () -> Unit) {
             content = content,
         )
 
-        if (documentState != null) {
-            val windowInfo = LocalWindowInfo.current
-            RemoteDocumentPlayer(
-                document = documentState!!.document,
-                windowInfo.containerSize.width,
-                windowInfo.containerSize.height,
-                modifier = Modifier.fillMaxSize(),
-                0,
-                onNamedAction = { _, _, _ -> },
-            )
-        }
+        documentState?.let { RemoteDocPreview(it) }
     }
 }

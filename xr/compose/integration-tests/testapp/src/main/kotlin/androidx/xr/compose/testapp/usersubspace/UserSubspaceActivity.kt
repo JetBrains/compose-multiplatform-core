@@ -101,7 +101,7 @@ class UserSubspaceActivity : ComponentActivity() {
             )
         }
         // State for the lazy lock duration slider
-        var lazyLockDuration by remember { mutableIntStateOf(1500) }
+        var lazyLockDuration by remember { mutableIntStateOf(1000) }
 
         UserSubspace(
             behavior = LockingBehavior.static(),
@@ -132,9 +132,18 @@ class UserSubspaceActivity : ComponentActivity() {
         }
         UserSubspace(
             lockTo = BodyPart.Head,
+            lockDimensions =
+                LockDimensions(
+                    isTranslationXTracked = true,
+                    isTranslationYTracked = true,
+                    isTranslationZTracked = true,
+                    isRotationXTracked = true,
+                    isRotationYTracked = true,
+                    isRotationZTracked = false,
+                ),
             behavior = LockingBehavior.lazy(durationMs = lazyLockDuration),
         ) {
-            SpatialPanel(SubspaceModifier.height(300.dp).width(600.dp).offset(y = (-250).dp)) {
+            SpatialPanel(SubspaceModifier.height(200.dp).width(450.dp).offset(y = (-50).dp)) {
                 Box(Modifier.fillMaxSize().background(Color.Cyan)) {
                     Row(modifier = Modifier.fillMaxWidth()) {
                         TopBarWithBackArrow(

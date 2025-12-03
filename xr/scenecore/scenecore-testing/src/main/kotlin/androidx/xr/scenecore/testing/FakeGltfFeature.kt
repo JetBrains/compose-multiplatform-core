@@ -49,6 +49,14 @@ public class FakeGltfFeature(nodeHolder: NodeHolder<*>) :
         mockGltfFeature?.stopAnimation()
     }
 
+    override fun pauseAnimation() {
+        mockGltfFeature?.pauseAnimation()
+    }
+
+    override fun resumeAnimation() {
+        mockGltfFeature?.resumeAnimation()
+    }
+
     override fun setMaterialOverride(
         material: MaterialResource,
         nodeName: String,

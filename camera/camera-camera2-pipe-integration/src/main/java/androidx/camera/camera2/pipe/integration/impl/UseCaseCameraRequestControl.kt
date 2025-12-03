@@ -277,7 +277,6 @@ constructor(
     private val threads: UseCaseThreads,
     private val cameraXConfig: CameraXConfig? = null,
 ) : UseCaseCameraRequestControl {
-    private val graph = useCaseGraphConfig.graph
 
     @Volatile private var closed = false
 
@@ -640,7 +639,7 @@ constructor(
         crossinline block: suspend (CameraGraph.Session) -> Deferred<Result3A>
     ): Deferred<Result3A> =
         try {
-            graph.acquireSession().use { block(it) }
+            useCaseGraphConfig.useGraphSession { block(it) }
         } catch (e: CancellationException) {
             Camera2Logger.debug(e) { "Cannot acquire the CameraGraph.Session" }
             submitFailedResult

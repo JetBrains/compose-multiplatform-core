@@ -175,6 +175,44 @@ class GltfFeatureImplTest {
         }
 
     @Test
+    fun pauseAnimation_pauseAnimation() {
+        val animationName = "test_animation"
+        `when`(mockImpressApi.animateGltfModel(modelImpressNode, animationName, true))
+            .thenReturn(fakeImpressApi.animateGltfModel(modelImpressNode, animationName, true))
+        gltfFeature.startAnimation(/* looping= */ true, animationName, executor)
+
+        assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
+
+        gltfFeature.pauseAnimation()
+        fakeImpressApi.toggleGltfModelAnimation(modelImpressNode, false)
+
+        assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.PAUSED)
+        verify(mockImpressApi).toggleGltfModelAnimation(modelImpressNode, false)
+    }
+
+    @Test
+    fun resumeAnimation_resumeAnimation() {
+        val animationName = "test_animation"
+        `when`(mockImpressApi.animateGltfModel(modelImpressNode, animationName, true))
+            .thenReturn(fakeImpressApi.animateGltfModel(modelImpressNode, animationName, true))
+        gltfFeature.startAnimation(/* looping= */ true, animationName, executor)
+
+        assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
+
+        gltfFeature.pauseAnimation()
+        fakeImpressApi.toggleGltfModelAnimation(modelImpressNode, false)
+
+        assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.PAUSED)
+        verify(mockImpressApi).toggleGltfModelAnimation(modelImpressNode, false)
+
+        gltfFeature.resumeAnimation()
+        fakeImpressApi.toggleGltfModelAnimation(modelImpressNode, true)
+
+        assertThat(gltfFeature.animationState).isEqualTo(GltfEntity.AnimationState.PLAYING)
+        verify(mockImpressApi).toggleGltfModelAnimation(modelImpressNode, true)
+    }
+
+    @Test
     @Throws(Exception::class)
     fun setMaterialOverrideGltfEntity_materialOverridesNode() {
         val material = createWaterMaterial(/* isAlphaMapVersion= */ false)

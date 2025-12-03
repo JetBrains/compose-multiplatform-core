@@ -116,6 +116,8 @@ public class FakeImpressApiImpl : ImpressApi {
     private val impressAnimatedNodes: MutableMap<ImpressNode, AnimationInProgress> = HashMap()
     // Map of impress nodes and animations that are currently playing (looping)
     private val impressLoopAnimatedNodes: MutableMap<ImpressNode, AnimationInProgress> = HashMap()
+    // Vector of animating Impress nodes that are currently paused.
+    private val impressPausedAnimatedNode: MutableList<ImpressNode> = ArrayList()
     // Map of impress entity nodes to their associated StereoSurfaceEntityData
     private val stereoSurfaceEntities: MutableMap<ImpressNode, StereoSurfaceEntityData> = HashMap()
     // Map of texture image tokens to their associated Texture object
@@ -309,6 +311,33 @@ public class FakeImpressApiImpl : ImpressApi {
         }
     }
 
+    override fun toggleGltfModelAnimation(impressNode: ImpressNode, playing: Boolean) {
+        if (getGltfNodeData(impressNode) == null) {
+            throw IllegalArgumentException("Impress node not found")
+        }
+        if (playing) {
+            // playing as true = resume animation
+            if (!impressPausedAnimatedNode.contains(impressNode)) {
+                throw IllegalArgumentException(
+                    "Animation in this Impress node is not in " + "pausing status"
+                )
+            }
+            impressPausedAnimatedNode.remove(impressNode)
+        } else {
+            // toggle as false = pause animation
+            if (
+                !impressAnimatedNodes.containsKey(impressNode) &&
+                    !impressLoopAnimatedNodes.containsKey(impressNode)
+            ) {
+                throw IllegalArgumentException("Impress node is not animating")
+            } else if (impressAnimatedNodes.containsKey(impressNode)) {
+                impressPausedAnimatedNode.add(impressNode)
+            } else if (impressLoopAnimatedNodes.containsKey(impressNode)) {
+                impressPausedAnimatedNode.add(impressNode)
+            }
+        }
+    }
+
     override fun createImpressNode(): ImpressNode {
         val entityId = nextNodeId++
         val gltfNodeData = GltfNodeData().apply { this.entityId = entityId }
@@ -363,8 +392,11 @@ public class FakeImpressApiImpl : ImpressApi {
     /** Returns the number of impress nodes that are currently animating. */
     public fun impressNodeAnimatingSize(): Int = impressAnimatedNodes.size
 
-    /** Returns the number of impress nodes that looping animations. */
+    /** Returns the number of animating Impress nodes that are currently looping. */
     public fun impressNodeLoopAnimatingSize(): Int = impressLoopAnimatedNodes.size
+
+    /** Returns the number of animating Impress nodes that are currently paused. */
+    public fun impressNodeAnimationPausingSize(): Int = impressPausedAnimatedNode.size
 
     override fun createStereoSurface(@StereoMode stereoMode: Int): ImpressNode {
         return createStereoSurface(

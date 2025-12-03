@@ -57,6 +57,20 @@ class FragmentBasedVideoPlayerActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    override fun finish() {
+        // Workaround for Session - Fragment lifecycle issue. Fragment must be destroyed before
+        // Session is destroyed.
+        val fragment = supportFragmentManager.findFragmentById(R.id.content_container)
+
+        if (fragment != null) {
+            supportFragmentManager.beginTransaction().remove(fragment).commit()
+
+            supportFragmentManager.executePendingTransactions()
+        }
+
+        super.finish()
+    }
+
     private fun checkFile(filePath: String) {
         val file = File(filePath)
         if (!file.exists()) {

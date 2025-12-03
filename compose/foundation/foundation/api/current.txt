@@ -341,6 +341,16 @@ package androidx.compose.foundation {
     method @BytecodeOnly @androidx.compose.runtime.Stable public static androidx.compose.ui.Modifier! progressSemantics$default(androidx.compose.ui.Modifier!, float, kotlin.ranges.ClosedFloatingPointRange!, int, int, Object!);
   }
 
+  @androidx.compose.runtime.Stable public interface ScrollIndicatorFactory {
+    method public androidx.compose.ui.node.DelegatableNode createNode(androidx.compose.foundation.ScrollIndicatorState state, androidx.compose.foundation.gestures.Orientation orientation);
+    method public boolean equals(Object? other);
+    method public int hashCode();
+  }
+
+  public final class ScrollIndicatorKt {
+    method public static androidx.compose.ui.Modifier scrollIndicator(androidx.compose.ui.Modifier, androidx.compose.foundation.ScrollIndicatorFactory factory, androidx.compose.foundation.ScrollIndicatorState state, androidx.compose.foundation.gestures.Orientation orientation);
+  }
+
   @androidx.compose.runtime.Stable public interface ScrollIndicatorState {
     method @InaccessibleFromKotlin @IntRange(from=0L) public int getContentSize();
     method @InaccessibleFromKotlin @IntRange(from=0L) @androidx.compose.runtime.annotation.FrequentlyChangingValue public int getScrollOffset();

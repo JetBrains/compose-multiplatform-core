@@ -43,6 +43,7 @@ import androidx.compose.remote.creation.compose.modifier.widthIn
 import androidx.compose.remote.creation.compose.state.RemoteString
 import androidx.compose.remote.creation.compose.state.rdp
 import androidx.compose.remote.integration.view.demos.R
+import androidx.compose.remote.tooling.preview.RemotePreview
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -56,7 +57,6 @@ import androidx.compose.ui.unit.sp
 
 @RemoteComposable
 @Composable
-@Preview
 fun WeatherDemo() {
     RemoteBox(
         horizontalAlignment = RemoteAlignment.CenterHorizontally,
@@ -114,9 +114,10 @@ fun WeatherDemo() {
     }
 }
 
+@Preview @Composable fun WeatherDemoPreview() = RemotePreview { WeatherDemo() }
+
 @RemoteComposable
 @Composable
-@Preview
 fun WeatherHeader() {
     val res = LocalContext.current.resources
     val image = remember {
@@ -137,13 +138,14 @@ fun WeatherHeader() {
     }
 }
 
+@Preview @Composable fun WeatherHeaderPreview() = RemotePreview { WeatherHeader() }
+
 val rowHeight = 90.rdp
 val rowHeightDp = 90.dp
 val rowHeight2 = 122.dp
 
 @RemoteComposable
 @Composable
-@Preview
 fun WeatherBox() {
     RemoteColumn(
         modifier = RemoteModifier.padding(8.dp),
@@ -155,9 +157,10 @@ fun WeatherBox() {
     }
 }
 
+@Preview @Composable fun WeatherBoxPreview() = RemotePreview { WeatherBox() }
+
 @RemoteComposable
 @Composable
-@Preview
 fun WeatherBox2() {
     val res = LocalContext.current.resources
     val image = remember {
@@ -179,9 +182,10 @@ fun WeatherBox2() {
     }
 }
 
+@Preview @Composable fun WeatherBox2Preview() = RemotePreview { WeatherBox2() }
+
 @RemoteComposable
 @Composable
-@Preview
 fun WeatherRow() {
     RemoteCollapsibleRow(
         modifier = RemoteModifier.fillMaxWidth().heightIn(min = rowHeight2),
@@ -196,6 +200,8 @@ fun WeatherRow() {
         Weather("62º", "4 PM", R.drawable.windy_breezy)
     }
 }
+
+@Preview @Composable fun WeatherRowPreview() = RemotePreview { WeatherRow() }
 
 @RemoteComposable
 @Composable
@@ -217,7 +223,6 @@ fun Weather(temperature: String, hour: String, resource: Int) {
 
 @RemoteComposable
 @Composable
-@Preview
 fun WeatherDays() {
     RemoteCollapsibleColumn(
         modifier =
@@ -238,6 +243,8 @@ fun WeatherDays() {
         WeatherDay("Sunday", "", R.drawable.windy_breezy, "62º/55ª")
     }
 }
+
+@Preview @Composable fun WeatherDaysPreview() = RemotePreview { WeatherDays() }
 
 @RemoteComposable
 @Composable

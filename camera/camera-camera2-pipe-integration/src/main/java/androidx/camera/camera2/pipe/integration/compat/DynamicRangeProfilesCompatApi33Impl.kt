@@ -18,6 +18,7 @@ package androidx.camera.camera2.pipe.integration.compat
 
 import android.hardware.camera2.params.DynamicRangeProfiles
 import androidx.annotation.RequiresApi
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
 import androidx.camera.camera2.pipe.integration.internal.DynamicRangeConversions
 import androidx.camera.core.DynamicRange
 import java.util.Collections
@@ -53,10 +54,12 @@ internal class DynamicRangeProfilesCompatApi33Impl(
             dynamicRangeProfiles,
         )
 
-    private fun profileToDynamicRange(profile: Long): DynamicRange {
+    private fun profileToDynamicRange(profile: Long): DynamicRange? {
         val result = DynamicRangeConversions.profileToDynamicRange(profile)
-        require(result != null) {
-            "Dynamic range profile cannot be converted to a DynamicRange object: $profile"
+        if (result == null) {
+            Camera2Logger.warn {
+                "Dynamic range profile cannot be converted to a DynamicRange object: $profile"
+            }
         }
         return result
     }
@@ -67,7 +70,7 @@ internal class DynamicRangeProfilesCompatApi33Impl(
         }
         val dynamicRangeSet: MutableSet<DynamicRange> = mutableSetOf()
         for (profile in profileSet) {
-            dynamicRangeSet.add(profileToDynamicRange(profile))
+            profileToDynamicRange(profile)?.let { dynamicRangeSet.add(it) }
         }
         return Collections.unmodifiableSet(dynamicRangeSet)
     }

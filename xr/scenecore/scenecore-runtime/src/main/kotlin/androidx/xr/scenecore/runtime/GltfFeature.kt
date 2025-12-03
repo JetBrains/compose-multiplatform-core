@@ -65,6 +65,12 @@ public interface GltfFeature : RenderingFeature {
     /** Stops the animation of the glTF entity. */
     @MainThread public fun stopAnimation()
 
+    /* Pause the animation of the glTF entity. */
+    @MainThread public fun pauseAnimation()
+
+    /* Resume the animation of the glTF entity. */
+    @MainThread public fun resumeAnimation()
+
     /**
      * Sets a material override for a specific mesh of a node.
      *

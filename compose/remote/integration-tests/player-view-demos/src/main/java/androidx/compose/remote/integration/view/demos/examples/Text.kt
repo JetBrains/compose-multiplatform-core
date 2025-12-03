@@ -27,6 +27,8 @@ import androidx.compose.remote.creation.RemoteComposeContextAndroid
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.creation.sin
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 
 @Suppress("RestrictedApiAndroidX")
 fun RcTextDemo8(): RemoteComposeContext {
@@ -44,24 +46,20 @@ fun RcTextDemo8(): RemoteComposeContext {
                 vertical = RowLayout.CENTER,
             ) {
                 column(Modifier.horizontalWeight(1f).background(Color.YELLOW)) {
+                    text("New Arsenal Game", maxLines = 1, overflow = CoreText.OVERFLOW_ELLIPSIS)
                     text(
-                        "(1) New Arsenal Game",
-                        maxLines = 1,
-                        overflow = CoreText.OVERFLOW_ELLIPSIS,
-                    )
-                    text(
-                        "(3) Arsenal vs Bayern Munich",
+                        "Arsenal vs Bayern Munich",
                         fontSize = 64f,
                         maxLines = 3,
                         overflow = CoreText.OVERFLOW_ELLIPSIS,
                     )
                     text(
-                        "(2) UEFA Champions League Group Stage",
+                        "UEFA Champions League Group Stage",
                         maxLines = 2,
                         overflow = CoreText.OVERFLOW_ELLIPSIS,
                     )
                     text(
-                        "(1) Wednesday 26th November",
+                        "Wednesday 26th November",
                         maxLines = 1,
                         overflow = CoreText.OVERFLOW_ELLIPSIS,
                     )
@@ -363,6 +361,84 @@ fun RcTextDemo3(): RemoteComposeContext {
 }
 
 @Suppress("RestrictedApiAndroidX")
+fun RcTextDemo3b(): RemoteComposeContext {
+    return RemoteComposeContextAndroid(
+        600,
+        600,
+        "Demo",
+        7,
+        RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+        AndroidxRcPlatformServices(),
+    ) {
+        root {
+            column(Modifier.padding(8)) {
+                val content =
+                    "Lorem ipsum dolor sit amet, consectetur" +
+                        " adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna" +
+                        " aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris" +
+                        " nisi ut aliquip ex ea commodo consequat."
+                row(Modifier.background(Color.BLACK).padding(8)) {
+                    text("Left Alignment", Modifier.horizontalWeight(1f), color = Color.WHITE)
+                    text("Basic Justification", Modifier.horizontalWeight(1f), color = Color.WHITE)
+                }
+                row(Modifier.padding(8)) {
+                    column(Modifier.background(Color.YELLOW).horizontalWeight(1f)) { text(content) }
+                    box(Modifier.size(16))
+                    column(Modifier.background(Color.CYAN).horizontalWeight(1f)) {
+                        text(content, textAlign = CoreText.TEXT_ALIGN_JUSTIFY)
+                    }
+                }
+                row(Modifier.background(Color.BLACK).padding(8)) {
+                    text("Center Alignment", Modifier.horizontalWeight(1f), color = Color.WHITE)
+                    text(
+                        "Line Break & Justification",
+                        Modifier.horizontalWeight(1f),
+                        color = Color.WHITE,
+                    )
+                }
+                row(Modifier.padding(8)) {
+                    column(Modifier.background(Color.YELLOW).horizontalWeight(1f)) {
+                        text(content, textAlign = CoreText.TEXT_ALIGN_CENTER)
+                    }
+                    box(Modifier.size(16))
+                    column(Modifier.background(Color.CYAN).horizontalWeight(1f)) {
+                        text(
+                            content,
+                            textAlign = CoreText.TEXT_ALIGN_JUSTIFY,
+                            lineBreakStrategy = CoreText.BREAK_STRATEGY_HIGH_QUALITY,
+                            justificationMode = CoreText.JUSTIFICATION_MODE_INTER_CHARACTER,
+                        )
+                    }
+                }
+                row(Modifier.background(Color.BLACK).padding(8)) {
+                    text("Right Alignment", Modifier.horizontalWeight(1f), color = Color.WHITE)
+                    text(
+                        "Line Break & Hyphenation",
+                        Modifier.horizontalWeight(1f),
+                        color = Color.WHITE,
+                    )
+                }
+                row(Modifier.padding(8)) {
+                    column(Modifier.background(Color.YELLOW).horizontalWeight(1f)) {
+                        text(content, textAlign = CoreText.TEXT_ALIGN_RIGHT)
+                    }
+                    box(Modifier.size(16))
+                    column(Modifier.background(Color.CYAN).horizontalWeight(1f)) {
+                        text(
+                            content,
+                            textAlign = CoreText.TEXT_ALIGN_JUSTIFY,
+                            hyphenationFrequency = CoreText.HYPHENATION_FREQUENCY_FULL,
+                            lineBreakStrategy = CoreText.BREAK_STRATEGY_HIGH_QUALITY,
+                            justificationMode = CoreText.JUSTIFICATION_MODE_INTER_CHARACTER,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Suppress("RestrictedApiAndroidX")
 fun RcTextDemo2(): RemoteComposeContext {
     return RemoteComposeContextAndroid(
         600,
@@ -379,6 +455,7 @@ fun RcTextDemo2(): RemoteComposeContext {
                     "Resizable Hello World!",
                     modifier = Modifier.verticalWeight(1f).fillMaxWidth().background(Color.GREEN),
                     autosize = true,
+                    hyphenationFrequency = CoreText.HYPHENATION_FREQUENCY_NORMAL,
                 )
             }
         }
@@ -437,3 +514,23 @@ fun RcTextDemo(): RemoteComposeContext {
         }
     }
 }
+
+@Preview @Composable fun RcTextDemoPreview() = RemoteDocPreview(RcTextDemo())
+
+@Preview @Composable fun RcTextDemo2Preview() = RemoteDocPreview(RcTextDemo2())
+
+@Preview @Composable fun RcTextDemo3Preview() = RemoteDocPreview(RcTextDemo3())
+
+@Preview(group = "alignment")
+@Composable
+fun RcTextDemo3bPreview() = RemoteDocPreview(RcTextDemo3b())
+
+@Preview @Composable fun RcTextDemo4Preview() = RemoteDocPreview(RcTextDemo4())
+
+@Preview @Composable fun RcTextDemo5Preview() = RemoteDocPreview(RcTextDemo5())
+
+@Preview @Composable fun RcTextDemo6Preview() = RemoteDocPreview(RcTextDemo6())
+
+@Preview @Composable fun RcTextDemo7Preview() = RemoteDocPreview(RcTextDemo7())
+
+@Preview @Composable fun RcTextDemo8Preview() = RemoteDocPreview(RcTextDemo8())
