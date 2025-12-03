@@ -28,6 +28,7 @@ import platform.CoreGraphics.CGRectZero
 import platform.UIKit.UIResponder
 import platform.UIKit.UIView
 import platform.UIKit.UIViewController
+import platform.UIKit.setAccessibilityElements
 
 /**
  * On iOS [InteropView] is a [UIResponder], which is a base class for [UIView] and [UIViewController]

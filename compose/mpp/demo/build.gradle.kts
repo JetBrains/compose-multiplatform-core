@@ -54,7 +54,6 @@ repositories {
 }
 
 kotlin {
-    applyDefaultHierarchyTemplate()
     jvm("desktop")
     js {
         outputModuleName = "mpp-demo"
@@ -206,7 +205,7 @@ kotlin {
             }
         }
 
-        val webMain by getting {
+        val webMain by creating {
             dependsOn(skikoMain)
             resources.setSrcDirs(resources.srcDirs)
             resources.srcDirs(unzipTask.map { it.destinationDir })
@@ -227,9 +226,9 @@ kotlin {
             }
         }
 
-        val nativeMain by getting { dependsOn(skikoMain) }
+        val nativeMain by creating { dependsOn(skikoMain) }
         val darwinMain by creating { dependsOn(nativeMain) }
-        val macosMain by getting { dependsOn(darwinMain) }
+        val macosMain by creating { dependsOn(darwinMain) }
         val macosX64Main by getting { dependsOn(macosMain) }
         val macosArm64Main by getting { dependsOn(macosMain) }
         val uikitMain by creating { dependsOn(darwinMain) }

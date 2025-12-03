@@ -322,7 +322,6 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                 dependencies {
                     implementation(project(":compose:material:material"))
                     implementation(project(":compose:foundation:foundation"))
-                    implementation(project(":compose:foundation:foundation"))
                     implementation(project(":compose:ui:ui-test-junit4"))
                     implementation(project(":navigationevent:navigationevent-compose"))
                 }
