@@ -483,7 +483,6 @@ internal open class InsetsPaddingModifierNode(private var insets: WindowInsets) 
         measurable: Measurable,
         constraints: Constraints,
     ): MeasureResult {
-
         val left =
             consumedInsets.getLeft(this, layoutDirection) -
                 ancestorConsumedInsets.getLeft(this, layoutDirection)

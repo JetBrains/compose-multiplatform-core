@@ -33,7 +33,7 @@ abstract class PlatformWindowInsetsProviderNode(
     private var ancestorWindowInsets: PlatformWindowInsets = EmptyPlatformWindowInsets
 
     override val traverseKey: Any
-        get() = "androidx.compose.ui.node.WindowInsetsProvider"
+        get() = "androidx.compose.ui.platform.PlatformWindowInsetsProviderNode"
 
     protected abstract fun calculatePlatformInsets(ancestorWindowInsets: PlatformWindowInsets): PlatformWindowInsets
 
