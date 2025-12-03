@@ -194,9 +194,7 @@ open class ContextMenuItem(
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
-        if (other == null || this::class != other::class) return false
-
-        other as ContextMenuItem
+        if (other !is ContextMenuItem) return false
 
         if (label != other.label) return false
         if (onClick != other.onClick) return false
@@ -212,6 +210,41 @@ open class ContextMenuItem(
 
     override fun toString(): String {
         return "ContextMenuItem(label='$label')"
+    }
+}
+
+/**
+ * Individual element of context menu.
+ *
+ * @param label The text to be displayed as a context menu item.
+ * @param enabled Whether the menu item should be enabled.
+ * @param onClick The action to be executed after click on the item.
+ */
+@ExperimentalFoundationApi
+open class ContextMenuItemWithEnabledState(
+    label: String,
+    val enabled: () -> Boolean,
+    onClick: () -> Unit
+) : ContextMenuItem(label, onClick) {
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ContextMenuItemWithEnabledState) return false
+
+        if (!super.equals(other)) return false
+        if (enabled != other.enabled) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + enabled.hashCode()
+        return result
+    }
+
+    override fun toString(): String {
+        return "ContextMenuItemWithEnabledState(label='$label', enabled=$enabled)"
     }
 }
 
