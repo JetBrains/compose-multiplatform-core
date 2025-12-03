@@ -84,7 +84,7 @@ dependencies {
     }
     androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     androidTestImplementation(project(":internal-testutils-truth"))
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.guavaAndroid)
     androidTestImplementation(libs.hamcrestCore)
     androidTestImplementation(libs.junit)

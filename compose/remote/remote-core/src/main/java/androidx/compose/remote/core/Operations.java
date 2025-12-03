@@ -124,6 +124,7 @@ import androidx.compose.remote.core.operations.layout.managers.CanvasLayout;
 import androidx.compose.remote.core.operations.layout.managers.CollapsibleColumnLayout;
 import androidx.compose.remote.core.operations.layout.managers.CollapsibleRowLayout;
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout;
+import androidx.compose.remote.core.operations.layout.managers.CoreText;
 import androidx.compose.remote.core.operations.layout.managers.FitBoxLayout;
 import androidx.compose.remote.core.operations.layout.managers.ImageLayout;
 import androidx.compose.remote.core.operations.layout.managers.RowLayout;
@@ -311,6 +312,7 @@ public class Operations {
     public static final int LAYOUT_CANVAS = 205;
     public static final int LAYOUT_CANVAS_CONTENT = 207;
     public static final int LAYOUT_TEXT = 208;
+    public static final int CORE_TEXT = 239;
     public static final int LAYOUT_STATE = 217;
     public static final int LAYOUT_IMAGE = 234;
 
@@ -464,6 +466,7 @@ public class Operations {
             // add experimental operations for this profile here
             sMapV7AndroidXExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
             sMapV7AndroidXExperimental.put(LAYOUT_COMPUTE, LayoutComputeOperation::read);
+            sMapV7AndroidXExperimental.put(CORE_TEXT, CoreText::read);
         }
         return sMapV7AndroidXExperimental;
     }
@@ -501,6 +504,7 @@ public class Operations {
             // add experimental operations for this profile here
             sMapV7WidgetsExperimental.put(MODIFIER_ALIGN_BY, AlignByModifierOperation::read);
             sMapV7WidgetsExperimental.put(LAYOUT_COMPUTE, LayoutComputeOperation::read);
+            sMapV7WidgetsExperimental.put(CORE_TEXT, CoreText::read);
         }
         return sMapV7WidgetsExperimental;
     }

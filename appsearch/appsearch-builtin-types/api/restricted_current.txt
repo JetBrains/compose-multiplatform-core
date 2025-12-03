@@ -146,7 +146,6 @@ package androidx.appsearch.builtintypes {
   }
 
   @RequiresApi(api=android.os.Build.VERSION_CODES.O) @androidx.appsearch.annotation.Document(name="builtin:Event") public class Event extends androidx.appsearch.builtintypes.Thing {
-    ctor protected Event(String, String, int, long, long, String?, java.util.List<java.lang.String!>?, String?, String?, String?, java.util.List<androidx.appsearch.builtintypes.PotentialAction!>, java.time.Instant?, java.time.Instant?, java.time.Duration?, String?, androidx.appsearch.builtintypes.ImageObject?);
     method public java.time.Duration? getDuration();
     method public java.time.Instant? getEndDate();
     method public String? getLocation();
@@ -272,7 +271,6 @@ package androidx.appsearch.builtintypes {
   }
 
   @androidx.appsearch.annotation.Document(name="builtin:Organization") public class Organization extends androidx.appsearch.builtintypes.Thing {
-    ctor protected Organization(String, String, int, long, long, String?, java.util.List<java.lang.String!>?, String?, String?, String?, java.util.List<androidx.appsearch.builtintypes.PotentialAction!>, androidx.appsearch.builtintypes.ImageObject?);
     method public androidx.appsearch.builtintypes.ImageObject? getLogo();
   }
 
@@ -368,7 +366,6 @@ package androidx.appsearch.builtintypes {
   }
 
   @RequiresApi(api=android.os.Build.VERSION_CODES.O) @androidx.appsearch.annotation.Document(name="builtin:SportsEvent") public class SportsEvent extends androidx.appsearch.builtintypes.Event {
-    ctor protected SportsEvent(String, String, int, long, long, String?, java.util.List<java.lang.String!>?, String?, String?, String?, java.util.List<androidx.appsearch.builtintypes.PotentialAction!>, java.time.Instant, java.time.Instant?, java.time.Duration?, String?, androidx.appsearch.builtintypes.ImageObject?, String, androidx.appsearch.builtintypes.Organization?, long, String, String?, String?, androidx.appsearch.builtintypes.SportsTeam, String?, String?, double, androidx.appsearch.builtintypes.SportsTeam, String?, String?, double, boolean, long);
     method public androidx.appsearch.builtintypes.SportsTeam getAwayTeam();
     method public String? getAwayTeamAccessoryScore();
     method public String? getAwayTeamScore();
@@ -383,7 +380,7 @@ package androidx.appsearch.builtintypes {
     method public long getResult();
     method public String getSport();
     method public long getSportsEventStatus();
-    method public String getSportsEventStatusLabel();
+    method public String? getSportsEventStatusLabel();
     method public boolean isPlaceHomeTeamAtStart();
     field public static final int RESULT_AWAY_TEAM_WON = 2; // 0x2
     field public static final int RESULT_DRAW = 3; // 0x3
@@ -436,7 +433,6 @@ package androidx.appsearch.builtintypes {
   }
 
   @androidx.appsearch.annotation.Document(name="builtin:SportsOrganization") public class SportsOrganization extends androidx.appsearch.builtintypes.Organization {
-    ctor protected SportsOrganization(String, String, int, long, long, String?, java.util.List<java.lang.String!>?, String?, String?, String?, java.util.List<androidx.appsearch.builtintypes.PotentialAction!>, androidx.appsearch.builtintypes.ImageObject?, String, android.graphics.Color?);
     method public android.graphics.Color? getAccentColor();
     method public String getSport();
   }
@@ -463,7 +459,6 @@ package androidx.appsearch.builtintypes {
   }
 
   @androidx.appsearch.annotation.Document(name="builtin:SportsTeam") public class SportsTeam extends androidx.appsearch.builtintypes.SportsOrganization {
-    ctor protected SportsTeam(String, String, int, long, long, String?, java.util.List<java.lang.String!>?, String?, String?, String?, java.util.List<androidx.appsearch.builtintypes.PotentialAction!>, androidx.appsearch.builtintypes.ImageObject?, String, android.graphics.Color?, long, long, long, long, long, String?);
     method public String? getFormattedRecord();
     method public long getLosses();
     method public long getOvertimeLosses();
@@ -650,7 +645,6 @@ package androidx.appsearch.builtintypes {
   }
 
   @androidx.appsearch.annotation.Document(name=androidx.appsearch.builtintypes.WebPage.SCHEMA_NAME) public class WebPage extends androidx.appsearch.builtintypes.Thing {
-    ctor public WebPage(String, String, int, long, long, String?, java.util.List<java.lang.String!>?, String?, String?, String?, java.util.List<androidx.appsearch.builtintypes.PotentialAction!>?, androidx.appsearch.builtintypes.ImageObject?, String?);
     method public androidx.appsearch.builtintypes.ImageObject? getFavicon();
     method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public String? getSource();
     field public static final String SCHEMA_NAME = "builtin:WebPage";

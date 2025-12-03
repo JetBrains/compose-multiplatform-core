@@ -19,7 +19,7 @@ package androidx.ink.brush.color.colorspace
 import androidx.annotation.RestrictTo
 
 /** Illuminant contains standard CIE [white points][WhitePoint]. */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public object Illuminant {
     /**
      * Standard CIE 1931 2° illuminant A, encoded in xyY. This illuminant has a color temperature of

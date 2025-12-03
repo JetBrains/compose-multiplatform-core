@@ -35,13 +35,6 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-common:2.6.2")
     implementation("androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha14")
     implementation(project(":privacysandbox:activity:activity-core"))
-
-    androidTestImplementation(project(":internal-testutils-runtime"))
-    androidTestImplementation(project(":appcompat:appcompat"))
-    androidTestImplementation(libs.espressoIntents)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.truth)
 }
 
 android {

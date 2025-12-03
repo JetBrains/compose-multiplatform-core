@@ -44,9 +44,14 @@ import static androidx.camera.testing.impl.FileUtil.generateVideoMediaStoreOptio
 import static androidx.camera.testing.impl.FileUtil.getAbsolutePathFromUri;
 import static androidx.camera.testing.impl.FileUtil.writeTextToExternalFile;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_DURATION_LIMIT_REACHED;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_ENCODING_FAILED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_FILE_SIZE_LIMIT_REACHED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_INSUFFICIENT_STORAGE;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_INVALID_OUTPUT_OPTIONS;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NONE;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_NO_VALID_DATA;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_RECORDER_ERROR;
+import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_RECORDING_GARBAGE_COLLECTED;
 import static androidx.camera.video.VideoRecordEvent.Finalize.ERROR_SOURCE_INACTIVE;
 
 import static java.util.Objects.requireNonNull;
@@ -495,6 +500,12 @@ public class CameraXActivity extends AppCompatActivity {
      * null which means no error occurs.
      */
     private @Nullable String mLastTakePictureErrorMessage = null;
+
+    /**
+     * Saves the error message of the last video recording action if any error occurs. This will be
+     * null which means no error occurs.
+     */
+    private @Nullable String mLastVideoRecordingErrorMessage = null;
 
     /**
      * Retrieve idling resource that waits for image received by analyzer).
@@ -947,7 +958,10 @@ public class CameraXActivity extends AppCompatActivity {
         if (event instanceof VideoRecordEvent.Finalize) {
             VideoRecordEvent.Finalize finalize = (VideoRecordEvent.Finalize) event;
 
-            switch (finalize.getError()) {
+            int errorCode = finalize.getError();
+            mLastVideoRecordingErrorMessage = getVideoRecordingErrorMessage(errorCode);
+
+            switch (errorCode) {
                 case ERROR_NONE:
                 case ERROR_FILE_SIZE_LIMIT_REACHED:
                 case ERROR_DURATION_LIMIT_REACHED:
@@ -955,6 +969,26 @@ public class CameraXActivity extends AppCompatActivity {
                 case ERROR_SOURCE_INACTIVE:
                     Uri uri = finalize.getOutputResults().getOutputUri();
                     OutputOptions outputOptions = finalize.getOutputOptions();
+                    if (!(outputOptions instanceof MediaStoreOutputOptions
+                            || outputOptions instanceof FileOutputOptions)) {
+                        throw new AssertionError("Unknown or unsupported OutputOptions type: "
+                                + outputOptions.getClass().getSimpleName());
+                    }
+
+                    if (uri.equals(Uri.EMPTY)) {
+                        if (errorCode == ERROR_NONE) {
+                            throw new AssertionError("Uri is EMPTY but Error Code is ERROR_NONE");
+                        }
+                        // Decrement mVideoSavedIdlingResource to make the tests be terminated
+                        // ASAP. The tests should check whether the video recording message is
+                        // null to determine whether the video is recorded successfully or saved
+                        // under some specific conditions.
+                        if (!mVideoSavedIdlingResource.isIdleNow()) {
+                            mVideoSavedIdlingResource.decrement();
+                        }
+                        break;
+                    }
+
                     String msg;
                     String videoFilePath;
                     if (outputOptions instanceof MediaStoreOutputOptions) {
@@ -964,30 +998,28 @@ public class CameraXActivity extends AppCompatActivity {
                                 uri
                         );
                         updateVideoSavedSessionData(uri);
-                    } else if (outputOptions instanceof FileOutputOptions) {
+                    } else {
                         videoFilePath = ((FileOutputOptions) outputOptions).getFile().getPath();
                         MediaScannerConnection.scanFile(this,
                                 new String[]{videoFilePath}, null,
                                 (path, uri1) -> {
                                     Log.i(TAG, "Scanned " + path + " -> uri= " + uri1);
-                                    updateVideoSavedSessionData(uri1);
+                                    updateVideoSavedSessionData(Objects.requireNonNull(uri1));
                                 });
                         msg = "Saved file " + videoFilePath;
-                    } else {
-                        throw new AssertionError("Unknown or unsupported OutputOptions type: "
-                                + outputOptions.getClass().getSimpleName());
                     }
+
                     // The video file path is used in tracing e2e test log. Don't remove it.
                     Log.d(TAG, "Saved video file: " + videoFilePath);
 
                     if (finalize.getError() != ERROR_NONE) {
-                        msg += " with code (" + finalize.getError() + ")";
+                        msg += " with code (" + errorCode + ")";
                     }
                     Log.d(TAG, msg, finalize.getCause());
                     Toast.makeText(CameraXActivity.this, msg, Toast.LENGTH_LONG).show();
                     break;
                 default:
-                    String errMsg = "Video capture failed by (" + finalize.getError() + "): "
+                    String errMsg = "Video capture failed by (" + errorCode + "): "
                             + finalize.getCause();
                     Log.e(TAG, errMsg, finalize.getCause());
                     Toast.makeText(CameraXActivity.this, errMsg, Toast.LENGTH_LONG).show();
@@ -2793,6 +2825,51 @@ public class CameraXActivity extends AppCompatActivity {
     @VisibleForTesting
     void cleanTakePictureErrorMessage() {
         mLastTakePictureErrorMessage = null;
+    }
+
+    /**
+     * Returns the error message of the last video recording action if any error occurs. Returns
+     * null if no error occurs.
+     */
+    @VisibleForTesting
+    @Nullable String getLastVideoRecordingErrorMessage() {
+        return mLastVideoRecordingErrorMessage;
+    }
+
+    @VisibleForTesting
+    void cleanVideoRecordingErrorMessage() {
+        mLastVideoRecordingErrorMessage = null;
+    }
+
+    private @Nullable String getVideoRecordingErrorMessage(
+            @VideoRecordEvent.Finalize.VideoRecordError int error) {
+        switch (error) {
+            case ERROR_NONE:
+                return null;
+            case VideoRecordEvent.Finalize.ERROR_UNKNOWN:
+                return "ERROR_UNKNOWN";
+            case ERROR_FILE_SIZE_LIMIT_REACHED:
+                return "ERROR_FILE_SIZE_LIMIT_REACHED";
+            case ERROR_INSUFFICIENT_STORAGE:
+                return "ERROR_INSUFFICIENT_STORAGE";
+            case ERROR_INVALID_OUTPUT_OPTIONS:
+                return "ERROR_INVALID_OUTPUT_OPTIONS";
+            case ERROR_ENCODING_FAILED:
+                return "ERROR_ENCODING_FAILED";
+            case ERROR_RECORDER_ERROR:
+                return "ERROR_RECORDER_ERROR";
+            case ERROR_NO_VALID_DATA:
+                return "ERROR_NO_VALID_DATA";
+            case ERROR_SOURCE_INACTIVE:
+                return "ERROR_SOURCE_INACTIVE";
+            case ERROR_DURATION_LIMIT_REACHED:
+                return "ERROR_DURATION_LIMIT_REACHED";
+            case ERROR_RECORDING_GARBAGE_COLLECTED:
+                return "ERROR_RECORDING_GARBAGE_COLLECTED";
+        }
+
+        // Should never reach here, but just in case...
+        return "Unknown(" + error + ")";
     }
 
     @SuppressWarnings("unchecked")

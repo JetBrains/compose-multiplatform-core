@@ -231,6 +231,13 @@ class WindowInsetsCompatTest {
         assertEquals(tappable, result.tappableElementInsets)
     }
 
+    @Test
+    public fun builder_min20_display_shape() {
+        val displayShape = DisplayShapeCompat.create(100, 200, false, 0, 0, 0, 0)
+        val result = WindowInsetsCompat.Builder().setDisplayShape(displayShape).build()
+        assertEquals(displayShape, result.displayShape)
+    }
+
     /** Only API 20-28, only `setSystemWindowInsets` and `systemBars()` works. */
     @Test
     public fun builder_min20_types() {

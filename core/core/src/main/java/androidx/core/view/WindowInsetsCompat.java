@@ -24,6 +24,8 @@ import static androidx.core.graphics.Insets.toCompatInsets;
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.util.Log;
+import android.view.Display;
+import android.view.DisplayShape;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.inputmethod.EditorInfo;
@@ -172,7 +174,8 @@ public class WindowInsetsCompat {
             // Pass the root window insets, which is useful if the Activity is adjustResize
             wic.setRootWindowInsets(ViewCompat.getRootWindowInsets(view));
             // Pass in the root view which allows the WIC to make of a copy of it's visible bounds
-            wic.copyRootViewBounds(view.getRootView());
+            // and initialize the display shape
+            wic.init(view.getRootView());
             // Take System UI visibility into account while computing system bar insets
             wic.setSystemUiVisibility(view.getWindowSystemUiVisibility());
         }
@@ -729,6 +732,15 @@ public class WindowInsetsCompat {
         return mImpl.getPrivacyIndicatorBounds();
     }
 
+    /**
+     * Returns the display shape in the coordinate space of the window.
+     *
+     * @see DisplayShapeCompat
+     */
+    public @Nullable DisplayShapeCompat getDisplayShape() {
+        return mImpl.getDisplayShape();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -843,6 +855,10 @@ public class WindowInsetsCompat {
             return null;
         }
 
+        @Nullable DisplayShapeCompat getDisplayShape() {
+            return DisplayShapeCompat.EMPTY;
+        }
+
         @Override
         public boolean equals(Object o) {
             // On API < 28 we can not rely on WindowInsets.equals(), so we handle it manually
@@ -872,6 +888,9 @@ public class WindowInsetsCompat {
         void copyRootViewBounds(@NonNull View rootView) {
         }
 
+        void initDisplayShape(@NonNull View rootView) {
+        }
+
         void setSystemUiVisibility(int systemUiVisibility) {
         }
 
@@ -882,6 +901,9 @@ public class WindowInsetsCompat {
         }
 
         public void setStableInsets(Insets stableInsets) {
+        }
+
+        public void setDisplayShape(@NonNull DisplayShapeCompat displayShape){
         }
     }
 
@@ -907,6 +929,8 @@ public class WindowInsetsCompat {
         Insets mRootViewVisibleInsets;
 
         int mSystemUiVisibility;
+
+        @Nullable DisplayShapeCompat mDisplayShapeCompat;
 
         Impl20(@NonNull WindowInsetsCompat host, @NonNull WindowInsets insets) {
             super(host);
@@ -1098,6 +1122,7 @@ public class WindowInsetsCompat {
             other.setRootWindowInsets(mRootWindowInsets);
             other.setRootViewData(mRootViewVisibleInsets);
             other.setSystemUiVisibility(mSystemUiVisibility);
+            other.setDisplayShape(mDisplayShapeCompat);
         }
 
         @Override
@@ -1126,6 +1151,51 @@ public class WindowInsetsCompat {
                 visibleInsets = Insets.NONE;
             }
             setRootViewData(visibleInsets);
+        }
+
+        @Override
+        void initDisplayShape(@NonNull View rootView) {
+            mDisplayShapeCompat = createDisplayShape(rootView);
+        }
+
+        private DisplayShapeCompat createDisplayShape(View rootView) {
+            if (rootView == null) {
+                return null;
+            }
+            final Display display = rootView.getDisplay();
+            if (display == null) {
+                return null;
+            }
+
+            final int displayWidth = rootView.getWidth();
+            final int displayHeight = rootView.getHeight();
+
+            if (mHost.isRound()) {
+                // If the device is round, create a circular shape
+                return DisplayShapeCompat.create(displayWidth, displayHeight, true,
+                        0, 0, 0, 0);
+            }
+
+            // Otherwise, build the shape from individual RoundedCornerCompat instances
+            final RoundedCornerCompat topLeft = DisplayCompat.getRoundedCorner(display,
+                    RoundedCornerCompat.POSITION_TOP_LEFT);
+            final RoundedCornerCompat topRight = DisplayCompat.getRoundedCorner(display,
+                    RoundedCornerCompat.POSITION_TOP_RIGHT);
+            final RoundedCornerCompat bottomRight = DisplayCompat.getRoundedCorner(
+                    display, RoundedCornerCompat.POSITION_BOTTOM_RIGHT);
+            final RoundedCornerCompat bottomLeft = DisplayCompat.getRoundedCorner(display,
+                    RoundedCornerCompat.POSITION_BOTTOM_LEFT);
+
+            return DisplayShapeCompat.create(displayWidth, displayHeight, false,
+                    topLeft != null ? topLeft.getRadius() : 0,
+                    topRight != null ? topRight.getRadius() : 0,
+                    bottomRight != null ? bottomRight.getRadius() : 0,
+                    bottomLeft != null ? bottomLeft.getRadius() : 0);
+        }
+
+        @Override
+        public void setDisplayShape(@NonNull DisplayShapeCompat displayShape) {
+            mDisplayShapeCompat = displayShape;
         }
 
         @Override
@@ -1196,6 +1266,11 @@ public class WindowInsetsCompat {
                         e);
             }
             sVisibleRectReflectionFetched = true;
+        }
+
+        @Override
+        @Nullable DisplayShapeCompat getDisplayShape() {
+            return mDisplayShapeCompat != null  ? mDisplayShapeCompat : DisplayShapeCompat.EMPTY;
         }
 
         @Override
@@ -1454,6 +1529,20 @@ public class WindowInsetsCompat {
         public boolean isVisible(int typeMask) {
             return mPlatformInsets.isVisible(TypeImpl34.toPlatformType(typeMask));
         }
+
+        @Override
+        void initDisplayShape(@NonNull View rootView){
+            // This is only used to init the display shape when the API < 34.
+            // Over API >= 34 the platform display shape is already initialized.
+        }
+
+        @Override
+        @Nullable DisplayShapeCompat getDisplayShape() {
+            if (mDisplayShapeCompat != null) {
+                return mDisplayShapeCompat;
+            }
+            return DisplayShapeCompat.toDisplayShapeCompat(mPlatformInsets.getDisplayShape());
+        }
     }
 
     /**
@@ -1693,6 +1782,18 @@ public class WindowInsetsCompat {
         }
 
         /**
+         * Sets the display shape.
+         *
+         * @see #getDisplayShape()
+         * @param displayShape the display shape
+         * @return itself
+         */
+        public @NonNull Builder setDisplayShape(@NonNull DisplayShapeCompat displayShape) {
+            mImpl.setDisplayShape(displayShape);
+            return this;
+        }
+
+        /**
          * Builds a {@link WindowInsetsCompat} instance.
          *
          * @return the {@link WindowInsetsCompat} instance.
@@ -1706,6 +1807,7 @@ public class WindowInsetsCompat {
         private final WindowInsetsCompat mInsets;
 
         Insets[] mInsetsTypeMask;
+        DisplayShapeCompat mDisplayShapeCompat;
 
         BuilderImpl() {
             this(new WindowInsetsCompat((WindowInsetsCompat) null));
@@ -1755,6 +1857,10 @@ public class WindowInsetsCompat {
         }
 
         void setPrivacyIndicatorBounds(@Nullable Rect bounds) {
+        }
+
+        void setDisplayShape(@NonNull DisplayShapeCompat displayShape) {
+            mDisplayShapeCompat = displayShape;
         }
 
         /**
@@ -1838,6 +1944,7 @@ public class WindowInsetsCompat {
                     mPlatformInsets);
             windowInsetsCompat.setOverriddenInsets(this.mInsetsTypeMask);
             windowInsetsCompat.setStableInsets(mStableInsets);
+            windowInsetsCompat.setDisplayShape(mDisplayShapeCompat);
             return windowInsetsCompat;
         }
 
@@ -1894,6 +2001,10 @@ public class WindowInsetsCompat {
         mImpl.setStableInsets(stableInsets);
     }
 
+    void setDisplayShape(@NonNull DisplayShapeCompat displayShape) {
+        mImpl.setDisplayShape(displayShape);
+    }
+
     @RequiresApi(api = 29)
     private static class BuilderImpl29 extends BuilderImpl {
         final WindowInsets.Builder mPlatBuilder;
@@ -1947,6 +2058,7 @@ public class WindowInsetsCompat {
             WindowInsetsCompat windowInsetsCompat = WindowInsetsCompat.toWindowInsetsCompat(
                     mPlatBuilder.build());
             windowInsetsCompat.setOverriddenInsets(mInsetsTypeMask);
+            windowInsetsCompat.setDisplayShape(mDisplayShapeCompat);
             return windowInsetsCompat;
         }
     }
@@ -2037,6 +2149,17 @@ public class WindowInsetsCompat {
         @Override
         void setVisible(int typeMask, boolean visible) {
             mPlatBuilder.setVisible(TypeImpl34.toPlatformType(typeMask), visible);
+        }
+
+        @Override
+        void setDisplayShape(@NonNull DisplayShapeCompat displayShape) {
+            DisplayShape platformDisplayShape =
+                    DisplayShapeCompat.toPlatformDisplayShape(displayShape);
+            if (platformDisplayShape != null) {
+                mPlatBuilder.setDisplayShape(platformDisplayShape);
+            } else {
+                mDisplayShapeCompat = displayShape;
+            }
         }
     }
 
@@ -2349,8 +2472,9 @@ public class WindowInsetsCompat {
         mImpl.setRootViewData(visibleInsets);
     }
 
-    void copyRootViewBounds(@NonNull View rootView) {
+    void init(@NonNull View rootView) {
         mImpl.copyRootViewBounds(rootView);
+        mImpl.initDisplayShape(rootView);
     }
 
     void setSystemUiVisibility(int systemUiVisibility) {

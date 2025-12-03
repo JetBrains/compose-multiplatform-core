@@ -477,6 +477,11 @@ public final class SetSchemaRequest {
                     request.mSchemasVisibleToConfigs.entrySet()) {
                 mSchemaVisibleToConfigs.put(entry.getKey(), new ArraySet<>(entry.getValue()));
             }
+            for (Map.Entry<String, Set<String>> entry :
+                    request.mSchemasWipeoutAccountPropertyPaths.entrySet()) {
+                mSchemasWipeoutAccountPropertyPaths.put(entry.getKey(),
+                        new ArraySet<>(entry.getValue()));
+            }
             mMigrators.putAll(request.mMigrators);
             mForceOverride = request.mForceOverride;
             mVersion = request.mVersion;

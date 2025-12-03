@@ -24,6 +24,7 @@ import android.hardware.camera2.CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE
 import android.hardware.camera2.params.DynamicRangeProfiles
 import android.os.Build
 import android.util.Range
+import android.util.Size
 import androidx.camera.camera2.pipe.CameraGraph
 import androidx.camera.camera2.pipe.OutputStream
 import androidx.camera.camera2.pipe.StreamFormat
@@ -83,8 +84,7 @@ class FeatureCombinationQueryImplTest {
     private val featureCombinationQueryImpl =
         FeatureCombinationQueryImpl(cameraMetadata, cameraPipe, createCameraQuirks(cameraMetadata))
 
-    private val useCaseTypes =
-        listOf(UseCaseType.PREVIEW, UseCaseType.IMAGE_CAPTURE, UseCaseType.VIDEO_CAPTURE)
+    private val useCaseTypes = UseCaseType.entries.filterNot { it == UseCaseType.UNDEFINED }
 
     private val createdSurfaces = mutableListOf<DeferrableSurface>()
 
@@ -156,14 +156,10 @@ class FeatureCombinationQueryImplTest {
 
     private fun CameraGraph.Config.verifyStreams(dynamicRange: DynamicRange, hasJpegR: Boolean) {
         assertThat(streams.map { it.outputs.first().size })
-            .containsExactly(PREVIEW_RESOLUTION, IMAGE_CAPTURE_RESOLUTION, VIDEO_CAPTURE_RESOLUTION)
+            .containsExactlyElementsIn(useCaseTypes.map { it.getResolution() })
 
         assertThat(streams.map { it.outputs.first().format })
-            .containsExactly(
-                StreamFormat.PRIVATE,
-                if (hasJpegR) StreamFormat.JPEG_R else StreamFormat.JPEG,
-                StreamFormat.PRIVATE,
-            )
+            .containsExactlyElementsIn(useCaseTypes.map { it.getStreamFormat(hasJpegR) })
 
         // TODO: Verify the output type, but CameraPipe doesn't seem to expose it (or
         //  LazyOutputConfig) right now
@@ -174,7 +170,7 @@ class FeatureCombinationQueryImplTest {
     private fun CameraGraph.Config.verifyDynamicRange(dynamicRange: DynamicRange) {
         assertThat(streams.map { it.outputs.first().dynamicRangeProfile })
             .containsExactlyElementsIn(
-                List(3) {
+                List(useCaseTypes.size) {
                     if (dynamicRange == DynamicRange.HLG_10_BIT) {
                         OutputStream.DynamicRangeProfile.HLG10
                     } else {
@@ -211,15 +207,7 @@ class FeatureCombinationQueryImplTest {
     ): SessionConfig {
         return map {
                 it.createUseCaseConfig(hasJpegR)
-                    .createSessionConfigBuilder(
-                        when (it) {
-                            UseCaseType.PREVIEW -> PREVIEW_RESOLUTION
-                            UseCaseType.IMAGE_CAPTURE -> IMAGE_CAPTURE_RESOLUTION
-                            UseCaseType.VIDEO_CAPTURE -> VIDEO_CAPTURE_RESOLUTION
-                            else -> PREVIEW_RESOLUTION
-                        },
-                        dynamicRange,
-                    )
+                    .createSessionConfigBuilder(it.getResolution(), dynamicRange)
                     .setExpectedFrameRateRange(fpsRange)
                     .setPreviewStabilization(
                         if (hasPreviewStabilization) StabilizationMode.ON
@@ -244,6 +232,7 @@ class FeatureCombinationQueryImplTest {
                 UseCaseType.IMAGE_CAPTURE -> CaptureType.IMAGE_CAPTURE
                 UseCaseType.VIDEO_CAPTURE -> CaptureType.VIDEO_CAPTURE
                 UseCaseType.STREAM_SHARING -> CaptureType.STREAM_SHARING
+                UseCaseType.IMAGE_ANALYSIS -> CaptureType.IMAGE_ANALYSIS
                 UseCaseType.UNDEFINED -> CaptureType.PREVIEW
             }
 
@@ -253,6 +242,7 @@ class FeatureCombinationQueryImplTest {
                 UseCaseType.IMAGE_CAPTURE -> if (hasJpegR) ImageFormat.JPEG_R else ImageFormat.JPEG
                 UseCaseType.VIDEO_CAPTURE -> ImageFormat.PRIVATE
                 UseCaseType.STREAM_SHARING -> ImageFormat.PRIVATE
+                UseCaseType.IMAGE_ANALYSIS -> ImageFormat.YUV_420_888
                 UseCaseType.UNDEFINED -> ImageFormat.PRIVATE
             }
 
@@ -267,10 +257,34 @@ class FeatureCombinationQueryImplTest {
         return builder.useCaseConfig
     }
 
+    private fun UseCaseType.getResolution(): Size {
+        return when (this) {
+            UseCaseType.PREVIEW -> PREVIEW_RESOLUTION
+            UseCaseType.IMAGE_CAPTURE -> IMAGE_CAPTURE_RESOLUTION
+            UseCaseType.VIDEO_CAPTURE -> VIDEO_CAPTURE_RESOLUTION
+            UseCaseType.IMAGE_ANALYSIS -> IMAGE_ANALYSIS_RESOLUTION
+            UseCaseType.STREAM_SHARING -> STREAM_SHARING_RESOLUTION
+            UseCaseType.UNDEFINED -> throw IllegalStateException()
+        }
+    }
+
+    private fun UseCaseType.getStreamFormat(hasJpegR: Boolean): StreamFormat {
+        return when (this) {
+            UseCaseType.PREVIEW -> StreamFormat.PRIVATE
+            UseCaseType.IMAGE_CAPTURE -> if (hasJpegR) StreamFormat.JPEG_R else StreamFormat.JPEG
+            UseCaseType.VIDEO_CAPTURE -> StreamFormat.PRIVATE
+            UseCaseType.IMAGE_ANALYSIS -> StreamFormat.YUV_420_888
+            UseCaseType.STREAM_SHARING -> StreamFormat.PRIVATE
+            UseCaseType.UNDEFINED -> throw IllegalStateException()
+        }
+    }
+
     private companion object {
         private val PREVIEW_RESOLUTION = SizeUtil.RESOLUTION_1080P
         private val IMAGE_CAPTURE_RESOLUTION = SizeUtil.RESOLUTION_1440P_16_9
         private val VIDEO_CAPTURE_RESOLUTION = SizeUtil.RESOLUTION_UHD
+        private val IMAGE_ANALYSIS_RESOLUTION = SizeUtil.RESOLUTION_VGA
+        private val STREAM_SHARING_RESOLUTION = SizeUtil.RESOLUTION_UHD
 
         private val FPS_60 = Range(60, 60)
     }

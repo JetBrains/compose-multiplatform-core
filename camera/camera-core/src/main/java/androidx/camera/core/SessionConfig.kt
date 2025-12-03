@@ -59,7 +59,6 @@ import java.util.concurrent.Executor
  * **[requiredFeatureGroup] and [preferredFeatureGroup]:**
  * - Avoid using non-groupable APIs for any feature that is groupable (see [GroupableFeature] to
  *   know which features are groupable). Doing so can lead to conflicting configurations.
- * - [ImageAnalysis] use case is currently not supported with these `GroupableFeature`s.
  * - Avoid setting multiple `GroupableFeature`s with the same [GroupableFeature.featureType] as
  *   required, as they conflict with each other. If they are set as preferred, only one will be
  *   selected according to the feature priorities, which are defined by the ordering in the
@@ -347,9 +346,7 @@ constructor(
          * Unlike the [setPreferredFeatureGroup] API, the order of the features doesn't matter for
          * this API since each and every one of these features must be configured.
          *
-         * Note that [CameraEffect] or [ImageAnalysis] use case is currently not supported when a
-         * feature is set to a session config. See the [SessionConfig] documentation for all such
-         * constraints.
+         * See the [SessionConfig] documentation for all of the constraints related to this API.
          *
          * @param features The vararg of `GroupableFeature` objects to add to the required features.
          * @return The [Builder] instance, allowing for method chaining.
@@ -386,9 +383,7 @@ constructor(
          * The final set of selected features will be notified to the listener set by the
          * [SessionConfig.setFeatureSelectionListener] API.
          *
-         * Note that [CameraEffect] or [ImageAnalysis] use case is currently not supported when a
-         * feature is set to a session config. See the [SessionConfig] documentation for all such
-         * constraints.
+         * See the [SessionConfig] documentation for all of the constraints related to this API.
          *
          * @param features The list of preferred features, ordered by preference.
          * @return The [Builder] instance, allowing for method chaining.

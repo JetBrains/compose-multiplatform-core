@@ -27,7 +27,7 @@ import androidx.camera.core.SessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.impl.utils.executor.CameraXExecutors.directExecutor
-import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase.*
+import androidx.camera.integration.featurecombo.AppUseCase.VIDEO_CAPTURE
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.fakes.FakeSurfaceEffect
 import androidx.camera.testing.impl.fakes.FakeSurfaceProcessorInternal
@@ -49,7 +49,7 @@ class FeatureCombinationDeviceTest(
     private val cameraSelector: CameraSelector,
     implName: String,
     cameraXConfig: CameraXConfig,
-    private val useCasesToTest: List<FeatureGroupTestBase.Companion.SupportedUseCase>,
+    private val useCasesToTest: List<AppUseCase>,
 ) : FeatureGroupTestBase(cameraSelector, implName, cameraXConfig) {
     @Test
     fun bindToLifecycle_allFeaturesPreferred_canBindSuccessfully(): Unit = runBlocking {

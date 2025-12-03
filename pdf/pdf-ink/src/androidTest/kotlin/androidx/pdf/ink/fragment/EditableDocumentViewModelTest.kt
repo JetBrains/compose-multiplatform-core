@@ -16,6 +16,7 @@
 
 package androidx.pdf.ink.fragment
 
+import android.graphics.Color
 import android.graphics.Matrix
 import android.graphics.RectF
 import android.net.Uri
@@ -31,6 +32,10 @@ import androidx.pdf.annotation.models.StampAnnotation
 import androidx.pdf.coroutines.collectTill
 import androidx.pdf.ink.EditableDocumentViewModel
 import androidx.pdf.ink.model.ApplyEditsState
+import androidx.pdf.ink.state.AnnotationDrawingMode
+import androidx.pdf.ink.view.tool.Eraser
+import androidx.pdf.ink.view.tool.Highlighter
+import androidx.pdf.ink.view.tool.Pen
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
@@ -273,6 +278,57 @@ class EditableDocumentViewModelTest {
         assertThat(applyStates.last()).isInstanceOf(ApplyEditsState.Failure::class.java)
         assertThat((applyStates.last() as ApplyEditsState.Failure).error.message)
             .isEqualTo("Document not available for saving.")
+    }
+
+    @Test
+    fun setCurrentToolInfo_updatesDrawingMode_whenPenSelected() = runTest {
+        val penTool = Pen(brushSize = 2.0f, color = Color.RED)
+        annotationsViewModel.setCurrentToolInfo(penTool)
+
+        val drawingMode = annotationsViewModel.drawingMode.first()
+        assertThat(drawingMode).isInstanceOf(AnnotationDrawingMode.PenMode::class.java)
+        assertThat((drawingMode as AnnotationDrawingMode.PenMode).brush.size).isEqualTo(2.0f)
+        assertThat(drawingMode.brush.colorIntArgb).isEqualTo(Color.RED)
+    }
+
+    @Test
+    fun setCurrentToolInfo_updatesDrawingMode_whenHighlighterSelected() = runTest {
+        val highlighterTool = Highlighter(brushSize = 10.0f, color = Color.YELLOW, emoji = null)
+        annotationsViewModel.setCurrentToolInfo(highlighterTool)
+
+        val drawingMode = annotationsViewModel.drawingMode.first()
+        assertThat(drawingMode).isInstanceOf(AnnotationDrawingMode.HighlighterMode::class.java)
+        assertThat((drawingMode as AnnotationDrawingMode.HighlighterMode).brush.size)
+            .isEqualTo(10.0f)
+        assertThat(drawingMode.brush.colorIntArgb).isEqualTo(Color.YELLOW)
+    }
+
+    @Test
+    fun setCurrentToolInfo_updatesDrawingMode_whenEraserSelected() = runTest {
+        annotationsViewModel.setCurrentToolInfo(Eraser)
+
+        val drawingMode = annotationsViewModel.drawingMode.first()
+        assertThat(drawingMode).isEqualTo(AnnotationDrawingMode.EraserMode)
+    }
+
+    @Test
+    fun setAnnotationVisibility_updatesAreAnnotationsEnabled() = runTest {
+        annotationsViewModel.setAnnotationVisibility(false)
+        assertThat(annotationsViewModel.areAnnotationsEnabled.first()).isFalse()
+
+        annotationsViewModel.setAnnotationVisibility(true)
+        assertThat(annotationsViewModel.areAnnotationsEnabled.first()).isTrue()
+    }
+
+    @Test
+    fun initialDrawingMode_isPenWithDefaultBrush() = runTest {
+        val drawingMode = annotationsViewModel.drawingMode.first()
+        assertThat(drawingMode).isInstanceOf(AnnotationDrawingMode.PenMode::class.java)
+    }
+
+    @Test
+    fun initialAreAnnotationsEnabled_isTrue() = runTest {
+        assertThat(annotationsViewModel.areAnnotationsEnabled.first()).isTrue()
     }
 
     fun createAnnotation(

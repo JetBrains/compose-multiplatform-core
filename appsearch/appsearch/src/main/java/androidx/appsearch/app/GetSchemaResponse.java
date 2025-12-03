@@ -17,6 +17,7 @@
 package androidx.appsearch.app;
 
 import android.annotation.SuppressLint;
+import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -67,11 +68,11 @@ public final class GetSchemaResponse extends AbstractSafeParcelable {
     final @Nullable List<InternalVisibilityConfig> mVisibilityConfigs;
 
     /**
-     * This map contains all schemas and their property paths that indicate the property is an
-     * {@link AppSearchAccount}.
+     * This Bundle contains a mapping from schema types to an ArrayList of strings, where each
+     * string is a property path indicating that the property is an {@link AppSearchAccount}.
      */
     @Field(id = 4)
-    final @Nullable Map<String, Set<String>> mSchemasWipeoutAccountPropertyPaths;
+    final @Nullable Bundle mSchemasWipeoutAccountPropertyPathsBundle;
 
     /**
      * This set contains all schemas most recently successfully provided to
@@ -118,16 +119,22 @@ public final class GetSchemaResponse extends AbstractSafeParcelable {
      */
     private @Nullable Map<String, Set<SchemaVisibilityConfig>> mSchemasVisibleToConfigsCached;
 
+    /**
+     * This map contains a mapping from schema types to an set of strings, where each
+     * string is a property path indicating that the property is an {@link AppSearchAccount}.
+     */
+    private @Nullable Map<String, Set<PropertyPath>> mSchemasWipeoutAccountPropertyPathsCached;
+
     @Constructor
     GetSchemaResponse(
             @Param(id = 1) int version,
             @Param(id = 2) @NonNull List<AppSearchSchema> schemas,
             @Param(id = 3) @Nullable List<InternalVisibilityConfig> visibilityConfigs,
-            @Param(id = 4) @Nullable Map<String, Set<String>> schemasWipeoutAccountPropertyPaths) {
+            @Param(id = 4) @Nullable Bundle schemasWipeoutAccountPropertyPathsBundle) {
         mVersion = version;
         mSchemas = Preconditions.checkNotNull(schemas);
         mVisibilityConfigs = visibilityConfigs;
-        mSchemasWipeoutAccountPropertyPaths = schemasWipeoutAccountPropertyPaths;
+        mSchemasWipeoutAccountPropertyPathsBundle = schemasWipeoutAccountPropertyPathsBundle;
     }
 
     /**
@@ -330,21 +337,27 @@ public final class GetSchemaResponse extends AbstractSafeParcelable {
      * @return A map where keys are schema type names, and values are sets of {@link PropertyPath}
      * strings configured for account wipeout for that schema type.
      */
-    @FlaggedApi(Flags.FLAG_ENABLE_SET_SCHEMA_VISIBLE_TO_CONFIGS)
+    @FlaggedApi(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
     @ExperimentalAppSearchApi
     public @NonNull Map<String, Set<PropertyPath>> getSchemasWipeoutAccountPropertyPaths() {
-        Map<String, Set<PropertyPath>> copy = new ArrayMap<>();
-        if (mSchemasWipeoutAccountPropertyPaths != null) {
-            for (Map.Entry<String, Set<String>> entry :
-                    mSchemasWipeoutAccountPropertyPaths.entrySet()) {
-                Set<PropertyPath> propertyPaths = new ArraySet<>(entry.getValue().size());
-                for (String propertyPath : entry.getValue()) {
-                    propertyPaths.add(new PropertyPath(propertyPath));
+        if (mSchemasWipeoutAccountPropertyPathsCached == null) {
+            if (mSchemasWipeoutAccountPropertyPathsBundle == null) {
+                mSchemasWipeoutAccountPropertyPathsCached = new ArrayMap<>();
+            } else {
+                Map<String, Set<PropertyPath>> copy = new ArrayMap<>();
+                for (String key : mSchemasWipeoutAccountPropertyPathsBundle.keySet()) {
+                    List<String> propertyPathsList = mSchemasWipeoutAccountPropertyPathsBundle
+                            .getStringArrayList(key);
+                    Set<PropertyPath> propertyPathsSet = new ArraySet<>(propertyPathsList.size());
+                    for (int i = 0; i < propertyPathsList.size(); i++) {
+                        propertyPathsSet.add(new PropertyPath(propertyPathsList.get(i)));
+                    }
+                    copy.put(key, propertyPathsSet);
                 }
-                copy.put(entry.getKey(), propertyPaths);
+                mSchemasWipeoutAccountPropertyPathsCached = Collections.unmodifiableMap(copy);
             }
         }
-        return copy;
+        return mSchemasWipeoutAccountPropertyPathsCached;
     }
 
     private @NonNull List<InternalVisibilityConfig> getVisibilityConfigsOrThrow() {
@@ -372,8 +385,8 @@ public final class GetSchemaResponse extends AbstractSafeParcelable {
          * should throw {@link UnsupportedOperationException} in the visibility getters.
          */
         private @Nullable Map<String, InternalVisibilityConfig.Builder> mVisibilityConfigBuilders;
-        @Nullable
-        private Map<String, Set<String>> mSchemasWipeoutAccountPropertyPaths;
+
+        private @Nullable Map<String, Set<String>> mSchemasWipeoutAccountPropertyPaths;
         private boolean mBuilt = false;
 
         /** Creates a new {@link Builder} */
@@ -396,10 +409,13 @@ public final class GetSchemaResponse extends AbstractSafeParcelable {
                             new InternalVisibilityConfig.Builder(config));
                 }
             }
-            if (getSchemaResponse.mSchemasWipeoutAccountPropertyPaths != null) {
-                mSchemasWipeoutAccountPropertyPaths = new ArrayMap<>();
-                mSchemasWipeoutAccountPropertyPaths.putAll(
-                        getSchemaResponse.mSchemasWipeoutAccountPropertyPaths);
+            if (getSchemaResponse.mSchemasWipeoutAccountPropertyPathsBundle != null) {
+                Bundle otherBundle = getSchemaResponse.mSchemasWipeoutAccountPropertyPathsBundle;
+                mSchemasWipeoutAccountPropertyPaths = new ArrayMap<>(otherBundle.size());
+                for (String key : otherBundle.keySet()) {
+                    mSchemasWipeoutAccountPropertyPaths.put(key,
+                            new ArraySet<>(otherBundle.getStringArrayList(key)));
+                }
             }
         }
 
@@ -805,9 +821,18 @@ public final class GetSchemaResponse extends AbstractSafeParcelable {
                     visibilityConfigs.add(builder.build());
                 }
             }
+            Bundle schemasWipeoutAccountPropertyPathsBundle = null;
+            if (mSchemasWipeoutAccountPropertyPaths != null) {
+                schemasWipeoutAccountPropertyPathsBundle = new Bundle();
+                for (Map.Entry<String, Set<String>> entry :
+                        mSchemasWipeoutAccountPropertyPaths.entrySet()) {
+                    schemasWipeoutAccountPropertyPathsBundle.putStringArrayList(entry.getKey(),
+                            new ArrayList<>(entry.getValue()));
+                }
+            }
             mBuilt = true;
             return new GetSchemaResponse(mVersion, mSchemas, visibilityConfigs,
-                    mSchemasWipeoutAccountPropertyPaths);
+                    schemasWipeoutAccountPropertyPathsBundle);
         }
 
         private @NonNull InternalVisibilityConfig.Builder getOrCreateVisibilityConfigBuilder(

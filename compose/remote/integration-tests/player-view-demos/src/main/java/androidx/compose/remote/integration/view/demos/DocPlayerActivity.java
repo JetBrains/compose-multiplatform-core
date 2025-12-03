@@ -113,7 +113,9 @@ public class DocPlayerActivity extends Activity {
                 }
 
             } catch (IOException e) {
-                readRawResource(this, 0);
+                if (sUUDoc.length() > 10000) {
+                    readRawResource(this, 0);
+                }
                 throw new RuntimeException(e);
             }
         } else {

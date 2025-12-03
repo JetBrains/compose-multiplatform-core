@@ -119,6 +119,7 @@ import androidx.compose.remote.core.operations.layout.managers.CanvasLayout;
 import androidx.compose.remote.core.operations.layout.managers.CollapsibleColumnLayout;
 import androidx.compose.remote.core.operations.layout.managers.CollapsibleRowLayout;
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout;
+import androidx.compose.remote.core.operations.layout.managers.CoreText;
 import androidx.compose.remote.core.operations.layout.managers.FitBoxLayout;
 import androidx.compose.remote.core.operations.layout.managers.ImageLayout;
 import androidx.compose.remote.core.operations.layout.managers.RowLayout;
@@ -194,6 +195,7 @@ public class RemoteComposeBuffer {
     protected int mLastComponentId = 0;
     private int mGeneratedComponentId = -1;
     protected int mApiLevel = CoreDocument.DOCUMENT_API_LEVEL;
+    protected int mProfileMask = 0;
 
     Operations.UniqueIntMap<CompanionOperation> mMap = new Operations.UniqueIntMap<>();
 
@@ -1903,18 +1905,16 @@ public class RemoteComposeBuffer {
     /**
      * Add a text component start tag
      *
-     * @param componentId component id
-     * @param animationId animation id
-     * @param textId id of the text
-     * @param color color of the text
-     * @param fontSize font size
-     * @param fontStyle font style (0 : Normal, 1 : Italic)
-     * @param fontWeight font weight (1 to 1000, normal is 400)
+     * @param componentId  component id
+     * @param animationId  animation id
+     * @param textId       id of the text
+     * @param color        color of the text
+     * @param fontSize     font size
+     * @param fontStyle    font style (0 : Normal, 1 : Italic)
+     * @param fontWeight   font weight (1 to 1000, normal is 400)
      * @param fontFamilyId font family or null
-     * @param flags flags for configuration, only use by color (0: Static color, 1: Color Id)
-     * @param textAlign text alignment (0 : Center, 1 : Left, 2 : Right)
-     * @param overflow
-     * @param maxLines
+     * @param flags        flags for configuration, only use by color (0: Static color, 1: Color Id)
+     * @param textAlign    text alignment (0 : Center, 1 : Left, 2 : Right)
      */
     public void addTextComponentStart(
             int componentId,
@@ -1931,7 +1931,6 @@ public class RemoteComposeBuffer {
             int maxLines) {
         mLastComponentId = getComponentId(componentId);
         int flagsAndTextAlign = (flags << 16) | (textAlign & 0xFFFF);
-
         TextLayout.apply(
                 mBuffer,
                 mLastComponentId,
@@ -1945,6 +1944,75 @@ public class RemoteComposeBuffer {
                 flagsAndTextAlign,
                 overflow,
                 maxLines);
+    }
+
+    /**
+     * Add a text component start tag
+     *
+     * @param componentId  component id
+     * @param animationId  animation id
+     * @param textId       id of the text
+     * @param color        color of the text
+     * @param colorId      color id of the text
+     * @param fontSize     font size
+     * @param fontStyle    font style (0 : Normal, 1 : Italic)
+     * @param fontWeight   font weight (1 to 1000, normal is 400)
+     * @param fontFamilyId font family or null
+     * @param flags        flags for configuration, only use by color (0: Static color, 1: Color Id)
+     * @param textAlign    text alignment (0 : Center, 1 : Left, 2 : Right)
+     */
+    public void addTextComponentStart(
+            int componentId,
+            int animationId,
+            int textId,
+            int color,
+            int colorId,
+            float fontSize,
+            int fontStyle,
+            float fontWeight,
+            int fontFamilyId,
+            int textAlign,
+            int overflow,
+            int maxLines,
+            float letterSpacing,
+            float lineHeightAdd,
+            float lineHeightMultiplier,
+            int lineBreakStrategy,
+            int hyphenationFrequency,
+            int justificationMode,
+            boolean underline,
+            boolean strikethrough,
+            int @NonNull [] fontAxis,
+            float @NonNull [] fontAxisValues,
+            boolean autosize,
+            int flags) {
+        mLastComponentId = getComponentId(componentId);
+        CoreText.apply(
+                mBuffer,
+                mLastComponentId,
+                animationId,
+                textId,
+                color,
+                colorId,
+                fontSize,
+                fontStyle,
+                fontWeight,
+                fontFamilyId,
+                textAlign,
+                overflow,
+                maxLines,
+                letterSpacing,
+                lineHeightAdd,
+                lineHeightMultiplier,
+                lineBreakStrategy,
+                hyphenationFrequency,
+                justificationMode,
+                underline,
+                strikethrough,
+                fontAxis,
+                fontAxisValues,
+                autosize,
+                flags);
     }
 
     /**
@@ -2274,18 +2342,17 @@ public class RemoteComposeBuffer {
      */
     public void setVersion(int documentApiLevel, int profiles) {
         mApiLevel = documentApiLevel;
+        mProfileMask = profiles;
         mBuffer.setVersion(documentApiLevel, profiles);
     }
 
     /**
      * Set current version of the buffer (typically for writing)
-     *
-     * @param documentApiLevel
-     * @param supportedOperations
      */
-    public void setVersion(int documentApiLevel, @NonNull Set<Integer> supportedOperations) {
+    public void setVersion(int documentApiLevel, int profileMask,
+            @NonNull Set<Integer> supportedOperations) {
         mApiLevel = documentApiLevel;
-
+        mProfileMask = profileMask;
         mBuffer.setValidOperations(supportedOperations);
     }
 

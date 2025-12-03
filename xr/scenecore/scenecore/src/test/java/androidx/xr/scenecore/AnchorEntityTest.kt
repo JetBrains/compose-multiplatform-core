@@ -285,6 +285,21 @@ class AnchorEntityTest {
     }
 
     @Test
+    fun getParentNonUniformSpaceScale_throwsIllegalArgumentException() {
+        val anchorEntity = AnchorEntity.create(session, anchor)
+        assertThrows(IllegalArgumentException::class.java) {
+            anchorEntity.getNonUniformScale(Space.PARENT)
+        }
+    }
+
+    @Test
+    fun getActivityNonUniformSpaceScale_returnsIdentity() {
+        val anchorEntity = AnchorEntity.create(session, anchor)
+        val scale = anchorEntity.getNonUniformScale(Space.ACTIVITY)
+        assertThat(scale).isEqualTo(Vector3.One)
+    }
+
+    @Test
     fun getParentSpaceScale_throwsIllegalArgumentException() {
         val anchorEntity = AnchorEntity.create(session, anchor)
         assertThrows(IllegalArgumentException::class.java) { anchorEntity.getScale(Space.PARENT) }
@@ -302,6 +317,13 @@ class AnchorEntityTest {
         val anchorEntity = AnchorEntity.create(session, anchor)
         val scale = anchorEntity.getScale(Space.REAL_WORLD)
         assertThat(scale).isEqualTo(1f)
+    }
+
+    @Test
+    fun getRealWorldSpaceNonUniformScale_returnsIdentity() {
+        val anchorEntity = AnchorEntity.create(session, anchor)
+        val scale = anchorEntity.getNonUniformScale(Space.REAL_WORLD)
+        assertThat(scale).isEqualTo(Vector3.One)
     }
 
     @Test

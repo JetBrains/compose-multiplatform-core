@@ -48,7 +48,7 @@ import androidx.ink.brush.color.unpackFloat2
  * @see ColorSpace.adapt
  * @see ColorSpace.connect
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public open class Connector
 /**
  * To connect between color spaces, we might need to use adapted transforms. This should be

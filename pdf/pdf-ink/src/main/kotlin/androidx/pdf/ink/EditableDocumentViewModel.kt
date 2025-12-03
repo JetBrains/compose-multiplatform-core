@@ -20,6 +20,8 @@ import android.graphics.Matrix
 import android.net.Uri
 import androidx.annotation.RestrictTo
 import androidx.annotation.VisibleForTesting
+import androidx.ink.brush.Brush
+import androidx.ink.brush.StockBrushes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -38,6 +40,12 @@ import androidx.pdf.annotation.models.PdfAnnotationData
 import androidx.pdf.ink.edits.AnnotationEditOperationsHandler
 import androidx.pdf.ink.history.AnnotationEditsHistoryManager
 import androidx.pdf.ink.model.ApplyEditsState
+import androidx.pdf.ink.state.AnnotationDrawingMode
+import androidx.pdf.ink.util.InkDefaults
+import androidx.pdf.ink.view.tool.AnnotationToolInfo
+import androidx.pdf.ink.view.tool.Eraser
+import androidx.pdf.ink.view.tool.Highlighter
+import androidx.pdf.ink.view.tool.Pen
 import androidx.pdf.viewer.fragment.PdfDocumentViewModel
 import java.util.concurrent.Executors
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -54,6 +62,14 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
     private var editOperationsHandler: AnnotationEditOperationsHandler? = null
 
     private val _annotationDisplayStateFlow = MutableStateFlow(AnnotationsDisplayState.EMPTY)
+
+    private val _canUndo = MutableStateFlow(false)
+    internal val canUndo: StateFlow<Boolean>
+        get() = _canUndo.asStateFlow()
+
+    private val _canRedo = MutableStateFlow(false)
+    internal val canRedo: StateFlow<Boolean>
+        get() = _canRedo.asStateFlow()
 
     internal val annotationsDisplayStateFlow: StateFlow<AnnotationsDisplayState> =
         _annotationDisplayStateFlow.asStateFlow()
@@ -72,6 +88,16 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
 
     // TODO: b/441634479 Refactor to extract the document from `DocumentLoaded` UI state.
     private var editablePdfDocument: EditablePdfDocument? = null
+
+    private val _drawingMode =
+        MutableStateFlow<AnnotationDrawingMode>(
+            AnnotationDrawingMode.PenMode(InkDefaults.PEN_BRUSH)
+        )
+    internal val drawingMode: StateFlow<AnnotationDrawingMode>
+        get() = _drawingMode.asStateFlow()
+
+    private val _areAnnotationsEnabled = MutableStateFlow(true)
+    internal val areAnnotationsEnabled: StateFlow<Boolean> = _areAnnotationsEnabled.asStateFlow()
 
     @VisibleForTesting
     public override fun resetState() {
@@ -145,10 +171,7 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
      * @param endPage The ending page number (inclusive).
      */
     internal fun fetchAnnotationsForPageRange(startPage: Int, endPage: Int) {
-        val document = editablePdfDocument
-        if (document == null) {
-            return
-        }
+        val document = editablePdfDocument ?: return
 
         viewModelScope.launch {
             val annotationsByPage = mutableMapOf<Int, List<PdfAnnotationData>>()
@@ -231,6 +254,14 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
             editsHistoryManager = localEditsHistoryManager
             editOperationsHandler = localEditOperationsHandler
 
+            viewModelScope.launch {
+                localEditsHistoryManager.canUndo.collect { canUndo -> _canUndo.value = canUndo }
+            }
+
+            viewModelScope.launch {
+                localEditsHistoryManager.canRedo.collect { canRedo -> _canRedo.value = canRedo }
+            }
+
             _annotationDisplayStateFlow.value =
                 AnnotationsDisplayState(
                     edits = document.getAllEdits(),
@@ -239,6 +270,42 @@ public class EditableDocumentViewModel(private val state: SavedStateHandle, load
         } else {
             editablePdfDocument = null
         }
+    }
+
+    internal fun setCurrentToolInfo(toolInfo: AnnotationToolInfo) {
+        when (toolInfo) {
+            is Pen -> {
+                val brush =
+                    Brush.createWithColorIntArgb(
+                        family = StockBrushes.pressurePen(),
+                        colorIntArgb = toolInfo.color,
+                        size = toolInfo.brushSize,
+                        epsilon = InkDefaults.EPSILON_VALUE,
+                    )
+                _drawingMode.value = AnnotationDrawingMode.PenMode(brush)
+            }
+
+            is Highlighter -> {
+                if (toolInfo.color != null) {
+                    val brush =
+                        Brush.createWithColorIntArgb(
+                            family = StockBrushes.highlighter(),
+                            colorIntArgb = toolInfo.color,
+                            size = toolInfo.brushSize,
+                            epsilon = InkDefaults.EPSILON_VALUE,
+                        )
+                    _drawingMode.value = AnnotationDrawingMode.HighlighterMode(brush)
+                } else {
+                    // TODO: Add support for emoji highlighter
+                }
+            }
+
+            is Eraser -> _drawingMode.value = AnnotationDrawingMode.EraserMode
+        }
+    }
+
+    internal fun setAnnotationVisibility(isVisible: Boolean) {
+        _areAnnotationsEnabled.value = isVisible
     }
 
     @Suppress("UNCHECKED_CAST")

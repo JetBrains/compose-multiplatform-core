@@ -41,6 +41,10 @@ import java.math.RoundingMode
 import java.text.DecimalFormat
 
 private const val MAX_SAFE_FLOAT_ARRAY = 30
+private const val OP_ADD = AnimatedFloatExpression.OFFSET + 1
+private const val OP_SUB = AnimatedFloatExpression.OFFSET + 2
+private const val OP_MUL = AnimatedFloatExpression.OFFSET + 3
+private const val OP_DIV = AnimatedFloatExpression.OFFSET + 4
 
 /** An inline value class representing a reference to a remote float. */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
@@ -287,7 +291,11 @@ public abstract class RemoteFloat : BaseRemoteState<Float>() {
 
     /** Returns a new [RemoteFloat] that evaluates to minimum of this [RemoteFloat] and [v]. */
     public fun min(v: Float): RemoteFloat =
-        binaryOp(this, v, AnimatedFloatExpression.MIN) { a, b -> kotlin.math.min(a, b) }
+        binaryOp(this, v, AnimatedFloatExpression.MIN, { a, b -> kotlin.math.min(a, b) }) {
+            array,
+            opId ->
+            null
+        }
 
     /** Returns a new [RemoteFloat] that evaluates to minimum of this [RemoteFloat] and [v]. */
     public fun min(v: RemoteFloat): RemoteFloat =
@@ -298,7 +306,21 @@ public abstract class RemoteFloat : BaseRemoteState<Float>() {
         if (v == 0f) {
             return this
         }
-        return binaryOp(this, v, AnimatedFloatExpression.ADD) { a, b -> a + b }
+        return binaryOp(this, v, AnimatedFloatExpression.ADD, { a, b -> a + b }) { array, opId ->
+            when (opId) {
+                OP_ADD -> {
+                    val arrayCopy = array.clone()
+                    arrayCopy[arrayCopy.size - 2] += v
+                    arrayCopy
+                }
+                OP_SUB -> {
+                    val arrayCopy = array.clone()
+                    arrayCopy[arrayCopy.size - 2] -= v
+                    arrayCopy
+                }
+                else -> null
+            }
+        }
     }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] plus [v]. */
@@ -317,7 +339,21 @@ public abstract class RemoteFloat : BaseRemoteState<Float>() {
         if (v == 0f) {
             return this
         }
-        return binaryOp(this, v, SUB) { a, b -> a - b }
+        return binaryOp(this, v, SUB, { a, b -> a - b }) { array, opId ->
+            when (opId) {
+                OP_ADD -> {
+                    val arrayCopy = array.clone()
+                    arrayCopy[arrayCopy.size - 2] -= v
+                    arrayCopy
+                }
+                OP_SUB -> {
+                    val arrayCopy = array.clone()
+                    arrayCopy[arrayCopy.size - 2] += v
+                    arrayCopy
+                }
+                else -> null
+            }
+        }
     }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] minus [v]. */
@@ -336,7 +372,21 @@ public abstract class RemoteFloat : BaseRemoteState<Float>() {
         if (constantValue != null && constantValue == 1f) {
             return RemoteFloat(v)
         }
-        return binaryOp(this, v, AnimatedFloatExpression.MUL) { a, b -> a * b }
+        return binaryOp(this, v, AnimatedFloatExpression.MUL, { a, b -> a * b }) { array, opId ->
+            when (opId) {
+                OP_MUL -> {
+                    val arrayCopy = array.clone()
+                    arrayCopy[arrayCopy.size - 2] *= v
+                    arrayCopy
+                }
+                OP_DIV -> {
+                    val arrayCopy = array.clone()
+                    arrayCopy[arrayCopy.size - 2] /= v
+                    arrayCopy
+                }
+                else -> null
+            }
+        }
     }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] times [v]. */
@@ -355,7 +405,21 @@ public abstract class RemoteFloat : BaseRemoteState<Float>() {
         if (v == 1f) {
             return this
         }
-        return binaryOp(this, v, AnimatedFloatExpression.DIV) { a, b -> a / b }
+        return binaryOp(this, v, AnimatedFloatExpression.DIV, { a, b -> a / b }) { array, opId ->
+            when (opId) {
+                OP_MUL -> {
+                    val arrayCopy = array.clone()
+                    arrayCopy[arrayCopy.size - 2] /= v
+                    arrayCopy
+                }
+                OP_DIV -> {
+                    val arrayCopy = array.clone()
+                    arrayCopy[arrayCopy.size - 2] *= v
+                    arrayCopy
+                }
+                else -> null
+            }
+        }
     }
 
     /** Returns a new [RemoteFloat] that evaluates to this [RemoteFloat] div [v]. */
@@ -513,6 +577,47 @@ internal fun binaryOp(
 
     return RemoteFloatExpression(constantValue = null) { creationState ->
         combineToFloatArray(creationState, arrayOf(RemoteFloat(a), b), opCode)
+    }
+}
+
+/**
+ * Boilerplate for implementing a binary arithmetic operation, with [peepHoleEval] allowing the
+ * possibility of folding this operation into the previous one (e.g. folding several additions into
+ * one).
+ *
+ * @param a The left hand side value of the binary operation
+ * @param b The right hand side value of the binary operation
+ * @param opCode The opcode to insert in the generated [FloatArray] if both sources aren\'t a const
+ *   float.
+ * @param directEval When the source is a const float, this lambda will be called to evaluate the
+ *   result directly.
+ * @param peepHoleEval This allows the caller the option to apply a peephole optimization to a
+ *   previous operation. E.g. (x * 3) * 4 could be written as x * 12. If no optimization is possible
+ *   peepHoleEval should return null.
+ */
+internal fun binaryOp(
+    a: RemoteFloat,
+    b: Float,
+    opCode: Float,
+    directEval: (Float, Float) -> Float,
+    peepHoleEval: (FloatArray, Int) -> FloatArray?,
+): RemoteFloat {
+    val aConst = a.constantValue
+    if (aConst != null && !b.isNaN()) {
+        return RemoteFloat(directEval(aConst, b))
+    }
+
+    return RemoteFloatExpression(constantValue = null) { creationState ->
+        val aArray = a.arrayForCreationState(creationState)
+        val last = aArray.last()
+        if (aArray.size > 2 && last.isNaN() && !aArray[aArray.size - 2].isNaN()) {
+            // If the last two elements of the array are a regular number and an operation, run
+            // peepHoleEval with combineToFloatArray if that returned null.
+            peepHoleEval(aArray, Utils.idFromNan(last))
+                ?: combineToFloatArray(creationState, arrayOf(a), b, opCode)
+        } else {
+            combineToFloatArray(creationState, arrayOf(a), b, opCode)
+        }
     }
 }
 

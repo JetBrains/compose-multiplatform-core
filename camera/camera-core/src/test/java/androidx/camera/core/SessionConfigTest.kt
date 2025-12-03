@@ -357,17 +357,15 @@ class SessionConfigTest {
     }
 
     @Test
-    fun sessionConfig_imageAnalysisAddedWithFeatureParam_illegalArgumentExceptionThrown() {
+    fun sessionConfig_imageAnalysisAddedWithFeatureParam_noExceptionThrown() {
         // Arrange
         val features = listOf(FPS_60)
 
         // Act & assert
-        assertThrows<IllegalArgumentException> {
-            SessionConfig(
-                useCases = listOf(ImageAnalysis.Builder().build()),
-                preferredFeatureGroup = features,
-            )
-        }
+        SessionConfig(
+            useCases = listOf(ImageAnalysis.Builder().build()),
+            preferredFeatureGroup = features,
+        )
     }
 
     @Test

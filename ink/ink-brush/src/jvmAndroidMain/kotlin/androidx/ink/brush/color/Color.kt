@@ -19,7 +19,6 @@ package androidx.ink.brush.color
 import androidx.annotation.ColorInt
 import androidx.annotation.IntRange
 import androidx.annotation.RestrictTo
-import androidx.ink.brush.color.colorspace.ColorModel
 import androidx.ink.brush.color.colorspace.ColorSpace
 import androidx.ink.brush.color.colorspace.ColorSpaces
 import androidx.ink.brush.color.colorspace.connect
@@ -105,7 +104,7 @@ import kotlin.math.min
  * documentation of the various [color spaces][ColorSpaces] for the exact ranges.
  */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public value class Color(public val value: ULong) {
     /**
      * Returns this color's color space.
@@ -293,7 +292,7 @@ public value class Color(public val value: ULong) {
  * @throws IllegalArgumentException If [colorSpace] has an [ColorSpace.id] set to
  *   [ColorSpace.MinId].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public fun Color(
     red: Float,
     green: Float,
@@ -315,7 +314,7 @@ public fun Color(
     }
 
     val id = colorSpace.id
-    requirePrecondition(id != ColorSpace.MinId) {
+    requirePrecondition(id != ColorSpace.MIN_ID) {
         "Unknown color space, please use a color space in ColorSpaces"
     }
 
@@ -381,7 +380,7 @@ internal fun UncheckedColor(
  * @param color The ARGB color int to create a <code>Color</code> from.
  * @return A non-null instance of {@link Color}
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public fun Color(@ColorInt color: Int): Color {
     return Color(color.toULong() shl 32)
 }
@@ -396,7 +395,7 @@ public fun Color(@ColorInt color: Int): Color {
  * @param alpha The alpha component of the color, between 0 and 255.
  * @return A non-null instance of {@link Color}
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public fun Color(
     @IntRange(from = 0, to = 0xFF) red: Int,
     @IntRange(from = 0, to = 0xFF) green: Int,
@@ -417,19 +416,19 @@ public fun Color(
  *
  * @return An ARGB color in the sRGB color space
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 @ColorInt
 public fun Color.toArgb(): Int {
     return (convert(ColorSpaces.Srgb).value shr 32).toInt()
 }
 
 /** `false` when this is [Color.Unspecified]. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public inline val Color.isSpecified: Boolean
     get() = value != Color.Unspecified.value
 
 /** `true` when this is [Color.Unspecified]. */
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public inline val Color.isUnspecified: Boolean
     get() = value == Color.Unspecified.value
 
@@ -437,5 +436,5 @@ public inline val Color.isUnspecified: Boolean
  * If this color [isSpecified] then this is returned, otherwise [block] is executed and its result
  * is returned.
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public inline fun Color.takeOrElse(block: () -> Color): Color = if (isSpecified) this else block()

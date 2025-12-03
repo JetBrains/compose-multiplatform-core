@@ -26,8 +26,6 @@ import androidx.collection.ArraySet;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -97,16 +95,6 @@ public class NamespaceCache {
     /**  Gets all prefixes that contains documents in AppSearch.  */
     public @NonNull Set<String> getAllDocumentPrefixes() {
         return mDocumentNamespaceMap.keySet();
-    }
-
-
-    /**  Gets all prefixed blob namespaces in AppSearch.  */
-    public @NonNull List<String> getAllPrefixedBlobNamespaces() {
-        List<String> prefixedBlobNamespaces = new ArrayList<>();
-        for (Set<String> value : mBlobNamespaceMap.values()) {
-            prefixedBlobNamespaces.addAll(value);
-        }
-        return prefixedBlobNamespaces;
     }
 
     /**

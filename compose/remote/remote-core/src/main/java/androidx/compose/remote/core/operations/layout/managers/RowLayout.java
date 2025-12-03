@@ -128,8 +128,8 @@ public class RowLayout extends LayoutManager {
     @Override
     public void computeWrapSize(
             @NonNull PaintContext context,
-            float maxWidth,
-            float maxHeight,
+            float minWidth, float maxWidth,
+            float minHeight, float maxHeight,
             boolean horizontalWrap,
             boolean verticalWrap,
             @NonNull MeasurePass measure,
@@ -137,6 +137,7 @@ public class RowLayout extends LayoutManager {
         DebugLog.s(() -> "COMPUTE WRAP SIZE in " + this + " (" + mComponentId + ")");
         int visibleChildrens = 0;
         float currentMaxWidth = maxWidth;
+
         for (Component c : mChildrenComponents) {
             c.measure(context, 0f, currentMaxWidth, 0f, maxHeight, measure);
             ComponentMeasure m = measure.get(c);
@@ -147,6 +148,7 @@ public class RowLayout extends LayoutManager {
                 currentMaxWidth -= m.getW();
             }
         }
+
         if (!mChildrenComponents.isEmpty()) {
             size.setWidth(size.getWidth() + (mSpacedBy * (visibleChildrens - 1)));
         }

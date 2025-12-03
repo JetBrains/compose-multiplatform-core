@@ -5410,20 +5410,6 @@ public final class AppSearchImpl implements Closeable {
     }
 
     /**
-     * Returns all prefixed blob namespaces saved in AppSearch.
-     *
-     * <p>This method is inefficient to call repeatedly.
-     */
-    public @NonNull List<String> getAllPrefixedBlobNamespaces() {
-        mReadWriteLock.readLock().lock();
-        try {
-            return mNamespaceCacheLocked.getAllPrefixedBlobNamespaces();
-        } finally {
-            mReadWriteLock.readLock().unlock();
-        }
-    }
-
-    /**
      * Converts an erroneous status code from the Icing status enums to the AppSearchResult enums.
      *
      * <p>Callers should ensure that the status code is not OK or WARNING_DATA_LOSS.

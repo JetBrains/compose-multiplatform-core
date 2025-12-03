@@ -34,17 +34,6 @@ import androidx.annotation.RestrictTo
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 internal object ProjectedServiceBinding {
 
-    /** Supported Projected intent actions. */
-    internal class ProjectedIntentAction
-    private constructor(internal val intentActionString: String) {
-
-        internal companion object {
-            /** Action used to bind to the Projected service. */
-            internal val ACTION_BIND: ProjectedIntentAction =
-                ProjectedIntentAction("androidx.xr.projected.ACTION_BIND")
-        }
-    }
-
     /**
      * Binds to a service using provided [ServiceConnection].
      *
@@ -63,7 +52,7 @@ internal object ProjectedServiceBinding {
      */
     internal fun bind(
         context: Context,
-        intentAction: ProjectedIntentAction,
+        intentAction: String,
         serviceConnection: ServiceConnection,
     ): Boolean =
         context.bindService(
@@ -72,9 +61,8 @@ internal object ProjectedServiceBinding {
             Context.BIND_AUTO_CREATE,
         )
 
-    private fun getIntent(context: Context, intentAction: ProjectedIntentAction): Intent {
-        val intentActionString = intentAction.intentActionString
-        val intent = Intent(intentActionString)
+    private fun getIntent(context: Context, intentAction: String): Intent {
+        val intent = Intent(intentAction)
         val projectedSystemServiceResolveInfo = findProjectedSystemService(context, intent)
         val foundService =
             ComponentName(
@@ -84,7 +72,7 @@ internal object ProjectedServiceBinding {
 
         return Intent().apply {
             component = foundService
-            action = intentActionString
+            action = intentAction
         }
     }
 

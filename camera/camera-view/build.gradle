@@ -75,7 +75,7 @@ dependencies {
     }
     androidTestImplementation(project(":camera:camera-camera2-pipe-integration"))
     androidTestImplementation(project(":internal-testutils-truth"))
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.guavaAndroid)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.testMonitor)

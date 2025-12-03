@@ -2,6 +2,7 @@
 chuckj@google.com
 anbailey@google.com
 ashikov@google.com
+derekx@google.com
 
 # Per-file for Playground infra
 per-file settings.gradle = dustinlam@google.com, rahulrav@google.com

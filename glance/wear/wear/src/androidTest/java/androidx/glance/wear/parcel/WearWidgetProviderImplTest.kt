@@ -98,8 +98,12 @@ class WearWidgetProviderImplTest {
             """
             DATA_TEXT<42> = "Testing ..."
             ROOT [-2:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
-              TEXT_LAYOUT [-3:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+              BOX [-3:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE
                 MODIFIERS
+                  PADDING = [0.0, 0.0, 0.0, 0.0]
+                  ROUNDED_CLIP_RECT = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                TEXT_LAYOUT [-5:-1] = [0.0, 0.0, 0.0, 0.0] VISIBLE (42:"null")
+                  MODIFIERS
             """
                 .trimIndent()
         val provider = WearWidgetProviderImpl(context, testName, mainScope, testWidget)

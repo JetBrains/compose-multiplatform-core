@@ -114,7 +114,6 @@ class ProfileTest {
             null,
             0,
             0,
-            0,
             Integer.MAX_VALUE,
         )
 
@@ -128,7 +127,6 @@ class ProfileTest {
             0,
             400f,
             null,
-            0,
             0,
             0,
             Integer.MAX_VALUE,

@@ -16,6 +16,7 @@
 
 package androidx.camera.core.featuregroup.impl.resolver
 
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Logger
 import androidx.camera.core.Preview
@@ -25,6 +26,7 @@ import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.core.featuregroup.impl.ResolvedFeatureGroup
 import androidx.camera.core.featuregroup.impl.UseCaseType
 import androidx.camera.core.featuregroup.impl.UseCaseType.Companion.getFeatureGroupUseCaseType
+import androidx.camera.core.featuregroup.impl.UseCaseType.IMAGE_ANALYSIS
 import androidx.camera.core.featuregroup.impl.UseCaseType.IMAGE_CAPTURE
 import androidx.camera.core.featuregroup.impl.UseCaseType.PREVIEW
 import androidx.camera.core.featuregroup.impl.UseCaseType.VIDEO_CAPTURE
@@ -33,11 +35,13 @@ import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.FPS_RA
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.IMAGE_FORMAT
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.RECORDING_QUALITY
 import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.VIDEO_STABILIZATION
+import androidx.camera.core.featuregroup.impl.feature.VideoStabilizationFeature
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.Supported
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.Unsupported
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.UnsupportedUseCase
 import androidx.camera.core.featuregroup.impl.resolver.FeatureGroupResolutionResult.UseCaseMissing
 import androidx.camera.core.impl.CameraInfoInternal
+import androidx.camera.core.impl.stabilization.VideoStabilization
 import androidx.camera.core.impl.utils.UseCaseUtil.isVideoCapture
 
 /**
@@ -106,16 +110,30 @@ internal class DefaultFeatureGroupResolver(private val cameraInfoInternal: Camer
 
     private fun GroupableFeature.getMissingUseCase(useCases: List<UseCase>): UseCaseMissing? {
         val supportsImageFeature = useCases.any { it is ImageCapture }
-        val supportsStreamFeature = useCases.any { it is Preview || it.isVideoCapture() }
+        val supportsDynamicRangeFeature = useCases.any { it is Preview || it.isVideoCapture() }
+        val supportsStreamFeature =
+            useCases.any { it is Preview || it is ImageAnalysis || it.isVideoCapture() }
         val supportsVideoFeature = useCases.any { it.isVideoCapture() }
 
         val missingUseCaseString =
             when (featureTypeInternal) {
                 IMAGE_FORMAT -> IMAGE_CAPTURE.toString().takeIf { !supportsImageFeature }
-                DYNAMIC_RANGE,
-                FPS_RANGE,
-                VIDEO_STABILIZATION ->
-                    "$PREVIEW or $VIDEO_CAPTURE".takeIf { !supportsStreamFeature }
+                DYNAMIC_RANGE ->
+                    "$PREVIEW or $VIDEO_CAPTURE".takeIf { !supportsDynamicRangeFeature }
+                FPS_RANGE ->
+                    "$PREVIEW or $VIDEO_CAPTURE or $IMAGE_ANALYSIS"
+                        .takeIf { !supportsStreamFeature }
+                VIDEO_STABILIZATION -> {
+                    when ((this as VideoStabilizationFeature).videoStabilization) {
+                        VideoStabilization.PREVIEW ->
+                            // All non-RAW streams are stabilized as per Camera2 doc
+                            "$PREVIEW or $VIDEO_CAPTURE or $IMAGE_ANALYSIS"
+                                .takeIf { !supportsStreamFeature }
+                        VideoStabilization.ON ->
+                            VIDEO_CAPTURE.toString().takeIf { !supportsVideoFeature }
+                        else -> null
+                    }
+                }
                 RECORDING_QUALITY -> VIDEO_CAPTURE.toString().takeIf { !supportsVideoFeature }
             }
 

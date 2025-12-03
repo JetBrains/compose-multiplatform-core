@@ -21,6 +21,7 @@ import static androidx.compose.remote.creation.Rc.FloatExpression.MUL;
 import android.graphics.Color;
 
 import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.operations.NamedVariable;
 import androidx.compose.remote.core.operations.RootContentBehavior;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
@@ -199,5 +200,51 @@ public class WidgetsProfileWriterV6 extends RemoteComposeWriterAndroid {
         return super.addNamedColor(name, color);
     }
     // todo DAY of Month. etc.
+
+    /**
+     * Add a light and dark themed color
+     *
+     * @param lightName  the name of the light color
+     * @param lightValue the value of the light color
+     * @param darkName   the name of the dark color
+     * @param darkValue  the value of the dark color
+     * @return the id of the color
+     */
+    public short addThemedColor(@Nullable String lightName, int lightValue,
+            @Nullable String darkName, int darkValue) {
+        int lightId = mState.createNextAvailableId();
+        int darkId = mState.createNextAvailableId();
+        int light_mode;
+        if (Rc.System.sLightMode == 0f) {
+            light_mode = mState.createNextAvailableId();
+            Rc.System.sLightMode = Utils.asNan(light_mode);
+        } else {
+            light_mode = Utils.idFromNan(Rc.System.sLightMode);
+        }
+
+        if (lightName != null) {
+            mBuffer.setNamedVariable(lightId, lightName, NamedVariable.COLOR_TYPE);
+        }
+        if (darkName != null) {
+            mBuffer.setNamedVariable(darkId, darkName, NamedVariable.COLOR_TYPE);
+        }
+
+        int retId = mState.createNextAvailableId();
+        mBuffer.addColor(lightId, lightValue);
+        mBuffer.addColor(darkId, darkValue);
+        mBuffer.addFloat(light_mode, 0);
+
+        setTheme(Rc.Theme.DARK);
+        startLoop(0, 0f, 1f, 1f);
+        mBuffer.addColorExpression(retId, (short) darkId, (short) lightId, 0);
+        endLoop();
+        setTheme(Rc.Theme.LIGHT);
+        startLoop(0, 0f, 1f, 1f);
+        mBuffer.addColorExpression(retId, (short) darkId, (short) lightId, 1);
+        endLoop();
+        setTheme(Rc.Theme.UNSPECIFIED);
+
+        return (short) retId;
+    }
 
 }

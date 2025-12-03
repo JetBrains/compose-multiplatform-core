@@ -41,6 +41,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.test.runTest
@@ -219,6 +220,7 @@ class PdfViewFormFillingTest {
             )
     }
 
+    @SdkSuppress(maxSdkVersion = 35)
     @Test
     fun testInteractionWithTextTypeFormWidget_actionDoneAppliesEdit() = runTest {
         val fakePdfDocument =

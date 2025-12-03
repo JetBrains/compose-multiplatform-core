@@ -497,9 +497,7 @@ private constructor(
         PartitionedMeshNative.isSpatialIndexInitialized(nativePointer)
 
     override fun toString(): String {
-        val address = java.lang.Long.toHexString(nativePointer)
-        return "PartitionedMesh(bounds=${computeBoundingBox()}, meshesByGroup=$meshesByGroup, " +
-            "nativePointer=$address)"
+        return "PartitionedMesh(bounds=${computeBoundingBox()}, meshesByGroup=$meshesByGroup)"
     }
 
     // NOMUTANTS -- Not tested post garbage collection.

@@ -43,19 +43,19 @@ class ShellTest {
 
     @Test
     fun startStopApplication(): Unit =
-        with(Shell.application(PKG_SETTINGS)) {
-            startApp()
+        with(Shell.application()) {
+            startApp(PKG_SETTINGS)
             assertThat(Shell.screen().resumedActivityName()).startsWith(PKG_SETTINGS)
-            stopApp()
+            stopApp(PKG_SETTINGS)
             assertThat(Shell.screen().resumedActivityName()).doesNotContain(PKG_SETTINGS)
         }
 
     @Test
     fun clearApplicationData(): Unit =
-        with(Shell.application(PKG_SETTINGS)) {
-            startApp()
+        with(Shell.application()) {
+            startApp(PKG_SETTINGS)
             assertThat(Shell.screen().resumedActivityName()).startsWith(PKG_SETTINGS)
-            clearAppData()
+            clearAppData(PKG_SETTINGS)
             assertThat(Shell.screen().resumedActivityName()).doesNotContain(PKG_SETTINGS)
         }
 

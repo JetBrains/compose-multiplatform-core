@@ -30,7 +30,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -329,7 +328,7 @@ class AnnotationToolbarViewModelTest {
         val collectedEffects = mutableListOf<ToolbarEffect>()
         val collectionJob = collectInto(viewmodel.effects, collectedEffects)
 
-        viewmodel.restoreState(restoredState)
+        viewmodel.updateState(restoredState)
 
         assertThat(viewmodel.state.value).isEqualTo(restoredState)
         assertThat(collectedEffects).hasSize(2)

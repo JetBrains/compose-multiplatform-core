@@ -68,6 +68,7 @@ public class RFloat : Number {
     public var array: FloatArray = floatArrayOf()
     public var id: Float = 0f // if 0 it has not been sent
     public var writer: RemoteComposeWriter? = null
+    public var animation: FloatArray? = null
 
     public constructor(writer: RemoteComposeWriter?, array: FloatArray) {
         this.array = array
@@ -96,13 +97,18 @@ public class RFloat : Number {
 
     override fun toFloat(): Float {
         if (!id.isNaN()) {
-            id = writer?.floatExpression(*array)!!
+            if (animation != null) {
+                id = writer?.floatExpression(array, animation)!!
+            } else {
+                id = writer?.floatExpression(*array)!!
+            }
         }
         return id
     }
 
-    public fun flush() {
+    public fun flush(): RFloat {
         toFloat()
+        return this
     }
 
     override fun toInt(): Int {
@@ -203,6 +209,30 @@ public class RFloat : Number {
         public operator fun invoke(float: Float, writer: RemoteComposeWriter? = null): RFloat {
             return RFloat(writer, floatArrayOf(float))
         }
+    }
+
+    public fun anim(
+        duration: Float,
+        type: Int = Rc.Animate.CUBIC_STANDARD,
+        spec: FloatArray? = null,
+        initialValue: Float = Float.NaN,
+        wrap: Float = Float.NaN,
+    ): RFloat {
+        animation = writer?.anim(duration, type, spec, initialValue, wrap)
+        this.flush()
+        return this
+    }
+
+    public fun genTextId(
+        before: Int = 2,
+        after: Int = 1,
+        flags: Int = Rc.TextFromFloat.PAD_AFTER_ZERO,
+    ): Int {
+        val w = writer
+        if (w == null) {
+            throw IllegalStateException("writer is null")
+        }
+        return w.createTextFromFloat(this.toFloat(), after, after, flags)
     }
 }
 

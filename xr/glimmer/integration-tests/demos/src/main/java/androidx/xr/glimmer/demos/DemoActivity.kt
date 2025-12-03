@@ -16,32 +16,56 @@
 
 package androidx.xr.glimmer.demos
 
-import android.app.Activity
-import android.graphics.Color
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.platform.ComposeView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.xr.projected.ProjectedContext
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
+import kotlinx.coroutines.launch
 
-/** Main [Activity] containing all Glimmer related demos. */
-class DemoActivity : ComponentActivity() {
+/**
+ * The main activity containing all Glimmer related demos.
+ *
+ * If there is a connected device, when this activity is created the first time, it will attempt to
+ * automatically launch [ProjectedDemoActivity] on the connected device.
+ */
+class DemoActivity : BaseDemoActivity() {
+
+    private var hasLaunchedProjectedActivity = false
+
+    @OptIn(ExperimentalProjectedApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
-
-        // TODO(b/438995221): Remove this line when this flag is turned on by default for all apps.
-        @OptIn(ExperimentalComposeUiApi::class)
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = true
-
-        enableEdgeToEdge(
-            SystemBarStyle.dark(Color.TRANSPARENT),
-            SystemBarStyle.dark(Color.TRANSPARENT),
-        )
         super.onCreate(savedInstanceState)
 
-        ComposeView(this)
-            .also { setContentView(it) }
-            .setContent { DemoApp(demoAppState = rememberDemoAppState(Demos)) }
+        val isFirstOnCreate = savedInstanceState == null
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            lifecycleScope.launch {
+                lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    ProjectedContext.isProjectedDeviceConnected(this@DemoActivity, coroutineContext)
+                        .collect { isConnected ->
+                            // Launch the projected activity if there is a connected device.
+                            if (isConnected && isFirstOnCreate && !hasLaunchedProjectedActivity) {
+                                launchProjectedActivity()
+                                hasLaunchedProjectedActivity = true
+                            }
+                        }
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalProjectedApi::class)
+    private fun launchProjectedActivity() {
+        val options = ProjectedContext.createProjectedActivityOptions(this)
+        val intent =
+            Intent(this, ProjectedDemoActivity::class.java).apply {
+                // Prevent stacking multiple instances
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            }
+        startActivity(intent, options.toBundle())
     }
 }

@@ -664,8 +664,8 @@ class ColorSpaceTest {
     fun testIDs() {
         // These cannot change
         assertEquals(0, ColorSpaces.Srgb.id.toLong())
-        assertEquals(-1, ColorSpace.MinId.toLong())
-        assertEquals(63, ColorSpace.MaxId.toLong())
+        assertEquals(-1, ColorSpace.MIN_ID.toLong())
+        assertEquals(63, ColorSpace.MAX_ID.toLong())
     }
 
     @Test

@@ -60,11 +60,9 @@ public object Shell {
     /**
      * Commands for application.
      *
-     * @param packageName the application package name
      * @return an instance of [ApplicationCommands].
      */
-    public fun application(packageName: String): ApplicationCommands =
-        ApplicationCommands(shell = this, packageName = packageName)
+    public fun application(): ApplicationCommands = ApplicationCommands(shell = this)
 
     /**
      * Commands for screen recorder.

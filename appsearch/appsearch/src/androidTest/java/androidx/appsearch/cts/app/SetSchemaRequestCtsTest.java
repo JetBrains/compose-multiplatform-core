@@ -1458,6 +1458,44 @@ public class SetSchemaRequestCtsTest {
                         + "builtin:Account");
     }
 
+    @Test
+    @RequiresFlagsEnabled({Flags.FLAG_ENABLE_ADDITIONAL_BUILDER_COPY_CONSTRUCTORS,
+            Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS})
+    public void testSetSchemaRequestBuilder_copyConstructor_wipeoutProperty() {
+        AppSearchSchema accountSchema =
+                new AppSearchSchema.Builder("builtin:Account").build();
+        AppSearchSchema schema = new AppSearchSchema.Builder("type1")
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder(
+                        "account1", "builtin:Account")
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(false)
+                        .build())
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder(
+                        "account2", "builtin:Account")
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(false)
+                        .build())
+                .build();
+
+        SetSchemaRequest original = new SetSchemaRequest.Builder()
+                .addSchemas(accountSchema, schema)
+                .setSchemaTypeWipeoutAccountPropertyPaths("type1",
+                        ImmutableSet.of(new PropertyPath("account1")), /*autoWipeout=*/true)
+                .setForceOverride(true)
+                .setVersion(1)
+                .build();
+
+        SetSchemaRequest copy = new SetSchemaRequest.Builder(original)
+                .setSchemaTypeWipeoutAccountPropertyPaths("type1",
+                        ImmutableSet.of(new PropertyPath("account2")), /*autoWipeout=*/true)
+                .build();
+
+        assertThat(original.getSchemasWipeoutAccountPropertyPaths())
+                .containsExactly("type1", ImmutableSet.of("account1"));
+        assertThat(copy.getSchemasWipeoutAccountPropertyPaths())
+                .containsExactly("type1", ImmutableSet.of("account1", "account2"));
+    }
+
     // @exportToFramework:startStrip()
     @Document
     static class EmailWithAccount {

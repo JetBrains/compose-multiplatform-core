@@ -72,7 +72,7 @@ dependencies {
     androidTestImplementation(project(":camera:camera-video"))
     androidTestImplementation(project(":internal-testutils-truth"))
     androidTestImplementation(project(":camera:camera-testlib-extensions"))
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.espressoIdlingResource)
     androidTestImplementation(libs.guavaAndroid)
     androidTestImplementation(libs.junit)

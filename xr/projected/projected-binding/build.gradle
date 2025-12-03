@@ -26,17 +26,30 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    id("androidx.stableaidl")
 }
 
 dependencies {
+    api(libs.kotlinCoroutinesCore)
     api("androidx.annotation:annotation:1.8.1")
 
     testImplementation(libs.truth)
+    testImplementation(libs.testExtJunit)
+    testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.mockitoKotlin4)
 }
 
 android {
     namespace = "androidx.xr.projected.binding"
+
+    buildFeatures {
+        aidl = true
+    }
+    buildTypes.configureEach {
+        stableAidl {
+            version = 1
+        }
+    }
 }
 
 androidx {

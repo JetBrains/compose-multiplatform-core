@@ -168,7 +168,10 @@ public class MockRemoteContext extends RemoteContext {
 
             @Override
             public RcPlatformServices.ComputedTextLayout layoutComplexText(int textId, int start,
-                    int end, int alignment, int overflow, int maxLines, float maxWidth, int flags) {
+                    int end, int alignment, int overflow, int maxLines, float maxWidth,
+                    float letterSpacing, float lineHeightAdd, float lineHeightMultiplier,
+                    int lineBreakStrategy, int hyphenationFrequency, int justificationMode,
+                    boolean useUnderline, boolean strikethrough, int flags) {
                 stringBuilder.append("layoutComplexText(").append(textId).append(", ").append(
                         start).append(", ").append(end).append(")\n");
                 return null;

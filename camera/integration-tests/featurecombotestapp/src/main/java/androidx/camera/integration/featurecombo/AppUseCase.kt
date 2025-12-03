@@ -52,6 +52,10 @@ enum class AppUseCase(val uiName: String, val prioritizedFeatures: List<Groupabl
             GroupableFeature.PREVIEW_STABILIZATION,
             GroupableFeatures.VIDEO_STABILIZATION,
         ),
+    ),
+    IMAGE_ANALYSIS(
+        "ImageAnalysis",
+        listOf(GroupableFeature.PREVIEW_STABILIZATION, GroupableFeature.FPS_60),
     );
 
     companion object {
@@ -66,7 +70,16 @@ enum class AppUseCase(val uiName: String, val prioritizedFeatures: List<Groupabl
          */
         fun Collection<AppUseCase>.getSupportedGroupableFeatures(): List<GroupableFeature> {
             // The priority of the use cases, from highest to lowest.
-            val useCasesPrioritized = listOf(VIDEO_CAPTURE, IMAGE_CAPTURE, PREVIEW)
+            val useCasesPrioritized =
+                AppUseCase.entries.toList().sortedBy {
+                    when (it) {
+                        VIDEO_CAPTURE -> 1
+                        IMAGE_CAPTURE -> 2
+                        IMAGE_ANALYSIS -> 3
+                        PREVIEW -> 4
+                    }
+                }
+
             val useCaseWeightMagnitude = AppUseCase.entries.maxOf { it.prioritizedFeatures.size }
 
             // Assign a weight to each use case, based on its priority. The weight is used to

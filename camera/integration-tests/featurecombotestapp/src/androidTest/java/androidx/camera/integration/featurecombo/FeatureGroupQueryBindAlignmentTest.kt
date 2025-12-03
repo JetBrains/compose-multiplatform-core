@@ -27,7 +27,6 @@ import androidx.camera.core.SessionConfig
 import androidx.camera.core.featuregroup.GroupableFeature
 import androidx.camera.integration.featurecombo.FeatureGroupQueryBindAlignmentTest.VerificationScenario.PREFERRED_FEATURES
 import androidx.camera.integration.featurecombo.FeatureGroupQueryBindAlignmentTest.VerificationScenario.REQUIRED_FEATURES
-import androidx.camera.integration.featurecombo.FeatureGroupTestBase.Companion.SupportedUseCase
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.LabTestRule.Companion.isInLabTest
 import androidx.test.filters.LargeTest
@@ -47,7 +46,7 @@ class FeatureGroupQueryBindAlignmentTest(
     private val implName: String,
     private val cameraXConfig: CameraXConfig,
     private val featureGroup: Set<GroupableFeature>,
-    private val useCasesToTest: List<SupportedUseCase>,
+    private val useCasesToTest: List<AppUseCase>,
 ) : FeatureGroupTestBase(cameraSelector, implName, cameraXConfig) {
     @Test
     fun testFeatureBindingAsRequiredOrPreferred_alignsWithIsSupportedQuery(): Unit = runBlocking {
@@ -227,7 +226,7 @@ class FeatureGroupQueryBindAlignmentTest(
 
                     // Generate combinations of each use case matched with each feature
                     for (feature in allFeatures) {
-                        SupportedUseCase.entries.forEach { useCase ->
+                        AppUseCase.entries.forEach { useCase ->
                             val featureGroup = setOf(feature)
                             val useCases = listOf(useCase)
 

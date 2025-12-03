@@ -24,6 +24,7 @@ import androidx.ink.brush.InputToolType
 import androidx.ink.strokes.MutableStrokeInputBatch
 import androidx.ink.strokes.StrokeInput
 import java.util.concurrent.ConcurrentLinkedQueue
+import kotlin.math.PI
 
 /**
  * Helps manage [StrokeInput] objects in an efficient way, including reusing and recycling instances
@@ -245,7 +246,7 @@ internal class StrokeInputPool(preAllocatedInstances: Int = 15) {
                             pointerIndex,
                             historyIndex,
                         )
-                        .coerceIn(0f, Math.PI.toFloat() / 2F)
+                        .coerceIn(0f, PI.toFloat() / 2F)
                 } else {
                     StrokeInput.NO_TILT
                 },
@@ -327,7 +328,7 @@ internal class StrokeInputPool(preAllocatedInstances: Int = 15) {
             // StrokeInput orientationRadians values lie in [0, 2PI] with zero being where the tip
             // points
             // to the "left" and increases as you rotate clockwise (towards "up", and so on).
-            return (orientation + 2.5f * Math.PI.toFloat()).mod(2 * Math.PI.toFloat())
+            return (orientation + 2.5f * PI.toFloat()).mod(2 * PI.toFloat())
         }
         return StrokeInput.NO_ORIENTATION
     }

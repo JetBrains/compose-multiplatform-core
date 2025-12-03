@@ -103,6 +103,7 @@ class SelectionContextualMenuTest {
         PdfViewTestActivity.onCreateCallback = {}
     }
 
+    @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
     @Test
     fun testDoubleTapAfterSelection_stillshowsMenuOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
@@ -142,6 +143,7 @@ class SelectionContextualMenuTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
     @Test
     fun testEmailSelection_showsEmailAddOptions() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
@@ -156,6 +158,7 @@ class SelectionContextualMenuTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
     @Test
     fun testGoToLinkSelection_showsJumptoOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
@@ -173,6 +176,7 @@ class SelectionContextualMenuTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
     @Test
     fun testHyperLinkSelection_showsCopylinkOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
@@ -190,6 +194,7 @@ class SelectionContextualMenuTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
     @Test
     fun testLinkSelection_showsOpenOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {
@@ -207,6 +212,7 @@ class SelectionContextualMenuTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
     @Test
     fun testPhoneNumberSelection_showsCallOption() {
         with(ActivityScenario.launch(PdfViewTestActivity::class.java)) {

@@ -65,6 +65,8 @@
           fontWeight: 500.0
           fontFamilyId: 43
           textAlign: 5
+          overflow: 0
+          maxLines: 1
         paddingLeft: 0.0
         paddingRight: 0.0
         paddingTop: 0.0
@@ -138,6 +140,8 @@
           fontWeight: 500.0
           fontFamilyId: 43
           textAlign: 5
+          overflow: 0
+          maxLines: 1
         paddingLeft: 0.0
         paddingRight: 0.0
         paddingTop: 0.0

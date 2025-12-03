@@ -25,7 +25,7 @@ import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.pow
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public object ColorSpaces {
     internal val SrgbPrimaries = floatArrayOf(0.640f, 0.330f, 0.300f, 0.600f, 0.150f, 0.060f)
     internal val Ntsc1953Primaries = floatArrayOf(0.67f, 0.33f, 0.21f, 0.71f, 0.14f, 0.08f)
@@ -38,7 +38,7 @@ public object ColorSpaces {
     // HLG transfer with an SDR whitepoint of 203 nits
     internal val Bt2020HlgTransferParameters =
         TransferParameters(
-            gamma = TypeHLGish,
+            gamma = TYPE_HGL_LIKE,
             a = 2.0,
             b = 2.0,
             c = 1 / 0.17883277,
@@ -50,7 +50,7 @@ public object ColorSpaces {
     // PQ transfer with an SDR whitepoint of 203 nits
     internal val Bt2020PqTransferParameters =
         TransferParameters(
-            gamma = TypePQish,
+            gamma = TYPE_PQ_LIKE,
             a = -1.555223,
             b = 1.860454,
             c = 32 / 2523.0,

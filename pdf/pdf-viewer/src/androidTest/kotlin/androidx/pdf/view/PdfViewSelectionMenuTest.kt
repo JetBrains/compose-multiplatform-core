@@ -40,6 +40,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -73,6 +74,7 @@ class PdfViewSelectionMenuTest {
         PdfViewTestActivity.onCreateCallback = {}
     }
 
+    @SdkSuppress(maxSdkVersion = 35)
     @Test
     fun testContextMenu_withDefaultOptions() {
         val selectionMenuItemPreparer = SelectionMenuItemPreparer()
@@ -96,6 +98,7 @@ class PdfViewSelectionMenuTest {
             .check(matches(isDisplayed()))
     }
 
+    @SdkSuppress(maxSdkVersion = 35)
     @Test
     fun testContextMenu_afterAddingAddCommentItem() {
         var addCommentClickCounter = 0
@@ -136,6 +139,7 @@ class PdfViewSelectionMenuTest {
         assert(addCommentClickCounter == 1)
     }
 
+    @SdkSuppress(maxSdkVersion = 35)
     @Test
     fun testContextMenu_afterRemovingSelectAll() {
         val selectionMenuItemPreparer = SelectionMenuItemPreparer { components ->

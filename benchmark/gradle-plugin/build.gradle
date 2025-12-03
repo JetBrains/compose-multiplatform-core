@@ -52,6 +52,7 @@ gradlePlugin {
 androidx {
     name = "Benchmark Gradle Plugin"
     type = SoftwareType.GRADLE_PLUGIN
+    minimumGradleVersion = "8.2"
     inceptionYear = "2019"
     description = "Android Benchmark Gradle Plugin"
 }

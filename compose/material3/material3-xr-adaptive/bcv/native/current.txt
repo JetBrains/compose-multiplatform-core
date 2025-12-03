@@ -10,4 +10,4 @@ open annotation class androidx.compose.material3.xr.adaptive/ExperimentalMateria
     constructor <init>() // androidx.compose.material3.xr.adaptive/ExperimentalMaterial3XrAdaptiveApi.<init>|<init>(){}[0]
 }
 
-final fun androidx.compose.material3.xr.adaptive/EnableAdaptiveXrComponents(kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int) // androidx.compose.material3.xr.adaptive/EnableAdaptiveXrComponents|EnableAdaptiveXrComponents(kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int){}[0]
+final fun androidx.compose.material3.xr.adaptive/WithAdaptiveXrComponents(kotlin/Boolean, kotlin/Function2<androidx.compose.runtime/Composer, kotlin/Int, kotlin/Unit>, androidx.compose.runtime/Composer?, kotlin/Int, kotlin/Int) // androidx.compose.material3.xr.adaptive/WithAdaptiveXrComponents|WithAdaptiveXrComponents(kotlin.Boolean;kotlin.Function2<androidx.compose.runtime.Composer,kotlin.Int,kotlin.Unit>;androidx.compose.runtime.Composer?;kotlin.Int;kotlin.Int){}[0]

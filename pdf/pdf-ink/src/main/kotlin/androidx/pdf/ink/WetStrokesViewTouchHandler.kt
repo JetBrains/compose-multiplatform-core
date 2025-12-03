@@ -16,7 +16,6 @@
 
 package androidx.pdf.ink
 
-import android.graphics.Color
 import android.graphics.Matrix
 import android.os.Build
 import android.view.MotionEvent
@@ -25,9 +24,9 @@ import androidx.annotation.RequiresExtension
 import androidx.ink.authoring.InProgressStrokeId
 import androidx.ink.authoring.InProgressStrokesView
 import androidx.ink.brush.Brush
-import androidx.ink.brush.StockBrushes
 import androidx.input.motionprediction.MotionEventPredictor
 import androidx.pdf.ink.EditablePdfViewerFragment.PageInfoProvider
+import androidx.pdf.ink.util.InkDefaults
 
 /**
  * Handles touch events on an [InProgressStrokesView] for ink drawing.
@@ -48,6 +47,9 @@ internal class WetStrokesViewTouchHandler(
     private val motionEventPredictor = MotionEventPredictor.newInstance(wetStrokesView)
     private var currentPageInfo: PageInfoProvider.PageInfo? = null
     private var lastValidEvent: MotionEvent? = null
+
+    /** The brush needs to be used for any new Strokes on [InProgressStrokesView]. */
+    var brushForInking: Brush = InkDefaults.PEN_BRUSH
 
     override fun onTouch(view: View, event: MotionEvent): Boolean {
         if (event.actionMasked == MotionEvent.ACTION_DOWN) {
@@ -101,7 +103,7 @@ internal class WetStrokesViewTouchHandler(
             wetStrokesView.startStroke(
                 event = event,
                 pointerId = pointerId,
-                brush = DEFAULT_BRUSH,
+                brush = brushForInking,
                 strokeToWorldTransform = strokeToWorldTransform,
             )
         onStrokeStartedListener.onStrokeStarted(currentStrokeId!!, pageInfo.pageNum)
@@ -177,15 +179,5 @@ internal class WetStrokesViewTouchHandler(
          * @param pageNum The page number (0-indexed) on which the stroke was started.
          */
         fun onStrokeStarted(strokeId: InProgressStrokeId, pageNum: Int)
-    }
-
-    companion object {
-        internal val DEFAULT_BRUSH: Brush =
-            Brush.createWithColorIntArgb(
-                family = StockBrushes.pressurePen(),
-                colorIntArgb = Color.GREEN,
-                size = 5F,
-                epsilon = 0.15F,
-            )
     }
 }

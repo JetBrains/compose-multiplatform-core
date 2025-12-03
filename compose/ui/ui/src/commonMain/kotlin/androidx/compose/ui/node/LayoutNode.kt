@@ -21,8 +21,6 @@ import androidx.compose.runtime.collection.MutableVector
 import androidx.compose.runtime.collection.mutableVectorOf
 import androidx.compose.runtime.tooling.CompositionErrorContext
 import androidx.compose.runtime.tooling.LocalCompositionErrorContext
-import androidx.compose.ui.ComposeUiFlags
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -435,14 +433,7 @@ internal class LayoutNode(
         // Ignore calls to invalidate Semantics while semantics are being applied (b/378114177).
         if (isCurrentlyCalculatingSemanticsConfiguration) return
 
-        if (@OptIn(ExperimentalComposeUiApi::class) !ComposeUiFlags.isSemanticAutofillEnabled) {
-            _semanticsConfiguration = null
-
-            // TODO(lmr): this ends up scheduling work that diffs the entire tree, but we should
-            //  eventually move to marking just this node as invalidated since we are invalidating
-            //  on a per-node level. This should preserve current behavior for now..
-            requireOwner().onSemanticsChange()
-        } else if (nodes.isUpdating || applyingModifierOnAttach) {
+        if (nodes.isUpdating || applyingModifierOnAttach) {
             // We are currently updating the modifier, so just schedule an invalidation. After
             // applying the modifier, we will notify listeners of semantics changes.
             isSemanticsInvalidated = true
@@ -471,10 +462,6 @@ internal class LayoutNode(
             // whether or not deactivated nodes should be considered removed or not.
             if (!isAttached || isDeactivated || !nodes.has(Nodes.Semantics)) return null
 
-            @OptIn(ExperimentalComposeUiApi::class)
-            if (!ComposeUiFlags.isSemanticAutofillEnabled && _semanticsConfiguration == null) {
-                _semanticsConfiguration = calculateSemanticsConfiguration()
-            }
             return _semanticsConfiguration
         }
 
@@ -536,12 +523,6 @@ internal class LayoutNode(
         pendingModifier?.let { applyModifier(it) }
         pendingModifier = null
 
-        // Note: With precomputed semantics config, calling invalidateSemantics() before the
-        // layoutNode is marked as attached would result in semantics not being calculated..
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (!ComposeUiFlags.isSemanticAutofillEnabled && nodes.has(Nodes.Semantics)) {
-            invalidateSemantics()
-        }
         owner.onPreAttach(this)
 
         // Update lookahead root when attached. For nested cases, we'll always use the
@@ -572,10 +553,8 @@ internal class LayoutNode(
 
         layoutDelegate.updateParentData()
 
-        if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isSemanticAutofillEnabled) {
-            if (!isDeactivated && nodes.has(Nodes.Semantics)) {
-                invalidateSemantics()
-            }
+        if (!isDeactivated && nodes.has(Nodes.Semantics)) {
+            invalidateSemantics()
         }
 
         owner.onPostAttach(this)
@@ -603,10 +582,6 @@ internal class LayoutNode(
         forEachCoordinatorIncludingInner { it.onLayoutNodeDetach() }
         onDetach?.invoke(owner)
 
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (!ComposeUiFlags.isSemanticAutofillEnabled && nodes.has(Nodes.Semantics)) {
-            invalidateSemantics()
-        }
         nodes.runDetachLifecycle()
         ignoreRemeasureRequests { _foldedChildren.forEach { child -> child.detach() } }
         nodes.markAsDetached()
@@ -623,8 +598,7 @@ internal class LayoutNode(
         // are detached before the LayoutNode, and invalidateSemantics() can trigger a call to
         // calculateSemanticsConfiguration() which will encounter unattached nodes. Instead, just
         // set the semantics configuration to null over here since we know the node is detached.
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (ComposeUiFlags.isSemanticAutofillEnabled && nodes.has(Nodes.Semantics)) {
+        if (nodes.has(Nodes.Semantics)) {
             val prev = _semanticsConfiguration
             _semanticsConfiguration = null
             isSemanticsInvalidated = false
@@ -1485,9 +1459,6 @@ internal class LayoutNode(
         isCurrentlyCalculatingSemanticsConfiguration = false
         if (isDeactivated) {
             isDeactivated = false
-            if (@OptIn(ExperimentalComposeUiApi::class) !ComposeUiFlags.isSemanticAutofillEnabled) {
-                invalidateSemantics()
-            }
             // we don't need to reset state as it was done when deactivated
         } else {
             resetModifierState()
@@ -1500,8 +1471,7 @@ internal class LayoutNode(
         // resetModifierState detaches all nodes, so we need to re-attach them upon reuse.
         nodes.markAsAttached()
         nodes.runAttachLifecycle()
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (ComposeUiFlags.isSemanticAutofillEnabled && nodes.has(Nodes.Semantics)) {
+        if (nodes.has(Nodes.Semantics)) {
             invalidateSemantics()
         }
         rescheduleRemeasureOrRelayout(this)
@@ -1519,12 +1489,8 @@ internal class LayoutNode(
         resetModifierState()
         // if the node is detached the semantics were already updated without this node.
         if (isAttached) {
-            if (@OptIn(ExperimentalComposeUiApi::class) !ComposeUiFlags.isSemanticAutofillEnabled) {
-                invalidateSemantics()
-            } else {
-                _semanticsConfiguration = null
-                isSemanticsInvalidated = false
-            }
+            _semanticsConfiguration = null
+            isSemanticsInvalidated = false
         }
         owner?.onLayoutNodeDeactivated(this)
     }

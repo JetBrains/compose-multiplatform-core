@@ -75,6 +75,7 @@ gradlePlugin {
 androidx {
     name = "Navigation TypeSafe Arguments Gradle Plugin"
     type = SoftwareType.GRADLE_PLUGIN
+    minimumGradleVersion = "8.6"
     inceptionYear = "2017"
     description = "Android Navigation TypeSafe Arguments Gradle Plugin"
 }

@@ -343,6 +343,8 @@ class PdfViewerFragmentV2TestSuite {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     @Test
     fun testPdfViewerFragment_whenFindInFileIsVisible_scrubberShouldBeInvisible() {
         scenarioLoadDocument(
@@ -503,6 +505,8 @@ class PdfViewerFragmentV2TestSuite {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     @Test
     fun testPdfViewerFragment_whenSelectAllClicked_allContentShouldBeSelected() {
         // Load the document and assert loading view is displayed

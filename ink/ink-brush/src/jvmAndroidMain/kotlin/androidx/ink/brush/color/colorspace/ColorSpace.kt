@@ -84,9 +84,8 @@ import kotlin.math.withSign
  * @see Connector
  * @see Adaptation
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class ColorSpace
-internal constructor(
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+public abstract class ColorSpace(
     /**
      * Returns the name of this color space. The name is never null and contains always at least 1
      * character.
@@ -127,7 +126,7 @@ internal constructor(
      */
     internal val id: Int,
 ) {
-    public constructor(name: String, model: ColorModel) : this(name, model, MinId)
+    public constructor(name: String, model: ColorModel) : this(name, model, MIN_ID)
 
     /**
      * Returns the number of components that form a color value according to this color space's
@@ -178,8 +177,8 @@ internal constructor(
             )
         }
 
-        if (id < MinId || id > MaxId) {
-            throw IllegalArgumentException("The id must be between $MinId and $MaxId")
+        if (id < MIN_ID || id > MAX_ID) {
+            throw IllegalArgumentException("The id must be between $MIN_ID and $MAX_ID")
         }
     }
 
@@ -353,14 +352,14 @@ internal constructor(
          *
          * @see id
          */
-        internal const val MinId = -1 // Do not change
+        internal const val MIN_ID = -1 // Do not change
 
         /**
          * The maximum ID value a color space can have.
          *
          * @see id
          */
-        internal const val MaxId = 63 // Do not change, used to encode in longs
+        internal const val MAX_ID = 63 // Do not change, used to encode in longs
     }
 }
 
@@ -391,7 +390,7 @@ private fun createConnector(
  * @param intent The render intent to map colors from the source to the destination
  * @return A non-null connector between the two specified color spaces
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public fun ColorSpace.connect(
     destination: ColorSpace = ColorSpaces.Srgb,
     intent: RenderIntent = RenderIntent.Perceptual,
@@ -421,7 +420,7 @@ public fun ColorSpace.connect(
  *   different from the specified white point; the specified color space otherwise
  * @see Adaptation
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 @JvmOverloads
 public fun ColorSpace.adapt(
     whitePoint: WhitePoint,

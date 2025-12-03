@@ -719,15 +719,26 @@ private constructor(
     }
 
     /**
-     * Sets the dimensions of the Surface in pixels. This is needed if the application wishes to use
-     * android.graphics.Canvas apis to render still images into the Surface. It is usually not
-     * needed if the application is using a MediaPlayer or ExoPlayer to render the Surface.
+     * Sets the width and height of the [Surface] which backs this [SurfaceEntity] in pixels.
+     *
+     * Before this method is called, the width and height of the underlying Surface are not
+     * guaranteed.
+     *
+     * This is needed if the application wishes to use [android.graphics.Canvas] APIs to render
+     * [Bitmaps][android.graphics.Bitmap] into the Surface. It is not needed if the application is
+     * using MediaPlayer or ExoPlayer to decode media into the [Surface], as those systems
+     * automatically manage the dimensions of the [Surface].
+     *
+     * Note that this method does not change the spatial dimensions of the [SurfaceEntity], it only
+     * updates the resolution of the [Surface]. Unlike [PanelEntity], changing this value will
+     * update the pixel density of the displayed Surface. Changing this will not change the scale.
      *
      * @throws IllegalArgumentException if the dimensions are not greater than 0.
-     * @throws IllegalStateException if the Entity has been disposed.
+     * @throws IllegalStateException if the Entity has been disposed, or if
+     *   [SurfaceProtection.PROTECTED] was set at creation.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     @MainThread
+    @ExperimentalSurfaceEntityPixelDimensionsApi
     public fun setSurfacePixelDimensions(dimensions: IntSize2d) {
         checkNotDisposed()
         rtEntity!!.setSurfacePixelDimensions(dimensions.width, dimensions.height)

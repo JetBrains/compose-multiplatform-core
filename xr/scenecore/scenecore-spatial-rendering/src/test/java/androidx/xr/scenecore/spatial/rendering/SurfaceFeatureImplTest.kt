@@ -82,22 +82,26 @@ class SurfaceFeatureImplTest {
         }
     }
 
-    private fun createDefaultSurfaceFeature(shape: SurfaceEntity.Shape): SurfaceFeatureImpl {
+    private fun createSurfaceFeature(
+        surfaceProtection: Int,
+        shape: SurfaceEntity.Shape,
+    ): SurfaceFeatureImpl {
         val stereoMode = SurfaceEntity.StereoMode.MONO
-        val surfaceProtection = 0
         val useSuperSampling = 0
 
-        surfaceFeature =
-            SurfaceFeatureImpl(
-                impressApi,
-                splitEngineSubspaceManager,
-                xrExtensions,
-                stereoMode,
-                shape,
-                surfaceProtection,
-                useSuperSampling,
-            )
+        return SurfaceFeatureImpl(
+            impressApi,
+            splitEngineSubspaceManager,
+            xrExtensions,
+            stereoMode,
+            shape,
+            surfaceProtection,
+            useSuperSampling,
+        )
+    }
 
+    private fun createDefaultSurfaceFeature(shape: SurfaceEntity.Shape): SurfaceFeatureImpl {
+        surfaceFeature = createSurfaceFeature(SurfaceEntity.SurfaceProtection.NONE, shape)
         return surfaceFeature
     }
 
@@ -324,6 +328,23 @@ class SurfaceFeatureImplTest {
 
         assertThat(surface).isNotNull()
         assertThat(surface).isEqualTo(quadData.surface)
+    }
+
+    @Ignore // b/428211243 this test currently leaks android.view.Surface
+    @Test
+    fun setPixelDimensions_throwsOnProtectedSurface() {
+        val protectedSurfaceFeature =
+            createSurfaceFeature(
+                SurfaceEntity.SurfaceProtection.PROTECTED,
+                SurfaceEntity.Shape.Quad(FloatSize2d(1f, 1f)),
+            )
+        var exceptionThrown = false
+        try {
+            protectedSurfaceFeature.setSurfacePixelDimensions(14, 14)
+        } catch (e: IllegalStateException) {
+            exceptionThrown = true
+        }
+        assertThat(exceptionThrown).isTrue()
     }
 
     @Ignore // b/428211243 this test currently leaks android.view.Surface

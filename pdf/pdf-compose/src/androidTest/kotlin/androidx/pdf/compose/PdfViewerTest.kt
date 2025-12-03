@@ -50,6 +50,7 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -558,6 +559,7 @@ class PdfViewerTest {
         assertThat(resIdsThumbBitmap.sameAs(resIdsAndDpThumbBitmap)).isTrue()
     }
 
+    @SdkSuppress(maxSdkVersion = 35)
     @Test
     fun testCommentMenuItemAppended() {
         val pdfDocument =

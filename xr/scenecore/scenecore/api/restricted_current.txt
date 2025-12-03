@@ -105,6 +105,7 @@ package androidx.xr.scenecore {
     method public <T extends androidx.xr.scenecore.Component> java.util.List<T> getComponentsOfType(Class<? extends T> type);
     method @InaccessibleFromKotlin public CharSequence getContentDescription();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.math.Pose getGravityAlignedPose(androidx.xr.runtime.math.Pose pose);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.math.Vector3 getNonUniformScale(androidx.xr.scenecore.Space relativeTo);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.Entity? getParent();
     method public androidx.xr.runtime.math.Pose getPose(androidx.xr.scenecore.Space relativeTo);
     method public float getScale(androidx.xr.scenecore.Space relativeTo);
@@ -174,6 +175,8 @@ package androidx.xr.scenecore {
     method @InaccessibleFromKotlin public CharSequence getContentDescription();
     method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.math.Pose getGravityAlignedPose(optional androidx.xr.runtime.math.Pose pose);
     method @BytecodeOnly @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.runtime.math.Pose! getGravityAlignedPose$default(androidx.xr.scenecore.Entity!, androidx.xr.runtime.math.Pose!, int, Object!);
+    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.runtime.math.Vector3 getNonUniformScale(optional androidx.xr.scenecore.Space relativeTo);
+    method @BytecodeOnly @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static androidx.xr.runtime.math.Vector3! getNonUniformScale$default(androidx.xr.scenecore.Entity!, androidx.xr.scenecore.Space!, int, Object!);
     method @InaccessibleFromKotlin public androidx.xr.scenecore.Entity? getParent();
     method public default androidx.xr.runtime.math.Pose getPose();
     method public androidx.xr.runtime.math.Pose getPose(optional androidx.xr.scenecore.Space relativeTo);
@@ -217,6 +220,9 @@ package androidx.xr.scenecore {
   }
 
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalPanelCoordinateApi {
+  }
+
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalSurfaceEntityPixelDimensionsApi {
   }
 
   public final class ExrImage {
@@ -1016,7 +1022,7 @@ package androidx.xr.scenecore {
     method @InaccessibleFromKotlin @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.Texture?);
     method @InaccessibleFromKotlin @MainThread public void setShape(androidx.xr.scenecore.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin @MainThread public void setStereoMode(androidx.xr.scenecore.SurfaceEntity.StereoMode);
-    method @MainThread @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public void setSurfacePixelDimensions(androidx.xr.runtime.math.IntSize2d dimensions);
+    method @SuppressCompatibility @MainThread @androidx.xr.scenecore.ExperimentalSurfaceEntityPixelDimensionsApi public void setSurfacePixelDimensions(androidx.xr.runtime.math.IntSize2d dimensions);
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.Texture? auxiliaryAlphaMaskTexture;
     property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public androidx.xr.scenecore.SurfaceEntity.ContentColorMetadata? contentColorMetadata;
     property public androidx.xr.runtime.math.FloatSize3d dimensions;

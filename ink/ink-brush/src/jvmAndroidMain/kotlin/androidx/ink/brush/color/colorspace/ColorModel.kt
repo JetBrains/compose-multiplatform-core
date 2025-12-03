@@ -27,7 +27,7 @@ import androidx.ink.brush.color.unpackInt1
  * represented by a tuple of 3 numbers (red, green and blue).
  */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public value class ColorModel
 internal constructor(
     /**

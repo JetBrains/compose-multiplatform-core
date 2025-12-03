@@ -28,8 +28,8 @@ import androidx.glance.wear.proto.WearWidgetRequestProto
  * @property instanceId The instance id of the widget for this request. The id is created by the
  *   system and is provided when [GlanceWearWidget.onActivated] is called.
  * @property containerType The container type being requested. See [ContainerInfo].
- * @property widthDp The width in dp of the container for this widget.
- * @property heightDp The height in dp of the container for this widget.
+ * @property widthDp The width in dp of the content for this widget.
+ * @property heightDp The height in dp of the content for this widget.
  */
 public class WearWidgetParams
 @RestrictTo(LIBRARY_GROUP)
@@ -44,7 +44,36 @@ public constructor(
     @param:Dimension(unit = Dimension.DP)
     @get:Dimension(unit = Dimension.DP)
     public val heightDp: Float,
+    @get:RestrictTo(LIBRARY_GROUP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
+    public val horizontalPaddingDp: Float,
+    @get:RestrictTo(LIBRARY_GROUP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
+    public val verticalPaddingDp: Float,
+    @get:RestrictTo(LIBRARY_GROUP)
+    @param:Dimension(unit = Dimension.DP)
+    @get:Dimension(unit = Dimension.DP)
+    public val cornerRadiusDp: Float,
 ) {
+
+    // TODO(pierf): Remove once it's no longer used.
+    @RestrictTo(LIBRARY_GROUP)
+    public constructor(
+        instanceId: WidgetInstanceId,
+        @ContainerInfo.ContainerType containerType: Int,
+        @Dimension(unit = Dimension.DP) widthDp: Float,
+        @Dimension(unit = Dimension.DP) heightDp: Float,
+    ) : this(
+        instanceId,
+        containerType,
+        widthDp,
+        heightDp,
+        horizontalPaddingDp = 0f,
+        verticalPaddingDp = 0f,
+        cornerRadiusDp = 0f,
+    )
 
     /** Converts this object to [WearWidgetRequestParcel]. */
     @RestrictTo(LIBRARY_GROUP)
@@ -56,6 +85,9 @@ public constructor(
                 container_type = containerType,
                 width_dp = widthDp,
                 height_dp = heightDp,
+                horizontal_padding_dp = horizontalPaddingDp,
+                vertical_padding_dp = verticalPaddingDp,
+                corner_radius_dp = cornerRadiusDp,
             )
         return WearWidgetRequestParcel().apply { payload = requestProto.encode() }
     }
@@ -70,6 +102,9 @@ public constructor(
                 containerType = requestProto.container_type,
                 widthDp = requestProto.width_dp,
                 heightDp = requestProto.height_dp,
+                horizontalPaddingDp = requestProto.horizontal_padding_dp,
+                verticalPaddingDp = requestProto.vertical_padding_dp,
+                cornerRadiusDp = requestProto.corner_radius_dp,
             )
         }
     }

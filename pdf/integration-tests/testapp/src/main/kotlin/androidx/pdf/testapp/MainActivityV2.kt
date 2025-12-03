@@ -53,8 +53,6 @@ internal class MainActivityV2 : AppCompatActivity() {
 
     private lateinit var searchButton: MaterialButton
     private lateinit var openPdfButton: MaterialButton
-    private lateinit var undoPdfButton: MaterialButton
-    private lateinit var redoPdfButton: MaterialButton
     private lateinit var preferenceButton: ImageButton
 
     private val settingsDialog: FeaturePreferencesDialog by lazy {
@@ -117,18 +115,12 @@ internal class MainActivityV2 : AppCompatActivity() {
         searchButton = findViewById(R.id.search_pdf_button)
         preferenceButton = findViewById(R.id.preference_button)
         savePdfButton = findViewById(R.id.save_pdf_button)
-        undoPdfButton = findViewById(R.id.undo_pdf_button)
-        redoPdfButton = findViewById(R.id.redo_pdf_button)
 
         if (pdfViewerFragment is EditablePdfHostFragment) {
             savePdfButton.visibility = View.VISIBLE
-            undoPdfButton.visibility = View.VISIBLE
-            redoPdfButton.visibility = View.VISIBLE
             pdfViewerFragment.onSaveCompletion = { savePdfButton.isEnabled = true }
         } else {
             savePdfButton.visibility = View.GONE
-            undoPdfButton.visibility = View.GONE
-            redoPdfButton.visibility = View.GONE
         }
 
         openPdfButton.setOnClickListener { filePicker.launch(MIME_TYPE_PDF) }

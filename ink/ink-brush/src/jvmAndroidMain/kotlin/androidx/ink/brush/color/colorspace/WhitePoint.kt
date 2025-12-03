@@ -25,7 +25,7 @@ import androidx.annotation.Size
  *
  * @see Illuminant
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public data class WhitePoint(val x: Float, val y: Float) {
     /** Illuminant for CIE XYZ white point */
     public constructor(x: Float, y: Float, z: Float) : this(x, y, z, x + y + z)

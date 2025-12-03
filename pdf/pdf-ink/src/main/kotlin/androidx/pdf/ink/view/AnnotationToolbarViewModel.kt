@@ -53,21 +53,25 @@ internal class AnnotationToolbarViewModel(initialState: AnnotationToolbarState) 
 
     // A Channel is designed for one-time events. It ensures that each
     // effect is consumed exactly once and is buffered safely across configuration changes.
-    private val _effects = Channel<ToolbarEffect>()
+    private val _effects = Channel<ToolbarEffect>(1)
     val effects = _effects.receiveAsFlow()
 
     /**
-     * Restores the toolbar's state from a previously saved [AnnotationToolbarState].
+     * Updates the toolbar's state to a state set internally or externally. This would be useful is
+     * restoring/reset scenarios.
      *
-     * After restoring the internal state, it immediately dispatches effects.
+     * After updating the internal state, it immediately dispatches effects.
+     *
+     * @param state The non-null [AnnotationToolbarState] to update. If null, this function is a
+     *   no-op.
      */
-    fun restoreState(restoredState: AnnotationToolbarState?) {
-        restoredState?.let {
-            _state.value = restoredState
+    fun updateState(state: AnnotationToolbarState?) {
+        state?.let {
+            _state.value = state
 
-            dispatchToolUpdated(restoredState)
+            dispatchToolUpdated(state)
 
-            dispatchAnnotationVisibility(restoredState)
+            dispatchAnnotationVisibility(state)
         }
     }
 

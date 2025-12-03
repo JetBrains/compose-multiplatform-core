@@ -84,7 +84,7 @@ class ProjectedServiceBindingTest {
             )
 
         val capturedIntent = intentCaptor.value
-        assertThat(capturedIntent.action).isEqualTo(ACTION_BIND.intentActionString)
+        assertThat(capturedIntent.action).isEqualTo(ACTION_BIND)
         assertThat(capturedIntent.component)
             .isEqualTo(ComponentName(SYSTEM_PACKAGE_NAME, SYSTEM_CLASS_NAME))
     }
@@ -131,7 +131,7 @@ class ProjectedServiceBindingTest {
             assertThrows(IllegalStateException::class.java) {
                 ProjectedServiceBinding.bind(mockContext, ACTION_BIND, mockServiceConnection)
             }
-        val intent = Intent(ACTION_BIND.intentActionString)
+        val intent = Intent(ACTION_BIND)
         assertThat(exception.message)
             .isEqualTo("More than one system service found for action: $intent.")
         verify(mockContext, never()).bindService(any(), any(), anyInt())
@@ -180,10 +180,10 @@ class ProjectedServiceBindingTest {
     }
 
     companion object {
+        private const val ACTION_BIND = "androidx.xr.ACTION_BIND"
         private const val SYSTEM_PACKAGE_NAME = "com.system.service"
         private const val SYSTEM_CLASS_NAME = "com.system.service.ProjectedService"
         private const val USER_PACKAGE_NAME = "com.user.app"
         private const val USER_CLASS_NAME = "com.user.app.SomeService"
-        private val ACTION_BIND = ProjectedServiceBinding.ProjectedIntentAction.ACTION_BIND
     }
 }

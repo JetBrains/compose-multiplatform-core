@@ -34,12 +34,6 @@ dependencies {
     implementation(project(":privacysandbox:activity:activity-core"))
     implementation("androidx.core:core:1.12.0")
     implementation(libs.kotlinCoroutinesCore)
-
-    androidTestImplementation(project(":privacysandbox:activity:activity-client"))
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.truth)
 }
 
 android {

@@ -35,6 +35,7 @@ import androidx.compose.remote.core.operations.DebugMessage;
 import androidx.compose.remote.core.operations.DrawTextAnchored;
 import androidx.compose.remote.core.operations.Header;
 import androidx.compose.remote.core.operations.TimeAttribute;
+import androidx.compose.remote.core.operations.TouchExpression;
 import androidx.compose.remote.core.operations.layout.managers.TextLayout;
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression;
 import androidx.compose.remote.core.operations.utilities.ImageScaling;
@@ -542,6 +543,8 @@ public class Rc {
 
         /** Path or Bitmap need to be dereferenced */
         public static final int ID_DEREF = PaintOperation.PTR_DEREFERENCE;
+
+        public static float sLightMode = 0;
     }
 
     /** Used for Touch variables */
@@ -557,9 +560,26 @@ public class Rc {
 
         /** TOUCH_VEL_Y is the x velocity of the touch */
         public static final float VELOCITY_Y = RemoteContext.FLOAT_TOUCH_VEL_Y;
-
         /** TOUCH_EVENT_TIME the time of the touch */
         public static final float TOUCH_EVENT_TIME = RemoteContext.FLOAT_TOUCH_EVENT_TIME;
+        /** Stop as soon as touch up */
+        public static final float STOP_INSTANTLY = TouchExpression.STOP_INSTANTLY;
+        /** Jump to the absolute position of the point */
+        public static final float STOP_ABSOLUTE_POS = TouchExpression.STOP_ABSOLUTE_POS;
+        /** Stop only at the start or end */
+        public static final float STOP_ENDS = TouchExpression.STOP_ENDS;
+        /** Stop at a series of notch positions expressed as a percent of the range*/
+        public static final float STOP_NOTCHES_PERCENTS = TouchExpression.STOP_NOTCHES_PERCENTS;
+        /** Stop by decelerating */
+        public static final float STOP_GENTLY = TouchExpression.STOP_GENTLY;
+        /** Stop at a collection of point described in absolute cordnates */
+        public static final float STOP_NOTCHES_ABSOLUTE = TouchExpression.STOP_NOTCHES_ABSOLUTE;
+        /** Stop at a series of evenly spaced notches  */
+        public static final float STOP_NOTCHES_EVEN = TouchExpression.STOP_NOTCHES_EVEN;
+        /** Stop at evenly spaced single step notches */
+        public static final float STOP_NOTCHES_SINGLE_EVEN =
+                TouchExpression.STOP_NOTCHES_SINGLE_EVEN;
+
     }
 
     /** Used for Sensor variables */
@@ -844,6 +864,7 @@ public class Rc {
     }
 
     public static class PathExpression {
+        public static final int SPLINE_PATH = 0;
         public static final int LOOP_PATH = LOOP;
         public static final int MONOTONIC_PATH = MONOTONIC;
         public static final int LINEAR_PATH = LINEAR;
@@ -860,4 +881,32 @@ public class Rc {
         public static final int PATH_DASH_ROTATE = 1;
         public static final int PATH_DASH_MORPH = 2;
     }
+
+    public static class Theme {
+        /** region of code is run only in dark mode */
+        public static final int DARK = androidx.compose.remote.core.operations.Theme.DARK;
+        /** region of code is run only in light mode */
+        public static final int LIGHT = androidx.compose.remote.core.operations.Theme.LIGHT;
+        /** region of code is run in any mode */
+        public static final int UNSPECIFIED =
+                androidx.compose.remote.core.operations.Theme.UNSPECIFIED;
+    }
+
+    public static class TextAttribute {
+        public static final short MEASURE_WIDTH =
+                androidx.compose.remote.core.operations.TextAttribute.MEASURE_WIDTH;
+        public static final short MEASURE_HEIGHT =
+                androidx.compose.remote.core.operations.TextAttribute.MEASURE_HEIGHT;
+        public static final short MEASURE_LEFT =
+                androidx.compose.remote.core.operations.TextAttribute.MEASURE_LEFT;
+        public static final short MEASURE_RIGHT =
+                androidx.compose.remote.core.operations.TextAttribute.MEASURE_RIGHT;
+        public static final short MEASURE_TOP =
+                androidx.compose.remote.core.operations.TextAttribute.MEASURE_TOP;
+        public static final short MEASURE_BOTTOM =
+                androidx.compose.remote.core.operations.TextAttribute.MEASURE_BOTTOM;
+        public static final short TEXT_LENGTH =
+                androidx.compose.remote.core.operations.TextAttribute.TEXT_LENGTH;
+    }
+
 }

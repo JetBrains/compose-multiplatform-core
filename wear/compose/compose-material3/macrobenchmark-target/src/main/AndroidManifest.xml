@@ -324,6 +324,50 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        
+        <activity
+            android:name=".CheckboxButtonActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.CHECKBOX_BUTTON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SplitCheckboxButtonActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.SPLIT_CHECKBOX_BUTTON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        
+        <activity
+            android:name=".RadioButtonActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.RADIO_BUTTON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".SplitRadioButtonActivity"
+            android:theme="@style/AppTheme"
+            android:exported="true">
+            <intent-filter>
+                <action android:name=
+                    "androidx.wear.compose.material3.macrobenchmark.target.SPLIT_RADIO_BUTTON" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".StartupActivity"

@@ -34,7 +34,7 @@ import androidx.annotation.RestrictTo
  * * The function is not constant
  * * The function is positive and increasing
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public data class TransferParameters(
     /** Value g in the equation of the EOTF described above. */
     val gamma: Double,
@@ -104,14 +104,14 @@ public data class TransferParameters(
         }
     }
 
-    internal val isHLGish: Boolean
-        get() = gamma == TypeHLGish
+    internal val IS_HGL_LIKE: Boolean
+        get() = gamma == TYPE_HGL_LIKE
 
-    internal val isPQish: Boolean
-        get() = gamma == TypePQish
+    internal val IS_PQ_LIKE: Boolean
+        get() = gamma == TYPE_PQ_LIKE
 }
 
-internal const val TypePQish = -2.0
-internal const val TypeHLGish = -3.0
+internal const val TYPE_PQ_LIKE = -2.0
+internal const val TYPE_HGL_LIKE = -3.0
 
-private fun isSpecialG(gamma: Double) = gamma == TypePQish || gamma == TypeHLGish
+private fun isSpecialG(gamma: Double) = gamma == TYPE_PQ_LIKE || gamma == TYPE_HGL_LIKE

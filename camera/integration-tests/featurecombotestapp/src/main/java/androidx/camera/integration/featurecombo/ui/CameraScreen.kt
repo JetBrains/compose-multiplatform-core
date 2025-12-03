@@ -34,6 +34,7 @@ import androidx.camera.view.PreviewView
 import androidx.camera.view.PreviewView.ScaleType.FIT_CENTER
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -81,6 +82,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role.Companion.RadioButton
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
@@ -116,6 +118,8 @@ fun CameraScreen(viewModel: CameraViewModel = viewModel()) {
         isUseCaseEnabled = viewModel.isUseCaseEnabled.collectAsStateWithLifecycle().value,
         featureUis = viewModel.featureUiList.collectAsStateWithLifecycle().value,
         useCaseResolutions = viewModel.useCaseResolutions.collectAsStateWithLifecycle().value,
+        imageAnalysisFrameCount =
+            viewModel.imageAnalysisFrameCount.collectAsStateWithLifecycle().value,
         onToggleCamera = { viewModel.toggleCamera(lifecycleOwner) },
         onCapture = { viewModel.capture(context) },
         onRecord = { viewModel.record(context) },
@@ -137,6 +141,7 @@ fun ContentScreen(
     isUseCaseEnabled: Map<AppUseCase, Boolean>,
     featureUis: List<FeatureUi>,
     useCaseResolutions: Map<AppUseCase, String>,
+    imageAnalysisFrameCount: Int,
     onToggleCamera: () -> Unit,
     onCapture: () -> Unit,
     onRecord: () -> Unit,
@@ -191,6 +196,7 @@ fun ContentScreen(
             isRecording = isRecording,
             isUseCaseEnabled = isUseCaseEnabled,
             useCaseResolutions = useCaseResolutions,
+            imageAnalysisFrameCount = imageAnalysisFrameCount,
             onCapture = onCapture,
             onRecord = onRecord,
             onReset = onReset,
@@ -299,6 +305,7 @@ fun CameraControlsRow(
     isRecording: Boolean,
     isUseCaseEnabled: Map<AppUseCase, Boolean>,
     useCaseResolutions: Map<AppUseCase, String>,
+    imageAnalysisFrameCount: Int,
     onCapture: () -> Unit,
     onRecord: () -> Unit,
     onReset: () -> Unit,
@@ -380,6 +387,16 @@ fun CameraControlsRow(
                             alpha = if (recordingSupported) 1.0F else 0.38F
                         ),
                     modifier = Modifier.size(48.dp),
+                )
+            }
+
+            if (isUseCaseEnabled[AppUseCase.IMAGE_ANALYSIS] == true) {
+                Text(
+                    modifier = Modifier.padding(4.dp).basicMarquee(),
+                    text = "Analyzed frames:\r\n$imageAnalysisFrameCount",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -481,6 +498,7 @@ fun ContentScreenPreview() {
         put(AppUseCase.PREVIEW, true)
         put(AppUseCase.IMAGE_CAPTURE, true)
         put(AppUseCase.VIDEO_CAPTURE, true)
+        put(AppUseCase.IMAGE_ANALYSIS, true)
     }
 
     val appFeatures =
@@ -504,7 +522,9 @@ fun ContentScreenPreview() {
                 put(AppUseCase.PREVIEW, "(1920 x 1080)")
                 put(AppUseCase.IMAGE_CAPTURE, "(4000 x 3000)")
                 put(AppUseCase.VIDEO_CAPTURE, "(3840 x 2160)")
+                put(AppUseCase.IMAGE_ANALYSIS, "(640 x 480)")
             },
+        imageAnalysisFrameCount = 0,
         onToggleCamera = {},
         onCapture = {},
         onRecord = {},

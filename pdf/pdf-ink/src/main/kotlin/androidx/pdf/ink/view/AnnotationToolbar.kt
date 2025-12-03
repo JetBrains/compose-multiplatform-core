@@ -105,13 +105,18 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     private var annotationToolbarListener: AnnotationToolbarListener? = null
 
     /** Set the listener for [AnnotationToolbar] events. */
-    public fun setAnnotationToolbarListener(listener: AnnotationToolbarListener) {
+    public fun setAnnotationToolbarListener(listener: AnnotationToolbarListener?) {
         annotationToolbarListener = listener
     }
 
     /** Clears any selection of tools on [AnnotationToolbar]. No-op if no tool is selected. */
     public fun clearToolSelection() {
         viewmodel.onAction(ClearToolSelection)
+    }
+
+    /** Reset the [AnnotationToolbar] to its initial state. */
+    public fun reset() {
+        viewmodel.updateState(ToolbarInitializer.createInitialState(context = context))
     }
 
     private val viewmodel =
@@ -381,7 +386,7 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyle: Int = 0) :
     override fun onRestoreInstanceState(state: Parcelable?) {
         if (state is ToolbarSavedState) {
             super.onRestoreInstanceState(state.superState)
-            viewmodel.restoreState(state.toolbarState)
+            viewmodel.updateState(state.toolbarState)
         } else {
             super.onRestoreInstanceState(state)
         }

@@ -684,7 +684,7 @@ internal class CanvasMeshRenderer(
         val uniformNamesOut = Array(MAX_UNIFORMS) { INVALID_NAME }
         val vertexShaderOut = arrayOf("unset vertex shader")
         val fragmentShaderOut = arrayOf("unset fragment shader")
-        fillSkiaMeshSpecData(
+        CanvasMeshRendererNative.fillSkiaMeshSpecData(
             meshFormat.nativePointer,
             isPacked,
             attributeTypesOut,
@@ -744,59 +744,6 @@ internal class CanvasMeshRenderer(
         require(vertexStride in 4..1024)
         return vertexStride
     }
-
-    /**
-     * Retrieves data analogous to [MeshSpecification] from native code. It makes use of "out"
-     * parameters to return this data, as it is tedious (and therefore error-prone) to construct and
-     * return complex objects from JNI. These "out" parameters are all arrays, as those are well
-     * supported by JNI, especially primitive arrays.
-     *
-     * @param meshFormatNativePointer The pointer address of a [MeshFormat].
-     * @param isPacked Whether to fill the mesh spec with properties describing a packed format (as
-     *   in ink::Mesh) or an unpacked format (as in ink::MutableMesh).
-     * @param attributeTypesOut An array that can hold at least [MAX_ATTRIBUTES] values. It will
-     *   contain the resulting attribute types aligning with [Type.nativeValue]. The number of
-     *   attributes will be determined by the first index of this array with an invalid value, and
-     *   that attribute count will determine the number of entries to look at in
-     *   [attributeOffsetsBytesOut] and [attributeNamesOut]. See
-     *   [MeshSpecification.Attribute.getType].
-     * @param attributeOffsetsBytesOut An array that can hold at least [MAX_ATTRIBUTES] values.
-     *   Specifies the layout of each vertex of the raw data for a mesh, where each vertex is a
-     *   contiguous chunk of memory and each attribute is located at a particular number of bytes
-     *   (offset) from the beginning of that vertex's chunk of memory.
-     * @param attributeNamesOut The names of each attribute, referenced in the shader code.
-     * @param vertexStrideBytesOut In the raw data of the mesh vertices, the number of bytes between
-     *   the start of each vertex. See [attributeOffsetsBytesOut] for how each attribute is laid
-     *   out.
-     * @param varyingTypesOut An array that can hold at least [MAX_VARYINGS] values. It will contain
-     *   the resulting varying types aligning with [Type.nativeValue]. The number of varyings will
-     *   be determined by the first index of this array with an invalid value, and that varying
-     *   count will determine the number of entries to look at in [varyingNamesOut]. See
-     *   [MeshSpecification.Varying.getType].
-     * @param varyingNamesOut The names of each varying, referenced in the shader code.
-     * @param vertexShaderOut An array with at least one element that will be filled in by the
-     *   string vertex shader code.
-     * @param fragmentShaderOut An array with at least one element that will be filled in by the
-     *   string fragment shader code.
-     * @throws IllegalArgumentException If an unrecognized format was passed in, i.e. when
-     *   [nativeIsMeshFormatRenderable] returns false.
-     */
-    @UsedByNative
-    private external fun fillSkiaMeshSpecData(
-        meshFormatNativePointer: Long,
-        isPacked: Boolean,
-        attributeTypesOut: IntArray,
-        attributeOffsetsBytesOut: IntArray,
-        attributeNamesOut: Array<String>,
-        vertexStrideBytesOut: IntArray,
-        varyingTypesOut: IntArray,
-        varyingNamesOut: Array<String>,
-        uniformIdsOut: IntArray,
-        uniformUnpackingIndicesOut: IntArray,
-        uniformNamesOut: Array<String>,
-        vertexShaderOut: Array<String>,
-        fragmentShaderOut: Array<String>,
-    )
 
     private fun saveRecentlyDrawnAndroidMesh(androidMesh: AndroidMesh, currentTimeMillis: Long) {
         recentlyDrawnMeshesToLastDrawTimeMillis[androidMesh] = currentTimeMillis
@@ -1127,4 +1074,65 @@ internal class CanvasMeshRenderer(
         private val MeshAttributeUnpackingParams.yScale
             get() = components[1].scale
     }
+}
+
+/** Singleton wrapper around native JNI calls. */
+@UsedByNative
+internal object CanvasMeshRendererNative {
+    init {
+        NativeLoader.load()
+    }
+
+    /**
+     * Retrieves data analogous to [MeshSpecification] from native code. It makes use of "out"
+     * parameters to return this data, as it is tedious (and therefore error-prone) to construct and
+     * return complex objects from JNI. These "out" parameters are all arrays, as those are well
+     * supported by JNI, especially primitive arrays.
+     *
+     * @param meshFormatNativePointer The pointer address of a [MeshFormat].
+     * @param isPacked Whether to fill the mesh spec with properties describing a packed format (as
+     *   in ink::Mesh) or an unpacked format (as in ink::MutableMesh).
+     * @param attributeTypesOut An array that can hold at least [MAX_ATTRIBUTES] values. It will
+     *   contain the resulting attribute types aligning with [Type.nativeValue]. The number of
+     *   attributes will be determined by the first index of this array with an invalid value, and
+     *   that attribute count will determine the number of entries to look at in
+     *   [attributeOffsetsBytesOut] and [attributeNamesOut]. See
+     *   [MeshSpecification.Attribute.getType].
+     * @param attributeOffsetsBytesOut An array that can hold at least [MAX_ATTRIBUTES] values.
+     *   Specifies the layout of each vertex of the raw data for a mesh, where each vertex is a
+     *   contiguous chunk of memory and each attribute is located at a particular number of bytes
+     *   (offset) from the beginning of that vertex's chunk of memory.
+     * @param attributeNamesOut The names of each attribute, referenced in the shader code.
+     * @param vertexStrideBytesOut In the raw data of the mesh vertices, the number of bytes between
+     *   the start of each vertex. See [attributeOffsetsBytesOut] for how each attribute is laid
+     *   out.
+     * @param varyingTypesOut An array that can hold at least [MAX_VARYINGS] values. It will contain
+     *   the resulting varying types aligning with [Type.nativeValue]. The number of varyings will
+     *   be determined by the first index of this array with an invalid value, and that varying
+     *   count will determine the number of entries to look at in [varyingNamesOut]. See
+     *   [MeshSpecification.Varying.getType].
+     * @param varyingNamesOut The names of each varying, referenced in the shader code.
+     * @param vertexShaderOut An array with at least one element that will be filled in by the
+     *   string vertex shader code.
+     * @param fragmentShaderOut An array with at least one element that will be filled in by the
+     *   string fragment shader code.
+     * @throws IllegalArgumentException If an unrecognized format was passed in, i.e. when
+     *   [nativeIsMeshFormatRenderable] returns false.
+     */
+    @UsedByNative
+    external fun fillSkiaMeshSpecData(
+        meshFormatNativePointer: Long,
+        isPacked: Boolean,
+        attributeTypesOut: IntArray,
+        attributeOffsetsBytesOut: IntArray,
+        attributeNamesOut: Array<String>,
+        vertexStrideBytesOut: IntArray,
+        varyingTypesOut: IntArray,
+        varyingNamesOut: Array<String>,
+        uniformIdsOut: IntArray,
+        uniformUnpackingIndicesOut: IntArray,
+        uniformNamesOut: Array<String>,
+        vertexShaderOut: Array<String>,
+        fragmentShaderOut: Array<String>,
+    )
 }

@@ -74,6 +74,7 @@ import androidx.xr.runtime.math.Ray
 import androidx.xr.runtime.math.Vector3
 import androidx.xr.scenecore.Entity
 import androidx.xr.scenecore.EntityMoveListener
+import androidx.xr.scenecore.ExperimentalSurfaceEntityPixelDimensionsApi
 import androidx.xr.scenecore.GroupEntity
 import androidx.xr.scenecore.MovableComponent
 import androidx.xr.scenecore.PanelEntity
@@ -478,6 +479,7 @@ class SurfaceEntityImageActivity : ComponentActivity() {
     // TODO: Update this to take a Pose for the controlPanel
     @Suppress("UnsafeOptInUsageError")
     @Composable
+    @OptIn(ExperimentalSurfaceEntityPixelDimensionsApi::class)
     fun ShowBitmapButton(
         session: Session,
         activity: Activity,

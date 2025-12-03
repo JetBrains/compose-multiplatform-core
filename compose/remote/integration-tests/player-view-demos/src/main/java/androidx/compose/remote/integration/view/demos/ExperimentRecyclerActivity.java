@@ -166,9 +166,6 @@ public class ExperimentRecyclerActivity extends Activity {
                 return d1.toString().compareTo(d2.toString());
             }
         });
-        for (RCDoc rcDoc : mDocList) {
-            System.out.println(rcDoc.toString());
-        }
         sCurrentBuffer = Objects.requireNonNull(mDocList.get(0).getDoc()).getDocument().getBuffer();
 
         // Set adapter to RecyclerView
@@ -346,8 +343,8 @@ public class ExperimentRecyclerActivity extends Activity {
         try (ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buffer, 0,
                 bufferSize)) {
             int read = byteArrayInputStream.read(bytes);
-            System.out.println("read " + read);
-            saveDoc(doc.toString(), bytes, getApplicationContext(), true);
+            Log.v("MAIN", "save   " + read + " bytes");
+            saveDoc(doc.toString(), bytes, getApplicationContext(), false);
         } catch (IOException e) {
             Log.e("MAIN", "Error reading bytes");
         }
@@ -468,11 +465,10 @@ public class ExperimentRecyclerActivity extends Activity {
 
     void toPlayer() {
         RCDoc doc = getDoc();
-        byte[] data = docToBytes(doc);
-        if (data.length < 10) {
-            sendDoc(doc); // for debugging
+        sendDoc(doc); // for debugging
+        if (DEBUG) {
+            sendToPlayerViaIntent(docToBytes(doc), doc.toString());
         }
-        sendToPlayerViaIntent(data, doc.toString());
     }
 
     void sendToPlayerViaIntent(byte[] data, String name) {
@@ -548,7 +544,7 @@ public class ExperimentRecyclerActivity extends Activity {
                 bufferSize)) {
             int read = byteArrayInputStream.read(bytes);
             System.out.println("read " + read);
-            saveDoc(doc.toString(), bytes, getApplicationContext(), true);
+            saveDoc(doc.toString(), bytes, getApplicationContext(), false);
         } catch (IOException e) {
             // Handle the exception
         }
@@ -663,6 +659,9 @@ public class ExperimentRecyclerActivity extends Activity {
                     return true;
                 }
             });
+//            int mode =(mPlayer.getResources().getConfiguration().isNightModeActive())?Rc.Theme
+//            .DARK:Rc.Theme.LIGHT;
+//            mPlayer.setTheme(mode);
             mTitle.setTextSize(32);
             mTitle.setTypeface(mTitle.getTypeface(), Typeface.BOLD);
             mTitle.setTextColor(Color.BLACK);

@@ -23,6 +23,7 @@ import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.operations.BitmapFontData
 import androidx.compose.remote.core.operations.DrawTextOnCircle
+import androidx.compose.remote.core.operations.TouchExpression
 import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
@@ -612,6 +613,36 @@ public open class RemoteComposeContext {
         )
     }
 
+    /**
+     * Add a polar path expression
+     *
+     * @param expressionR The r component of the expression.
+     * @param start The start value of the expression.
+     * @param end The end value of the expression.
+     * @param count The number of values in the expression.
+     * @param flags The flags for the expression.
+     */
+    public fun addPolarPathExpression(
+        expressionR: RFloat,
+        start: Number,
+        end: Number,
+        count: Number,
+        centerX: Number,
+        centerY: Number,
+        flags: Int = 0,
+    ): Int {
+
+        return mRemoteWriter.addPolarPathExpression(
+            expressionR.array,
+            start.toFloat(),
+            end.toFloat(),
+            count.toFloat(),
+            centerX.toFloat(),
+            centerY.toFloat(),
+            flags,
+        )
+    }
+
     public fun skew(skewX: Float, skewY: Float) {
         mRemoteWriter.skew(skewX, skewY)
     }
@@ -778,6 +809,43 @@ public open class RemoteComposeContext {
 
     public fun easing(maxTime: Float, maxAcceleration: Float, maxVelocity: Float): FloatArray {
         return mRemoteWriter.easing(maxTime, maxAcceleration, maxVelocity)
+    }
+
+    /**
+     * Add a touch expression.
+     *
+     * @param exp The expression.
+     * @param defValue The default value.
+     * @param min The minimum value.
+     * @param max The maximum value.
+     * @param touchMode The touch mode.
+     * @param velocityId The velocity ID.
+     * @param touchEffects The touch effects.
+     * @param touchSpec The touch spec.
+     * @param easingSpec The easing spec.
+     */
+    public fun touchExpression(
+        vararg exp: Float,
+        defValue: Float = 0f,
+        min: Float = 0f,
+        max: Float = 10f,
+        touchMode: Int = TouchExpression.STOP_GENTLY,
+        velocityId: Float = 0f,
+        touchEffects: Int = 0,
+        touchSpec: FloatArray? = null,
+        easingSpec: FloatArray? = null,
+    ): Float {
+        return mRemoteWriter.addTouch(
+            defValue,
+            min,
+            max,
+            touchMode,
+            velocityId,
+            touchEffects,
+            touchSpec,
+            easingSpec,
+            *exp,
+        )
     }
 
     public fun addTouch(
@@ -1170,6 +1238,7 @@ public open class RemoteComposeContext {
         modifier: RecordingModifier,
         textId: Int,
         color: Int,
+        colorId: Int,
         fontSize: Float,
         fontStyle: Int,
         fontWeight: Float,
@@ -1177,11 +1246,24 @@ public open class RemoteComposeContext {
         textAlign: Int,
         overflow: Int,
         maxLines: Int,
+        letterSpacing: Float,
+        lineHeightAdd: Float,
+        lineHeightMultiplier: Float,
+        lineBreakStrategy: Int,
+        hyphenationFrequency: Int,
+        justificationMode: Int,
+        underline: Boolean,
+        strikethrough: Boolean,
+        fontAxis: Array<String>?,
+        fontAxisValues: FloatArray?,
+        autosize: Boolean,
+        flags: Int,
     ) {
         mRemoteWriter.startTextComponent(
             modifier,
             textId,
             color,
+            colorId,
             fontSize,
             fontStyle,
             fontWeight,
@@ -1189,34 +1271,18 @@ public open class RemoteComposeContext {
             textAlign,
             overflow,
             maxLines,
-        )
-    }
-
-    public fun startTextComponent(
-        modifier: RecordingModifier,
-        textId: Int,
-        color: Int,
-        fontSize: Float,
-        fontStyle: Int,
-        fontWeight: Float,
-        fontFamily: String?,
-        flags: Short,
-        textAlign: Short,
-        overflow: Int,
-        maxLines: Int,
-    ) {
-        mRemoteWriter.startTextComponent(
-            modifier,
-            textId,
-            color,
-            fontSize,
-            fontStyle,
-            fontWeight,
-            fontFamily,
+            letterSpacing,
+            lineHeightAdd,
+            lineHeightMultiplier,
+            lineBreakStrategy,
+            hyphenationFrequency,
+            justificationMode,
+            underline,
+            strikethrough,
+            fontAxis,
+            fontAxisValues,
+            autosize,
             flags,
-            textAlign,
-            overflow,
-            maxLines,
         )
     }
 
@@ -1440,7 +1506,7 @@ public open class RemoteComposeContext {
     }
 
     public fun text(
-        string: String,
+        stringId: Int,
         modifier: RecordingModifier = RecordingModifier(),
         color: Int = 0xFF000000.toInt(),
         fontSize: Float = 36f,
@@ -1451,10 +1517,9 @@ public open class RemoteComposeContext {
         overflow: Int = TextLayout.OVERFLOW_CLIP,
         maxLines: Int = Int.MAX_VALUE,
     ) {
-        val textId = mRemoteWriter.textCreateId(string)
         mRemoteWriter.textComponent(
             modifier,
-            textId,
+            stringId,
             color,
             fontSize,
             fontStyle,
@@ -1463,6 +1528,112 @@ public open class RemoteComposeContext {
             textAlign,
             overflow,
             maxLines,
+        ) {}
+    }
+
+    public fun text(
+        string: String,
+        modifier: RecordingModifier = RecordingModifier(),
+        color: Int = 0xFF000000.toInt(),
+        colorId: Int = -1,
+        fontSize: Float = 36f,
+        fontStyle: Int = 0,
+        fontWeight: Float = 400f,
+        fontFamily: String? = null,
+        textAlign: Int = TextLayout.TEXT_ALIGN_LEFT,
+        overflow: Int = TextLayout.OVERFLOW_CLIP,
+        maxLines: Int = Int.MAX_VALUE,
+        letterSpacing: Float = 0.0f,
+        lineHeightAdd: Float = 0.0f,
+        lineHeightMultiplier: Float = 1.0f,
+        lineBreakStrategy: Int = 0,
+        hyphenationFrequency: Int = 0,
+        justificationMode: Int = 0,
+        underline: Boolean = false,
+        strikethrough: Boolean = false,
+        autosize: Boolean = false,
+        fontAxis: List<Pair<String, Float>>? = null,
+    ) {
+        val textId = mRemoteWriter.textCreateId(string)
+        text(
+            textId,
+            modifier,
+            color,
+            colorId,
+            fontSize,
+            fontStyle,
+            fontWeight,
+            fontFamily,
+            textAlign,
+            overflow,
+            maxLines,
+            letterSpacing,
+            lineHeightAdd,
+            lineHeightMultiplier,
+            lineBreakStrategy,
+            hyphenationFrequency,
+            justificationMode,
+            underline,
+            strikethrough,
+            autosize,
+            fontAxis,
+        )
+    }
+
+    public fun text(
+        textId: Int,
+        modifier: RecordingModifier = RecordingModifier(),
+        color: Int = 0xFF000000.toInt(),
+        colorId: Int = 0,
+        fontSize: Float = 36f,
+        fontStyle: Int = 0,
+        fontWeight: Float = 400f,
+        fontFamily: String? = null,
+        textAlign: Int = TextLayout.TEXT_ALIGN_LEFT,
+        overflow: Int = TextLayout.OVERFLOW_CLIP,
+        maxLines: Int = Int.MAX_VALUE,
+        letterSpacing: Float = 0.0f,
+        lineHeightAdd: Float = 0.0f,
+        lineHeightMultiplier: Float = 1.0f,
+        lineBreakStrategy: Int = 0,
+        hyphenationFrequency: Int = 0,
+        justificationMode: Int = 0,
+        underline: Boolean = false,
+        striketrough: Boolean = false,
+        autosize: Boolean = false,
+        fontAxis: List<Pair<String, Float>>? = null,
+        flags: Int = 0,
+    ) {
+        var explicitStringArray: Array<String>? = null
+        var explicitFloatArray: FloatArray? = null
+        if (fontAxis != null) {
+            explicitStringArray = fontAxis.map { it.first }.toTypedArray()
+            explicitFloatArray = fontAxis.map { it.second }.toTypedArray().toFloatArray()
+        }
+        mRemoteWriter.textComponent(
+            modifier,
+            textId,
+            color,
+            colorId,
+            fontSize,
+            fontStyle,
+            fontWeight,
+            fontFamily,
+            textAlign,
+            overflow,
+            maxLines,
+            letterSpacing,
+            lineHeightAdd,
+            lineHeightMultiplier,
+            lineBreakStrategy,
+            hyphenationFrequency,
+            justificationMode,
+            underline,
+            striketrough,
+            explicitStringArray,
+            explicitFloatArray,
+            autosize,
+            flags,
         ) {}
     }
 

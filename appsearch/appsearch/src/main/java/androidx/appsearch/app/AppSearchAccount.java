@@ -32,12 +32,26 @@ import org.jspecify.annotations.Nullable;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @ExperimentalAppSearchApi
 @FlaggedApi(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
-public class AppSearchAccount extends GenericDocument {
+public final class AppSearchAccount extends GenericDocument {
     /** The name of the schema type for {@link AppSearchAccount} documents.*/
     public static final String SCHEMA_TYPE = "builtin:Account";
 
+    /**
+     * The property name of the type of an account.
+     * @exportToFramework:hide
+     */
     public static final String PROPERTY_ACCOUNT_TYPE = "accountType";
+
+    /**
+     * The property name of the name of an account.
+     * @exportToFramework:hide
+     */
     public static final String PROPERTY_ACCOUNT_NAME = "accountName";
+
+    /**
+     * The property name of the id of an account.
+     * @exportToFramework:hide
+     */
     public static final String PROPERTY_ACCOUNT_ID = "accountId";
 
     public static final AppSearchSchema SCHEMA = new AppSearchSchema.Builder(SCHEMA_TYPE)
@@ -93,7 +107,7 @@ public class AppSearchAccount extends GenericDocument {
     /**
      * The builder class for {@link AppSearchAccount}.
      */
-    public static class Builder extends GenericDocument.Builder<Builder> {
+    public static final class Builder extends GenericDocument.Builder<Builder> {
         /**
          * Creates a new {@link AppSearchAccount.Builder}
          *

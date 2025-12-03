@@ -200,8 +200,7 @@ internal class SurfaceFeatureImpl(
     override val surface: Surface
         get() {
             // TODO Either cache the surface in the constructor, or change this interface to return
-            // a
-            //  Future.
+            // a Future.
             try {
                 return impressApi.getSurfaceFromStereoSurface(entityImpressNode)
             } catch (e: IllegalArgumentException) {
@@ -211,6 +210,11 @@ internal class SurfaceFeatureImpl(
 
     override fun setSurfacePixelDimensions(width: Int, height: Int) {
         require(width > 0 && height > 0) { "Surface dimensions must be positive." }
+        if (surfaceProtection == SurfaceEntity.SurfaceProtection.PROTECTED) {
+            throw IllegalStateException(
+                "Cannot set surface pixel dimensions for protected surfaces."
+            )
+        }
         try {
             impressApi.setStereoSurfaceEntitySurfaceSize(entityImpressNode, width, height)
         } catch (e: IllegalArgumentException) {

@@ -2696,6 +2696,7 @@ package androidx.core.view {
   public final class DisplayCompat {
     method public static androidx.core.view.DisplayCompat.ModeCompat getMode(android.content.Context, android.view.Display);
     method public static androidx.core.view.RoundedCornerCompat? getRoundedCorner(android.view.Display, int);
+    method public static androidx.core.view.DisplayShapeCompat getShape(android.content.Context, android.view.Display);
     method public static androidx.core.view.DisplayCompat.ModeCompat![] getSupportedModes(android.content.Context, android.view.Display);
   }
 
@@ -2717,6 +2718,10 @@ package androidx.core.view {
     method public int getSafeInsetRight();
     method public int getSafeInsetTop();
     method public androidx.core.graphics.Insets getWaterfallInsets();
+  }
+
+  public final class DisplayShapeCompat {
+    method public android.graphics.Path getPath();
   }
 
   public final class DragAndDropPermissionsCompat {
@@ -3552,6 +3557,7 @@ package androidx.core.view {
     method @Deprecated public androidx.core.view.WindowInsetsCompat consumeStableInsets();
     method @Deprecated public androidx.core.view.WindowInsetsCompat consumeSystemWindowInsets();
     method public androidx.core.view.DisplayCutoutCompat? getDisplayCutout();
+    method public androidx.core.view.DisplayShapeCompat? getDisplayShape();
     method public androidx.core.graphics.Insets getInsets(int);
     method public androidx.core.graphics.Insets getInsetsIgnoringVisibility(int);
     method @Deprecated public androidx.core.graphics.Insets getMandatorySystemGestureInsets();
@@ -3590,6 +3596,7 @@ package androidx.core.view {
     ctor public WindowInsetsCompat.Builder(androidx.core.view.WindowInsetsCompat);
     method public androidx.core.view.WindowInsetsCompat build();
     method public androidx.core.view.WindowInsetsCompat.Builder setDisplayCutout(androidx.core.view.DisplayCutoutCompat?);
+    method public androidx.core.view.WindowInsetsCompat.Builder setDisplayShape(androidx.core.view.DisplayShapeCompat);
     method public androidx.core.view.WindowInsetsCompat.Builder setInsets(int, androidx.core.graphics.Insets);
     method public androidx.core.view.WindowInsetsCompat.Builder setInsetsIgnoringVisibility(int, androidx.core.graphics.Insets);
     method @Deprecated public androidx.core.view.WindowInsetsCompat.Builder setMandatorySystemGestureInsets(androidx.core.graphics.Insets);

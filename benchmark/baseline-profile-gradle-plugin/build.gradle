@@ -93,6 +93,7 @@ gradlePlugin {
 androidx {
     name = "Baseline Profile Gradle Plugin"
     type = SoftwareType.GRADLE_PLUGIN
+    minimumGradleVersion = "8.2"
     inceptionYear = "2022"
     description = "Android Baseline Profile Gradle Plugin"
 }

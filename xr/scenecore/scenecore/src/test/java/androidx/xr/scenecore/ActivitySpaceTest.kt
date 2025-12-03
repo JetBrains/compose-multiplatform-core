@@ -165,16 +165,30 @@ class ActivitySpaceTest {
     }
 
     @Test
-    fun getParentSpaceScale_throwsIllegalArgumentException() {
-        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
-        assertThrows(IllegalArgumentException::class.java) { activitySpace.getScale(Space.PARENT) }
-    }
-
-    @Test
     fun getActivitySpaceScale_returnsIdentity() {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         val scale = activitySpace.getScale(Space.ACTIVITY)
         assertThat(scale).isEqualTo(1f)
+    }
+
+    fun getParentSpaceNonUniformScale_throwsIllegalArgumentException() {
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        assertThrows(IllegalArgumentException::class.java) {
+            activitySpace.getNonUniformScale(Space.PARENT)
+        }
+    }
+
+    @Test
+    fun getActivityNonUniformSpaceScale_returnsIdentity() {
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        val scale = activitySpace.getNonUniformScale(Space.ACTIVITY)
+        assertThat(scale).isEqualTo(Vector3.One)
+    }
+
+    @Test
+    fun getParentSpaceScale_throwsIllegalArgumentException() {
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        assertThrows(IllegalArgumentException::class.java) { activitySpace.getScale(Space.PARENT) }
     }
 
     @Test
@@ -182,6 +196,13 @@ class ActivitySpaceTest {
         val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
         val scale = activitySpace.getScale(Space.REAL_WORLD)
         assertThat(scale).isEqualTo(1f)
+    }
+
+    @Test
+    fun getRealWorldSpaceNonUniformScale_returnsIdentity() {
+        val activitySpace = ActivitySpace.create(fakeRuntime, entityManager)
+        val scale = activitySpace.getNonUniformScale(Space.REAL_WORLD)
+        assertThat(scale).isEqualTo(Vector3.One)
     }
 
     @Test

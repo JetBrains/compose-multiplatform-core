@@ -49,17 +49,21 @@ import androidx.pdf.annotation.models.PdfEdits
 import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.ink.model.ApplyEditsState
 import androidx.pdf.ink.model.ApplyInProgressException
+import androidx.pdf.ink.state.AnnotationDrawingMode
 import androidx.pdf.ink.util.PageTransformCalculator
+import androidx.pdf.ink.view.AnnotationToolbar
+import androidx.pdf.ink.view.tool.AnnotationToolInfo
 import androidx.pdf.view.PdfContentLayout
 import androidx.pdf.view.PdfView
 import androidx.pdf.viewer.fragment.PdfStylingOptions
 import androidx.pdf.viewer.fragment.PdfViewerFragment
 import java.util.Collections
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
- * A [Fragment] that extends [PdfViewerFragment] to provide PDF editing capabilities, including
- * annotation and form filling, leveraging the 'androidx.ink' library.
+ * A [androidx.fragment.app.Fragment] that extends [PdfViewerFragment] to provide PDF editing
+ * capabilities, including annotation and form filling, leveraging the 'androidx.ink' library.
  *
  * <p>This fragment coordinates the underlying PDF content with editing layers, enabling users to
  * add ink strokes, create annotations, and modify form fields. It manages the interaction logic
@@ -183,19 +187,18 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     private lateinit var onViewportChangedListener: PdfView.OnViewportChangedListener
     private lateinit var wetStrokesOnFinishedListener: WetStrokesOnFinishedListener
 
+    private lateinit var wetStrokesViewTouchHandler: WetStrokesViewTouchHandler
+
     @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
     override val documentViewModel: EditableDocumentViewModel by viewModels {
         EditableDocumentViewModel.Factory
     }
+    private lateinit var annotationToolbar: AnnotationToolbar
     private var pageTransformCalculator: PageTransformCalculator = PageTransformCalculator()
     private val strokeIdToPageNumMap: MutableMap<InProgressStrokeId, Int> =
         Collections.synchronizedMap(mutableMapOf<InProgressStrokeId, Int>())
 
-    /** Undoes the last edit. If there are no more edits to undo, this is a no-op. */
-    internal fun undo(): Unit = documentViewModel.undo()
-
-    /** Redoes the last undone edit. If there are no more edits to redo, this is a no-op. */
-    internal fun redo(): Unit = documentViewModel.redo()
+    private lateinit var annotationsViewOnTouchListener: AnnotationsViewOnTouchListener
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -217,12 +220,16 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
 
         annotationView =
             AnnotationsView(requireContext()).apply {
+                id = R.id.pdf_annotation_view
                 layoutParams =
                     ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
             }
+
+        inflater.inflate(R.layout.annotation_toolbar_layout, rootView, true)
+        annotationToolbar = rootView.findViewById(R.id.annotationToolbar)
 
         val pdfContentLayout =
             rootView.findViewById<PdfContentLayout>(
@@ -277,6 +284,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         setupBackPressedCallback()
         attachOnViewportChangedListener()
         setupDiscardChangesDialogListener()
+        setupAnnotationToolbar()
     }
 
     /**
@@ -295,6 +303,7 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
         // Clean up the listener to avoid potential memory leaks
         super.onDestroyView()
         pdfView.removeOnViewportChangedListener(onViewportChangedListener)
+        annotationToolbar.setAnnotationToolbarListener(null)
     }
 
     private fun updateUiForEditMode(isEnabled: Boolean) {
@@ -307,6 +316,10 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
     private fun setAnnotationInteraction(isEnabled: Boolean) {
         PdfFeatureFlags.isMultiTouchScrollEnabled = isEnabled
         wetStrokesView.visibility = if (isEnabled) VISIBLE else GONE
+        annotationToolbar.visibility = if (isEnabled) VISIBLE else GONE
+        if (!isEnabled) {
+            annotationToolbar.reset()
+        }
     }
 
     private fun setupDiscardChangesDialogListener() {
@@ -329,16 +342,16 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
             )
         wetStrokesView.apply {
             addFinishedStrokesListener(wetStrokesOnFinishedListener)
-            setOnTouchListener(
+            wetStrokesViewTouchHandler =
                 WetStrokesViewTouchHandler(this, ::getPageInfoFromViewCoordinates) {
                     strokeId,
                     pageNum ->
                     strokeIdToPageNumMap[strokeId] = pageNum
                 }
-            )
+            setOnTouchListener(wetStrokesViewTouchHandler)
         }
 
-        val annotationsViewOnTouchListener =
+        annotationsViewOnTouchListener =
             AnnotationsViewOnTouchListener(
                 requireContext(),
                 WetStrokesViewTouchEventDispatcher(),
@@ -463,6 +476,77 @@ public open class EditablePdfViewerFragment : PdfViewerFragment {
             }
         }
         return null
+    }
+
+    private fun setupAnnotationToolbar() {
+        annotationToolbar.setAnnotationToolbarListener(
+            object : AnnotationToolbar.AnnotationToolbarListener {
+                override fun onToolChanged(toolInfo: AnnotationToolInfo) {
+                    documentViewModel.setCurrentToolInfo(toolInfo)
+                }
+
+                override fun onUndo() {
+                    documentViewModel.undo()
+                }
+
+                override fun onRedo() {
+                    documentViewModel.redo()
+                }
+
+                override fun onAnnotationVisibilityChanged(isVisible: Boolean) {
+                    documentViewModel.setAnnotationVisibility(isVisible)
+                }
+            }
+        )
+
+        lifecycleScope.apply {
+            collectFlowOnLifecycleScope {
+                documentViewModel.canUndo.collect { annotationToolbar.canUndo = it }
+            }
+
+            collectFlowOnLifecycleScope {
+                documentViewModel.canRedo.collect { annotationToolbar.canRedo = it }
+            }
+
+            collectFlowOnLifecycleScope {
+                documentViewModel.drawingMode.collect { updateDrawingMode(it) }
+            }
+
+            collectFlowOnLifecycleScope {
+                documentViewModel.areAnnotationsEnabled.collect { isEnabled ->
+                    annotationView.visibility = if (isEnabled) VISIBLE else GONE
+                    // Disable touch listener to short-circuit touch events to PdfView.
+                    val touchListener = if (isEnabled) annotationsViewOnTouchListener else null
+                    pdfContainer.setOnTouchListener(touchListener)
+                }
+            }
+        }
+    }
+
+    private fun updateDrawingMode(drawingMode: AnnotationDrawingMode) {
+        when (drawingMode) {
+            // TODO(b/448242937): Revisit touch interception logic;
+            // Based on drawingMode, enable/disable touch interception
+            is AnnotationDrawingMode.PenMode -> {
+                wetStrokesViewTouchHandler.brushForInking = drawingMode.brush
+                wetStrokesView.setOnTouchListener(wetStrokesViewTouchHandler)
+            }
+
+            else -> {
+                wetStrokesView.setOnTouchListener(null)
+                // TODO: Add handling for other drawing modes
+            }
+        }
+    }
+
+    private fun collectFlowOnLifecycleScope(block: suspend () -> Unit): Job {
+        return viewLifecycleOwner.lifecycleScope.launch {
+            /**
+             * [repeatOnLifecycle] launches the block in a new coroutine every time the lifecycle is
+             * in the STARTED state (or above) and cancels it when it's STOPPED.
+             */
+            repeatOnLifecycle(Lifecycle.State.STARTED) { block() }
+        }
     }
 
     /**

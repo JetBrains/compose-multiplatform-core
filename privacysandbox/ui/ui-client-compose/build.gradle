@@ -35,23 +35,6 @@ dependencies {
     api("androidx.core:core:1.12.0")
     api("androidx.compose.ui:ui:1.8.2")
     implementation(project(":privacysandbox:ui:ui-client"))
-
-    androidTestImplementation(project(":internal-testutils-runtime"))
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.espressoIntents)
-    androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.mockitoCore)
-    androidTestImplementation(libs.testUiautomator)
-    androidTestImplementation(project(":appcompat:appcompat"))
-    androidTestImplementation(project(":privacysandbox:ui:ui-provider"))
-    androidTestImplementation(project(":privacysandbox:ui:integration-tests:testingutils"))
-    androidTestImplementation(project(":compose:ui:ui-test-junit4"))
-    androidTestImplementation("androidx.compose.foundation:foundation-layout:1.8.0")
     debugImplementation(project(":compose:ui:ui-test-manifest"))
 }
 

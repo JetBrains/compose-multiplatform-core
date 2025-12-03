@@ -113,7 +113,6 @@ public interface Entity : ScenePose {
      * @param scale The scale factor for each axis.
      * @param relativeTo Set the scale relative to given Space. Default value is the parent Space.
      */
-    // TODO - b/440157781: Add a getter method for non uniform scale
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     public fun setScale(scale: Vector3, relativeTo: Space = Space.PARENT)
 
@@ -125,6 +124,15 @@ public interface Entity : ScenePose {
      * @param scale The uniform scale factor from the parent.
      */
     public fun setScale(@FloatRange(from = 0.0) scale: Float): Unit = setScale(scale, Space.PARENT)
+
+    /**
+     * Returns the scale of this entity along each axis, relative to given space.
+     *
+     * @param relativeTo Get the scale relative to given Space. Default value is the parent space.
+     * @return Current non-uniform scale applied to self and children.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public fun getNonUniformScale(relativeTo: Space = Space.PARENT): Vector3
 
     /**
      * Returns the scale of this entity, relative to given space.
@@ -348,6 +356,12 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
     override fun setScale(scale: Vector3, relativeTo: Space) {
         checkNotDisposed()
         rtEntity!!.setScale(scale, relativeTo.toRtSpace())
+    }
+
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override fun getNonUniformScale(relativeTo: Space): Vector3 {
+        checkNotDisposed()
+        return rtEntity!!.getScale(relativeTo.toRtSpace())
     }
 
     override fun getScale(relativeTo: Space): Float {

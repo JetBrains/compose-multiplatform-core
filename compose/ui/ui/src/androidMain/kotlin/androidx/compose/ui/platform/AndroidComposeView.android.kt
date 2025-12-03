@@ -1429,8 +1429,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     }
 
     override fun onPostAttach(node: LayoutNode) {
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (autofillSupported() && ComposeUiFlags.isSemanticAutofillEnabled) {
+        if (autofillSupported()) {
             _autofillManager?.onPostAttach(node)
         }
     }
@@ -1439,15 +1438,13 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         layoutNodes.remove(node.semanticsId)
         measureAndLayoutDelegate.onNodeDetached(node)
         requestClearInvalidObservations()
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (autofillSupported() && ComposeUiFlags.isSemanticAutofillEnabled) {
+        if (autofillSupported()) {
             _autofillManager?.onDetach(node)
         }
     }
 
     override fun requestAutofill(node: LayoutNode) {
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (autofillSupported() && ComposeUiFlags.isSemanticAutofillEnabled) {
+        if (autofillSupported()) {
             _autofillManager?.requestAutofill(node)
         }
     }
@@ -1465,8 +1462,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
         if (childAndroidViews != null) {
             clearChildInvalidObservations(childAndroidViews)
         }
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (autofillSupported() && ComposeUiFlags.isSemanticAutofillEnabled) {
+        if (autofillSupported()) {
             _autofillManager?.onEndApplyChanges()
         }
         // Listeners can add more items to the list and we want to ensure that they
@@ -2032,8 +2028,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     }
 
     override fun onLayoutNodeDeactivated(layoutNode: LayoutNode) {
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (autofillSupported() && ComposeUiFlags.isSemanticAutofillEnabled) {
+        if (autofillSupported()) {
             _autofillManager?.onLayoutNodeDeactivated(layoutNode)
         }
     }
@@ -2045,8 +2040,7 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
     }
 
     override fun onPostLayoutNodeReused(layoutNode: LayoutNode, oldSemanticsId: Int) {
-        @OptIn(ExperimentalComposeUiApi::class)
-        if (autofillSupported() && ComposeUiFlags.isSemanticAutofillEnabled) {
+        if (autofillSupported()) {
             _autofillManager?.onPostLayoutNodeReused(layoutNode, oldSemanticsId)
         }
     }
@@ -2346,18 +2340,14 @@ internal class AndroidComposeView(context: Context, coroutineContext: CoroutineC
 
     override fun onProvideAutofillVirtualStructure(structure: ViewStructure?, flags: Int) {
         if (autofillSupported() && structure != null) {
-            if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isSemanticAutofillEnabled) {
-                _autofillManager?.populateViewStructure(structure)
-            }
+            _autofillManager?.populateViewStructure(structure)
             _autofill?.populateViewStructure(structure)
         }
     }
 
     override fun autofill(values: SparseArray<AutofillValue>) {
         if (autofillSupported()) {
-            if (@OptIn(ExperimentalComposeUiApi::class) ComposeUiFlags.isSemanticAutofillEnabled) {
-                _autofillManager?.performAutofill(values)
-            }
+            _autofillManager?.performAutofill(values)
             _autofill?.performAutofill(values)
         }
     }

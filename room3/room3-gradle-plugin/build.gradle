@@ -95,6 +95,7 @@ gradlePlugin {
 androidx {
     name = "Room Gradle Plugin"
     type = SoftwareType.GRADLE_PLUGIN
+    minimumGradleVersion = "8.6"
     inceptionYear = "2023"
     description = "Android Room Gradle Plugin"
     kotlinTarget = KotlinTarget.KOTLIN_2_1

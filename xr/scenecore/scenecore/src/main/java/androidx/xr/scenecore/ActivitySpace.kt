@@ -263,6 +263,30 @@ private constructor(rtActivitySpace: RtActivitySpace, entityManager: EntityManag
     }
 
     /**
+     * Returns the scale of the `ActivitySpace` along each axis, relative to the specified
+     * coordinate space.
+     *
+     * @param relativeTo The coordinate space to get the scale relative to. Defaults to
+     *   [Space.PARENT].
+     * @return The current scale of the `ActivitySpace` along each axis.
+     * @throws IllegalArgumentException if called with Space.PARENT since ActivitySpace has no
+     *   parents.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    override fun getNonUniformScale(relativeTo: Space): Vector3 {
+        checkNotDisposed()
+        return when (relativeTo) {
+            Space.PARENT ->
+                throw IllegalArgumentException(
+                    "ActivitySpace is a root space and it does not have a parent."
+                )
+            Space.ACTIVITY,
+            Space.REAL_WORLD -> super.getNonUniformScale(relativeTo)
+            else -> throw IllegalArgumentException("Unsupported relativeTo value: $relativeTo")
+        }
+    }
+
+    /**
      * Returns the scale of the `ActivitySpace` relative to the specified coordinate space.
      *
      * @param relativeTo The coordinate space to get the scale relative to. Defaults to

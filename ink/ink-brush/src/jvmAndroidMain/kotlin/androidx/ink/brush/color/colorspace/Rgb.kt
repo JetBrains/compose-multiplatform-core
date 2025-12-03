@@ -133,7 +133,7 @@ import kotlin.math.pow
  * To learn more about the white point adaptation process, refer to the documentation of
  * [Adaptation].
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public class Rgb
 /**
  * Creates a new RGB color space using a specified set of primaries and a specified white point.
@@ -169,7 +169,7 @@ public class Rgb
  *     * The minimum valid value is >= the maximum valid value.
  *     * The ID is not between [ColorSpace.MinId] and [ColorSpace.MaxId].
  */
-internal constructor(
+public constructor(
     name: String,
     primaries: FloatArray,
     public val whitePoint: WhitePoint,
@@ -348,7 +348,7 @@ internal constructor(
         0.0f,
         1.0f,
         null,
-        MinId,
+        MIN_ID,
     )
 
     /**
@@ -398,7 +398,7 @@ internal constructor(
         min,
         max,
         null,
-        MinId,
+        MIN_ID,
     )
 
     /**
@@ -419,7 +419,7 @@ internal constructor(
         @Size(min = 1) name: String,
         @Size(9) toXYZ: FloatArray,
         function: TransferParameters,
-    ) : this(name, computePrimaries(toXYZ), computeWhitePoint(toXYZ), function, MinId)
+    ) : this(name, computePrimaries(toXYZ), computeWhitePoint(toXYZ), function, MIN_ID)
 
     /**
      * Creates a new RGB color space using a specified set of primaries and a specified white point.
@@ -451,7 +451,7 @@ internal constructor(
         @Size(min = 6, max = 9) primaries: FloatArray,
         whitePoint: WhitePoint,
         function: TransferParameters,
-    ) : this(name, primaries, whitePoint, function, MinId)
+    ) : this(name, primaries, whitePoint, function, MIN_ID)
 
     /**
      * Creates a new RGB color space using a specified set of primaries and a specified white point.
@@ -522,7 +522,7 @@ internal constructor(
         @Size(min = 1) name: String,
         @Size(9) toXYZ: FloatArray,
         gamma: Double,
-    ) : this(name, computePrimaries(toXYZ), computeWhitePoint(toXYZ), gamma, 0.0f, 1.0f, MinId)
+    ) : this(name, computePrimaries(toXYZ), computeWhitePoint(toXYZ), gamma, 0.0f, 1.0f, MIN_ID)
 
     /**
      * Creates a new RGB color space using a specified set of primaries and a specified white point.
@@ -556,7 +556,7 @@ internal constructor(
         @Size(min = 6, max = 9) primaries: FloatArray,
         whitePoint: WhitePoint,
         gamma: Double,
-    ) : this(name, primaries, whitePoint, gamma, 0.0f, 1.0f, MinId)
+    ) : this(name, primaries, whitePoint, gamma, 0.0f, 1.0f, MIN_ID)
 
     /**
      * Creates a new RGB color space using a specified set of primaries and a specified white point.
@@ -604,10 +604,16 @@ internal constructor(
         primaries,
         whitePoint,
         null,
-        if (gamma == 1.0) DoubleIdentity
-        else DoubleFunction { x -> (if (x < 0.0) 0.0 else x).pow(1.0 / gamma) },
-        if (gamma == 1.0) DoubleIdentity
-        else DoubleFunction { x -> (if (x < 0.0) 0.0 else x).pow(gamma) },
+        if (gamma == 1.0) {
+            DoubleIdentity
+        } else {
+            DoubleFunction { x -> (if (x < 0.0) 0.0 else x).pow(1.0 / gamma) }
+        },
+        if (gamma == 1.0) {
+            DoubleIdentity
+        } else {
+            DoubleFunction { x -> (if (x < 0.0) 0.0 else x).pow(gamma) }
+        },
         min,
         max,
         TransferParameters(gamma, 1.0, 0.0, 0.0, 0.0),
@@ -633,7 +639,7 @@ internal constructor(
         colorSpace.min,
         colorSpace.max,
         colorSpace.transferParameters,
-        MinId,
+        MIN_ID,
     )
 
     /**
@@ -1196,12 +1202,12 @@ internal constructor(
         }
 
         private fun generateOetf(function: TransferParameters): DoubleFunction {
-            return if (function.isHLGish) {
+            return if (function.IS_HGL_LIKE) {
                 DoubleFunction { x: Double -> transferHlgOetf(function, x) }
-            } else if (function.isPQish) {
+            } else if (function.IS_PQ_LIKE) {
                 DoubleFunction { x: Double -> transferSt2048Oetf(function, x) }
             } else {
-                if (function.e == 0.0 && function.f == 0.0)
+                if (function.e == 0.0 && function.f == 0.0) {
                     DoubleFunction { x: Double ->
                         rcpResponse(
                             x,
@@ -1212,7 +1218,7 @@ internal constructor(
                             function.gamma,
                         )
                     }
-                else
+                } else {
                     DoubleFunction { x: Double ->
                         rcpResponse(
                             x,
@@ -1225,20 +1231,21 @@ internal constructor(
                             function.gamma,
                         )
                     }
+                }
             }
         }
 
         private fun generateEotf(function: TransferParameters): DoubleFunction {
-            return if (function.isHLGish) {
+            return if (function.IS_HGL_LIKE) {
                 DoubleFunction { x: Double -> transferHlgEotf(function, x) }
-            } else if (function.isPQish) {
+            } else if (function.IS_PQ_LIKE) {
                 DoubleFunction { x: Double -> transferSt2048Eotf(function, x) }
             } else {
-                if (function.e == 0.0 && function.f == 0.0)
+                if (function.e == 0.0 && function.f == 0.0) {
                     DoubleFunction { x: Double ->
                         response(x, function.a, function.b, function.c, function.d, function.gamma)
                     }
-                else
+                } else {
                     DoubleFunction { x: Double ->
                         response(
                             x,
@@ -1251,6 +1258,7 @@ internal constructor(
                             function.gamma,
                         )
                     }
+                }
             }
         }
     }
@@ -1260,6 +1268,7 @@ internal constructor(
  * Java's DoubleUnaryOperator isn't available until API 24, so we'll use a substitute. When we bump
  * minimum SDK versions, this should be removed and we should use Java's version.
  */
-internal fun interface DoubleFunction {
-    operator fun invoke(double: Double): Double
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
+public fun interface DoubleFunction {
+    public operator fun invoke(double: Double): Double
 }

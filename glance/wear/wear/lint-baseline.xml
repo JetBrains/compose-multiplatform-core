@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 9.0.0-alpha13" type="baseline" client="gradle" dependencies="false" name="AGP (9.0.0-alpha13)" variant="all" version="9.0.0-alpha13">
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ClipModifierKt.clip-USBMPiE can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="            RemoteModifier.fillMaxSize()"
+        errorLine2="            ^">
+        <location
+            file="src/main/java/androidx/glance/wear/composable/WearWidgetContainer.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="PaddingModifierKt.padding-WMci_g0 can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="            RemoteModifier.fillMaxSize()"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/wear/composable/WearWidgetContainer.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteBoxKt.RemoteBox can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="            RemoteModifier.fillMaxSize()"
+        errorLine2="            ^">
+        <location
+            file="src/main/java/androidx/glance/wear/composable/WearWidgetContainer.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="SizeModifierKt.fillMaxSize can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="            RemoteModifier.fillMaxSize()"
+        errorLine2="            ~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/wear/composable/WearWidgetContainer.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="SizeModifierKt.fillMaxSize can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="            RemoteModifier.fillMaxSize()"
+        errorLine2="                           ~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/wear/composable/WearWidgetContainer.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="PaddingModifierKt.padding-WMci_g0 can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="                .padding(horizontal = horizontalPadding, vertical = verticalPadding)"
+        errorLine2="                 ~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/wear/composable/WearWidgetContainer.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ClipModifierKt.clip-USBMPiE can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="                .clip(shape = RoundedCornerShape(size = cornerRadius)),"
+        errorLine2="                 ~~~~">
+        <location
+            file="src/main/java/androidx/glance/wear/composable/WearWidgetContainer.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="ClipModifierKt.clip-USBMPiE can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="                .clip(shape = RoundedCornerShape(size = cornerRadius)),"
+        errorLine2="                              ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/wear/composable/WearWidgetContainer.kt"/>
+    </issue>
+
+    <issue
+        id="RestrictedApiAndroidX"
+        message="RemoteBoxKt.RemoteBox can only be called from within the same library group (referenced groupId=`androidx.compose.remote` from groupId=`androidx.glance.wear`)"
+        errorLine1="        content = content,"
+        errorLine2="                  ~~~~~~~">
+        <location
+            file="src/main/java/androidx/glance/wear/composable/WearWidgetContainer.kt"/>
+    </issue>
+
+</issues>

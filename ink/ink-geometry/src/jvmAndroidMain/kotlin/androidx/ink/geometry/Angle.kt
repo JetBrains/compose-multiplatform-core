@@ -19,6 +19,7 @@ package androidx.ink.geometry
 import androidx.annotation.FloatRange
 import androidx.ink.nativeloader.NativeLoader
 import androidx.ink.nativeloader.UsedByNative
+import kotlin.math.PI
 
 /**
  * A utility for working with a signed angle. A positive value represents rotation from the positive
@@ -39,14 +40,14 @@ public object Angle {
     /** Returns the equivalent angle in radians in the range [0, 2π). */
     @JvmStatic
     @AngleRadiansFloat
-    @FloatRange(from = 0.0, to = 2 * Math.PI, toInclusive = false)
+    @FloatRange(from = 0.0, to = 2 * PI, toInclusive = false)
     public fun normalizedRadians(@AngleRadiansFloat radians: Float): Float =
         AngleNative.normalizedRadians(radians)
 
     /** Returns the equivalent angle in radians in the range (-π, π]. */
     @JvmStatic
     @AngleRadiansFloat
-    @FloatRange(from = -Math.PI, to = Math.PI, fromInclusive = false)
+    @FloatRange(from = -PI, to = PI, fromInclusive = false)
     public fun normalizedAboutZeroRadians(@AngleRadiansFloat radians: Float): Float =
         AngleNative.normalizedAboutZeroRadians(radians)
 
@@ -64,20 +65,20 @@ public object Angle {
     public fun normalizedAboutZeroDegrees(@AngleDegreesFloat degrees: Float): Float =
         AngleNative.normalizedAboutZeroDegrees(degrees)
 
-    private const val DEGREES_PER_RADIAN = 180.0f / Math.PI.toFloat()
-    private const val RADIANS_PER_DEGREE = Math.PI.toFloat() / 180.0f
+    private const val DEGREES_PER_RADIAN = 180.0f / PI.toFloat()
+    private const val RADIANS_PER_DEGREE = PI.toFloat() / 180.0f
 
     /** Angle of zero (also 0 degrees, but this is annotated as radians). */
     @JvmField @AngleRadiansFloat public val ZERO_RADIANS: Float = 0.0f
 
     /** Angle of PI radians (180 degrees). */
-    @JvmField @AngleRadiansFloat public val HALF_TURN_RADIANS: Float = Math.PI.toFloat()
+    @JvmField @AngleRadiansFloat public val HALF_TURN_RADIANS: Float = PI.toFloat()
 
     /** Angle of PI/2 radians (90 degrees). */
-    @JvmField @AngleRadiansFloat public val QUARTER_TURN_RADIANS: Float = (Math.PI / 2).toFloat()
+    @JvmField @AngleRadiansFloat public val QUARTER_TURN_RADIANS: Float = (PI / 2).toFloat()
 
     /** Angle of 2*PI radians (360 degrees) */
-    @JvmField @AngleRadiansFloat public val FULL_TURN_RADIANS: Float = (Math.PI * 2).toFloat()
+    @JvmField @AngleRadiansFloat public val FULL_TURN_RADIANS: Float = (PI * 2).toFloat()
 
     /** Angle of zero (also 0 radians, but this is annotated as degrees). */
     @JvmField @AngleDegreesFloat public val ZERO_DEGREES: Float = 0.0f

@@ -37,6 +37,7 @@ dependencies {
     api("androidx.annotation:annotation:1.9.1")
     api("androidx.compose.runtime:runtime:$composeVersion")
     api("androidx.lifecycle:lifecycle-service:2.9.2")
+    implementation("androidx.compose.foundation:foundation:$composeVersion")
 
     implementation(project(":compose:remote:remote-creation"))
     implementation(project(":compose:remote:remote-creation-compose"))

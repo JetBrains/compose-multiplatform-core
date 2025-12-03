@@ -120,6 +120,7 @@ import androidx.compose.remote.core.operations.layout.managers.CanvasLayout;
 import androidx.compose.remote.core.operations.layout.managers.CollapsibleColumnLayout;
 import androidx.compose.remote.core.operations.layout.managers.CollapsibleRowLayout;
 import androidx.compose.remote.core.operations.layout.managers.ColumnLayout;
+import androidx.compose.remote.core.operations.layout.managers.CoreText;
 import androidx.compose.remote.core.operations.layout.managers.FitBoxLayout;
 import androidx.compose.remote.core.operations.layout.managers.ImageLayout;
 import androidx.compose.remote.core.operations.layout.managers.RowLayout;
@@ -1108,6 +1109,62 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     }
 
     @Override
+    public void addTextComponentStart(
+            int componentId,
+            int animationId,
+            int textId,
+            int color,
+            int colorId,
+            float fontSize,
+            int fontStyle,
+            float fontWeight,
+            int fontFamilyId,
+            int textAlign,
+            int overflow,
+            int maxLines,
+            float letterSpacing,
+            float lineHeightAdd,
+            float lineHeightMultiplier,
+            int lineBreakStrategy,
+            int hyphenationFrequency,
+            int justificationMode,
+            boolean underline,
+            boolean strikethrough,
+            int @NonNull [] fontAxis,
+            float @NonNull [] fontAxisValues,
+            boolean autosize,
+            int flags) {
+        mLastComponentId = getComponentId(componentId);
+        addOperation(
+                new CoreText(
+                        null,
+                        mLastComponentId,
+                        animationId,
+                        textId,
+                        color,
+                        colorId,
+                        fontSize,
+                        fontStyle,
+                        fontWeight,
+                        fontFamilyId,
+                        textAlign,
+                        overflow,
+                        maxLines,
+                        letterSpacing,
+                        lineHeightAdd,
+                        lineHeightMultiplier,
+                        lineBreakStrategy,
+                        hyphenationFrequency,
+                        justificationMode,
+                        underline,
+                        strikethrough,
+                        fontAxis,
+                        fontAxisValues,
+                        autosize,
+                        flags));
+    }
+
+    @Override
     public void addImpulse(float duration, float start) {
         addOperation(new ImpulseOperation(duration, start));
     }
@@ -1126,7 +1183,7 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     public void addParticles(
             int id,
             int @NonNull [] varIds,
-            float @NonNull []@NonNull [] initialExpressions,
+            float @NonNull [] @NonNull [] initialExpressions,
             int particleCount) {
         addOperation(new ParticlesCreate(id, varIds, initialExpressions, particleCount));
     }
@@ -1155,7 +1212,7 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     }
 
     @Override
-    public void defineFloatFunction(int fid, int @NonNull[] args) {
+    public void defineFloatFunction(int fid, int @NonNull [] args) {
         addOperation(new FloatFunctionDefine(fid, args), fid);
     }
 
@@ -1307,7 +1364,8 @@ public class RecordingRemoteComposeBuffer extends RemoteComposeBuffer {
     }
 
     @Override
-    public void setVersion(int documentApiLevel, @NonNull Set<Integer> supportedOperations) {
+    public void setVersion(int documentApiLevel, int operationsProfiles,
+            @NonNull Set<Integer> supportedOperations) {
         throw new UnsupportedOperationException("setVersion is not supported");
     }
 

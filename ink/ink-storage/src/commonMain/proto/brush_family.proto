@@ -16,7 +16,7 @@
 
 syntax = "proto2";
 
-package androidx.ink.storage.proto;
+package ink.proto;
 
 import "color.proto";
 

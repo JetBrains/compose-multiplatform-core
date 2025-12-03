@@ -154,7 +154,6 @@ package androidx.compose.ui {
     property @Deprecated public boolean isRemoveFocusedViewFixEnabled;
     property public boolean isRequestFocusOnNonFocusableFocusTargetEnabled;
     property public boolean isScrollCaptureCenteringEnabled;
-    property public boolean isSemanticAutofillEnabled;
     property public boolean isTraversableDelegatesFixEnabled;
     property public boolean isViewFocusFixEnabled;
     field public static final androidx.compose.ui.ComposeUiFlags INSTANCE;
@@ -172,7 +171,6 @@ package androidx.compose.ui {
     field @Deprecated public static boolean isRemoveFocusedViewFixEnabled;
     field public static boolean isRequestFocusOnNonFocusableFocusTargetEnabled;
     field public static boolean isScrollCaptureCenteringEnabled;
-    field public static boolean isSemanticAutofillEnabled;
     field public static boolean isTraversableDelegatesFixEnabled;
     field public static boolean isViewFocusFixEnabled;
   }

@@ -80,7 +80,7 @@ dependencies {
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testUiautomator)
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(project(":camera:camera-testing")) {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")

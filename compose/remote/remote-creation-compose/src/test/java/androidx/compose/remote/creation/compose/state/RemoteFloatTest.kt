@@ -21,6 +21,7 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RemoteContext
 import androidx.compose.remote.core.VariableSupport
 import androidx.compose.remote.core.operations.TextFromFloat
+import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
 import androidx.compose.remote.creation.platform.AndroidxRcPlatformServices
 import androidx.compose.remote.player.core.platform.AndroidRemoteContext
@@ -645,6 +646,62 @@ class RemoteFloatTest {
         //        val indianFormatter = DecimalFormat.getNumberInstance(Locale("hi", "IN")) as
         // DecimalFormat
         //        testTextFromFloat("50,00,000.0", 5000000.rf, indianFormatter)
+    }
+
+    @Test
+    fun addAndAddPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) + 100f + 50f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 150.0 + ")
+    }
+
+    @Test
+    fun addAndSubtractPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) + 100f - 50f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 50.0 + ")
+    }
+
+    @Test
+    fun subtractAndSubtractPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) - 100f - 50f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 150.0 - ")
+    }
+
+    @Test
+    fun subtractAndAddPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) - 100f + 50f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 50.0 - ")
+    }
+
+    @Test
+    fun multiplyAndMultiplyPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) * 4f * 2f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 8.0 * ")
+    }
+
+    @Test
+    fun multiplyAndDividePeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) * 4f / 2f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 2.0 * ")
+    }
+
+    @Test
+    fun divideAndDividePeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) / 4f / 2f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 8.0 / ")
+    }
+
+    @Test
+    fun divideAndMultiplyPeepholeOptimization() {
+        val expr = RemoteFloat(RemoteContext.FLOAT_CONTINUOUS_SEC) / 4f * 2f
+        val array = expr.arrayForCreationState(creationState)
+        assertThat(AnimatedFloatExpression.toString(array, null)).isEqualTo("[1] 2.0 / ")
     }
 
     private fun makeAndPaintCoreDocument() =

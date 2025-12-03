@@ -313,9 +313,16 @@ package androidx.test.uiautomator {
     method public final boolean pressEnter();
     method public final boolean pressHome();
     method public final void startActivity(Class<? extends java.lang.Object?> clazz);
+    method public final void startActivity(Class<? extends java.lang.Object?> clazz, optional java.util.List<java.lang.Integer> intentFlags);
     method public final void startActivity(String packageName, String activityName);
-    method public void startActivityIntent(android.content.Intent intent);
+    method public final void startActivity(String packageName, String activityName, optional java.util.List<java.lang.Integer> intentFlags);
+    method @BytecodeOnly public static void startActivity$default(androidx.test.uiautomator.UiAutomatorTestScope!, Class!, java.util.List!, int, Object!);
+    method @BytecodeOnly public static void startActivity$default(androidx.test.uiautomator.UiAutomatorTestScope!, String!, String!, java.util.List!, int, Object!);
+    method public final void startActivityIntent(android.content.Intent intent);
     method public final void startApp(String packageName);
+    method public final void startApp(String packageName, optional java.util.List<java.lang.Integer> intentFlags);
+    method @BytecodeOnly public static void startApp$default(androidx.test.uiautomator.UiAutomatorTestScope!, String!, java.util.List!, int, Object!);
+    method protected void startIntentAndWait(android.content.Intent intent);
     method public final void type(String text);
     method public final void unregisterWatchers();
     method public final boolean waitForAppToBeVisible(String appPackageName);

@@ -44,7 +44,7 @@ import androidx.annotation.RestrictTo
  * @see Connector
  * @see ColorSpace.connect
  */
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public abstract class Adaptation private constructor(internal val transform: FloatArray) {
     public companion object {
         /**

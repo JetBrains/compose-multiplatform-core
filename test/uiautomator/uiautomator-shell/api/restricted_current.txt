@@ -2,7 +2,7 @@
 package androidx.test.shell {
 
   public final class Shell {
-    method public androidx.test.shell.command.ApplicationCommands application(String packageName);
+    method public androidx.test.shell.command.ApplicationCommands application();
     method public androidx.test.shell.Shell.CommandOutput command(String command);
     method public androidx.test.shell.command.PermissionCommands permission(String packageName);
     method public androidx.test.shell.command.ProcessCommands process();
@@ -65,9 +65,12 @@ package androidx.test.shell {
 package androidx.test.shell.command {
 
   public final class ApplicationCommands {
-    method public void clearAppData();
-    method public void startApp();
-    method public void stopApp();
+    method public void amStartActivityIntent(android.content.Intent intent);
+    method public void amStartActivityIntent(android.content.Intent intent, optional String additionalArguments);
+    method @BytecodeOnly public static void amStartActivityIntent$default(androidx.test.shell.command.ApplicationCommands!, android.content.Intent!, String!, int, Object!);
+    method public void clearAppData(String packageName);
+    method public void startApp(String packageName);
+    method public void stopApp(String packageName);
   }
 
   public final class PermissionCommands {

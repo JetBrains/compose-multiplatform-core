@@ -174,15 +174,16 @@ public class StateLayout extends LayoutManager {
     @Override
     public void computeWrapSize(
             @NonNull PaintContext context,
-            float maxWidth,
-            float maxHeight,
+            float minWidth, float maxWidth,
+            float minHeight, float maxHeight,
             boolean horizontalWrap,
             boolean verticalWrap,
             @NonNull MeasurePass measure,
             @NonNull Size size) {
         LayoutManager layout = getLayout(currentLayoutIndex);
         layout.computeWrapSize(
-                context, maxWidth, maxHeight, horizontalWrap, verticalWrap, measure, size);
+                context, minWidth, maxWidth, minHeight , maxHeight,
+                horizontalWrap, verticalWrap, measure, size);
     }
 
     @Override

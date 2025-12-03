@@ -27,12 +27,21 @@ message WearWidgetRequestProto {
   // The namespace for the ID of the widget instance.
   string id_namespace = 5;
 
-  // The width in dp of the container for this widget.
+  // The width in dp of the content for this widget.
   float width_dp = 2;
 
-  // The height in dp of the container for this widget.
+  // The height in dp of the content for this widget.
   float height_dp = 3;
 
   // The container type for this widget.
   uint32 container_type = 4;
+
+  // The horizontal padding in dp of the container for the widget.
+  float horizontal_padding_dp = 6;
+
+  // The vertical padding in dp of the container for the widget.
+  float vertical_padding_dp = 7;
+
+  // The corner radius in dp of the container for the widget.
+  float corner_radius_dp = 8;
 }

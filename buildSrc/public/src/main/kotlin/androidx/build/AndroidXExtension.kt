@@ -23,12 +23,14 @@ import java.io.File
 import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.attributes.plugin.GradlePluginApiVersion
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.SetProperty
+import org.gradle.kotlin.dsl.named
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 /** Extension for [AndroidXImplPlugin] that's responsible for holding configuration options. */
@@ -439,6 +441,20 @@ abstract class AndroidXExtension(
     /** Enable Robolectric tests for Android Host Tests. */
     fun enableRobolectric() {
         configureRobolectric(project)
+    }
+
+    /** Sets the minimum supported version of Gradle for this Gradle plugin */
+    fun setMinimumGradleVersion(version: String) {
+        listOf("runtimeElements", "apiElements").forEach { configurationName ->
+            project.configurations.named(configurationName).configure { configuration ->
+                configuration.attributes { attributes ->
+                    attributes.attribute(
+                        GradlePluginApiVersion.GRADLE_PLUGIN_API_VERSION_ATTRIBUTE,
+                        project.objects.named(version),
+                    )
+                }
+            }
+        }
     }
 
     /** Locates a project by path. */

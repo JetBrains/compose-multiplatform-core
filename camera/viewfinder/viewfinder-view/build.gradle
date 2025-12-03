@@ -37,7 +37,7 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     implementation(libs.autoValueAnnotations)
-    implementation("androidx.test.espresso:espresso-idling-resource:3.1.0")
+    implementation(libs.espressoIdlingResource)
     implementation(libs.kotlinCoroutinesCore)
     implementation(libs.kotlinCoroutinesAndroid)
 

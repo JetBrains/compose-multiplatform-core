@@ -129,6 +129,7 @@ class BouncyLogoOverlayEffect(
                         AppUseCase.PREVIEW -> PREVIEW
                         AppUseCase.VIDEO_CAPTURE -> VIDEO_CAPTURE
                         AppUseCase.IMAGE_CAPTURE -> IMAGE_CAPTURE
+                        AppUseCase.IMAGE_ANALYSIS -> 0
                     }
             }
 

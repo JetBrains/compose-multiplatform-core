@@ -34,17 +34,6 @@ dependencies {
     api("androidx.core:core:1.12.0")
     api project(":privacysandbox:ui:ui-core")
     implementation("androidx.tracing:tracing:1.3.0")
-
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.espressoCore)
-    androidTestImplementation(libs.testUiautomator)
-    androidTestImplementation(project(":internal-testutils-runtime"))
-    androidTestImplementation(project(":internal-testutils-truth"))
 }
 
 android {

@@ -32,12 +32,6 @@ dependencies {
     api(libs.kotlinCoroutinesCore)
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.core:core:1.13.0")
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.testExtJunit)
-    androidTestImplementation(libs.testCore)
-    androidTestImplementation(libs.testRunner)
-    androidTestImplementation(libs.testRules)
-    androidTestImplementation(libs.truth)
 }
 
 android {

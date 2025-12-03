@@ -73,6 +73,13 @@ import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDem
 import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo2
 import androidx.compose.remote.integration.view.demos.examples.RcSimpleClock1
 import androidx.compose.remote.integration.view.demos.examples.RcTextDemo
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo2
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo3
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo4
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo5
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo6
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo7
+import androidx.compose.remote.integration.view.demos.examples.RcTextDemo8
 import androidx.compose.remote.integration.view.demos.examples.ScrollViewDemo
 import androidx.compose.remote.integration.view.demos.examples.ShaderCalendar
 import androidx.compose.remote.integration.view.demos.examples.SimplePath
@@ -105,7 +112,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat.startActivity
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -283,6 +289,13 @@ class ExperimentActivity : ComponentActivity() {
                     getpc("Fireworks") { shaderFireworks() },
                     getpc("Layout modifier 2") { LayoutModifierDemo2() },
                     getpc("Layout modifier 1") { LayoutModifierDemo1() },
+                    getpc("Card") { RcTextDemo8() },
+                    getpc("Dynamic Style Text") { RcTextDemo7() },
+                    getpc("Dynamic Size Text") { RcTextDemo6() },
+                    getpc("Ellipses Text") { RcTextDemo5() },
+                    getpc("Variable fonts Text") { RcTextDemo4() },
+                    getpc("Line height Text") { RcTextDemo3() },
+                    getpc("Autosize Text") { RcTextDemo2() },
                     getpc("Text baseline") { RcTextDemo() },
                     getpc("CountDown") { countDown() },
                     getpc("Cube 3D") { cube3d() },

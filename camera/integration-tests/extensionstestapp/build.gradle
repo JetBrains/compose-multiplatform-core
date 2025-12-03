@@ -63,7 +63,7 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     implementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.3.1")
-    implementation("androidx.test.espresso:espresso-idling-resource:3.1.0")
+    implementation(libs.espressoIdlingResource)
 
     // Guava
     implementation(libs.guavaAndroid)
@@ -79,7 +79,7 @@ dependencies {
     androidTestImplementation(libs.testRules)
     androidTestImplementation(libs.testUiautomator)
     androidTestImplementation(libs.truth)
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.3.0")
+    androidTestImplementation(libs.espressoCore)
     androidTestImplementation(project(":camera:camera-testing")) {
         // Ensure camera-testing does not pull in androidx.test dependencies
         exclude(group:"androidx.test")

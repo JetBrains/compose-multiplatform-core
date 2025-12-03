@@ -20,6 +20,8 @@ import android.content.Context
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
+import androidx.glance.wear.composable.WearWidgetContainer
 import androidx.glance.wear.parcel.WearWidgetCapture
 
 /**
@@ -45,8 +47,14 @@ public class WearWidgetDocument(public val content: @Composable () -> Unit) : We
                 params.heightDp.dpToPx(context),
                 context.resources.displayMetrics.density,
             ),
-            content,
-        )
+        ) {
+            WearWidgetContainer(
+                horizontalPadding = params.horizontalPaddingDp.dp,
+                verticalPadding = params.verticalPaddingDp.dp,
+                cornerRadius = params.cornerRadiusDp.dp,
+                content = content,
+            )
+        }
     }
 }
 

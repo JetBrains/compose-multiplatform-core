@@ -26,7 +26,7 @@ import androidx.annotation.RestrictTo
  * @see ColorSpace.connect
  */
 @JvmInline
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
 public value class RenderIntent internal constructor(@Suppress("unused") internal val value: Int) {
     public companion object {
         /**

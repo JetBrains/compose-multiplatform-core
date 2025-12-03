@@ -372,6 +372,51 @@ class EntityTest {
     }
 
     @Test
+    fun allEntitySetScale_float_allEntityGetNonUniformScale_scaleSetCorrectly() {
+        val scale = Vector3(0.1f, 0.1f, 0.1f)
+
+        panelEntity.setScale(scale)
+        gltfModelEntity.setScale(scale, Space.PARENT)
+
+        // We expect this to raise an exception
+        assertThrows(UnsupportedOperationException::class.java) {
+            anchorEntity.setScale(scale, Space.ACTIVITY)
+        }
+        activityPanelEntity.setScale(scale, Space.REAL_WORLD)
+        groupEntity.setScale(scale)
+        assertThrows(UnsupportedOperationException::class.java) { activitySpace.setScale(scale) }
+
+        assertThat(panelEntity.getNonUniformScale()).isEqualTo(scale)
+        assertThat(gltfModelEntity.getNonUniformScale(Space.PARENT)).isEqualTo(scale)
+        assertThat(anchorEntity.getNonUniformScale(Space.ACTIVITY)).isEqualTo(Vector3.One)
+        assertThat(activityPanelEntity.getNonUniformScale(Space.REAL_WORLD)).isEqualTo(scale)
+
+        assertThrows(IllegalArgumentException::class.java) { activitySpace.getNonUniformScale() }
+    }
+
+    @Test
+    fun allEntitySetScale_vector_allEntityGetNonUniformScale_scaleSetCorrectly() {
+        val scale = Vector3(0.1f, 0.1f, 0.1f)
+
+        panelEntity.setScale(scale)
+        gltfModelEntity.setScale(scale, Space.PARENT)
+
+        // We expect this to raise an exception
+        assertThrows(UnsupportedOperationException::class.java) {
+            anchorEntity.setScale(scale, Space.ACTIVITY)
+        }
+        activityPanelEntity.setScale(scale, Space.REAL_WORLD)
+        groupEntity.setScale(scale)
+        assertThrows(UnsupportedOperationException::class.java) { activitySpace.setScale(scale) }
+
+        assertThat(panelEntity.getNonUniformScale()).isEqualTo(scale)
+        assertThat(gltfModelEntity.getNonUniformScale(Space.PARENT)).isEqualTo(scale)
+        assertThat(anchorEntity.getNonUniformScale(Space.ACTIVITY)).isEqualTo(Vector3.One)
+        assertThat(activityPanelEntity.getNonUniformScale(Space.REAL_WORLD)).isEqualTo(scale)
+        assertThrows(IllegalArgumentException::class.java) { activitySpace.getNonUniformScale() }
+    }
+
+    @Test
     fun allEntityTransformPoseTo_callsRuntimeEntityImplTransformPoseTo() {
         val pose = Pose.Identity
 

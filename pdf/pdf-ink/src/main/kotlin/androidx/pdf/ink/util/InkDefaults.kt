@@ -1,0 +1,46 @@
+/*
+ * Copyright 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.pdf.ink.util
+
+import android.graphics.Color
+import androidx.ink.brush.Brush
+import androidx.ink.brush.StockBrushes
+
+/** Defaults for Ink attributes. */
+internal object InkDefaults {
+    /** Default ink [Color] for drawing. */
+    private const val PEN_COLOR = Color.BLACK
+
+    /** Default ink [Brush] size for drawing. */
+    private const val BRUSH_SIZE = 5f
+
+    /**
+     * Default ink [Brush] epsilon for drawing.
+     *
+     * @see [Brush.epsilon]
+     */
+    const val EPSILON_VALUE = 0.15f
+
+    /** Default ink [Brush] for drawing. */
+    val PEN_BRUSH =
+        Brush.createWithColorIntArgb(
+            family = StockBrushes.pressurePen(),
+            colorIntArgb = PEN_COLOR,
+            size = BRUSH_SIZE,
+            epsilon = EPSILON_VALUE,
+        )
+}

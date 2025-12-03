@@ -24,6 +24,7 @@ import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraEffect
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Logger
 import androidx.camera.core.Preview
@@ -34,6 +35,7 @@ import androidx.camera.core.takePicture
 import androidx.camera.integration.featurecombo.AppFeatures
 import androidx.camera.integration.featurecombo.AppUseCase
 import androidx.camera.integration.featurecombo.AppUseCase.Companion.getSupportedGroupableFeatures
+import androidx.camera.integration.featurecombo.AppUseCase.IMAGE_ANALYSIS
 import androidx.camera.integration.featurecombo.AppUseCase.IMAGE_CAPTURE
 import androidx.camera.integration.featurecombo.AppUseCase.PREVIEW
 import androidx.camera.integration.featurecombo.AppUseCase.VIDEO_CAPTURE
@@ -63,8 +65,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTimedValue
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -90,6 +98,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
 
     private var preview = Preview.Builder().build()
     private val imageCapture = ImageCapture.Builder().build()
+    private val imageAnalysis = ImageAnalysis.Builder().build()
     private val videoCapture: VideoCapture<Recorder> =
         VideoCapture.withOutput(Recorder.Builder().build())
 
@@ -134,6 +143,10 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     val isRecording: StateFlow<Boolean>
         get() = _isRecording
 
+    private val _imageAnalysisFrameCount = MutableStateFlow(0)
+    val imageAnalysisFrameCount: StateFlow<Int>
+        get() = _imageAnalysisFrameCount
+
     private var appFeatures: AppFeatures =
         AppFeatures(
             dynamicRange = DynamicRange.SDR,
@@ -152,6 +165,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     private var featureCombo: FeatureCombo? = null
 
     private var bindStartTime: Long = Long.MIN_VALUE
+
+    private var imageAnalysisJob: Job? = null
 
     init {
         ProcessCameraProvider.configureInstance(
@@ -273,6 +288,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                     when (it) {
                         PREVIEW -> preview.resolutionInfo?.resolution
                         IMAGE_CAPTURE -> imageCapture.resolutionInfo?.resolution
+                        IMAGE_ANALYSIS -> imageAnalysis.resolutionInfo?.resolution
                         VIDEO_CAPTURE -> videoCapture.resolutionInfo?.resolution
                     }
 
@@ -330,9 +346,35 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
                 newMap
             }
 
+            if (useCase == IMAGE_ANALYSIS) {
+                updateAnalyzer()
+            }
+
             Log.d(TAG, "toggleUseCase: isUseCaseEnabled = ${isUseCaseEnabled.value}")
 
             reconfigureFeatureCombo(lifecycleOwner)
+        }
+    }
+
+    private fun updateAnalyzer() {
+        if (isUseCaseEnabled.value[IMAGE_ANALYSIS] == true) {
+            val frameCount = AtomicInteger(0)
+
+            imageAnalysis.setAnalyzer(Dispatchers.Default.asExecutor()) {
+                frameCount.incrementAndGet()
+                it.close()
+            }
+
+            imageAnalysisJob =
+                viewModelScope.launch {
+                    while (true) {
+                        delay(1.seconds)
+                        _imageAnalysisFrameCount.value = (frameCount.get() + 5) / 10 * 10
+                    }
+                }
+        } else {
+            imageAnalysisJob?.cancel()
+            imageAnalysis.clearAnalyzer()
         }
     }
 
@@ -472,6 +514,8 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
     }
 
     private suspend fun reconfigureFeatureCombo(lifecycleOwner: LifecycleOwner) {
+        _imageAnalysisFrameCount.value = 0
+
         featureCombo = FeatureCombo(preferredFeatures = useCaseSupportedFeatures)
 
         bindCamera(lifecycleOwner)
@@ -722,6 +766,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
             when (it) {
                 PREVIEW -> preview
                 IMAGE_CAPTURE -> imageCapture
+                IMAGE_ANALYSIS -> imageAnalysis
                 VIDEO_CAPTURE -> videoCapture
             }
         }
@@ -737,6 +782,7 @@ class CameraViewModel(private val savedStateHandle: SavedStateHandle) : ViewMode
             put(PREVIEW, true)
             put(IMAGE_CAPTURE, true)
             put(VIDEO_CAPTURE, true)
+            put(IMAGE_ANALYSIS, false)
         }
     }
 }

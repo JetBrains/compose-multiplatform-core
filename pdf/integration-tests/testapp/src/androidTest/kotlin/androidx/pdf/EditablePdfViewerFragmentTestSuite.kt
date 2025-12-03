@@ -27,6 +27,7 @@ import androidx.pdf.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.actions.TwoFingerSwipeDownAction
 import androidx.pdf.actions.TwoFingerSwipeUpAction
 import androidx.pdf.ink.R as InkR
+import androidx.pdf.ink.R as PdfInkR
 import androidx.pdf.ink.model.ApplyInProgressException
 import androidx.pdf.util.Preconditions
 import androidx.pdf.viewer.fragment.R as PdfR
@@ -42,6 +43,7 @@ import androidx.test.espresso.assertion.ViewAssertions.doesNotExist
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -342,6 +344,60 @@ class EditablePdfViewerFragmentTestSuite {
         onIdle()
         scenario.onFragment { hasChanges = it.hasUnsavedChanges }
         assertThat(hasChanges).isFalse()
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_testUndoRedo() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        enterEditMode()
+        // Assert undo/redo buttons is initially disabled
+        onView(withId(PdfInkR.id.undo_button)).check(matches(not(isEnabled())))
+        onView(withId(PdfInkR.id.redo_button)).check(matches(not(isEnabled())))
+
+        // Draw an annotation on the content view
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        // Assert AnnotationView is visible
+        onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(isDisplayed()))
+        // Assert undo button gets enabled after a stroke is drawn; but redo remains disabled
+        onView(withId(PdfInkR.id.undo_button)).check(matches(isEnabled()))
+        onView(withId(PdfInkR.id.redo_button)).check(matches(not(isEnabled())))
+
+        // Undo last drawn annotation
+        onView(withId(PdfInkR.id.undo_button)).perform(click())
+        // Assert user cannot perform any more undo steps after last annotation is undone
+        onView(withId(PdfInkR.id.undo_button)).check(matches(not(isEnabled())))
+        // Assert redo button gets enabled
+        onView(withId(PdfInkR.id.redo_button)).check(matches(isEnabled()))
+
+        // Now perform a redo
+        onView(withId(PdfInkR.id.redo_button)).perform(click())
+        onView(withId(PdfInkR.id.redo_button)).check(matches(not(isEnabled())))
+        // Assert undo button gets enabled
+        onView(withId(PdfInkR.id.undo_button)).check(matches(isEnabled()))
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_annotationDisabled() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        enterEditMode()
+        // Draw an annotation on the content view
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        // Assert AnnotationView is visible
+        onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(isDisplayed()))
+        // Disable annotations
+        onView(withId(PdfInkR.id.toggle_annotation_button)).perform(click())
+        // Assert AnnotationView is hidden
+        onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(not(isDisplayed())))
+
+        // Toggle once again to enable annotations
+        onView(withId(PdfInkR.id.toggle_annotation_button)).perform(click())
+        onView(withId(PdfInkR.id.pdf_annotation_view)).check(matches(isDisplayed()))
     }
 
     private fun enterEditMode() {

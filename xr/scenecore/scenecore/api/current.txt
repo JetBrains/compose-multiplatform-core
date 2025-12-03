@@ -194,6 +194,9 @@ package androidx.xr.scenecore {
   @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalPanelCoordinateApi {
   }
 
+  @SuppressCompatibility @kotlin.RequiresOptIn(message="This is an experimental API. It may be changed or removed in the future.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalSurfaceEntityPixelDimensionsApi {
+  }
+
   public final class ExrImage {
     method @MainThread public static suspend Object? createFromZip(androidx.xr.runtime.Session session, android.net.Uri uri, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
     method @MainThread public static suspend Object? createFromZip(androidx.xr.runtime.Session session, java.nio.file.Path path, kotlin.coroutines.Continuation<? super androidx.xr.scenecore.ExrImage>);
@@ -954,6 +957,7 @@ package androidx.xr.scenecore {
     method @InaccessibleFromKotlin @MainThread public void setEdgeFeatheringParams(androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams);
     method @InaccessibleFromKotlin @MainThread public void setShape(androidx.xr.scenecore.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin @MainThread public void setStereoMode(androidx.xr.scenecore.SurfaceEntity.StereoMode);
+    method @SuppressCompatibility @MainThread @androidx.xr.scenecore.ExperimentalSurfaceEntityPixelDimensionsApi public void setSurfacePixelDimensions(androidx.xr.runtime.math.IntSize2d dimensions);
     property public androidx.xr.runtime.math.FloatSize3d dimensions;
     property public androidx.xr.scenecore.SurfaceEntity.EdgeFeatheringParams edgeFeatheringParams;
     property public androidx.xr.scenecore.SurfaceEntity.Shape shape;
