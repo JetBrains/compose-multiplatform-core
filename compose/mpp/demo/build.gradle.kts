@@ -27,7 +27,7 @@ plugins {
 
 kotlin {
     jvm("desktop")
-    js(IR) {
+    js {
         outputModuleName = "mpp-demo"
         browser {
             commonWebpackConfig {
