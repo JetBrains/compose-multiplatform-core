@@ -253,7 +253,7 @@ private val SelectionManager.textManager: TextManager get() = object : TextManag
     override val paste = null
     override val selectAll = null
     override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) {
-//        this@textManager.selectWordAtPositionIfNotAlreadySelected(offset)
+        this@textManager.selectWordAtPositionIfNotAlreadySelected(offset)
     }
 }
 
