@@ -400,13 +400,7 @@ internal class RootNodeOwner(
 
         val rootModifier = Modifier
             .then(RootWindowInsetsProviderModifierElement(platformContext.windowInsets))
-            .then(
-                if (ComposeUiFlags.areWindowInsetsRulersEnabled) {
-                    RulerProviderModifierElement(platformContext.windowInsets)
-                } else {
-                    Modifier
-                }
-            )
+            .rulerProvider(platformContext.windowInsets)
             .then(EmptySemanticsElement(rootSemanticsNode))
             .focusProperties {
                 onExit = {
@@ -1005,17 +999,14 @@ private object IdentityPositionCalculator: PositionCalculator {
     override fun localToScreen(localPosition: Offset): Offset = localPosition
 }
 
-private class RootWindowInsetsProviderModifierElement(
+private fun Modifier.rulerProvider(windowInsets: PlatformWindowInsets) =
+    if (ComposeUiFlags.areWindowInsetsRulersEnabled) then(RulerProviderModifierElement(windowInsets)) else this
+
+private data class RootWindowInsetsProviderModifierElement(
     val windowInsets: PlatformWindowInsets,
 ): ModifierNodeElement<RootPlatformWindowInsetsProviderNode>() {
     override fun create(): RootPlatformWindowInsetsProviderNode = RootPlatformWindowInsetsProviderNode(windowInsets)
     override fun update(node: RootPlatformWindowInsetsProviderNode) = node.update(windowInsets)
-    override fun hashCode(): Int = windowInsets.hashCode()
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is RootWindowInsetsProviderModifierElement) return false
-        return windowInsets == other.windowInsets
-    }
 }
 
 private class RootPlatformWindowInsetsProviderNode(
