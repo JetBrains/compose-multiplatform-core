@@ -526,4 +526,20 @@ class SceneTest {
         rtModeChangeListener.onSpatialModeChanged(Pose.Identity, Vector3.One)
         assertThat(modeChangeListenerCalled).isFalse()
     }
+
+    @Test
+    fun sceneClose_clearsKeyEntity() {
+        var modeChangeListenerCalled = false
+        val modeChangeListener =
+            Consumer<SpatialModeChangeEvent> { modeChangeListenerCalled = true }
+        session.scene.setSpatialModeChangedListener(modeChangeListener)
+        val rtModeChangeListenerCaptor = argumentCaptor<RtSpatialModeChangeListener>()
+        verify(mockSceneRuntime).spatialModeChangeListener = rtModeChangeListenerCaptor.capture()
+        val rtModeChangeListener = rtModeChangeListenerCaptor.firstValue
+
+        session.scene.close()
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertThat(session.scene.keyEntity).isNull()
+    }
 }

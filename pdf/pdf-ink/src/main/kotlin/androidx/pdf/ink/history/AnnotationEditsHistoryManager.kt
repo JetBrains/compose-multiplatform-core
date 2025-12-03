@@ -21,6 +21,7 @@ import androidx.pdf.annotation.models.EditId
 import androidx.pdf.annotation.models.EditOperation
 import androidx.pdf.annotation.models.PdfAnnotation
 import androidx.pdf.annotation.models.PdfAnnotationData
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Manages the history of edits for PDF annotations.
@@ -30,6 +31,20 @@ import androidx.pdf.annotation.models.PdfAnnotationData
 internal class AnnotationEditsHistoryManager() {
     private val annotationEditsHistory: AnnotationEditsHistory =
         AnnotationEditsHistoryImpl(maxSize = MAX_STACK_SIZE)
+
+    /**
+     * Checks if there are any edits available to be undone.
+     *
+     * @return true if an undo operation can be performed, false otherwise.
+     */
+    val canUndo: StateFlow<Boolean> = annotationEditsHistory.canUndo
+
+    /**
+     * Checks if there are any edits available to be redone.
+     *
+     * @return true if a redo operation can be performed, false otherwise.
+     */
+    val canRedo: StateFlow<Boolean> = annotationEditsHistory.canRedo
 
     /**
      * Records the addition of a new annotation to the history.
@@ -71,20 +86,6 @@ internal class AnnotationEditsHistoryManager() {
      * @return The [AnnotationEditOperation] that was redone, or null if there is nothing to redo.
      */
     fun redo(): AnnotationEditOperation? = annotationEditsHistory.redo()
-
-    /**
-     * Checks if there are any edits available to be undone.
-     *
-     * @return true if an undo operation can be performed, false otherwise.
-     */
-    fun canUndo(): Boolean = annotationEditsHistory.canUndo()
-
-    /**
-     * Checks if there are any edits available to be redone.
-     *
-     * @return true if a redo operation can be performed, false otherwise.
-     */
-    fun canRedo(): Boolean = annotationEditsHistory.canRedo()
 
     /** Clears all edits from the history. */
     fun clear() = annotationEditsHistory.clear()

@@ -30,14 +30,9 @@ import androidx.compose.runtime.remember
 /**
  * Abstract base class for all remote string representations in Compose Remote, this class extends
  * [RemoteState<String>].
- *
- * @property hasConstantValue A boolean indicating whether this [RemoteString] will always evaluate
- *   to the same value. This is a **conservative check**; it might report `false` even for some
- *   expressions that are effectively constant if tracking their dependencies is computationally
- *   expensive.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class RemoteString : RemoteState<String> {
+public abstract class RemoteString : BaseRemoteState<String>() {
 
     public val length: RemoteInt
         get() {

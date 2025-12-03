@@ -16,7 +16,6 @@
 
 package androidx.room3.solver.types
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_BYTE
@@ -26,7 +25,6 @@ import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_FLOAT
 import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_INT
 import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_LONG
 import androidx.room3.compiler.codegen.XTypeName.Companion.PRIMITIVE_SHORT
-import androidx.room3.compiler.codegen.buildCodeBlock
 import androidx.room3.compiler.processing.XProcessingEnv
 import androidx.room3.compiler.processing.XType
 import androidx.room3.parser.SQLTypeAffinity
@@ -100,21 +98,12 @@ class PrimitiveColumnTypeAdapter(
                 Primitive.FLOAT -> "toDouble"
                 else -> null
             }
-        val valueExpr = buildCodeBlock { language ->
-            when (language) {
-                // For Java, with the language's primitive type casting, value variable can be
-                // used as bind argument directly.
-                CodeLanguage.JAVA -> add("%L", valueVarName)
-                // For Kotlin, a converter function is emitted when a cast is needed.
-                CodeLanguage.KOTLIN -> {
-                    if (castFunction != null) {
-                        add("%L.%L()", valueVarName, castFunction)
-                    } else {
-                        add("%L", valueVarName)
-                    }
-                }
+        val valueExpr =
+            if (castFunction != null) {
+                XCodeBlock.of("%L.%L()", valueVarName, castFunction)
+            } else {
+                XCodeBlock.of("%L", valueVarName)
             }
-        }
         scope.builder.addStatement("%L.%L(%L, %L)", stmtName, stmtSetter, indexVarName, valueExpr)
     }
 
@@ -138,14 +127,7 @@ class PrimitiveColumnTypeAdapter(
                         Primitive.FLOAT -> "toFloat"
                         else -> null
                     } ?: return@let it
-                buildCodeBlock { language ->
-                    when (language) {
-                        // For Java a cast will suffice
-                        CodeLanguage.JAVA -> add(XCodeBlock.ofCast(out.asTypeName(), it))
-                        // For Kotlin a converter function is emitted
-                        CodeLanguage.KOTLIN -> add(XCodeBlock.of("%L.%L()", it, castFunction))
-                    }
-                }
+                XCodeBlock.of("%L.%L()", it, castFunction)
             },
         )
     }

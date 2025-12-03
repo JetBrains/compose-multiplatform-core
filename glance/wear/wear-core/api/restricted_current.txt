@@ -3,10 +3,10 @@ package androidx.glance.wear {
 
   public final class ActiveWearWidgetHandle {
     method @InaccessibleFromKotlin public int getContainerType();
-    method @InaccessibleFromKotlin public int getInstanceId();
+    method @InaccessibleFromKotlin public androidx.glance.wear.WidgetInstanceId getInstanceId();
     method @InaccessibleFromKotlin public android.content.ComponentName getProvider();
     property public int containerType;
-    property public int instanceId;
+    property public androidx.glance.wear.WidgetInstanceId instanceId;
     property public android.content.ComponentName provider;
     field public static final androidx.glance.wear.ActiveWearWidgetHandle.Companion Companion;
   }
@@ -33,6 +33,21 @@ package androidx.glance.wear {
     property public static int CONTAINER_TYPE_FULLSCREEN;
     property public static int CONTAINER_TYPE_LARGE;
     property public static int CONTAINER_TYPE_SMALL;
+  }
+
+  public final class WearWidgetParams {
+    method @InaccessibleFromKotlin public int getContainerType();
+    method @InaccessibleFromKotlin @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public float getHeightDp();
+    method @InaccessibleFromKotlin public androidx.glance.wear.WidgetInstanceId getInstanceId();
+    method @InaccessibleFromKotlin @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public float getWidthDp();
+    property public int containerType;
+    property @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public float heightDp;
+    property public androidx.glance.wear.WidgetInstanceId instanceId;
+    property @Dimension(unit=androidx.annotation.Dimension.Companion.DP) public float widthDp;
+    field public static final androidx.glance.wear.WearWidgetParams.Companion Companion;
+  }
+
+  public static final class WearWidgetParams.Companion {
   }
 
   public final class WearWidgetProviderInfo {
@@ -62,19 +77,13 @@ package androidx.glance.wear {
     method @kotlin.jvm.Throws(exceptionClasses=XmlPullParserException::class) public androidx.glance.wear.WearWidgetProviderInfo parseFromService(android.content.Context context, android.content.ComponentName providerService) throws org.xmlpull.v1.XmlPullParserException;
   }
 
-  public final class WearWidgetRequest {
-    method @InaccessibleFromKotlin public int getContainerType();
-    method @InaccessibleFromKotlin public float getHeightDp();
-    method @InaccessibleFromKotlin public int getInstanceId();
-    method @InaccessibleFromKotlin public float getWidthDp();
-    property public int containerType;
-    property public float heightDp;
-    property public int instanceId;
-    property public float widthDp;
-    field public static final androidx.glance.wear.WearWidgetRequest.Companion Companion;
-  }
-
-  public static final class WearWidgetRequest.Companion {
+  public final class WidgetInstanceId {
+    ctor public WidgetInstanceId(String namespace, int id);
+    method public String flattenToString();
+    method @InaccessibleFromKotlin public int getId();
+    method @InaccessibleFromKotlin public String getNamespace();
+    property public int id;
+    property public String namespace;
   }
 
 }

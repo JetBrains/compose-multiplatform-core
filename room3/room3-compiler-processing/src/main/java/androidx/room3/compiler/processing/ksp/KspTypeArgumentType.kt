@@ -16,21 +16,19 @@
 
 package androidx.room3.compiler.processing.ksp
 
-import androidx.room3.compiler.processing.XType
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.KSTypeArgument
 import com.google.devtools.ksp.symbol.KSTypeParameter
 import com.google.devtools.ksp.symbol.KSTypeReference
 import com.google.devtools.ksp.symbol.Variance
-import com.squareup.kotlinpoet.javapoet.JTypeName
-import com.squareup.kotlinpoet.javapoet.KTypeName
 
 /**
  * The typeName for type arguments requires the type parameter, hence we have a special type for
  * them when we produce them.
  */
-internal open class KspTypeArgumentType(
+internal open class KspTypeArgumentType
+private constructor(
     env: KspProcessingEnv,
     val typeArg: KSTypeArgument,
     originalKSAnnotations: Sequence<KSAnnotation> = typeArg.annotations,
@@ -52,31 +50,22 @@ internal open class KspTypeArgumentType(
      */
     private val _extendsBound by lazy {
         val extendBound = env.wrap(ksType = ksType, allowPrimitives = false)
-        if (
-            typeArg.variance == Variance.STAR ||
-                (this.ksType.declaration is KSTypeParameter && this == extendBound)
-        ) {
+        if (isStar() || (this.ksType.declaration is KSTypeParameter && this == extendBound)) {
             null
         } else {
             extendBound
         }
     }
 
-    override fun resolveJTypeName(): JTypeName {
-        return typeArg.asJTypeName(env.resolver)
-    }
+    override fun isStar() = typeArg.variance == Variance.STAR
 
-    override fun resolveKTypeName(): KTypeName {
-        return typeArg.asKTypeName(env.resolver)
-    }
+    override fun extendsBound() = _extendsBound
 
-    override fun boxed(): KspTypeArgumentType {
-        return this
-    }
+    override fun resolveJTypeName() = typeArg.asJTypeName(env.resolver)
 
-    override fun extendsBound(): XType? {
-        return _extendsBound
-    }
+    override fun resolveKTypeName() = typeArg.asKTypeName(env.resolver)
+
+    override fun boxed() = this
 
     override fun copy(
         env: KspProcessingEnv,
@@ -97,4 +86,21 @@ internal open class KspTypeArgumentType(
         val original: KSTypeArgument,
         override val type: KSTypeReference,
     ) : KSTypeArgument by original
+
+    companion object {
+        fun create(env: KspProcessingEnv, typeArg: KSTypeArgument): KspTypeArgumentType {
+            return when (typeArg.variance) {
+                Variance.STAR ->
+                    if (env.delegate.kspVersion >= KotlinVersion(2, 0)) {
+                        // `typeArg.type` is `null` in KSP2, here we use `Unit` as a placeholder.
+                        KspTypeArgumentType(env, typeArg, ksType = env.resolver.builtIns.unitType)
+                    } else {
+                        KspTypeArgumentType(env, typeArg)
+                    }
+                Variance.COVARIANT,
+                Variance.CONTRAVARIANT -> KspTypeArgumentType(env, typeArg)
+                Variance.INVARIANT -> error("Unexpected INVARIANT type argument: $typeArg")
+            }
+        }
+    }
 }

@@ -142,7 +142,7 @@ class SectionedItemTemplateTest {
         val template = SectionedItemTemplate.Builder().build()
 
         assertThat(template.scrollStatePersistenceStrategy)
-            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_RESET_TO_TOP)
+            .isEqualTo(SectionedItemTemplate.SCROLL_STATE_PRESERVE_INDEX)
     }
 
     @Test

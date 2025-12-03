@@ -158,6 +158,7 @@ public final class EntityTest {
         mEntity.setPose(mTestPose, Space.PARENT);
         assertPose(mEntity.getPose(Space.PARENT), mTestPose);
         assertPose(mEntity.getPose(Space.ACTIVITY), mTestPose);
+        assertPose(mEntity.getActivitySpacePose(), mTestPose);
     }
 
     @Test
@@ -194,6 +195,9 @@ public final class EntityTest {
 
         assertPose(
                 child.getPose(Space.ACTIVITY),
+                new Pose(new Vector3(2.0f, 4.0f, 6.0f), Quaternion.Identity));
+        assertPose(
+                child.getActivitySpacePose(),
                 new Pose(new Vector3(2.0f, 4.0f, 6.0f), Quaternion.Identity));
     }
 

@@ -53,95 +53,9 @@ class WearWidgetProviderClientTest {
     }
 
     @Test
-    fun sendActivationNotice() = runTest {
-        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
-        val instanceId = 123
-        val containerType = CONTAINER_TYPE_LARGE
-
-        assertThat(shadowApp.boundServiceConnections).isEmpty()
-
-        launch { client.sendActivationNotice(instanceId, containerType) }
-        // Actual binding runs on the main thread.
-        advanceUntilIdle()
-        shadowOf(Looper.getMainLooper()).idle()
-        advanceUntilIdle()
-
-        val handle =
-            ActiveWearWidgetHandle.fromParcel(service.activatedHandleParcel!!, COMPONENT_NAME)
-        assertThat(handle.provider).isEqualTo(COMPONENT_NAME)
-        assertThat(handle.instanceId).isEqualTo(instanceId)
-        assertThat(handle.containerType).isEqualTo(containerType)
-        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
-        assertThat(shadowApp.boundServiceConnections).isEmpty()
-    }
-
-    @Test
-    fun sendDeactivationNotice() = runTest {
-        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
-        val instanceId = 123
-        val containerType = CONTAINER_TYPE_LARGE
-
-        assertThat(shadowApp.boundServiceConnections).isEmpty()
-
-        launch { client.sendDeactivationNotice(instanceId, containerType) }
-        // Actual binding runs on the main thread.
-        advanceUntilIdle()
-        shadowOf(Looper.getMainLooper()).idle()
-        advanceUntilIdle()
-
-        val handle =
-            ActiveWearWidgetHandle.fromParcel(service.deactivatedHandleParcel!!, COMPONENT_NAME)
-        assertThat(handle.provider).isEqualTo(COMPONENT_NAME)
-        assertThat(handle.instanceId).isEqualTo(instanceId)
-        assertThat(handle.containerType).isEqualTo(containerType)
-        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
-        assertThat(shadowApp.boundServiceConnections).isEmpty()
-    }
-
-    @Test
-    fun sendActivationNotice_cancelled() = runTest {
-        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
-        val instanceId = 123
-        val containerType = CONTAINER_TYPE_LARGE
-
-        assertThat(shadowApp.boundServiceConnections).isEmpty()
-
-        val job = launch { client.sendActivationNotice(instanceId, containerType) }
-        // Actual binding runs on the main thread.
-        advanceUntilIdle()
-        shadowOf(Looper.getMainLooper()).idle()
-
-        job.cancel()
-        advanceUntilIdle()
-
-        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
-        assertThat(shadowApp.boundServiceConnections).isEmpty()
-    }
-
-    @Test
-    fun sendDeactivationNotice_cancelled() = runTest {
-        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
-        val instanceId = 123
-        val containerType = CONTAINER_TYPE_LARGE
-
-        assertThat(shadowApp.boundServiceConnections).isEmpty()
-
-        val job = launch { client.sendDeactivationNotice(instanceId, containerType) }
-        // Actual binding runs on the main thread.
-        advanceUntilIdle()
-        shadowOf(Looper.getMainLooper()).idle()
-
-        job.cancel()
-        advanceUntilIdle()
-
-        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
-        assertThat(shadowApp.boundServiceConnections).isEmpty()
-    }
-
-    @Test
     fun sendAddEvent() = runTest {
         val client = WearWidgetProviderClient(context, COMPONENT_NAME)
-        val instanceId = 123
+        val instanceId = WidgetInstanceId(ID_NAMESPACE, 123)
         val containerType = CONTAINER_TYPE_LARGE
 
         assertThat(shadowApp.boundServiceConnections).isEmpty()
@@ -163,7 +77,7 @@ class WearWidgetProviderClientTest {
     @Test
     fun sendRemoveEvent() = runTest {
         val client = WearWidgetProviderClient(context, COMPONENT_NAME)
-        val instanceId = 123
+        val instanceId = WidgetInstanceId(ID_NAMESPACE, 123)
         val containerType = CONTAINER_TYPE_LARGE
 
         assertThat(shadowApp.boundServiceConnections).isEmpty()
@@ -186,7 +100,7 @@ class WearWidgetProviderClientTest {
     @Test
     fun sendAddEvent_cancelled() = runTest {
         val client = WearWidgetProviderClient(context, COMPONENT_NAME)
-        val instanceId = 123
+        val instanceId = WidgetInstanceId(ID_NAMESPACE, 123)
         val containerType = CONTAINER_TYPE_LARGE
 
         assertThat(shadowApp.boundServiceConnections).isEmpty()
@@ -206,7 +120,7 @@ class WearWidgetProviderClientTest {
     @Test
     fun sendRemoveEvent_cancelled() = runTest {
         val client = WearWidgetProviderClient(context, COMPONENT_NAME)
-        val instanceId = 123
+        val instanceId = WidgetInstanceId(ID_NAMESPACE, 123)
         val containerType = CONTAINER_TYPE_LARGE
 
         assertThat(shadowApp.boundServiceConnections).isEmpty()
@@ -223,9 +137,54 @@ class WearWidgetProviderClientTest {
         assertThat(shadowApp.boundServiceConnections).isEmpty()
     }
 
+    @Test
+    fun sendAddEventAsync() = runTest {
+        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
+        val instanceId = WidgetInstanceId(ID_NAMESPACE, 123)
+        val containerType = CONTAINER_TYPE_LARGE
+
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+
+        val future = client.sendAddEventAsync(instanceId, containerType, Runnable::run)
+        // Actual binding runs on the main thread.
+        advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+        advanceUntilIdle()
+        future.get()
+
+        val handle = ActiveWearWidgetHandle.fromParcel(service.addedHandleParcel!!, COMPONENT_NAME)
+        assertThat(handle.provider).isEqualTo(COMPONENT_NAME)
+        assertThat(handle.instanceId).isEqualTo(instanceId)
+        assertThat(handle.containerType).isEqualTo(containerType)
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+    }
+
+    @Test
+    fun sendRemoveEventAsync() = runTest {
+        val client = WearWidgetProviderClient(context, COMPONENT_NAME)
+        val instanceId = WidgetInstanceId(ID_NAMESPACE, 123)
+        val containerType = CONTAINER_TYPE_LARGE
+
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+
+        val future = client.sendRemoveEventAsync(instanceId, containerType, Runnable::run)
+        // Actual binding runs on the main thread.
+        advanceUntilIdle()
+        shadowOf(Looper.getMainLooper()).idle()
+        advanceUntilIdle()
+        future.get()
+
+        val handle =
+            ActiveWearWidgetHandle.fromParcel(service.removedHandleParcel!!, COMPONENT_NAME)
+        assertThat(handle.provider).isEqualTo(COMPONENT_NAME)
+        assertThat(handle.instanceId).isEqualTo(instanceId)
+        assertThat(handle.containerType).isEqualTo(containerType)
+        assertThat(shadowApp.unboundServiceConnections).hasSize(1)
+        assertThat(shadowApp.boundServiceConnections).isEmpty()
+    }
+
     private class FakeWearWidgetProvider : IWearWidgetProvider.Stub() {
-        var activatedHandleParcel: ActiveWearWidgetHandleParcel? = null
-        var deactivatedHandleParcel: ActiveWearWidgetHandleParcel? = null
         var addedHandleParcel: ActiveWearWidgetHandleParcel? = null
         var removedHandleParcel: ActiveWearWidgetHandleParcel? = null
 
@@ -239,18 +198,12 @@ class WearWidgetProviderClientTest {
         override fun onActivated(
             handleParcel: ActiveWearWidgetHandleParcel?,
             callback: IExecutionCallback?,
-        ) {
-            activatedHandleParcel = handleParcel
-            callback?.onSuccess()
-        }
+        ) {}
 
         override fun onDeactivated(
             handleParcel: ActiveWearWidgetHandleParcel?,
             callback: IExecutionCallback?,
-        ) {
-            deactivatedHandleParcel = handleParcel
-            callback?.onSuccess()
-        }
+        ) {}
 
         override fun onAdded(
             handleParcel: ActiveWearWidgetHandleParcel?,
@@ -271,5 +224,6 @@ class WearWidgetProviderClientTest {
 
     private companion object {
         val COMPONENT_NAME = ComponentName("my.package", "androidx.glance.wear.MyTestService")
+        private const val ID_NAMESPACE = "ns"
     }
 }

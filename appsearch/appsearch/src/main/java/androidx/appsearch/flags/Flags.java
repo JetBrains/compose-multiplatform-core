@@ -364,6 +364,12 @@ public final class Flags {
     public static final String FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS =
             FLAG_PREFIX + "enable_schemas_wipeout_account_property_paths";
 
+    /**
+     * Whether to enable indexing non existent parent qualified id in the join index.
+     */
+    public static final String FLAG_ENABLE_NON_EXISTENT_QUALIFIED_ID_JOIN =
+            FLAG_PREFIX + "enable_non_existent_qualified_id_join";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -798,6 +804,13 @@ public final class Flags {
      * Whether to enable wipe out document when an account is removed.
      */
     public static boolean enableSchemasWipeoutAccountPropertyPaths() {
+        return true;
+    }
+
+    /**
+     * Whether to enable indexing non existent parent qualified id in the join index.
+     */
+    public static boolean enableNonExistentQualifiedIdJoin() {
         return true;
     }
 }

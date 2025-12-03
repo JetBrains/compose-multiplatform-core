@@ -16,7 +16,6 @@
 
 package androidx.room3.processor
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.XTypeSpec
@@ -76,7 +75,7 @@ abstract class FunctionProcessorDelegate(
     abstract fun findResultBinder(
         returnType: XType,
         query: ParsedQuery,
-        extrasCreator: TypeAdapterExtras.() -> Unit,
+        extrasCreator: TypeAdapterExtras.() -> Unit = {},
     ): QueryResultBinder
 
     abstract fun findPreparedResultBinder(
@@ -247,24 +246,13 @@ class SuspendFunctionProcessorDelegate(
         callableImpl: XTypeSpec,
         dbProperty: XPropertySpec,
     ) {
-        when (context.codeLanguage) {
-            CodeLanguage.JAVA ->
-                addStatement(
-                    "return %T.execute(%N, %L, %L, %N)",
-                    COROUTINES_ROOM,
-                    dbProperty,
-                    "true", // inTransaction
-                    callableImpl,
-                    continuationParam.name,
-                )
-            CodeLanguage.KOTLIN ->
-                addStatement(
-                    "return %T.execute(%N, %L, %L)",
-                    COROUTINES_ROOM,
-                    dbProperty,
-                    "true", // inTransaction
-                    callableImpl,
-                )
-        }
+
+        addStatement(
+            "return %T.execute(%N, %L, %L)",
+            COROUTINES_ROOM,
+            dbProperty,
+            "true", // inTransaction
+            callableImpl,
+        )
     }
 }

@@ -19,14 +19,13 @@ package androidx.compose.remote.creation.compose.modifier
 
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.operations.layout.modifiers.DimensionModifierOperation.Type
+import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.Dp
 
-@Composable
-public fun RemoteModifier.size(width: Dp, height: Dp): RemoteModifier = width(width).height(height)
+public fun RemoteModifier.size(width: RemoteDp, height: RemoteDp): RemoteModifier =
+    width(width).height(height)
 
-@Composable public fun RemoteModifier.size(size: Dp): RemoteModifier = width(size).height(size)
+public fun RemoteModifier.size(size: RemoteDp): RemoteModifier = width(size).height(size)
 
 public fun RemoteModifier.fillMaxSize(fraction: RemoteFloat = RemoteFloat(1f)): RemoteModifier =
     fillMaxWidth(fraction).fillMaxHeight(fraction)

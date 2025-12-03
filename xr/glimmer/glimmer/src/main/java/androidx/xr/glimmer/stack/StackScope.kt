@@ -90,7 +90,11 @@ internal class StackItemHolder(private val state: StackState, content: StackScop
     override fun item(key: Any?, content: @Composable (StackItemScope.() -> Unit)) {
         intervals.addInterval(
             size = 1,
-            StackItemInterval(state = state, key = key?.let { { it } }, item = { content() }),
+            StackItemInterval(
+                state = state,
+                key = key?.let { keyValue -> { keyValue } },
+                item = { content() },
+            ),
         )
     }
 
@@ -155,6 +159,5 @@ internal class StackItemInterval(
         itemScopes.getOrPut(key, defaultValue = { StackItemScopeImpl(state) })
 
     internal fun getKeyOrDefault(globalIndex: Int, localIntervalIndex: Int) =
-        // Fallback to the global index if no key is provided, which is the default behavior.
-        key?.invoke(localIntervalIndex) ?: globalIndex
+        key?.invoke(localIntervalIndex) ?: DefaultStackItemKey(globalIndex)
 }

@@ -60,17 +60,28 @@ public class FakeRenderingRuntime(
         )
     }
 
-    override suspend fun loadGltfByAssetNameAsync(assetName: String): GltfModelResource =
-        FakeGltfModelResource(0)
+    override suspend fun loadGltfByAssetNameAsync(assetName: String): GltfModelResource {
+        val gltfModelResource = FakeGltfModelResource(0)
+        gltfModelResource.assetName = assetName
+        return gltfModelResource
+    }
 
     @Suppress("AsyncSuffixFuture")
-    override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> =
-        immediateFuture(FakeGltfModelResource(0))
+    override fun loadGltfByAssetName(assetName: String): ListenableFuture<GltfModelResource> {
+        val gltfModelResource = FakeGltfModelResource(0)
+        gltfModelResource.assetName = assetName
+        return immediateFuture(gltfModelResource)
+    }
 
     override suspend fun loadGltfByByteArrayAsync(
         assetData: ByteArray,
         assetKey: String,
-    ): GltfModelResource = FakeGltfModelResource(0)
+    ): GltfModelResource {
+        val gltfModelResource = FakeGltfModelResource(0)
+        gltfModelResource.assetData = assetData
+        gltfModelResource.assetKey = assetKey
+        return gltfModelResource
+    }
 
     @Suppress("AsyncSuffixFuture")
     override fun loadGltfByByteArray(

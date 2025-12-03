@@ -20,6 +20,8 @@ import androidx.biometric.BiometricPrompt
 
 /** A fake implementation of [PromptConfigRepository] for testing purposes. */
 internal class FakePromptConfigRepository : PromptConfigRepository {
+    override var currentAuthenticationKey: Int = 0
+
     override var promptInfo: BiometricPrompt.PromptInfo? = null
 
     override var cryptoObject: BiometricPrompt.CryptoObject? = null

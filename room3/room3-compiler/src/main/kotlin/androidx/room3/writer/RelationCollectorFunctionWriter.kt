@@ -18,7 +18,6 @@ package androidx.room3.writer
 
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room3.compiler.codegen.XFunSpec
 import androidx.room3.compiler.codegen.XMemberName.Companion.packageMember
 import androidx.room3.compiler.codegen.XName
@@ -244,9 +243,6 @@ class RelationCollectorFunctionWriter(private val collector: RelationCollector) 
                                     paramName,
                                 )
                             addStatement("%L", recursiveCall)
-                            applyTo(CodeLanguage.JAVA) {
-                                addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
-                            }
                         }
                     },
             )

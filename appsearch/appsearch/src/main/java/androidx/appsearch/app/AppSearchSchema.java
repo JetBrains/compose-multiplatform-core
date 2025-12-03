@@ -72,6 +72,26 @@ public final class AppSearchSchema extends AbstractSafeParcelable {
     @FlaggedApi(Flags.FLAG_ENABLE_SAFE_PARCELABLE_2)
     public static final @NonNull Parcelable.Creator<AppSearchSchema> CREATOR =
             new AppSearchSchemaCreator();
+// @exportToFramework:startStrip()
+
+    /**
+     * Gets the generated {@link AppSearchSchema} for a class annotated with
+     * \@{@link androidx.appsearch.annotation.Document}.
+     *
+     * @param documentClass A class annotated with \@{@link androidx.appsearch.annotation.Document}.
+     * @return the generated {@link AppSearchSchema} for the given document class.
+     * @throws AppSearchException if no generated conversion class exists on the classpath for the
+     *                            given document class.
+     */
+    @ExperimentalAppSearchApi
+    public static @NonNull AppSearchSchema fromDocumentClass(
+            @NonNull java.lang.Class<?> documentClass) throws AppSearchException {
+        Preconditions.checkNotNull(documentClass);
+        DocumentClassFactoryRegistry registry = DocumentClassFactoryRegistry.getInstance();
+        DocumentClassFactory<?> factory = registry.getOrCreateFactory(documentClass);
+        return factory.getSchema();
+    }
+// @exportToFramework:endStrip()
 
     @Field(id = 1, getter = "getSchemaType")
     private final String mSchemaType;

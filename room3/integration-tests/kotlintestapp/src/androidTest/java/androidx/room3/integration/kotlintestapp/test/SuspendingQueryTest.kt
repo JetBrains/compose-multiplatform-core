@@ -873,7 +873,7 @@ class SuspendingQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     fun withWriteTransaction_stress_dbMutation() = runTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         context.deleteDatabase("test_stress_dbMutation.db")
-        val db = Room.databaseBuilder(context, TestDatabase::class.java, "test.db").build()
+        val db = Room.databaseBuilder<TestDatabase>(context, "test_stress_dbMutation.db").build()
         db.counterDao().upsert(Counter(1, 0))
         coroutineScope {
             repeat(5000) {

@@ -46,21 +46,21 @@ class AnnotationEditsHistoryImplTest {
         history.addEntry(op1)
         history.addEntry(op2)
 
-        assertThat(history.canUndo()).isTrue()
+        assertThat(history.canUndo.value).isTrue()
 
         val data1 = history.undo()
         assertThat(data1).isNotNull()
         assertThat(data1!!.op).isEqualTo(EditOperation.Remove)
         assertThat(data1.edit).isEqualTo(op2.edit)
-        assertThat(history.canRedo()).isTrue()
-        assertThat(history.canUndo()).isTrue()
+        assertThat(history.canRedo.value).isTrue()
+        assertThat(history.canUndo.value).isTrue()
 
         val data2 = history.undo()
         assertThat(data2).isNotNull()
         assertThat(data2!!.op).isEqualTo(EditOperation.Remove)
         assertThat(data2.edit).isEqualTo(op1.edit)
-        assertThat(history.canRedo()).isTrue()
-        assertThat(history.canUndo()).isFalse()
+        assertThat(history.canRedo.value).isTrue()
+        assertThat(history.canUndo.value).isFalse()
     }
 
     @Test
@@ -75,7 +75,7 @@ class AnnotationEditsHistoryImplTest {
         assertThat(undoEdit!!.edit.editId.pageNum).isEqualTo(11)
         // Oldest edit (1) should be gone.
         var lastUndo: AnnotationEditOperation? = null
-        while (history.canUndo()) {
+        while (history.canUndo.value) {
             lastUndo = history.undo()
         }
 
@@ -89,9 +89,9 @@ class AnnotationEditsHistoryImplTest {
         history.addEntry(op)
         history.undo()
 
-        assertThat(history.canRedo()).isTrue()
+        assertThat(history.canRedo.value).isTrue()
         assertThat(history.redo()).isEqualTo(op)
-        assertThat(history.canRedo()).isFalse()
+        assertThat(history.canRedo.value).isFalse()
     }
 
     @Test
@@ -103,9 +103,9 @@ class AnnotationEditsHistoryImplTest {
         assertThat(op1).isNotNull()
         assertThat(op1!!.op).isEqualTo(EditOperation.Add)
 
-        assertThat(history.canRedo()).isTrue()
+        assertThat(history.canRedo.value).isTrue()
         assertThat(history.redo()).isEqualTo(op)
-        assertThat(history.canRedo()).isFalse()
+        assertThat(history.canRedo.value).isFalse()
     }
 
     @Test
@@ -115,8 +115,8 @@ class AnnotationEditsHistoryImplTest {
         history.undo()
         history.redo()
 
-        assertThat(history.canUndo()).isTrue()
-        assertThat(history.canRedo()).isFalse()
+        assertThat(history.canUndo.value).isTrue()
+        assertThat(history.canRedo.value).isFalse()
 
         val op1 = history.undo()
         assertThat(op1).isNotNull()
@@ -130,8 +130,8 @@ class AnnotationEditsHistoryImplTest {
         history.undo()
         history.clear()
 
-        assertThat(history.canUndo()).isFalse()
-        assertThat(history.canRedo()).isFalse()
+        assertThat(history.canUndo.value).isFalse()
+        assertThat(history.canRedo.value).isFalse()
     }
 
     @Test
@@ -149,7 +149,7 @@ class AnnotationEditsHistoryImplTest {
         threads.forEach { it.join() }
 
         var undoCount = 0
-        while (history.canUndo()) {
+        while (history.canUndo.value) {
             history.undo()
             undoCount++
         }

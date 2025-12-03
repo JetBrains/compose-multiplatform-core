@@ -33,7 +33,6 @@ import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ExperimentalIndirectPointerApi
 import androidx.compose.ui.Modifier
@@ -52,8 +51,6 @@ import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.test.StandardTestDispatcher
-import org.junit.After
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -66,21 +63,9 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalIndirectPointerApi::class, ExperimentalComposeUiApi::class)
 class IndirectPointerGestureTest {
 
-    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
+    @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule val inputModeRule = nonTouchInputModeRule()
-
-    val savedInitialFocusAvailabilityFlag = ComposeUiFlags.isInitialFocusOnFocusableAvailable
-
-    @Before
-    fun setup() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = true
-    }
-
-    @After
-    fun tearDown() {
-        ComposeUiFlags.isInitialFocusOnFocusableAvailable = savedInitialFocusAvailabilityFlag
-    }
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Test
     fun gestures_areIgnored_whenDisabled() {

@@ -25,7 +25,7 @@ import android.widget.EditText
 import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
 import androidx.pdf.R
-import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
 import androidx.test.core.app.ActivityScenario
@@ -45,12 +45,20 @@ import com.google.common.truth.Truth.assertThat
 import kotlin.math.roundToInt
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class PdfViewFormFillingTest {
+
+    private lateinit var formEditInfos: MutableList<FormEditInfo>
+
+    @Before
+    fun setUp() {
+        formEditInfos = mutableListOf()
+    }
 
     @After
     fun tearDown() {
@@ -70,6 +78,13 @@ class PdfViewFormFillingTest {
                         isFormFillingEnabled = enableFormFilling
                         pdfDocument = fakePdfDocument
                         id = PDF_VIEW_ID
+                        addOnFormWidgetInfoUpdatedListener(
+                            object : PdfView.OnFormWidgetInfoUpdatedListener {
+                                override fun onFormWidgetInfoUpdated(formEditInfo: FormEditInfo) {
+                                    formEditInfos.add(formEditInfo)
+                                }
+                            }
+                        )
                     },
                     ViewGroup.LayoutParams(width, height),
                 )
@@ -119,10 +134,10 @@ class PdfViewFormFillingTest {
         pdfClickPoint = requireNotNull(pdfClickPoint)
         val formWidgetClickPoint = Point(pdfClickPoint.x.roundToInt(), pdfClickPoint.y.roundToInt())
         // Confirm that fakePdfDocument.applyEdit is called.
-        assertThat(fakePdfDocument.editHistory).hasSize(1)
-        assertThat(fakePdfDocument.editHistory[0])
+        assertThat(formEditInfos).hasSize(1)
+        assertThat(formEditInfos[0])
             .isEqualTo(
-                FormEditRecord(pageNumber = 0, widgetIndex = 0, clickPoint = formWidgetClickPoint)
+                FormEditInfo(pageNumber = 0, widgetIndex = 0, clickPoint = formWidgetClickPoint)
             )
     }
 
@@ -156,10 +171,10 @@ class PdfViewFormFillingTest {
             close()
         }
         // Confirm that fakePdfDocument.applyEdit is called.
-        assertThat(fakePdfDocument.editHistory).hasSize(1)
-        assertThat(fakePdfDocument.editHistory[0])
+        assertThat(formEditInfos).hasSize(1)
+        assertThat(formEditInfos[0])
             .isEqualTo(
-                FormEditRecord(pageNumber = 0, widgetIndex = 0, selectedIndices = IntArray(1) { 0 })
+                FormEditInfo(pageNumber = 0, widgetIndex = 0, selectedIndices = IntArray(1) { 0 })
             )
     }
 
@@ -197,10 +212,10 @@ class PdfViewFormFillingTest {
             close()
         }
         // Confirm that fakePdfDocument.applyEdit is called.
-        assertThat(fakePdfDocument.editHistory).hasSize(1)
-        assertThat(fakePdfDocument.editHistory[0])
+        assertThat(formEditInfos).hasSize(1)
+        assertThat(formEditInfos[0])
             .isEqualTo(
-                FormEditRecord(pageNumber = 0, widgetIndex = 0, selectedIndices = intArrayOf(0, 2))
+                FormEditInfo(pageNumber = 0, widgetIndex = 0, selectedIndices = intArrayOf(0, 2))
             )
     }
 
@@ -252,14 +267,10 @@ class PdfViewFormFillingTest {
             } finally {
                 IdlingRegistry.getInstance().unregister(childAddedIdlingResource)
             }
-
-            // assert that a edit text is visible with the text "TextField"
-            // Type "World" into the edit text
-            fakePdfDocument.waitForApplyEdit(1)
             close()
         }
-        assertThat(fakePdfDocument.editHistory).hasSize(1)
-        assertThat(fakePdfDocument.editHistory[0]).isEqualTo(FormEditRecord(0, 0, finalText))
+        assertThat(formEditInfos).hasSize(1)
+        assertThat(formEditInfos[0]).isEqualTo(FormEditInfo(0, 0, finalText))
     }
 
     @Test

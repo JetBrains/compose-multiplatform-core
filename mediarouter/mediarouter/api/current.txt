@@ -185,6 +185,7 @@ package androidx.mediarouter.media {
     method public int getPlaybackStream();
     method public int getPlaybackType();
     method public int getPresentationDisplayId();
+    method public java.util.List<java.util.Set<java.lang.String!>!> getRequiredPermissions();
     method public android.content.IntentSender? getSettingsActivity();
     method public int getVolume();
     method public int getVolumeHandling();
@@ -219,6 +220,7 @@ package androidx.mediarouter.media {
     method public androidx.mediarouter.media.MediaRouteDescriptor.Builder setPlaybackStream(int);
     method public androidx.mediarouter.media.MediaRouteDescriptor.Builder setPlaybackType(int);
     method public androidx.mediarouter.media.MediaRouteDescriptor.Builder setPresentationDisplayId(int);
+    method public androidx.mediarouter.media.MediaRouteDescriptor.Builder setRequiredPermissions(java.util.List<java.util.Set<java.lang.String!>!>);
     method public androidx.mediarouter.media.MediaRouteDescriptor.Builder setSettingsActivity(android.content.IntentSender?);
     method public androidx.mediarouter.media.MediaRouteDescriptor.Builder setVisibilityPublic();
     method public androidx.mediarouter.media.MediaRouteDescriptor.Builder setVisibilityRestricted(java.util.Set<java.lang.String!>);

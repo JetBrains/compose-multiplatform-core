@@ -19,10 +19,6 @@ package androidx.compose.material3
 import androidx.compose.runtime.Composable
 
 // No-op
-internal actual val shouldUsePrecisionPointerComponentSizing: Boolean
-    @Composable get() = false
-
-// No-op
 @Composable
 internal actual fun EnsurePrecisionPointerListenersRegistered(content: @Composable (() -> Unit)) {
     content()

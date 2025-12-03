@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.ParentDataModifierNode
@@ -70,6 +71,10 @@ import kotlinx.coroutines.launch
  * @param contentPadding The spacing values to apply internally between the container and the
  *   content
  * @param verticalAlignment the vertical alignment of the button group's children.
+ * @param transformation The transformation for the ButtonGroup when it's inside a dynamically
+ *   changing container. To prevent a "double transformation" (on both the group and its buttons),
+ *   individual [Button]s inside this group must have their own container transformations disabled;
+ *   only their content should be transformed.
  * @param content the content and properties of each button. The Ux guidance is to use no more than
  *   3 buttons within a ButtonGroup. Note that this content is on the [ButtonGroupScope], to provide
  *   access to 3 new modifiers to configure the buttons.
@@ -81,6 +86,7 @@ public fun ButtonGroup(
     expansionWidth: Dp = ButtonGroupDefaults.ExpansionWidth,
     contentPadding: PaddingValues = ButtonGroupDefaults.fullWidthPaddings(),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    transformation: SurfaceTransformation? = null,
     content: @Composable ButtonGroupScope.() -> Unit,
 ) {
     val expandAmountPx = with(LocalDensity.current) { expansionWidth.toPx() }
@@ -113,9 +119,14 @@ public fun ButtonGroup(
         }
     }
 
-    Layout(modifier = modifier.padding(contentPadding), content = { scope.content() }) {
-        measurables,
-        constraints ->
+    Layout(
+        modifier =
+            modifier.padding(contentPadding).graphicsLayer {
+                val transformation = transformation ?: return@graphicsLayer
+                with(transformation) { applyContainerTransformation() }
+            },
+        content = { scope.content() },
+    ) { measurables, constraints ->
         require(constraints.hasBoundedWidth) { "ButtonGroup width cannot be unbounded." }
 
         val width = constraints.maxWidth
@@ -187,6 +198,52 @@ public fun ButtonGroup(
             }
         }
     }
+}
+
+/**
+ * Layout component to implement an expressive group of buttons in a row, that react to touch by
+ * growing the touched button, (while the neighbor(s) shrink to accommodate and keep the group width
+ * constant).
+ *
+ * Example of a [ButtonGroup]:
+ *
+ * @sample androidx.wear.compose.material3.samples.ButtonGroupSample
+ *
+ * Example of 3 buttons, the middle one bigger [ButtonGroup]:
+ *
+ * @sample androidx.wear.compose.material3.samples.ButtonGroupThreeButtonsSample
+ * @param modifier Modifier to be applied to the button group
+ * @param spacing the amount of spacing between buttons
+ * @param expansionWidth how much buttons grow when pressed
+ * @param contentPadding The spacing values to apply internally between the container and the
+ *   content
+ * @param verticalAlignment the vertical alignment of the button group's children.
+ * @param content the content and properties of each button. The Ux guidance is to use no more than
+ *   3 buttons within a ButtonGroup. Note that this content is on the [ButtonGroupScope], to provide
+ *   access to 3 new modifiers to configure the buttons.
+ */
+@Deprecated(
+    "This overload is deprecated. Please use the new overload with the transformation parameter.",
+    level = DeprecationLevel.HIDDEN,
+)
+@Composable
+public fun ButtonGroup(
+    modifier: Modifier = Modifier,
+    spacing: Dp = ButtonGroupDefaults.Spacing,
+    expansionWidth: Dp = ButtonGroupDefaults.ExpansionWidth,
+    contentPadding: PaddingValues = ButtonGroupDefaults.fullWidthPaddings(),
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    content: @Composable ButtonGroupScope.() -> Unit,
+) {
+    ButtonGroup(
+        modifier = modifier,
+        spacing = spacing,
+        expansionWidth = expansionWidth,
+        contentPadding = contentPadding,
+        verticalAlignment = verticalAlignment,
+        transformation = null,
+        content = content,
+    )
 }
 
 public interface ButtonGroupScope {

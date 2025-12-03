@@ -35,6 +35,23 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
         }
 
     public constructor(
+        creationDisplayInfo: CreationDisplayInfo,
+        contentDescription: String,
+        profile: Profile,
+        content: RemoteComposeContextAndroid.() -> Unit,
+    ) : super(RemoteComposeWriterAndroid(creationDisplayInfo, contentDescription, profile, null)) {
+        content()
+    }
+
+    public constructor(
+        profile: Profile,
+        vararg tags: RemoteComposeWriter.HTag,
+        content: RemoteComposeContextAndroid.() -> Unit,
+    ) : super(RemoteComposeWriterAndroid(profile, *tags)) {
+        content()
+    }
+
+    public constructor(
         width: Int,
         height: Int,
         contentDescription: String,
@@ -104,6 +121,10 @@ public class RemoteComposeContextAndroid : RemoteComposeContext {
             radX.toFloat(),
             radY.toFloat(),
         )
+    }
+
+    public fun drawRect(x: Number, y: Number, w: Number, h: Number) {
+        drawRect(x.toFloat(), y.toFloat(), w.toFloat(), h.toFloat())
     }
 
     public fun drawLine(x1: Number, y1: Number, x2: Number, y2: Number) {

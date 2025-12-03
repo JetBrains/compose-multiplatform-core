@@ -342,7 +342,8 @@ public interface CameraMetadata : Metadata, UnsafeWrapper {
                 val availableAeModes =
                     this[CameraCharacteristics.CONTROL_AE_AVAILABLE_MODES] ?: return false
                 return availableAeModes.contains(
-                    AeMode.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                    android.hardware.camera2.CameraMetadata
+                        .CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
                 )
             }
 

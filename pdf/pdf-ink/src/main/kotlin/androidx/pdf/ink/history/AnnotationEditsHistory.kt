@@ -17,9 +17,21 @@
 package androidx.pdf.ink.history
 
 import androidx.pdf.annotation.models.AnnotationEditOperation
+import kotlinx.coroutines.flow.StateFlow
 
 /** Responsible for maintaining the history of annotations to support undo and redo operations. */
 internal interface AnnotationEditsHistory {
+
+    /**
+     * A flow that emits `true` when there is an operation that can be undone, `false` otherwise.
+     */
+    val canUndo: StateFlow<Boolean>
+
+    /**
+     * A flow that emits `true` when there is an operation that can be redone, `false` otherwise.
+     */
+    val canRedo: StateFlow<Boolean>
+
     /**
      * Adds a new annotation to the history. This operation typically pushes the annotation onto the
      * undo stack and clears the redo stack.
@@ -44,20 +56,6 @@ internal interface AnnotationEditsHistory {
      */
     fun redo(): AnnotationEditOperation?
 
-    /**
-     * Checks if there are any annotations available to be undone.
-     *
-     * @return true if the undo stack is not empty, false otherwise.
-     */
-    fun canUndo(): Boolean
-
-    /**
-     * Checks if there are any annotations available to be redone.
-     *
-     * @return true if the redo stack is not empty, false otherwise.
-     */
-    fun canRedo(): Boolean
-
-    /** Clears all annotations from both the undo and redo history. */
+    /** Clears both the undo and redo stacks, effectively resetting the history. */
     fun clear()
 }

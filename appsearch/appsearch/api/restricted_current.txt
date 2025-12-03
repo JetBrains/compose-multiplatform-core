@@ -145,6 +145,7 @@ package androidx.appsearch.app {
   }
 
   public final class AppSearchSchema {
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public static androidx.appsearch.app.AppSearchSchema fromDocumentClass(Class<? extends java.lang.Object!>) throws androidx.appsearch.exceptions.AppSearchException;
     method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public String getDescription();
     method public java.util.List<java.lang.String!> getParentTypes();
     method public java.util.List<androidx.appsearch.app.AppSearchSchema.PropertyConfig!> getProperties();
@@ -475,6 +476,7 @@ package androidx.appsearch.app {
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ADD_PERMISSIONS_AND_GET_VISIBILITY) public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.SchemaVisibilityConfig!>!> getSchemaTypesVisibleToConfigs();
     method @RequiresFeature(enforcement="androidx.appsearch.app.Features#isFeatureSupported", name=androidx.appsearch.app.Features.ADD_PERMISSIONS_AND_GET_VISIBILITY) public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.PackageIdentifier!>!> getSchemaTypesVisibleToPackages();
     method public java.util.Set<androidx.appsearch.app.AppSearchSchema!> getSchemas();
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public java.util.Map<java.lang.String!,java.util.Set<androidx.appsearch.app.PropertyPath!>!> getSchemasWipeoutAccountPropertyPaths();
     method @IntRange(from=0) public int getVersion();
   }
 
@@ -489,11 +491,13 @@ package androidx.appsearch.app {
     method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemaTypeNotDisplayedBySystem(String);
     method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemaTypeVisibleToConfigs(String);
     method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemaTypeVisibleToPackages(String);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemaTypeWipeoutAccountPropertyPaths(String);
     method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder clearSchemas();
     method public androidx.appsearch.app.GetSchemaResponse.Builder setPubliclyVisibleSchema(String, androidx.appsearch.app.PackageIdentifier);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setRequiredPermissionsForSchemaTypeVisibility(String, java.util.Set<java.util.Set<java.lang.Integer!>!>);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setSchemaTypeVisibleToConfigs(String, java.util.Set<androidx.appsearch.app.SchemaVisibilityConfig!>);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setSchemaTypeVisibleToPackages(String, java.util.Set<androidx.appsearch.app.PackageIdentifier!>);
+    method @SuppressCompatibility @androidx.appsearch.app.ExperimentalAppSearchApi public androidx.appsearch.app.GetSchemaResponse.Builder setSchemaTypeWipeoutAccountPropertyPaths(String, java.util.Collection<androidx.appsearch.app.PropertyPath!>);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setVersion(@IntRange(from=0) int);
     method public androidx.appsearch.app.GetSchemaResponse.Builder setVisibilitySettingSupported(boolean);
   }

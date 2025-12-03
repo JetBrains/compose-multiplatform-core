@@ -309,18 +309,6 @@ package androidx.room3 {
     property public abstract String tableName;
   }
 
-  @Deprecated @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface MapInfo {
-    ctor @KotlinOnly @Deprecated public MapInfo(optional String keyColumn, optional String keyTable, optional String valueColumn, optional String valueTable);
-    method @InaccessibleFromKotlin @Deprecated public abstract String keyColumn() default "";
-    method @InaccessibleFromKotlin @Deprecated public abstract String keyTable() default "";
-    method @InaccessibleFromKotlin @Deprecated public abstract String valueColumn() default "";
-    method @InaccessibleFromKotlin @Deprecated public abstract String valueTable() default "";
-    property @Deprecated public abstract String keyColumn;
-    property @Deprecated public abstract String keyTable;
-    property @Deprecated public abstract String valueColumn;
-    property @Deprecated public abstract String valueTable;
-  }
-
   @IntDef({androidx.room3.OnConflictStrategy.Companion.NONE, androidx.room3.OnConflictStrategy.Companion.REPLACE, androidx.room3.OnConflictStrategy.Companion.ROLLBACK, androidx.room3.OnConflictStrategy.Companion.ABORT, androidx.room3.OnConflictStrategy.Companion.FAIL, androidx.room3.OnConflictStrategy.Companion.IGNORE}) @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface OnConflictStrategy {
     field public static final int ABORT = 3; // 0x3
     field public static final androidx.room3.OnConflictStrategy.Companion Companion;

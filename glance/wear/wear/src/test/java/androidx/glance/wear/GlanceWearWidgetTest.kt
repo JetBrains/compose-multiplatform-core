@@ -46,8 +46,8 @@ class GlanceWearWidgetTest {
     @Suppress("RestrictedApiAndroidX")
     private class TestWidget(updateClient: WidgetUpdateClient) : GlanceWearWidget(updateClient) {
 
-        override suspend fun provideWidgetContent(context: Context, request: WearWidgetRequest) =
-            WearWidgetContent {
+        override suspend fun provideWidgetData(context: Context, params: WearWidgetParams) =
+            WearWidgetDocument {
                 RemoteText("Testing...")
             }
     }

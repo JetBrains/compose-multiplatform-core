@@ -929,6 +929,17 @@ public class WebViewFeatureInternal {
             new ApiFeature.NoFramework(WebViewFeature.HYPERLINK_CONTEXT_MENU_ITEMS,
                     Features.HYPERLINK_CONTEXT_MENU_ITEMS);
 
+    /**
+     * Feature for {@link WebSettingsFeature#isFeatureSupported(String)}.
+     * This feature covers a behavior change in {@link androidx.webkit.NavigationListener},
+     * see WebViewFeature javadoc for more info.
+     */
+    public static final ApiFeature.NoFramework
+            NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED =
+            new ApiFeature.NoFramework(
+                    WebViewFeature.NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED,
+                    Features.ON_NAVIGATION_COMPLETED_NON_COMMITTED);
+
     // --- Add new feature constants above this line ---
 
     private WebViewFeatureInternal() {

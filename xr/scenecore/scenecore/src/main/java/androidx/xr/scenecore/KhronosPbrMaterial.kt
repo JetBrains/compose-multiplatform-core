@@ -57,10 +57,12 @@ internal constructor(
     }
 
     /**
-     * Sets the material's base color using a texture.
+     * Sets the material's base color texture (often called albedo).
      *
-     * By default this is a white texture, where all pixels are [1, 1, 1, 1]. In other words, if
-     * this is left as default, the base color will always be the base color factor.
+     * This texture defines the main color of the surface. It is typically used to apply visual
+     * patterns like wood grain or fabric weaves. By default this is a white texture, where all
+     * pixels are [1, 1, 1, 1]. In other words, if this is left as default, the base color will
+     * always be the base color factor.
      *
      * @param texture The [Texture] to be used as the base color texture, in sRGB color space.
      * @param sampler The [TextureSampler] to be used when sampling the base color texture.
@@ -137,7 +139,10 @@ internal constructor(
     /**
      * Sets the normal map texture for surface detail.
      *
-     * By default the texture is unset, in which case no normal mapping is done.
+     * A normal map is a texture that simulates fine surface details, such as bumps, grooves, or
+     * scratches, by modifying the way light reflects off the surface. This creates the illusion of
+     * depth and complexity. By default the texture is unset, in which case no normal mapping is
+     * done.
      *
      * @param texture The [Texture] to be used as the normal map, in tangent space and linear color.
      * @param scale A scalar multiplier controlling the strength of the normal map. Default is 1.0.

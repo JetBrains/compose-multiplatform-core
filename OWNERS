@@ -43,7 +43,7 @@ per-file *libraryversions.toml = adorokhine@google.com, tjbarron@google.com, xyj
 # AppFunctions
 per-file *libraryversions.toml = tonymak@google.com, shikhamalhotra@google.com, utkarshnigam@google.com, mingweiliao@google.com
 # XR *
-per-file *libraryversions.toml = rafiahmad@google.com
+per-file *libraryversions.toml = rafiahmad@google.com, leoferrer@google.com, mrw@google.com
 # MediaRouter *
 per-file *libraryversions.toml = aquilescanta@google.com, asapperstein@google.com, shenqiuz@google.com
 # PDF *

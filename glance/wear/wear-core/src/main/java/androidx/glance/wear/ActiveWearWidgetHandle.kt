@@ -37,7 +37,7 @@ public class ActiveWearWidgetHandle
 @RestrictTo(LIBRARY_GROUP)
 public constructor(
     public val provider: ComponentName,
-    public val instanceId: Int,
+    public val instanceId: WidgetInstanceId,
     @ContainerType public val containerType: Int,
 ) {
     override fun equals(other: Any?): Boolean =
@@ -52,10 +52,17 @@ public constructor(
 
     override fun hashCode(): Int = Objects.hash(provider, instanceId, containerType)
 
+    override fun toString(): String =
+        "ActiveWidget{${provider.className}:$instanceId type=${ContainerInfo.containerTypeToString(containerType)}}"
+
     @RestrictTo(LIBRARY_GROUP)
     public fun toParcel(): ActiveWearWidgetHandleParcel {
         val handleProto =
-            ActiveWearWidgetHandleProto(instance_id = instanceId, container_type = containerType)
+            ActiveWearWidgetHandleProto(
+                id = instanceId.id,
+                id_namespace = instanceId.namespace,
+                container_type = containerType,
+            )
         return ActiveWearWidgetHandleParcel().apply { payload = handleProto.encode() }
     }
 
@@ -68,7 +75,7 @@ public constructor(
             val handleProto = ActiveWearWidgetHandleProto.ADAPTER.decode(handleParcel.payload)
             return ActiveWearWidgetHandle(
                 provider = provider,
-                instanceId = handleProto.instance_id,
+                instanceId = WidgetInstanceId(handleProto.id_namespace, handleProto.id),
                 containerType = handleProto.container_type,
             )
         }

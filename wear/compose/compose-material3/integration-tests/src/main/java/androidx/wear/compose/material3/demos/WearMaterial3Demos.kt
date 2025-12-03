@@ -80,6 +80,7 @@ val WearMaterial3Demos =
                         ComposableDemo("Fading Expanding Label") {
                             FadingExpandingLabelButtonSample()
                         },
+                        ComposableDemo("Text Entry Button") { TextEntryButtonDemo() },
                     ),
                 ),
                 ComposableDemo("Color Scheme") { ColorSchemeDemos() },

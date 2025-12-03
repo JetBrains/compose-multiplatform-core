@@ -168,12 +168,18 @@ internal class SharedBoundsNode(state: SharedElementEntry) :
     override fun onDetach() {
         super.onDetach()
         boundsBeforeDetached =
-            // Grab the bounds position using positionInRoot to leverage cached positions from
-            // RectList.
-            Rect(
-                approachCoordinates.positionInRoot() - rootCoords.positionInRoot(),
-                approachCoordinates.size.toSize(),
-            )
+            if (rootCoords.isAttached) {
+                // Grab the bounds position using positionInRoot to leverage cached positions from
+                // RectList.
+                Rect(
+                    approachCoordinates.positionInRoot() - rootCoords.positionInRoot(),
+                    approachCoordinates.size.toSize(),
+                )
+            } else {
+                // SharedTransitionLayout has been detached already. No need to track position
+                // any more, as the shared element will no longer be valid.
+                null
+            }
         layer = null
         sharedElementEntry.parentState = null
         sharedElementEntry.boundsProvider = null

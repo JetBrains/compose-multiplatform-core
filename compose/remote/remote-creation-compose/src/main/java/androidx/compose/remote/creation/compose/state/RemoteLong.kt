@@ -25,13 +25,9 @@ import androidx.compose.runtime.Composable
 
 /**
  * Abstract base class for all remote long representations. This class extends [RemoteState<Long>].
- *
- * @property hasConstantValue A boolean indicating whether this [RemoteLong] will always evaluate to
- *   the same [value]. This is a conservative check; some expressions that are effectively constant
- *   might still return `false` due to the cost of tracking their dependencies.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class RemoteLong : RemoteState<Long> {
+public abstract class RemoteLong : BaseRemoteState<Long>() {
 
     public abstract val id: Int
 
@@ -68,9 +64,9 @@ public abstract class RemoteLong : RemoteState<Long> {
 /**
  * A mutable implementation of [RemoteLong].
  *
- * @property hasConstantValue A boolean indicating whether this [MutableRemoteLong] is expected to
- *   remain constant. For mutable states, this is typically `false`.
- * @property idProvider A lambda that provides the unique ID for this mutable long within the
+ * @param constantValue A boolean indicating whether this [MutableRemoteLong] is expected to remain
+ *   constant. For mutable states, this is typically `false`.
+ * @param idProvider A lambda that provides the unique ID for this mutable long within the
  *   [RemoteComposeCreationState]. This ID is used to identify the long in the remote document.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)

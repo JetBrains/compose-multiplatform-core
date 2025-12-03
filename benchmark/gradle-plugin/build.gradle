@@ -56,4 +56,9 @@ androidx {
     description = "Android Benchmark Gradle Plugin"
 }
 
-afterEvaluate { tasks.named("test") {it.dependsOn( tasks.named("publish")) }}
+afterEvaluate {
+    tasks.named("test") {
+        it.environment("PLUGIN_VERSION", androidx.LibraryVersions.BENCHMARK)
+        it.dependsOn( tasks.named("publish"))
+    }
+}

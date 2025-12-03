@@ -35,7 +35,7 @@ package androidx.glance.wear.parcel;
 @JavaPassthrough(annotation="@androidx.annotation.RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY)")
 interface IWearWidgetUpdateRequester {
   int getApiVersion() = 0;
-  oneway void requestUpdate(in int instanceId, in androidx.glance.wear.parcel.WearWidgetRawContentParcel contentParcel, in androidx.glance.wear.parcel.IExecutionCallback callback) = 1;
+  oneway void requestUpdate(in androidx.glance.wear.parcel.WearWidgetUpdateRequestParcel requestParcel, in androidx.glance.wear.parcel.WearWidgetRawContentParcel contentParcel, in androidx.glance.wear.parcel.IExecutionCallback callback) = 1;
   const int API_VERSION = 1;
   const int UPDATE_ERROR_CODE_INTERNAL_ERROR = 1;
 }

@@ -21,6 +21,7 @@ import android.graphics.Bitmap
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.PromptContentView
+import androidx.biometric.internal.AuthenticationManager
 import androidx.biometric.internal.CanceledFrom
 import androidx.biometric.internal.data.AuthenticationStateRepository
 import androidx.biometric.internal.data.PromptConfigRepository
@@ -31,6 +32,7 @@ import androidx.biometric.utils.CancellationSignalProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
@@ -45,6 +47,19 @@ internal class AuthenticationViewModel(
     private val promptConfigRepository: PromptConfigRepository,
     private val authenticationStateRepository: AuthenticationStateRepository,
 ) : ViewModel() {
+    /**
+     * The key associated with the current authentication session. This key is stored in
+     * [PromptConfigRepository] and is updated to the caller's [authManagerKey] when an
+     * authentication session starts. It is compared with [authManagerKey] to ensure that only the
+     * active [AuthenticationManager] instance processes authentication events, especially after
+     * configuration changes.
+     */
+    var currentAuthenticationKey: Int
+        get() = promptConfigRepository.currentAuthenticationKey
+        set(value) {
+            promptConfigRepository.currentAuthenticationKey = value
+        }
+
     /** The crypto object associated with the current authentication session. */
     var cryptoObject: BiometricPrompt.CryptoObject?
         get() = promptConfigRepository.cryptoObject
@@ -220,6 +235,42 @@ internal class AuthenticationViewModel(
             }
         }
 
+    /**
+     * A unique identifier for [AuthenticationManager] used to filter callbacks and events.
+     *
+     * Since multiple instances of [AuthenticationManager] may exist simultaneously, this key allows
+     * this manager to verify it is the active owner of the current authentication session. If this
+     * key does not match the [currentAuthenticationKey], this manager will ignore incoming events.
+     *
+     * The key must be got by [generateNextManagerKey] when needed, and the generator must be reset
+     * by [resetManagerKey] when the launcher's lifecycle ends. This ensures that after a
+     * configuration change, managers are recreated and reassigned the same keys in the same order,
+     * allowing the authentication process to be correctly restored with the right instance.
+     *
+     * Note: If it's older API, we need to support the case when BiometricPrompt is initialized
+     * later than onCreate(), e.g. button click listener. Therefore, using key does not work for old
+     * APIs. See go/bp-androidx-redesign for more information.
+     */
+    private val authManagerKey = AtomicInteger()
+
+    /**
+     * Atomically increments the current value and get a next manager key.
+     *
+     * @see [authManagerKey]
+     */
+    fun generateNextManagerKey(): Int {
+        return authManagerKey.incrementAndGet()
+    }
+
+    /**
+     * Reset the manager key.
+     *
+     * @see [authManagerKey]
+     */
+    fun resetManagerKey() {
+        authManagerKey.set(0)
+    }
+
     /** Sets the [BiometricPrompt.PromptInfo] for the current authentication session. */
     fun setPromptInfo(promptInfo: BiometricPrompt.PromptInfo?) {
         promptConfigRepository.promptInfo = promptInfo
@@ -346,7 +397,7 @@ internal class AuthenticationViewModel(
         DialogInterface.OnClickListener {
         private val viewModelRef: WeakReference<AuthenticationViewModel> = WeakReference(viewModel)
 
-        override fun onClick(dialogInterface: DialogInterface, which: Int) {
+        override fun onClick(dialogInterface: DialogInterface?, which: Int) {
             viewModelRef.get()?.setNegativeButtonPressPending()
         }
     }
@@ -356,7 +407,7 @@ internal class AuthenticationViewModel(
         DialogInterface.OnClickListener {
         private val viewModelRef: WeakReference<AuthenticationViewModel> = WeakReference(viewModel)
 
-        override fun onClick(dialogInterface: DialogInterface, which: Int) {
+        override fun onClick(dialogInterface: DialogInterface?, which: Int) {
             viewModelRef.get()?.setMoreOptionsButtonPressPending()
         }
     }

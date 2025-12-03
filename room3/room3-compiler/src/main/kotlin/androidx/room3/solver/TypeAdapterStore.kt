@@ -116,7 +116,6 @@ import androidx.room3.solver.types.TypeConverter
 import androidx.room3.solver.types.UuidColumnTypeAdapter
 import androidx.room3.solver.types.ValueClassConverterWrapper
 import androidx.room3.vo.BuiltInConverterFlags
-import androidx.room3.vo.MapInfo
 import androidx.room3.vo.ShortcutQueryParameter
 import androidx.room3.vo.Warning
 import androidx.room3.vo.isEnabled
@@ -621,42 +620,31 @@ private constructor(
                     return null
                 }
 
-            // Get @MapInfo info if any (this might be null)
-            val mapInfo = extras.getData(MapInfo::class)
             val mapKeyColumn = getMapColumnName(context, query, keyTypeArg)
             val mapValueColumn = getMapColumnName(context, query, valueTypeArg)
-            if (mapInfo != null && (mapKeyColumn != null || mapValueColumn != null)) {
-                context.logger.e(ProcessorErrors.CANNOT_USE_MAP_COLUMN_AND_MAP_INFO_SIMULTANEOUSLY)
-            }
-
-            val mappedKeyColumnName = mapKeyColumn ?: mapInfo?.keyColumnName
-            val mappedValueColumnName = mapValueColumn ?: mapInfo?.valueColumnName
 
             val keyRowAdapter =
-                findRowAdapter(
-                    typeMirror = keyTypeArg,
-                    query = query,
-                    columnName = mappedKeyColumnName,
-                ) ?: return null
+                findRowAdapter(typeMirror = keyTypeArg, query = query, columnName = mapKeyColumn)
+                    ?: return null
 
             val valueRowAdapter =
                 findRowAdapter(
                     typeMirror = valueTypeArg,
                     query = query,
-                    columnName = mappedValueColumnName,
+                    columnName = mapValueColumn,
                 ) ?: return null
 
             validateMapKeyTypeArg(
                 context = context,
                 keyTypeArg = keyTypeArg,
                 keyReader = findStatementValueReader(keyTypeArg, null),
-                keyColumnName = mappedKeyColumnName,
+                keyColumnName = mapKeyColumn,
             )
             validateMapValueTypeArg(
                 context = context,
                 valueTypeArg = valueTypeArg,
                 valueReader = findStatementValueReader(valueTypeArg, null),
-                valueColumnName = mappedValueColumnName,
+                valueColumnName = mapValueColumn,
             )
             return GuavaImmutableMultimapQueryResultAdapter(
                 context = context,
@@ -705,34 +693,29 @@ private constructor(
                 return null
             }
 
-            // Get @MapInfo info if any (this might be null)
-            val mapInfo = extras.getData(MapInfo::class)
-            val mapColumn = getMapColumnName(context, query, keyTypeArg)
-            if (mapInfo != null && mapColumn != null) {
-                context.logger.e(ProcessorErrors.CANNOT_USE_MAP_COLUMN_AND_MAP_INFO_SIMULTANEOUSLY)
-            }
-
-            val mappedKeyColumnName = mapColumn ?: mapInfo?.keyColumnName
-            val keyRowAdapter =
-                findRowAdapter(
-                    typeMirror = keyTypeArg,
+            val mapKeyColumn =
+                getMapColumnName(
+                    context = context,
                     query = query,
-                    columnName = mappedKeyColumnName,
-                ) ?: return null
+                    // If the map is a SparseArray get the key column info from the declared type
+                    // itself
+                    type = if (mapType.isSparseArray()) typeMirror else keyTypeArg,
+                )
+
+            val keyRowAdapter =
+                findRowAdapter(typeMirror = keyTypeArg, query = query, columnName = mapKeyColumn)
+                    ?: return null
 
             validateMapKeyTypeArg(
                 context = context,
                 keyTypeArg = keyTypeArg,
                 keyReader = findStatementValueReader(keyTypeArg, null),
-                keyColumnName = mappedKeyColumnName,
+                keyColumnName = mapKeyColumn,
             )
 
             val mapValueResultAdapter =
-                findMapValueResultAdapter(
-                    query = query,
-                    mapInfo = mapInfo,
-                    mapValueTypeArg = mapValueTypeArg,
-                ) ?: return null
+                findMapValueResultAdapter(query = query, mapValueTypeArg = mapValueTypeArg)
+                    ?: return null
             return MapQueryResultAdapter(
                 context = context,
                 parsedQuery = query,
@@ -797,7 +780,6 @@ private constructor(
 
     private fun findMapValueResultAdapter(
         query: ParsedQuery,
-        mapInfo: MapInfo?,
         mapValueTypeArg: XType,
     ): MapValueResultAdapter? {
         val collectionTypeRaw =
@@ -825,24 +807,20 @@ private constructor(
                 }
 
             val valueTypeArg = mapValueTypeArg.typeArguments.single().extendsBoundOrSelf()
-            val mapColumnName = getMapColumnName(context, query, valueTypeArg)
-            if (mapColumnName != null && mapInfo != null) {
-                context.logger.e(ProcessorErrors.CANNOT_USE_MAP_COLUMN_AND_MAP_INFO_SIMULTANEOUSLY)
-            }
+            val mapValueColumnName = getMapColumnName(context, query, valueTypeArg)
 
-            val mappedValueColumnName = mapColumnName ?: mapInfo?.valueColumnName
             val valueRowAdapter =
                 findRowAdapter(
                     typeMirror = valueTypeArg,
                     query = query,
-                    columnName = mappedValueColumnName,
+                    columnName = mapValueColumnName,
                 ) ?: return null
 
             validateMapValueTypeArg(
                 context = context,
                 valueTypeArg = valueTypeArg,
                 valueReader = findStatementValueReader(valueTypeArg, null),
-                valueColumnName = mappedValueColumnName,
+                valueColumnName = mapValueColumnName,
             )
 
             return MapValueResultAdapter.EndMapValueResultAdapter(
@@ -858,16 +836,11 @@ private constructor(
                 findRowAdapter(
                     typeMirror = keyTypeArg,
                     query = query,
-                    // No need to account for @MapInfo since nested maps did not support
-                    // this now deprecated annotation anyway.
                     columnName = getMapColumnName(context, query, keyTypeArg),
                 ) ?: return null
             val valueMapAdapter =
-                findMapValueResultAdapter(
-                    query = query,
-                    mapInfo = mapInfo,
-                    mapValueTypeArg = valueTypeArg,
-                ) ?: return null
+                findMapValueResultAdapter(query = query, mapValueTypeArg = valueTypeArg)
+                    ?: return null
             return MapValueResultAdapter.NestedMapValueResultAdapter(
                 keyRowAdapter = keyRowAdapter,
                 keyTypeArg = keyTypeArg,
@@ -875,20 +848,19 @@ private constructor(
                 mapValueResultAdapter = valueMapAdapter,
             )
         } else {
-            val mappedValueColumnName =
-                getMapColumnName(context, query, mapValueTypeArg) ?: mapInfo?.valueColumnName
+            val mapValueColumnName = getMapColumnName(context, query, mapValueTypeArg)
             val valueRowAdapter =
                 findRowAdapter(
                     typeMirror = mapValueTypeArg,
                     query = query,
-                    columnName = mappedValueColumnName,
+                    columnName = mapValueColumnName,
                 ) ?: return null
 
             validateMapValueTypeArg(
                 context = context,
                 valueTypeArg = mapValueTypeArg,
                 valueReader = findStatementValueReader(mapValueTypeArg, null),
-                valueColumnName = mappedValueColumnName,
+                valueColumnName = mapValueColumnName,
             )
             return MapValueResultAdapter.EndMapValueResultAdapter(
                 valueRowAdapter = valueRowAdapter,

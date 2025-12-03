@@ -18,7 +18,6 @@ package androidx.xr.arcore.testapp.persistentanchors
 
 import android.app.Activity
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -70,6 +69,7 @@ import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.AnchorPersistenceMode
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.FieldOfView
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.FloatSize2d
@@ -397,11 +397,11 @@ class PersistentAnchorsActivity : ComponentActivity() {
         when (anchorResult) {
             is AnchorCreateSuccess -> createAnchorPanel(anchorResult.anchor)
             is AnchorCreateResourcesExhausted -> {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: anchor resources exhausted.")
+                Log.error { "Failed to create anchor: anchor resources exhausted." }
                 Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
             }
             else -> {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: ${anchorResult::class.simpleName}")
+                Log.error { "Failed to create anchor: ${anchorResult::class.simpleName}" }
                 Toast.makeText(this, "Anchor failed to create.", Toast.LENGTH_LONG).show()
             }
         }
@@ -466,7 +466,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 anchor.persist()
                 uuids.emit(Anchor.getPersistedAnchorUuids(session))
             } catch (e: RuntimeException) {
-                Log.e("ARCore", "Error persisting anchor: ${e.message}")
+                Log.error(e) { "Error persisting anchor: ${e.message}" }
             }
         }
     }
@@ -486,7 +486,7 @@ class PersistentAnchorsActivity : ComponentActivity() {
             try {
                 Anchor.load(session, uuid)
             } catch (e: IllegalStateException) {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: ${e.message}")
+                Log.error(e) { "Failed to create anchor: ${e.message}" }
                 return
             }
 
@@ -499,15 +499,15 @@ class PersistentAnchorsActivity : ComponentActivity() {
                 }
             }
             is AnchorCreateResourcesExhausted -> {
-                Log.e(ACTIVITY_NAME, "Failed to load anchor: anchor resources exhausted.")
+                Log.error { "Failed to load anchor: anchor resources exhausted." }
                 Toast.makeText(this, "Anchor limit has been reached.", Toast.LENGTH_LONG).show()
             }
             is AnchorLoadInvalidUuid -> {
-                Log.e(ACTIVITY_NAME, "Failed to load anchor: invalid UUID.")
+                Log.error { "Failed to load anchor: invalid UUID." }
                 Toast.makeText(this, "Invalid UUID.", Toast.LENGTH_LONG).show()
             }
             else -> {
-                Log.e(ACTIVITY_NAME, "Failed to load anchor: ${anchorResult::class.simpleName}")
+                Log.error { "Failed to load anchor: ${anchorResult::class.simpleName}" }
                 Toast.makeText(this, "Anchor failed to load.", Toast.LENGTH_LONG).show()
             }
         }

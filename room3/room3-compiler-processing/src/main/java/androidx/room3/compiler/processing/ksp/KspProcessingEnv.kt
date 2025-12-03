@@ -400,11 +400,7 @@ private class KspResolver(val env: KspProcessingEnv, val resolver: Resolver) {
                 allowPrimitives = false,
             )
         }
-        return if (ksTypeArgument.variance == Variance.STAR) {
-            KspStarTypeArgumentType(env = env, typeArg = ksTypeArgument)
-        } else {
-            KspTypeArgumentType(env = env, typeArg = ksTypeArgument)
-        }
+        return KspTypeArgumentType.create(env, ksTypeArgument)
     }
 
     /**

@@ -108,6 +108,7 @@ package androidx.xr.scenecore {
     method @InaccessibleFromKotlin public androidx.xr.scenecore.Entity? getParent();
     method public androidx.xr.runtime.math.Pose getPose(androidx.xr.scenecore.Space relativeTo);
     method public float getScale(androidx.xr.scenecore.Space relativeTo);
+    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public boolean isDisposed();
     method public boolean isEnabled(boolean includeParents);
     method public void removeAllComponents();
     method public void removeComponent(androidx.xr.scenecore.Component component);
@@ -120,6 +121,7 @@ package androidx.xr.scenecore {
     method public void setScale(float scale, androidx.xr.scenecore.Space relativeTo);
     property public java.util.List<androidx.xr.scenecore.Entity> children;
     property public CharSequence contentDescription;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public boolean isDisposed;
     property public androidx.xr.scenecore.Entity? parent;
   }
 
@@ -179,6 +181,7 @@ package androidx.xr.scenecore {
     method @FloatRange(from=0.0) public default float getScale();
     method @FloatRange(from=0.0) public float getScale(optional androidx.xr.scenecore.Space relativeTo);
     method @BytecodeOnly @FloatRange(from=0.0) public static float getScale$default(androidx.xr.scenecore.Entity!, androidx.xr.scenecore.Space!, int, Object!);
+    method @InaccessibleFromKotlin @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public boolean isDisposed();
     method public boolean isEnabled(optional boolean includeParents);
     method @BytecodeOnly public static boolean isEnabled$default(androidx.xr.scenecore.Entity!, boolean, int, Object!);
     method public void removeAllComponents();
@@ -199,7 +202,12 @@ package androidx.xr.scenecore {
     method @BytecodeOnly public static void setScale$default(androidx.xr.scenecore.Entity!, float, androidx.xr.scenecore.Space!, int, Object!);
     property public abstract java.util.List<androidx.xr.scenecore.Entity> children;
     property public abstract CharSequence contentDescription;
+    property @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public abstract boolean isDisposed;
     property public abstract androidx.xr.scenecore.Entity? parent;
+  }
+
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public static final class Entity.DisposedException extends java.lang.IllegalStateException {
+    ctor public Entity.DisposedException(String message);
   }
 
   public interface EntityMoveListener {
@@ -709,6 +717,7 @@ package androidx.xr.scenecore {
   }
 
   public final class Scene implements androidx.xr.runtime.SessionConnector {
+    ctor @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public Scene();
     method public void addSpatialCapabilitiesChangedListener(java.util.concurrent.Executor callbackExecutor, java.util.function.Consumer<java.util.Set<androidx.xr.scenecore.SpatialCapability>> listener);
     method public void addSpatialCapabilitiesChangedListener(java.util.function.Consumer<java.util.Set<androidx.xr.scenecore.SpatialCapability>> listener);
     method public void clearSpatialModeChangedListener();

@@ -96,8 +96,11 @@ public class AppSearchAccountTest {
         DocumentClassFactory<Account> factory = registry.getOrCreateFactory(Account.class);
         assertThat(factory.getSchema()).isEqualTo(AppSearchAccount.SCHEMA);
 
-        Account account = new Account("namespace", "id", "accountType",
-                "accountName", "accountId");
+        Account account = new Account.Builder("namespace", "id")
+                .setAccountType("accountType")
+                .setAccountName("accountName")
+                .setAccountId("accountId")
+                .build();
         GenericDocument expectedDocument = factory.toGenericDocument(account);
 
         AppSearchAccount actualAccount = new AppSearchAccount.Builder("namespace", "id")

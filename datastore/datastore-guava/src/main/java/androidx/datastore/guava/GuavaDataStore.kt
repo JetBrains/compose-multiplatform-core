@@ -27,7 +27,9 @@ import androidx.datastore.core.MultiProcessDataStoreFactory
 import androidx.datastore.core.Serializer
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.dataStoreFile
+import com.google.common.util.concurrent.ExecutionSequencer
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.MoreExecutors
 import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.Executor
@@ -48,6 +50,8 @@ internal constructor(
     /** The [CoroutineContext] that holds a dispatcher. */
     private val coroutineContext: CoroutineContext,
 ) {
+    private val updateSequencer = ExecutionSequencer.create()
+
     /**
      * Returns a [ListenableFuture] to get the latest persisted data. It is not blocked by any
      * ongoing updates.
@@ -68,9 +72,14 @@ internal constructor(
      * as `T -> T` to match [DataStore.updateData].
      */
     public fun updateDataAsync(dataTransform: Function<T, T>): ListenableFuture<T> {
-        return launchFuture(context = coroutineContext, launchUndispatched = false) {
-            dataStore.updateData { dataTransform.apply(it) }
-        }
+        return updateSequencer.submitAsync(
+            {
+                launchFuture(context = coroutineContext, launchUndispatched = false) {
+                    dataStore.updateData { dataTransform.apply(it) }
+                }
+            },
+            MoreExecutors.directExecutor(),
+        )
     }
 
     /** Builder class for a [GuavaDataStore]. */

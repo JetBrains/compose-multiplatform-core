@@ -40,14 +40,6 @@ public object DeviceQuirksLoader {
         }
         if (
             quirkSettings.shouldEnableQuirk(
-                CloseCaptureSessionOnDisconnectQuirk::class.java,
-                CloseCaptureSessionOnDisconnectQuirk.isEnabled(),
-            )
-        ) {
-            quirks.add(CloseCaptureSessionOnDisconnectQuirk())
-        }
-        if (
-            quirkSettings.shouldEnableQuirk(
                 CrashWhenTakingPhotoWithAutoFlashAEModeQuirk::class.java,
                 CrashWhenTakingPhotoWithAutoFlashAEModeQuirk.isEnabled(),
             )

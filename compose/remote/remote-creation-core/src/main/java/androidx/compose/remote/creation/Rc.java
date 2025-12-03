@@ -777,6 +777,54 @@ public class Rc {
         /** do not pad before number */
         public static final int PAD_PRE_ZERO =
                 androidx.compose.remote.core.operations.TextFromFloat.PAD_PRE_ZERO;
+
+        /** default e.g.  e.g. 1234567890.12 */
+        public static final int GROUPING_NONE =
+                androidx.compose.remote.core.operations.TextFromFloat.GROUPING_NONE;
+
+        /** by 3 digits e.g. 123,456,789.01 */
+        public static final int GROUPING_BY3 =
+                androidx.compose.remote.core.operations.TextFromFloat.GROUPING_BY3;
+
+        /** by 4 digits e.g. 12,3456,7890.12 */
+        public static final int GROUPING_BY4 =
+                androidx.compose.remote.core.operations.TextFromFloat.GROUPING_BY4;
+
+        /** by 3 then 2 digits e.g. 1,23,45,67,890.12 */
+        public static final int GROUPING_BY32 =
+                androidx.compose.remote.core.operations.TextFromFloat.GROUPING_BY32;
+
+        /** use comma as separator e.g. 123,456,789.01 */
+        public static final int SEPARATOR_PERIOD_COMMA =
+                androidx.compose.remote.core.operations.TextFromFloat.SEPARATOR_PERIOD_COMMA;
+
+        /** use period as separator e.g. 123.456.789,01 */
+        public static final int SEPARATOR_COMMA_PERIOD =
+                androidx.compose.remote.core.operations.TextFromFloat.SEPARATOR_COMMA_PERIOD;
+
+        /** use space as separator e.g. 123 456 789,01 */
+        public static final int SEPARATOR_SPACE_COMMA =
+                androidx.compose.remote.core.operations.TextFromFloat.SEPARATOR_SPACE_COMMA;
+
+        /** use space as separator e.g. 123_456_789,01 */
+        public static final int SEPARATOR_UNDER_PERIOD =
+                androidx.compose.remote.core.operations.TextFromFloat.SEPARATOR_UNDER_PERIOD;
+
+        /** no options */
+        public static final int OPTIONS_NONE =
+                androidx.compose.remote.core.operations.TextFromFloat.OPTIONS_NONE;
+
+        /** use parentheses as negative sign e.g. (1234567890.12) */
+        public static final int OPTIONS_NEGATIVE_PARENTHESES =
+                androidx.compose.remote.core.operations.TextFromFloat.OPTIONS_NEGATIVE_PARENTHESES;
+
+        /** round do not truncate (if time typically you do not do this) */
+        public static final int OPTIONS_ROUNDING =
+                androidx.compose.remote.core.operations.TextFromFloat.OPTIONS_ROUNDING;
+
+        /** Legacy compatibility mode grouping & separator ignored */
+        public static final int LEGACY_MODE =
+                androidx.compose.remote.core.operations.TextFromFloat.LEGACY_MODE;
     }
 
     /** Used in Texture */

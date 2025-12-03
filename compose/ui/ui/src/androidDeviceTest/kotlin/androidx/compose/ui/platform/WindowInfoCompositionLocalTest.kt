@@ -968,6 +968,4 @@ private class CustomWrappedContext(private val base: Activity) : Context() {
     // This is @hide on 30, so we cannot reference base.isUiContext, but overriding will work. Just
     // return true always, since we are wrapping an Activity anyway (which is a UI context)
     override fun isUiContext(): Boolean = true
-
-    override fun getDeviceId(): Int = base.getDeviceId()
 }

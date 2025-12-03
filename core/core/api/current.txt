@@ -944,6 +944,11 @@ package androidx.core.app {
     method public void removeOnPictureInPictureModeChangedListener(androidx.core.util.Consumer<androidx.core.app.PictureInPictureModeChangedInfo> listener);
   }
 
+  public interface OnPictureInPictureUiStateChangedProvider {
+    method public void addOnPictureInPictureUiStateChangedListener(androidx.core.util.Consumer<androidx.core.app.PictureInPictureUiStateCompat> listener);
+    method public void removeOnPictureInPictureUiStateChangedListener(androidx.core.util.Consumer<androidx.core.app.PictureInPictureUiStateCompat> listener);
+  }
+
   public interface OnUserLeaveHintProvider {
     method public void addOnUserLeaveHintListener(Runnable listener);
     method public void removeOnUserLeaveHintListener(Runnable listener);
@@ -992,6 +997,58 @@ package androidx.core.app {
     method @InaccessibleFromKotlin public boolean isInPictureInPictureMode();
     property public boolean isInPictureInPictureMode;
     property @RequiresApi(26) public android.content.res.Configuration newConfig;
+  }
+
+  public final class PictureInPictureParamsCompat {
+    ctor public PictureInPictureParamsCompat();
+    ctor @BytecodeOnly public PictureInPictureParamsCompat(boolean, android.util.Rational!, java.util.List!, android.graphics.Rect!, boolean, android.app.RemoteAction!, android.util.Rational!, CharSequence!, CharSequence!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public PictureInPictureParamsCompat(optional boolean isEnabled, optional android.util.Rational? aspectRatio, optional java.util.List<android.app.RemoteAction> actions, optional android.graphics.Rect? sourceRectHint, optional boolean isSeamlessResizeEnabled, optional android.app.RemoteAction? closeAction, optional android.util.Rational? expandedAspectRatio, optional CharSequence? title, optional CharSequence? subTitle);
+    method @InaccessibleFromKotlin public java.util.List<android.app.RemoteAction> getActions();
+    method @InaccessibleFromKotlin public android.util.Rational? getAspectRatio();
+    method @InaccessibleFromKotlin public android.app.RemoteAction? getCloseAction();
+    method @InaccessibleFromKotlin public android.util.Rational? getExpandedAspectRatio();
+    method @InaccessibleFromKotlin public android.graphics.Rect? getSourceRectHint();
+    method @InaccessibleFromKotlin public CharSequence? getSubTitle();
+    method @InaccessibleFromKotlin public CharSequence? getTitle();
+    method @InaccessibleFromKotlin public boolean isEnabled();
+    method @InaccessibleFromKotlin public boolean isSeamlessResizeEnabled();
+    property public java.util.List<android.app.RemoteAction> actions;
+    property public android.util.Rational? aspectRatio;
+    property public android.app.RemoteAction? closeAction;
+    property public android.util.Rational? expandedAspectRatio;
+    property public boolean isEnabled;
+    property public boolean isSeamlessResizeEnabled;
+    property public android.graphics.Rect? sourceRectHint;
+    property public CharSequence? subTitle;
+    property public CharSequence? title;
+  }
+
+  public static final class PictureInPictureParamsCompat.Builder {
+    ctor public PictureInPictureParamsCompat.Builder();
+    method public androidx.core.app.PictureInPictureParamsCompat build();
+    method public androidx.core.app.PictureInPictureParamsCompat.Builder setActions(java.util.List<android.app.RemoteAction> actions);
+    method public androidx.core.app.PictureInPictureParamsCompat.Builder setAspectRatio(android.util.Rational? aspectRatio);
+    method public androidx.core.app.PictureInPictureParamsCompat.Builder setCloseAction(android.app.RemoteAction? closeAction);
+    method public androidx.core.app.PictureInPictureParamsCompat.Builder setEnabled(boolean enabled);
+    method public androidx.core.app.PictureInPictureParamsCompat.Builder setExpandedAspectRatio(android.util.Rational? expandedAspectRatio);
+    method public androidx.core.app.PictureInPictureParamsCompat.Builder setSeamlessResizeEnabled(boolean seamlessResizeEnabled);
+    method public androidx.core.app.PictureInPictureParamsCompat.Builder setSourceRectHint(android.graphics.Rect? sourceRectHint);
+    method public androidx.core.app.PictureInPictureParamsCompat.Builder setSubTitle(CharSequence? subTitle);
+    method public androidx.core.app.PictureInPictureParamsCompat.Builder setTitle(CharSequence? title);
+  }
+
+  public final class PictureInPictureUiStateCompat {
+    ctor public PictureInPictureUiStateCompat(boolean isStashed, boolean isTransitioningToPip);
+    method public static androidx.core.app.PictureInPictureUiStateCompat fromPictureInPictureUiState(android.app.PictureInPictureUiState uiState);
+    method @InaccessibleFromKotlin public boolean isStashed();
+    method @InaccessibleFromKotlin public boolean isTransitioningToPip();
+    property public boolean isStashed;
+    property public boolean isTransitioningToPip;
+    field public static final androidx.core.app.PictureInPictureUiStateCompat.Companion Companion;
+  }
+
+  public static final class PictureInPictureUiStateCompat.Companion {
+    method public androidx.core.app.PictureInPictureUiStateCompat fromPictureInPictureUiState(android.app.PictureInPictureUiState uiState);
   }
 
   public final class RemoteActionCompat implements androidx.versionedparcelable.VersionedParcelable {
@@ -1949,6 +2006,7 @@ package androidx.core.os {
 
   public final class BuildCompat {
     method @ChecksSdkIntAtLeast(api=36, codename="Baklava") public static boolean isAtLeastB();
+    method public static boolean isAtLeastB_1();
     method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.N) public static boolean isAtLeastN();
     method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.N_MR1) public static boolean isAtLeastNMR1();
     method @Deprecated @ChecksSdkIntAtLeast(api=android.os.Build.VERSION_CODES.O) public static boolean isAtLeastO();
@@ -3610,6 +3668,7 @@ package androidx.core.view.accessibility {
     method @Deprecated public static void setAction(android.view.accessibility.AccessibilityEvent, int);
     method @Deprecated public static void setContentChangeTypes(android.view.accessibility.AccessibilityEvent, int);
     method @Deprecated public static void setMovementGranularity(android.view.accessibility.AccessibilityEvent, int);
+    field public static final int CONTENT_CHANGE_TYPE_CHECKED = 8192; // 0x2000
     field public static final int CONTENT_CHANGE_TYPE_CONTENT_DESCRIPTION = 4; // 0x4
     field public static final int CONTENT_CHANGE_TYPE_CONTENT_INVALID = 1024; // 0x400
     field public static final int CONTENT_CHANGE_TYPE_DRAG_CANCELLED = 512; // 0x200
@@ -3617,11 +3676,14 @@ package androidx.core.view.accessibility {
     field public static final int CONTENT_CHANGE_TYPE_DRAG_STARTED = 128; // 0x80
     field public static final int CONTENT_CHANGE_TYPE_ENABLED = 4096; // 0x1000
     field public static final int CONTENT_CHANGE_TYPE_ERROR = 2048; // 0x800
+    field public static final int CONTENT_CHANGE_TYPE_EXPANDED = 16384; // 0x4000
     field public static final int CONTENT_CHANGE_TYPE_PANE_APPEARED = 16; // 0x10
     field public static final int CONTENT_CHANGE_TYPE_PANE_DISAPPEARED = 32; // 0x20
     field public static final int CONTENT_CHANGE_TYPE_PANE_TITLE = 8; // 0x8
+    field public static final int CONTENT_CHANGE_TYPE_SORT_DIRECTION = 65536; // 0x10000
     field public static final int CONTENT_CHANGE_TYPE_STATE_DESCRIPTION = 64; // 0x40
     field public static final int CONTENT_CHANGE_TYPE_SUBTREE = 1; // 0x1
+    field public static final int CONTENT_CHANGE_TYPE_SUPPLEMENTAL_DESCRIPTION = 32768; // 0x8000
     field public static final int CONTENT_CHANGE_TYPE_TEXT = 2; // 0x2
     field public static final int CONTENT_CHANGE_TYPE_UNDEFINED = 0; // 0x0
     field public static final int TYPES_ALL_MASK = -1; // 0xffffffff
@@ -3718,6 +3780,7 @@ package androidx.core.view.accessibility {
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat? getParent(int);
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.RangeInfoCompat! getRangeInfo();
     method public CharSequence? getRoleDescription();
+    method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionCompat? getSelection();
     method public CharSequence? getStateDescription();
     method public CharSequence? getSupplementalDescription();
     method public CharSequence! getText();
@@ -3825,6 +3888,7 @@ package androidx.core.view.accessibility {
     method public void setScreenReaderFocusable(boolean);
     method public void setScrollable(boolean);
     method public void setSelected(boolean);
+    method public void setSelection(androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionCompat?);
     method public void setShowingHintText(boolean);
     method public void setSource(android.view.View!);
     method public void setSource(android.view.View!, int);
@@ -3858,6 +3922,7 @@ package androidx.core.view.accessibility {
     field public static final String ACTION_ARGUMENT_ROW_INT = "android.view.accessibility.action.ARGUMENT_ROW_INT";
     field public static final String ACTION_ARGUMENT_SCROLL_AMOUNT_FLOAT = "androidx.core.view.accessibility.action.ARGUMENT_SCROLL_AMOUNT_FLOAT";
     field public static final String ACTION_ARGUMENT_SELECTION_END_INT = "ACTION_ARGUMENT_SELECTION_END_INT";
+    field public static final String ACTION_ARGUMENT_SELECTION_PARCELABLE = "androidx.core.view.accessibility.action.ARGUMENT_SELECTION_PARCELABLE";
     field public static final String ACTION_ARGUMENT_SELECTION_START_INT = "ACTION_ARGUMENT_SELECTION_START_INT";
     field public static final String ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE = "ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE";
     field public static final int ACTION_CLEAR_ACCESSIBILITY_FOCUS = 128; // 0x80
@@ -3881,6 +3946,13 @@ package androidx.core.view.accessibility {
     field public static final int ACTION_SELECT = 4; // 0x4
     field public static final int ACTION_SET_SELECTION = 131072; // 0x20000
     field public static final int ACTION_SET_TEXT = 2097152; // 0x200000
+    field public static final int CHECKED_STATE_FALSE = 0; // 0x0
+    field public static final int CHECKED_STATE_PARTIAL = 2; // 0x2
+    field public static final int CHECKED_STATE_TRUE = 1; // 0x1
+    field public static final int EXPANDED_STATE_COLLAPSED = 1; // 0x1
+    field public static final int EXPANDED_STATE_FULL = 3; // 0x3
+    field public static final int EXPANDED_STATE_PARTIAL = 2; // 0x2
+    field public static final int EXPANDED_STATE_UNDEFINED = 0; // 0x0
     field public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_ARG_LENGTH";
     field public static final int EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_MAX_LENGTH = 20000; // 0x4e20
     field public static final String EXTRA_DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX = "android.view.accessibility.extra.DATA_TEXT_CHARACTER_LOCATION_ARG_START_INDEX";
@@ -3944,6 +4016,7 @@ package androidx.core.view.accessibility {
     field public static final androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat! ACTION_SCROLL_TO_POSITION;
     field public static final androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat! ACTION_SCROLL_UP;
     field public static final androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat! ACTION_SELECT;
+    field public static final androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat ACTION_SET_EXTENDED_SELECTION;
     field public static final androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat! ACTION_SET_PROGRESS;
     field public static final androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat! ACTION_SET_SELECTION;
     field public static final androidx.core.view.accessibility.AccessibilityNodeInfoCompat.AccessibilityActionCompat! ACTION_SET_TEXT;
@@ -3985,10 +4058,15 @@ package androidx.core.view.accessibility {
     method public int getRowIndex();
     method public int getRowSpan();
     method public String? getRowTitle();
+    method public int getSortDirection();
     method @Deprecated public boolean isHeading();
     method public boolean isSelected();
     method public static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.CollectionItemInfoCompat! obtain(int, int, int, int, boolean);
     method public static androidx.core.view.accessibility.AccessibilityNodeInfoCompat.CollectionItemInfoCompat! obtain(int, int, int, int, boolean, boolean);
+    field public static final int SORT_DIRECTION_ASCENDING = 1; // 0x1
+    field public static final int SORT_DIRECTION_DESCENDING = 2; // 0x2
+    field public static final int SORT_DIRECTION_NONE = 0; // 0x0
+    field public static final int SORT_DIRECTION_OTHER = 3; // 0x3
   }
 
   public static final class AccessibilityNodeInfoCompat.CollectionItemInfoCompat.Builder {
@@ -4002,6 +4080,7 @@ package androidx.core.view.accessibility {
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.CollectionItemInfoCompat.Builder setRowSpan(int);
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.CollectionItemInfoCompat.Builder setRowTitle(String?);
     method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.CollectionItemInfoCompat.Builder setSelected(boolean);
+    method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.CollectionItemInfoCompat.Builder setSortDirection(int);
   }
 
   public static class AccessibilityNodeInfoCompat.RangeInfoCompat {
@@ -4014,6 +4093,22 @@ package androidx.core.view.accessibility {
     field public static final int RANGE_TYPE_FLOAT = 1; // 0x1
     field public static final int RANGE_TYPE_INT = 0; // 0x0
     field public static final int RANGE_TYPE_PERCENT = 2; // 0x2
+  }
+
+  public static final class AccessibilityNodeInfoCompat.SelectionCompat {
+    ctor public AccessibilityNodeInfoCompat.SelectionCompat(android.view.accessibility.AccessibilityNodeInfo.Selection?);
+    ctor public AccessibilityNodeInfoCompat.SelectionCompat(androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat, androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat);
+    method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat? getEnd();
+    method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat.SelectionPositionCompat? getStart();
+  }
+
+  public static final class AccessibilityNodeInfoCompat.SelectionPositionCompat {
+    ctor public AccessibilityNodeInfoCompat.SelectionPositionCompat(android.view.accessibility.AccessibilityNodeInfo.SelectionPosition);
+    ctor public AccessibilityNodeInfoCompat.SelectionPositionCompat(android.view.View, int);
+    ctor public AccessibilityNodeInfoCompat.SelectionPositionCompat(android.view.View, int, int);
+    ctor public AccessibilityNodeInfoCompat.SelectionPositionCompat(androidx.core.view.accessibility.AccessibilityNodeInfoCompat, int);
+    method public androidx.core.view.accessibility.AccessibilityNodeInfoCompat? getNode();
+    method public int getOffset();
   }
 
   public static final class AccessibilityNodeInfoCompat.TouchDelegateInfoCompat {

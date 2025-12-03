@@ -208,6 +208,16 @@ public interface Entity : ScenePose {
      */
     public fun isEnabled(includeParents: Boolean = true): Boolean
 
+    /** True if this entity is disposed. */
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val isDisposed: Boolean
+
+    /**
+     * Exception type that is thrown if client is invoking any of the APIs after the entity instance
+     * is already disposed.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public class DisposedException(message: String) : IllegalStateException(message)
+
     /**
      * Disposes of any system resources held by this Entity, and transitively calls dispose() on all
      * its children. Once disposed, this Entity is invalid and cannot be used again.
@@ -261,19 +271,16 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
         entityManager.setEntityForRtEntity(rtEntity, this)
     }
 
-    private companion object {
-        private const val TAG = "BaseEntity"
-    }
-
     private val componentList = mutableListOf<Component>()
 
     /*
      * Throws an [IllegalStateException] if the entity is disposed.
      */
+    @Throws(Entity.DisposedException::class)
     internal fun checkNotDisposed() {
-        checkNotNull(rtEntity) {
+        if (isDisposed) {
             // TODO: b/434266829 - Use name or content description for better error message.
-            "Entity $this is already disposed."
+            throw Entity.DisposedException("Entity $this is already disposed.")
         }
     }
 
@@ -368,8 +375,12 @@ internal constructor(rtEntity: RtEntityType, private val entityManager: EntityMa
         return !(rtEntity!!.isHidden(includeParents))
     }
 
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    override val isDisposed: Boolean
+        get() = rtEntity == null
+
     override fun dispose() {
-        if (rtEntity == null) return
+        if (isDisposed) return
         // Make a copy for avoiding concurrent access when disposing children.
         // Main panel is disposed when session is destroyed. Disconnect it from scene if it's
         // parented to entity being disposed.

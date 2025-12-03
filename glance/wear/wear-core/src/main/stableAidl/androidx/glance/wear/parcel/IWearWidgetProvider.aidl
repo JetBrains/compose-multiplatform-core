@@ -51,17 +51,19 @@ interface IWearWidgetProvider {
     /**
      * Called when the widget becomes active in the Host.
      *
+     * There are currently no Hosts that send this event.
+     *
      * @since version 1
      */
-     // TODO: b/458364657 - Remove
     oneway void onActivated(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 2;
 
     /**
      * Called when the widget becomes de-activated in the Host.
      *
+     * There are currently no Hosts that send this event.
+     *
      * @since version 1
      */
-     // TODO: b/458364657 - Remove
     oneway void onDeactivated(in ActiveWearWidgetHandleParcel handleParcel, IExecutionCallback callback) = 3;
 
     /**

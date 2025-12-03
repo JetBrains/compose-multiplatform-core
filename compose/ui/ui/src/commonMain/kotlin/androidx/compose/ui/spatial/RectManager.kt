@@ -36,7 +36,6 @@ import androidx.compose.ui.node.requireSemanticsInfo
 import androidx.compose.ui.postDelayed
 import androidx.compose.ui.removePost
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.util.fastRoundToInt
 import androidx.compose.ui.util.trace
@@ -222,40 +221,18 @@ internal class RectManager(
         }
     }
 
-    fun onLayoutLayerPositionalPropertiesChanged(layoutNode: LayoutNode) {
+    fun recalculateRectIfDirty(layoutNode: LayoutNode) {
         // no need to update the positions on not placed items, as technically not placed items
         // doesn't have a position. they will get the correct position once they became placed.
-        if (!layoutNode.isPlaced) return
-        val outerToInnerOffset = layoutNode.outerToInnerOffset()
-        if (outerToInnerOffset.isSet) {
-            // translational properties only. AABB still valid.
-            layoutNode.outerToInnerOffset = outerToInnerOffset
-            layoutNode.outerToInnerOffsetDirty = false
-            layoutNode.forEachChild {
-                // NOTE: this calls rectlist.move(...) so does not need to be recursive
-                // TODO: we could potentially move to a single call of `updateSubhierarchy(...)`
-                onLayoutPositionChanged(it)
-            }
-            invalidateCallbacksFor(layoutNode)
-        } else {
-            // there are rotations/skews/scales going on, so we need to do a more expensive update
-            insertOrUpdateTransformedNodeSubhierarchy(layoutNode)
-        }
-    }
-
-    fun onLayoutPositionChanged(layoutNode: LayoutNode, forceUpdate: Boolean = false) {
-        // no need to update the positions on not placed items, as technically not placed items
-        // doesn't have a position. they will get the correct position once they became placed.
-        if (!layoutNode.isPlaced) return
+        if (!layoutNode.isPlaced || !layoutNode.rectInParentDirty) return
         // Our goal here is to get the right "root" coordinates for every layout. We can use
-        // LayoutCoordinates.localToRoot to calculate this somewhat readily, however this function
-        // is getting called with a very high frequency and so it is important that extracting these
-        // coordinates remains relatively cheap to limit the overhead of this tracking. The
-        // LayoutCoordinates will traverse up the entire "spine" of the hierarchy, so as we do this
-        // calculation for many nodes, we would be making many redundant calculations. In order to
-        // minimize this, we store the "offsetFromRoot" of each layout node as we calculate it, and
-        // attempt to utilize this value when calculating it for a node that is below it.
-        // Additionally, we calculate and cache the parent's "outer to inner offset" which may
+        // LayoutCoordinates.localToRoot to calculate this somewhat readily, however this
+        // function is getting called with a very high frequency and so it is important that
+        // extracting these coordinates remains relatively cheap to limit the overhead of this
+        // tracking. The LayoutCoordinates will traverse up the entire "spine" of the hierarchy,
+        // so as we do this calculation for many nodes, we would be making many redundant
+        // calculations. In order to optimize it, we only re-calculate when offset from
+        // parent changes and add it to the already stored in the rect list parent offset.
         val parent = layoutNode.parent
         val parentOuterInnerOffset =
             if (parent != null && !parent.hasPositionalLayerTransformationsInOffsetFromRoot) {
@@ -278,37 +255,29 @@ internal class RectManager(
                 val delegate = layoutNode.measurePassDelegate
                 val width = delegate.measuredWidth
                 val height = delegate.measuredHeight
-                val size = IntSize(width, height)
                 val semanticsId = layoutNode.semanticsId
 
                 if (layoutNode.addedToRectList) {
-                    if (
-                        forceUpdate ||
-                            offsetFromParent != layoutNode.lastOffsetFromParent ||
-                            size != layoutNode.lastSize
-                    ) {
-                        if (parent != null) {
-                            rects.moveBasedOnParentOffset(
-                                value = semanticsId,
-                                parentId = parent.semanticsId,
-                                offsetFromParentX = offsetFromParent.x,
-                                offsetFromParentY = offsetFromParent.y,
-                                width = width,
-                                height = height,
-                            )
-                        } else {
-                            // moving the root.
-                            // when parent is null offsetFromParent is just the outer coordinator
-                            // offset.
-                            rects.move(
-                                value = semanticsId,
-                                l = offsetFromParent.x,
-                                t = offsetFromParent.y,
-                                r = offsetFromParent.x + width,
-                                b = offsetFromParent.y + height,
-                            )
-                        }
-                        invalidate()
+                    if (parent != null) {
+                        rects.moveBasedOnParentOffset(
+                            value = semanticsId,
+                            parentId = parent.semanticsId,
+                            offsetFromParentX = offsetFromParent.x,
+                            offsetFromParentY = offsetFromParent.y,
+                            width = width,
+                            height = height,
+                        )
+                    } else {
+                        // moving the root.
+                        // when parent is null offsetFromParent is just the outer coordinator
+                        // offset.
+                        rects.move(
+                            value = semanticsId,
+                            l = offsetFromParent.x,
+                            t = offsetFromParent.y,
+                            r = offsetFromParent.x + width,
+                            b = offsetFromParent.y + height,
+                        )
                     }
                 } else {
                     layoutNode.addedToRectList = true
@@ -342,10 +311,7 @@ internal class RectManager(
                             hasCallbacks = hasCallbacks,
                         )
                     }
-                    invalidate()
                 }
-                layoutNode.lastSize = size
-                layoutNode.lastOffsetFromParent = offsetFromParent
             } else {
                 // even if we don't have layer transformations anymore, we had it previously
                 // and the whole subtree was calculated with that. we need to recalculate the
@@ -363,6 +329,9 @@ internal class RectManager(
             // If unset is returned then that means there is a rotation/skew/scale
             insertOrUpdateTransformedNodeSubhierarchy(layoutNode)
         }
+        layoutNode.rectInParentDirty = false
+        invalidate()
+        scheduleDebounceCallback(ensureSomethingScheduled = true)
     }
 
     fun getOffsetFromRectListFor(layoutNode: LayoutNode): IntOffset {
@@ -404,7 +373,6 @@ internal class RectManager(
 
     private fun insertOrUpdateTransformedNode(layoutNode: LayoutNode) {
         layoutNode.hasPositionalLayerTransformationsInOffsetFromRoot = true
-        layoutNode.lastOffsetFromParent = IntOffset.Max
 
         val coord = layoutNode.outerCoordinator
         val delegate = layoutNode.measurePassDelegate
@@ -439,6 +407,7 @@ internal class RectManager(
                 hasCallbacks = throttledCallbacks.rectChangedMap.containsKey(id),
             )
         }
+        layoutNode.rectInParentDirty = false
         invalidate()
     }
 
@@ -495,6 +464,7 @@ internal class RectManager(
         if (layoutNode.addedToRectList) {
             rects.remove(layoutNode.semanticsId)
             layoutNode.addedToRectList = false
+            layoutNode.rectInParentDirty = true
             invalidate()
             isFragmented = true
         }

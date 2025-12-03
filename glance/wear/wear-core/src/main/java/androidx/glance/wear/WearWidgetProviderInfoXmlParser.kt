@@ -168,13 +168,21 @@ internal object WearWidgetProviderInfoXmlParser {
                 try {
                     resources.getInteger(attrResId)
                 } catch (e: Resources.NotFoundException) {
-                    throw XmlPullParserException("Invalid container type resource", this, e)
+                    throw XmlPullParserException(
+                        "Invalid container type resource. Resource must have an integer value.",
+                        this,
+                        e,
+                    )
                 }
             } else {
-                getAttributeValue(NAMESPACE_DISABLED, attrName)?.toIntOrNull()
-                    ?: defaultValue
-                    ?: throw XmlPullParserException("Failed to parse Container Type for $attrName")
-            }
+                // Parse String as either one of the types or an integer.
+                val attrValue = getAttributeValue(NAMESPACE_DISABLED, attrName)
+                if (attrValue != null) {
+                    ContainerInfo.containerTypeFromString(attrValue) ?: attrValue.toIntOrNull()
+                } else {
+                    defaultValue
+                }
+            } ?: throw XmlPullParserException("Failed to parse Container Type for $attrName")
         if (type == ContainerInfo.CONTAINER_TYPE_FULLSCREEN) {
             throw XmlPullParserException("Fullscreen container type is not supported for widgets")
         }

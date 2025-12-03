@@ -70,9 +70,6 @@ object ProcessorErrors {
         "Cannot use unbound generics in Dao classes." +
             " If you are trying to create a base DAO, create a normal class, extend it with type" +
             " params then mark the subclass with @Dao."
-    const val CANNOT_USE_MAP_COLUMN_AND_MAP_INFO_SIMULTANEOUSLY =
-        "Cannot use @MapColumn and " +
-            " @MapInfo annotation in the same function. Please prefer using @MapColumn only."
     const val CANNOT_FIND_GETTER_FOR_PROPERTY = "Cannot find getter for property."
     const val CANNOT_FIND_SETTER_FOR_PROPERTY = "Cannot find setter for property."
     const val MISSING_PRIMARY_KEY =
@@ -174,10 +171,6 @@ object ProcessorErrors {
     fun cannotMapSpecifiedColumn(column: String, columnsInQuery: List<String>, annotation: String) =
         "Column specified in the provided @$annotation annotation must be present in the query. " +
             "Provided: $column. Columns found: ${columnsInQuery.joinToString(", ")}"
-
-    const val MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED =
-        "To use the @MapInfo annotation, you " +
-            "must provide either the key column name, value column name, or both."
 
     fun mayNeedMapColumn(columnArg: String): String {
         return """
@@ -1187,8 +1180,8 @@ object ProcessorErrors {
     ): String {
         val (locationDesc, recommendation) =
             when (location) {
-                AmbiguousColumnLocation.MAP_INFO -> {
-                    "in the @MapInfo" to "update @MapInfo"
+                AmbiguousColumnLocation.MAP_COLUMN -> {
+                    "in the @MapColumn" to "update @MapColumn"
                 }
                 AmbiguousColumnLocation.DATA_CLASS -> {
                     checkNotNull(typeName)
@@ -1207,7 +1200,7 @@ object ProcessorErrors {
     }
 
     enum class AmbiguousColumnLocation {
-        MAP_INFO,
+        MAP_COLUMN,
         DATA_CLASS,
         ENTITY,
     }

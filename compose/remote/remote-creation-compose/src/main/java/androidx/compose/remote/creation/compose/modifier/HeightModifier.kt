@@ -24,8 +24,6 @@ import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class HeightModifier(public val type: Type, public val value: RemoteFloat) :
@@ -49,12 +47,6 @@ public fun RemoteModifier.fillMaxHeight(fraction: RemoteFloat = RemoteFloat(1f))
 
 public fun RemoteModifier.fillMaxHeight(fraction: Float): RemoteModifier =
     then(HeightModifier(Type.FILL, RemoteFloat(fraction)))
-
-@Composable
-public fun RemoteModifier.height(height: Dp): RemoteModifier {
-    val valuePx = with(LocalDensity.current) { height.toPx() }
-    return then(HeightModifier(Type.EXACT, RemoteFloat(valuePx)))
-}
 
 @Composable
 public fun RemoteModifier.height(height: Int): RemoteModifier =

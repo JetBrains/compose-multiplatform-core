@@ -110,7 +110,7 @@ package androidx.webkit {
     ctor public ProcessGlobalConfig();
     method public static void apply(androidx.webkit.ProcessGlobalConfig);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_DATA_DIRECTORY_SUFFIX, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setDataDirectorySuffix(android.content.Context, String);
-    method @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setDirectoryBasePaths(android.content.Context, java.io.File, java.io.File);
+    method @Deprecated @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setDirectoryBasePaths(android.content.Context, java.io.File, java.io.File);
     method @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_CONFIGURE_PARTITIONED_COOKIES, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") public androidx.webkit.ProcessGlobalConfig setPartitionedCookiesEnabled(android.content.Context, boolean);
     method @Deprecated @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupMode(android.content.Context, @SuppressCompatibility int);
     method @SuppressCompatibility @RequiresFeature(name=androidx.webkit.WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE_V2, enforcement="androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)") @androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp public androidx.webkit.ProcessGlobalConfig setUiThreadStartupModeV2(android.content.Context, @SuppressCompatibility int);
@@ -638,6 +638,7 @@ package androidx.webkit {
     field public static final String MULTI_PROFILE = "MULTI_PROFILE";
     field public static final String MUTE_AUDIO = "MUTE_AUDIO";
     field public static final String NAVIGATION_CALLBACK_BASIC = "WEB_VIEW_NAVIGATION_CLIENT_BASIC_USAGE";
+    field @SuppressCompatibility @androidx.webkit.WebNavigationClient.ExperimentalNavigationCallback public static final String NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED = "NAVIGATION_LISTENER_ON_COMPLETED_FIRES_FOR_NON_COMMITTED";
     field @SuppressCompatibility @androidx.webkit.WebNavigationClient.ExperimentalNavigationCallback public static final String NAVIGATION_LISTENER_V1 = "NAVIGATION_LISTENER_V1";
     field public static final String OFF_SCREEN_PRERASTER = "OFF_SCREEN_PRERASTER";
     field @SuppressCompatibility @androidx.webkit.Profile.ExperimentalOriginMatchedHeader public static final String ORIGIN_MATCHED_HEADERS = "ORIGIN_MATCHED_HEADERS";

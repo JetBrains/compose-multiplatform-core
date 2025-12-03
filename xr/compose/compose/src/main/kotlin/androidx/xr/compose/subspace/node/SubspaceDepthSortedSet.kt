@@ -41,11 +41,15 @@ internal class SubspaceDepthSortedSet(
         mutableObjectIntMapOf()
     }
 
-    fun pollFirst(): SubspaceLayoutNode? =
-        set.takeIf { it.isNotEmpty() }?.first()?.also { remove(it) }
+    fun drain(action: (SubspaceLayoutNode) -> Unit) {
+        while (isNotEmpty()) {
+            action(removeFirst())
+        }
+    }
 
-    fun pollLast(): SubspaceLayoutNode? =
-        set.takeIf { it.isNotEmpty() }?.last()?.also { remove(it) }
+    fun removeFirst(): SubspaceLayoutNode = first().also { remove(it) }
+
+    fun removeLast(): SubspaceLayoutNode = last().also { remove(it) }
 
     override val size: Int
         get() = set.size

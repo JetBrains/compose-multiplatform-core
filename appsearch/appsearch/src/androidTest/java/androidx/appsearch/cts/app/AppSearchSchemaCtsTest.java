@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
+import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.AppSearchSchema.BooleanPropertyConfig;
 import androidx.appsearch.app.AppSearchSchema.DoublePropertyConfig;
@@ -1425,4 +1426,36 @@ public class AppSearchSchemaCtsTest {
         assertThat(schema1.toString()).contains("An embedding of the subject of the email");
         assertThat(schema3.toString()).contains("A different description");
     }
+// @exportToFramework:startStrip()
+
+    @Document
+    static class TestDocument {
+        @Document.Namespace
+        public String namespace;
+
+        @Document.Id
+        public String id;
+
+        @Document.StringProperty(indexingType = StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+        public String subject;
+
+        @Document.StringProperty(indexingType = StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+        public String body;
+    }
+
+    @Test
+    public void testFromDocumentClass() throws Exception {
+        AppSearchSchema expectedSchema = new AppSearchSchema.Builder("TestDocument")
+                .addProperty(new StringPropertyConfig.Builder("subject")
+                        .setIndexingType(StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                        .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                        .build())
+                .addProperty(new StringPropertyConfig.Builder("body")
+                        .setIndexingType(StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                        .setTokenizerType(StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                        .build()).build();
+        assertThat(AppSearchSchema.fromDocumentClass(TestDocument.class)).isEqualTo(
+                expectedSchema);
+    }
+// @exportToFramework:endStrip()
 }

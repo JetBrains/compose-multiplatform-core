@@ -157,17 +157,18 @@ internal class ItemDecorationNode(
         val scrimColor = getScrimColor(index = index, topItem = topItem)
         val outline = getItemOutline()
 
-        if (scrimColor == null) {
-            // If there is no scrim color, apply alpha to the item content.
+        scrimColor?.let {
+            // If there is a scrim color, apply it on top of the item.
+            drawOutline(outline = outline, color = it, alpha = scrimAlpha)
+        }
+
+        if (contentAlpha < 1f) {
             drawOutline(
                 outline = outline,
                 blendMode = BlendMode.DstOut,
                 color = Color.Black,
                 alpha = 1f - contentAlpha,
             )
-        } else {
-            // If there is a scrim color, apply it on top of the item instead of content alpha.
-            drawOutline(outline = outline, color = scrimColor, alpha = scrimAlpha)
         }
     }
 

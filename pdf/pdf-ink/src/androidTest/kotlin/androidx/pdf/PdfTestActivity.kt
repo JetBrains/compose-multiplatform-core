@@ -42,6 +42,8 @@ open class PdfTestActivity : Activity() {
             v.updatePadding(top = systemBars.top)
             insets
         }
+
+        onCreateCallback(this)
         // disable enter animation.
         @Suppress("Deprecation") overridePendingTransition(0, 0)
     }
@@ -50,5 +52,9 @@ open class PdfTestActivity : Activity() {
         super.finish()
         // disable exit animation.
         @Suppress("Deprecation") overridePendingTransition(0, 0)
+    }
+
+    companion object {
+        internal var onCreateCallback: (PdfTestActivity) -> Unit = {}
     }
 }

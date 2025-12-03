@@ -1,0 +1,99 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.webgpu
+
+import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
+import kotlin.annotation.AnnotationRetention
+import kotlin.annotation.Retention
+import kotlin.annotation.Target
+
+@Retention(AnnotationRetention.SOURCE)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@IntDef(
+    flag = true,
+    value =
+        [
+            BufferUsage.None,
+            BufferUsage.MapRead,
+            BufferUsage.MapWrite,
+            BufferUsage.CopySrc,
+            BufferUsage.CopyDst,
+            BufferUsage.Index,
+            BufferUsage.Vertex,
+            BufferUsage.Uniform,
+            BufferUsage.Storage,
+            BufferUsage.Indirect,
+            BufferUsage.QueryResolve,
+        ],
+)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE, AnnotationTarget.VALUE_PARAMETER)
+
+/** Flags specifying the intended usages of a GPU buffer. */
+public annotation class BufferUsage {
+    public companion object {
+
+        /** No specified usage. */
+        public const val None: Int = 0x00000000
+
+        /** Allows mapping the buffer for CPU read access. */
+        public const val MapRead: Int = 0x00000001
+
+        /** Allows mapping the buffer for CPU write access. */
+        public const val MapWrite: Int = 0x00000002
+
+        /** Allows the buffer to be used as a source for copy operations. */
+        public const val CopySrc: Int = 0x00000004
+
+        /** Allows the buffer to be used as a destination for copy operations. */
+        public const val CopyDst: Int = 0x00000008
+
+        /** Allows the buffer to be used as an index buffer for drawing commands. */
+        public const val Index: Int = 0x00000010
+
+        /** Allows the buffer to be used as a vertex buffer for drawing commands. */
+        public const val Vertex: Int = 0x00000020
+
+        /** Allows the buffer to be used as a uniform buffer in shaders. */
+        public const val Uniform: Int = 0x00000040
+
+        /** Allows the buffer to be used as a storage buffer in shaders. */
+        public const val Storage: Int = 0x00000080
+
+        /** Allows the buffer to be used for indirect drawing/dispatch commands. */
+        public const val Indirect: Int = 0x00000100
+
+        /** Allows the buffer to be used as a destination for query results. */
+        public const val QueryResolve: Int = 0x00000200
+        internal val names: Map<Int, String> =
+            mapOf(
+                0x00000000 to "None",
+                0x00000001 to "MapRead",
+                0x00000002 to "MapWrite",
+                0x00000004 to "CopySrc",
+                0x00000008 to "CopyDst",
+                0x00000010 to "Index",
+                0x00000020 to "Vertex",
+                0x00000040 to "Uniform",
+                0x00000080 to "Storage",
+                0x00000100 to "Indirect",
+                0x00000200 to "QueryResolve",
+            )
+
+        public fun toString(@BufferUsage value: Int): String = names[value] ?: value.toString()
+    }
+}

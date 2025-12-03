@@ -27,7 +27,6 @@ import androidx.room3.ext.SupportDbTypeNames
 import androidx.room3.ext.isEntityElement
 import androidx.room3.parser.SqlParser
 import androidx.room3.processor.ProcessorErrors.RAW_QUERY_STRING_PARAMETER_REMOVED
-import androidx.room3.vo.MapInfo
 import androidx.room3.vo.RawQueryFunction
 
 class RawQueryFunctionProcessor(
@@ -74,22 +73,7 @@ class RawQueryFunctionProcessor(
         val observedTableNames = processObservedTables()
         val query = SqlParser.rawQueryForTables(observedTableNames)
         // build the query but don't calculate result info since we just guessed it.
-        val resultBinder =
-            delegate.findResultBinder(returnType, query) {
-                @Suppress("DEPRECATION") // Due to MapInfo
-                val annotation =
-                    delegate.executableElement.getAnnotation(androidx.room3.MapInfo::class)
-                if (annotation != null) {
-                    val keyColumn = annotation["keyColumn"]?.asString() ?: ""
-                    val valueColumn = annotation["valueColumn"]?.asString() ?: ""
-                    context.checker.check(
-                        keyColumn.isNotEmpty() || valueColumn.isNotEmpty(),
-                        executableElement,
-                        ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED,
-                    )
-                    putData(MapInfo::class, MapInfo(keyColumn, valueColumn))
-                }
-            }
+        val resultBinder = delegate.findResultBinder(returnType, query)
 
         val runtimeQueryParam = findRuntimeQueryParameter(delegate.extractParams())
         val inTransaction = executableElement.hasAnnotation(Transaction::class)

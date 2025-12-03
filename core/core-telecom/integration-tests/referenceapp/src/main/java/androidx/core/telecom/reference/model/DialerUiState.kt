@@ -33,4 +33,6 @@ data class DialerUiState(
     val availableEndpoints: List<CallEndpointCompat> = emptyList(),
     val selectedEndpoint: CallEndpointCompat? = null,
     val isFetchingEndpoints: Boolean = false,
+    val isLocalCallSilenceEnabled: Boolean = false,
+    val isInitiallyMuted: Boolean = false,
 )

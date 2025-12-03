@@ -17,7 +17,7 @@
 
 package androidx.biometric
 
-import androidx.biometric.BiometricPrompt.LifecycleContainer
+import androidx.biometric.internal.ui.getConfirmCredentialActivityLauncher
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import java.util.concurrent.Executor
@@ -48,9 +48,10 @@ public fun FragmentActivity.registerForAuthenticationResult(
 ): AuthenticationResultLauncher {
     return AuthenticationResultRegistry()
         .register(
+            context = this,
             viewModelStoreOwner = this,
-            fragmentManager = this.supportFragmentManager,
-            lifecycleContainer = LifecycleContainer(this.lifecycle),
+            lifecycleOwner = this,
+            confirmCredentialActivityLauncher = getConfirmCredentialActivityLauncher(),
             resultCallback = resultCallback,
             callbackExecutor = callbackExecutor,
         )
@@ -81,9 +82,10 @@ public fun FragmentActivity.registerForAuthenticationResult(
 ): AuthenticationResultLauncher {
     return AuthenticationResultRegistry()
         .register(
+            context = this,
             viewModelStoreOwner = this,
-            fragmentManager = this.supportFragmentManager,
-            lifecycleContainer = LifecycleContainer(this.lifecycle),
+            lifecycleOwner = this,
+            confirmCredentialActivityLauncher = getConfirmCredentialActivityLauncher(),
             resultCallback = resultCallback,
             callbackExecutor = null,
         )
@@ -115,9 +117,10 @@ public fun Fragment.registerForAuthenticationResult(
 ): AuthenticationResultLauncher {
     return AuthenticationResultRegistry()
         .register(
+            context = requireContext(),
             viewModelStoreOwner = this,
-            fragmentManager = this.childFragmentManager,
-            lifecycleContainer = LifecycleContainer(this.lifecycle),
+            lifecycleOwner = this,
+            confirmCredentialActivityLauncher = getConfirmCredentialActivityLauncher(),
             resultCallback = resultCallback,
             callbackExecutor = callbackExecutor,
         )
@@ -148,9 +151,10 @@ public fun Fragment.registerForAuthenticationResult(
 ): AuthenticationResultLauncher {
     return AuthenticationResultRegistry()
         .register(
+            context = requireContext(),
             viewModelStoreOwner = this,
-            fragmentManager = this.childFragmentManager,
-            lifecycleContainer = LifecycleContainer(this.lifecycle),
+            lifecycleOwner = this,
+            confirmCredentialActivityLauncher = getConfirmCredentialActivityLauncher(),
             resultCallback = resultCallback,
             callbackExecutor = null,
         )

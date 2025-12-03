@@ -22,6 +22,7 @@ import androidx.xr.compose.subspace.node.LayoutCoordinatesAwareModifierNode
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
 import androidx.xr.compose.subspace.node.currentValueOf
+import androidx.xr.compose.subspace.node.invalidateMeasurement
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
@@ -142,7 +143,10 @@ internal class LookAtUserNode(var enabled: Boolean, var up: Vector3) :
         } else if (!enabled && headPoseJob?.isActive == true) {
             headPoseJob?.cancel()
             deltaRotation = Pose.Identity.rotation
-            invalidatePlacement()
+            // TODO(b/460828333): invalidatePlacement() appears to be skipping valid nodes.
+            // When this is resolved, revert this code to use invalidatePlacement() instead of
+            // invalidateMeasurement().
+            invalidateMeasurement()
         }
     }
 

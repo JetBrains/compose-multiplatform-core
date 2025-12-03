@@ -26,7 +26,6 @@ import com.android.build.api.artifact.SingleArtifact
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 // This project can be removed once b/239659205 has landed and use only the

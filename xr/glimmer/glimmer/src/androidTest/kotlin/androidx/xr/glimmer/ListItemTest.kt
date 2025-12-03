@@ -84,7 +84,7 @@ import org.junit.runner.RunWith
 class ListItemTest {
     @get:Rule(0) val rule = createComposeRule(StandardTestDispatcher())
 
-    @get:Rule(1) val inputModeRule = nonTouchInputModeRule()
+    @get:Rule(1) val glimmerRule = createGlimmerRule()
 
     @Test
     fun semantics() {

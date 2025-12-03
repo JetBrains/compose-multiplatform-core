@@ -85,7 +85,7 @@ class BenchmarkPluginTest {
                 }
                 dependencies {
                     classpath "com.android.tools.build:gradle:8.2.1"
-                    classpath "androidx.benchmark:androidx.benchmark.gradle.plugin:+"
+                    classpath "androidx.benchmark:androidx.benchmark.gradle.plugin:${System.getenv("PLUGIN_VERSION")}"
                 }
             }
         """
@@ -422,7 +422,7 @@ class BenchmarkPluginWithCurrentAgpTest {
                 }
                 dependencies {
                     classpath "${projectSetup.props.agpDependency}"
-                    classpath "androidx.benchmark:androidx.benchmark.gradle.plugin:+"
+                    classpath "androidx.benchmark:androidx.benchmark.gradle.plugin:${System.getenv("PLUGIN_VERSION")}"
                 }
             }
         """

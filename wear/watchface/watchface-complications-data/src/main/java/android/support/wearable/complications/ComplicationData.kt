@@ -1929,28 +1929,27 @@ private constructor(
          */
         fun build(): ComplicationData {
             // Validate.
-            for (requiredField in REQUIRED_FIELDS[type]!!) {
-                check(fields.containsKey(requiredField)) {
-                    "Field $requiredField is required for type $type"
-                }
-                check(
-                    !(fields.containsKey(FIELD_ICON_BURN_IN_PROTECTION) &&
-                        !fields.containsKey(FIELD_ICON))
-                ) {
-                    "Field ICON must be provided when field ICON_BURN_IN_PROTECTION is provided."
-                }
-                check(
-                    !(fields.containsKey(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION) &&
-                        !fields.containsKey(FIELD_SMALL_IMAGE))
-                ) {
-                    "Field SMALL_IMAGE must be provided when field SMALL_IMAGE_BURN_IN_PROTECTION" +
-                        " is provided."
-                }
+            check(REQUIRED_FIELDS[type]!!.all { fields.containsKey(it) }) {
+                val missingField = REQUIRED_FIELDS[type]!!.first { !fields.containsKey(it) }
+                "Field $missingField is required for type $type"
             }
-            for (requiredOneOfFieldGroup in REQUIRED_ONE_OF_FIELDS[type]!!) {
-                check(requiredOneOfFieldGroup.count { fields.containsKey(it) } >= 1) {
-                    "One of $requiredOneOfFieldGroup must be provided."
-                }
+            check(
+                !(fields.containsKey(FIELD_ICON_BURN_IN_PROTECTION) &&
+                    !fields.containsKey(FIELD_ICON))
+            ) {
+                "Field ICON must be provided when field ICON_BURN_IN_PROTECTION is provided."
+            }
+            check(
+                !(fields.containsKey(FIELD_SMALL_IMAGE_BURN_IN_PROTECTION) &&
+                    !fields.containsKey(FIELD_SMALL_IMAGE))
+            ) {
+                "Field SMALL_IMAGE must be provided when field SMALL_IMAGE_BURN_IN_PROTECTION" +
+                    " is provided."
+            }
+            check(REQUIRED_ONE_OF_FIELDS[type]!!.all { group -> group.any(fields::containsKey) }) {
+                val missingField =
+                    REQUIRED_ONE_OF_FIELDS[type]!!.first { grp -> grp.none(fields::containsKey) }
+                "One of $missingField must be provided."
             }
             return ComplicationData(this)
         }

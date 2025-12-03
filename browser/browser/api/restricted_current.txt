@@ -161,6 +161,7 @@ package androidx.browser.customtabs {
   }
 
   @SuppressCompatibility @androidx.browser.customtabs.ExperimentalCustomContentAction public final class CustomContentAction {
+    method public static androidx.browser.customtabs.CustomContentAction fromBundle(android.os.Bundle);
     method public int getId();
     method public String getLabel();
     method public android.app.PendingIntent getPendingIntent();

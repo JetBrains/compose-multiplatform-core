@@ -19,11 +19,14 @@ package androidx.xr.glimmer
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.testutils.assertAgainstGolden
 import androidx.compose.ui.Modifier
@@ -31,6 +34,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.dp
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.test.screenshot.matchers.MSSIMMatcher
 import kotlinx.coroutines.flow.Flow
@@ -38,9 +42,19 @@ import kotlinx.coroutines.flow.asFlow
 
 internal const val GOLDEN_DIRECTORY = "xr/glimmer/glimmer"
 
-internal fun ComposeContentTestRule.setGlimmerThemeContent(content: @Composable () -> Unit) {
+internal fun ComposeContentTestRule.setGlimmerThemeContent(
+    addInitialFocusInterceptor: Boolean = false,
+    content: @Composable () -> Unit,
+) {
     setContent {
-        GlimmerTheme { Box(Modifier.background(GlimmerTheme.colors.surface)) { content() } }
+        GlimmerTheme {
+            Column(Modifier.background(GlimmerTheme.colors.surface)) {
+                if (addInitialFocusInterceptor) {
+                    Box(Modifier.size(1.dp).focusable())
+                }
+                content()
+            }
+        }
     }
 }
 

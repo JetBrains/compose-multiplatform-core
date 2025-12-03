@@ -22,6 +22,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.Log
 import androidx.compose.remote.core.WireBuffer
+import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.layout.RemoteAlignment
 import androidx.compose.remote.creation.compose.layout.RemoteArrangement
 import androidx.compose.remote.creation.compose.layout.RemoteBox
@@ -37,11 +38,12 @@ import androidx.compose.remote.creation.compose.modifier.border
 import androidx.compose.remote.creation.compose.modifier.padding
 import androidx.compose.remote.creation.compose.modifier.size
 import androidx.compose.remote.creation.compose.state.RemotePaint
+import androidx.compose.remote.creation.compose.state.rdp
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.player.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.player.compose.test.utils.screenshot.TargetPlayer
 import androidx.compose.remote.player.compose.test.utils.screenshot.rule.RemoteComposeScreenshotTestRule
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.test.core.app.ApplicationProvider
@@ -76,7 +78,12 @@ class BlendModeTest {
     @Test
     fun all_blend_modes() {
         runBlocking {
-            remoteComposeTestRule.runScreenshotTest(size = Size(2000f, 2500f)) { AllBlendModes() }
+            remoteComposeTestRule.runScreenshotTest(
+                creationDisplayInfo =
+                    CreationDisplayInfo(2000, 2500, context.resources.displayMetrics.density)
+            ) {
+                AllBlendModes()
+            }
 
             if (!saveDocument) return@runBlocking
             val document = remoteComposeTestRule.captureDocument(context) { AllBlendModes() }
@@ -115,13 +122,13 @@ class BlendModeTest {
     @Composable
     private fun RemoteBlendModeVisual(blendMode: BlendMode, name: String) {
         RemoteBox(
-            RemoteModifier.size(100.dp)
-                .border(1.dp, androidx.compose.ui.graphics.Color.Black)
+            RemoteModifier.size(100.rdp)
+                .border(1.rdp, androidx.compose.ui.graphics.Color.Black)
                 .padding(8.dp),
             horizontalAlignment = RemoteAlignment.Start,
             verticalArrangement = RemoteArrangement.Top,
         ) {
-            RemoteCanvas(RemoteModifier.size(100.dp)) {
+            RemoteCanvas(RemoteModifier.size(100.rdp)) {
                 val w = remoteComponentWidth(remoteComposeCreationState)
                 val h = remoteComponentHeight(remoteComposeCreationState)
 
@@ -142,7 +149,7 @@ class BlendModeTest {
                 // Draw src
                 paint.color = Color.BLUE
                 paint.blendMode = blendMode
-                canvas.drawRect(0f, (h * 1f / 3f), (w * 2f / 3f).toFloat(), h, paint)
+                canvas.drawRect(0f.rf, (h * 1f / 3f), (w * 2f / 3f), h, paint)
             }
             RemoteText(name, fontSize = 12f.sp)
         }

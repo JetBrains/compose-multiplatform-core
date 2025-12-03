@@ -27,6 +27,7 @@ import android.os.ParcelUuid
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.telecom.DisconnectCause
+import android.telecom.VideoProfile
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
@@ -84,9 +85,9 @@ internal class CallSessionLegacy(
     private val mCallSessionLegacyId: Int = CallEndpointUuidTracker.startSession()
     private var mGlobalMuteStateReceiver: MuteStateReceiver? = null
     private val mDialingOrRingingStateReached = CompletableDeferred<Unit>()
-
     private val mBluetoothDeviceChecker = ProductionBluetoothDeviceChecker(mContext)
     private val mVideoCallSpeakerManager = VideoCallSpeakerManager(mBluetoothDeviceChecker)
+    private var mCallType: Int = 0
 
     /**
      * Flag to ensure that the logic to {@link #avoidSpeakerOverrideOnCallStart} is only attempted
@@ -110,6 +111,15 @@ internal class CallSessionLegacy(
             val state =
                 if (attributes.isOutgoingCall()) CallStateEvent.DIALING else CallStateEvent.RINGING
             onStateChangedCallback.emit(state)
+
+            val initialCallType =
+                if (attributes.isVideoCall()) {
+                    CallAttributesCompat.CALL_TYPE_VIDEO_CALL
+                } else {
+                    CallAttributesCompat.CALL_TYPE_AUDIO_CALL
+                }
+            mCallType = initialCallType
+            callChannels.callTypeChannel.trySend(initialCallType)
         }
     }
 
@@ -446,6 +456,44 @@ internal class CallSessionLegacy(
         return CallControlResult.Success()
     }
 
+    fun requestVideoState(androidxVideoState: Int): CallControlResult {
+        // Store the AndroidX video state internally
+        mCallType = androidxVideoState
+
+        // **Translate the androidx state to the platform VideoProfile state**
+        val platformVideoState = toVideoProfileState(androidxVideoState)
+
+        // Notify your app's listeners with the original androidx state
+        callChannels.callTypeChannel.trySend(mCallType)
+        Log.d(
+            TAG,
+            "Requesting video state change to androidx=[$mCallType], " +
+                "platform=[$platformVideoState]",
+        )
+
+        // **Notify the platform with the translated state**
+        setVideoState(platformVideoState)
+        return CallControlResult.Success()
+    }
+
+    /** Translates an androidx CallType to a platform VideoProfile state. */
+    fun toVideoProfileState(callType: Int): Int {
+        return when (callType) {
+            CallAttributesCompat.CALL_TYPE_AUDIO_CALL -> {
+                Log.i(TAG, "AUDIO_CALL -> VideoProfile.STATE_AUDIO_ONLY")
+                VideoProfile.STATE_AUDIO_ONLY
+            }
+            CallAttributesCompat.CALL_TYPE_VIDEO_CALL -> {
+                Log.i(TAG, "VIDEO_CALL -> VideoProfile.STATE_BIDIRECTIONAL")
+                VideoProfile.STATE_BIDIRECTIONAL
+            }
+            else -> {
+                Log.w(TAG, "Unknown callType=[$callType], defaulting to audio.")
+                VideoProfile.STATE_AUDIO_ONLY
+            }
+        }
+    }
+
     fun setConnectionActive(): CallControlResult {
         setActive()
         var caughtTimeout = false
@@ -739,6 +787,12 @@ internal class CallSessionLegacy(
             return session.requestEndpointChange(endpoint)
         }
 
+        override suspend fun requestCallType(
+            callType: @CallAttributesCompat.Companion.CallType Int
+        ): CallControlResult {
+            return session.requestVideoState(callType)
+        }
+
         // Send these events out to the client to collect
         override val currentCallEndpoint: Flow<CallEndpointCompat> =
             callChannels.currentEndpointChannel.receiveAsFlow()
@@ -747,6 +801,10 @@ internal class CallSessionLegacy(
             callChannels.availableEndpointChannel.receiveAsFlow()
 
         override val isMuted: Flow<Boolean> = callChannels.isMutedChannel.receiveAsFlow()
+
+        override fun callTypeFlow(): Flow<Int> {
+            return session.callChannels.callTypeChannel.receiveAsFlow()
+        }
     }
 
     override fun close() {

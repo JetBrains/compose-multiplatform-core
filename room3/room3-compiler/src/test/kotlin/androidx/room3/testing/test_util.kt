@@ -196,7 +196,7 @@ object COMMON {
 
 fun testCodeGenScope(): CodeGenScope {
     return CodeGenScope(
-        object : TypeWriter(WriterContext(CodeLanguage.JAVA, setOf(Platform.JVM), true)) {
+        object : TypeWriter(WriterContext(CodeLanguage.KOTLIN, setOf(Platform.JVM), true)) {
             override val packageName = "test"
 
             override fun createTypeSpecBuilder(): XTypeSpec.Builder {

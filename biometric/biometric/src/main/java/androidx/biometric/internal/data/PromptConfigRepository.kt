@@ -27,6 +27,9 @@ import kotlinx.coroutines.delay
  * A repository for both the initial configuration and the dynamic states of the biometric prompt.
  */
 internal interface PromptConfigRepository {
+    /** A key used to track the current authentication session. */
+    var currentAuthenticationKey: Int
+
     /** Info about the appearance and behavior of the prompt provided by the client application. */
     var promptInfo: BiometricPrompt.PromptInfo?
 
@@ -80,6 +83,8 @@ internal interface PromptConfigRepository {
  * hosts the [BiometricPrompt].
  */
 internal class PromptConfigRepositoryImpl : PromptConfigRepository {
+    override var currentAuthenticationKey: Int = 0
+
     override var promptInfo: BiometricPrompt.PromptInfo? = null
         set(value) {
             field = value

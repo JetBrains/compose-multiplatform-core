@@ -21,7 +21,7 @@ import android.content.Context
 import android.util.Log
 import androidx.glance.wear.ActiveWearWidgetHandle
 import androidx.glance.wear.GlanceWearWidget
-import androidx.glance.wear.WearWidgetRequest
+import androidx.glance.wear.WearWidgetParams
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -50,10 +50,9 @@ internal class WearWidgetProviderImpl(
         requireNotNull(callback) { "Invalid widget callback." }
         mainScope.launch {
             // TODO: Report errors in the callback if any of the following steps fail.
-            val request = WearWidgetRequest.fromParcel(requestParcel)
-            val widgetContent = widget.provideWidgetContent(context, request)
-            val rawContent =
-                widgetContent.captureRawContent(context, request.widthDp, request.heightDp)
+            val params = WearWidgetParams.fromParcel(requestParcel)
+            val widgetContent = widget.provideWidgetData(context, params)
+            val rawContent = widgetContent.captureRawContent(context, params)
             callback.updateWidgetContent(rawContent.toParcel())
         }
     }
@@ -61,12 +60,12 @@ internal class WearWidgetProviderImpl(
     override fun onActivated(
         handleParcel: ActiveWearWidgetHandleParcel?,
         callback: IExecutionCallback?,
-    ) = onEvent(handleParcel, callback, widget::onAdded)
+    ) {}
 
     override fun onDeactivated(
         handleParcel: ActiveWearWidgetHandleParcel?,
         callback: IExecutionCallback?,
-    ) = onEvent(handleParcel, callback, widget::onRemoved)
+    ) {}
 
     override fun onAdded(
         handleParcel: ActiveWearWidgetHandleParcel?,

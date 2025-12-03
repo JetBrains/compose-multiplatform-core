@@ -30,7 +30,6 @@ import androidx.xr.scenecore.runtime.AudioTrackExtensionsWrapper
 import androidx.xr.scenecore.runtime.CameraViewScenePose
 import androidx.xr.scenecore.runtime.Dimensions
 import androidx.xr.scenecore.runtime.Entity
-import androidx.xr.scenecore.runtime.GltfEntity
 import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.HeadScenePose
 import androidx.xr.scenecore.runtime.InputEventListener
@@ -204,7 +203,7 @@ public class FakeSceneRuntime(
         feature: GltfFeature,
         pose: Pose,
         parentEntity: Entity,
-    ): GltfEntity {
+    ): FakeGltfEntity {
         if (executor == null) throw NullPointerException("Set executor before test")
 
         val gltfEntity = FakeGltfEntity(feature, executor)

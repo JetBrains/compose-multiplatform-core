@@ -1,0 +1,68 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.webgpu
+
+import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
+import kotlin.annotation.AnnotationRetention
+import kotlin.annotation.Retention
+import kotlin.annotation.Target
+
+@Retention(AnnotationRetention.SOURCE)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@IntDef(
+    value =
+        [
+            ErrorType.NoError,
+            ErrorType.Validation,
+            ErrorType.OutOfMemory,
+            ErrorType.Internal,
+            ErrorType.Unknown,
+        ]
+)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE, AnnotationTarget.VALUE_PARAMETER)
+
+/** The general category or type of an error. */
+public annotation class ErrorType {
+    public companion object {
+
+        /** No error occurred. */
+        public const val NoError: Int = 0x00000001
+
+        /** The error is due to invalid API usage or object state. */
+        public const val Validation: Int = 0x00000002
+
+        /** The error is due to insufficient memory. */
+        public const val OutOfMemory: Int = 0x00000003
+
+        /** An internal error in the WebGPU implementation. */
+        public const val Internal: Int = 0x00000004
+
+        /** The error type is unknown. */
+        public const val Unknown: Int = 0x00000005
+        internal val names: Map<Int, String> =
+            mapOf(
+                0x00000001 to "NoError",
+                0x00000002 to "Validation",
+                0x00000003 to "OutOfMemory",
+                0x00000004 to "Internal",
+                0x00000005 to "Unknown",
+            )
+
+        public fun toString(@ErrorType value: Int): String = names[value] ?: value.toString()
+    }
+}

@@ -67,7 +67,7 @@ import androidx.wear.compose.material3.LocalTextStyle
 public fun RemoteText(
     text: RemoteString,
     modifier: RemoteModifier = RemoteModifier,
-    color: RemoteColor = RemoteMaterialTheme.colorScheme.onSurface,
+    color: RemoteColor? = LocalRemoteContentColor.current,
     fontSize: TextUnit = TextUnit.Unspecified,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,

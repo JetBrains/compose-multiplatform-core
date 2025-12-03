@@ -18,7 +18,6 @@ package androidx.xr.arcore.apps.whitebox.mobile.geospatial
 
 import android.opengl.GLSurfaceView
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -67,6 +66,7 @@ import androidx.xr.arcore.hitTest
 import androidx.xr.arcore.playservices.UnsupportedArCoreCompatApi
 import androidx.xr.arcore.playservices.cameraState
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Ray
@@ -147,7 +147,7 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
     private fun createAnchorAtPose(pose: Pose) {
         val geospatial = Geospatial.getInstance(session)
         if (geospatial.state.value != Geospatial.State.RUNNING) {
-            Log.e(ACTIVITY_NAME, "Failed to create anchor: Geospatial is not running.")
+            Log.error { "Failed to create anchor: Geospatial is not running." }
             return
         }
 
@@ -169,7 +169,7 @@ class GeospatialActivity : ComponentActivity(), DefaultLifecycleObserver {
                     }
             }
             is CreateGeospatialPoseFromPoseNotTracking -> {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: Geospatial is not tracking.")
+                Log.error { "Failed to create anchor: Geospatial is not tracking." }
             }
         }
     }

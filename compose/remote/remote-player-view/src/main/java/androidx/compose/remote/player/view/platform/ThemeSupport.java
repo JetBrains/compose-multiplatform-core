@@ -51,7 +51,9 @@ public class ThemeSupport {
         if (!found) {
             return;
         }
-
+        if (null ==  mContext.getApplicationContext()) {
+            return;
+        }
         for (int i = 0; i < name.length; i++) {
             String s = name[i];
             if (!s.startsWith("android.")) {
@@ -231,8 +233,10 @@ public class ThemeSupport {
     }
 
     private void setRColor(String name, int id) {
-        int color = getColorFromResource(id);
-        mInner.setColor(name, color);
+        if (null !=  mContext.getApplicationContext()) {
+            int color = getColorFromResource(id);
+            mInner.setColor(name, color);
+        }
     }
 
     private int getColorFromResource(int id) {
@@ -240,7 +244,7 @@ public class ThemeSupport {
                 >= android.os.Build.VERSION_CODES.S) { // REMOVE IN PLATFORM
             TypedValue typedValue = new TypedValue();
             try (TypedArray arr =
-                    mContext.getApplicationContext()
+                         mContext.getApplicationContext()
                             .obtainStyledAttributes(typedValue.data, new int[] {id})) {
                 int color = arr.getColor(0, -1);
                 return color;

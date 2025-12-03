@@ -381,7 +381,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     @Test
     public void getPoseInActivitySpace_whenAtSamePose_returnsIdentityPose() {
         AnchorEntityImpl anchorEntity = createAnchorEntityWithRuntimeAnchor();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1).toNormalized());
+        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1));
         mActivitySpace.setOpenXrReferenceSpaceTransform(
                 Matrix4.fromTrs(
                         pose.getTranslation(), pose.getRotation(), new Vector3(2f, 2f, 2f)));
@@ -393,7 +393,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     @Test
     public void getPoseInActivitySpace_returnsDifferencePose() {
         AnchorEntityImpl anchorEntity = createAnchorEntityWithRuntimeAnchor();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1).toNormalized());
+        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1));
         mActivitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity);
         anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose));
 
@@ -444,7 +444,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     public void getActivitySpacePose_whenAtSamePose_returnsIdentityPose() {
         mActivitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity);
         AnchorEntityImpl anchorEntity = createAnchorEntityWithRuntimeAnchor();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1).toNormalized());
+        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1));
 
         anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose));
 
@@ -455,7 +455,7 @@ public final class AnchorEntityImplTest extends SystemSpaceEntityImplTest {
     public void getActivitySpacePose_returnsDifferencePose() {
         mActivitySpace.setOpenXrReferenceSpaceTransform(Matrix4.Identity);
         AnchorEntityImpl anchorEntity = createAnchorEntityWithRuntimeAnchor();
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1).toNormalized());
+        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1));
 
         anchorEntity.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose));
 

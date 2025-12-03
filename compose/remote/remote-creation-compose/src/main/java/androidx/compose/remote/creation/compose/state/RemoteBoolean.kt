@@ -33,7 +33,8 @@ import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationSta
  * @property v The internal [RemoteInt] that holds the boolean value.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public class RemoteBoolean internal constructor(internal val v: RemoteInt) : RemoteState<Boolean> {
+public class RemoteBoolean internal constructor(internal val v: RemoteInt) :
+    BaseRemoteState<Boolean>() {
     public override val constantValue: Boolean?
         get() = v.constantValue?.let { it != 0 }
 

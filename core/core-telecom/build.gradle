@@ -26,7 +26,6 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -46,10 +45,15 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.kotlinCoroutinesTest)
+    androidTestImplementation "org.jetbrains.kotlin:kotlin-test:2.2.10"
 }
 
 android {
+    compileSdk = 36
+    compileSdkMinor = 1
     namespace = "androidx.core.telecom"
+    compileSdk = 36
+    compileSdkMinor = 1
     buildFeatures {
         aidl = true
     }

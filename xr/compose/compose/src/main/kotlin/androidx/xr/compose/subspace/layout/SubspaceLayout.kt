@@ -118,16 +118,18 @@ public inline fun SubspaceLayout(
 
     val coreEntity = rememberOpaqueEntity { GroupEntity.create(session = this, name = "Entity") }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
-    ComposeNode<ComposeSubspaceNode, Applier<Any>>(
-        factory = ComposeSubspaceNode.Constructor,
-        update = {
-            set(compositionLocalMap, SetCompositionLocalMap)
-            set(measurePolicy, SetMeasurePolicy)
-            set(coreEntity, SetCoreEntity)
-            set(modifier, SetModifier)
-        },
-        content = { CompositionLocalProvider(LocalOpaqueEntity provides coreEntity) { content() } },
-    )
+    CompositionLocalProvider(LocalOpaqueEntity provides coreEntity) {
+        ComposeNode<ComposeSubspaceNode, Applier<Any>>(
+            factory = ComposeSubspaceNode.Constructor,
+            update = {
+                set(compositionLocalMap, SetCompositionLocalMap)
+                set(measurePolicy, SetMeasurePolicy)
+                set(coreEntity, SetCoreEntity)
+                set(modifier, SetModifier)
+            },
+            content = { content() },
+        )
+    }
 }
 
 /** Creates a [CoreGroupEntity] that is automatically disposed of when it leaves the composition. */
@@ -168,15 +170,17 @@ internal inline fun SubspaceLayout(
             " is a child of another SubspaceComposable."
     }
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
-    ComposeNode<ComposeSubspaceNode, Applier<Any>>(
-        factory = ComposeSubspaceNode.Constructor,
-        update = {
-            set(compositionLocalMap, SetCompositionLocalMap)
-            set(measurePolicy, SetMeasurePolicy)
-            set(coreEntity, SetCoreEntity)
-            set(modifier, SetModifier)
-        },
-    )
+    CompositionLocalProvider(LocalOpaqueEntity provides coreEntity) {
+        ComposeNode<ComposeSubspaceNode, Applier<Any>>(
+            factory = ComposeSubspaceNode.Constructor,
+            update = {
+                set(compositionLocalMap, SetCompositionLocalMap)
+                set(measurePolicy, SetMeasurePolicy)
+                set(coreEntity, SetCoreEntity)
+                set(modifier, SetModifier)
+            },
+        )
+    }
 }
 
 /**
@@ -213,16 +217,17 @@ internal inline fun SubspaceLayout(
             "Subspace composition. Please ensure that this component is in a Subspace or " +
             " is a child of another SubspaceComposable."
     }
-
     val compositionLocalMap = currentComposer.currentCompositionLocalMap
-    ComposeNode<ComposeSubspaceNode, Applier<Any>>(
-        factory = ComposeSubspaceNode.Constructor,
-        update = {
-            set(compositionLocalMap, SetCompositionLocalMap)
-            set(measurePolicy, SetMeasurePolicy)
-            set(coreGroupEntity, SetCoreEntity)
-            set(modifier, SetModifier)
-        },
-        content = { CompositionLocalProvider(LocalOpaqueEntity provides coreEntity) { content() } },
-    )
+    CompositionLocalProvider(LocalOpaqueEntity provides coreEntity) {
+        ComposeNode<ComposeSubspaceNode, Applier<Any>>(
+            factory = ComposeSubspaceNode.Constructor,
+            update = {
+                set(compositionLocalMap, SetCompositionLocalMap)
+                set(measurePolicy, SetMeasurePolicy)
+                set(coreGroupEntity, SetCoreEntity)
+                set(modifier, SetModifier)
+            },
+            content = { content() },
+        )
+    }
 }

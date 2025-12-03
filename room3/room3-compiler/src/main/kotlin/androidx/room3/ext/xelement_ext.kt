@@ -54,6 +54,3 @@ class ValueClassInfo(
     val parameter: XExecutableParameterElement,
     val getter: XMethodElement?,
 )
-
-/** Suffix of the Kotlin synthetic class created interface method implementations. */
-const val DEFAULT_IMPLS_CLASS_NAME = "DefaultImpls"

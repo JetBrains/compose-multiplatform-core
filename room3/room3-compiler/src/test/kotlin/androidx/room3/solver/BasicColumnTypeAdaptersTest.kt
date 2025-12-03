@@ -19,6 +19,7 @@ package androidx.room3.solver
 import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.VisibilityModifier
 import androidx.room3.compiler.codegen.XClassName
+import androidx.room3.compiler.codegen.XCodeBlock
 import androidx.room3.compiler.codegen.XFunSpec
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.XTypeName
@@ -26,7 +27,7 @@ import androidx.room3.compiler.codegen.XTypeSpec
 import androidx.room3.compiler.codegen.compat.XConverters.toString
 import androidx.room3.compiler.processing.XType
 import androidx.room3.compiler.processing.util.XTestInvocation
-import androidx.room3.compiler.processing.util.runProcessorTest
+import androidx.room3.compiler.processing.util.runKspTest
 import androidx.room3.compiler.processing.writeTo
 import androidx.room3.ext.CommonTypeNames
 import androidx.room3.ext.SQLiteDriverTypeNames
@@ -53,44 +54,40 @@ class BasicColumnTypeAdaptersTest(
             return listOf(
                 arrayOf(
                     XTypeName.PRIMITIVE_INT,
-                    "st.bindLong(6, inp);",
-                    "out = (int) (readSt.getLong(9));",
+                    "st.bindLong(6, inp.toLong())",
+                    "out = readSt.getLong(9).toInt()",
                 ),
                 arrayOf(
                     XTypeName.PRIMITIVE_BYTE,
-                    "st.bindLong(6, inp);",
-                    "out = (byte) (readSt.getLong(9));",
+                    "st.bindLong(6, inp.toLong())",
+                    "out = readSt.getLong(9).toByte()",
                 ),
                 arrayOf(
                     XTypeName.PRIMITIVE_SHORT,
-                    "st.bindLong(6, inp);",
-                    "out = (short) (readSt.getLong(9));",
+                    "st.bindLong(6, inp.toLong())",
+                    "out = readSt.getLong(9).toShort()",
                 ),
-                arrayOf(
-                    XTypeName.PRIMITIVE_LONG,
-                    "st.bindLong(6, inp);",
-                    "out = readSt.getLong(9);",
-                ),
+                arrayOf(XTypeName.PRIMITIVE_LONG, "st.bindLong(6, inp)", "out = readSt.getLong(9)"),
                 arrayOf(
                     XTypeName.PRIMITIVE_CHAR,
-                    "st.bindLong(6, inp);",
-                    "out = (char) (readSt.getLong(9));",
+                    "st.bindLong(6, inp.toLong())",
+                    "out = readSt.getLong(9).toChar()",
                 ),
                 arrayOf(
                     XTypeName.PRIMITIVE_FLOAT,
-                    "st.bindDouble(6, inp);",
-                    "out = (float) (readSt.getDouble(9));",
+                    "st.bindDouble(6, inp.toDouble())",
+                    "out = readSt.getDouble(9).toFloat()",
                 ),
                 arrayOf(
                     XTypeName.PRIMITIVE_DOUBLE,
-                    "st.bindDouble(6, inp);",
-                    "out = readSt.getDouble(9);",
+                    "st.bindDouble(6, inp)",
+                    "out = readSt.getDouble(9)",
                 ),
-                arrayOf(CommonTypeNames.STRING, "st.bindText(6, inp);", "out = readSt.getText(9);"),
+                arrayOf(CommonTypeNames.STRING, "st.bindText(6, inp)", "out = readSt.getText(9)"),
                 arrayOf(
                     XTypeName.getArrayName(XTypeName.PRIMITIVE_BYTE),
-                    "st.bindBlob(6, inp);",
-                    "out = readSt.getBlob(9);",
+                    "st.bindBlob(6, inp)",
+                    "out = readSt.getBlob(9)",
                 ),
             )
         }
@@ -98,7 +95,7 @@ class BasicColumnTypeAdaptersTest(
 
     @Test
     fun bind() {
-        runProcessorTest { invocation ->
+        runKspTest(sources = emptyList()) { invocation ->
             val scope = testCodeGenScope()
             val type = invocation.processingEnv.requireType(input)
             val adapter =
@@ -111,28 +108,15 @@ class BasicColumnTypeAdaptersTest(
                         affinity = null,
                         skipDefaultConverter = false,
                     )!!
-            val expected =
-                if (invocation.isKsp || input.isPrimitive) {
-                    bindCode
-                } else {
-                    """
-                if (inp == null) {
-                  st.bindNull(6);
-                } else {
-                  $bindCode
-                }
-                """
-                        .trimIndent()
-                }
             adapter.bindToStmt("st", "6", "inp", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim(), `is`(expected))
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim(), `is`(bindCode))
             generateCode(invocation, scope, type)
         }
     }
 
     @Test
     fun boxedBind() {
-        runProcessorTest { invocation ->
+        runKspTest(sources = emptyList()) { invocation ->
             val scope = testCodeGenScope()
             val boxedType = invocation.processingEnv.requireType(input).boxed()
             val adapter =
@@ -146,27 +130,15 @@ class BasicColumnTypeAdaptersTest(
                         skipDefaultConverter = false,
                     )!!
             adapter.bindToStmt("st", "6", "inp", scope)
-            val expected =
-                if (invocation.isKsp) {
-                    bindCode
-                } else {
-                    """
-                if (inp == null) {
-                  st.bindNull(6);
-                } else {
-                  $bindCode
-                }
-                """
-                        .trimIndent()
-                }
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim(), `is`(expected))
+            val expected = bindCode
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim(), `is`(expected))
             generateCode(invocation, scope, boxedType)
         }
     }
 
     @Test
     fun nullableBind() {
-        runProcessorTest { invocation ->
+        runKspTest(sources = emptyList()) { invocation ->
             val scope = testCodeGenScope()
             val nullableType = invocation.processingEnv.requireType(input).makeNullable()
             val adapter =
@@ -179,15 +151,19 @@ class BasicColumnTypeAdaptersTest(
                         affinity = null,
                         skipDefaultConverter = false,
                     )!!
-            adapter.bindToStmt("st", "6", "inp", scope)
+            val nullableTypeName = nullableType.asTypeName()
+            val tmpProperty = scope.getTmpVar("_tmp")
+            scope.builder.addLocalVal(tmpProperty, nullableTypeName, "inp")
+            adapter.bindToStmt("st", "6", tmpProperty, scope)
             assertThat(
-                scope.generate().toString(CodeLanguage.JAVA).trim(),
+                scope.generate().toString(CodeLanguage.KOTLIN).trim(),
                 `is`(
                     """
-                    if (inp == null) {
-                      st.bindNull(6);
+                    val _tmp: ${nullableTypeName.toString(CodeLanguage.KOTLIN)} = inp
+                    if (_tmp == null) {
+                      st.bindNull(6)
                     } else {
-                      $bindCode
+                      ${bindCode.replace("inp", tmpProperty)}
                     }
                     """
                         .trimIndent()
@@ -205,40 +181,45 @@ class BasicColumnTypeAdaptersTest(
         val className = XClassName.get("foo.bar", "OuterClass")
         XTypeSpec.classBuilder(className)
             .apply {
-                addProperty(
-                    XPropertySpec.builder(
-                            name = "st",
-                            typeName = SQLiteDriverTypeNames.STATEMENT,
-                            visibility = VisibilityModifier.PUBLIC,
-                            isMutable = true,
-                        )
-                        .build()
-                )
-                addProperty(
-                    XPropertySpec.builder(
-                            name = "readSt",
-                            typeName = SQLiteDriverTypeNames.STATEMENT,
-                            visibility = VisibilityModifier.PUBLIC,
-                            isMutable = true,
-                        )
-                        .build()
-                )
-                addProperty(
-                    XPropertySpec.builder(
-                            name = "out",
-                            typeName = type.asTypeName(),
-                            visibility = VisibilityModifier.PUBLIC,
-                            isMutable = true,
-                        )
-                        .build()
-                )
-                addProperty(
-                    XPropertySpec.builder(
-                            name = "inp",
-                            typeName = type.asTypeName(),
-                            visibility = VisibilityModifier.PUBLIC,
-                            isMutable = true,
-                        )
+                val properties =
+                    listOf(
+                        XPropertySpec.builder(
+                                name = "st",
+                                typeName = SQLiteDriverTypeNames.STATEMENT,
+                                visibility = VisibilityModifier.PUBLIC,
+                                isMutable = false,
+                            )
+                            .initializer(XCodeBlock.of("st"))
+                            .build(),
+                        XPropertySpec.builder(
+                                name = "readSt",
+                                typeName = SQLiteDriverTypeNames.STATEMENT,
+                                visibility = VisibilityModifier.PUBLIC,
+                                isMutable = false,
+                            )
+                            .initializer(XCodeBlock.of("readSt"))
+                            .build(),
+                        XPropertySpec.builder(
+                                name = "out",
+                                typeName = type.asTypeName(),
+                                visibility = VisibilityModifier.PUBLIC,
+                                isMutable = true,
+                            )
+                            .initializer(XCodeBlock.of("out"))
+                            .build(),
+                        XPropertySpec.builder(
+                                name = "inp",
+                                typeName = type.asTypeName(),
+                                visibility = VisibilityModifier.PUBLIC,
+                                isMutable = true,
+                            )
+                            .initializer(XCodeBlock.of("inp"))
+                            .build(),
+                    )
+                properties.forEach { addProperty(it) }
+                setPrimaryConstructor(
+                    XFunSpec.constructorBuilder(VisibilityModifier.PUBLIC)
+                        .apply { properties.forEach { addParameter(it.name, it.type) } }
                         .build()
                 )
                 addFunction(
@@ -248,12 +229,12 @@ class BasicColumnTypeAdaptersTest(
                 )
             }
             .build()
-            .writeTo(CodeLanguage.JAVA, className.packageName, invocation.processingEnv.filer)
+            .writeTo(CodeLanguage.KOTLIN, className.packageName, invocation.processingEnv.filer)
     }
 
     @Test
     fun read() {
-        runProcessorTest { invocation ->
+        runKspTest(sources = emptyList()) { invocation ->
             val scope = testCodeGenScope()
             val type = invocation.processingEnv.requireType(input)
             val adapter =
@@ -266,28 +247,15 @@ class BasicColumnTypeAdaptersTest(
                         affinity = null,
                         skipDefaultConverter = false,
                     )!!
-            val expected =
-                if (invocation.isKsp || input.isPrimitive) {
-                    readCode
-                } else {
-                    """
-                if (readSt.isNull(9)) {
-                  out = null;
-                } else {
-                  $readCode
-                }
-                """
-                        .trimIndent()
-                }
             adapter.readFromStatement("out", "readSt", "9", scope)
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim(), `is`(expected))
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim(), `is`(readCode))
             generateCode(invocation, scope, type)
         }
     }
 
     @Test
     fun readBoxed() {
-        runProcessorTest { invocation ->
+        runKspTest(sources = emptyList()) { invocation ->
             val scope = testCodeGenScope()
             val boxedType = invocation.processingEnv.requireType(input).boxed()
             val adapter =
@@ -301,27 +269,15 @@ class BasicColumnTypeAdaptersTest(
                         skipDefaultConverter = false,
                     )!!
             adapter.readFromStatement("out", "readSt", "9", scope)
-            val expected =
-                if (invocation.isKsp) {
-                    readCode
-                } else {
-                    """
-                if (readSt.isNull(9)) {
-                  out = null;
-                } else {
-                  $readCode
-                }
-                """
-                        .trimIndent()
-                }
-            assertThat(scope.generate().toString(CodeLanguage.JAVA).trim(), `is`(expected))
+            val expected = readCode
+            assertThat(scope.generate().toString(CodeLanguage.KOTLIN).trim(), `is`(expected))
             generateCode(invocation, scope, boxedType)
         }
     }
 
     @Test
     fun readNullable() {
-        runProcessorTest { invocation ->
+        runKspTest(sources = emptyList()) { invocation ->
             val scope = testCodeGenScope()
             val nullableType = invocation.processingEnv.requireType(input).makeNullable()
             val adapter =
@@ -332,11 +288,11 @@ class BasicColumnTypeAdaptersTest(
                     .findColumnTypeAdapter(nullableType, null, false)!!
             adapter.readFromStatement("out", "readSt", "9", scope)
             assertThat(
-                scope.generate().toString(CodeLanguage.JAVA).trim(),
+                scope.generate().toString(CodeLanguage.KOTLIN).trim(),
                 `is`(
                     """
                     if (readSt.isNull(9)) {
-                      out = null;
+                      out = null
                     } else {
                       $readCode
                     }

@@ -9,6 +9,7 @@
   `./gradlew <project>:updateApi`, the projects and their root paths can be found in
   `settings.gradle`.
 - When moving files, use `git mv` to keep version control history.
+- Do not make a git commit unless specifically requested.
 
 ## Development Workflow & Refactoring:
 

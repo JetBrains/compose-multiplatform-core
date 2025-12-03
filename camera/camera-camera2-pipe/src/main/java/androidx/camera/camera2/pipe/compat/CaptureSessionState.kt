@@ -229,10 +229,6 @@ internal class CaptureSessionState(
         // 2. Pass the GraphRequestProcessor to the graphProcessor after the session is fully
         //    created and the onConfigured callback has been invoked.
         synchronized(lock) {
-            if (state == State.CLOSING || state == State.CLOSED) {
-                return
-            }
-
             if (cameraCaptureSession == null && session != null) {
                 val captureSequenceProcessor =
                     captureSequenceProcessorFactory.create(session, activeSurfaceMap)

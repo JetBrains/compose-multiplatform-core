@@ -346,22 +346,6 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testUseMapInfoWithBothEmptyColumnsProvided() {
-        singleQueryMethod(
-            """
-                @MapInfo
-                @RawQuery
-                abstract Map<User, Book> getMultimap(SupportSQLiteQuery query);
-            """
-        ) { _, invocation ->
-            invocation.assertCompilationResult {
-                hasErrorCount(1)
-                hasErrorContaining(ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED)
-            }
-        }
-    }
-
-    @Test
     fun testDoesNotImplementEqualsAndHashcodeRawQuery() {
         singleQueryMethod(
             """
@@ -379,7 +363,7 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testMissingMapInfoOneToOneString() {
+    fun testMissingMapColumnOneToOneString() {
         singleQueryMethod(
             """
                 @RawQuery
@@ -393,7 +377,7 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testMissingMapInfoOneToManyString() {
+    fun testMissingMapColumnOneToManyString() {
         singleQueryMethod(
             """
                 @RawQuery
@@ -407,7 +391,7 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testMissingMapInfoImmutableListMultimapOneToOneString() {
+    fun testMissingMapColumnImmutableListMultimapOneToOneString() {
         singleQueryMethod(
             """
                 @RawQuery
@@ -421,7 +405,7 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testMissingMapInfoOneToOneLong() {
+    fun testMissingMapColumnOneToOneLong() {
         singleQueryMethod(
             """
                 @RawQuery
@@ -435,7 +419,7 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testMissingMapInfoOneToManyLong() {
+    fun testMissingMapColumnOneToManyLong() {
         singleQueryMethod(
             """
                 @RawQuery
@@ -449,7 +433,7 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testMissingMapInfoImmutableListMultimapOneToOneLong() {
+    fun testMissingMapColumnImmutableListMultimapOneToOneLong() {
         singleQueryMethod(
             """
                 @RawQuery
@@ -463,7 +447,7 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testMissingMapInfoImmutableListMultimapOneToOneTypeConverterKey() {
+    fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterKey() {
         singleQueryMethod(
             """
                 @TypeConverters(DateConverter.class)
@@ -478,7 +462,7 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testMissingMapInfoImmutableListMultimapOneToOneTypeConverterValue() {
+    fun testMissingMapColumnImmutableListMultimapOneToOneTypeConverterValue() {
         singleQueryMethod(
             """
                 @TypeConverters(DateConverter.class)
@@ -493,12 +477,11 @@ class RawQueryFunctionProcessorTest {
     }
 
     @Test
-    fun testOneToOneStringMapInfoForKeyInsteadOfColumn() {
+    fun testOneToOneStringMapColumnForKeyInsteadOfColumn() {
         singleQueryMethod(
             """
-                @MapInfo(keyColumn = "mArtistName")
                 @RawQuery
-                abstract Map<Artist, String> getAllArtistsWithAlbumCoverYear(SupportSQLiteQuery query);
+                abstract Map<@MapColumn(columnName="mArtistName") Artist, String> getAllArtistsWithAlbumCoverYear(SupportSQLiteQuery query);
             """
         ) { _, invocation ->
             invocation.assertCompilationResult {
@@ -521,28 +504,6 @@ class RawQueryFunctionProcessorTest {
             """
         ) { _, invocation ->
             invocation.assertCompilationResult { hasNoWarnings() }
-        }
-    }
-
-    @Test
-    fun testCannotHaveMapInfoAndMapColumn() {
-        singleQueryMethod(
-            """
-                @SuppressWarnings(
-                    {RoomWarnings.QUERY_MISMATCH, RoomWarnings.AMBIGUOUS_COLUMN_IN_RESULT}
-                )
-                @MapInfo(keyColumn = "uid", keyTable = "u")
-                @RawQuery
-                abstract Map<@MapColumn(columnName = "uid") Integer, Book> getMultimap(
-                    SupportSQLiteQuery query
-                );
-            """
-        ) { _, invocation ->
-            invocation.assertCompilationResult {
-                hasErrorContaining(
-                    ProcessorErrors.CANNOT_USE_MAP_COLUMN_AND_MAP_INFO_SIMULTANEOUSLY
-                )
-            }
         }
     }
 

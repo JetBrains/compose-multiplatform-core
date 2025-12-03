@@ -89,14 +89,12 @@ internal class SpatialEnvironmentFeatureImpl(
             "This method must be called on the main thread."
         }
 
-        geometrySubspaceImpressNode = impressApi.createImpressNode()
-        val subspaceName = "geometry_subspace_" + geometrySubspaceImpressNode!!.handle
+        val subspaceNode = impressApi.createImpressNode()
+        geometrySubspaceImpressNode = subspaceNode
+        val subspaceName = "geometry_subspace_" + subspaceNode.handle
 
         geometrySubspaceSplitEngine =
-            splitEngineSubspaceManager.createSubspace(
-                subspaceName,
-                geometrySubspaceImpressNode!!.handle,
-            )
+            splitEngineSubspaceManager.createSubspace(subspaceName, subspaceNode.handle)
 
         geometrySubspaceSplitEngine?.let { geometrySubspace ->
             extensions.createNodeTransaction().use { transaction ->
@@ -130,7 +128,7 @@ internal class SpatialEnvironmentFeatureImpl(
                 @Suppress("UNUSED_VARIABLE")
                 val unused = impressApi.animateGltfModel(geometryImpressNode, animationName, true)
             }
-            impressApi.setImpressNodeParent(geometryImpressNode, geometryImpressNode)
+            impressApi.setImpressNodeParent(geometryImpressNode, subspaceNode)
         }
     }
 

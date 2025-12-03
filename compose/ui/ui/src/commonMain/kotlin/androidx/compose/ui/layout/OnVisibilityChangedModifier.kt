@@ -57,7 +57,6 @@ import kotlinx.coroutines.launch
  * @param callback lambda that is invoked when the fraction of this node inside of the specified
  *   viewport crosses the [minFractionVisible]. The boolean argument passed into this lambda will be
  *   true in cases where the fraction visible is greater, and false when it is not.
- * @see onFirstVisible
  * @see onLayoutRectChanged
  * @see registerOnLayoutRectChanged
  * @see RelativeLayoutBounds.fractionVisibleIn

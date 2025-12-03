@@ -24,8 +24,6 @@ import androidx.compose.remote.creation.compose.state.RemoteDp
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class WidthModifier(public val type: Type, public val value: RemoteFloat) :
@@ -49,13 +47,6 @@ public fun RemoteModifier.fillMaxWidth(fraction: RemoteFloat = RemoteFloat(1f)):
 
 public fun RemoteModifier.fillMaxWidth(fraction: Float): RemoteModifier =
     then(WidthModifier(Type.FILL, RemoteFloat(fraction)))
-
-@Composable
-public fun RemoteModifier.width(width: Dp): RemoteModifier {
-    val valuePx = with(LocalDensity.current) { width.toPx() }
-
-    return then(WidthModifier(Type.EXACT, RemoteFloat(valuePx)))
-}
 
 public fun RemoteModifier.width(width: Int): RemoteModifier =
     then(WidthModifier(Type.EXACT, RemoteFloat(width.toFloat())))

@@ -108,13 +108,19 @@ class RaiseHandDataEmitter {
 
 @OptIn(ExperimentalAppActions::class)
 class LocalCallSilenceExtensionDataEmitter {
+    companion object {
+        val TAG: String = LocalCallSilenceExtensionDataEmitter::class.java.simpleName
+    }
+
     private val mLcsDataFlow: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     fun onVoipAppUpdate(isSilenced: Boolean) {
+        Log.i(TAG, "ICS: onVoipAppUpdate: $isSilenced")
         mLcsDataFlow.value = isSilenced
     }
 
     fun onInCallServiceUpdate(isSilenced: Boolean) {
+        Log.i(TAG, "ICS: onInCallServiceUpdate: $isSilenced")
         mLcsDataFlow.value = isSilenced
     }
 

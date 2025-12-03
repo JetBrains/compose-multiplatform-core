@@ -29,11 +29,17 @@ import androidx.xr.scenecore.runtime.GltfFeature
 import androidx.xr.scenecore.runtime.MaterialResource
 import com.android.extensions.xr.XrExtensions
 import com.google.androidxr.splitengine.SplitEngineSubspaceManager
-import com.google.common.util.concurrent.ListenableFuture
 import java.util.Collections
 import java.util.HashMap
 import java.util.concurrent.Executor
 import java.util.function.Consumer
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Implementation of a SceneCore GltfEntity.
@@ -49,6 +55,7 @@ internal class GltfFeatureImpl(
 ) : BaseRenderingFeature(impressApi, splitEngineSubspaceManager, extensions), GltfFeature {
 
     private val modelImpressNode: ImpressNode = impressApi.instanceGltfModel(gltfModel.nativeHandle)
+    private var currentAnimationJob: Job? = null
 
     private val meshOverrides = mutableMapOf<String, Int>()
 
@@ -84,33 +91,29 @@ internal class GltfFeatureImpl(
         // notified that the animation has stopped, been cancelled (by starting another animation)
         // and / or shown an error state if something went wrong.
 
-        val future: ListenableFuture<Void?> =
-            impressApi.animateGltfModel(modelImpressNode, animationName, loop)
+        currentAnimationJob?.cancel()
+        val coroutineDispatcher = executor.asCoroutineDispatcher()
         animationState = GltfEntity.AnimationState.PLAYING
-
-        // At the moment, we don't do anything interesting on failure except for logging. If we
-        // didn't care about logging the failure, we could just not register a listener at all if
-        // the animation is looping, since it will never terminate normally.
-        future.addListener(
-            {
-                try {
-                    future.get()
-                    // The animation played to completion and has stopped
-                } catch (e: Exception) {
-                    if (e is InterruptedException) {
-                        // If this happened, then it's likely Impress is shutting down and we
-                        // need to shut down as well.
-                        Thread.currentThread().interrupt()
-                    } else {
-                        // Some other error happened.  Log it and stop the animation.
-                        Log.e("GltfEntityImpl", "Could not start animation: $e")
-                    }
-                } finally {
+        CoroutineScope(coroutineDispatcher).launch {
+            try {
+                // The @MainThread annotation is a "Lint" check. As soon as you call launch, you are
+                // creating a new asynchronous task. The Dispatcher you pass to launch decides where
+                // that task runs. If you try to access that context from a background thread
+                // (which is where executor put you), the native code looks for the context, doesn't
+                // find it (or finds a mismatch), and fails or crashes
+                withContext(Dispatchers.Main) {
+                    impressApi.animateGltfModelTemp(modelImpressNode, animationName, loop)
+                }
+            } catch (e: Exception) {
+                if (e is CancellationException) throw e
+                // Some other error happened.  Log it and stop the animation.
+                Log.e("GltfFeatureImpl", "Could not start animation: $e")
+            } finally {
+                if (currentAnimationJob === coroutineContext[Job]) {
                     animationState = GltfEntity.AnimationState.STOPPED
                 }
-            },
-            executor,
-        )
+            }
+        }
     }
 
     @MainThread

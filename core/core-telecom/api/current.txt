@@ -2,19 +2,25 @@
 package androidx.core.telecom {
 
   public final class CallAttributesCompat {
+    ctor public CallAttributesCompat(CharSequence displayName, android.net.Uri address, int direction);
+    ctor public CallAttributesCompat(CharSequence displayName, android.net.Uri address, int direction, optional int callType);
+    ctor public CallAttributesCompat(CharSequence displayName, android.net.Uri address, int direction, optional int callType, optional int callCapabilities);
     ctor public CallAttributesCompat(CharSequence displayName, android.net.Uri address, int direction, optional int callType, optional int callCapabilities, optional androidx.core.telecom.CallEndpointCompat? preferredStartingCallEndpoint);
-    ctor @BytecodeOnly public CallAttributesCompat(CharSequence!, android.net.Uri!, int, int, int, androidx.core.telecom.CallEndpointCompat!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor public CallAttributesCompat(CharSequence displayName, android.net.Uri address, int direction, optional int callType, optional int callCapabilities, optional androidx.core.telecom.CallEndpointCompat? preferredStartingCallEndpoint, optional Boolean? isLogExcluded);
+    ctor @BytecodeOnly public CallAttributesCompat(CharSequence!, android.net.Uri!, int, int, int, androidx.core.telecom.CallEndpointCompat!, Boolean!, int, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @InaccessibleFromKotlin public android.net.Uri getAddress();
     method @InaccessibleFromKotlin public int getCallCapabilities();
     method @InaccessibleFromKotlin public int getCallType();
     method @InaccessibleFromKotlin public int getDirection();
     method @InaccessibleFromKotlin public CharSequence getDisplayName();
     method @InaccessibleFromKotlin public androidx.core.telecom.CallEndpointCompat? getPreferredStartingCallEndpoint();
+    method @InaccessibleFromKotlin public Boolean? isLogExcluded();
     property public android.net.Uri address;
     property public int callCapabilities;
     property public int callType;
     property public int direction;
     property public CharSequence displayName;
+    property public Boolean? isLogExcluded;
     property public androidx.core.telecom.CallEndpointCompat? preferredStartingCallEndpoint;
     field public static final int CALL_TYPE_AUDIO_CALL = 1; // 0x1
     field public static final int CALL_TYPE_VIDEO_CALL = 2; // 0x2
@@ -51,11 +57,13 @@ package androidx.core.telecom {
 
   public interface CallControlScope extends kotlinx.coroutines.CoroutineScope {
     method public suspend Object? answer(int callType, kotlin.coroutines.Continuation<? super androidx.core.telecom.CallControlResult>);
+    method public default kotlinx.coroutines.flow.Flow<java.lang.Integer> callTypeFlow();
     method public suspend Object? disconnect(android.telecom.DisconnectCause disconnectCause, kotlin.coroutines.Continuation<? super androidx.core.telecom.CallControlResult>);
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<java.util.List<androidx.core.telecom.CallEndpointCompat>> getAvailableEndpoints();
     method public android.os.ParcelUuid getCallId();
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<androidx.core.telecom.CallEndpointCompat> getCurrentCallEndpoint();
     method @InaccessibleFromKotlin public kotlinx.coroutines.flow.Flow<java.lang.Boolean> isMuted();
+    method public default suspend Object? requestCallType(int callType, kotlin.coroutines.Continuation<? super androidx.core.telecom.CallControlResult>);
     method public suspend Object? requestEndpointChange(androidx.core.telecom.CallEndpointCompat endpoint, kotlin.coroutines.Continuation<? super androidx.core.telecom.CallControlResult>);
     method public suspend Object? setActive(kotlin.coroutines.Continuation<? super androidx.core.telecom.CallControlResult>);
     method public suspend Object? setInactive(kotlin.coroutines.Continuation<? super androidx.core.telecom.CallControlResult>);

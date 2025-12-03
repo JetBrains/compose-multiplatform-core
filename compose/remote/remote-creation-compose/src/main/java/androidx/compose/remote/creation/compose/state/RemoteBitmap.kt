@@ -40,7 +40,7 @@ public abstract class RemoteBitmap
 internal constructor(
     public val state: RemoteComposeCreationState?,
     public override val constantValue: Bitmap?,
-) : RemoteState<Bitmap> {
+) : BaseRemoteState<Bitmap>() {
 
     // @Deprecated("Use getIdForCreationState directly")
     // TODO: re-enable this asap
@@ -118,8 +118,8 @@ internal constructor(
  * A mutable implementation of [RemoteBitmap] that holds its value in a [MutableState<Bitmap>].
  *
  * @property state The [RemoteComposeCreationState] associated with this bitmap.
- * @property hasConstantValue A boolean indicating whether this [MutableRemoteBitmap] is expected to
- *   remain constant. For mutable states, this is typically `false`.
+ * @property constantValue The [Bitmap] this [RemoteColor] always evaluates to, if any, or null if
+ *   it's not constant.
  * @property idProvider A lambda that provides the unique ID for this mutable bitmap within the
  *   [RemoteComposeCreationState]. This ID is used to identify the bitmap in the remote document.
  */

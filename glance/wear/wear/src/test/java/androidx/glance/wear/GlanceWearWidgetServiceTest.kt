@@ -86,14 +86,14 @@ class GlanceWearWidgetServiceTest {
 
     @Suppress("RestrictedApiAndroidX")
     class TestWidget : GlanceWearWidget() {
-        var instanceId: Int? = null
+        var instanceId: WidgetInstanceId? = null
 
-        override suspend fun provideWidgetContent(
+        override suspend fun provideWidgetData(
             context: Context,
-            request: WearWidgetRequest,
-        ): WearWidgetContent {
-            instanceId = request.instanceId
-            return WearWidgetContent { RemoteText("Testing...") }
+            params: WearWidgetParams,
+        ): WearWidgetDocument {
+            instanceId = params.instanceId
+            return WearWidgetDocument { RemoteText("Testing...") }
         }
     }
 

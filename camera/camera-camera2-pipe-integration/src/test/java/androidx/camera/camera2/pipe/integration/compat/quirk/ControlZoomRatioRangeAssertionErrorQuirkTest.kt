@@ -42,16 +42,15 @@ class ControlZoomRatioRangeAssertionErrorQuirkTest(
     }
 
     companion object {
-        @Suppress("TYPE_INTERSECTION_AS_REIFIED_WARNING")
         @JvmStatic
         @ParameterizedRobolectricTestRunner.Parameters(name = "Brand: {0}, Model: {1}")
         fun data() =
             listOf(
-                arrayOf("jio", "LS1542QWN", true),
-                arrayOf("samsung", "SM-A025M/DS", true),
-                arrayOf("Samsung", "SM-S124DL", true),
-                arrayOf("vivo", "vivo 2039", true),
-                arrayOf("motorola", "MotoG100", false),
+                arrayOf<Any>("jio", "LS1542QWN", true),
+                arrayOf<Any>("samsung", "SM-A025M/DS", true),
+                arrayOf<Any>("Samsung", "SM-S124DL", true),
+                arrayOf<Any>("vivo", "vivo 2039", true),
+                arrayOf<Any>("motorola", "MotoG100", false),
             )
     }
 }

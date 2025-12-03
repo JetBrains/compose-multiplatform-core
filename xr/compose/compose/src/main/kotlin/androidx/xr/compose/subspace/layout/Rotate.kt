@@ -18,6 +18,7 @@ package androidx.xr.compose.subspace.layout
 
 import androidx.xr.compose.subspace.node.SubspaceLayoutModifierNode
 import androidx.xr.compose.subspace.node.SubspaceModifierNodeElement
+import androidx.xr.compose.subspace.node.invalidatePlacement
 import androidx.xr.compose.unit.VolumeConstraints
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
@@ -93,12 +94,20 @@ private class RotationElement(private val quaternion: Quaternion) :
     }
 
     override fun update(node: RotationNode) {
-        node.quaternion = quaternion
+        node.update(quaternion)
     }
 }
 
 internal class RotationNode(public var quaternion: Quaternion) :
     SubspaceLayoutModifierNode, SubspaceModifier.Node() {
+
+    override val shouldAutoInvalidate: Boolean = false
+
+    fun update(quaternion: Quaternion) {
+        if (this.quaternion != quaternion) invalidatePlacement()
+        this.quaternion = quaternion
+    }
+
     override fun SubspaceMeasureScope.measure(
         measurable: SubspaceMeasurable,
         constraints: VolumeConstraints,

@@ -18,10 +18,10 @@ package androidx.xr.arcore.playservices
 
 import android.app.Activity
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
@@ -215,10 +215,9 @@ internal constructor(
                 throw ApkNotInstalledException(ARCORE_PACKAGE_NAME)
             }
             Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE -> {
-                Log.e(
-                    "ArCoreManager",
-                    "Session cannot be created because ARCore is not supported on this device.",
-                )
+                Log.error {
+                    "Session cannot be created because ARCore is not supported on this device."
+                }
                 throw UnsupportedDeviceException()
             }
             Availability.UNKNOWN_CHECKING -> {

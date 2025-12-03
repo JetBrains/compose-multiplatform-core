@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.DrawModifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -80,7 +81,7 @@ public fun RemoteText(
 public fun RemoteText(
     text: RemoteString,
     modifier: RemoteModifier = RemoteModifier,
-    color: RemoteColor = RemoteColor(Color.Black),
+    color: RemoteColor? = null,
     fontSize: TextUnit = TextUnit.Unspecified,
     fontStyle: FontStyle? = null,
     fontWeight: FontWeight? = null,
@@ -90,7 +91,8 @@ public fun RemoteText(
     maxLines: Int = Int.MAX_VALUE,
     style: TextStyle = LocalTextStyle.current,
 ) {
-    // Remote color is always used and style color is ignored.
+    val textColor = color ?: RemoteColor(style.color.takeOrElse { Color.Black })
+
     val style =
         style.merge(
             fontSize = fontSize,
@@ -103,7 +105,7 @@ public fun RemoteText(
     RemoteText(
         text,
         modifier,
-        color,
+        textColor,
         style.fontSize,
         style.fontStyle,
         style.fontWeight,

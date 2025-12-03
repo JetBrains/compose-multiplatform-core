@@ -38,9 +38,11 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mockito
+import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
@@ -416,6 +418,24 @@ class SpatialEnvironmentFeatureImplTest {
             )
             .hasLength(2)
         assertThat(materials).isEmpty()
+    }
+
+    @Test
+    fun setPreferredSpatialEnvGeometry_setsSubspaceAsParentOfGltfNode() {
+        val gltf = fakeLoadGltfAsset("fakeGltfAsset")
+
+        environment.preferredSpatialEnvironment = SpatialEnvironmentPreference(null, gltf)
+        val subspaceHandleCaptor = ArgumentCaptor.forClass(Int::class.java)
+        verify(splitEngineSubspaceManager)
+            .createSubspace(anyString(), subspaceHandleCaptor.capture())
+        val expectedParentHandle = subspaceHandleCaptor.value
+        val geometryNodes = fakeImpressApi.getImpressNodesForToken((gltf as GltfModel).nativeHandle)
+        val gltfNode = ImpressNode(geometryNodes!![0])
+        val actualParentHandle = fakeImpressApi.getImpressNodeParent(gltfNode)
+
+        assertThat(actualParentHandle).isNotEqualTo(-1)
+        assertThat(actualParentHandle).isNotEqualTo(gltfNode.handle)
+        assertThat(actualParentHandle).isEqualTo(expectedParentHandle)
     }
 
     @Test

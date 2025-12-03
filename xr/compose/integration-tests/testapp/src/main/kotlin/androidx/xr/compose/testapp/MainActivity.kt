@@ -85,6 +85,7 @@ import androidx.xr.compose.testapp.movable.MovableActivity
 import androidx.xr.compose.testapp.movablescalable.MovableScalable
 import androidx.xr.compose.testapp.panelembeddedsubspace.PanelEmbeddedSubspace
 import androidx.xr.compose.testapp.panelvolume.PanelVolume
+import androidx.xr.compose.testapp.performance.LayoutPerformance
 import androidx.xr.compose.testapp.permissionsdialog.PermissionsDialog
 import androidx.xr.compose.testapp.pose.Pose
 import androidx.xr.compose.testapp.resizablepanel.ResizablePanel
@@ -344,6 +345,9 @@ class MainActivity : ComponentActivity() {
                     }
                     TestCaseColumnRowItem(getString(R.string.fsm_focus_change_test)) {
                         startTest<FSMFocusChangeActivity>()
+                    }
+                    TestCaseColumnRowItem(getString(R.string.layout_performance)) {
+                        startTest<LayoutPerformance>()
                     }
                     TestCaseBlankRow("THE FOLLOWING ARE LIFECYCLE TESTS")
                     TestCaseColumnRowItem(getString(R.string.lifecycle_open_close_test)) {

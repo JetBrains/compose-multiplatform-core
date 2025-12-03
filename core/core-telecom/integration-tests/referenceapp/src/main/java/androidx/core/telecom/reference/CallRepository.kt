@@ -219,12 +219,12 @@ class CallRepository {
 
     // --- Service Interaction Methods ---
 
-    fun addOutgoingCall(callAttributesCompat: CallAttributesCompat) {
+    fun addOutgoingCall(callAttributesCompat: CallAttributesCompat, isInitiallyMuted: Boolean) {
         if (!mIsBound || mBinder == null) {
             Log.w(LOG_TAG, "addOutgoingCall: Service is not connected/bound.")
             return
         }
-        mBinder?.addCall(callAttributesCompat, getNextNotificationId())
+        mBinder?.addCall(callAttributesCompat, getNextNotificationId(), isInitiallyMuted)
     }
 
     fun onIncomingCallDetected(attributes: CallAttributesCompat, id: Int) {
@@ -233,7 +233,7 @@ class CallRepository {
             return
         }
         Log.i(LOG_TAG, "onIncomingCallDetected: ")
-        mBinder?.addCall(attributes, id)
+        mBinder?.addCall(attributes, id, false)
     }
 
     fun setCallActive(callId: String) {

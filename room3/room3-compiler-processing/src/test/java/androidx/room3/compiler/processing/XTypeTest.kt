@@ -1307,6 +1307,127 @@ class XTypeTest {
     }
 
     @Test
+    fun isStar() {
+        val javaSource =
+            Source.java(
+                "test.Usage",
+                """
+                package test;
+                class Usage {
+                  Foo<?> fooStar = null;
+                  Foo<Bar> fooBar = null;
+                  Foo<? extends Object> fooExtendsObject = null;
+                  Foo<? extends Bar> fooExtendsBar = null;
+                  Foo<? super Bar> fooSuperBar = null;
+                }
+                interface Foo<T> {}
+                interface Bar {}
+                """
+                    .trimIndent(),
+            )
+        val kotlinSource =
+            Source.kotlin(
+                "test.Usage.kt",
+                """
+                package test
+                class Usage {
+                    val fooStar: Foo<*> = TODO()
+                    val fooBar: Foo<Bar> = TODO()
+                    val fooExtendsObject: Foo<out Any?> = TODO()
+                    val fooExtendsBar: Foo<out Bar> = TODO()
+                    val fooSuperBar: Foo<in Bar> = TODO()
+
+                    // For kotlin-specific tests
+                    val fooInBar: FooIn<Bar> = TODO()
+                    val fooOutBar: FooOut<Bar> = TODO()
+                    val fooOutJvmWildcardBar: Foo<@JvmWildcard Bar> = TODO()
+                    val jvmSuppressWildcardsFooStar: @JvmSuppressWildcards Foo<*> = TODO()
+                }
+                interface Foo<T>
+                interface FooIn<in T>
+                interface FooOut<out T>
+                interface Bar
+                """
+                    .trimIndent(),
+            )
+        fun runTests(source: Source) {
+            runProcessorTest(sources = listOf(source)) { invocation ->
+                val usage = invocation.processingEnv.requireTypeElement("test.Usage")
+
+                usage.getDeclaredField("fooStar").type.let { type ->
+                    assertThat(type.isStar()).isFalse()
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isTrue()
+                        assertThat(typeArg.extendsBound()).isNull()
+                    }
+                }
+                usage.getDeclaredField("fooBar").type.let { type ->
+                    assertThat(type.isStar()).isFalse()
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isFalse()
+                        assertThat(typeArg.extendsBound()).isNull()
+                    }
+                }
+                usage.getDeclaredField("fooExtendsObject").type.let { type ->
+                    assertThat(type.isStar()).isFalse()
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isFalse()
+                        assertThat(typeArg.extendsBound()).isNotNull()
+                    }
+                }
+                usage.getDeclaredField("fooExtendsBar").type.let { type ->
+                    assertThat(type.isStar()).isFalse()
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isFalse()
+                        assertThat(typeArg.extendsBound()).isNotNull()
+                    }
+                }
+                usage.getDeclaredField("fooSuperBar").type.let { type ->
+                    assertThat(type.isStar()).isFalse()
+                    type.typeArguments.single().let { typeArg ->
+                        assertThat(typeArg.isStar()).isFalse()
+                        assertThat(typeArg.extendsBound()).isNotNull()
+                    }
+                }
+
+                // Additional tests that only apply to Kotlin sources
+                if (source is Source.KotlinSource) {
+                    usage.getDeclaredField("fooInBar").type.let { type ->
+                        assertThat(type.isStar()).isFalse()
+                        type.typeArguments.single().let { typeArg ->
+                            assertThat(typeArg.isStar()).isFalse()
+                            assertThat(typeArg.extendsBound()).isNull()
+                        }
+                    }
+                    usage.getDeclaredField("fooOutBar").type.let { type ->
+                        assertThat(type.isStar()).isFalse()
+                        type.typeArguments.single().let { typeArg ->
+                            assertThat(typeArg.isStar()).isFalse()
+                            assertThat(typeArg.extendsBound()).isNull()
+                        }
+                    }
+                    usage.getDeclaredField("fooOutJvmWildcardBar").type.let { type ->
+                        assertThat(type.isStar()).isFalse()
+                        type.typeArguments.single().let { typeArg ->
+                            assertThat(typeArg.isStar()).isFalse()
+                            assertThat(typeArg.extendsBound()).isNull()
+                        }
+                    }
+                    usage.getDeclaredField("jvmSuppressWildcardsFooStar").type.let { type ->
+                        assertThat(type.isStar()).isFalse()
+                        type.typeArguments.single().let { typeArg ->
+                            assertThat(typeArg.isStar()).isTrue()
+                            assertThat(typeArg.extendsBound()).isNull()
+                        }
+                    }
+                }
+            }
+        }
+        runTests(javaSource)
+        runTests(kotlinSource)
+    }
+
+    @Test
     fun isKotlinUnit() {
         val kotlinSubject =
             Source.kotlin(

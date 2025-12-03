@@ -24,6 +24,7 @@ import static com.android.extensions.xr.node.ReformOptions.ALLOW_MOVE;
 import static com.android.extensions.xr.node.ReformOptions.ALLOW_RESIZE;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.TruthJUnit.assume;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.directExecutor;
 
@@ -43,6 +44,8 @@ import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.xr.runtime.NodeHolder;
+import androidx.xr.runtime.math.FloatSize2d;
 import androidx.xr.runtime.math.Pose;
 import androidx.xr.scenecore.impl.perception.PerceptionLibrary;
 import androidx.xr.scenecore.impl.perception.Session;
@@ -52,8 +55,10 @@ import androidx.xr.scenecore.runtime.MoveEventListener;
 import androidx.xr.scenecore.runtime.PanelEntity;
 import androidx.xr.scenecore.runtime.ResizeEvent;
 import androidx.xr.scenecore.runtime.ResizeEventListener;
+import androidx.xr.scenecore.runtime.SurfaceEntity;
 import androidx.xr.scenecore.runtime.extensions.XrExtensionsProvider;
 import androidx.xr.scenecore.testing.FakeScheduledExecutorService;
+import androidx.xr.scenecore.testing.FakeSurfaceFeature;
 
 import com.android.extensions.xr.XrExtensions;
 import com.android.extensions.xr.node.Node;
@@ -90,16 +95,7 @@ public class ResizableComponentImplTest {
     private final PerceptionLibrary mPerceptionLibrary = mock(PerceptionLibrary.class);
     private final XrExtensions mXrExtensions = XrExtensionsProvider.getXrExtensions();
     private final EntityManager mEntityManager = new EntityManager();
-    private final Node mActivitySpaceNode = mXrExtensions.createNode();
-    private final ActivitySpaceImpl mActivitySpaceImpl =
-            new ActivitySpaceImpl(
-                    mActivitySpaceNode,
-                    mActivity,
-                    mXrExtensions,
-                    mEntityManager,
-                    () -> mXrExtensions.getSpatialState(mActivity),
-                    /* unscaledGravityAlignedActivitySpace= */ false,
-                    mFakeExecutor);
+    private ActivitySpaceImpl mActivitySpaceImpl;
     private final AndroidXrEntity mActivitySpaceRoot = Mockito.mock(AndroidXrEntity.class);
     private final PerceptionSpaceScenePoseImpl mPerceptionSpaceScenePose =
             new PerceptionSpaceScenePoseImpl(mActivitySpaceImpl, mActivitySpaceRoot);
@@ -111,6 +107,17 @@ public class ResizableComponentImplTest {
 
     @Before
     public void setUp() {
+        assume().that(mXrExtensions).isNotNull();
+        Node activitySpaceNode = mXrExtensions.createNode();
+        mActivitySpaceImpl =
+                new ActivitySpaceImpl(
+                        activitySpaceNode,
+                        mActivity,
+                        mXrExtensions,
+                        mEntityManager,
+                        () -> mXrExtensions.getSpatialState(mActivity),
+                        /* unscaledGravityAlignedActivitySpace= */ false,
+                        mFakeExecutor);
         when(mPerceptionLibrary.initSession(eq(mActivity), anyInt(), eq(mFakeExecutor)))
                 .thenReturn(immediateFuture(mock(Session.class)));
         mFakeRuntime =
@@ -149,6 +156,15 @@ public class ResizableComponentImplTest {
                 dimensions,
                 "testPanel",
                 mFakeRuntime.getActivitySpace());
+    }
+
+    private SurfaceEntity createTestSurfaceEntity(Pose pose, SurfaceEntity.Shape shape) {
+        NodeHolder<?> nodeHolder = new NodeHolder<>(mXrExtensions.createNode(), Node.class);
+        SurfaceEntity surface =
+                mFakeRuntime.createSurfaceEntity(
+                        new FakeSurfaceFeature(nodeHolder), pose, mFakeRuntime.getActivitySpace());
+        surface.setShape(shape);
+        return surface;
     }
 
     @Test
@@ -190,527 +206,232 @@ public class ResizableComponentImplTest {
     }
 
     @Test
-    public void addResizableComponentWithTooSmallMinSize_getsMinimumValidSize() {
+    public void addResizableComponentToPanel_getsPanelSize() {
+        Dimensions panelSize = new Dimensions(1f, 20f, 0f);
+
+        // case for attach without set size
+        ResizableComponentImpl resizableComponent =
+                new ResizableComponentImpl(
+                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
+
+        AndroidXrEntity entity = (AndroidXrEntity) createTestPanelEntity(Pose.Identity, panelSize);
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
+
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+
+        assertThat(options.getCurrentSize().x).isEqualTo(panelSize.width);
+        assertThat(options.getCurrentSize().y).isEqualTo(panelSize.height);
+        assertThat(options.getCurrentSize().z).isEqualTo(panelSize.depth);
+        assertThat(resizableComponent.getSize().width).isEqualTo(panelSize.width);
+        assertThat(resizableComponent.getSize().height).isEqualTo(panelSize.height);
+        assertThat(resizableComponent.getSize().depth).isEqualTo(panelSize.depth);
+
+        entity.removeComponent(resizableComponent);
+
+        // case for preset size
+        Dimensions inputSize = new Dimensions(0f, 5f, 40f);
+        Dimensions expectSize = panelSize;
+
+        resizableComponent.setSize(inputSize);
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
+
+        assertThat(options.getCurrentSize().x).isEqualTo(expectSize.width);
+        assertThat(options.getCurrentSize().y).isEqualTo(expectSize.height);
+        assertThat(options.getCurrentSize().z).isEqualTo(expectSize.depth);
+        assertThat(resizableComponent.getSize().width).isEqualTo(expectSize.width);
+        assertThat(resizableComponent.getSize().height).isEqualTo(expectSize.height);
+        assertThat(resizableComponent.getSize().depth).isEqualTo(expectSize.depth);
+    }
+
+    @Test
+    public void addResizableComponentToQuadSurface_getsQuadSize() {
+        Dimensions quadSize = new Dimensions(1f, 2f, 0f);
+
+        // case for attach without set size
+        ResizableComponentImpl resizableComponent =
+                new ResizableComponentImpl(
+                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
+
+        AndroidXrEntity entity =
+                (AndroidXrEntity)
+                        createTestSurfaceEntity(
+                                Pose.Identity,
+                                new SurfaceEntity.Shape.Quad(
+                                        new FloatSize2d(quadSize.width, quadSize.height)));
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
+
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+        Dimensions expectSize = quadSize;
+
+        assertThat(options.getCurrentSize().x).isEqualTo(expectSize.width);
+        assertThat(options.getCurrentSize().y).isEqualTo(expectSize.height);
+        assertThat(options.getCurrentSize().z).isEqualTo(expectSize.depth);
+        assertThat(resizableComponent.getSize().width).isEqualTo(expectSize.width);
+        assertThat(resizableComponent.getSize().height).isEqualTo(expectSize.height);
+        assertThat(resizableComponent.getSize().depth).isEqualTo(expectSize.depth);
+
+        entity.removeComponent(resizableComponent);
+
+        // case for preset size
+        Dimensions inputSize = new Dimensions(0f, 5f, 40f);
+
+        resizableComponent.setSize(inputSize);
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
+
+        assertThat(options.getCurrentSize().x).isEqualTo(expectSize.width);
+        assertThat(options.getCurrentSize().y).isEqualTo(expectSize.height);
+        assertThat(options.getCurrentSize().z).isEqualTo(expectSize.depth);
+        assertThat(resizableComponent.getSize().width).isEqualTo(expectSize.width);
+        assertThat(resizableComponent.getSize().height).isEqualTo(expectSize.height);
+        assertThat(resizableComponent.getSize().depth).isEqualTo(expectSize.depth);
+    }
+
+    @Test
+    public void addResizableComponent_setsMinMaxSizeOnNodeReformOptions() {
+        Dimensions inputMin = new Dimensions(Float.NaN, 1f, 2f);
+        Dimensions inputMax = new Dimensions(Float.NaN, -1f, 1f);
+        Dimensions expectMin = new Dimensions(0f, 1f, 2f);
+        Dimensions expectMax = new Dimensions(Float.POSITIVE_INFINITY, 1f, 2f);
+
+        ResizableComponentImpl resizableComponent =
+                new ResizableComponentImpl(mFakeExecutor, mXrExtensions, inputMin, inputMax);
+
+        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
+
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+        assertThat(options.getMinimumSize().x).isEqualTo(expectMin.width);
+        assertThat(options.getMinimumSize().y).isEqualTo(expectMin.height);
+        assertThat(options.getMinimumSize().z).isEqualTo(expectMin.depth);
+        assertThat(options.getMaximumSize().x).isEqualTo(expectMax.width);
+        assertThat(options.getMaximumSize().y).isEqualTo(expectMax.height);
+        assertThat(options.getMaximumSize().z).isEqualTo(expectMax.depth);
+    }
+
+    @Test
+    public void setSizeOnResizableComponent_setsSanitizedSizeOnCurrentAndReformOptions() {
+        // case for valid size
+        Dimensions inputSize = new Dimensions(0f, 5f, 40f);
+        Dimensions expectSize = new Dimensions(0f, 5f, 40f);
+
+        ResizableComponentImpl resizableComponent =
+                new ResizableComponentImpl(
+                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
+
+        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
+        resizableComponent.setSize(inputSize);
+
+        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
+
+        assertThat(options.getCurrentSize().x).isEqualTo(expectSize.width);
+        assertThat(options.getCurrentSize().y).isEqualTo(expectSize.height);
+        assertThat(options.getCurrentSize().z).isEqualTo(expectSize.depth);
+        assertThat(resizableComponent.getSize().width).isEqualTo(expectSize.width);
+        assertThat(resizableComponent.getSize().height).isEqualTo(expectSize.height);
+        assertThat(resizableComponent.getSize().depth).isEqualTo(expectSize.depth);
+
+        // case for invalid(NaN) size
+        inputSize = new Dimensions(Float.NaN, Float.NaN, 50f);
+        expectSize = new Dimensions(0f, 5f, 50f);
+        resizableComponent.setSize(inputSize);
+
+        assertThat(options.getCurrentSize().x).isEqualTo(expectSize.width);
+        assertThat(options.getCurrentSize().y).isEqualTo(expectSize.height);
+        assertThat(options.getCurrentSize().z).isEqualTo(expectSize.depth);
+        assertThat(resizableComponent.getSize().width).isEqualTo(expectSize.width);
+        assertThat(resizableComponent.getSize().height).isEqualTo(expectSize.height);
+        assertThat(resizableComponent.getSize().depth).isEqualTo(expectSize.depth);
+    }
+
+    @Test
+    public void getMinMaxSizeOnResizableComponent_returnsSanitizedInitialMinMaxSize() {
+        Dimensions initMin = new Dimensions(Float.NaN, -1f, 2f);
+        Dimensions initMax = new Dimensions(Float.NaN, 1f, 1f);
+        Dimensions expectMin = new Dimensions(0f, 0f, 2f);
+        Dimensions expectMax = new Dimensions(Float.POSITIVE_INFINITY, 1f, 2f);
+
+        ResizableComponentImpl resizableComponent =
+                new ResizableComponentImpl(mFakeExecutor, mXrExtensions, initMin, initMax);
+
+        assertThat(resizableComponent.getMinimumSize().width).isEqualTo(expectMin.width);
+        assertThat(resizableComponent.getMinimumSize().height).isEqualTo(expectMin.height);
+        assertThat(resizableComponent.getMinimumSize().depth).isEqualTo(expectMin.depth);
+        assertThat(resizableComponent.getMaximumSize().width).isEqualTo(expectMax.width);
+        assertThat(resizableComponent.getMaximumSize().height).isEqualTo(expectMax.height);
+        assertThat(resizableComponent.getMaximumSize().depth).isEqualTo(expectMax.depth);
+    }
+
+    @Test
+    public void setMinSizeOnResizableComponent_setsSanitizedMinMaxSizeOnNodeReformOptions() {
+        Dimensions initMin = new Dimensions(1f, 1f, 1f);
+        Dimensions initMax = new Dimensions(10f, 10f, 10f);
+        Dimensions inputMin = new Dimensions(20f, Float.NaN, -1f);
+        Dimensions expectMin = new Dimensions(20f, 1f, 0f);
+        Dimensions expectMax = new Dimensions(20f, 10f, 10f);
+
         AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
 
         assertThat(entity).isNotNull();
 
         ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(-0.01f, -0.01f, -0.01f),
-                        MAX_DIMENSIONS);
-
+                new ResizableComponentImpl(mFakeExecutor, mXrExtensions, initMin, initMax);
         assertThat(resizableComponent).isNotNull();
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
 
         ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
 
-        assertThat(options.getEnabledReform()).isEqualTo(ALLOW_RESIZE);
-        assertThat(options.getMinimumSize().x).isEqualTo(MIN_DIMENSIONS.width);
-        assertThat(options.getMinimumSize().y).isEqualTo(MIN_DIMENSIONS.height);
-        assertThat(options.getMinimumSize().z).isEqualTo(MIN_DIMENSIONS.depth);
-        assertThat(options.getMaximumSize().x).isEqualTo(MAX_DIMENSIONS.width);
-        assertThat(options.getMaximumSize().y).isEqualTo(MAX_DIMENSIONS.height);
-        assertThat(options.getMaximumSize().z).isEqualTo(MAX_DIMENSIONS.depth);
+        resizableComponent.setMinimumSize(inputMin);
+
+        assertThat(options.getMinimumSize().x).isEqualTo(expectMin.width);
+        assertThat(options.getMinimumSize().y).isEqualTo(expectMin.height);
+        assertThat(options.getMinimumSize().z).isEqualTo(expectMin.depth);
+        assertThat(resizableComponent.getMinimumSize().width).isEqualTo(expectMin.width);
+        assertThat(resizableComponent.getMinimumSize().height).isEqualTo(expectMin.height);
+        assertThat(resizableComponent.getMinimumSize().depth).isEqualTo(expectMin.depth);
+        assertThat(options.getMaximumSize().x).isEqualTo(expectMax.width);
+        assertThat(options.getMaximumSize().y).isEqualTo(expectMax.height);
+        assertThat(options.getMaximumSize().z).isEqualTo(expectMax.depth);
+        assertThat(resizableComponent.getMaximumSize().width).isEqualTo(expectMax.width);
+        assertThat(resizableComponent.getMaximumSize().height).isEqualTo(expectMax.height);
+        assertThat(resizableComponent.getMaximumSize().depth).isEqualTo(expectMax.depth);
     }
 
     @Test
-    public void addResizableComponentWithTooSmallMaxSize_getsDefaultSize() {
+    public void setMaxSizeOnResizableComponent_setsSanitizedMinMaxSizeOnNodeReformOptions() {
+        Dimensions initMin = new Dimensions(2f, 2f, 2f);
+        Dimensions initMax = new Dimensions(10f, 10f, 10f);
+        Dimensions inputMax = new Dimensions(1f, Float.NaN, -1f);
+        Dimensions expectMin = new Dimensions(1f, 2f, 0f);
+        Dimensions expectMax = new Dimensions(1f, 10f, 0f);
+
         AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
 
         assertThat(entity).isNotNull();
 
         ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, new Dimensions(0f, 0f, 0f));
-
+                new ResizableComponentImpl(mFakeExecutor, mXrExtensions, initMin, initMax);
         assertThat(resizableComponent).isNotNull();
 
         assertThat(entity.addComponent(resizableComponent)).isTrue();
 
         ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
 
-        assertThat(options.getEnabledReform()).isEqualTo(ALLOW_RESIZE);
-        assertThat(options.getMinimumSize().x).isEqualTo(MIN_DIMENSIONS.width);
-        assertThat(options.getMinimumSize().y).isEqualTo(MIN_DIMENSIONS.height);
-        assertThat(options.getMinimumSize().z).isEqualTo(MIN_DIMENSIONS.depth);
-        assertThat(options.getMaximumSize().x).isEqualTo(MAX_DIMENSIONS.width);
-        assertThat(options.getMaximumSize().y).isEqualTo(MAX_DIMENSIONS.height);
-        assertThat(options.getMaximumSize().z).isEqualTo(MAX_DIMENSIONS.depth);
-    }
-
-    @Test
-    public void addResizableComponentToPanelEntity_resizableComponentCurrentSizeIsPanelSize() {
-        // PanelEntity's depth will always be 9.
-        Dimensions expectedDimensions = new Dimensions(1.0f, 1.0f, 0.0f);
-        PanelEntity entity = createTestPanelEntity(new Pose(), expectedDimensions);
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.0f), // minSize
-                        new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
-
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        Dimensions size = resizableComponent.getSize();
-
-        assertThat(size.width).isEqualTo(expectedDimensions.width);
-        assertThat(size.height).isEqualTo(expectedDimensions.height);
-        assertThat(size.depth).isEqualTo(expectedDimensions.depth);
-    }
-
-    @Test
-    public void addResizableComponentToPanelEntityWithTooSmallSize_addsComponentFailed() {
-        PanelEntity entity = createTestPanelEntity(new Pose(), MIN_DIMENSIONS);
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
-                        new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isFalse();
-    }
-
-    @Test
-    public void addResizableComponentToPanelEntityWithTooBigSize_addsComponentFailed() {
-        PanelEntity entity = createTestPanelEntity(new Pose(), MAX_DIMENSIONS);
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
-                        new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isFalse();
-    }
-
-    @Test
-    public void getSizeOnResizableComponent_returnsDefaultSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-        assertThat(entity).isNotNull();
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
-
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(DEFAULT_SIZE.depth);
-    }
-
-    @Test
-    public void setSizeOnResizableComponent_returnsSetSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
-                        new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
-
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        resizableComponent.setSize(new Dimensions(2.0f, 3.0f, 4.0f));
-
-        assertThat(resizableComponent.getSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(4.0f);
-    }
-
-    @Test
-    public void setSizeFirstTimeOnResizableComponentWithTooSmallSize_returnsDefaultSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
-                        new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
-
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        // Smaller than minSize.
-        resizableComponent.setSize(new Dimensions(0.1f, 1.0f, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, 0.1f, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, 1.0f, 0.1f));
-
-        assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(DEFAULT_SIZE.depth);
-    }
-
-    @Test
-    public void setSizeFirstTimeOnResizableComponentWithTooBigSize_returnsDefaultSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
-                        new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
-
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        // Bigger than maxSize.
-        resizableComponent.setSize(new Dimensions(6.0f, 1.0f, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, 6.0f, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, 1.0f, 6.0f));
-
-        assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(DEFAULT_SIZE.depth);
-    }
-
-    @Test
-    public void setSizeOnResizableComponentMultipleTimes_returnsLastValidSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
-                        new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        resizableComponent.setSize(new Dimensions(2.0f, 3.0f, 4.0f));
-
-        assertThat(resizableComponent.getSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(4.0f);
-
-        // Set NaN size.
-        resizableComponent.setSize(new Dimensions(Float.NaN, 1.0f, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, Float.NaN, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, 1.0f, Float.NaN));
-
-        assertThat(resizableComponent.getSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(4.0f);
-
-        // Smaller than minSize.
-        resizableComponent.setSize(new Dimensions(0.1f, 1.0f, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, 0.1f, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, 1.0f, 0.1f));
-
-        assertThat(resizableComponent.getSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(4.0f);
-
-        // Bigger than maxSize
-        resizableComponent.setSize(new Dimensions(6.0f, 1.0f, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, 6.0f, 1.0f));
-        resizableComponent.setSize(new Dimensions(1.0f, 1.0f, 6.0f));
-
-        assertThat(resizableComponent.getSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(4.0f);
-    }
-
-    @Test
-    public void setSizeOnResizableComponent_setsSizeOnNodeReformOptions() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
-
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
-
-        resizableComponent.setSize(MAX_DIMENSIONS);
-
-        assertThat(options.getCurrentSize().x).isEqualTo(MAX_DIMENSIONS.width);
-        assertThat(options.getCurrentSize().y).isEqualTo(MAX_DIMENSIONS.height);
-        assertThat(options.getCurrentSize().z).isEqualTo(MAX_DIMENSIONS.depth);
-    }
-
-    @Test
-    public void getMinimumSizeOnResizableComponent_returnsOnCreateSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
-
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        assertThat(resizableComponent.getMinimumSize().width).isEqualTo(MIN_DIMENSIONS.width);
-        assertThat(resizableComponent.getMinimumSize().height).isEqualTo(MIN_DIMENSIONS.height);
-        assertThat(resizableComponent.getMinimumSize().depth).isEqualTo(MIN_DIMENSIONS.depth);
-    }
-
-    @Test
-    public void getMinimumSizeOnResizableComponent_invalidMinSizeOnCreate_getsMinimumValidSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        // Create with NaN min size.
-        ResizableComponentImpl nanMinSizeResizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(Float.NaN, Float.NaN, Float.NaN),
-                        MIN_DIMENSIONS);
-
-        assertThat(nanMinSizeResizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(nanMinSizeResizableComponent)).isTrue();
-
-        assertThat(nanMinSizeResizableComponent.getMinimumSize().width)
-                .isEqualTo(MIN_DIMENSIONS.width);
-        assertThat(nanMinSizeResizableComponent.getMinimumSize().height)
-                .isEqualTo(MIN_DIMENSIONS.height);
-        assertThat(nanMinSizeResizableComponent.getMinimumSize().depth)
-                .isEqualTo(MIN_DIMENSIONS.depth);
-
-        // Create with minSize >= maxSize.
-        ResizableComponentImpl tooBigResizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, DEFAULT_SIZE, DEFAULT_SIZE);
-
-        assertThat(tooBigResizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(tooBigResizableComponent)).isTrue();
-
-        assertThat(tooBigResizableComponent.getMinimumSize().width).isEqualTo(MIN_DIMENSIONS.width);
-        assertThat(tooBigResizableComponent.getMinimumSize().height)
-                .isEqualTo(MIN_DIMENSIONS.height);
-        assertThat(tooBigResizableComponent.getMinimumSize().depth).isEqualTo(MIN_DIMENSIONS.depth);
-    }
-
-    @Test
-    public void setMinimumSizeOnResizableComponentMultipleTimes_returnsLastValidSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
-                        new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
-
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        resizableComponent.setMinimumSize(new Dimensions(2.0f, 3.0f, 4.0f));
-
-        assertThat(resizableComponent.getMinimumSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getMinimumSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getMinimumSize().depth).isEqualTo(4.0f);
-
-        // Set NaN size.
-        resizableComponent.setMinimumSize(new Dimensions(Float.NaN, 1.0f, 1.0f));
-        resizableComponent.setMinimumSize(new Dimensions(1.0f, Float.NaN, 1.0f));
-        resizableComponent.setMinimumSize(new Dimensions(1.0f, 1.0f, Float.NaN));
-
-        assertThat(resizableComponent.getMinimumSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getMinimumSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getMinimumSize().depth).isEqualTo(4.0f);
-
-        // If size <= zero size, don't set.
-        resizableComponent.setMinimumSize(new Dimensions(-0.01f, 1f, 1f));
-        resizableComponent.setMinimumSize(new Dimensions(1f, -0.01f, 1f));
-        resizableComponent.setMinimumSize(new Dimensions(1f, 1f, -0.01f));
-
-        assertThat(resizableComponent.getMinimumSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getMinimumSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getMinimumSize().depth).isEqualTo(4.0f);
-
-        // If size >= maxSize, don't set.
-        resizableComponent.setMinimumSize(new Dimensions(6f, 1f, 1f));
-        resizableComponent.setMinimumSize(new Dimensions(1f, 6f, 1f));
-        resizableComponent.setMinimumSize(new Dimensions(1f, 1f, 6f));
-
-        assertThat(resizableComponent.getMinimumSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getMinimumSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getMinimumSize().depth).isEqualTo(4.0f);
-    }
-
-    @Test
-    public void setMinimumSizeOnResizableComponent_setsMinimumSizeOnNodeReformOptions() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
-
-        resizableComponent.setMinimumSize(DEFAULT_SIZE);
-
-        assertThat(options.getMinimumSize().x).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(options.getMinimumSize().y).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(options.getMinimumSize().z).isEqualTo(DEFAULT_SIZE.depth);
-    }
-
-    @Test
-    public void getMaximumSizeOnResizableComponent_returnsOnCreateSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
-
-        assertThat(resizableComponent).isNotNull();
-        assertThat(resizableComponent.getMaximumSize().width).isEqualTo(MAX_DIMENSIONS.width);
-        assertThat(resizableComponent.getMaximumSize().height).isEqualTo(MAX_DIMENSIONS.height);
-        assertThat(resizableComponent.getMaximumSize().depth).isEqualTo(MAX_DIMENSIONS.depth);
-    }
-
-    @Test
-    public void getMaximumSizeOnResizableComponent_invalidMaxSizeOnCreate_getsDefaultSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-        assertThat(entity).isNotNull();
-
-        // Create with NaN min size.
-        ResizableComponentImpl nanMaxSizeResizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        MIN_DIMENSIONS,
-                        new Dimensions(Float.NaN, Float.NaN, Float.NaN));
-
-        assertThat(nanMaxSizeResizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(nanMaxSizeResizableComponent)).isTrue();
-
-        assertThat(nanMaxSizeResizableComponent.getMaximumSize().width)
-                .isEqualTo(MAX_DIMENSIONS.width);
-        assertThat(nanMaxSizeResizableComponent.getMaximumSize().height)
-                .isEqualTo(MAX_DIMENSIONS.height);
-        assertThat(nanMaxSizeResizableComponent.getMaximumSize().depth)
-                .isEqualTo(MAX_DIMENSIONS.depth);
-
-        // Create with maxSize <= minSize.
-        ResizableComponentImpl tooSmallResizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, DEFAULT_SIZE, DEFAULT_SIZE);
-        assertThat(tooSmallResizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(tooSmallResizableComponent)).isTrue();
-
-        assertThat(tooSmallResizableComponent.getMaximumSize().width)
-                .isEqualTo(MAX_DIMENSIONS.width);
-        assertThat(tooSmallResizableComponent.getMaximumSize().height)
-                .isEqualTo(MAX_DIMENSIONS.height);
-        assertThat(tooSmallResizableComponent.getMaximumSize().depth)
-                .isEqualTo(MAX_DIMENSIONS.depth);
-    }
-
-    @Test
-    public void setMaximumSizeOnResizableComponentMultipleTimes_returnsLastValidSize() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
-                        new Dimensions(5.0f, 5.0f, 5.0f)); // maxSize
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        resizableComponent.setMaximumSize(new Dimensions(2.0f, 3.0f, 4.0f));
-
-        assertThat(resizableComponent.getMaximumSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getMaximumSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getMaximumSize().depth).isEqualTo(4.0f);
-
-        // Set NaN size.
-        resizableComponent.setMaximumSize(new Dimensions(Float.NaN, 1.0f, 1.0f));
-        resizableComponent.setMaximumSize(new Dimensions(1.0f, Float.NaN, 1.0f));
-        resizableComponent.setMaximumSize(new Dimensions(1.0f, 1.0f, Float.NaN));
-
-        assertThat(resizableComponent.getMaximumSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getMaximumSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getMaximumSize().depth).isEqualTo(4.0f);
-
-        // If size <= minSize, don't set.
-        resizableComponent.setMaximumSize(new Dimensions(0.1f, 1.0f, 1.0f));
-        resizableComponent.setMaximumSize(new Dimensions(1.0f, 0.1f, 1.0f));
-        resizableComponent.setMaximumSize(new Dimensions(1.0f, 1.0f, 0.1f));
-
-        assertThat(resizableComponent.getMaximumSize().width).isEqualTo(2.0f);
-        assertThat(resizableComponent.getMaximumSize().height).isEqualTo(3.0f);
-        assertThat(resizableComponent.getMaximumSize().depth).isEqualTo(4.0f);
-    }
-
-    @Test
-    public void setMaximumSizeOnResizableComponent_setsMaximumSizeOnNodeReformOptions() {
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-
-        assertThat(entity).isNotNull();
-
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
-
-        assertThat(resizableComponent).isNotNull();
-
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
-
-        resizableComponent.setMaximumSize(DEFAULT_SIZE);
-
-        assertThat(options.getMaximumSize().x).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(options.getMaximumSize().y).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(options.getMaximumSize().z).isEqualTo(DEFAULT_SIZE.depth);
+        resizableComponent.setMaximumSize(inputMax);
+
+        assertThat(options.getMinimumSize().x).isEqualTo(expectMin.width);
+        assertThat(options.getMinimumSize().y).isEqualTo(expectMin.height);
+        assertThat(options.getMinimumSize().z).isEqualTo(expectMin.depth);
+        assertThat(resizableComponent.getMinimumSize().width).isEqualTo(expectMin.width);
+        assertThat(resizableComponent.getMinimumSize().height).isEqualTo(expectMin.height);
+        assertThat(resizableComponent.getMinimumSize().depth).isEqualTo(expectMin.depth);
+        assertThat(options.getMaximumSize().x).isEqualTo(expectMax.width);
+        assertThat(options.getMaximumSize().y).isEqualTo(expectMax.height);
+        assertThat(options.getMaximumSize().z).isEqualTo(expectMax.depth);
+        assertThat(resizableComponent.getMaximumSize().width).isEqualTo(expectMax.width);
+        assertThat(resizableComponent.getMaximumSize().height).isEqualTo(expectMax.height);
+        assertThat(resizableComponent.getMaximumSize().depth).isEqualTo(expectMax.depth);
     }
 
     @Test
@@ -1093,12 +814,7 @@ public class ResizableComponentImplTest {
 
         MovableComponentImpl movableComponent =
                 new MovableComponentImpl(
-                        true,
-                        true,
-                        false,
-                        mActivitySpaceImpl,
-                        mPanelShadowRenderer,
-                        mFakeExecutor);
+                        true, true, false, mActivitySpaceImpl, mPanelShadowRenderer, mFakeExecutor);
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
                         mFakeExecutor,
@@ -1120,12 +836,7 @@ public class ResizableComponentImplTest {
 
         MovableComponentImpl movableComponent =
                 new MovableComponentImpl(
-                        true,
-                        true,
-                        false,
-                        mActivitySpaceImpl,
-                        mPanelShadowRenderer,
-                        mFakeExecutor);
+                        true, true, false, mActivitySpaceImpl, mPanelShadowRenderer, mFakeExecutor);
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
                         mFakeExecutor,
@@ -1180,12 +891,7 @@ public class ResizableComponentImplTest {
 
         MovableComponentImpl movableComponent =
                 new MovableComponentImpl(
-                        true,
-                        true,
-                        false,
-                        mActivitySpaceImpl,
-                        mPanelShadowRenderer,
-                        mFakeExecutor);
+                        true, true, false, mActivitySpaceImpl, mPanelShadowRenderer, mFakeExecutor);
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
                         mFakeExecutor,
@@ -1475,8 +1181,8 @@ public class ResizableComponentImplTest {
     }
 
     @Test
-    public void resizableComponent_withNaNSize_useDefaultSizeAfterResize() {
-        // Arrange
+    public void resizableComponent_onResizeEvent_proposeSanitizedAndClampedSize() {
+        // Setup
         AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
         ResizableComponentImpl resizableComponent =
                 new ResizableComponentImpl(
@@ -1490,20 +1196,21 @@ public class ResizableComponentImplTest {
 
         ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
         // Set an initial valid size for the component.
-        resizableComponent.setSize(new Dimensions(1.0f, 2.0f, 3.0f));
+        resizableComponent.setSize(new Dimensions(2.0f, 3.0f, 4.0f));
 
         // Verify initial state.
-        assertThat(options.getCurrentSize().x).isEqualTo(1.0f);
-        assertThat(options.getCurrentSize().y).isEqualTo(2.0f);
-        assertThat(options.getCurrentSize().z).isEqualTo(3.0f);
+        assertThat(options.getCurrentSize().x).isEqualTo(2.0f);
+        assertThat(options.getCurrentSize().y).isEqualTo(3.0f);
+        assertThat(options.getCurrentSize().z).isEqualTo(4.0f);
 
         ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
         resizableComponent.addResizeEventListener(directExecutor(), mockResizeEventListener);
 
         // 1. Send a START resize event.
-        sendAndProcessReformEvent(
-                entity.getNode(),
-                ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_START, 0));
+        ReformEvent startReformEvent =
+                ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_START, 0);
+        ShadowReformEvent.extract(startReformEvent).setProposedSize(new Vec3(3.0f, 4.0f, 5.0f));
+        sendAndProcessReformEvent(entity.getNode(), startReformEvent);
 
         // Capture all ResizeEvent arguments in a single verification.
         ArgumentCaptor<ResizeEvent> resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
@@ -1516,18 +1223,18 @@ public class ResizableComponentImplTest {
         assertThat(capturedEvents.get(0).getResizeState())
                 .isEqualTo(ResizeEvent.RESIZE_STATE_START);
         // Use the default ReformOptions size when resizing start.
-        assertThat(options.getCurrentSize().x).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(options.getCurrentSize().y).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(options.getCurrentSize().z).isEqualTo(DEFAULT_SIZE.depth);
-        assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(DEFAULT_SIZE.depth);
+        assertThat(options.getCurrentSize().x).isEqualTo(3.0f);
+        assertThat(options.getCurrentSize().y).isEqualTo(4.0f);
+        assertThat(options.getCurrentSize().z).isEqualTo(5.0f);
+        assertThat(resizableComponent.getSize().width).isEqualTo(3.0f);
+        assertThat(resizableComponent.getSize().height).isEqualTo(4.0f);
+        assertThat(resizableComponent.getSize().depth).isEqualTo(5.0f);
 
         // 2. Send an END resize event with a NaN width.
         ReformEvent endEventNanWidth =
                 ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_END, 0);
         ShadowReformEvent.extract(endEventNanWidth)
-                .setProposedSize(new Vec3(Float.NaN, 5.0f, 6.0f));
+                .setProposedSize(new Vec3(Float.NaN, 0.0f, 20.0f));
         sendAndProcessReformEvent(entity.getNode(), endEventNanWidth);
 
         resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
@@ -1538,14 +1245,14 @@ public class ResizableComponentImplTest {
 
         // Event 2: RESIZE_STATE_END (NaN width proposed)
         assertThat(capturedEvents.get(1).getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        // When a non-well-formed size is proposed, ResizableComponentImpl defaults
-        // to DEFAULT_SIZE (1.0, 1.0, 1.0).
-        assertThat(options.getCurrentSize().x).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(options.getCurrentSize().y).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(options.getCurrentSize().z).isEqualTo(DEFAULT_SIZE.depth);
-        assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(DEFAULT_SIZE.depth);
+        // When received invalid size from event, for NaN, propose a fallback previous value,
+        // for value out of min/max, propose clamped value.
+        assertThat(options.getCurrentSize().x).isEqualTo(3.0f);
+        assertThat(options.getCurrentSize().y).isEqualTo(0.5f);
+        assertThat(options.getCurrentSize().z).isEqualTo(10.0f);
+        assertThat(resizableComponent.getSize().width).isEqualTo(3.0f);
+        assertThat(resizableComponent.getSize().height).isEqualTo(0.5f);
+        assertThat(resizableComponent.getSize().depth).isEqualTo(10.0f);
 
         // 3. Send an END resize event with a NaN height.
         ReformEvent endEventNanHeight =
@@ -1563,13 +1270,13 @@ public class ResizableComponentImplTest {
 
         // Event 3: RESIZE_STATE_END (NaN height proposed)
         assertThat(capturedEvents.get(2).getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        // The size should still be the default size.
-        assertThat(options.getCurrentSize().x).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(options.getCurrentSize().y).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(options.getCurrentSize().z).isEqualTo(DEFAULT_SIZE.depth);
-        assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(DEFAULT_SIZE.depth);
+        // Propose sanitized and clamped size
+        assertThat(options.getCurrentSize().x).isEqualTo(4.0f);
+        assertThat(options.getCurrentSize().y).isEqualTo(0.5f);
+        assertThat(options.getCurrentSize().z).isEqualTo(6.0f);
+        assertThat(resizableComponent.getSize().width).isEqualTo(4.0f);
+        assertThat(resizableComponent.getSize().height).isEqualTo(0.5f);
+        assertThat(resizableComponent.getSize().depth).isEqualTo(6.0f);
 
         // 4. Send an END resize event with a NaN depth.
         ReformEvent endEventNanDepth =
@@ -1587,178 +1294,7 @@ public class ResizableComponentImplTest {
 
         // Event 4: RESIZE_STATE_END (NaN depth proposed)
         assertThat(capturedEvents.get(3).getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        // The size should still be the default size.
-        assertThat(options.getCurrentSize().x).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(options.getCurrentSize().y).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(options.getCurrentSize().z).isEqualTo(DEFAULT_SIZE.depth);
-        assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(DEFAULT_SIZE.depth);
-    }
-
-    @Test
-    public void resizableComponent_withTooSmallSize_useLastValidSizeAfterResize() {
-        // Arrange
-        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
-        ResizableComponentImpl resizableComponent =
-                new ResizableComponentImpl(
-                        mFakeExecutor,
-                        mXrExtensions,
-                        new Dimensions(0.5f, 0.5f, 0.5f), // minSize
-                        new Dimensions(10.0f, 10.0f, 10.0f)); // maxSize
-
-        assertThat(resizableComponent).isNotNull();
-        assertThat(entity.addComponent(resizableComponent)).isTrue();
-
-        ReformOptions options = mNodeRepository.getReformOptions(entity.getNode());
-        // Set an initial valid size for the component
-        resizableComponent.setSize(new Dimensions(1.0f, 2.0f, 3.0f));
-
-        // Verify initial state
-        assertThat(options.getCurrentSize().x).isEqualTo(1.0f);
-        assertThat(options.getCurrentSize().y).isEqualTo(2.0f);
-        assertThat(options.getCurrentSize().z).isEqualTo(3.0f);
-
-        ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
-        resizableComponent.addResizeEventListener(directExecutor(), mockResizeEventListener);
-
-        // Act
-        // 1. Send a START resize event
-        sendAndProcessReformEvent(
-                entity.getNode(),
-                ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_START, 0));
-
-        // Capture all ResizeEvent arguments in a single verification
-        ArgumentCaptor<ResizeEvent> resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
-
-        verify(mockResizeEventListener, times(1)).onResizeEvent(resizeEventCaptor.capture());
-
-        List<ResizeEvent> capturedEvents = resizeEventCaptor.getAllValues();
-
-        // Event 1: RESIZE_STATE_START
-        assertThat(capturedEvents.get(0).getResizeState())
-                .isEqualTo(ResizeEvent.RESIZE_STATE_START);
-        // Use the default ReformOptions size when resizing start.
-        assertThat(options.getCurrentSize().x).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(options.getCurrentSize().y).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(options.getCurrentSize().z).isEqualTo(DEFAULT_SIZE.depth);
-        assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(DEFAULT_SIZE.depth);
-
-        // 2. Send an END resize event with an invalid (zero) proposed size
-        ReformEvent endReformEventWithZeroSize =
-                ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_END, 0);
-        ShadowReformEvent.extract(endReformEventWithZeroSize)
-                .setProposedSize(new Vec3(0.0f, 0.0f, 0.0f));
-        sendAndProcessReformEvent(entity.getNode(), endReformEventWithZeroSize);
-
-        // Capture all ResizeEvent arguments in a single verification
-        resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
-
-        verify(mockResizeEventListener, times(2)).onResizeEvent(resizeEventCaptor.capture());
-
-        capturedEvents = resizeEventCaptor.getAllValues();
-
-        // Event 2: RESIZE_STATE_END (invalid zero size proposed)
-        assertThat(capturedEvents.get(1).getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        // When an invalid size is proposed via ReformEvent, ResizableComponentImpl
-        // currently defaults to DEFAULT_SIZE (1.0, 1.0, 1.0)
-        assertThat(options.getCurrentSize().x).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(options.getCurrentSize().y).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(options.getCurrentSize().z).isEqualTo(DEFAULT_SIZE.depth);
-        assertThat(resizableComponent.getSize().width).isEqualTo(DEFAULT_SIZE.width);
-        assertThat(resizableComponent.getSize().height).isEqualTo(DEFAULT_SIZE.height);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(DEFAULT_SIZE.depth);
-
-        // 3. Send an END resize event with a valid proposed size
-        ReformEvent endReformEventValid =
-                ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_END, 0);
-        ShadowReformEvent.extract(endReformEventValid).setProposedSize(new Vec3(4.0f, 5.0f, 6.0f));
-        sendAndProcessReformEvent(entity.getNode(), endReformEventValid);
-
-        // Capture all ResizeEvent arguments in a single verification
-        resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
-
-        verify(mockResizeEventListener, times(3)).onResizeEvent(resizeEventCaptor.capture());
-
-        capturedEvents = resizeEventCaptor.getAllValues();
-
-        // Event 3: RESIZE_STATE_END (valid size proposed)
-        assertThat(capturedEvents.get(2).getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        // Component and Node size should update to the newly proposed valid size
-        assertThat(options.getCurrentSize().x).isEqualTo(4.0f);
-        assertThat(options.getCurrentSize().y).isEqualTo(5.0f);
-        assertThat(options.getCurrentSize().z).isEqualTo(6.0f);
-        assertThat(resizableComponent.getSize().width).isEqualTo(4.0f);
-        assertThat(resizableComponent.getSize().height).isEqualTo(5.0f);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(6.0f);
-
-        // 4. Send an END resize event with an invalid (width too small) proposed size
-        ReformEvent endReformEventWidthTooSmall =
-                ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_END, 0);
-        ShadowReformEvent.extract(endReformEventWidthTooSmall)
-                .setProposedSize(new Vec3(0.0f, 3.0f, 4.0f));
-        sendAndProcessReformEvent(entity.getNode(), endReformEventWidthTooSmall);
-
-        // Capture all ResizeEvent arguments in a single verification
-        resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
-
-        verify(mockResizeEventListener, times(4)).onResizeEvent(resizeEventCaptor.capture());
-
-        capturedEvents = resizeEventCaptor.getAllValues();
-
-        // Event 4: RESIZE_STATE_END (invalid width too small proposed)
-        assertThat(capturedEvents.get(3).getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        // Component and Node size should retain the last valid size (4.0, 5.0, 6.0)
-        assertThat(options.getCurrentSize().x).isEqualTo(4.0f);
-        assertThat(options.getCurrentSize().y).isEqualTo(5.0f);
-        assertThat(options.getCurrentSize().z).isEqualTo(6.0f);
-        assertThat(resizableComponent.getSize().width).isEqualTo(4.0f);
-        assertThat(resizableComponent.getSize().height).isEqualTo(5.0f);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(6.0f);
-
-        // 5. Send an END resize event with an invalid (height too small) proposed size
-        ReformEvent endReformEventHeightTooSmall =
-                ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_END, 0);
-        ShadowReformEvent.extract(endReformEventHeightTooSmall)
-                .setProposedSize(new Vec3(2.0f, 0.0f, 4.0f));
-        sendAndProcessReformEvent(entity.getNode(), endReformEventHeightTooSmall);
-
-        // Capture all ResizeEvent arguments in a single verification
-        resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
-
-        verify(mockResizeEventListener, times(5)).onResizeEvent(resizeEventCaptor.capture());
-
-        capturedEvents = resizeEventCaptor.getAllValues();
-
-        // Event 5: RESIZE_STATE_END (invalid height too small proposed)
-        assertThat(capturedEvents.get(4).getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        // Component and Node size should retain the last valid size (4.0, 5.0, 6.0)
-        assertThat(options.getCurrentSize().x).isEqualTo(4.0f);
-        assertThat(options.getCurrentSize().y).isEqualTo(5.0f);
-        assertThat(options.getCurrentSize().z).isEqualTo(6.0f);
-        assertThat(resizableComponent.getSize().width).isEqualTo(4.0f);
-        assertThat(resizableComponent.getSize().height).isEqualTo(5.0f);
-        assertThat(resizableComponent.getSize().depth).isEqualTo(6.0f);
-
-        // 6. Send an END resize event with an invalid (depth too small) proposed size
-        ReformEvent endReformEventDepthTooSmall =
-                ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_END, 0);
-        ShadowReformEvent.extract(endReformEventDepthTooSmall)
-                .setProposedSize(new Vec3(2.0f, 3.0f, 0.0f));
-        sendAndProcessReformEvent(entity.getNode(), endReformEventDepthTooSmall);
-
-        // Capture all ResizeEvent arguments in a single verification
-        resizeEventCaptor = ArgumentCaptor.forClass(ResizeEvent.class);
-
-        verify(mockResizeEventListener, times(6)).onResizeEvent(resizeEventCaptor.capture());
-
-        capturedEvents = resizeEventCaptor.getAllValues();
-
-        // Event 6: RESIZE_STATE_END (invalid depth too small proposed)
-        assertThat(capturedEvents.get(5).getResizeState()).isEqualTo(ResizeEvent.RESIZE_STATE_END);
-        // Component and Node size should retain the last valid size (4.0, 5.0, 6.0)
+        // Propose sanitized and clamped size
         assertThat(options.getCurrentSize().x).isEqualTo(4.0f);
         assertThat(options.getCurrentSize().y).isEqualTo(5.0f);
         assertThat(options.getCurrentSize().z).isEqualTo(6.0f);
@@ -1867,5 +1403,31 @@ public class ResizableComponentImplTest {
         assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.9f);
         // The resize event listener should not be called again for a move event.
         verify(mockResizeEventListener, times(1)).onResizeEvent(any());
+    }
+
+    @Test
+    public void resizableComponent_restoresAlphaOnDetachWhenHidden() {
+        AndroidXrEntity entity = (AndroidXrEntity) createTestEntity();
+        ResizableComponentImpl resizableComponent =
+                new ResizableComponentImpl(
+                        mFakeExecutor, mXrExtensions, MIN_DIMENSIONS, MAX_DIMENSIONS);
+        assertThat(entity.addComponent(resizableComponent)).isTrue();
+        entity.setAlpha(0.9f);
+        ResizeEventListener mockResizeEventListener = mock(ResizeEventListener.class);
+        resizableComponent.addResizeEventListener(directExecutor(), mockResizeEventListener);
+
+        // Start a resize event to hide the content.
+        sendAndProcessReformEvent(
+                entity.getNode(),
+                ShadowReformEvent.create(REFORM_TYPE_RESIZE, REFORM_STATE_START, 0));
+
+        // Verify content is hidden.
+        assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.0f);
+
+        // Detach the component.
+        entity.removeComponent(resizableComponent);
+
+        // Verify alpha is restored.
+        assertThat(mNodeRepository.getAlpha(entity.getNode())).isEqualTo(0.9f);
     }
 }

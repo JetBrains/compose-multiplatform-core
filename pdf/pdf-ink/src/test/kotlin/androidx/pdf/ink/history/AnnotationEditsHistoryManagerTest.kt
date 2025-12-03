@@ -43,8 +43,8 @@ class AnnotationEditsHistoryManagerTest {
 
         historyManager.recordAdd(editId, annotation)
 
-        assertThat(historyManager.canUndo()).isTrue()
-        assertThat(historyManager.canRedo()).isFalse()
+        assertThat(historyManager.canUndo.value).isTrue()
+        assertThat(historyManager.canRedo.value).isFalse()
     }
 
     @Test
@@ -54,8 +54,8 @@ class AnnotationEditsHistoryManagerTest {
 
         historyManager.recordRemove(editId, annotation)
 
-        assertThat(historyManager.canUndo()).isTrue()
-        assertThat(historyManager.canRedo()).isFalse()
+        assertThat(historyManager.canUndo.value).isTrue()
+        assertThat(historyManager.canRedo.value).isFalse()
     }
 
     @Test
@@ -65,8 +65,8 @@ class AnnotationEditsHistoryManagerTest {
 
         historyManager.recordUpdate(editId, annotation)
 
-        assertThat(historyManager.canUndo()).isTrue()
-        assertThat(historyManager.canRedo()).isFalse()
+        assertThat(historyManager.canUndo.value).isTrue()
+        assertThat(historyManager.canRedo.value).isFalse()
     }
 
     @Test
@@ -79,8 +79,8 @@ class AnnotationEditsHistoryManagerTest {
 
         assertThat(undoneOperation).isNotNull()
         assertThat(undoneOperation?.op).isEqualTo(EditOperation.Remove)
-        assertThat(historyManager.canUndo()).isFalse()
-        assertThat(historyManager.canRedo()).isTrue()
+        assertThat(historyManager.canUndo.value).isFalse()
+        assertThat(historyManager.canRedo.value).isTrue()
     }
 
     @Test
@@ -94,8 +94,8 @@ class AnnotationEditsHistoryManagerTest {
 
         assertThat(redoneOperation).isNotNull()
         assertThat(redoneOperation?.op).isEqualTo(EditOperation.Add)
-        assertThat(historyManager.canUndo()).isTrue()
-        assertThat(historyManager.canRedo()).isFalse()
+        assertThat(historyManager.canUndo.value).isTrue()
+        assertThat(historyManager.canRedo.value).isFalse()
     }
 
     @Test
@@ -107,8 +107,8 @@ class AnnotationEditsHistoryManagerTest {
 
         historyManager.clear()
 
-        assertThat(historyManager.canUndo()).isFalse()
-        assertThat(historyManager.canRedo()).isFalse()
+        assertThat(historyManager.canUndo.value).isFalse()
+        assertThat(historyManager.canRedo.value).isFalse()
     }
 
     @Test
@@ -121,9 +121,9 @@ class AnnotationEditsHistoryManagerTest {
 
         // Undo should only be possible 20 times (the max size)
         for (i in 1..20) {
-            assertThat(historyManager.canUndo()).isTrue()
+            assertThat(historyManager.canUndo.value).isTrue()
             historyManager.undo()
         }
-        assertThat(historyManager.canUndo()).isFalse()
+        assertThat(historyManager.canUndo.value).isFalse()
     }
 }

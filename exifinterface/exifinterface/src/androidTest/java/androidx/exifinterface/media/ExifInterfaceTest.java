@@ -339,6 +339,17 @@ public class ExifInterfaceTest {
 
     @Test
     @LargeTest
+    public void testJpegWithFillBytes() throws Throwable {
+        // Fill bytes are added before APP1 and SOS markers.
+        File imageFile =
+                copyFromResourceToFile(
+                        R.raw.jpeg_with_fill_bytes, "jpeg_with_fill_bytes.jpg");
+        readFromFilesWithExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_BYTES);
+        testWritingExif(imageFile, ExpectedAttributes.JPEG_WITH_FILL_BYTES);
+    }
+
+    @Test
+    @LargeTest
     public void testDngWithExifAndXmp() throws Throwable {
         File imageFile =
                 copyFromResourceToFile(R.raw.dng_with_exif_with_xmp, "dng_with_exif_with_xmp.dng");

@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
  * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
  *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
  *   need to use Modifier.overscroll separately.
+ * @param flingBehavior logic describing fling and snapping behavior when drag has finished.
  * @param reverseLayout reverses the direction of scrolling and layout.
  * @param horizontalAlignment aligns items horizontally.
  * @param verticalArrangement is arrangement for items. This only applies if the content is smaller
@@ -64,6 +65,7 @@ public fun VerticalList(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     userScrollEnabled: Boolean = true,
     overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
+    flingBehavior: FlingBehavior = rememberSnapFlingBehavior(state),
     reverseLayout: Boolean = false,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
@@ -77,6 +79,7 @@ public fun VerticalList(
         contentPadding = contentPadding,
         userScrollEnabled = userScrollEnabled,
         overscrollEffect = overscrollEffect,
+        flingBehavior = flingBehavior,
         horizontalAlignment = horizontalAlignment,
         verticalArrangement = verticalArrangement,
         verticalAlignment = null,

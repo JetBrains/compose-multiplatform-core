@@ -18,12 +18,12 @@ plugins {
     id("AndroidXPlugin")
     id("com.android.application")
     id("AndroidXComposePlugin")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     namespace = "androidx.core.telecom.reference"
-
+    compileSdk = 36
+    compileSdkMinor = 1
     defaultConfig {
         applicationId = "androidx.core.telecom.reference"
         minSdk = 26

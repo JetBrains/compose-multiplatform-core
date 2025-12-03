@@ -32,12 +32,6 @@ public sealed interface PdfFragmentUiState {
     public object Loading : PdfFragmentUiState
 
     /**
-     * Indicates that the PDF document is being updated with edits (e.g., annotations, form
-     * filling).
-     */
-    public object SavingEdits : PdfFragmentUiState
-
-    /**
      * Indicates that the PDF document has been loaded successfully.
      *
      * @property pdfDocument The loaded PDF document.

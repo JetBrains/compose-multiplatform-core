@@ -35,13 +35,16 @@ import static androidx.appsearch.testutil.AppSearchTestUtils.generateRandomBytes
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.when;
 
+import android.accounts.Account;
 import android.content.Context;
 import android.os.ParcelFileDescriptor;
 
+import androidx.appsearch.app.AppSearchAccount;
 import androidx.appsearch.app.AppSearchBatchResult;
 import androidx.appsearch.app.AppSearchBlobHandle;
 import androidx.appsearch.app.AppSearchResult;
@@ -187,7 +190,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 mUnlimitedConfig,
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
@@ -486,6 +489,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -545,6 +549,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -640,6 +645,7 @@ public class AppSearchImplTest {
                 "database1",
                 Collections.singletonList(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -921,7 +927,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -938,6 +944,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1066,6 +1073,7 @@ public class AppSearchImplTest {
                 "database1",
                 Collections.singletonList(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1238,6 +1246,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -1356,7 +1365,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 appSearchConfig,
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
@@ -1370,6 +1379,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -1434,6 +1444,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1476,6 +1487,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1531,6 +1543,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1591,6 +1604,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1605,6 +1619,7 @@ public class AppSearchImplTest {
                 "database2",
                 schema2,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1662,6 +1677,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1676,6 +1692,7 @@ public class AppSearchImplTest {
                 "database2",
                 schema2,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1752,7 +1769,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -1767,6 +1784,7 @@ public class AppSearchImplTest {
                 "database1",
                 personSchema,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1786,6 +1804,7 @@ public class AppSearchImplTest {
                 "database2",
                 callSchema,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1800,6 +1819,7 @@ public class AppSearchImplTest {
                 "database3",
                 textSchema,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1940,7 +1960,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -1964,6 +1984,7 @@ public class AppSearchImplTest {
                 "database1",
                 personAndCallSchema,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -1979,6 +2000,7 @@ public class AppSearchImplTest {
                 "database2",
                 callSchema,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2150,6 +2172,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2215,6 +2238,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2269,6 +2293,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2332,6 +2357,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2399,6 +2425,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2464,6 +2491,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2498,6 +2526,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2556,6 +2585,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2625,6 +2655,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2686,6 +2717,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2758,6 +2790,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2824,6 +2857,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2872,6 +2906,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -2941,6 +2976,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -3010,6 +3046,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -3085,6 +3122,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -3156,6 +3194,7 @@ public class AppSearchImplTest {
                 "database1",
                 schema1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -3250,7 +3289,8 @@ public class AppSearchImplTest {
                         "package",
                         "database1",
                         schemas,
-                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         schemaStatsBuilder,
@@ -3295,7 +3335,8 @@ public class AppSearchImplTest {
                         "package",
                         "database1",
                         schemas,
-                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         schemaStatsBuilder,
@@ -3312,7 +3353,8 @@ public class AppSearchImplTest {
                         "package",
                         "database1",
                         schemas,
-                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         schemaStatsBuilder,
@@ -3349,7 +3391,8 @@ public class AppSearchImplTest {
                         "package",
                         "database1",
                         schemas,
-                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         schemaStatsBuilder,
@@ -3366,6 +3409,7 @@ public class AppSearchImplTest {
                         "database1",
                         schemas,
                         Collections.singletonList(visibilityConfig),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         schemaStatsBuilder,
@@ -3417,7 +3461,8 @@ public class AppSearchImplTest {
                         "package",
                         "database1",
                         oldSchemas,
-                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         schemaStatsBuilder,
@@ -3438,7 +3483,8 @@ public class AppSearchImplTest {
                         "package",
                         "database1",
                         newSchemas,
-                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ true,
                         /* version= */ 0,
                         schemaStatsBuilder,
@@ -3466,6 +3512,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -3503,6 +3550,7 @@ public class AppSearchImplTest {
                         "database1",
                         finalSchemas,
                         /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /*forceOverride=*/ false,
                         /*version=*/ 0,
                         /* setSchemaStatsBuilder= */ null,
@@ -3519,6 +3567,7 @@ public class AppSearchImplTest {
                 "database1",
                 finalSchemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -3560,6 +3609,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -3570,6 +3620,7 @@ public class AppSearchImplTest {
                 "database2",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -3617,6 +3668,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -3661,7 +3713,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -3698,7 +3750,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -3738,7 +3790,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -3778,7 +3830,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -3815,7 +3867,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -3867,7 +3919,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -3908,7 +3960,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -3934,7 +3986,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -3963,7 +4015,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -4012,7 +4064,7 @@ public class AppSearchImplTest {
                                 return 1L;
                             }
                         }),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -4063,7 +4115,7 @@ public class AppSearchImplTest {
                                 return 1L;
                             }
                         }),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -4096,6 +4148,7 @@ public class AppSearchImplTest {
                 "db1",
                 ImmutableList.of(schema),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4148,7 +4201,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -4199,7 +4252,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -4232,7 +4285,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -4292,7 +4345,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
@@ -4325,7 +4378,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -4478,7 +4531,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker,
                 /*revocableFileDescriptorStore=*/ null,
@@ -4508,7 +4561,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -4578,7 +4631,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -4664,6 +4717,7 @@ public class AppSearchImplTest {
                 "database",
                 schema,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4731,6 +4785,7 @@ public class AppSearchImplTest {
                 "database",
                 schema,
                 /*visibilityConfigs=*/ ImmutableList.of(visibilityConfig),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4741,6 +4796,7 @@ public class AppSearchImplTest {
                 "database",
                 schema,
                 /*visibilityConfigs=*/ ImmutableList.of(visibilityConfig),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4834,6 +4890,7 @@ public class AppSearchImplTest {
                     databaseName,
                     schema,
                     /*visibilityConfigs=*/ ImmutableList.of(visibilityConfig),
+                    /*accountPropertyPaths=*/ ImmutableMap.of(),
                     /*forceOverride=*/ false,
                     /*version=*/ 0,
                     /* setSchemaStatsBuilder= */ null,
@@ -4906,6 +4963,7 @@ public class AppSearchImplTest {
                 "package1", "database1",
                 Collections.singletonList(new AppSearchSchema.Builder("schema").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4920,6 +4978,7 @@ public class AppSearchImplTest {
                 "package1", "database2",
                 Collections.singletonList(new AppSearchSchema.Builder("schema").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4934,6 +4993,7 @@ public class AppSearchImplTest {
                 "package2", "database1",
                 Collections.singletonList(new AppSearchSchema.Builder("schema").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4958,6 +5018,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4968,6 +5029,7 @@ public class AppSearchImplTest {
                 "database2",
                 schemas2,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4978,6 +5040,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas3,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -4999,7 +5062,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -5017,6 +5080,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas1,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5027,6 +5091,7 @@ public class AppSearchImplTest {
                 "database2",
                 schemas2,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5037,6 +5102,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas3,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5065,6 +5131,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5180,6 +5247,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5207,6 +5275,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5230,6 +5299,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5298,6 +5368,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5323,6 +5394,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5347,6 +5419,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5357,6 +5430,7 @@ public class AppSearchImplTest {
                 "database2",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5418,7 +5492,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -5545,6 +5619,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5559,6 +5634,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5647,6 +5723,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5713,6 +5790,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5817,6 +5895,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5924,6 +6003,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -5990,6 +6070,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -6095,6 +6176,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -6203,6 +6285,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -6250,7 +6333,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -6263,6 +6346,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -6314,6 +6398,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -6360,7 +6445,7 @@ public class AppSearchImplTest {
                 mAppSearchDir,
                 new AppSearchConfigImpl(new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(mUnlimitedConfig),
@@ -6373,6 +6458,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -6445,6 +6531,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 setSchemaStatsBuilder,
@@ -6540,6 +6627,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 setSchemaStatsBuilder,
@@ -6629,6 +6717,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 setSchemaStatsBuilder,
@@ -6939,6 +7028,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -7083,7 +7173,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -7097,6 +7187,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -7184,7 +7275,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -7198,6 +7289,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -7262,7 +7354,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -7318,7 +7410,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -7332,6 +7424,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -7459,7 +7552,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -7473,6 +7566,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -7483,6 +7577,7 @@ public class AppSearchImplTest {
                 "database2",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -7493,6 +7588,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -7503,6 +7599,7 @@ public class AppSearchImplTest {
                 "database2",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -7581,7 +7678,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -7659,7 +7756,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -7680,6 +7777,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -7845,7 +7943,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -7862,6 +7960,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -7951,7 +8050,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -7968,6 +8067,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8029,7 +8129,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -8096,7 +8196,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -8151,7 +8251,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -8165,6 +8265,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8227,7 +8328,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -8241,6 +8342,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8251,6 +8353,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8261,6 +8364,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8365,7 +8469,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -8379,6 +8483,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8454,7 +8559,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -8468,6 +8573,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8478,6 +8584,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8595,7 +8702,7 @@ public class AppSearchImplTest {
                         return getMaxDocumentSizeBytes();
                     }
                 }, new LocalStorageIcingOptionsConfig()),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -8630,6 +8737,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8640,6 +8748,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -8751,7 +8860,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 tempFolder,
                 config,
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(config),
                 /*icingSearchEngine=*/ null,
@@ -8824,7 +8933,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 tempFolder,
                 config,
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null, /*visibilityChecker=*/ null,
                 new JetpackRevocableFileDescriptorStore(config),
                 /*icingSearchEngine=*/ null,
@@ -8931,6 +9040,7 @@ public class AppSearchImplTest {
                 "database1",
                 /*schemas=*/ImmutableList.of(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/false,
                 /*version=*/0,
                 /* setSchemaStatsBuilder= */null,
@@ -9010,7 +9120,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -9021,6 +9131,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9069,7 +9180,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -9080,6 +9191,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9126,7 +9238,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -9137,6 +9249,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9197,7 +9310,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -9208,6 +9321,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9271,6 +9385,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ ImmutableList.of(visibilityConfig),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9317,6 +9432,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas1,
                 /*visibilityConfigs=*/ ImmutableList.of(visibilityConfig1),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9361,6 +9477,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas2,
                 /*visibilityConfigs=*/ ImmutableList.of(visibilityConfig2),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9424,6 +9541,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ ImmutableList.of(visibilityConfig),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9456,6 +9574,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ ImmutableList.of(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9494,6 +9613,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ ImmutableList.of(visibilityConfig),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9526,6 +9646,7 @@ public class AppSearchImplTest {
                 "database1",
                 /*schemas=*/ new ArrayList<>(),
                 /*visibilityConfigs=*/ ImmutableList.of(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9537,6 +9658,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ ImmutableList.of(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -9571,6 +9693,7 @@ public class AppSearchImplTest {
                 "databaseName",
                 schemas,
                 ImmutableList.of(visibilityConfig),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -9585,7 +9708,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
@@ -9619,8 +9742,9 @@ public class AppSearchImplTest {
         internalSetSchemaResponse = mAppSearchImpl.setSchema(
                 "packageName",
                 "databaseName",
-                ImmutableList.of(),
-                ImmutableList.of(),
+                /*schemas=*/ ImmutableList.of(),
+                /*visibilityConfigs=*/ ImmutableList.of(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -9635,7 +9759,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
@@ -9672,7 +9796,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -9686,6 +9810,7 @@ public class AppSearchImplTest {
                 /*visibilityConfigs=*/ImmutableList.of(
                         new InternalVisibilityConfig.Builder("Type")
                                 .setNotDisplayedBySystem(true).build()),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/false,
                 /*version=*/0,
                 /* setSchemaStatsBuilder= */null,
@@ -9710,6 +9835,7 @@ public class AppSearchImplTest {
                 "database",
                 Collections.singletonList(new AppSearchSchema.Builder("Type").build()),
                 /*visibilityConfigs=*/ImmutableList.of(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/false,
                 /*version=*/0,
                 /* setSchemaStatsBuilder= */null,
@@ -9736,6 +9862,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ImmutableList.of(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/false,
                 /*version=*/1,
                 /* setSchemaStatsBuilder= */null,
@@ -9790,7 +9917,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 mockVisibilityChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -9808,6 +9935,7 @@ public class AppSearchImplTest {
                         new InternalVisibilityConfig.Builder("PrivateType")
                                 .setNotDisplayedBySystem(true)
                                 .build()),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/false,
                 /*version=*/1,
                 /* setSchemaStatsBuilder= */null,
@@ -9869,7 +9997,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 publicAclMockChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -9889,6 +10017,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 visibilityConfigs,
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/true,
                 /*version=*/1,
                 /* setSchemaStatsBuilder= */null,
@@ -9970,7 +10099,7 @@ public class AppSearchImplTest {
                         new UnlimitedLimitConfig(),
                         new LocalStorageIcingOptionsConfig()
                 ),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 publicAclMockChecker, /*revocableFileDescriptorStore=*/ null,
                 /*icingSearchEngine=*/ null,
@@ -9990,6 +10119,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 visibilityConfigs,
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/true,
                 /*version=*/1,
                 /* setSchemaStatsBuilder= */null,
@@ -10059,6 +10189,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 visibilityConfigs,
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/true,
                 /*version=*/1,
                 /* setSchemaStatsBuilder= */null,
@@ -10094,6 +10225,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10158,6 +10290,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10206,6 +10339,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10278,6 +10412,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10343,6 +10478,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10396,6 +10532,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10423,6 +10560,7 @@ public class AppSearchImplTest {
                         new AppSearchSchema.Builder("Type2").build(),
                         new AppSearchSchema.Builder("Type3").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10449,6 +10587,7 @@ public class AppSearchImplTest {
                         new AppSearchSchema.Builder("Type1").build(),
                         new AppSearchSchema.Builder("Type2").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10470,6 +10609,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(new AppSearchSchema.Builder("Type1").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10504,6 +10644,7 @@ public class AppSearchImplTest {
                                         .build())
                                 .build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10533,6 +10674,7 @@ public class AppSearchImplTest {
                                         .build())
                                 .build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 1,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10561,6 +10703,7 @@ public class AppSearchImplTest {
                                         .build())
                                 .build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 2,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10599,6 +10742,7 @@ public class AppSearchImplTest {
                                         .build())
                                 .build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10634,6 +10778,7 @@ public class AppSearchImplTest {
                                         .build())
                                 .build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10718,6 +10863,7 @@ public class AppSearchImplTest {
                                 .addVisibleToPackage(
                                         new PackageIdentifier(fakeListeningPackage, new byte[0]))
                                 .build()),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10746,6 +10892,7 @@ public class AppSearchImplTest {
                                 .build(),
                         new InternalVisibilityConfig.Builder("Type2").build()
                 ),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10781,6 +10928,7 @@ public class AppSearchImplTest {
                                         new PackageIdentifier(fakeListeningPackage, new byte[0]))
                                 .build(),
                         new InternalVisibilityConfig.Builder("Type2").build()),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10815,6 +10963,7 @@ public class AppSearchImplTest {
                                 .addVisibleToPackage(
                                         new PackageIdentifier(fakeListeningPackage, new byte[0]))
                                 .build()),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10883,6 +11032,7 @@ public class AppSearchImplTest {
                                         .build())
                                 .build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10918,6 +11068,7 @@ public class AppSearchImplTest {
                                         .build())
                                 .build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10974,6 +11125,7 @@ public class AppSearchImplTest {
                         new AppSearchSchema.Builder("Type1").build(),
                         new AppSearchSchema.Builder("Type2").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -10995,6 +11147,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(new AppSearchSchema.Builder("Type2").build()),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -11014,6 +11167,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -11083,6 +11237,7 @@ public class AppSearchImplTest {
                         new AppSearchSchema.Builder("Type4").build()
                 ),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -11120,6 +11275,7 @@ public class AppSearchImplTest {
                 "database1",
                 ImmutableList.of(),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 0,
                 /*setSchemaStatsBuilder=*/ null,
@@ -11176,6 +11332,7 @@ public class AppSearchImplTest {
                                 ).build()
                 ),
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 1,
                 /*setSchemaStatsBuilder=*/ null,
@@ -11214,6 +11371,7 @@ public class AppSearchImplTest {
                 "database1",
                 updatedSchemaTypes,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 2,
                 /*setSchemaStatsBuilder=*/ null,
@@ -11237,6 +11395,7 @@ public class AppSearchImplTest {
                 "database1",
                 updatedSchemaTypes,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ true,
                 /*version=*/ 3,
                 /*setSchemaStatsBuilder=*/ null,
@@ -11288,6 +11447,7 @@ public class AppSearchImplTest {
                 "database1",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11358,7 +11518,7 @@ public class AppSearchImplTest {
                                 return 10;
                             }
                         }),
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
@@ -11381,6 +11541,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11427,7 +11588,7 @@ public class AppSearchImplTest {
         mAppSearchImpl = AppSearchImpl.create(
                 mAppSearchDir,
                 configLargeThreshold,
-                 /*initStatsBuilder=*/ null,
+                /*initStatsBuilder=*/ null,
                 /*callStatsBuilder=*/ null,
                 /*visibilityChecker=*/ null,
                 /*revocableFileDescriptorStore=*/ null,
@@ -11465,6 +11626,7 @@ public class AppSearchImplTest {
                 "database",
                 schemas,
                 /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /*forceOverride=*/ false,
                 /*version=*/ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11549,6 +11711,678 @@ public class AppSearchImplTest {
     }
 
     @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testPutDocument_verifyAccount() throws Exception {
+        // Setup: set a schema with account property.
+        AppSearchSchema email = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                        AppSearchAccount.SCHEMA_TYPE)
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(true)
+                        .build())
+                .build();
+
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                        ImmutableList.of(email, AppSearchAccount.SCHEMA),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of("Email",
+                                ImmutableSet.of("account")),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        // There is no account in the system.
+        mAppSearchImpl.updateAccountStore(/*allExistingAccounts=*/ImmutableSet.of(),
+                /*renamedAccounts=*/ImmutableMap.of());
+
+        // Put a document with account property, should fail.
+        GenericDocument document =
+                new GenericDocument.Builder<>("namespace", "id", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("accountName")
+                                        .build())
+                        .build();
+
+        AppSearchException e = assertThrows(AppSearchException.class,
+                () ->  mAppSearchImpl.putDocument(
+                        "package",
+                        "database",
+                        document,
+                        /* sendChangeNotifications= */ false,
+                        /* logger= */ null,
+                        /* callStatsBuilder= */ null));
+        assertThat(e.getMessage()).containsMatch("The account at 0 of account doesn't exist");
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testBatchPutDocument_verifyAccount() throws Exception {
+        // Setup: set a schema with account property.
+        AppSearchSchema email = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                        AppSearchAccount.SCHEMA_TYPE)
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(true)
+                        .build())
+                .build();
+
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                        ImmutableList.of(email, AppSearchAccount.SCHEMA),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of("Email",
+                                ImmutableSet.of("account")),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        // There is no account in the system.
+        mAppSearchImpl.updateAccountStore(/*allExistingAccounts=*/ImmutableSet.of(),
+                /*renamedAccounts=*/ImmutableMap.of());
+
+        // Put 2 documents with nonExist account, should fail
+        GenericDocument document1 =
+                new GenericDocument.Builder<>("namespace", "id1", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("accountName")
+                                        .build())
+                        .build();
+        GenericDocument document2 =
+                new GenericDocument.Builder<>("namespace", "id2", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("accountName")
+                                        .build())
+                        .build();
+
+        AppSearchBatchResult.Builder<String, Void> resultBuilder =
+                new AppSearchBatchResult.Builder<>();
+        mAppSearchImpl.batchPutDocuments(
+                "package",
+                "database",
+                ImmutableList.of(document1, document2),
+                resultBuilder,
+                /*sendChangeNotifications=*/ false,
+                /* logger= */ null,
+                PersistType.Code.LITE,
+                /* callStatsBuilder= */ null);
+        AppSearchBatchResult<String, Void> batchResult = resultBuilder.build();
+        AppSearchResult<?> result1 = batchResult.getAll().get("id1");
+        assertFalse(result1.isSuccess());
+        assertThat(result1.getErrorMessage()).containsMatch(
+                "The account at 0 of account doesn't exist");
+        AppSearchResult<?> result2 = batchResult.getAll().get("id2");
+        assertFalse(result2.isSuccess());
+        assertThat(result2.getErrorMessage()).containsMatch(
+                "The account at 0 of account doesn't exist");
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testWipeoutAccount_remove() throws Exception {
+        // Setup: set a schema with account property and create an account.
+        AppSearchSchema email = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                        AppSearchAccount.SCHEMA_TYPE)
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(true)
+                        .build())
+                .build();
+
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                       ImmutableList.of(email, AppSearchAccount.SCHEMA),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of("Email",
+                                ImmutableSet.of("account")),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        Account account = new Account("accountName", "accountType");
+        mAppSearchImpl.updateAccountStore(ImmutableSet.of(account),
+                /*renamedAccounts=*/ImmutableMap.of());
+
+        // Put a document with account property, should pass.
+        GenericDocument document =
+                new GenericDocument.Builder<>("namespace", "id", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("accountName")
+                                .build())
+                        .build();
+        mAppSearchImpl.putDocument(
+                "package",
+                "database",
+                document,
+                /* sendChangeNotifications= */ false,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // Verify the document exists
+        GenericDocument outDocument = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument).isEqualTo(document);
+
+        // Remove account, the document should be removed
+        mAppSearchImpl.updateAccountStore(/*allExistingAccounts=*/ImmutableSet.of(),
+                /*renamedAccounts=*/ImmutableMap.of());
+        AppSearchException e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.getDocument(
+                        "package",
+                        "database",
+                        "namespace",
+                        "id",
+                        /*typePropertyPaths=*/ Collections.emptyMap(),
+                        /*callStatsBuilder=*/ null));
+        assertThat(e.getMessage()).endsWith("not found.");
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testWipeoutAccount_removeSpecialAccountName() throws Exception {
+        // Setup: set a schema with account property and create an account.
+        AppSearchSchema email = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                        AppSearchAccount.SCHEMA_TYPE)
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(true)
+                        .build())
+                .addProperty(new AppSearchSchema.StringPropertyConfig.Builder("body")
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setIndexingType(
+                                AppSearchSchema.StringPropertyConfig.INDEXING_TYPE_PREFIXES)
+                        .setTokenizerType(
+                                AppSearchSchema.StringPropertyConfig.TOKENIZER_TYPE_PLAIN)
+                        .build())
+                .build();
+
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                        ImmutableList.of(email, AppSearchAccount.SCHEMA),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of("Email",
+                                ImmutableSet.of("account")),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        // Create an account with accountName contains special characters
+        Account account = new Account("OR e", "accountType");
+        mAppSearchImpl.updateAccountStore(ImmutableSet.of(account),
+                /*renamedAccounts=*/ImmutableMap.of());
+
+        // Put a document with account property, should pass.
+        GenericDocument document1 =
+                new GenericDocument.Builder<>("namespace", "id1", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("OR e")
+                                        .build())
+                        .build();
+        mAppSearchImpl.putDocument(
+                "package",
+                "database",
+                document1,
+                /* sendChangeNotifications= */ false,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // put another document
+        GenericDocument document2 =
+                new GenericDocument.Builder<>("namespace", "id2", "Email")
+                        .setPropertyString("body", "e")
+                        .build();
+        mAppSearchImpl.putDocument(
+                "package",
+                "database",
+                document2,
+                /* sendChangeNotifications= */ false,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // Verify the document exists
+        GenericDocument outDocument = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id1",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument).isEqualTo(document1);
+        outDocument = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id2",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument).isEqualTo(document2);
+
+        // Remove account, the document1 should be removed, but document2 should remain.
+        mAppSearchImpl.updateAccountStore(/*allExistingAccounts=*/ImmutableSet.of(),
+                /*renamedAccounts=*/ImmutableMap.of());
+        AppSearchException e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.getDocument(
+                        "package",
+                        "database",
+                        "namespace",
+                        "id1",
+                        /*typePropertyPaths=*/ Collections.emptyMap(),
+                        /*callStatsBuilder=*/ null));
+        assertThat(e.getMessage()).endsWith("not found.");
+        outDocument = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id2",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument).isEqualTo(document2);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testWipeoutAccount_rename() throws Exception {
+        // Setup: set a schema with account property and create an account.
+        AppSearchSchema email = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                        AppSearchAccount.SCHEMA_TYPE)
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(true)
+                        .build())
+                .build();
+
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                        ImmutableList.of(email, AppSearchAccount.SCHEMA),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of("Email",
+                                ImmutableSet.of("account")),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        Account account = new Account("accountName", "accountType");
+        mAppSearchImpl.updateAccountStore(ImmutableSet.of(account),
+                /*renamedAccounts=*/ImmutableMap.of());
+
+        // Put a document with account property, should pass.
+        GenericDocument document =
+                new GenericDocument.Builder<>("namespace", "id", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("accountName")
+                                        .build())
+                        .build();
+        mAppSearchImpl.putDocument(
+                "package",
+                "database",
+                document,
+                /* sendChangeNotifications= */ false,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // Verify the document exists
+        GenericDocument outDocument = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument).isEqualTo(document);
+
+        // Rename account, the document should remain.
+        Account renamedAccount = new Account("rename", "accountType");
+        mAppSearchImpl.updateAccountStore(ImmutableSet.of(renamedAccount),
+                ImmutableMap.of(account, renamedAccount));
+        outDocument = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument).isEqualTo(document);
+
+        // Remove renamed account, the document should be removed.
+        mAppSearchImpl.updateAccountStore(/*allExistingAccounts=*/ImmutableSet.of(),
+                /*renamedAccounts=*/ImmutableMap.of());
+        AppSearchException e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.getDocument(
+                        "package",
+                        "database",
+                        "namespace",
+                        "id",
+                        /*typePropertyPaths=*/ Collections.emptyMap(),
+                        /*callStatsBuilder=*/ null));
+        assertThat(e.getMessage()).endsWith("not found.");
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testWipeoutAccount_batchPutDocument() throws Exception {
+        // Setup: set a schema with account property.
+        AppSearchSchema email = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                        AppSearchAccount.SCHEMA_TYPE)
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(true)
+                        .build())
+                .build();
+
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                        ImmutableList.of(email, AppSearchAccount.SCHEMA),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of("Email",
+                                ImmutableSet.of("account")),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        // Add an account to AppSearch
+        Account account = new Account("accountName", "accountType");
+        mAppSearchImpl.updateAccountStore(ImmutableSet.of(account),
+                /*renamedAccounts=*/ImmutableMap.of());
+
+        // Put 2 documents with account property, should pass.
+        GenericDocument document1 =
+                new GenericDocument.Builder<>("namespace", "id1", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("accountName")
+                                        .build())
+                        .build();
+        GenericDocument document2 =
+                new GenericDocument.Builder<>("namespace", "id2", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("accountName")
+                                        .build())
+                        .build();
+        AppSearchBatchResult.Builder<String, Void> resultBuilder =
+                new AppSearchBatchResult.Builder<>();
+        mAppSearchImpl.batchPutDocuments(
+                "package",
+                "database",
+                ImmutableList.of(document1, document2),
+                resultBuilder,
+                /*sendChangeNotifications=*/ false,
+                /* logger= */ null,
+                PersistType.Code.LITE,
+                /* callStatsBuilder= */ null);
+        AppSearchBatchResult<String, Void> batchResult = resultBuilder.build();
+        assertThat(batchResult.getSuccesses()).containsExactly("id1", null, "id2", null);
+
+        // Verify the documents exists
+        GenericDocument outDocument1 = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id1",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument1).isEqualTo(document1);
+        GenericDocument outDocument2 = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id2",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument2).isEqualTo(document2);
+
+        // Remove account, documents should be removed.
+        mAppSearchImpl.updateAccountStore(/*allExistingAccounts=*/ImmutableSet.of(),
+                /*renamedAccounts=*/ImmutableMap.of());
+
+        AppSearchException e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.getDocument(
+                        "package",
+                        "database",
+                        "namespace",
+                        "id1",
+                        /*typePropertyPaths=*/ Collections.emptyMap(),
+                        /*callStatsBuilder=*/ null));
+        assertThat(e.getMessage()).endsWith("not found.");
+
+        e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.getDocument(
+                        "package",
+                        "database",
+                        "namespace",
+                        "id2",
+                        /*typePropertyPaths=*/ Collections.emptyMap(),
+                        /*callStatsBuilder=*/ null));
+        assertThat(e.getMessage()).endsWith("not found.");
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testWipeoutAccount_persistToDisk() throws Exception {
+        // Setup: set a schema with account property and create an account.
+        AppSearchSchema email = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                        AppSearchAccount.SCHEMA_TYPE)
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(true)
+                        .build())
+                .build();
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                        ImmutableList.of(email, AppSearchAccount.SCHEMA),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of("Email",
+                                ImmutableSet.of("account")),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+        Account account = new Account("accountName", "accountType");
+        mAppSearchImpl.updateAccountStore(ImmutableSet.of(account),
+                /*renamedAccounts=*/ImmutableMap.of());
+
+        // Put a document with account property
+        GenericDocument document =
+                new GenericDocument.Builder<>("namespace", "id", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("accountName")
+                                        .build())
+                        .build();
+        mAppSearchImpl.putDocument(
+                "package",
+                "database",
+                document,
+                /* sendChangeNotifications= */ false,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+        // Persist to disk, the account store should also persist.
+        mAppSearchImpl.persistToDisk("package",
+                BaseStats.CALL_TYPE_PUT_DOCUMENT,
+                PersistType.Code.FULL,
+                /*logger=*/ null,
+                /*callStatsBuilder=*/ null);
+
+        // Create new AppSearchImpl instance
+        mAppSearchImpl = AppSearchImpl.create(
+                mAppSearchDir,
+                mUnlimitedConfig,
+                /*initStatsBuilder=*/ null,
+                /*callStatsBuilder=*/ null,
+                /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
+                ALWAYS_OPTIMIZE);
+        GenericDocument outDocument = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument).isEqualTo(document);
+
+        // remove account should remove the reference document
+        mAppSearchImpl.updateAccountStore(/*allExistingAccounts=*/ImmutableSet.of(),
+                /*renamedAccounts=*/ImmutableMap.of());
+        AppSearchException e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.getDocument(
+                        "package",
+                        "database",
+                        "namespace",
+                        "id",
+                        /*typePropertyPaths=*/ Collections.emptyMap(),
+                        /*callStatsBuilder=*/ null));
+        assertThat(e.getMessage()).endsWith("not found.");
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
+    public void testSetAccountProperty_persistToDisk() throws Exception {
+        // Setup: set a schema with account property and create an account.
+        AppSearchSchema email = new AppSearchSchema.Builder("Email")
+                .addProperty(new AppSearchSchema.DocumentPropertyConfig.Builder("account",
+                        AppSearchAccount.SCHEMA_TYPE)
+                        .setCardinality(AppSearchSchema.PropertyConfig.CARDINALITY_OPTIONAL)
+                        .setShouldIndexNestedProperties(true)
+                        .build())
+                .build();
+        InternalSetSchemaResponse internalSetSchemaResponse =
+                mAppSearchImpl.setSchema(
+                        "package",
+                        "database",
+                        ImmutableList.of(email, AppSearchAccount.SCHEMA),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of("Email",
+                                ImmutableSet.of("account")),
+                        /* forceOverride= */ false,
+                        /* version= */ 0,
+                        /* setSchemaStatsBuilder= */ null,
+                        /* callStatsBuilder= */ null);
+        assertThat(internalSetSchemaResponse.isSuccess()).isTrue();
+
+        // Persist to disk, the account property paths should also persist.
+        mAppSearchImpl.persistToDisk("package",
+                BaseStats.CALL_TYPE_PUT_DOCUMENT,
+                PersistType.Code.FULL,
+                /*logger=*/ null,
+                /*callStatsBuilder=*/ null);
+
+        // Create new AppSearchImpl instance
+        mAppSearchImpl = AppSearchImpl.create(
+                mAppSearchDir,
+                mUnlimitedConfig,
+                /*initStatsBuilder=*/ null,
+                /*callStatsBuilder=*/ null,
+                /*visibilityChecker=*/ null,
+                /*revocableFileDescriptorStore=*/ null,
+                /*icingSearchEngine=*/ null,
+                ALWAYS_OPTIMIZE);
+
+        // Create an account in System
+        Account account = new Account("accountName", "accountType");
+        mAppSearchImpl.updateAccountStore(ImmutableSet.of(account),
+                /*renamedAccounts=*/ImmutableMap.of());
+
+        // Put a document with account property
+        GenericDocument document =
+                new GenericDocument.Builder<>("namespace", "id", "Email")
+                        .setPropertyDocument("account",
+                                new AppSearchAccount.Builder("namespace", "account1")
+                                        .setAccountId("accountId")
+                                        .setAccountType("accountType")
+                                        .setAccountName("accountName")
+                                        .build())
+                        .build();
+        mAppSearchImpl.putDocument(
+                "package",
+                "database",
+                document,
+                /* sendChangeNotifications= */ false,
+                /* logger= */ null,
+                /* callStatsBuilder= */ null);
+
+        // Verify the document exists
+        GenericDocument outDocument = mAppSearchImpl.getDocument(
+                "package",
+                "database",
+                "namespace",
+                "id",
+                /*typePropertyPaths=*/ Collections.emptyMap(),
+                /*callStatsBuilder=*/ null);
+        assertThat(outDocument).isEqualTo(document);
+
+        // remove account should remove the reference document
+        mAppSearchImpl.updateAccountStore(/*allExistingAccounts=*/ImmutableSet.of(),
+                /*renamedAccounts=*/ImmutableMap.of());
+        AppSearchException e = assertThrows(AppSearchException.class,
+                () -> mAppSearchImpl.getDocument(
+                        "package",
+                        "database",
+                        "namespace",
+                        "id",
+                        /*typePropertyPaths=*/ Collections.emptyMap(),
+                        /*callStatsBuilder=*/ null));
+        assertThat(e.getMessage()).endsWith("not found.");
+    }
+
+    @Test
     public void testGetAndResetNeedPersistToDisk_returnsFalseForInitializationWithoutRecovery()
             throws Exception {
         // Set schema
@@ -11573,7 +12407,8 @@ public class AppSearchImplTest {
                         "package",
                         "database",
                         schemas,
-                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         /* setSchemaStatsBuilder= */ null,
@@ -11658,7 +12493,8 @@ public class AppSearchImplTest {
                         "package",
                         "database",
                         schemas,
-                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         /* setSchemaStatsBuilder= */ null,
@@ -11745,7 +12581,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11772,7 +12609,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11788,7 +12626,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 /* schemas= */ Collections.emptyList(),
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ true,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11816,7 +12655,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas1,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11843,7 +12683,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas2,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ true,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11872,7 +12713,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas1,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11910,7 +12752,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas2,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11937,7 +12780,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11953,7 +12797,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -11987,7 +12832,8 @@ public class AppSearchImplTest {
                         "package",
                         "database",
                         schemas,
-                        /* visibilityConfigs= */ Collections.emptyList(),
+                        /*visibilityConfigs=*/ Collections.emptyList(),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         /* schemaStatsBuilder= */ null,
@@ -12005,6 +12851,7 @@ public class AppSearchImplTest {
                         "database",
                         schemas,
                         Collections.singletonList(visibilityConfig),
+                        /*accountPropertyPaths=*/ ImmutableMap.of(),
                         /* forceOverride= */ false,
                         /* version= */ 0,
                         /* schemaStatsBuilder= */ null,
@@ -12031,7 +12878,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -12074,7 +12922,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,
@@ -12130,7 +12979,8 @@ public class AppSearchImplTest {
                 "package",
                 "database",
                 schemas,
-                /* visibilityConfigs= */ Collections.emptyList(),
+                /*visibilityConfigs=*/ Collections.emptyList(),
+                /*accountPropertyPaths=*/ ImmutableMap.of(),
                 /* forceOverride= */ false,
                 /* version= */ 0,
                 /* setSchemaStatsBuilder= */ null,

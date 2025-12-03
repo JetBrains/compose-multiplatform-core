@@ -44,7 +44,7 @@ import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
-import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
 import java.util.UUID
@@ -93,9 +93,6 @@ internal open class FakeEditablePdfDocument(
 
     @get:Synchronized @set:Synchronized internal var layoutReach: Int = 0
 
-    override val formEditRecords: List<FormEditRecord>
-        get() = editHistory.toList()
-
     private val bitmapRequestsLock = Any()
     private val _bitmapRequests = mutableMapOf<Int, SizeParams>()
     internal val bitmapRequests
@@ -113,7 +110,7 @@ internal open class FakeEditablePdfDocument(
         _formWidgetRequests.clear()
     }
 
-    internal var editHistory: MutableList<FormEditRecord> = mutableListOf()
+    internal var editHistory: MutableList<FormEditInfo> = mutableListOf()
 
     private val edits = mutableMapOf<EditId, PdfAnnotationData>()
 
@@ -138,12 +135,7 @@ internal open class FakeEditablePdfDocument(
         return pageFormWidgetInfos[pageNum]?.filter { it.widgetType in types } ?: emptyList()
     }
 
-    override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
-        editHistory.add(record)
-        return listOf()
-    }
-
-    override suspend fun write(destination: ParcelFileDescriptor) {
+    override suspend fun applyEdit(record: FormEditInfo) {
         return
     }
 
@@ -337,10 +329,30 @@ internal open class FakeEditablePdfDocument(
         return edits.values.filter { it.annotation.pageNum == pageNum } as List<T>
     }
 
+    override fun addOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun removeOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        TODO("Not yet implemented")
+    }
+
     override fun getAllEdits(): PdfEdits = PdfEdits(edits.values.groupBy { it.annotation.pageNum })
 
     override fun clearUncommittedEdits() {
         TODO("Not yet implemented")
+    }
+
+    override fun createWriteHandle(): PdfWriteHandle {
+        return object : PdfWriteHandle {
+            override suspend fun write(destination: ParcelFileDescriptor) {}
+
+            override fun close() {}
+        }
     }
 
     companion object {

@@ -42,7 +42,7 @@ configurations {
 }
 
 dependencies {
-    compileOnly(libs.androidGradlePlugin)
+    compileOnly(libs.androidGradlePluginApi)
     compileOnly(libs.kotlinGradlePlugin)
 
     implementation(gradleApi())

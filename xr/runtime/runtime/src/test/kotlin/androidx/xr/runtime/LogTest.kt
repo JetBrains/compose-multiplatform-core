@@ -56,6 +56,24 @@ class LogTest {
     }
 
     @Test
+    fun log_whenEnabledWithStringAndLevelVERBOSE_logsVerboseAndAbove() {
+        Log.enabled = true
+        Log.level = Log.Level.VERBOSE
+
+        Log.verbose(MESSAGE_VERBOSE)
+        Log.debug(MESSAGE_DEBUG)
+        Log.info(MESSAGE_INFO)
+        Log.warn(MESSAGE_WARN)
+        Log.error(MESSAGE_ERROR)
+
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.VERBOSE, TEST_TAG, MESSAGE_VERBOSE)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.DEBUG, TEST_TAG, MESSAGE_DEBUG)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.INFO, TEST_TAG, MESSAGE_INFO)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.WARN, TEST_TAG, MESSAGE_WARN)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.ERROR, TEST_TAG, MESSAGE_ERROR)
+    }
+
+    @Test
     fun log_whenEnabledWithLevelDEBUG_logsDebugAndAbove() {
         Log.enabled = true
         Log.level = Log.Level.DEBUG
@@ -65,6 +83,23 @@ class LogTest {
         Log.info { MESSAGE_INFO }
         Log.warn { MESSAGE_WARN }
         Log.error { MESSAGE_ERROR }
+
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.DEBUG, TEST_TAG, MESSAGE_DEBUG)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.INFO, TEST_TAG, MESSAGE_INFO)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.WARN, TEST_TAG, MESSAGE_WARN)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.ERROR, TEST_TAG, MESSAGE_ERROR)
+    }
+
+    @Test
+    fun log_whenEnabledWithStringAndLevelDEBUG_logsDebugAndAbove() {
+        Log.enabled = true
+        Log.level = Log.Level.DEBUG
+
+        Log.verbose(MESSAGE_VERBOSE)
+        Log.debug(MESSAGE_DEBUG)
+        Log.info(MESSAGE_INFO)
+        Log.warn(MESSAGE_WARN)
+        Log.error(MESSAGE_ERROR)
 
         expectedLogMessagesRule.expectLogMessage(AndroidLog.DEBUG, TEST_TAG, MESSAGE_DEBUG)
         expectedLogMessagesRule.expectLogMessage(AndroidLog.INFO, TEST_TAG, MESSAGE_INFO)
@@ -89,6 +124,22 @@ class LogTest {
     }
 
     @Test
+    fun log_whenEnabledWithStringAndLevelINFO_logsInfoAndAbove() {
+        Log.enabled = true
+        Log.level = Log.Level.INFO
+
+        Log.verbose(MESSAGE_VERBOSE)
+        Log.debug(MESSAGE_DEBUG)
+        Log.info(MESSAGE_INFO)
+        Log.warn(MESSAGE_WARN)
+        Log.error(MESSAGE_ERROR)
+
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.INFO, TEST_TAG, MESSAGE_INFO)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.WARN, TEST_TAG, MESSAGE_WARN)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.ERROR, TEST_TAG, MESSAGE_ERROR)
+    }
+
+    @Test
     fun log_whenEnabledWithLevelWARN_logsWarnAndAbove() {
         Log.enabled = true
         Log.level = Log.Level.WARN
@@ -98,6 +149,21 @@ class LogTest {
         Log.info { MESSAGE_INFO }
         Log.warn { MESSAGE_WARN }
         Log.error { MESSAGE_ERROR }
+
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.WARN, TEST_TAG, MESSAGE_WARN)
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.ERROR, TEST_TAG, MESSAGE_ERROR)
+    }
+
+    @Test
+    fun log_whenEnabledWithStringAndLevelWARN_logsWarnAndAbove() {
+        Log.enabled = true
+        Log.level = Log.Level.WARN
+
+        Log.verbose(MESSAGE_VERBOSE)
+        Log.debug(MESSAGE_DEBUG)
+        Log.info(MESSAGE_INFO)
+        Log.warn(MESSAGE_WARN)
+        Log.error(MESSAGE_ERROR)
 
         expectedLogMessagesRule.expectLogMessage(AndroidLog.WARN, TEST_TAG, MESSAGE_WARN)
         expectedLogMessagesRule.expectLogMessage(AndroidLog.ERROR, TEST_TAG, MESSAGE_ERROR)
@@ -118,6 +184,20 @@ class LogTest {
     }
 
     @Test
+    fun log_whenEnabledWithStringAndLevelERROR_logsErrorOnly() {
+        Log.enabled = true
+        Log.level = Log.Level.ERROR
+
+        Log.verbose(MESSAGE_VERBOSE)
+        Log.debug(MESSAGE_DEBUG)
+        Log.info(MESSAGE_INFO)
+        Log.warn(MESSAGE_WARN)
+        Log.error(MESSAGE_ERROR)
+
+        expectedLogMessagesRule.expectLogMessage(AndroidLog.ERROR, TEST_TAG, MESSAGE_ERROR)
+    }
+
+    @Test
     fun log_whenDisabled_logsNothing() {
         Log.enabled = false
         Log.level = Log.Level.VERBOSE
@@ -127,6 +207,18 @@ class LogTest {
         Log.info { MESSAGE_INFO }
         Log.warn { MESSAGE_WARN }
         Log.error { MESSAGE_ERROR }
+    }
+
+    @Test
+    fun log_withStringWhenDisabled_logsNothing() {
+        Log.enabled = false
+        Log.level = Log.Level.VERBOSE
+
+        Log.verbose(MESSAGE_VERBOSE)
+        Log.debug(MESSAGE_DEBUG)
+        Log.info(MESSAGE_INFO)
+        Log.warn(MESSAGE_WARN)
+        Log.error(MESSAGE_ERROR)
     }
 
     @Test

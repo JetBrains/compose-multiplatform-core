@@ -172,7 +172,10 @@ public class ProcessGlobalConfig {
      * @throws UnsupportedOperationException if underlying WebView does not support the use of
      *                                       the method.
      * @throws IllegalArgumentException if the paths supplied do not have the right permissions
+     * @deprecated Please use {@link #setDataDirectorySuffix(Context, String)}
+     *              to set the suffix instead.
      */
+    @Deprecated
     @SuppressWarnings("StreamFiles")
     @RequiresFeature(name =
             WebViewFeature.STARTUP_FEATURE_SET_DIRECTORY_BASE_PATHS,

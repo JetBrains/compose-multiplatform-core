@@ -255,6 +255,17 @@ public class RecordingModifier {
     /**
      * Add a padding modifier
      *
+     * @param padding
+     * @return
+     */
+    public @NonNull RecordingModifier padding(float padding) {
+        mList.add(new PaddingModifier(padding, padding, padding, padding));
+        return this;
+    }
+
+    /**
+     * Add a padding modifier
+     *
      * @param start
      * @param top
      * @param end

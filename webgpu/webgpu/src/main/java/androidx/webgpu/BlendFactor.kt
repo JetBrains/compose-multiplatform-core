@@ -1,0 +1,135 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package androidx.webgpu
+
+import androidx.annotation.IntDef
+import androidx.annotation.RestrictTo
+import kotlin.annotation.AnnotationRetention
+import kotlin.annotation.Retention
+import kotlin.annotation.Target
+
+@Retention(AnnotationRetention.SOURCE)
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+@IntDef(
+    value =
+        [
+            BlendFactor.Undefined,
+            BlendFactor.Zero,
+            BlendFactor.One,
+            BlendFactor.Src,
+            BlendFactor.OneMinusSrc,
+            BlendFactor.SrcAlpha,
+            BlendFactor.OneMinusSrcAlpha,
+            BlendFactor.Dst,
+            BlendFactor.OneMinusDst,
+            BlendFactor.DstAlpha,
+            BlendFactor.OneMinusDstAlpha,
+            BlendFactor.SrcAlphaSaturated,
+            BlendFactor.Constant,
+            BlendFactor.OneMinusConstant,
+            BlendFactor.Src1,
+            BlendFactor.OneMinusSrc1,
+            BlendFactor.Src1Alpha,
+            BlendFactor.OneMinusSrc1Alpha,
+        ]
+)
+@Target(AnnotationTarget.FUNCTION, AnnotationTarget.TYPE, AnnotationTarget.VALUE_PARAMETER)
+
+/** Defines the blending factor to be used in a blend operation. */
+public annotation class BlendFactor {
+    public companion object {
+
+        /** An undefined blend factor. */
+        public const val Undefined: Int = 0x00000000
+
+        /** The blend factor is (0, 0, 0, 0). */
+        public const val Zero: Int = 0x00000001
+
+        /** The blend factor is (1, 1, 1, 1). */
+        public const val One: Int = 0x00000002
+
+        /** The blend factor is (Rs, Gs, Bs, As). */
+        public const val Src: Int = 0x00000003
+
+        /** The blend factor is (1 - Rs, 1 - Gs, 1 - Bs, 1 - As). */
+        public const val OneMinusSrc: Int = 0x00000004
+
+        /** The blend factor is (As, As, As, As). */
+        public const val SrcAlpha: Int = 0x00000005
+
+        /** The blend factor is (1 - As, 1 - As, 1 - As, 1 - As). */
+        public const val OneMinusSrcAlpha: Int = 0x00000006
+
+        /** The blend factor is (Rd, Gd, Bd, Ad). */
+        public const val Dst: Int = 0x00000007
+
+        /** The blend factor is (1 - Rd, 1 - Gd, 1 - Bd, 1 - Ad). */
+        public const val OneMinusDst: Int = 0x00000008
+
+        /** The blend factor is (Ad, Ad, Ad, Ad). */
+        public const val DstAlpha: Int = 0x00000009
+
+        /** The blend factor is (1 - Ad, 1 - Ad, 1 - Ad, 1 - Ad). */
+        public const val OneMinusDstAlpha: Int = 0x0000000a
+
+        /** The blend factor is (f, f, f, 1), where f = min(As, 1 - Ad). */
+        public const val SrcAlphaSaturated: Int = 0x0000000b
+
+        /** The blend factor is the constant color from the blend constant value. */
+        public const val Constant: Int = 0x0000000c
+
+        /**
+         * The blend factor is (1, 1, 1, 1) minus the constant color from the blend constant value.
+         */
+        public const val OneMinusConstant: Int = 0x0000000d
+
+        /** The blend factor is (Rs1, Gs1, Bs1, As1) from a second source. */
+        public const val Src1: Int = 0x0000000e
+
+        /** The blend factor is (1 - Rs1, 1 - Gs1, 1 - Bs1, 1 - As1) from a second source. */
+        public const val OneMinusSrc1: Int = 0x0000000f
+
+        /** The blend factor is (As1, As1, As1, As1) from a second source alpha. */
+        public const val Src1Alpha: Int = 0x00000010
+
+        /** The blend factor is (1 - As1, 1 - As1, 1 - As1, 1 - As1) from a second source alpha. */
+        public const val OneMinusSrc1Alpha: Int = 0x00000011
+        internal val names: Map<Int, String> =
+            mapOf(
+                0x00000000 to "Undefined",
+                0x00000001 to "Zero",
+                0x00000002 to "One",
+                0x00000003 to "Src",
+                0x00000004 to "OneMinusSrc",
+                0x00000005 to "SrcAlpha",
+                0x00000006 to "OneMinusSrcAlpha",
+                0x00000007 to "Dst",
+                0x00000008 to "OneMinusDst",
+                0x00000009 to "DstAlpha",
+                0x0000000a to "OneMinusDstAlpha",
+                0x0000000b to "SrcAlphaSaturated",
+                0x0000000c to "Constant",
+                0x0000000d to "OneMinusConstant",
+                0x0000000e to "Src1",
+                0x0000000f to "OneMinusSrc1",
+                0x00000010 to "Src1Alpha",
+                0x00000011 to "OneMinusSrc1Alpha",
+            )
+
+        public fun toString(@BlendFactor value: Int): String = names[value] ?: value.toString()
+    }
+}

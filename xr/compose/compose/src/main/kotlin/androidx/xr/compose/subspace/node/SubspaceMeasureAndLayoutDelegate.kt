@@ -78,8 +78,8 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
         }
 
         node.measurePending = true
+        node.layoutPending = true
         nodesPendingMeasure.add(node)
-        requestLayout(node, true)
         return !measureAndLayoutInProgress
     }
 
@@ -140,37 +140,29 @@ internal class SubspaceMeasureAndLayoutDelegate(private val root: SubspaceLayout
     }
 
     private fun processMeasureRequests() {
-        nodesPendingMeasure.removeAll { originalNode ->
+        nodesPendingMeasure.drain { originalNode ->
             if (originalNode.measurePending && originalNode.isAttached) {
                 var node = originalNode
-
                 var sizeChanged = node.remeasureWithSnapshot()
-
-                while (sizeChanged && node?.parent != null) {
-                    node = node.parent
-                    sizeChanged = node?.remeasureWithSnapshot() ?: false
+                while (sizeChanged && node.parent != null) {
+                    node = checkNotNull(node.parent) { "Node detached during measurement." }
+                    sizeChanged = node.remeasureWithSnapshot()
                 }
-
-                if (originalNode != node) {
-                    requestLayout(node, true)
-                }
+                requestLayout(node, true)
             }
-            true
         }
     }
 
     private fun processLayoutRequests() {
-        nodesPendingLayout.removeAll { node ->
+        nodesPendingLayout.drain { node ->
             if (node.layoutPending && node.isAttached) {
                 snapshotStateObserver.observeReads(node, onCommitAffectingLayout) { node.replace() }
             }
-            true
         }
     }
 
     private fun drainPostponedRequests() {
-        if (postponedRequests.isEmpty()) return
-        postponedRequests.fastForEach { node -> node.requestMeasure() }
+        postponedRequests.fastForEach { it.requestMeasure() }
         postponedRequests.clear()
     }
 

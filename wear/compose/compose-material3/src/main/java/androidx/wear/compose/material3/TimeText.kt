@@ -26,12 +26,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -238,31 +235,27 @@ public interface TimeSource {
     @Composable public fun currentTime(): String
 }
 
-internal class DefaultTimeSource(timeFormat: String) : TimeSource {
-    private val _timeFormat = timeFormat
-
+internal class DefaultTimeSource(val timeFormat: String) : TimeSource {
     @Composable
-    override fun currentTime(): String = currentTime({ currentTimeMillis() }, _timeFormat).value
+    override fun currentTime(): String = currentTime({ currentTimeMillis() }, timeFormat).value
 }
 
 @Composable
 @VisibleForTesting
 internal fun currentTime(time: () -> Long, timeFormat: String): State<String> {
-
-    var calendar by remember { mutableStateOf(Calendar.getInstance()) }
-    var currentTime by remember { mutableLongStateOf(time()) }
-
-    val timeText = remember { derivedStateOf { formatTime(calendar, currentTime, timeFormat) } }
+    val timeText = remember {
+        mutableStateOf(formatTime(Calendar.getInstance(), time(), timeFormat))
+    }
 
     val context = LocalContext.current
-    val updatedTimeLambda by rememberUpdatedState(time)
-
-    remember(context, updatedTimeLambda) {
+    remember(context) {
             callbackFlow<Unit> {
                 val receiver =
                     TimeBroadcastReceiver(
-                        onTimeChanged = { currentTime = updatedTimeLambda() },
-                        onTimeZoneChanged = { calendar = Calendar.getInstance() },
+                        // Either time or timezone changed, or we got the tick sent every minute.
+                        onChange = {
+                            timeText.value = formatTime(Calendar.getInstance(), time(), timeFormat)
+                        }
                     )
                 receiver.register(context)
                 awaitClose { receiver.unregister(context) }
@@ -293,18 +286,11 @@ private fun PaddingValues.toArcPadding() =
     }
 
 /** A [BroadcastReceiver] to receive time tick, time change, and time zone change events. */
-private class TimeBroadcastReceiver(
-    val onTimeChanged: () -> Unit,
-    val onTimeZoneChanged: () -> Unit,
-) : BroadcastReceiver() {
+private class TimeBroadcastReceiver(val onChange: () -> Unit) : BroadcastReceiver() {
     private var registered = false
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_TIMEZONE_CHANGED) {
-            onTimeZoneChanged()
-        } else {
-            onTimeChanged()
-        }
+        onChange()
     }
 
     fun register(context: Context) {

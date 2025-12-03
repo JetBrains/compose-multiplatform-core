@@ -256,12 +256,10 @@ public class Matrix3(dataToCopy: FloatArray) {
          */
         @JvmStatic
         public fun fromQuaternion(quaternion: Quaternion): Matrix3 {
-            val q = quaternion.toNormalized()
-
-            val qx = q.x
-            val qy = q.y
-            val qz = q.z
-            val qw = q.w
+            val qx = quaternion.x
+            val qy = quaternion.y
+            val qz = quaternion.z
+            val qw = quaternion.w
 
             val qx2 = qx * qx
             val qy2 = qy * qy

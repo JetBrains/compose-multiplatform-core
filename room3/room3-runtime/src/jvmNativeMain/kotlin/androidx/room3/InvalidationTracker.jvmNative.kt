@@ -45,7 +45,6 @@ actual constructor(
             viewTables = viewTables,
             tableNames = tableNames,
             useTempTable = true,
-            onInvalidatedTablesIds = {},
         )
 
     /** Internal function to initialize table tracking. Invoked by generated code. */

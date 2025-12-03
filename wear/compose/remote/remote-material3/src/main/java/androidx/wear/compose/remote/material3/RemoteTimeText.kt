@@ -19,6 +19,7 @@
 package androidx.wear.compose.remote.material3
 
 import android.graphics.Typeface
+import android.text.format.DateFormat
 import androidx.annotation.RestrictTo
 import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_HR
 import androidx.compose.remote.core.RemoteContext.FLOAT_TIME_IN_MIN
@@ -31,11 +32,19 @@ import androidx.compose.remote.creation.compose.layout.RemoteComposable
 import androidx.compose.remote.creation.compose.modifier.RemoteModifier
 import androidx.compose.remote.creation.compose.modifier.clearAndSetSemantics
 import androidx.compose.remote.creation.compose.modifier.fillMaxSize
+import androidx.compose.remote.creation.compose.state.RemoteBoolean
 import androidx.compose.remote.creation.compose.state.RemoteColor
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemotePaint
 import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.GenericFontFamily
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
 
 /**
  * A remote composable for displaying the time and surrounding text, designed to curve along the top
@@ -59,6 +68,8 @@ import androidx.compose.runtime.Composable
 public fun RemoteTimeText(
     modifier: RemoteModifier = RemoteModifier,
     time: RemoteString = RemoteTimeTextDefaults.defaultTimeString(),
+    fontSize: TextUnit = 14.sp,
+    fontFamily: FontFamily? = null,
     leadingText: RemoteString? = null,
     trailingText: RemoteString? = null,
     separator: RemoteString = RemoteString("·"),
@@ -71,8 +82,16 @@ public fun RemoteTimeText(
             trailingText = trailingText ?: RemoteString(""),
             separator = separator,
         )
+    val fontSize = with(LocalDensity.current) { fontSize.toPx() }.rf
     RemoteBox(modifier.clearAndSetSemantics {}) {
-        RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) { drawTimeText(text, color) }
+        RemoteCanvas(modifier = RemoteModifier.fillMaxSize()) {
+            drawTimeText(
+                text = text,
+                textColor = color,
+                fontSize = fontSize,
+                fontFamily = fontFamily,
+            )
+        }
     }
 }
 
@@ -90,16 +109,34 @@ private fun buildTimeTextString(
     return leadingWithSeparator + time + trailingWithSeparator
 }
 
-private fun RemoteCanvasDrawScope.drawTimeText(text: RemoteString, color: RemoteColor) {
+private fun RemoteCanvasDrawScope.drawTimeText(
+    text: RemoteString,
+    textColor: RemoteColor,
+    fontSize: RemoteFloat,
+    fontFamily: FontFamily?,
+) {
     val width = remote.component.width
     val height = remote.component.height
 
-    val fontSize = 30f
+    val fontTypeface =
+        when (fontFamily) {
+            FontFamily.Default -> Typeface.DEFAULT
+            FontFamily.SansSerif -> Typeface.SANS_SERIF
+            FontFamily.Serif -> Typeface.SERIF
+            FontFamily.Monospace -> Typeface.MONOSPACE
+            else -> {
+                if (fontFamily != null && (fontFamily is GenericFontFamily)) {
+                    Typeface.create(fontFamily.name, Typeface.NORMAL)
+                }
+                null
+            }
+        }
+
     val textPaint =
         RemotePaint().apply {
-            textSize = fontSize
-            typeface = Typeface.DEFAULT
-            remoteColor = color
+            textSize = fontSize.id
+            typeface = fontTypeface
+            remoteColor = textColor
         }
 
     canvas.drawTextOnCircle(
@@ -107,10 +144,10 @@ private fun RemoteCanvasDrawScope.drawTimeText(text: RemoteString, color: Remote
         width / 2f,
         height / 2f,
         width / 2f - fontSize,
-        270f,
-        0f,
+        270f.rf,
+        0f.rf,
         DrawTextOnCircle.Alignment.CENTER,
-        DrawTextOnCircle.Placement.INSIDE,
+        DrawTextOnCircle.Placement.OUTSIDE,
         textPaint,
     )
 }
@@ -118,11 +155,29 @@ private fun RemoteCanvasDrawScope.drawTimeText(text: RemoteString, color: Remote
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public object RemoteTimeTextDefaults {
 
+    /**
+     * Returns a [RemoteBoolean] indicating whether the time should be displayed in 24-hour format.
+     * Currently captured at recording time.
+     */
     @Composable
-    public fun defaultTimeString(): RemoteString {
+    public fun is24HourFormat(): RemoteBoolean =
+        RemoteBoolean(DateFormat.is24HourFormat(LocalContext.current))
+
+    @Composable
+    public fun defaultTimeString(is24HourFormat: RemoteBoolean = is24HourFormat()): RemoteString {
         val mins =
             (RemoteFloat(FLOAT_TIME_IN_MIN) % 60f).toRemoteString(2, 0, TextFromFloat.PAD_PRE_ZERO)
-        val hours = RemoteFloat(FLOAT_TIME_IN_HR).toRemoteString(2, 0, TextFromFloat.PAD_PRE_ZERO)
-        return hours + RemoteString(":") + mins
+        val hours24String: RemoteString =
+            RemoteFloat(FLOAT_TIME_IN_HR).toRemoteString(2, 0, TextFromFloat.PAD_PRE_ZERO)
+        val currentHour = RemoteFloat(FLOAT_TIME_IN_HR)
+        val hour12: RemoteFloat =
+            ((currentHour % 12f).eq(0.rf)).select(RemoteFloat(12f), currentHour % 12f)
+        val hours12String: RemoteString = hour12.toRemoteString(2, 0, TextFromFloat.PAD_PRE_ZERO)
+        val amPm: RemoteString =
+            (currentHour.lt(12.rf)).select(RemoteString(" AM"), RemoteString(" PM"))
+
+        val time24 = hours24String + RemoteString(":") + mins
+        val time12 = hours12String + RemoteString(":") + mins + amPm
+        return is24HourFormat.select(time24, time12)
     }
 }

@@ -44,7 +44,11 @@ class SandboxedPdfLoaderTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val loader = SandboxedPdfLoader(context, Dispatchers.Main)
         loader.testingConnection =
-            FakePdfServiceConnection(context, isConnected = false) { isServiceConnected = true }
+            FakePdfServiceConnection(
+                context,
+                isConnected = false,
+                onServiceConnected = { isServiceConnected = true },
+            )
         val uri = TestUtils.openFile(context, PDF_DOCUMENT)
 
         val document = loader.openDocument(uri)
@@ -63,7 +67,11 @@ class SandboxedPdfLoaderTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val loader = SandboxedPdfLoader(context, Dispatchers.Main)
         loader.testingConnection =
-            FakePdfServiceConnection(context, isConnected = false) { isServiceConnected = true }
+            FakePdfServiceConnection(
+                context,
+                isConnected = false,
+                onServiceConnected = { isServiceConnected = true },
+            )
         val pfd = TestUtils.openFileDescriptor(context, PDF_DOCUMENT)
 
         val document = loader.openDocument(FAKE_URI_1, pfd)

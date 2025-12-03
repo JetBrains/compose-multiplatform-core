@@ -276,7 +276,7 @@ public class Matrix4(dataToCopy: FloatArray) {
         @JvmStatic
         public fun fromTrs(translation: Vector3, rotation: Quaternion, scale: Vector3): Matrix4 {
             // implementationd details: https://www.songho.ca/opengl/gl_quaternion.html
-            val q = rotation.toNormalized()
+            val q = rotation
 
             // double var1 var2
             val dqyx = 2 * q.y * q.x

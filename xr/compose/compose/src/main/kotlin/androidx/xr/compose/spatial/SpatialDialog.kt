@@ -16,6 +16,7 @@
 
 package androidx.xr.compose.spatial
 
+import android.view.ViewParent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.animateFloat
@@ -26,7 +27,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.ZeroCornerSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -38,18 +38,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.xr.compose.platform.LocalCoreEntity
-import androidx.xr.compose.platform.LocalCoreMainPanelEntity
+import androidx.core.viewtree.setViewTreeDisjointParent
+import androidx.xr.compose.R
 import androidx.xr.compose.platform.LocalDialogManager
-import androidx.xr.compose.platform.LocalOpaqueEntity
 import androidx.xr.compose.platform.LocalSession
 import androidx.xr.compose.platform.LocalSpatialCapabilities
+import androidx.xr.compose.platform.findNearestParentEntity
 import androidx.xr.compose.subspace.layout.CorePanelEntity
 import androidx.xr.compose.subspace.layout.SpatialRoundedCornerShape
 import androidx.xr.compose.subspace.rememberComposeView
@@ -174,7 +175,8 @@ private fun LayoutSpatialDialog(
     var spatialElevationLevel by remember { mutableStateOf(SpatialElevationLevel.Level0) }
     val dialogManager = LocalDialogManager.current
     val session = checkNotNull(LocalSession.current) { "session must be initialized" }
-    val parentEntity = LocalCoreEntity.current ?: LocalCoreMainPanelEntity.current ?: return
+    val parentView = LocalView.current
+    val parentEntity = findNearestParentEntity()
     val view = rememberComposeView()
     val density = LocalDensity.current
 
@@ -226,18 +228,21 @@ private fun LayoutSpatialDialog(
                     name = "ElevatedPanel:${view.id}",
                 )
             )
-            .also { it.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density) }
+            .also {
+                it.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density)
+                view.setTag(R.id.compose_xr_local_view_entity, it)
+            }
     }
+
+    SideEffect { view.setViewTreeDisjointParent(parentView as? ViewParent ?: parentView.parent) }
 
     LaunchedEffect(density) {
         panelEntity.setShape(SpatialRoundedCornerShape(ZeroCornerSize), density)
     }
 
     view.setContent {
-        CompositionLocalProvider(LocalOpaqueEntity provides panelEntity) {
-            Box(modifier = Modifier.constrainTo(Constraints()).onSizeChanged { contentSize = it }) {
-                content()
-            }
+        Box(modifier = Modifier.constrainTo(Constraints()).onSizeChanged { contentSize = it }) {
+            content()
         }
     }
 

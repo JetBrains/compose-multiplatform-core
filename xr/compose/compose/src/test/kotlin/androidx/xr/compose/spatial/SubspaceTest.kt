@@ -491,6 +491,41 @@ class SubspaceTest {
     }
 
     @Test
+    fun subspace_whenMultipleSubspacesLeaveComposition_disablesMainPanelEntity() {
+        var showFirstSubspace by mutableStateOf(true)
+        var showSecondSubspace by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            if (showFirstSubspace) {
+                Subspace {}
+            }
+
+            if (showSecondSubspace) {
+                Subspace {}
+            }
+        }
+
+        val session = assertNotNull(composeTestRule.session)
+        val mainPanelEntity = session.scene.mainPanelEntity
+        assertThat(mainPanelEntity.isEnabled()).isFalse()
+
+        showSecondSubspace = true
+        composeTestRule.waitForIdle()
+
+        assertThat(mainPanelEntity.isEnabled()).isFalse()
+
+        showFirstSubspace = false
+        composeTestRule.waitForIdle()
+
+        assertThat(mainPanelEntity.isEnabled()).isFalse()
+
+        showSecondSubspace = false
+        composeTestRule.waitForIdle()
+
+        assertThat(mainPanelEntity.isEnabled()).isTrue()
+    }
+
+    @Test
     fun subspace_whenSwitchingModes_retainsState() {
         val testSceneRuntime = createFakeRuntime(composeTestRule.activity)
         composeTestRule.session = createFakeSession(composeTestRule.activity, testSceneRuntime)

@@ -34,8 +34,8 @@ import kotlin.math.sign
  * @return A [FlingBehavior] instance that provides focus-aware snapping.
  */
 @Composable
-internal fun rememberSnapFlingBehavior(state: ListState): FlingBehavior {
-    val snapLayoutInfoProvider = remember(state) { ListFocusSnapLayoutInfoProvider(state) }
+public fun rememberSnapFlingBehavior(state: ListState): FlingBehavior {
+    val snapLayoutInfoProvider = remember(state) { SnapLayoutInfoProvider(state) }
     return rememberSnapFlingBehavior(snapLayoutInfoProvider)
 }
 
@@ -43,54 +43,57 @@ internal fun rememberSnapFlingBehavior(state: ListState): FlingBehavior {
  * List snapping aligns the focus line with the center of the closest item. Combined with adaptive
  * scrolling, this ensures that users have to move the same distance when swipes between items of
  * the similar size, resulting in predictable movement.
+ *
+ * @param state The [ListState] to observe for layout and focus information.
+ * @return A focus-aware [SnapLayoutInfoProvider] instance.
  */
-private class ListFocusSnapLayoutInfoProvider(private val state: ListState) :
-    SnapLayoutInfoProvider {
-
-    /**
-     * Calculates the approach offset for the decay animation before starting the snapping phase.
-     * The returned offset is one item less than the suggested [decayOffset] to ensure a smoother
-     * animation.
-     */
-    override fun calculateApproachOffset(velocity: Float, decayOffset: Float): Float {
-        if (state.layoutInfo.totalItemsCount == 0) {
-            return 0f
+public fun SnapLayoutInfoProvider(state: ListState): SnapLayoutInfoProvider =
+    object : SnapLayoutInfoProvider {
+        /**
+         * Calculates the approach offset for the decay animation before starting the snapping
+         * phase. The returned offset is one item less than the suggested [decayOffset] to ensure a
+         * smoother animation.
+         */
+        override fun calculateApproachOffset(velocity: Float, decayOffset: Float): Float {
+            if (state.layoutInfo.totalItemsCount == 0) {
+                return 0f
+            }
+            val averageItemSize = state.layoutInfo.visibleItemsAverageSize()
+            return (abs(decayOffset) - averageItemSize).coerceAtLeast(0.0f) * decayOffset.sign
         }
-        val averageItemSize = state.layoutInfo.visibleItemsAverageSize()
-        return (abs(decayOffset) - averageItemSize).coerceAtLeast(0.0f) * decayOffset.sign
-    }
 
-    /**
-     * Calculates the final snap offset to align the center of the closest item with the focus line.
-     */
-    override fun calculateSnapOffset(velocity: Float): Float {
-        if (state.layoutInfo.totalItemsCount == 0) {
-            return 0f
-        }
-        val autoFocusMeasureResult = state.autoFocusBehaviour.properties ?: return 0f
+        /**
+         * Calculates the final snap offset to align the center of the closest item with the focus
+         * line.
+         */
+        override fun calculateSnapOffset(velocity: Float): Float {
+            if (state.layoutInfo.totalItemsCount == 0) {
+                return 0f
+            }
+            val autoFocusMeasureResult = state.autoFocusBehaviour.properties ?: return 0f
 
-        var lowerBoundOffset = Float.NEGATIVE_INFINITY
-        var upperBoundOffset = Float.POSITIVE_INFINITY
+            var lowerBoundOffset = Float.NEGATIVE_INFINITY
+            var upperBoundOffset = Float.POSITIVE_INFINITY
 
-        state.layoutInfo.visibleItemsInfo.fastForEach { item ->
-            // Measure the distance between the center of the item and the focus line.
-            val offset = item.offset + item.size / 2 - autoFocusMeasureResult.focusScroll
+            state.layoutInfo.visibleItemsInfo.fastForEach { item ->
+                // Measure the distance between the center of the item and the focus line.
+                val offset = item.offset + item.size / 2 - autoFocusMeasureResult.focusScroll
 
-            // Find the closest item before the focus line
-            if (offset <= 0 && offset > lowerBoundOffset) {
-                lowerBoundOffset = offset
+                // Find the closest item before the focus line
+                if (offset <= 0 && offset > lowerBoundOffset) {
+                    lowerBoundOffset = offset
+                }
+
+                // Find the closest item after the focus line
+                if (0 <= offset && offset < upperBoundOffset) {
+                    upperBoundOffset = offset
+                }
             }
 
-            // Find the closest item after the focus line
-            if (0 <= offset && offset < upperBoundOffset) {
-                upperBoundOffset = offset
+            return if (abs(lowerBoundOffset) <= upperBoundOffset) {
+                lowerBoundOffset
+            } else {
+                upperBoundOffset
             }
         }
-
-        return if (abs(lowerBoundOffset) <= upperBoundOffset) {
-            lowerBoundOffset
-        } else {
-            upperBoundOffset
-        }
     }
-}

@@ -792,7 +792,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    fun testInvalidMapInfoColumnsWithRawQuery() {
+    fun testInvalidMapColumnColumnsWithRawQuery() {
         musicDao.addSongs(rhcpSong1, rhcpSong2, acdcSong1, pinkFloydSong1)
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         try {
@@ -967,7 +967,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    fun testSingleNestedMapWithMapInfoLeftJoin() {
+    fun testSingleNestedMapWithMapColumnLeftJoin() {
         musicDao.addArtists(rhcp, acdc, theClash, pinkFloyd)
         musicDao.addAlbums(
             stadiumArcadium,
@@ -978,7 +978,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         )
         musicDao.addSongs(rhcpSong1, acdcSong1, pinkFloydSong1, rhcpSong3)
 
-        val singleNestedMap = musicDao.getArtistToAlbumsMappedToSongNamesMapInfoLeftJoin()
+        val singleNestedMap = musicDao.getArtistToAlbumsMappedToSongNamesMapColumnLeftJoin()
         val rhcpMap = singleNestedMap.getValue(rhcp)
 
         assertThat(rhcpMap.keys).containsExactlyElementsIn(listOf(californication, stadiumArcadium))
@@ -990,7 +990,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
     }
 
     @Test
-    fun testDoubleNestedMapWithMapInfoKeyLeftJoin() {
+    fun testNestedMapWithMapColumnKeyAndValue() {
         musicDao.addArtists(rhcp, acdc, pinkFloyd)
         musicDao.addAlbums(
             stadiumArcadium,
@@ -1002,55 +1002,7 @@ class MultimapQueryTest(driver: UseDriver) : TestDatabaseTest(driver) {
         musicDao.addSongs(rhcpSong1, rhcpSong2, acdcSong1, rhcpSong3)
         musicDao.addImages(pinkFloydAlbumCover, rhcpAlbumCover, theClashAlbumCover)
 
-        val doubleNestedMap = musicDao.getImageYearToArtistToAlbumsMappedToSongs()
-        val rhcpImageMap = doubleNestedMap.getValue(rhcpAlbumCover.mImageYear)
-        val rhcpMap = rhcpImageMap.getValue(rhcp)
-        val stadiumArcadiumList = rhcpMap.getValue(stadiumArcadium)
-        val californicationList = rhcpMap.getValue(californication)
-
-        val stadiumArcadiumExpectedList = listOf(rhcpSong1, rhcpSong2)
-        val californicationExpectedList = listOf(rhcpSong3)
-
-        assertThat(doubleNestedMap.keys)
-            .containsExactlyElementsIn(
-                listOf(
-                    pinkFloydAlbumCover.mImageYear,
-                    rhcpAlbumCover.mImageYear,
-                    theClashAlbumCover.mImageYear,
-                )
-            )
-        assertThat(rhcpImageMap.keys).containsExactly(rhcp)
-        assertThat(rhcpMap.keys).containsExactlyElementsIn(listOf(californication, stadiumArcadium))
-        assertThat(stadiumArcadiumList).containsExactlyElementsIn(stadiumArcadiumExpectedList)
-        assertThat(californicationList).containsExactlyElementsIn(californicationExpectedList)
-
-        // LEFT JOIN Checks
-        assertThat(doubleNestedMap).containsKey(theClashAlbumCover.mImageYear)
-        assertThat(doubleNestedMap[theClashAlbumCover.mImageYear]).isEmpty()
-        assertThat(doubleNestedMap).containsKey(pinkFloydAlbumCover.mImageYear)
-        assertThat(doubleNestedMap[pinkFloydAlbumCover.mImageYear]).containsKey(pinkFloyd)
-        assertThat(doubleNestedMap[pinkFloydAlbumCover.mImageYear]!![pinkFloyd])
-            .containsKey(theDarkSideOfTheMoon)
-        assertThat(
-                doubleNestedMap[pinkFloydAlbumCover.mImageYear]!![pinkFloyd]!![theDarkSideOfTheMoon]
-            )
-            .isEmpty()
-    }
-
-    @Test
-    fun testNestedMapWithMapInfoKeyAndValue() {
-        musicDao.addArtists(rhcp, acdc, pinkFloyd)
-        musicDao.addAlbums(
-            stadiumArcadium,
-            californication,
-            theDarkSideOfTheMoon,
-            highwayToHell,
-            dreamland,
-        )
-        musicDao.addSongs(rhcpSong1, rhcpSong2, acdcSong1, rhcpSong3)
-        musicDao.addImages(pinkFloydAlbumCover, rhcpAlbumCover, theClashAlbumCover)
-
-        val doubleNestedMap = musicDao.getNestedMapWithMapInfoKeyAndValue()
+        val doubleNestedMap = musicDao.getNestedMapWithMapColumnKeyAndValue()
         val rhcpImageMap = doubleNestedMap.getValue(rhcpAlbumCover.mImageYear)
         val rhcpMap = rhcpImageMap.getValue(rhcp)
         val stadiumArcadiumList = rhcpMap.getValue(stadiumArcadium)

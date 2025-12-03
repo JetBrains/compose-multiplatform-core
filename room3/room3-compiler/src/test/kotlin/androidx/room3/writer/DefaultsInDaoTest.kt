@@ -71,8 +71,9 @@ class DefaultsInDaoTest(private val jvmDefaultMode: String) {
                     .trimIndent(),
             )
         compileInEachDefaultsMode(source) { generated ->
-            generated.contains("public void upsert(final User obj)")
-            generated.contains("SubjectDao_Impl.super.upsert(")
+            generated.contains("public override fun upsert(obj: User): Unit")
+            generated.contains("super@SubjectDao_Impl.upsert(obj)")
+            generated.doesNotContain("SubjectDao_Impl.super.upsert(")
             generated.doesNotContain("SubjectDao.super.upsert")
             generated.doesNotContain("this.upsert")
         }
@@ -99,13 +100,10 @@ class DefaultsInDaoTest(private val jvmDefaultMode: String) {
                     .trimIndent(),
             )
         compileInEachDefaultsMode(source) { generated ->
-            generated.contains("public void upsert(final User obj)")
-            if (jvmDefaultMode == "disable") {
-                generated.contains("SubjectDao.DefaultImpls.upsert(SubjectDao_Impl.this")
-            } else {
-                generated.contains("SubjectDao.super.upsert(")
-            }
-
+            generated.contains("public override fun upsert(obj: User): Unit")
+            generated.contains("super@SubjectDao_Impl.upsert(obj)")
+            generated.doesNotContain("SubjectDao.DefaultImpls.upsert(SubjectDao_Impl.this")
+            generated.doesNotContain("SubjectDao.super.upsert(")
             generated.doesNotContain("SubjectDao_Impl.super.upsert")
             generated.doesNotContain("this.upsert")
         }
@@ -132,16 +130,10 @@ class DefaultsInDaoTest(private val jvmDefaultMode: String) {
                     .trimIndent(),
             )
         compileInEachDefaultsMode(source) { generated ->
-            generated.contains(
-                "public Object upsert(final User obj, " +
-                    "final Continuation<? super Unit> \$completion)"
-            )
-            if (jvmDefaultMode == "disable") {
-                generated.contains("SubjectDao.DefaultImpls.upsert(SubjectDao_Impl.this")
-            } else {
-                generated.contains("SubjectDao.super.upsert(")
-            }
-
+            generated.contains("public override suspend fun upsert(obj: User): Unit")
+            generated.contains("super@SubjectDao_Impl.upsert(obj)")
+            generated.doesNotContain("SubjectDao.DefaultImpls.upsert(SubjectDao_Impl.this")
+            generated.doesNotContain("SubjectDao.super.upsert(")
             generated.doesNotContain("SubjectDao_Impl.super.upsert")
             generated.doesNotContain("this.upsert")
         }
@@ -202,14 +194,14 @@ class DefaultsInDaoTest(private val jvmDefaultMode: String) {
                             dbElement = db,
                             writerContext =
                                 TypeWriter.WriterContext(
-                                    codeLanguage = CodeLanguage.JAVA,
+                                    codeLanguage = CodeLanguage.KOTLIN,
                                     javaLambdaSyntaxAvailable = true,
                                     targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
                                 ),
                         )
                         .write(invocation.processingEnv)
                     invocation.assertCompilationResult {
-                        val relativePath = parsedDao.implTypeName.canonicalName + ".java"
+                        val relativePath = parsedDao.implTypeName.canonicalName + ".kt"
                         handler(generatedSourceFileWithPath(relativePath))
                     }
                 }

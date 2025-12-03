@@ -21,6 +21,7 @@ import android.content.Context
 import androidx.glance.wear.ActiveWearWidgetHandle
 import androidx.glance.wear.ContainerInfo.Companion.CONTAINER_TYPE_FULLSCREEN
 import androidx.glance.wear.GlanceWearWidget
+import androidx.glance.wear.WidgetInstanceId
 import androidx.glance.wear.parcel.legacy.TileAddEventData
 import androidx.glance.wear.parcel.legacy.TileRemoveEventData
 import androidx.glance.wear.proto.legacy.TileAddEvent
@@ -52,13 +53,17 @@ class LegacyTileProviderImplTest {
         val tileId = 123
         val addEvent = TileAddEvent(tile_id = tileId)
         val eventData = TileAddEventData(addEvent.encode(), TileAddEventData.VERSION_PROTOBUF)
-        val expectedWidgetId =
-            ActiveWearWidgetHandle(providerName, tileId, CONTAINER_TYPE_FULLSCREEN)
+        val expectedWidgetHandle =
+            ActiveWearWidgetHandle(
+                providerName,
+                WidgetInstanceId("", tileId),
+                CONTAINER_TYPE_FULLSCREEN,
+            )
 
         legacyTileProvider.onTileAddEvent(eventData)
         testScope.advanceUntilIdle()
 
-        verify(mockWidget).onAdded(context, expectedWidgetId)
+        verify(mockWidget).onAdded(context, expectedWidgetHandle)
     }
 
     @Test
@@ -67,12 +72,16 @@ class LegacyTileProviderImplTest {
         val removeEvent = TileRemoveEvent(tile_id = tileId)
         val eventData =
             TileRemoveEventData(removeEvent.encode(), TileRemoveEventData.VERSION_PROTOBUF)
-        val expectedWidgetId =
-            ActiveWearWidgetHandle(providerName, tileId, CONTAINER_TYPE_FULLSCREEN)
+        val expectedWidgetHandle =
+            ActiveWearWidgetHandle(
+                providerName,
+                WidgetInstanceId("", tileId),
+                CONTAINER_TYPE_FULLSCREEN,
+            )
 
         legacyTileProvider.onTileRemoveEvent(eventData)
         testScope.advanceUntilIdle()
 
-        verify(mockWidget).onRemoved(context, expectedWidgetId)
+        verify(mockWidget).onRemoved(context, expectedWidgetHandle)
     }
 }

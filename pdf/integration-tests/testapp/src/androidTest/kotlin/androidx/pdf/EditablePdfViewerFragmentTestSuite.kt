@@ -27,6 +27,7 @@ import androidx.pdf.FragmentUtils.scenarioLoadDocument
 import androidx.pdf.actions.TwoFingerSwipeDownAction
 import androidx.pdf.actions.TwoFingerSwipeUpAction
 import androidx.pdf.ink.R as InkR
+import androidx.pdf.ink.model.ApplyInProgressException
 import androidx.pdf.util.Preconditions
 import androidx.pdf.viewer.fragment.R as PdfR
 import androidx.test.espresso.Espresso.onIdle
@@ -45,6 +46,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
+import com.google.common.truth.Truth.assertThat
 import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.greaterThan
@@ -73,6 +75,8 @@ class EditablePdfViewerFragmentTestSuite {
                         .register(fragment.pdfLoadingIdlingResource.countingIdlingResource)
                     IdlingRegistry.getInstance()
                         .register(fragment.pdfScrollIdlingResource.countingIdlingResource)
+                    IdlingRegistry.getInstance()
+                        .register(fragment.pdfApplyEditsIdlingResource.countingIdlingResource)
                 }
     }
 
@@ -83,6 +87,8 @@ class EditablePdfViewerFragmentTestSuite {
                 .unregister(fragment.pdfLoadingIdlingResource.countingIdlingResource)
             IdlingRegistry.getInstance()
                 .unregister(fragment.pdfScrollIdlingResource.countingIdlingResource)
+            IdlingRegistry.getInstance()
+                .unregister(fragment.pdfApplyEditsIdlingResource.countingIdlingResource)
         }
         scenario.close()
     }
@@ -228,6 +234,114 @@ class EditablePdfViewerFragmentTestSuite {
         onIdle()
         onView(withText(InkR.string.discard_changes_dialog_title)).check(doesNotExist())
         onView(withId(R.id.edit_fab)).check(matches(isDisplayed())) // Back to viewer mode
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_enterAndExitEditMode_togglesState() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        // 1. Verify initial state (Viewer Mode)
+        scenario.onFragment { fragment -> assertThat(fragment.isEditModeEnabled).isFalse() }
+
+        // 2. Enter Edit Mode
+        enterEditMode()
+
+        scenario.onFragment { fragment ->
+            assertThat(fragment.isEditModeEnabled).isTrue()
+            assertThat(fragment.onEnterEditModeCalled).isTrue()
+        }
+
+        // 3. Exit Edit Mode
+        scenario.onFragment { fragment -> fragment.isEditModeEnabled = false }
+        onIdle()
+
+        scenario.onFragment { fragment ->
+            assertThat(fragment.isEditModeEnabled).isFalse()
+            assertThat(fragment.onExitEditModeCalled).isTrue()
+        }
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_applyDraftEdits_callbacks() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+
+        // Create an annotation
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        onIdle()
+
+        // Apply draft edits
+        scenario.onFragment { fragment ->
+            assertThat(fragment.isApplyEditsInProgress).isFalse()
+            fragment.pdfApplyEditsIdlingResource.increment()
+            fragment.applyDraftEdits()
+            assertThat(fragment.isApplyEditsInProgress).isTrue()
+        }
+
+        onIdle()
+
+        // Verify success callback was called and progress is finished
+        scenario.onFragment { fragment ->
+            assertThat(fragment.onApplyEditsSuccessCalled).isTrue()
+            assertThat(fragment.isApplyEditsInProgress).isFalse()
+        }
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_applyDraftEdits_throwsIfInProgress() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+        enterEditMode()
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        onIdle()
+
+        scenario.onFragment { fragment ->
+            // 1. Start the first apply operation
+            fragment.pdfApplyEditsIdlingResource.increment()
+            fragment.applyDraftEdits()
+            assertThat(fragment.isApplyEditsInProgress).isTrue()
+
+            // 2. Attempt a second apply operation immediately and verify it throws
+            try {
+                fragment.applyDraftEdits()
+            } catch (e: Exception) {
+                assertThat(e).isInstanceOf(ApplyInProgressException::class.java)
+            }
+        }
+    }
+
+    @Test
+    fun testEditablePdfViewerFragment_hasUnsavedChanges() {
+        if (!isRequiredSdkExtensionAvailable()) return
+
+        loadDocumentAndSetupFragment()
+
+        // 1. Initially, no unsaved changes
+        var hasChanges = true
+        scenario.onFragment { hasChanges = it.hasUnsavedChanges }
+        assertThat(hasChanges).isFalse()
+
+        // 2. Enter edit mode, still no changes
+        enterEditMode()
+        scenario.onFragment { hasChanges = it.hasUnsavedChanges }
+        assertThat(hasChanges).isFalse()
+
+        // 3. Create an annotation, now there are unsaved changes
+        onView(withId(PdfR.id.pdfContentLayout)).perform(swipeLeft())
+        onIdle()
+        scenario.onFragment { hasChanges = it.hasUnsavedChanges }
+        assertThat(hasChanges).isTrue()
+
+        // 4. Apply edits, changes should be saved
+        scenario.onFragment { it.applyDraftEdits() }
+        onIdle()
+        scenario.onFragment { hasChanges = it.hasUnsavedChanges }
+        assertThat(hasChanges).isFalse()
     }
 
     private fun enterEditMode() {

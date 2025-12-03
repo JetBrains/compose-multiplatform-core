@@ -28,6 +28,7 @@ import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.IFELSE
 import androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.SUB
 import androidx.compose.remote.core.operations.utilities.StringUtils
+import androidx.compose.remote.core.operations.utilities.StringUtils.PAD_NONE
 import androidx.compose.remote.core.operations.utilities.easing.FloatAnimation
 import androidx.compose.remote.creation.compose.capture.LocalRemoteComposeCreationState
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCreationState
@@ -36,6 +37,8 @@ import androidx.compose.remote.creation.compose.layout.RemoteFloatContext
 import androidx.compose.remote.player.core.state.RemoteDomains
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import java.math.RoundingMode
+import java.text.DecimalFormat
 
 private const val MAX_SAFE_FLOAT_ARRAY = 30
 
@@ -60,28 +63,15 @@ public val Float.rf: RemoteFloat
 internal fun Number.getFloatIdForCreationState(creationState: RemoteComposeCreationState): Float =
     when (this) {
         is Float -> this
-        is RemoteFloat -> getFloatIdForCreationState(creationState)
         else -> toFloat()
     }
-
-/** Extension property that extracts whether or not a [Number] represents a constant value. */
-internal val Number.hasConstantValue: Boolean
-    get() =
-        when (this) {
-            is RemoteFloat -> this.hasConstantValue
-            else -> true
-        }
 
 /**
  * Abstract base class for all remote float representations. It extends [Number] and implements
  * [RemoteState<Float>].
- *
- * @property hasConstantValue Whether this [RemoteFloat] will always evaluate to the same value.
- *   This is a conservative check and might return false for some expressions that are effectively
- *   constant.
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-public abstract class RemoteFloat : Number(), RemoteState<Float> {
+public abstract class RemoteFloat : BaseRemoteState<Float>() {
     internal abstract val arrayProvider: (creationState: RemoteComposeCreationState) -> FloatArray
 
     internal fun arrayForCreationState(creationState: RemoteComposeCreationState): FloatArray {
@@ -114,7 +104,7 @@ public abstract class RemoteFloat : Number(), RemoteState<Float> {
         return id
     }
 
-    public override fun toFloat(): Float {
+    public fun toFloat(): Float {
         return id
     }
 
@@ -128,6 +118,76 @@ public abstract class RemoteFloat : Number(), RemoteState<Float> {
         return RemoteIntExpression(constantValue = null) { creationState ->
             longArrayOf(getLongIdForCreationState(creationState))
         }
+    }
+
+    public fun toRemoteString(format: DecimalFormat): RemoteString {
+
+        val decimalSeparator = format.decimalFormatSymbols.decimalSeparator
+        val groupingSeparator = format.decimalFormatSymbols.groupingSeparator
+
+        val grouping =
+            if (format.groupingSize == 3) {
+                val pattern = format.toPattern()
+
+                if (pattern.matches(",[0#]{2},[0#]{3}".toRegex())) {
+                    TextFromFloat.GROUPING_BY32
+                } else {
+                    TextFromFloat.GROUPING_BY3
+                }
+            } else if (format.groupingSize == 4) {
+                TextFromFloat.GROUPING_BY4
+            } else {
+                TextFromFloat.GROUPING_NONE
+            }
+
+        val separator =
+            if (groupingSeparator == ',' && decimalSeparator == '.') {
+                TextFromFloat.SEPARATOR_COMMA_PERIOD
+            } else if (groupingSeparator == '.' && decimalSeparator == ',') {
+                TextFromFloat.SEPARATOR_PERIOD_COMMA
+            } else if (groupingSeparator == ' ' && decimalSeparator == ',') {
+                TextFromFloat.SEPARATOR_SPACE_COMMA
+            } else if (groupingSeparator == '_' && decimalSeparator == '.') {
+                TextFromFloat.SEPARATOR_UNDER_PERIOD
+            } else {
+                // default
+                TextFromFloat.SEPARATOR_COMMA_PERIOD
+            }
+
+        var options = 0
+        if (format.negativePrefix == "(") {
+            options = options or TextFromFloat.OPTIONS_NEGATIVE_PARENTHESES
+        }
+
+        if (format.roundingMode != RoundingMode.UNNECESSARY) {
+            // Not clear we can represent rounding properly
+            options = options or TextFromFloat.OPTIONS_ROUNDING
+        }
+
+        constantValue?.let {
+            return RemoteString(
+                StringUtils.floatToString(
+                    it,
+                    format.maximumIntegerDigits.coerceAtMost(255),
+                    format.maximumFractionDigits.coerceAtMost(255),
+                    PAD_NONE,
+                    PAD_NONE,
+                    separator.toByte(),
+                    grouping.toByte(),
+                    options shr 8,
+                )
+            )
+        }
+
+        var flags: Int = TextFromFloat.PAD_PRE_NONE or TextFromFloat.PAD_AFTER_NONE
+
+        flags = flags or separator or grouping or options
+
+        return toRemoteString(
+            before = format.maximumIntegerDigits.coerceAtMost(255),
+            after = format.maximumFractionDigits.coerceAtMost(255),
+            flags = flags,
+        )
     }
 
     /**
@@ -186,26 +246,6 @@ public abstract class RemoteFloat : Number(), RemoteState<Float> {
                 }
             },
         )
-    }
-
-    public override fun toByte(): Byte {
-        TODO("Not yet implemented")
-    }
-
-    public override fun toDouble(): Double {
-        TODO("Not yet implemented")
-    }
-
-    public override fun toInt(): Int {
-        TODO("Not yet implemented")
-    }
-
-    public override fun toLong(): Long {
-        TODO("Not yet implemented")
-    }
-
-    public override fun toShort(): Short {
-        TODO("Not yet implemented")
     }
 
     /**
@@ -322,9 +362,6 @@ public abstract class RemoteFloat : Number(), RemoteState<Float> {
     public operator fun div(v: RemoteFloat): RemoteFloat {
         if (v.constantValue != null && v.constantValue == 1f) {
             return this
-        }
-        if (constantValue != null && constantValue == 1f) {
-            return v
         }
         return binaryOp(this, v, AnimatedFloatExpression.DIV) { a, b -> a / b }
     }
@@ -1065,7 +1102,6 @@ public annotation class AnimationType
  */
 public fun toArray(a: Number): FloatArray =
     when (a) {
-        is RemoteFloat -> a.arrayForCreationState(FallbackCreationState.state)
         is Float -> floatArrayOf(a)
         else -> floatArrayOf(a.toFloat())
     }
@@ -1079,12 +1115,8 @@ public fun toArray(a: Number): FloatArray =
  * @param creationState The [RemoteComposeCreationState] to use for conversion.
  * @return A [FloatArray] representation of the number.
  */
-public fun toArray(a: Number, creationState: RemoteComposeCreationState): FloatArray =
-    when (a) {
-        is RemoteFloat -> a.arrayForCreationState(creationState)
-        is Float -> floatArrayOf(a)
-        else -> floatArrayOf(a.toFloat())
-    }
+public fun toArray(a: RemoteFloat, creationState: RemoteComposeCreationState): FloatArray =
+    a.arrayForCreationState(creationState)
 
 /**
  * Composable function to remember and provide a [RemoteFloat] from a [FloatArray]. This is intended

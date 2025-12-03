@@ -24,7 +24,6 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.net.Uri
 import android.os.Build
-import android.os.ParcelFileDescriptor
 import android.util.Size
 import android.util.SparseArray
 import androidx.annotation.OpenForTesting
@@ -36,7 +35,6 @@ import androidx.pdf.content.PdfPageGotoLinkContent
 import androidx.pdf.content.PdfPageLinkContent
 import androidx.pdf.content.PdfPageTextContent
 import androidx.pdf.content.SelectionBoundary
-import androidx.pdf.models.FormEditRecord
 import androidx.pdf.models.FormWidgetInfo
 import kotlin.math.roundToInt
 import kotlin.random.Random
@@ -74,7 +72,6 @@ internal open class FakePdfDocument(
     private val pages: List<Point> = listOf(),
     override val formType: Int = PDF_FORM_TYPE_NONE,
     override val isLinearized: Boolean = false,
-    override val formEditRecords: List<FormEditRecord> = emptyList(),
     private val searchResults: SparseArray<List<PageMatchBounds>> = SparseArray(),
     override val uri: Uri = Uri.parse("content://test.app/document.pdf"),
     private val pageLinks: Map<Int, PdfDocument.PdfPageLinks> = mapOf(),
@@ -179,11 +176,15 @@ internal open class FakePdfDocument(
         return listOf()
     }
 
-    override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
-        return listOf()
+    override fun addOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
+        return
     }
 
-    override suspend fun write(destination: ParcelFileDescriptor) {
+    override fun removeOnPdfContentInvalidatedListener(
+        listener: PdfDocument.OnPdfContentInvalidatedListener
+    ) {
         return
     }
 

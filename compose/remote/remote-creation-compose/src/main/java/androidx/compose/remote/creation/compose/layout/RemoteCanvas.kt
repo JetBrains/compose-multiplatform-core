@@ -35,6 +35,7 @@ import androidx.compose.remote.creation.compose.modifier.toComposeUiLayout
 import androidx.compose.remote.creation.compose.state.FallbackCreationState
 import androidx.compose.remote.creation.compose.state.RemoteFloat
 import androidx.compose.remote.creation.compose.state.RemoteString
+import androidx.compose.remote.creation.compose.state.rf
 import androidx.compose.remote.creation.modifiers.RecordingModifier
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.draw.DrawModifier
@@ -94,9 +95,9 @@ public fun RemoteCanvas(
 }
 
 public fun RemoteCanvasDrawScope.rotate(
-    angle: Number,
-    pivotX: Number,
-    pivotY: Number,
+    angle: RemoteFloat,
+    pivotX: RemoteFloat,
+    pivotY: RemoteFloat,
     function: RemoteCanvasDrawScope.() -> Unit,
 ) {
     canvas.save()
@@ -106,10 +107,10 @@ public fun RemoteCanvasDrawScope.rotate(
 }
 
 public fun RemoteCanvasDrawScope.clipRect(
-    left: Number,
-    top: Number,
-    right: Number,
-    bottom: Number,
+    left: RemoteFloat,
+    top: RemoteFloat,
+    right: RemoteFloat,
+    bottom: RemoteFloat,
     clipOp: ClipOp = ClipOp.Intersect,
     block: RemoteCanvasDrawScope.() -> Unit,
 ) {
@@ -129,7 +130,7 @@ public fun RemoteCanvasDrawScope.clipRect(
     withTransform({ clipRect(iLeft, iTop, iRight, iBottom, clipOp) }) { this@clipRect.block() }
 }
 
-public fun DrawTransform.translate(x: Number, y: Number) {
+public fun DrawTransform.translate(x: RemoteFloat, y: RemoteFloat) {
     val ix: Float =
         if (x is RemoteFloat) x.getFloatIdForCreationState(FallbackCreationState.state)
         else x.toFloat()
@@ -142,13 +143,13 @@ public fun DrawTransform.translate(x: Number, y: Number) {
 public fun RemoteCanvasDrawScope.remoteDrawAnchoredText(
     text: CharSequence,
     brush: RemoteBrush,
-    anchor: Offset,
-    panx: Number,
-    pany: Number,
-    alpha: Number,
+    anchor: RemoteOffset,
+    panx: RemoteFloat,
+    pany: RemoteFloat,
+    alpha: RemoteFloat,
     drawStyle: DrawStyle = Fill,
     typeface: Typeface? = null,
-    textSize: Number = 18f,
+    textSize: RemoteFloat = 18f.rf,
 ) {
     val iAlpha: Float =
         if (alpha is RemoteFloat) alpha.getFloatIdForCreationState(FallbackCreationState.state)
@@ -186,13 +187,13 @@ public fun RemoteCanvasDrawScope.remoteDrawAnchoredText(
 public fun RemoteCanvasDrawScope.remoteDrawAnchoredText(
     text: RemoteString,
     brush: RemoteBrush,
-    anchor: Offset,
-    panx: Number,
-    pany: Number,
-    alpha: Number,
+    anchor: RemoteOffset,
+    panx: RemoteFloat,
+    pany: RemoteFloat,
+    alpha: RemoteFloat,
     drawStyle: DrawStyle = Fill,
     typeface: Typeface? = null,
-    textSize: Number = 18f,
+    textSize: RemoteFloat = 18f.rf,
 ) {
     val iAlpha: Float =
         if (alpha is RemoteFloat) alpha.getFloatIdForCreationState(FallbackCreationState.state)
@@ -230,26 +231,18 @@ public fun RemoteCanvasDrawScope.remoteDrawAnchoredText(
 public fun RemoteCanvasDrawScope.remoteDrawAnchoredText(
     text: CharSequence,
     color: Color,
-    anchor: Offset,
-    panx: Number,
-    pany: Number,
-    alpha: Number,
+    anchor: RemoteOffset,
+    panx: RemoteFloat,
+    pany: RemoteFloat,
+    alpha: RemoteFloat,
     drawStyle: DrawStyle = Fill,
     typeface: Typeface? = null,
-    textSize: Number = 18f,
+    textSize: RemoteFloat = 18f.rf,
 ) {
-    val iAlpha: Float =
-        if (alpha is RemoteFloat) alpha.getFloatIdForCreationState(FallbackCreationState.state)
-        else alpha.toFloat()
-    val iTextSize: Float =
-        if (textSize is RemoteFloat)
-            textSize.getFloatIdForCreationState(FallbackCreationState.state)
-        else textSize.toFloat()
-
     val colorFilter: ColorFilter? = null
     val blendMode: BlendMode = DefaultBlendMode
 
-    val paint = configurePaint(color, drawStyle, iAlpha, colorFilter, blendMode)
+    val paint = configurePaint(color, drawStyle, alpha.id, colorFilter, blendMode)
     val ap = paint.asFrameworkPaint()
 
     if (typeface != null) {
@@ -257,7 +250,7 @@ public fun RemoteCanvasDrawScope.remoteDrawAnchoredText(
     } else {
         ap.setTypeface(Typeface.DEFAULT)
     }
-    ap.textSize = iTextSize
+    ap.textSize = textSize.id
     canvas.drawAnchoredText(
         text.toString(),
         anchorX = anchor.x,
@@ -272,26 +265,18 @@ public fun RemoteCanvasDrawScope.remoteDrawAnchoredText(
 public fun RemoteCanvasDrawScope.remoteDrawAnchoredText(
     text: RemoteString,
     color: Color,
-    anchor: Offset,
-    panx: Number,
-    pany: Number,
-    alpha: Number,
+    anchor: RemoteOffset,
+    panx: RemoteFloat,
+    pany: RemoteFloat,
+    alpha: RemoteFloat,
     drawStyle: DrawStyle = Fill,
     typeface: Typeface? = null,
-    textSize: Number = 18f,
+    textSize: RemoteFloat = 18f.rf,
 ) {
-    val iAlpha: Float =
-        if (alpha is RemoteFloat) alpha.getFloatIdForCreationState(FallbackCreationState.state)
-        else alpha.toFloat()
-    val iTextSize: Float =
-        if (textSize is RemoteFloat)
-            textSize.getFloatIdForCreationState(FallbackCreationState.state)
-        else textSize.toFloat()
-
     val colorFilter: ColorFilter? = null
     val blendMode: BlendMode = DefaultBlendMode
 
-    val paint = configurePaint(color, drawStyle, iAlpha, colorFilter, blendMode)
+    val paint = configurePaint(color, drawStyle, alpha.id, colorFilter, blendMode)
     val ap = paint.asFrameworkPaint()
 
     if (typeface != null) {
@@ -299,7 +284,7 @@ public fun RemoteCanvasDrawScope.remoteDrawAnchoredText(
     } else {
         ap.setTypeface(Typeface.DEFAULT)
     }
-    ap.textSize = iTextSize
+    ap.textSize = textSize.id
     canvas.drawAnchoredText(
         text,
         anchorX = anchor.x,
@@ -328,9 +313,9 @@ private fun getVerticalOffset(mOutPanY: Float, mBounds: FloatArray): Float {
 public fun RemoteCanvasDrawScope.remoteDrawTweePath(
     path1: Path,
     path2: Path,
-    tween: Number,
-    start: Number,
-    stop: Number,
+    tween: RemoteFloat,
+    start: RemoteFloat,
+    stop: RemoteFloat,
     color: Color,
     alpha: Float = 1.0f,
     style: DrawStyle = Fill,
@@ -567,16 +552,16 @@ public fun RemoteCanvasDrawScope.remoteDrawScaledBitmap(
     canvas.usePaint(paint.asFrameworkPaint())
     canvas.drawScaledBitmap(
         image,
-        srcLeft,
-        srcTop,
-        srcRight,
-        srcBottom,
-        dstLeft,
-        dstTop,
-        dstRight,
-        dstBottom,
+        srcLeft.rf,
+        srcTop.rf,
+        srcRight.rf,
+        srcBottom.rf,
+        dstLeft.rf,
+        dstTop.rf,
+        dstRight.rf,
+        dstBottom.rf,
         scaleType,
-        scaleFactor,
+        scaleFactor.rf,
         contentDescription,
     )
 }
@@ -701,28 +686,6 @@ internal fun toPaint(
 internal typealias ROffset = Offset
 
 internal typealias RSize = Size
-
-public fun ROffset(x: Number, y: Number): ROffset {
-    val ix: Float =
-        if (x is RemoteFloat) x.getFloatIdForCreationState(FallbackCreationState.state)
-        else x.toFloat()
-    val iy: Float =
-        if (y is RemoteFloat) y.getFloatIdForCreationState(FallbackCreationState.state)
-        else y.toFloat()
-
-    return Offset(ix, iy)
-}
-
-public fun RSize(w: Number, h: Number): RSize {
-    val iw: Float =
-        if (w is RemoteFloat) w.getFloatIdForCreationState(FallbackCreationState.state)
-        else w.toFloat()
-    val ih: Float =
-        if (h is RemoteFloat) h.getFloatIdForCreationState(FallbackCreationState.state)
-        else h.toFloat()
-
-    return Size(iw, ih)
-}
 
 public inline fun DrawScope.drawIntoRemoteCanvas(block: (RecordingCanvas) -> Unit): Unit {
     val canvas = drawContext.canvas.nativeCanvas as? RecordingCanvas

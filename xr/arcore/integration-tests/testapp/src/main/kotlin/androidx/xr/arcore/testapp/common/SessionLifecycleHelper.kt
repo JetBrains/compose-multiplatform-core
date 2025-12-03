@@ -16,12 +16,12 @@
 
 package androidx.xr.arcore.testapp.common
 
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.SessionConfigureCalibrationRequired
@@ -115,10 +115,9 @@ class SessionLifecycleHelper(
                     try {
                         when (val configResult = session.configure(config)) {
                             is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                                Log.e(
-                                    TAG,
-                                    "Google Play Services Location Library is not linked, this should not happen.",
-                                )
+                                Log.error {
+                                    "Google Play Services Location Library is not linked, this should not happen."
+                                }
                             }
                             is SessionConfigureCalibrationRequired -> {
                                 onSessionCalibrationRequired(configResult.calibrationType)
@@ -151,16 +150,15 @@ class SessionLifecycleHelper(
 
     internal fun tryUpdateConfig(config: Config) {
         if (!::session.isInitialized) {
-            Log.e(TAG, "Can't update config, session has not been initialized")
+            Log.error { "Can't update config, session has not been initialized" }
             return
         }
         try {
             when (val result = session.configure(config)) {
                 is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                    Log.e(
-                        TAG,
-                        "Google Play Services Location Library is not linked, this should not happen.",
-                    )
+                    Log.error {
+                        "Google Play Services Location Library is not linked, this should not happen."
+                    }
                 }
                 is SessionConfigureCalibrationRequired -> {
                     onSessionCalibrationRequired(result.calibrationType)
@@ -182,7 +180,7 @@ class SessionLifecycleHelper(
     }
 
     private fun <F> showErrorMessage(error: F) {
-        Log.e(TAG, error.toString())
+        Log.error { error.toString() }
         Toast.makeText(activity, error.toString(), Toast.LENGTH_LONG).show()
     }
 }

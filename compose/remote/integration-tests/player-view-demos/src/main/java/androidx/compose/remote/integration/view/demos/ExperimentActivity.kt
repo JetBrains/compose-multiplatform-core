@@ -64,9 +64,9 @@ import androidx.compose.remote.core.CoreDocument
 import androidx.compose.remote.core.RcProfiles.PROFILE_WIDGETS
 import androidx.compose.remote.core.RemoteComposeBuffer
 import androidx.compose.remote.core.operations.Theme
+import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.RemoteComposeWriter
-import androidx.compose.remote.creation.compose.capture.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.capture.RemoteComposeCapture
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths.pathTest
 import androidx.compose.remote.integration.view.demos.examples.LayoutModifierDemo1
@@ -101,7 +101,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -223,7 +222,7 @@ fun getComposeDoc(
         ) {
             //        val doc: MutableState<CoreDocument?> = remember { mutableStateOf(null) }
             //        val density = with(LocalDensity.current) { 1.dp.toPx() * 160 }
-            val connection = CreationDisplayInfo(1000, 1000, 440)
+            val connection = CreationDisplayInfo(1000, 1000, 440 / 160f)
             //        val done = remember { mutableStateOf(false) }
             RemoteComposeCapture(
                 baseContext,
@@ -367,8 +366,7 @@ class ExperimentActivity : ComponentActivity() {
                 content: @Composable () -> Unit,
             ): MutableState<CoreDocument?> {
                 val doc: MutableState<CoreDocument?> = remember { mutableStateOf(null) }
-                val density = with(LocalDensity.current) { 1.dp.toPx() * 160 }
-                val connection = CreationDisplayInfo(1000, 1000, density.toInt())
+                val connection = CreationDisplayInfo(1000, 1000, 1f)
                 val done = remember { mutableStateOf(false) }
                 RemoteComposeCapture(
                     LocalContext.current,

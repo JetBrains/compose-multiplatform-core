@@ -50,21 +50,9 @@ class AuthenticationResultTestActivity : FragmentActivity() {
             return binding.credentialFallback.isChecked || binding.credentialButton.isChecked
         }
 
-    private val authResultLauncher =
-        registerForAuthenticationResult(
-            object : AuthenticationResultCallback {
-                override fun onAuthResult(result: AuthenticationResult) {
-                    when (result) {
-                        is AuthenticationResult.Success -> onAuthenticationSucceeded(result)
-                        is AuthenticationResult.Error -> onAuthenticationError(result)
-                    }
-                }
-
-                override fun onAuthFailure() {
-                    onAuthenticationFailed()
-                }
-            }
-        )
+    private val authResultLauncher = getAuthResultLauncher(1)
+    private val secondAuthResultLauncher = getAuthResultLauncher(2)
+    private val thirdAuthResultLauncher = getAuthResultLauncher(3)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +65,9 @@ class AuthenticationResultTestActivity : FragmentActivity() {
         binding.credentialFallback.setOnCheckedChangeListener { _, _ -> updateOtherOptions() }
 
         binding.common.canAuthenticateButton.setOnClickListener { canAuthenticate() }
-        binding.common.authenticateButton.setOnClickListener { authenticate() }
+        binding.common.authenticateButton.setOnClickListener { authenticate(1) }
+        binding.common.secondAuthenticateButton.setOnClickListener { authenticate(2) }
+        binding.common.thirdAuthenticateButton.setOnClickListener { authenticate(3) }
         binding.common.clearLogButton.setOnClickListener { clearLog() }
         // Restore logged messages on activity recreation (e.g. due to device rotation).
         if (savedInstanceState != null) {
@@ -91,6 +81,7 @@ class AuthenticationResultTestActivity : FragmentActivity() {
         // If option is selected, dismiss the prompt on rotation.
         if (binding.common.cancelConfigChangeCheckbox.isChecked && isChangingConfigurations) {
             authResultLauncher.cancel()
+            secondAuthResultLauncher.cancel()
         }
     }
 
@@ -100,9 +91,9 @@ class AuthenticationResultTestActivity : FragmentActivity() {
         outState.putCharSequence(KEY_LOG_TEXT, binding.common.logTextView.text)
     }
 
-    private fun authenticate() {
-        val title = "Title"
-        val subtitle = "Subtitle"
+    private fun authenticate(buttonNumber: Int) {
+        val title = "Title$buttonNumber"
+        val subtitle = "Subtitle$buttonNumber"
         val bodyContent =
             if (binding.common.plainTextContent.isChecked) {
                 AuthenticationRequest.BodyContent.PlainText("Description")
@@ -154,7 +145,15 @@ class AuthenticationResultTestActivity : FragmentActivity() {
             }
 
         try {
-            authRequest?.let { authResultLauncher.launch(it) }
+            authRequest?.let {
+                if (buttonNumber == 1) {
+                    authResultLauncher.launch(it)
+                } else if (buttonNumber == 2) {
+                    secondAuthResultLauncher.launch(it)
+                } else if (buttonNumber == 3) {
+                    thirdAuthResultLauncher.launch(it)
+                }
+            }
         } catch (e: Exception) {
             when (e) {
                 is IllegalArgumentException,
@@ -249,6 +248,29 @@ class AuthenticationResultTestActivity : FragmentActivity() {
             binding.common.requireConfirmationCheckbox.isChecked = true
         }
     }
+
+    private fun getAuthResultLauncher(id: Int) =
+        registerForAuthenticationResult(
+            object : AuthenticationResultCallback {
+                override fun onAuthResult(result: AuthenticationResult) {
+                    when (result) {
+                        is AuthenticationResult.Success -> {
+                            onAuthenticationSucceeded(result)
+                            log("button$id")
+                        }
+                        is AuthenticationResult.Error -> {
+                            onAuthenticationError(result)
+                            log("button$id")
+                        }
+                    }
+                }
+
+                override fun onAuthFailure() {
+                    onAuthenticationFailed()
+                    log("button$id")
+                }
+            }
+        )
 
     private fun onAuthenticationError(result: AuthenticationResult.Error) {
         log("onAuthenticationError " + result.errorCode + " " + result.errString)

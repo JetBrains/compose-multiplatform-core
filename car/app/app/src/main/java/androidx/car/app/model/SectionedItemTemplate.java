@@ -136,7 +136,7 @@ public final class SectionedItemTemplate implements Template {
         mIsLoading = false;
         mIsAlphabeticalIndexingAllowed = false;
         mAlphabeticalIndexingStrategy = ALPHABETICAL_INDEXING_DISABLED;
-        mScrollStatePersistenceStrategy = SCROLL_STATE_RESET_TO_TOP;
+        mScrollStatePersistenceStrategy = SCROLL_STATE_PRESERVE_INDEX;
     }
 
     /** Creates a {@link SectionedItemTemplate} from the {@link Builder}. */
@@ -281,7 +281,7 @@ public final class SectionedItemTemplate implements Template {
 
         private int mAlphabeticalIndexingStrategy = ALPHABETICAL_INDEXING_DISABLED;
 
-        private int mScrollStatePersistenceStrategy = SCROLL_STATE_RESET_TO_TOP;
+        private int mScrollStatePersistenceStrategy = SCROLL_STATE_PRESERVE_INDEX;
 
         /** Create a new {@link SectionedItemTemplate} builder. */
         public Builder() {

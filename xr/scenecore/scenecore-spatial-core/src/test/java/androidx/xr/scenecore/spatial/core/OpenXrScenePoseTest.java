@@ -187,7 +187,7 @@ public final class OpenXrScenePoseTest {
 
     @Test
     public void getPoseInActivitySpace_whenAtSamePose_returnsIdentityPose() {
-        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1).toNormalized());
+        Pose pose = new Pose(new Vector3(1, 1, 1), new Quaternion(0, 1, 0, 1));
         mTestScenePose = createTestScenePose(pose);
         mActivitySpace.setOpenXrReferenceSpaceTransform(Matrix4.fromPose(pose));
 

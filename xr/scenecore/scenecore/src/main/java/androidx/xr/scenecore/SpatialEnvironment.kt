@@ -339,8 +339,10 @@ internal fun SpatialEnvironment.SpatialEnvironmentPreference.toRtSpatialEnvironm
 internal fun RtSpatialEnvironmentPreference.toSpatialEnvironmentPreference():
     SpatialEnvironment.SpatialEnvironmentPreference {
     return SpatialEnvironment.SpatialEnvironmentPreference(
-        skybox?.let { ExrImage(it) },
-        geometry?.let { GltfModel(it) },
+        // The lifecycle of this EXR image is managed by the SpatialEnvironment.
+        skybox?.let { ExrImage(null, it) },
+        // The lifecycle of this glTF model is managed by the SpatialEnvironment.
+        geometry?.let { GltfModel(null, it) },
         geometryMaterial?.let { rtMaterial ->
             object : Material {
                 override val material: RtMaterial = rtMaterial

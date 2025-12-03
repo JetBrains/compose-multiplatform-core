@@ -19,20 +19,15 @@ package androidx.room3.processor
 import androidx.room3.Query
 import androidx.room3.SkipQueryVerification
 import androidx.room3.Transaction
-import androidx.room3.compiler.processing.XAnnotation
 import androidx.room3.compiler.processing.XMethodElement
 import androidx.room3.compiler.processing.XType
 import androidx.room3.ext.isNotError
 import androidx.room3.parser.ParsedQuery
 import androidx.room3.parser.QueryType
 import androidx.room3.parser.SqlParser
-import androidx.room3.processor.ProcessorErrors.cannotMapSpecifiedColumn
-import androidx.room3.solver.TypeAdapterExtras
 import androidx.room3.solver.query.result.DataClassRowAdapter
-import androidx.room3.verifier.ColumnInfo
 import androidx.room3.verifier.DatabaseVerificationErrors
 import androidx.room3.verifier.DatabaseVerifier
-import androidx.room3.vo.MapInfo
 import androidx.room3.vo.QueryFunction
 import androidx.room3.vo.QueryParameter
 import androidx.room3.vo.ReadQueryFunction
@@ -235,18 +230,12 @@ private class InternalQueryProcessor(
         )
     }
 
-    @Suppress("DEPRECATION") // Due to MapInfo usage
     private fun getQueryFunction(
         delegate: FunctionProcessorDelegate,
         returnType: XType,
         query: ParsedQuery,
     ): QueryFunction {
-        val resultBinder =
-            delegate.findResultBinder(returnType, query) {
-                delegate.executableElement.getAnnotation(androidx.room3.MapInfo::class)?.let {
-                    processMapInfo(it, query, delegate.executableElement, this)
-                }
-            }
+        val resultBinder = delegate.findResultBinder(returnType, query)
         context.checker.check(
             resultBinder.adapter != null,
             executableElement,
@@ -316,70 +305,6 @@ private class InternalQueryProcessor(
             inTransaction = inTransaction,
             queryResultBinder = resultBinder,
         )
-    }
-
-    /**
-     * Parse @MapInfo annotation, validate its inputs and put information in the bag of extras, it
-     * will be later used by the TypeAdapterStore.
-     */
-    @Suppress("DEPRECATION") // Due to @MapInfo usage
-    private fun processMapInfo(
-        mapInfoAnnotation: XAnnotation,
-        query: ParsedQuery,
-        queryExecutableElement: XMethodElement,
-        adapterExtras: TypeAdapterExtras,
-    ) {
-        val keyColumn = mapInfoAnnotation["keyColumn"]?.asString() ?: ""
-        val keyTable = mapInfoAnnotation["keyTable"]?.asString()?.ifEmpty { null }
-        val valueColumn = mapInfoAnnotation["valueColumn"]?.asString() ?: ""
-        val valueTable = mapInfoAnnotation["valueTable"]?.asString()?.ifEmpty { null }
-
-        val resultTableAliases = query.tables.associate { it.name to it.alias }
-        // Checks if this list of columns contains one with matching name and origin table.
-        // Takes into account that projection tables names might be aliased but originTable uses
-        // sqlite3_column_origin_name which is un-aliased.
-        fun List<ColumnInfo>.contains(columnName: String, tableName: String?) =
-            any { resultColumn ->
-                val resultTableAlias =
-                    resultColumn.originTable?.let { resultTableAliases[it] ?: it }
-                resultColumn.name == columnName &&
-                    (if (tableName != null) {
-                        resultTableAlias == tableName || resultColumn.originTable == tableName
-                    } else true)
-            }
-
-        context.checker.check(
-            keyColumn.isNotEmpty() || valueColumn.isNotEmpty(),
-            queryExecutableElement,
-            ProcessorErrors.MAP_INFO_MUST_HAVE_AT_LEAST_ONE_COLUMN_PROVIDED,
-        )
-
-        val resultColumns = query.resultInfo?.columns
-
-        if (resultColumns != null) {
-            context.checker.check(
-                keyColumn.isEmpty() || resultColumns.contains(keyColumn, keyTable),
-                queryExecutableElement,
-            ) {
-                cannotMapSpecifiedColumn(
-                    (if (keyTable != null) "$keyTable." else "") + keyColumn,
-                    resultColumns.map { it.name },
-                    androidx.room3.MapInfo::class.java.simpleName,
-                )
-            }
-            context.checker.check(
-                valueColumn.isEmpty() || resultColumns.contains(valueColumn, valueTable),
-                queryExecutableElement,
-            ) {
-                cannotMapSpecifiedColumn(
-                    (if (valueTable != null) "$valueTable." else "") + valueColumn,
-                    resultColumns.map { it.name },
-                    androidx.room3.MapInfo::class.java.simpleName,
-                )
-            }
-        }
-
-        adapterExtras.putData(MapInfo::class, MapInfo(keyColumn, valueColumn))
     }
 
     companion object {

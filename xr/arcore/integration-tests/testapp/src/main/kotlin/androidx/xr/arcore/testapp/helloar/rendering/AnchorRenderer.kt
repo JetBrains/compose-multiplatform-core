@@ -17,7 +17,6 @@
 package androidx.xr.arcore.testapp.helloar.rendering
 
 import android.app.Activity
-import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -27,6 +26,7 @@ import androidx.xr.arcore.AnchorCreateSuccess
 import androidx.xr.arcore.ArDevice
 import androidx.xr.arcore.Plane
 import androidx.xr.arcore.hitTest
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Pose
@@ -117,10 +117,9 @@ internal class AnchorRenderer(
                                             )
                                         }
                                         is AnchorCreateResourcesExhausted -> {
-                                            Log.e(
-                                                activity::class.simpleName,
-                                                "Failed to create anchor: anchor resources exhausted.",
-                                            )
+                                            Log.error {
+                                                "Failed to create anchor: anchor resources exhausted."
+                                            }
                                             Toast.makeText(
                                                     activity,
                                                     "Anchor limit has been reached.",
@@ -129,10 +128,9 @@ internal class AnchorRenderer(
                                                 .show()
                                         }
                                         else -> {
-                                            Log.e(
-                                                activity::class.simpleName,
-                                                "Failed to create anchor: ${anchorResult::class.simpleName}",
-                                            )
+                                            Log.error {
+                                                "Failed to create anchor: ${anchorResult::class.simpleName}"
+                                            }
                                             Toast.makeText(
                                                     activity,
                                                     "Anchor failed to create.",

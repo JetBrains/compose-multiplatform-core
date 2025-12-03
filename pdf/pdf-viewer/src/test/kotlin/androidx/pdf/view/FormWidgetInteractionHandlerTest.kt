@@ -20,94 +20,55 @@ import android.content.Context
 import android.graphics.Point
 import android.graphics.PointF
 import android.graphics.Rect
-import android.graphics.RectF
-import android.os.DeadObjectException
-import androidx.core.graphics.toRect
-import androidx.pdf.PdfDocument
 import androidx.pdf.PdfPoint
-import androidx.pdf.exceptions.RequestFailedException
-import androidx.pdf.models.FormEditRecord
+import androidx.pdf.models.FormEditInfo
 import androidx.pdf.models.FormWidgetInfo
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.never
-import org.mockito.Mockito.`when`
-import org.mockito.kotlin.any
-import org.mockito.kotlin.doAnswer
-import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.robolectric.RobolectricTestRunner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.TARGET_SDK])
 class FormWidgetInteractionHandlerTest {
-    private val pdfDocument =
-        mock<PdfDocument> {
-            on { pageCount } doReturn TOTAL_PAGES
-            onBlocking { getPageInfo(any(), any()) } doAnswer
-                { invocationOnMock ->
-                    PdfDocument.PageInfo(
-                        pageNum = invocationOnMock.getArgument(0),
-                        height = PAGE_HEIGHT,
-                        width = PAGE_WIDTH,
-                    )
-                }
-        }
-    private val errorFlow = MutableSharedFlow<Throwable>()
     private lateinit var handler: FormWidgetInteractionHandler
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope: TestScope = TestScope(testDispatcher)
+
+    private var formEditTextPlaced: Boolean = false
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         val applicationContext = ApplicationProvider.getApplicationContext<Context>()
         handler =
-            FormWidgetInteractionHandler(applicationContext, pdfDocument, testScope, errorFlow) {}
+            FormWidgetInteractionHandler(applicationContext, testScope) {
+                formEditTextPlaced = true
+            }
+        formEditTextPlaced = false
     }
 
     @Test
-    fun handleInteraction_readOnlyWidget_doesNothing() = runTest {
-        val touchPoint = PdfPoint(0, PointF(10f, 20f))
-        val formWidgetInfo =
-            FormWidgetInfo(
-                widgetType = FormWidgetInfo.WIDGET_TYPE_TEXTFIELD,
-                widgetIndex = 0,
-                widgetRect = Rect(10, 10, 20, 20),
-                textValue = "Hello",
-                accessibilityLabel = "accessible",
-                readOnly = true, // Read-only widget
-            )
-
-        handler.handleInteraction(touchPoint, formWidgetInfo)
-        // Assert that applyEdit was never called for a read-only widget
-        verify(pdfDocument, never()).applyEdit(any(), any())
-    }
-
-    @Test
-    fun handleInteractionWithClickTypeWidget_successfulApplyEdit() = runTest {
-        val invalidatedRectValues = mutableListOf<Pair<Int, List<RectF>>>()
+    fun handleInteraction_checkBoxWidget() = runTest {
+        val invalidatedRectValues = mutableListOf<FormEditInfo>()
         backgroundScope.launch(testDispatcher) {
-            handler.invalidatedAreas.toList(invalidatedRectValues)
+            handler.formWidgetUpdates.toList(invalidatedRectValues)
         }
 
         val pageNum = 1
         val pdfCoordinates = PointF(10f, 20f)
+        val touchPoint = PdfPoint(pageNum, pdfCoordinates)
         val widgetIndex = 0
         val formWidgetInfo =
             FormWidgetInfo(
@@ -118,29 +79,28 @@ class FormWidgetInteractionHandlerTest {
                 accessibilityLabel = "accessible",
                 readOnly = false,
             )
-        val invalidatedRects = listOf(Rect(0, 0, 100, 100))
+
         val expectedEditRecord =
-            FormEditRecord(
+            FormEditInfo(
                 pageNumber = pageNum,
                 widgetIndex = widgetIndex,
                 clickPoint = Point(pdfCoordinates.x.toInt(), pdfCoordinates.y.toInt()),
             )
-        `when`(pdfDocument.applyEdit(pageNum, expectedEditRecord)).thenReturn(invalidatedRects)
 
-        handler.handleInteractionWithClickTypeWidget(pageNum, pdfCoordinates, formWidgetInfo)
-        verify(pdfDocument).applyEdit(pageNum, expectedEditRecord)
+        handler.handleInteraction(touchPoint, formWidgetInfo)
         assertThat(invalidatedRectValues.size).isEqualTo(1)
-        assertThat(invalidatedRectValues[0].first).isEqualTo(pageNum)
-        assertThat(invalidatedRectValues[0].second.map { it.toRect() }).isEqualTo(invalidatedRects)
+        assertThat(invalidatedRectValues[0]).isEqualTo(expectedEditRecord)
     }
 
     @Test
-    fun handleInteraction_radioButtonWidget_applyEdit() = runTest {
-        val invalidatedAreas = mutableListOf<Pair<Int, List<RectF>>>()
-        backgroundScope.launch(testDispatcher) { handler.invalidatedAreas.toList(invalidatedAreas) }
+    fun handleInteraction_radioButtonWidget() = runTest {
+        val formEditInfos = mutableListOf<FormEditInfo>()
+        backgroundScope.launch(testDispatcher) { handler.formWidgetUpdates.toList(formEditInfos) }
 
         val pageNum = 0
         val pdfCoordinates = PointF(10f, 20f)
+        val touchPoint = PdfPoint(pageNum, pdfCoordinates)
+
         val widgetIndex = 0
         val formWidgetInfo =
             FormWidgetInfo(
@@ -152,25 +112,21 @@ class FormWidgetInteractionHandlerTest {
                 readOnly = false,
             )
         val expectedEditRecord =
-            FormEditRecord(
+            FormEditInfo(
                 pageNumber = pageNum,
                 widgetIndex = widgetIndex,
                 clickPoint = Point(pdfCoordinates.x.toInt(), pdfCoordinates.y.toInt()),
             )
-        val invalidatedRects = listOf(Rect(0, 0, 100, 100))
 
-        `when`(pdfDocument.applyEdit(pageNum, expectedEditRecord)).thenReturn(invalidatedRects)
-        handler.handleInteractionWithClickTypeWidget(pageNum, pdfCoordinates, formWidgetInfo)
-        verify(pdfDocument).applyEdit(pageNum, expectedEditRecord)
-        assertThat(invalidatedAreas.size).isEqualTo(1)
-        assertThat(invalidatedAreas[0].first).isEqualTo(pageNum)
-        assertThat(invalidatedAreas[0].second.map { it.toRect() }).isEqualTo(invalidatedRects)
+        handler.handleInteraction(touchPoint, formWidgetInfo)
+        assertThat(formEditInfos.size).isEqualTo(1)
+        assertThat(formEditInfos[0]).isEqualTo(expectedEditRecord)
     }
 
     @Test
-    fun handleInteraction_pushButtonWidget_callsApplyEdit() = runTest {
-        val invalidatedAreas = mutableListOf<Pair<Int, List<RectF>>>()
-        backgroundScope.launch(testDispatcher) { handler.invalidatedAreas.toList(invalidatedAreas) }
+    fun handleInteraction_pushButtonWidget() = runTest {
+        val formEditInfos = mutableListOf<FormEditInfo>()
+        backgroundScope.launch(testDispatcher) { handler.formWidgetUpdates.toList(formEditInfos) }
 
         val pageNum = 0
         val pdfCoordinates = PointF(10f, 20f)
@@ -186,91 +142,36 @@ class FormWidgetInteractionHandlerTest {
                 readOnly = false,
             )
         val expectedEditRecord =
-            FormEditRecord(
+            FormEditInfo(
                 pageNumber = pageNum,
                 widgetIndex = widgetIndex,
                 clickPoint = Point(pdfCoordinates.x.toInt(), pdfCoordinates.y.toInt()),
             )
-        val invalidatedRects = listOf(Rect(0, 0, 100, 100))
-
-        `when`(pdfDocument.applyEdit(pageNum, expectedEditRecord)).thenReturn(invalidatedRects)
 
         handler.handleInteraction(touchPoint, formWidgetInfo)
 
-        verify(pdfDocument).applyEdit(pageNum, expectedEditRecord)
-        assertThat(invalidatedAreas.size).isEqualTo(1)
-        assertThat(invalidatedAreas[0].first).isEqualTo(pageNum)
-        assertThat(invalidatedAreas[0].second.map { it.toRect() }).isEqualTo(invalidatedRects)
+        assertThat(formEditInfos.size).isEqualTo(1)
+        assertThat(formEditInfos[0]).isEqualTo(expectedEditRecord)
     }
 
     @Test
-    fun applyEditRecord_emitsInvalidatedAreasOnSuccess() = runTest {
-        val invalidatedAreas = mutableListOf<Pair<Int, List<RectF>>>()
-        backgroundScope.launch(testDispatcher) { handler.invalidatedAreas.toList(invalidatedAreas) }
-        val pageNum = 1
+    fun handleInteraction_textFieldWidget() = runTest {
+        val formEditInfos = mutableListOf<FormEditInfo>()
+        backgroundScope.launch(testDispatcher) { handler.formWidgetUpdates.toList(formEditInfos) }
+        val pageNum = 0
+        val pdfCoordinates = PointF(10f, 20f)
+        val touchPoint = PdfPoint(pageNum, pdfCoordinates)
         val widgetIndex = 0
-        val formEditRecord =
-            FormEditRecord(pageNumber = pageNum, widgetIndex = widgetIndex, text = "New Text")
-        val invalidatedRects = listOf(Rect(0, 0, 50, 50))
-
-        `when`(pdfDocument.applyEdit(pageNum, formEditRecord)).thenReturn(invalidatedRects)
-
-        handler.applyEditRecord(pageNum, formEditRecord)
-
-        assertThat(invalidatedAreas.size).isEqualTo(1)
-        assertThat(invalidatedAreas[0].first).isEqualTo(pageNum)
-        assertThat(invalidatedAreas[0].second.map { it.toRect() }).isEqualTo(invalidatedRects)
-    }
-
-    @Test
-    fun applyEditRecord_emitsRequestFailedExceptionForDeadObjectException() = runTest {
-        val pageNum = 1
-        val widgetIndex = 0
-        val formEditRecord =
-            FormEditRecord(pageNumber = pageNum, widgetIndex = widgetIndex, text = "New Text")
-
-        `when`(pdfDocument.applyEdit(pageNum, formEditRecord)).thenAnswer {
-            throw DeadObjectException()
-        }
-
-        val errors = mutableListOf<Throwable>()
-        backgroundScope.launch(testDispatcher) { errorFlow.toList(errors) }
-
-        handler.applyEditRecord(pageNum, formEditRecord)
-
-        assertEquals(1, errors.size)
-        val error = errors[0]
-        assert(error is RequestFailedException)
-        val requestFailedException = error as RequestFailedException
-        assertEquals(pageNum..pageNum, requestFailedException.requestMetadata.pageRange)
-        assert(requestFailedException.throwable is DeadObjectException)
-    }
-
-    @Test
-    fun applyEditRecord_emitsRequestFailedExceptionForIllegalArgumentException() = runTest {
-        val pageNum = 1
-        val widgetIndex = 0
-        val formEditRecord =
-            FormEditRecord(pageNumber = pageNum, widgetIndex = widgetIndex, text = "New Text")
-
-        `when`(pdfDocument.applyEdit(pageNum, formEditRecord)).thenAnswer {
-            throw IllegalArgumentException()
-        }
-
-        val errors = mutableListOf<Throwable>()
-        backgroundScope.launch(testDispatcher) { errorFlow.toList(errors) }
-
-        handler.applyEditRecord(pageNum, formEditRecord)
-
-        assertEquals(1, errors.size)
-        val error = errors[0]
-        assert(error is RequestFailedException)
-        val requestFailedException = error as RequestFailedException
-        assertEquals(pageNum..pageNum, requestFailedException.requestMetadata.pageRange)
-        assert(requestFailedException.throwable is IllegalArgumentException)
+        val formWidgetInfo =
+            FormWidgetInfo(
+                widgetType = FormWidgetInfo.WIDGET_TYPE_TEXTFIELD,
+                widgetIndex = widgetIndex,
+                widgetRect = Rect(10, 10, 20, 20),
+                textValue = "Push",
+                accessibilityLabel = "accessible",
+                readOnly = false,
+            )
+        handler.handleInteraction(touchPoint, formWidgetInfo)
+        assertThat(formEditTextPlaced).isTrue()
     }
 }
-
-private const val TOTAL_PAGES = 100
-private const val PAGE_WIDTH = 100
-private const val PAGE_HEIGHT = 200

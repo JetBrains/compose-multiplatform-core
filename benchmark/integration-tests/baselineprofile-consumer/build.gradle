@@ -26,8 +26,6 @@ import com.android.build.api.artifact.SingleArtifact
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    // Remove when b/442128557 is fixed
-    id("org.jetbrains.kotlin.android")
     id("androidx.baselineprofile")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
@@ -37,7 +35,7 @@ android {
     sourceSets {
         // This is required because of release variant specific code used by hilt.
         releaseLibrariesOnly {
-            java.srcDirs += "src/release/"
+            kotlin.directories.add("src/release/")
         }
     }
     buildTypes {

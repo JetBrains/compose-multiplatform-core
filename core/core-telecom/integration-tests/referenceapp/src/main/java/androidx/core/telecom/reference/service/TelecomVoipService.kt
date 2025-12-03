@@ -155,7 +155,11 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
     }
 
     @OptIn(ExperimentalAppActions::class)
-    override fun addCall(callAttributes: CallAttributesCompat, notificationId: Int) {
+    override fun addCall(
+        callAttributes: CallAttributesCompat,
+        notificationId: Int,
+        isInitiallyMuted: Boolean,
+    ) {
         val callId = notificationId.toString()
         Log.d(TAG, "[$callId] addCall")
         val callActions = CallActions()
@@ -209,6 +213,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
                                     callId = callId,
                                     settings = loadAllExtensionSettings(applicationContext),
                                     scope = this,
+                                    desiredInitialMuteState = isInitiallyMuted,
                                 )
 
                             onCall {
@@ -258,6 +263,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         callId: String,
         settings: ExtensionSettings,
         scope: ExtensionInitializationScope,
+        desiredInitialMuteState: Boolean,
     ): InitializedExtensionsHolder {
         var localCallSilenceExt: LocalCallSilenceExtension? = null
         var callIconExt: CallIconExtension? = null
@@ -267,11 +273,16 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
         var participantsMgr: ParticipantsExtensionManager? = null
         // --- Local Call Silence Extension ---
         if (settings.localCallSilenceEnabled) {
+            Log.i(
+                TAG,
+                "LCS: Local Call Silence Extension Enabled: sending initial state: $desiredInitialMuteState",
+            )
             localCallSilenceExt =
-                scope.addLocalCallSilenceExtension(false) { isSilenced ->
+                scope.addLocalCallSilenceExtension(desiredInitialMuteState) { isSilenced ->
                     Log.i(
                         TAG,
-                        "[$callId] Local Silence Update Received" + " via Callback: $isSilenced",
+                        "LCS: [$callId] Local Silence Update Received" +
+                            " via Callback: $isSilenced",
                     )
                     updateCallDataInternal(callId) { it.copy(isLocallyMuted = isSilenced) }
                 }
@@ -326,6 +337,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             participants = participantsExt,
             raiseHand = raiseHandExt,
             participantsManager = participantsMgr,
+            initialLocalMuteState = desiredInitialMuteState,
         )
     }
 
@@ -478,6 +490,7 @@ class TelecomVoipService() : LocalServiceBinder, LifecycleService() {
             isParticipantExtensionEnabled = initializedExtensions.participants != null,
             isLocalCallSilenceEnabled = initializedExtensions.localCallSilence != null,
             isCallIconExtensionEnabled = initializedExtensions.callIcon != null,
+            isLocallyMuted = initializedExtensions.initialLocalMuteState,
         )
     }
 

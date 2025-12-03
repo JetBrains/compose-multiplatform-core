@@ -19,6 +19,7 @@ package androidx.biometric;
 import static android.Manifest.permission.SET_BIOMETRIC_DIALOG_ADVANCED;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.security.identity.IdentityCredential;
@@ -33,8 +34,12 @@ import androidx.annotation.RequiresPermission;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.biometric.BiometricManager.Authenticators;
+import androidx.biometric.internal.AuthenticationHandler;
 import androidx.biometric.internal.BiometricFragment;
 import androidx.biometric.internal.BiometricViewModel;
+import androidx.biometric.internal.CanceledFrom;
+import androidx.biometric.internal.viewmodel.AuthenticationViewModel;
+import androidx.biometric.internal.viewmodel.AuthenticationViewModelFactory;
 import androidx.biometric.utils.AuthenticatorUtils;
 import androidx.biometric.utils.CryptoObjectUtils;
 import androidx.fragment.app.Fragment;
@@ -1059,6 +1064,7 @@ public class BiometricPrompt {
      */
     private @Nullable FragmentManager mClientFragmentManager;
     private boolean mHostedInActivity;
+    private AuthenticationHandler mHelper;
 
     /**
      * Constructs a {@link BiometricPrompt}, which can be used to prompt the user to authenticate
@@ -1218,18 +1224,52 @@ public class BiometricPrompt {
      * should be called by the client fragment each time the configuration changes
      * (e.g. in {@code onCreate()}).
      *
-     * @param owner The ViewModelStoreOwner of the client application that will host the prompt.
-     * @param fragmentManager The FragmentManager for internal fragment. Will be removed.
-     * @param callback The object that will receive and process authentication events.
+     * @param viewModelStoreOwner The ViewModelStoreOwner of the client application that will
+     *                            host the prompt.
+     * @param callback            The object that will receive and process authentication events.
      * @param executor The executor that will be used to run {@link AuthenticationCallback} methods.
+     * @param confirmCredentialActivityLauncher The {@link Runnable} to launch KeyguardManager's
+     *                                          ConfirmDeviceCredentialActivity.
      */
-    BiometricPrompt(ViewModelStoreOwner owner, FragmentManager fragmentManager,
-            AuthenticationCallback callback,  @Nullable Executor executor) {
-        init(true /* hostedInActivity */, fragmentManager, owner, callback, executor);
+    BiometricPrompt(Context context, LifecycleOwner lifecycleOwner,
+            ViewModelStoreOwner viewModelStoreOwner,
+            Runnable confirmCredentialActivityLauncher,
+            @Nullable Executor executor,
+            AuthenticationCallback callback) {
+        init(context, lifecycleOwner, viewModelStoreOwner, confirmCredentialActivityLauncher,
+                executor, callback);
     }
 
     /**
-     * Initializes or updates the data needed by the prompt.
+     * Initializes or updates the data needed by the prompt (for new AuthenticationExtensions APIs).
+     *
+     * @param context             The  {@link Context} used for calling framework API
+     * @param lifecycleOwner           The  {@link androidx.lifecycle.Lifecycle} to observer. If
+     *                            provided, it might be used to automatically manage resources or
+     *                            clean up listeners associated with the BiometricPrompt. Can be
+     *                            null.
+     * @param viewModelStoreOwner The {@link androidx.lifecycle.ViewModelStoreOwner} used for
+     *                            creating the internal {@link AuthenticationViewModel}.
+     * @param callback            The object that will receive and process authentication events.
+     * @param executor            The executor that will be used to run callback methods, or
+     *                            {@link null} if a default executor should be used.
+     * @param confirmCredentialActivityLauncher The {@link Runnable} to launch KeyguardManager's
+     *                                          ConfirmDeviceCredentialActivity.
+     */
+    private void init(Context context, LifecycleOwner lifecycleOwner,
+            ViewModelStoreOwner viewModelStoreOwner,
+            Runnable confirmCredentialActivityLauncher,
+            @Nullable Executor executor,
+            AuthenticationCallback callback) {
+        final AuthenticationViewModel viewModel = new ViewModelProvider(viewModelStoreOwner,
+                new AuthenticationViewModelFactory()).get(
+                AuthenticationViewModel.class);
+        mHelper = AuthenticationHandler.create(context, lifecycleOwner, viewModel,
+                confirmCredentialActivityLauncher, executor, callback);
+    }
+
+    /**
+     * Initializes or updates the data needed by the prompt (for old BiometricPrompt APIs).
      *
      * @param fragmentManager The fragment manager that will be used to attach the prompt.
      * @param viewModelStoreOwner The {@link androidx.lifecycle.ViewModelStoreOwner} used for
@@ -1324,6 +1364,10 @@ public class BiometricPrompt {
      * @param crypto A crypto object to be associated with this authentication.
      */
     private void authenticateInternal(@NonNull PromptInfo info, @Nullable CryptoObject crypto) {
+        if (mHelper != null) {
+            mHelper.authenticate(info, crypto);
+            return;
+        }
         if (mClientFragmentManager == null) {
             Log.e(TAG, "Unable to start authentication. Client fragment manager was null.");
             return;
@@ -1345,6 +1389,10 @@ public class BiometricPrompt {
      * {@link PromptInfo.Builder#setDeviceCredentialAllowed(boolean)} for more details.
      */
     public void cancelAuthentication() {
+        if (mHelper != null) {
+            mHelper.cancelAuthentication(CanceledFrom.CLIENT);
+            return;
+        }
         if (mClientFragmentManager == null) {
             Log.e(TAG, "Unable to start authentication. Client fragment manager was null.");
             return;

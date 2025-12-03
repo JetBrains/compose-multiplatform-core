@@ -17,6 +17,8 @@
 package androidx.compose.remote.creation.compose.modifier
 
 import android.annotation.SuppressLint
+import android.content.Context
+import androidx.compose.remote.creation.CreationDisplayInfo
 import androidx.compose.remote.creation.compose.SCREENSHOT_GOLDEN_DIRECTORY
 import androidx.compose.remote.creation.compose.capture.shaders.RemoteBrush
 import androidx.compose.remote.creation.compose.capture.shaders.horizontalGradient
@@ -36,6 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -54,13 +57,23 @@ class BackgroundModifierTest {
             moduleDirectory = SCREENSHOT_GOLDEN_DIRECTORY,
             targetPlayer = TargetPlayer.View,
         )
+    private val context: Context = ApplicationProvider.getApplicationContext()
 
     val size = Size(200f, 200f)
+    private val creationDisplayInfo =
+        CreationDisplayInfo(
+            size.width.toInt(),
+            size.height.toInt(),
+            context.resources.displayMetrics.density,
+        )
 
     @SuppressLint("UnrememberedMutableState")
     @Test
     fun backgroundSolidColor() {
-        remoteComposeTestRule.runScreenshotTest(size = size, backgroundColor = Color.Black) {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            backgroundColor = Color.Black,
+        ) {
             DemoBox("background(Color.Blue)") {
                 RemoteBox(modifier = RemoteModifier.fillMaxSize().background(Color.Blue))
             }
@@ -69,7 +82,10 @@ class BackgroundModifierTest {
 
     @Test
     fun backgroundVerticalGradient() {
-        remoteComposeTestRule.runScreenshotTest(size = size, backgroundColor = Color.Black) {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            backgroundColor = Color.Black,
+        ) {
             DemoBox("verticalGradient(listOf(Color.Blue, Color.Red))") {
                 RemoteBox(
                     modifier =
@@ -82,7 +98,10 @@ class BackgroundModifierTest {
 
     @Test
     fun backgroundHorizontalGradient() {
-        remoteComposeTestRule.runScreenshotTest(size = size, backgroundColor = Color.Black) {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            backgroundColor = Color.Black,
+        ) {
             DemoBox("horizontalGradient(listOf(Color.Blue, Color.Red))") {
                 RemoteBox(
                     modifier =
@@ -97,7 +116,10 @@ class BackgroundModifierTest {
 
     @Test
     fun backgroundRadialGradient() {
-        remoteComposeTestRule.runScreenshotTest(size = size, backgroundColor = Color.Black) {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            backgroundColor = Color.Black,
+        ) {
             DemoBox("radialGradient(listOf(Color.Blue, Color.Red))") {
                 RemoteBox(
                     modifier =
@@ -110,7 +132,10 @@ class BackgroundModifierTest {
 
     @Test
     fun backgroundSweepGradient() {
-        remoteComposeTestRule.runScreenshotTest(size = size, backgroundColor = Color.Black) {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            backgroundColor = Color.Black,
+        ) {
             DemoBox("sweepGradient(listOf(Color.Blue, Color.Red))") {
                 RemoteBox(
                     modifier =
@@ -123,7 +148,10 @@ class BackgroundModifierTest {
 
     @Test
     fun backgroundRemoteColor() {
-        remoteComposeTestRule.runScreenshotTest(size = size, backgroundColor = Color.Black) {
+        remoteComposeTestRule.runScreenshotTest(
+            creationDisplayInfo = creationDisplayInfo,
+            backgroundColor = Color.Black,
+        ) {
             // workaround issue with createNamedRemoteFloat
             val alpha = rememberRemoteIntValue("a1") { 1 }.toRemoteFloat()
             val red = rememberRemoteIntValue("r1") { 1 }.toRemoteFloat()

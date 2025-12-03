@@ -39,10 +39,10 @@ import androidx.compose.ui.layout.Remeasurement
 import androidx.compose.ui.layout.RemeasurementModifier
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
-import androidx.wear.compose.foundation.lazy.TransformingLazyColumnState.Companion.OffsetToTriggerInitialPin
 import androidx.wear.compose.foundation.lazy.layout.LazyLayoutItemAnimator
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.abs
+import kotlin.math.max
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -67,37 +67,42 @@ public fun rememberTransformingLazyColumnState(
     initialAnchorItemScrollOffset: Int = 0,
 ): TransformingLazyColumnState =
     rememberSaveable(saver = TransformingLazyColumnState.Saver) {
+        TransformingLazyColumnState(initialAnchorItemIndex, initialAnchorItemScrollOffset)
+    }
+
+/**
+ * A state object that can be hoisted to control and observe scrolling in a
+ * [TransformingLazyColumn].
+ *
+ * @param initialAnchorItemIndex The index of the item to be used as the anchor. If a non-negative
+ *   index is provided, the state will attempt to center this item in the viewport. If a negative
+ *   index is provided then the list will be initialized with the first item (index 0) pinned to the
+ *   start of the viewport, respecting any content padding. This is the default behavior.
+ * @param initialAnchorItemScrollOffset The offset to be applied to the anchor item. Defaults to 0.
+ *   This offset is ONLY used when a non-negative `initialAnchorItemIndex` is provided (i.e., when
+ *   the item is being centered). It is ignored if `initialAnchorItemIndex` is less than 0. The
+ *   offset is used when placing the item in the center of the screen; a positive value scrolls the
+ *   item towards the end of the list, and a negative value scrolls it towards the start. This
+ *   correlates with [TransformingLazyColumnState.anchorItemScrollOffset].
+ */
+@Stable
+public class TransformingLazyColumnState(
+    initialAnchorItemIndex: Int = -1,
+    initialAnchorItemScrollOffset: Int = 0,
+) : ScrollableState {
+
+    private val actualInitialAnchorItemIndex = max(0, initialAnchorItemIndex)
+
+    private val actualInitialAnchorItemScrollOffset =
         // Determine if we should use the special "pin to start" behavior.
         // This is triggered whenever initialAnchorItemIndex is negative.
         if (initialAnchorItemIndex < 0) {
             // Default behavior: Pin the first item (index 0) to the start of the viewport.
-            TransformingLazyColumnState(
-                initialAnchorItemIndex = 0,
-                initialAnchorItemScrollOffset = OffsetToTriggerInitialPin,
-            )
+            OffsetToTriggerInitialPin
         } else {
             // Explicit non-negative index provided: Use the centering logic.
-            TransformingLazyColumnState(
-                initialAnchorItemIndex = initialAnchorItemIndex,
-                initialAnchorItemScrollOffset = initialAnchorItemScrollOffset,
-            )
+            initialAnchorItemScrollOffset
         }
-    }
-
-/**
- * Creates a [TransformingLazyColumnState] that is remembered across compositions.
- *
- * @param initialAnchorItemIndex the index of an item that is going to be placed in the center of
- *   the screen (if possible). This correlates with [TransformingLazyColumnState.anchorItemIndex].
- * @param initialAnchorItemScrollOffset the offset of an item to be used when placing the item in
- *   the center of the screen (if possible). This correlates with
- *   [TransformingLazyColumnState.anchorItemScrollOffset].
- */
-@Stable
-public class TransformingLazyColumnState(
-    initialAnchorItemIndex: Int = 0,
-    initialAnchorItemScrollOffset: Int = 0,
-) : ScrollableState {
 
     override val isScrollInProgress: Boolean
         get() = scrollableState.isScrollInProgress
@@ -163,7 +168,7 @@ public class TransformingLazyColumnState(
      *
      * @sample androidx.wear.compose.foundation.samples.TransformingLazyColumnScrollToItemSample
      */
-    public var anchorItemIndex: Int by mutableIntStateOf(initialAnchorItemIndex)
+    public var anchorItemIndex: Int by mutableIntStateOf(actualInitialAnchorItemIndex)
         private set
 
     /**
@@ -175,7 +180,7 @@ public class TransformingLazyColumnState(
      *
      * @see anchorItemIndex for samples with the recommended usage patterns.
      */
-    public var anchorItemScrollOffset: Int by mutableIntStateOf(initialAnchorItemScrollOffset)
+    public var anchorItemScrollOffset: Int by mutableIntStateOf(actualInitialAnchorItemScrollOffset)
         private set
 
     /**
@@ -191,7 +196,7 @@ public class TransformingLazyColumnState(
 
     internal var nearestRange: IntRange by
         mutableStateOf(
-            calculateNearestItemsRange(initialAnchorItemIndex),
+            calculateNearestItemsRange(actualInitialAnchorItemIndex),
             structuralEqualityPolicy(),
         )
         private set

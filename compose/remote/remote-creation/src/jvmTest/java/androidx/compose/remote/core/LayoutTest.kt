@@ -24,11 +24,18 @@ import androidx.compose.remote.core.layout.TestComponentVisibility
 import androidx.compose.remote.core.layout.TestOperation
 import androidx.compose.remote.core.layout.TestParameters
 import androidx.compose.remote.core.operations.layout.Component
+import androidx.compose.remote.core.operations.layout.managers.BoxLayout
 import androidx.compose.remote.core.operations.layout.managers.RowLayout
+import androidx.compose.remote.core.operations.layout.managers.TextLayout.TEXT_ALIGN_START
+import androidx.compose.remote.creation.Rc.Time.CONTINUOUS_SEC
 import androidx.compose.remote.creation.RemoteComposeContext
 import androidx.compose.remote.creation.actions.ValueIntegerChange
 import androidx.compose.remote.creation.computeMeasure
 import androidx.compose.remote.creation.computePosition
+import androidx.compose.remote.creation.modifiers.RecordingModifier
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -39,6 +46,24 @@ class LayoutTest : LayoutTestPlayer() {
 
     @Rule @JvmField var name = TestName()
 
+    class TestClock(val time: Long) : RemoteClock() {
+        override fun nanoTime(): Long {
+            return time
+        }
+
+        override fun getZone(): ZoneId? {
+            return ZoneId.of("UTC")
+        }
+
+        override fun withZone(zone: ZoneId?): Clock? {
+            return null
+        }
+
+        override fun instant(): Instant? {
+            return Instant.ofEpochMilli(time)
+        }
+    }
+
     private fun checkLayout(
         w: Int,
         h: Int,
@@ -46,6 +71,7 @@ class LayoutTest : LayoutTestPlayer() {
         profile: Int,
         description: String,
         ops: ArrayList<TestOperation?>,
+        testClock: RemoteClock = TestClock(1234),
     ) {
         if (ops.size == 0) {
             return
@@ -54,7 +80,7 @@ class LayoutTest : LayoutTestPlayer() {
             return
         }
         val function = (ops[0] as TestLayout).layout
-        val testParameters = TestParameters(name.getMethodName(), GENERATE_GOLD_FILES)
+        val testParameters = TestParameters(name.getMethodName(), GENERATE_GOLD_FILES, testClock)
         val writer =
             RemoteComposeContext(
                     w,
@@ -200,6 +226,44 @@ class LayoutTest : LayoutTestPlayer() {
             RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
             "Layout",
             ops,
+        )
+    }
+
+    @Test
+    fun testLayoutTextFromFloat1() {
+        val ops =
+            arrayListOf<TestOperation?>(
+                TestLayout {
+                    box(
+                        RecordingModifier().fillMaxSize().background(Color.YELLOW),
+                        BoxLayout.CENTER,
+                        BoxLayout.CENTER,
+                    ) {
+                        val textId = createTextFromFloat(CONTINUOUS_SEC, 5, 5, 3)
+                        textComponent(
+                            RecordingModifier().fillMaxWidth().background(Color.GREEN),
+                            textId,
+                            0xFF000000.toInt(),
+                            20f,
+                            0,
+                            500f,
+                            "Sans Serif",
+                            TEXT_ALIGN_START,
+                            0,
+                            1,
+                        ) {}
+                    }
+                },
+                CaptureComponentTree(),
+            )
+        checkLayout(
+            1000,
+            1000,
+            7,
+            RcProfiles.PROFILE_ANDROIDX or RcProfiles.PROFILE_EXPERIMENTAL,
+            "Layout",
+            ops,
+            TestClock(1234),
         )
     }
 }

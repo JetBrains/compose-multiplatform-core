@@ -19,7 +19,6 @@ import androidx.build.ApkCopyHelperKt
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
     id("AndroidXComposePlugin")
 }
 

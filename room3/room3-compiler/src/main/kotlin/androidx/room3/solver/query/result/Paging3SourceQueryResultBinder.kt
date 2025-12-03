@@ -16,17 +16,13 @@
 
 package androidx.room3.solver.query.result
 
-import androidx.room3.compiler.codegen.CodeLanguage
 import androidx.room3.compiler.codegen.XClassName
 import androidx.room3.compiler.codegen.XCodeBlock
-import androidx.room3.compiler.codegen.XCodeBlock.Builder.Companion.applyTo
 import androidx.room3.compiler.codegen.XFunSpec
 import androidx.room3.compiler.codegen.XPropertySpec
 import androidx.room3.compiler.codegen.XTypeName
 import androidx.room3.compiler.codegen.XTypeSpec
-import androidx.room3.ext.Function1TypeSpec
 import androidx.room3.ext.InvokeWithLambdaParameter
-import androidx.room3.ext.KotlinTypeNames
 import androidx.room3.ext.LambdaSpec
 import androidx.room3.ext.RoomMemberNames.DB_UTIL_PERFORM_SUSPENDING
 import androidx.room3.ext.RoomTypeNames.RAW_QUERY
@@ -59,86 +55,40 @@ class MultiTypePagingSourceQueryResultBinder(
     ) {
         val rawQueryVarName = scope.getTmpVar("_rawQuery")
         val stmtVarName = scope.getTmpVar("_stmt")
-
-        when (scope.language) {
-            CodeLanguage.JAVA -> {
-                val assignExpr =
-                    if (bindStatement != null) {
+        scope.builder.apply {
+            if (bindStatement != null) {
+                beginControlFlow(
+                    "val %L: %T = %T(%N) { %L ->",
+                    rawQueryVarName,
+                    RAW_QUERY,
+                    RAW_QUERY,
+                    sqlQueryVar,
+                    stmtVarName,
+                )
+                bindStatement.invoke(scope, stmtVarName)
+                endControlFlow()
+            } else {
+                addLocalVariable(
+                    name = rawQueryVarName,
+                    typeName = RAW_QUERY,
+                    assignExpr =
                         XCodeBlock.ofNewInstance(
                             typeName = RAW_QUERY,
-                            "%L, %L",
+                            argsFormat = "%N",
                             sqlQueryVar,
-                            Function1TypeSpec(
-                                parameterTypeName = SQLiteDriverTypeNames.STATEMENT,
-                                parameterName = stmtVarName,
-                                returnTypeName = KotlinTypeNames.UNIT,
-                            ) {
-                                val functionScope = scope.fork()
-                                functionScope.builder
-                                    .apply { bindStatement.invoke(functionScope, stmtVarName) }
-                                    .build()
-                                addCode(functionScope.generate())
-                                addStatement("return %T.INSTANCE", KotlinTypeNames.UNIT)
-                            },
-                        )
-                    } else {
-                        XCodeBlock.ofNewInstance(typeName = RAW_QUERY, "%L", sqlQueryVar)
-                    }
-                scope.builder.apply {
-                    addLocalVariable(
-                        name = rawQueryVarName,
-                        typeName = RAW_QUERY,
-                        assignExpr = assignExpr,
-                    )
-                    addStatement(
-                        "return %L",
-                        createPagingSourceSpec(
-                            scope = scope,
-                            rawQueryVarName = rawQueryVarName,
-                            stmtVarName = stmtVarName,
-                            dbProperty = dbProperty,
-                            inTransaction = inTransaction,
                         ),
-                    )
-                }
+                )
             }
-            CodeLanguage.KOTLIN -> {
-                scope.builder.apply {
-                    if (bindStatement != null) {
-                        beginControlFlow(
-                            "val %L: %T = %T(%N) { %L ->",
-                            rawQueryVarName,
-                            RAW_QUERY,
-                            RAW_QUERY,
-                            sqlQueryVar,
-                            stmtVarName,
-                        )
-                        bindStatement.invoke(scope, stmtVarName)
-                        endControlFlow()
-                    } else {
-                        addLocalVariable(
-                            name = rawQueryVarName,
-                            typeName = RAW_QUERY,
-                            assignExpr =
-                                XCodeBlock.ofNewInstance(
-                                    typeName = RAW_QUERY,
-                                    argsFormat = "%N",
-                                    sqlQueryVar,
-                                ),
-                        )
-                    }
-                    addStatement(
-                        "return %L",
-                        createPagingSourceSpec(
-                            scope = scope,
-                            rawQueryVarName = rawQueryVarName,
-                            stmtVarName = stmtVarName,
-                            dbProperty = dbProperty,
-                            inTransaction = false,
-                        ),
-                    )
-                }
-            }
+            addStatement(
+                "return %L",
+                createPagingSourceSpec(
+                    scope = scope,
+                    rawQueryVarName = rawQueryVarName,
+                    stmtVarName = stmtVarName,
+                    dbProperty = dbProperty,
+                    inTransaction = false,
+                ),
+            )
         }
     }
 
@@ -201,20 +151,13 @@ class MultiTypePagingSourceQueryResultBinder(
                                     javaLambdaSyntaxAvailable = scope.javaLambdaSyntaxAvailable,
                                 ) {
                                 override fun XCodeBlock.Builder.body(scope: CodeGenScope) {
-                                    applyTo { language ->
-                                        val getSql =
-                                            when (language) {
-                                                CodeLanguage.JAVA -> "getSql()"
-                                                CodeLanguage.KOTLIN -> "sql"
-                                            }
-                                        addLocalVal(
-                                            stmtVarName,
-                                            SQLiteDriverTypeNames.STATEMENT,
-                                            "%L.prepare(%L.$getSql)",
-                                            connectionVar,
-                                            limitRawQueryParamName,
-                                        )
-                                    }
+                                    addLocalVal(
+                                        stmtVarName,
+                                        SQLiteDriverTypeNames.STATEMENT,
+                                        "%L.prepare(%L.sql)",
+                                        connectionVar,
+                                        limitRawQueryParamName,
+                                    )
                                     addStatement(
                                         "%L.getBindingFunction().invoke(%L)",
                                         limitRawQueryParamName,
@@ -222,14 +165,7 @@ class MultiTypePagingSourceQueryResultBinder(
                                     )
                                     beginControlFlow("try").apply {
                                         listAdapter?.convert(resultVar, stmtVarName, scope)
-                                        applyTo { language ->
-                                            val returnPrefix =
-                                                when (language) {
-                                                    CodeLanguage.JAVA -> "return "
-                                                    CodeLanguage.KOTLIN -> ""
-                                                }
-                                            addStatement("$returnPrefix%L", resultVar)
-                                        }
+                                        addStatement("%L", resultVar)
                                     }
                                     nextControlFlow("finally")
                                     addStatement("%L.close()", stmtVarName)

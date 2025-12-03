@@ -158,8 +158,7 @@ constructor(
                     Quaternion.Companion.slerp(start.rotation, end.rotation, ratio)
                 } else {
                     // If the angle is small, lerp can be used for efficiency.
-                    // Note: This assumes both quaternions are normalized.
-                    Quaternion.Companion.lerp(start.rotation, end.rotation, ratio).toNormalized()
+                    Quaternion.Companion.lerp(start.rotation, end.rotation, ratio)
                 }
 
             return Pose(interpolatedPosition, interpolatedRotation)

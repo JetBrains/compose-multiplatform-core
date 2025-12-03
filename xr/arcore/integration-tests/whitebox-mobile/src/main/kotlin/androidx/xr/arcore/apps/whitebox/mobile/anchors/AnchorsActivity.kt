@@ -21,7 +21,6 @@ import android.opengl.GLES11Ext
 import android.opengl.GLES30
 import android.opengl.GLSurfaceView
 import android.os.Bundle
-import android.util.Log
 import android.view.Surface
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -63,6 +62,7 @@ import androidx.xr.arcore.apps.whitebox.mobile.samplerender.maybeThrowGLExceptio
 import androidx.xr.arcore.apps.whitebox.mobile.samplerender.renderers.BackgroundRenderer
 import androidx.xr.arcore.playservices.ArCoreRuntime
 import androidx.xr.arcore.playservices.cameraState
+import androidx.xr.runtime.Log
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
 import androidx.xr.runtime.math.Matrix4
@@ -152,7 +152,7 @@ class AnchorsActivity :
                     )
                     .setTexture("u_AlbedoTexture", virtualObjectAlbedoTexture)
         } catch (e: IOException) {
-            Log.v(ACTIVITY_NAME, "Failed to create background renderer", e)
+            Log.error(e) { "Failed to create background renderer" }
             return
         }
     }
@@ -168,7 +168,7 @@ class AnchorsActivity :
             backgroundRenderer.setUseDepthVisualization(render, false)
             backgroundRenderer.setUseOcclusion(render, false)
         } catch (e: IOException) {
-            Log.e(ACTIVITY_NAME, "Failed to read a required asset file", e)
+            Log.error(e) { "Failed to read a required asset file" }
             return
         }
 
@@ -283,11 +283,11 @@ class AnchorsActivity :
             try {
                 Anchor.create(session, anchorPose)
             } catch (e: IllegalStateException) {
-                Log.e(ACTIVITY_NAME, "Failed to create anchor: ${e.message}")
+                Log.error(e) { "Failed to create anchor: ${e.message}" }
                 return
             }
         if (anchorResult !is AnchorCreateSuccess) {
-            Log.e(ACTIVITY_NAME, "Failed to create anchor: ${anchorResult::class.simpleName}")
+            Log.error { "Failed to create anchor: ${anchorResult::class.simpleName}" }
             return
         }
         anchors.add(anchorResult.anchor)

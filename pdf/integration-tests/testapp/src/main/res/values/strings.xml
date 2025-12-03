@@ -17,6 +17,7 @@
     <string name="compose_fragment">Compose PDF</string>
     <string name="thumbnail_content_description">Page thumbnail</string>
     <string name="thumbnail_content_description_page_n">Page thumbnail %1$d</string>
+    <string name="two_page_layout">Two Page Layout</string>
     <string name="toggle_thumbnails_view">Toggle thumbnails view</string>
     <string name="preference_string">Feature flags</string>
     <string name="external_input">External Hardware Interaction</string>

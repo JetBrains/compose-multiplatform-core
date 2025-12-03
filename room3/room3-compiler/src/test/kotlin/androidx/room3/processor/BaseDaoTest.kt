@@ -221,7 +221,7 @@ class BaseDaoTest {
                         dbElement = dbElm,
                         writerContext =
                             TypeWriter.WriterContext(
-                                codeLanguage = CodeLanguage.JAVA,
+                                codeLanguage = CodeLanguage.KOTLIN,
                                 javaLambdaSyntaxAvailable = false,
                                 targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
                             ),
@@ -280,7 +280,7 @@ class BaseDaoTest {
                     dbElement = dbElm,
                     writerContext =
                         TypeWriter.WriterContext(
-                            codeLanguage = CodeLanguage.JAVA,
+                            codeLanguage = CodeLanguage.KOTLIN,
                             javaLambdaSyntaxAvailable = false,
                             targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
                         ),

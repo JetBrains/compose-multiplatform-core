@@ -18,6 +18,8 @@ package androidx.appsearch.app;
 
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.annotation.CanIgnoreReturnValue;
+import androidx.appsearch.flags.FlaggedApi;
+import androidx.appsearch.flags.Flags;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -26,10 +28,10 @@ import org.jspecify.annotations.Nullable;
  * Encapsulates a {@link GenericDocument} that represent an Account.
  *
  * <p>This class is a higher level implement of {@link GenericDocument}.
- * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 @ExperimentalAppSearchApi
+@FlaggedApi(Flags.FLAG_ENABLE_SCHEMAS_WIPEOUT_ACCOUNT_PROPERTY_PATHS)
 public class AppSearchAccount extends GenericDocument {
     /** The name of the schema type for {@link AppSearchAccount} documents.*/
     public static final String SCHEMA_TYPE = "builtin:Account";

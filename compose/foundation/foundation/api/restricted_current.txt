@@ -149,23 +149,23 @@ package androidx.compose.foundation {
   }
 
   @SuppressCompatibility @androidx.compose.foundation.ExperimentalFoundationApi public final class ComposeFoundationFlags {
+    property public boolean isBringIntoViewRltBouncyBehaviorInPagerFixEnabled;
     property public boolean isCacheWindowForPagerEnabled;
+    property public boolean isCacheWindowRefillFixEnabled;
     property public boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
-    property public boolean isKeepInViewFocusObservationChangeEnabled;
     property public boolean isNewContextMenuEnabled;
     property public boolean isNonSuspendingPointerInputInClickableEnabled;
     property public boolean isPausableCompositionInPrefetchEnabled;
     property public boolean isSmartSelectionEnabled;
-    property public boolean isTextFieldDpadNavigationEnabled;
     field public static final androidx.compose.foundation.ComposeFoundationFlags INSTANCE;
+    field public static boolean isBringIntoViewRltBouncyBehaviorInPagerFixEnabled;
     field public static boolean isCacheWindowForPagerEnabled;
+    field public static boolean isCacheWindowRefillFixEnabled;
     field public static boolean isDetectTapGesturesImmediateCoroutineDispatchEnabled;
-    field public static boolean isKeepInViewFocusObservationChangeEnabled;
     field public static boolean isNewContextMenuEnabled;
     field public static boolean isNonSuspendingPointerInputInClickableEnabled;
     field public static boolean isPausableCompositionInPrefetchEnabled;
     field public static boolean isSmartSelectionEnabled;
-    field public static boolean isTextFieldDpadNavigationEnabled;
   }
 
   public final class DarkThemeKt {

@@ -69,8 +69,6 @@ constructor(context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
     fun updatePaletteItems(paletteItems: List<PaletteItem>, currentSelectedIndex: Int? = null) {
         colorPaletteAdapter.submitList(paletteItems) {
             if (currentSelectedIndex != null) colorPaletteAdapter.setSelection(currentSelectedIndex)
-            // Updating palette items may change the dimensions of the view
-            requestLayout()
         }
     }
 

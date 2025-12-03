@@ -18,6 +18,7 @@ package androidx.appsearch.builtintypes;
 
 import android.net.Uri;
 
+import androidx.appsearch.annotation.CanIgnoreReturnValue;
 import androidx.appsearch.annotation.CurrentTimeMillisLong;
 import androidx.appsearch.annotation.Document;
 import androidx.appsearch.app.AppSearchSchema.LongPropertyConfig;
@@ -215,6 +216,7 @@ public class MobileApplication extends Thing {
         }
 
         /** Sets the display name. */
+        @CanIgnoreReturnValue
         public @NonNull T setDisplayName(@NonNull String displayName) {
             resetIfBuilt();
             mDisplayName = Preconditions.checkNotNull(displayName);
@@ -222,6 +224,7 @@ public class MobileApplication extends Thing {
         }
 
         /** Sets the icon uri. */
+        @CanIgnoreReturnValue
         public @NonNull T setIconUri(@NonNull Uri iconUri) {
             resetIfBuilt();
             mIconUri = Preconditions.checkNotNull(iconUri);
@@ -229,6 +232,7 @@ public class MobileApplication extends Thing {
         }
 
         /** Sets the last time the app was installed or updated on the device. */
+        @CanIgnoreReturnValue
         public @NonNull T setUpdatedTimestampMillis(
                 @CurrentTimeMillisLong long updatedTimestampMillis) {
             resetIfBuilt();
@@ -237,6 +241,7 @@ public class MobileApplication extends Thing {
         }
 
         /** Sets the class name. */
+        @CanIgnoreReturnValue
         public @NonNull T setClassName(@NonNull String className) {
             resetIfBuilt();
             mClassName = Preconditions.checkNotNull(className);

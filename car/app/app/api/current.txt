@@ -246,6 +246,82 @@ package androidx.car.app.constraints {
 
 }
 
+package @SuppressCompatibility androidx.car.app.dialer {
+
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public class InCallTemplate implements androidx.car.app.model.Template {
+    method public java.util.List<androidx.car.app.model.Action!> getActions();
+    method public androidx.car.app.model.Header? getHeader();
+    method public androidx.car.app.model.CarIcon? getIcon();
+    method public java.util.List<androidx.car.app.model.CarText!> getTexts();
+    method public androidx.car.app.model.CarText? getTitle();
+    method public boolean isLoading();
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class InCallTemplate.Builder {
+    ctor public InCallTemplate.Builder();
+    ctor public InCallTemplate.Builder(androidx.car.app.dialer.InCallTemplate);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.InCallTemplate.Builder addAction(androidx.car.app.model.Action);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.InCallTemplate.Builder addText(androidx.car.app.model.CarText);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.InCallTemplate.Builder addText(CharSequence);
+    method public androidx.car.app.dialer.InCallTemplate build();
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.InCallTemplate.Builder setHeader(androidx.car.app.model.Header?);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.InCallTemplate.Builder setIcon(androidx.car.app.model.CarIcon?);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.InCallTemplate.Builder setLoading(boolean);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.InCallTemplate.Builder setTitle(androidx.car.app.model.CarText?);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.InCallTemplate.Builder setTitle(CharSequence?);
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public interface TelephoneKeypadCallback {
+    method public void onKeyDown(int);
+    method public void onKeyLongPress(int);
+    method public void onKeyUp(int);
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public interface TelephoneKeypadCallbackDelegate {
+    method public void sendKeyDown(int, androidx.car.app.OnDoneCallback);
+    method public void sendKeyLongPress(int, androidx.car.app.OnDoneCallback);
+    method public void sendKeyUp(int, androidx.car.app.OnDoneCallback);
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public class TelephoneKeypadTemplate implements androidx.car.app.model.Template {
+    ctor @VisibleForTesting public TelephoneKeypadTemplate();
+    method public androidx.car.app.model.Header? getHeader();
+    method public java.util.Map<java.lang.Integer!,androidx.car.app.model.CarText!> getKeySecondaryTexts();
+    method public String? getPhoneNumber();
+    method public androidx.car.app.model.InputCallbackDelegate? getPhoneNumberChangedDelegate();
+    method public androidx.car.app.model.Action? getPrimaryAction();
+    method public androidx.car.app.dialer.TelephoneKeypadCallbackDelegate? getTelephoneKeypadCallbackDelegate();
+    field public static final int KEY_EIGHT = 8; // 0x8
+    field public static final int KEY_FIVE = 5; // 0x5
+    field public static final int KEY_FOUR = 4; // 0x4
+    field public static final int KEY_NINE = 9; // 0x9
+    field public static final int KEY_ONE = 1; // 0x1
+    field public static final int KEY_POUND = 11; // 0xb
+    field public static final int KEY_SEVEN = 7; // 0x7
+    field public static final int KEY_SIX = 6; // 0x6
+    field public static final int KEY_STAR = 10; // 0xa
+    field public static final int KEY_THREE = 3; // 0x3
+    field public static final int KEY_TWO = 2; // 0x2
+    field public static final int KEY_ZERO = 0; // 0x0
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static final class TelephoneKeypadTemplate.Builder {
+    ctor public TelephoneKeypadTemplate.Builder(androidx.car.app.dialer.TelephoneKeypadTemplate);
+    ctor public TelephoneKeypadTemplate.Builder(androidx.car.app.model.Action, androidx.car.app.dialer.TelephoneKeypadTemplate.PhoneNumberChangeListener);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.TelephoneKeypadTemplate.Builder addKeySecondaryText(int, androidx.car.app.model.CarText);
+    method public androidx.car.app.dialer.TelephoneKeypadTemplate build();
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.TelephoneKeypadTemplate.Builder setHeader(androidx.car.app.model.Header?);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.TelephoneKeypadTemplate.Builder setKeySecondaryTexts(java.util.Map<java.lang.Integer!,androidx.car.app.model.CarText!>);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.TelephoneKeypadTemplate.Builder setPhoneNumber(String?);
+    method @com.google.errorprone.annotations.CanIgnoreReturnValue public androidx.car.app.dialer.TelephoneKeypadTemplate.Builder setTelephoneKeypadCallback(androidx.car.app.dialer.TelephoneKeypadCallback?);
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public static interface TelephoneKeypadTemplate.PhoneNumberChangeListener {
+    method public void onPhoneNumberChanged(String);
+  }
+
+}
+
 package androidx.car.app.features {
 
   public final class CarFeatures {
@@ -852,6 +928,12 @@ package androidx.car.app.media {
     field public static final int AUDIO_CONTENT_BUFFER_SIZE = 512; // 0x200
     field public static final String AUDIO_CONTENT_MIME = "audio/l16";
     field public static final int AUDIO_CONTENT_SAMPLING_RATE = 16000; // 0x3e80
+  }
+
+  public final class MediaConstants {
+    property public static String ACTION_SHOW_MEDIA_PLAYBACK;
+    field public static final String ACTION_SHOW_MEDIA_PLAYBACK = "androidx.car.app.media.action.SHOW_MEDIA_PLAYBACK";
+    field public static final androidx.car.app.media.MediaConstants INSTANCE;
   }
 
   @SuppressCompatibility @androidx.car.app.annotations.ExperimentalCarApi public class MediaPlaybackManager implements androidx.car.app.managers.Manager {
@@ -1898,6 +1980,11 @@ package androidx.car.app.model {
     method public void setTemplate(androidx.car.app.model.Template);
     method public static androidx.car.app.model.TemplateWrapper wrap(androidx.car.app.model.Template);
     method public static androidx.car.app.model.TemplateWrapper wrap(androidx.car.app.model.Template, String);
+  }
+
+  @SuppressCompatibility @androidx.car.app.annotations.CarProtocol @androidx.car.app.annotations.ExperimentalCarApi @androidx.car.app.annotations.RequiresCarApi(8) public final class TimerSpan extends androidx.car.app.model.CarSpan {
+    method public static androidx.car.app.model.TimerSpan create(long);
+    method public long getElapsedRealtimeMillis();
   }
 
   @SuppressCompatibility @androidx.car.app.annotations.CarProtocol public final class Toggle {

@@ -176,6 +176,18 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.runtime.GltfFeature createWithMockFeature(androidx.xr.scenecore.runtime.GltfFeature feature, androidx.xr.runtime.NodeHolder<? extends java.lang.Object?> nodeHolder);
   }
 
+  @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeGltfModelResource implements androidx.xr.scenecore.runtime.GltfModelResource {
+    ctor public FakeGltfModelResource(long mToken);
+    method @InaccessibleFromKotlin public byte[] getAssetData();
+    method @InaccessibleFromKotlin public String getAssetKey();
+    method @InaccessibleFromKotlin public String getAssetName();
+    method @InaccessibleFromKotlin public long getMToken();
+    property public byte[] assetData;
+    property public String assetKey;
+    property public String assetName;
+    property public long mToken;
+  }
+
   @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public final class FakeHeadScenePose extends androidx.xr.scenecore.testing.FakeScenePose implements androidx.xr.scenecore.runtime.HeadScenePose {
     ctor public FakeHeadScenePose();
   }
@@ -568,7 +580,7 @@ package androidx.xr.scenecore.testing {
     method public androidx.xr.scenecore.runtime.ActivityPanelEntity createActivityPanelEntity(androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.PixelDimensions windowBoundsPx, String name, android.app.Activity hostActivity, androidx.xr.scenecore.runtime.Entity parent);
     method @RequiresApi(android.os.Build.VERSION_CODES.O) public androidx.xr.scenecore.runtime.AnchorEntity createAnchorEntity();
     method public androidx.xr.scenecore.testing.FakeAnchorPlacement createAnchorPlacementForPlanes(java.util.Set<androidx.xr.scenecore.runtime.PlaneType> planeTypeFilter, java.util.Set<androidx.xr.scenecore.runtime.PlaneSemantic> planeSemanticFilter);
-    method public androidx.xr.scenecore.runtime.GltfEntity createGltfEntity(androidx.xr.scenecore.runtime.GltfFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.Entity parentEntity);
+    method public androidx.xr.scenecore.testing.FakeGltfEntity createGltfEntity(androidx.xr.scenecore.runtime.GltfFeature feature, androidx.xr.runtime.math.Pose pose, androidx.xr.scenecore.runtime.Entity parentEntity);
     method public androidx.xr.scenecore.runtime.Entity createGroupEntity(androidx.xr.runtime.math.Pose pose, String name, androidx.xr.scenecore.runtime.Entity parent);
     method public androidx.xr.scenecore.runtime.InteractableComponent createInteractableComponent(java.util.concurrent.Executor executor, androidx.xr.scenecore.runtime.InputEventListener listener);
     method public androidx.xr.scenecore.runtime.LoggingEntity createLoggingEntity(androidx.xr.runtime.math.Pose pose);
@@ -759,7 +771,6 @@ package androidx.xr.scenecore.testing {
     method @InaccessibleFromKotlin public boolean getMContentColorMetadataSet();
     method @InaccessibleFromKotlin public int getMaxContentLightLevel();
     method public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolution();
-    method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.PerceivedResolutionResult getPerceivedResolutionResult();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.TextureResource? getPrimaryAlphaMask();
     method @InaccessibleFromKotlin public androidx.xr.scenecore.runtime.SurfaceEntity.Shape getShape();
     method @InaccessibleFromKotlin public int getStereoMode();
@@ -769,7 +780,7 @@ package androidx.xr.scenecore.testing {
     method public void setContentColorMetadata(int colorSpace, int colorTransfer, int colorRange, int maxContentLightLevel);
     method @InaccessibleFromKotlin public void setEdgeFeather(androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather);
     method @InaccessibleFromKotlin public void setMContentColorMetadataSet(boolean);
-    method @InaccessibleFromKotlin public void setPerceivedResolutionResult(androidx.xr.scenecore.runtime.PerceivedResolutionResult);
+    method public void setPerceivedResolution(androidx.xr.scenecore.runtime.PerceivedResolutionResult perceivedResolution);
     method public void setPrimaryAlphaMaskTexture(androidx.xr.scenecore.runtime.TextureResource? alphaMask);
     method @InaccessibleFromKotlin public void setShape(androidx.xr.scenecore.runtime.SurfaceEntity.Shape);
     method @InaccessibleFromKotlin public void setStereoMode(int);
@@ -784,7 +795,6 @@ package androidx.xr.scenecore.testing {
     property public androidx.xr.scenecore.runtime.SurfaceEntity.EdgeFeather edgeFeather;
     property public boolean mContentColorMetadataSet;
     property public int maxContentLightLevel;
-    property public androidx.xr.scenecore.runtime.PerceivedResolutionResult perceivedResolutionResult;
     property public androidx.xr.scenecore.runtime.TextureResource? primaryAlphaMask;
     property public androidx.xr.scenecore.runtime.SurfaceEntity.Shape shape;
     property public int stereoMode;

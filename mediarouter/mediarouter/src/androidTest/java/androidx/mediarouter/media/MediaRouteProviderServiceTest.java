@@ -16,16 +16,30 @@
 
 package androidx.mediarouter.media;
 
+import static androidx.mediarouter.media.MediaRouteProviderProtocol.CLIENT_VERSION_4;
+import static androidx.mediarouter.media.MediaRouteProviderProtocol.SERVICE_MSG_DESCRIPTOR_CHANGED;
+import static androidx.mediarouter.media.MediaRouteProviderProtocol.SERVICE_MSG_REGISTERED;
 import static androidx.mediarouter.media.MediaRouterActiveScanThrottlingHelper.MAX_ACTIVE_SCAN_DURATION_MS;
+
+import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -40,6 +54,7 @@ import androidx.mediarouter.media.MediaRouteProviderService.ClientInfo;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.filters.SdkSuppress;
 import androidx.test.filters.SmallTest;
 import androidx.test.rule.ServiceTestRule;
 
@@ -50,7 +65,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -65,10 +82,12 @@ public class MediaRouteProviderServiceTest {
     private static final String FAKE_MEDIA_ROUTE_ID_2 = "fakeMediaRouteId2";
     private static final String FAKE_MEDIA_ROUTE_ID_3 = "fakeMediaRouteId3";
     private static final String FAKE_MEDIA_ROUTE_ID_4 = "fakeMediaRouteId4";
+    private static final String FAKE_MEDIA_ROUTE_ID_5 = "fakeMediaRouteId5";
     private static final String FAKE_MEDIA_ROUTE_NAME_1 = "fakeMediaRouteName1";
     private static final String FAKE_MEDIA_ROUTE_NAME_2 = "fakeMediaRouteName2";
     private static final String FAKE_MEDIA_ROUTE_NAME_3 = "fakeMediaRouteName3";
     private static final String FAKE_MEDIA_ROUTE_NAME_4 = "fakeMediaRouteName4";
+    private static final String FAKE_MEDIA_ROUTE_NAME_5 = "fakeMediaRouteName5";
     private static final String REAL_CLIENT_PACKAGE_NAME = "androidx.mediarouter.test";
     private static final String FAKE_CLIENT_PACKAGE_NAME = "fake_client_package_name";
     private static final long TIME_OUT_MS = 3000;
@@ -81,6 +100,7 @@ public class MediaRouteProviderServiceTest {
     private Messenger mReceiveMessenger2;
     private int mRequestId;
     private MediaRouteSelector mSelector;
+    private ArrayList<Messenger> mRegisteredClients = new ArrayList<>();
 
     private static CountDownLatch sActiveScanCountDownLatch;
     private static CountDownLatch sPassiveScanCountDownLatch;
@@ -117,8 +137,9 @@ public class MediaRouteProviderServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        unregisterClient(mReceiveMessenger1);
-        unregisterClient(mReceiveMessenger2);
+        for (Messenger client : List.copyOf(mRegisteredClients)) {
+            unregisterClient(client);
+        }
         mServiceRule.unbindService();
         sLastDiscoveryRequest = null;
         sRouteControllerOptions = null;
@@ -226,6 +247,7 @@ public class MediaRouteProviderServiceTest {
 
         // Active scan should be true.
         assertTrue(sActiveScanCountDownLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
+        PollingCheck.waitFor(TIME_OUT_MS, () -> sLastDiscoveryRequest != null);
         assertFalse(sLastDiscoveryRequest.shouldScanWithScreenOff());
     }
 
@@ -427,6 +449,196 @@ public class MediaRouteProviderServiceTest {
         assertEquals(REAL_CLIENT_PACKAGE_NAME, sRouteControllerOptions.getClientPackageName());
     }
 
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N, maxSdkVersion =
+            Build.VERSION_CODES.VANILLA_ICE_CREAM)
+    @Test
+    public void permissionFiltering_isNotEnforcedBeforeBaklava1() throws Exception {
+        MediaRouteProviderServiceImpl service = MediaRouteProviderServiceImpl.sInstance;
+        List<MediaRouteDescriptor> routes = List.of(
+                new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_5, FAKE_MEDIA_ROUTE_NAME_5)
+                        .setMinClientVersion(CLIENT_VERSION_4)
+                        .setRequiredPermissions(
+                                List.of(Set.of(Manifest.permission.NEARBY_WIFI_DEVICES)))
+                        .build());
+        service.setActiveScanRoutes(routes);
+        service.setPassiveRoutes(routes);
+        when(service.mPackageManagerSpy.checkPermission(
+                eq(Manifest.permission.NEARBY_WIFI_DEVICES),
+                anyString())).thenReturn(PackageManager.PERMISSION_DENIED);
+
+        CountDownLatch routeWasAdvertisedLatch = new CountDownLatch(1);
+        FakeClient fakeClient = new FakeClient(new FakeClient.ServiceCallbackReceiver(){
+            @Override
+            void onDescriptorChanged(@Nullable MediaRouteProviderDescriptor descriptor) {
+                if (descriptor != null) {
+                    for (MediaRouteDescriptor route : descriptor.getRoutes()) {
+                        if (route.getId().equals(FAKE_MEDIA_ROUTE_ID_5)) {
+                            routeWasAdvertisedLatch.countDown();
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+        MediaRouteDiscoveryRequest discoveryRequest = new MediaRouteDiscoveryRequest(
+                mSelector, /* activeScan= */ true);
+
+        registerClient(fakeClient.mMessenger);
+        sendDiscoveryRequest(fakeClient.mMessenger, discoveryRequest);
+
+        assertTrue(routeWasAdvertisedLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES_FULL.BAKLAVA_1, codeName = "Baklava")
+    @Test
+    public void permissionFiltering_clientDoesNotHavePermission_routeIsNotReturned()
+            throws Exception {
+        MediaRouteProviderServiceImpl service = MediaRouteProviderServiceImpl.sInstance;
+        List<MediaRouteDescriptor> routes = List.of(
+                new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_5, FAKE_MEDIA_ROUTE_NAME_5)
+                        .setMinClientVersion(CLIENT_VERSION_4)
+                        .setRequiredPermissions(
+                                List.of(Set.of(Manifest.permission.NEARBY_WIFI_DEVICES)))
+                        .build());
+        service.setActiveScanRoutes(routes);
+        service.setPassiveRoutes(routes);
+        when(service.mPackageManagerSpy.checkPermission(
+                eq(Manifest.permission.NEARBY_WIFI_DEVICES),
+                anyString())).thenReturn(PackageManager.PERMISSION_DENIED);
+
+        CountDownLatch onRegisteredLatch = new CountDownLatch(1);
+        CountDownLatch onDescriptorChangedLatch = new CountDownLatch(1);
+        FakeClient fakeClient = new FakeClient(new FakeClient.ServiceCallbackReceiver(){
+            @Override
+            void onRegistered(@Nullable MediaRouteProviderDescriptor descriptor) {
+                if (descriptor != null) {
+                    assertThat(descriptor.getRoutes().stream().map(
+                            r -> r.getId()).toList()).doesNotContain(FAKE_MEDIA_ROUTE_ID_5);
+                }
+                onRegisteredLatch.countDown();
+            }
+
+            @Override
+            void onDescriptorChanged(@Nullable MediaRouteProviderDescriptor descriptor) {
+                if (descriptor != null) {
+                    assertThat(descriptor.getRoutes().stream().map(
+                            r -> r.getId()).toList()).doesNotContain(FAKE_MEDIA_ROUTE_ID_5);
+                }
+                onDescriptorChangedLatch.countDown();
+            }
+        });
+        MediaRouteDiscoveryRequest discoveryRequest = new MediaRouteDiscoveryRequest(
+                mSelector, /* activeScan= */ true);
+
+        registerClient(fakeClient.mMessenger);
+        sendDiscoveryRequest(fakeClient.mMessenger, discoveryRequest);
+
+        assertTrue(onRegisteredLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
+        assertTrue(onDescriptorChangedLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES_FULL.BAKLAVA_1, codeName = "Baklava")
+    @Test
+    public void permissionFiltering_clientHasPermission_routeIsReturned() throws Exception {
+        MediaRouteProviderServiceImpl service = MediaRouteProviderServiceImpl.sInstance;
+        List<MediaRouteDescriptor> routes = List.of(
+                new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_5, FAKE_MEDIA_ROUTE_NAME_5)
+                        .setMinClientVersion(CLIENT_VERSION_4)
+                        .setRequiredPermissions(
+                                List.of(Set.of(Manifest.permission.NEARBY_WIFI_DEVICES)))
+                        .build());
+        service.setActiveScanRoutes(routes);
+        service.setPassiveRoutes(routes);
+        when(service.mPackageManagerSpy.checkPermission(
+                eq(Manifest.permission.NEARBY_WIFI_DEVICES),
+                anyString())).thenReturn(PackageManager.PERMISSION_GRANTED);
+        CountDownLatch descriptorChangedLatch = new CountDownLatch(1);
+        FakeClient fakeClient = new FakeClient(new FakeClient.ServiceCallbackReceiver() {
+            @Override
+            void onRegistered(@Nullable MediaRouteProviderDescriptor descriptor) {
+                if (descriptor != null) {
+                    assertTrue(descriptor.getRoutes().stream().map(r -> r.getId()).noneMatch(
+                            FAKE_MEDIA_ROUTE_ID_5::equals));
+                }
+            }
+            @Override
+            void onDescriptorChanged(@Nullable MediaRouteProviderDescriptor descriptor) {
+                if (descriptor != null && descriptorChangedLatch.getCount() > 0) {
+                    if (descriptor.getRoutes().stream().map(r -> r.getId()).anyMatch(
+                            FAKE_MEDIA_ROUTE_ID_5::equals)) {
+                        descriptorChangedLatch.countDown();
+                    }
+                }
+            }
+        });
+        MediaRouteDiscoveryRequest discoveryRequest = new MediaRouteDiscoveryRequest(
+                mSelector, /* activeScan= */ true);
+
+        registerClient(fakeClient.mMessenger);
+        sendDiscoveryRequest(fakeClient.mMessenger, discoveryRequest);
+
+        assertTrue(descriptorChangedLatch.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES_FULL.BAKLAVA_1, codeName = "Baklava")
+    @Test
+    public void permissionFiltering_twoClientsWithoutPermission_routeIsNotReturned()
+            throws Exception {
+        MediaRouteProviderServiceImpl service = MediaRouteProviderServiceImpl.sInstance;
+        List<MediaRouteDescriptor> routes = List.of(
+                new MediaRouteDescriptor.Builder(FAKE_MEDIA_ROUTE_ID_5, FAKE_MEDIA_ROUTE_NAME_5)
+                        .setMinClientVersion(CLIENT_VERSION_4)
+                        .setRequiredPermissions(
+                                List.of(Set.of(Manifest.permission.NEARBY_WIFI_DEVICES)))
+                        .build());
+        service.setActiveScanRoutes(routes);
+        service.setPassiveRoutes(routes);
+        when(service.mPackageManagerSpy.checkPermission(
+                eq(Manifest.permission.NEARBY_WIFI_DEVICES),
+                anyString())).thenReturn(PackageManager.PERMISSION_DENIED);
+
+        CountDownLatch client1Registered = new CountDownLatch(1);
+        FakeClient fakeClient1 = new FakeClient(new FakeClient.ServiceCallbackReceiver(){
+            @Override
+            void onRegistered(@Nullable MediaRouteProviderDescriptor descriptor) {
+                if (descriptor != null) {
+                    assertThat(descriptor.getRoutes().stream().map(
+                            r -> r.getId()).toList()).doesNotContain(FAKE_MEDIA_ROUTE_ID_5);
+                }
+                client1Registered.countDown();
+            }
+
+            @Override
+            void onDescriptorChanged(@Nullable MediaRouteProviderDescriptor descriptor) {
+                if (descriptor != null) {
+                    assertThat(descriptor.getRoutes().stream().map(
+                            r -> r.getId()).toList()).doesNotContain(FAKE_MEDIA_ROUTE_ID_5);
+                }
+            }
+        });
+        MediaRouteDiscoveryRequest discoveryRequest = new MediaRouteDiscoveryRequest(
+                mSelector, /* activeScan= */ true);
+        registerClient(fakeClient1.mMessenger);
+        sendDiscoveryRequest(fakeClient1.mMessenger, discoveryRequest);
+
+        assertTrue(client1Registered.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
+
+        CountDownLatch client2Registered = new CountDownLatch(1);
+        FakeClient fakeClient2 = new FakeClient(new FakeClient.ServiceCallbackReceiver() {
+            @Override
+            void onRegistered(@Nullable MediaRouteProviderDescriptor descriptor) {
+                if (descriptor != null) {
+                    assertThat(descriptor.getRoutes().stream().map(
+                            r -> r.getId()).toList()).doesNotContain(FAKE_MEDIA_ROUTE_ID_5);
+                    client2Registered.countDown();
+                }
+            }
+        });
+        registerClient(fakeClient2.mMessenger);
+
+        assertTrue(client2Registered.await(TIME_OUT_MS, TimeUnit.MILLISECONDS));
+    }
+
     private void registerClient(Messenger receiveMessenger) throws Exception {
         Message msg = Message.obtain();
         msg.what = MediaRouteProviderProtocol.CLIENT_MSG_REGISTER;
@@ -435,6 +647,7 @@ public class MediaRouteProviderServiceTest {
         msg.replyTo = receiveMessenger;
 
         mServiceMessenger.send(msg);
+        mRegisteredClients.add(receiveMessenger);
     }
 
     private void unregisterClient(Messenger receiveMessenger) throws Exception {
@@ -443,6 +656,7 @@ public class MediaRouteProviderServiceTest {
         msg.replyTo = receiveMessenger;
 
         mServiceMessenger.send(msg);
+        mRegisteredClients.remove(receiveMessenger);
     }
 
     private void sendDiscoveryRequest(
@@ -500,6 +714,9 @@ public class MediaRouteProviderServiceTest {
 
     /** Fake {@link MediaRouteProviderService} implementation. */
     public static final class MediaRouteProviderServiceImpl extends MediaRouteProviderService {
+        static MediaRouteProviderServiceTest.MediaRouteProviderServiceImpl sInstance = null;
+        PackageManager mPackageManagerSpy;  // Note: only usable on SDK level N(24) or higher
+
         @Override
         public void onCreate() {
             super.onCreate();
@@ -522,18 +739,68 @@ public class MediaRouteProviderServiceTest {
                             sClientInfoListenerRemovalCountDownLatch.countDown();
                         }
                     });
+            assertNull(sInstance);
+            sInstance = this;
+        }
+
+        @Override
+        public void onDestroy() {
+            assertNotNull(sInstance);
+            sInstance = null;
+            super.onDestroy();
+        }
+
+        @Override
+        protected void attachBaseContext(@NonNull Context context) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                super.attachBaseContext(context);
+            } else {
+                // Mockito spy support only works on SDK level N (24) or higher.
+                mPackageManagerSpy = spy(context.getPackageManager());
+                ContextWrapper wrapper = new ContextWrapper(context) {
+                    @Override
+                    public PackageManager getPackageManager() {
+                        return mPackageManagerSpy;
+                    }
+                };
+                super.attachBaseContext(wrapper);
+            }
         }
 
         @Override
         public MediaRouteProvider onCreateMediaRouteProvider() {
             return new MediaRouteProviderImpl(this);
         }
+
+        void setActiveScanRoutes(List<MediaRouteDescriptor> activeScanRoutes) {
+            ((MediaRouteProviderImpl) getMediaRouteProvider()).setActiveScanRoutes(
+                    activeScanRoutes);
+        }
+
+        void setPassiveRoutes(List<MediaRouteDescriptor> passiveRoutes) {
+            ((MediaRouteProviderImpl) getMediaRouteProvider()).setPassiveRoutes(passiveRoutes);
+        }
     }
 
     /** Fake {@link MediaRouteProvider} implementation. */
     public static class MediaRouteProviderImpl extends MediaRouteProvider {
+        List<MediaRouteDescriptor> mActiveScanRoutes;
+        List<MediaRouteDescriptor> mPassiveRoutes;
+
+        List<MediaRouteDescriptor> mExtraRoutes = Collections.emptyList();
+
         MediaRouteProviderImpl(Context context) {
             super(context);
+            mActiveScanRoutes = createMediaRouteProviderDescriptor().getRoutes();
+            mPassiveRoutes = List.of();
+        }
+
+        void setActiveScanRoutes(List<MediaRouteDescriptor> activeScanRoutes) {
+            mActiveScanRoutes = activeScanRoutes;
+        }
+
+        void setPassiveRoutes(List<MediaRouteDescriptor> passiveRoutes) {
+            mPassiveRoutes = passiveRoutes;
         }
 
         @Override
@@ -548,13 +815,14 @@ public class MediaRouteProviderServiceTest {
             boolean isActiveScan =
                     (discoveryRequest != null) ? discoveryRequest.isActiveScan() : false;
             if (wasActiveScan != isActiveScan) {
+                MediaRouteProviderDescriptor descriptor =
+                        new MediaRouteProviderDescriptor.Builder()
+                                .addRoutes(isActiveScan ? mActiveScanRoutes : mPassiveRoutes)
+                                .build();
+                setDescriptor(descriptor);
                 if (isActiveScan) {
-                    setDescriptor(createMediaRouteProviderDescriptor());
                     sActiveScanCountDownLatch.countDown();
                 } else {
-                    MediaRouteProviderDescriptor emptyDescriptor =
-                            new MediaRouteProviderDescriptor.Builder().build();
-                    setDescriptor(emptyDescriptor);
                     sPassiveScanCountDownLatch.countDown();
                 }
             }
@@ -617,5 +885,47 @@ public class MediaRouteProviderServiceTest {
 
     private void resetClientInfoListenerRemovalCountDownLatch(int count) {
         sClientInfoListenerRemovalCountDownLatch = new CountDownLatch(count);
+    }
+
+    /**
+     * A helper class for handling messages sent to a client of a MessageRouteProviderService
+     */
+    private static class FakeClient {
+        @Nullable private ServiceCallbackReceiver mServiceCallbackReceiver;
+        private Messenger mMessenger;
+
+        FakeClient(@Nullable ServiceCallbackReceiver callbackReceiver) {
+            mServiceCallbackReceiver = callbackReceiver;
+            mMessenger = new Messenger(new Handler(Looper.getMainLooper()) {
+                @Override
+                public void handleMessage(@NonNull Message msg) {
+                    switch (msg.what) {
+                        case SERVICE_MSG_REGISTERED: {
+                            MediaRouteProviderDescriptor descriptor =
+                                    MediaRouteProviderDescriptor.fromBundle((Bundle) msg.obj);
+                            if (mServiceCallbackReceiver != null) {
+                                mServiceCallbackReceiver.onRegistered(descriptor);
+                            }
+                            break;
+                        }
+                        case SERVICE_MSG_DESCRIPTOR_CHANGED: {
+                            MediaRouteProviderDescriptor descriptor =
+                                    MediaRouteProviderDescriptor.fromBundle((Bundle) msg.obj);
+                            if (mServiceCallbackReceiver != null) {
+                                mServiceCallbackReceiver.onDescriptorChanged(descriptor);
+                            }
+                            break;
+                        }
+                        default:
+                            // ignore
+                    }
+                }
+            });
+        }
+
+        static class ServiceCallbackReceiver {
+            void onRegistered(@Nullable MediaRouteProviderDescriptor descriptor) {}
+            void onDescriptorChanged(@Nullable MediaRouteProviderDescriptor descriptor) {}
+        }
     }
 }

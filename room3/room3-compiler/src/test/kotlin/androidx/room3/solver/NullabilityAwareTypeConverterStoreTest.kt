@@ -405,17 +405,17 @@ class NullabilityAwareTypeConverterStoreTest {
                         invocation.processingEnv.requireTypeElement("androidx.room3.RoomDatabase"),
                     writerContext =
                         TypeWriter.WriterContext(
-                            codeLanguage = CodeLanguage.JAVA,
+                            codeLanguage = CodeLanguage.KOTLIN,
                             javaLambdaSyntaxAvailable = false,
                             targetPlatforms = setOf(XProcessingEnv.Platform.JVM),
                         ),
                 )
                 .write(invocation.processingEnv)
             invocation.assertCompilationResult {
-                generatedSourceFileWithPath("MyDao_Impl.java").let {
+                generatedSourceFileWithPath("MyDao_Impl.kt").let {
                     // make sure it bounded w/o upcasting to Boolean
-                    it.contains("final int _tmp = TestConverters.composeDays(entity.mWorkDays);")
-                    it.contains("statement.bindLong(2, _tmp);")
+                    it.contains("val _tmp: Int = TestConverters.composeDays(_tmpMWorkDays)")
+                    it.contains("statement.bindLong(2, _tmp.toLong())")
                 }
             }
         }

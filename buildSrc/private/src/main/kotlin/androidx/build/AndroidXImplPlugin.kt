@@ -25,6 +25,7 @@ import androidx.build.checkapi.JavaApiTaskConfig
 import androidx.build.checkapi.KmpApiTaskConfig
 import androidx.build.checkapi.LibraryApiTaskConfig
 import androidx.build.checkapi.configureProjectForApiTasks
+import androidx.build.dependencyTracker.AffectedModuleDetector
 import androidx.build.docs.CheckTipOfTreeDocsTask.Companion.setUpCheckDocsTask
 import androidx.build.gitclient.getHeadShaProvider
 import androidx.build.gradle.isRoot
@@ -134,7 +135,6 @@ import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
-import org.jetbrains.kotlin.gradle.utils.API
 
 /**
  * A plugin which enables all of the Gradle customizations for AndroidX. This plugin reacts to other
@@ -255,7 +255,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                 versionService.libraryGroupsByGroupId,
                 versionService.overrideLibraryGroupsByProjectPath,
                 listProjectsService.map { it.allPossibleProjects },
-                { getHeadShaProvider(project) },
+                { project.getHeadShaProvider() },
                 { configurationName: String ->
                     configureAarAsJarForConfiguration(project, configurationName)
                 },
@@ -322,6 +322,7 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                         it.archiveFileName.set(archiveName)
                         it.from(project.file(xmlReport.outputLocation))
                         it.include("*.xml")
+                        AffectedModuleDetector.configureTaskGuard(it)
                     }
                 task.finalizedBy(zipXmlTask)
             }
@@ -580,12 +581,6 @@ abstract class AndroidXImplPlugin @Inject constructor() : Plugin<Project> {
                             implementation(kotlin("test-junit"))
                         }
                     }
-                // TODO(b/452246814): Remove when built-in Kotlin adds kotlin-stdlib as an api
-                // dependency automatically
-                project.dependencies.add(
-                    API,
-                    "org.jetbrains.kotlin:kotlin-stdlib:${kotlinExtension.coreLibrariesVersion}",
-                )
             }
         }
     }

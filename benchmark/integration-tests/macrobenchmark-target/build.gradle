@@ -17,7 +17,6 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
@@ -45,6 +44,6 @@ dependencies {
     implementation(project(":tracing:tracing-perfetto"))
     implementation(libs.material)
 
-    implementation("androidx.work:work-runtime:2.10.0")
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
+    implementation("androidx.work:work-runtime:2.11.0")
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
 }

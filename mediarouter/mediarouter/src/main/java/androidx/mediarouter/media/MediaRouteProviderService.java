@@ -57,9 +57,12 @@ import static androidx.mediarouter.media.MediaRouteProviderProtocol.SERVICE_VERS
 import static androidx.mediarouter.media.MediaRouteProviderProtocol.isValidRemoteMessenger;
 import static androidx.mediarouter.media.MediaRouter.UNSELECT_REASON_UNKNOWN;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.DeadObjectException;
@@ -80,6 +83,7 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.collection.ArrayMap;
 import androidx.core.content.ContextCompat;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.Consumer;
 import androidx.core.util.ObjectsCompat;
 import androidx.mediarouter.media.MediaRouteProvider.DynamicGroupRouteController;
@@ -95,6 +99,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 /**
@@ -132,6 +137,7 @@ public abstract class MediaRouteProviderService extends Service {
     final PrivateHandler mPrivateHandler;
     private final MediaRouteProvider.Callback mProviderCallback;
 
+    PackageManager mPackageManager;
     MediaRouteProvider mProvider;
     final MediaRouteProviderServiceImpl mImpl;
 
@@ -199,12 +205,15 @@ public abstract class MediaRouteProviderService extends Service {
     /**
      * Creates a media route provider service.
      */
+    @SuppressLint("NewApi") // b/462789273 NewApi check fails to detect BuildCompat.isAtLeastB_1 use
     public MediaRouteProviderService() {
         mReceiveHandler = new ReceiveHandler(this);
         mReceiveMessenger = new Messenger(mReceiveHandler);
         mPrivateHandler = new PrivateHandler();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (BuildCompat.isAtLeastB_1()) {
+            mImpl = new MediaRouteProviderServiceImplApi36_1(this);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             mImpl = new MediaRouteProviderServiceImplApi30(this);
         } else {
             mImpl = new MediaRouteProviderServiceImplBase(this);
@@ -255,6 +264,7 @@ public abstract class MediaRouteProviderService extends Service {
     @Override
     protected void attachBaseContext(@NonNull Context context) {
         super.attachBaseContext(context);
+        mPackageManager = context.getPackageManager();
         mImpl.attachBaseContext(context);
     }
 
@@ -645,6 +655,8 @@ public abstract class MediaRouteProviderService extends Service {
                         if (requestId != 0) {
                             MediaRouteProviderDescriptor descriptor =
                                     mService.getMediaRouteProvider().getDescriptor();
+                            descriptor = filterRoutesByRequiredPermissions(descriptor,
+                                    client.mPackageName);
                             sendMessage(messenger, SERVICE_MSG_REGISTERED,
                                     requestId, SERVICE_VERSION_CURRENT,
                                     createDescriptorBundleForClientVersion(descriptor,
@@ -1204,6 +1216,10 @@ public abstract class MediaRouteProviderService extends Service {
              * Creates a bundle of the given provider descriptor for this client.
              */
             public Bundle createDescriptorBundle(MediaRouteProviderDescriptor descriptor) {
+                if (descriptor == null) {
+                    return null;
+                }
+                descriptor = filterRoutesByRequiredPermissions(descriptor, mPackageName);
                 return createDescriptorBundleForClientVersion(descriptor, mVersion);
             }
 
@@ -1314,6 +1330,13 @@ public abstract class MediaRouteProviderService extends Service {
                     MediaRouteProviderDescriptor descriptor) {
                 sendDescriptorChanged(descriptor);
             }
+        }
+
+        public MediaRouteProviderDescriptor filterRoutesByRequiredPermissions(
+                MediaRouteProviderDescriptor descriptor, String packageName) {
+            // Required permissions filtering is only supported in BAKLAVA_1 and up (see the
+            // MediaRouteProviderServiceImplApi36_1 override of this method).
+            return descriptor;
         }
     }
 
@@ -1560,6 +1583,94 @@ public abstract class MediaRouteProviderService extends Service {
                 if (index < 0) return -1;
                 return mControllers.keyAt(index);
             }
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES_FULL.BAKLAVA_1)
+    static class MediaRouteProviderServiceImplApi36_1 extends MediaRouteProviderServiceImplApi30 {
+        PackageManager mPackageManager;
+
+        MediaRouteProviderServiceImplApi36_1(MediaRouteProviderService instance) {
+            super(instance);
+        }
+
+        @Override
+        public MediaRouteProviderDescriptor filterRoutesByRequiredPermissions(
+                MediaRouteProviderDescriptor descriptor, String packageName) {
+            if (descriptor == null) {
+                return null;
+            }
+            MediaRouteProviderDescriptor.Builder builder =
+                    new MediaRouteProviderDescriptor.Builder(descriptor);
+            builder.setRoutes(Collections.emptyList());
+
+            for (MediaRouteDescriptor route : descriptor.getRoutes()) {
+                if (hasRequiredPermissions(packageName, route)) {
+                    builder.addRoute(route);
+                } else if (DEBUG) {
+                    Log.d(TAG, "'" + route.getName() + "' not visible to " + packageName
+                            + " due to missing permissions " + route.getRequiredPermissions());
+                }
+            }
+            return builder.build();
+        }
+
+        /**
+         * Returns whether the given package has the required permissions to see a certain route.
+         */
+        boolean hasRequiredPermissions(String packageName, MediaRouteDescriptor route) {
+            List<Set<String>> requiredPermissions = route.getRequiredPermissions();
+            if (requiredPermissions.isEmpty()) {
+                return true;
+            }
+            if (mPackageManager == null) {
+                mPackageManager = mService.getPackageManager();
+            }
+            for (Set<String> permissionSet : requiredPermissions) {
+                boolean hasAllInSet = true;
+                for (String permission : permissionSet) {
+                    if (!hasPermission(packageName, permission)) {
+                        hasAllInSet = false;
+                        break;
+                    }
+                }
+                if (hasAllInSet) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Returns whether a given package has a permission.
+         */
+        boolean hasPermission(String packageName, String permission) {
+            if (mPackageManager.checkPermission(permission, packageName)
+                    == PackageManager.PERMISSION_GRANTED) {
+                return true;
+            }
+
+            // TODO(b/413118912) - replace the permission string below with the framework constant
+            //  when it's available (currently planned in SDK 37).
+            if ("android.permission.ACCESS_LOCAL_NETWORK".equals(permission)) {
+                try {
+                    // The local network protection feature should only apply to apps
+                    // with target SDK after 36 (Baklava).
+                    ApplicationInfo appInfo = mPackageManager.getApplicationInfo(
+                            packageName, /* flags= */ 0);
+                    if (appInfo.targetSdkVersion <= Build.VERSION_CODES.BAKLAVA) {
+                        if (DEBUG) {
+                            Log.d(TAG, packageName + " has targetSDK="
+                                    + appInfo.targetSdkVersion + " so ignoring missing "
+                                    + permission);
+                        }
+                        return true;
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    // ignored
+                }
+            }
+            return false;
         }
     }
 }

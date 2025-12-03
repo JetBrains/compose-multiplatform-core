@@ -56,6 +56,7 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -175,17 +176,25 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
 
     // TODO:: b/364316364 should assert on a per call basis
     internal class CachedLocalSilence(scope: CallExtensionScope) {
-        private val isLocallySilenced = MutableStateFlow(false)
+        val emissionFlow = MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 5)
 
         val extension =
-            scope.addLocalCallSilenceExtension(onIsLocallySilencedUpdated = isLocallySilenced::emit)
+            scope.addLocalCallSilenceExtension(onIsLocallySilencedUpdated = emissionFlow::emit)
 
         suspend fun waitForLocalCallSilenceState(expected: Boolean) {
             val result =
                 withTimeoutOrNull(ICS_EXTENSION_UPDATE_TIMEOUT_MS) {
-                    isLocallySilenced.first { it == expected }
+                    Log.d("waitForLocalCallSilenceState", ": WAITING FOR[$expected]")
+                    emissionFlow.first {
+                        Log.d("waitForLocalCallSilenceState", ": COLLECTED[$it]")
+                        it == expected
+                    }
                 }
-            assertEquals("Never received local call silence state", expected, result)
+            assertEquals(
+                "Never received local call silence state update for [$expected]",
+                expected,
+                result,
+            )
         }
     }
 
@@ -544,6 +553,9 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                         val localSilenceExtension = CachedLocalSilence(this)
                         onConnected {
                             hasConnected = true
+                            // assert the initial local call silence state from the remote surface
+                            localSilenceExtension.waitForLocalCallSilenceState(false)
+
                             // simulate an external global mute while the local call silence
                             // extension is connected.  The expected behavior is that telecom will
                             // undo this op
@@ -567,10 +579,6 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
                             }
 
                             // VoIP --> ICS
-                            voipAppControl.updateIsLocallySilenced(false)
-                            localSilenceExtension.waitForLocalCallSilenceState(false)
-
-                            // signal that the app wants to locally silence the call
                             voipAppControl.updateIsLocallySilenced(true)
                             localSilenceExtension.waitForLocalCallSilenceState(true)
 
@@ -598,6 +606,44 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
             } finally {
                 mContext.unregisterReceiver(globalMuteStateReceiver)
             }
+        }
+    }
+
+    /**
+     * Tests the LocalCallSilence extension behavior when a call is initiated in a "locally
+     * silenced" (muted) state and verifies the InCallService (ICS) extension correctly receives the
+     * initial `true` (silenced) state immediately upon connection.
+     */
+    @LargeTest
+    @Test(timeout = 10000)
+    fun testLocalCallSilenceStartMuted(): Unit = runBlocking {
+        usingIcs { ics ->
+            val voipAppControl = bindToVoipAppWithExtensions()
+            val callback = TestCallCallbackListener(this)
+            voipAppControl.setCallback(callback)
+            val voipCallId =
+                createAndVerifyVoipCall(
+                    voipAppControl,
+                    callback,
+                    listOf(getLocalSilenceCapability(setOf())),
+                    parameters.direction,
+                    true, /* start the local call silence as silenced / muted */
+                )
+            val call = TestUtils.waitOnInCallServiceToReachXCalls(ics, 1)!!
+            var hasConnected = false
+
+            with(ics) {
+                connectExtensions(call) {
+                    val localSilenceExtension = CachedLocalSilence(this)
+                    onConnected {
+                        hasConnected = true
+                        // assert the initial local call silence state from the remote surface
+                        localSilenceExtension.waitForLocalCallSilenceState(true)
+                        call.disconnect()
+                    }
+                }
+            }
+            assertTrue("onConnected never received", hasConnected)
         }
     }
 
@@ -676,12 +722,14 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         requestId: Int,
         capabilities: List<Capability>,
         direction: Int,
+        initLcsValue: Boolean = false,
     ) {
         // add a call to verify capability exchange IS made with ICS
         voipAppControl.addCall(
             requestId,
             capabilities,
             direction == CallAttributesCompat.DIRECTION_OUTGOING,
+            initLcsValue,
         )
     }
 
@@ -694,9 +742,10 @@ class E2EExtensionTests(private val parameters: TestParameters) : BaseTelecomTes
         callback: TestCallCallbackListener,
         capabilities: List<Capability>,
         direction: Int,
+        initLcsValue: Boolean = false,
     ): String {
         val requestId = mRequestIdGenerator.getAndIncrement()
-        createVoipCallAsync(voipAppControl, requestId, capabilities, direction)
+        createVoipCallAsync(voipAppControl, requestId, capabilities, direction, initLcsValue)
         val callId = callback.waitForCallAdded(requestId)
         assertTrue("call could not be created", !callId.isNullOrEmpty())
         return callId!!

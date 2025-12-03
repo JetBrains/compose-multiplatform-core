@@ -19,10 +19,10 @@ package androidx.xr.arcore.apps.whitebox.mobile.samplerender
 import android.opengl.GLES30
 import android.opengl.GLException
 import android.opengl.GLU
-import android.util.Log
 import androidx.collection.IntList
 import androidx.collection.MutableIntList
 import androidx.collection.mutableIntListOf
+import androidx.xr.runtime.Log
 import java.util.Locale
 
 /** Methods for handling OpenGL errors. */
@@ -36,10 +36,16 @@ public fun maybeThrowGLException(reason: String, api: String) {
 }
 
 /** Logs a message with the given logcat priority if a GL error occurred. */
-public fun maybeLogGLError(priority: Int, tag: String, reason: String, api: String) {
+public fun maybeLogGLError(level: Log.Level, reason: String, api: String) {
     val errorCodes: IntList? = getGlErrors()
     if (errorCodes != null) {
-        Log.println(priority, tag, formatErrorMessage(reason, api, errorCodes))
+        when (level) {
+            Log.Level.VERBOSE -> Log.verbose { formatErrorMessage(reason, api, errorCodes) }
+            Log.Level.DEBUG -> Log.debug { formatErrorMessage(reason, api, errorCodes) }
+            Log.Level.INFO -> Log.info { formatErrorMessage(reason, api, errorCodes) }
+            Log.Level.WARN -> Log.warn { formatErrorMessage(reason, api, errorCodes) }
+            Log.Level.ERROR -> Log.error { formatErrorMessage(reason, api, errorCodes) }
+        }
     }
 }
 

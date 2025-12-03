@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION") // For @MapInfo
-
 package androidx.room3.integration.kotlintestapp.dao
 
 import androidx.collection.ArrayMap
@@ -26,7 +24,6 @@ import androidx.room3.Dao
 import androidx.room3.Delete
 import androidx.room3.Insert
 import androidx.room3.MapColumn
-import androidx.room3.MapInfo
 import androidx.room3.Query
 import androidx.room3.RawQuery
 import androidx.room3.RewriteQueriesToDropUnusedColumns
@@ -178,98 +175,99 @@ interface MusicDao {
         LiveData<ImmutableListMultimap<Artist, Song>>
 
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
-    @MapInfo(keyColumn = "mArtistName")
     @RewriteQueriesToDropUnusedColumns
-    fun artistNameToSongs(): Map<String, List<Song>>
+    fun artistNameToSongs(): Map<@MapColumn("mArtistName") String, List<Song>>
 
     @Query("SELECT * FROM Album JOIN Song ON Song.mReleasedYear = Album.mAlbumReleaseYear")
-    @MapInfo(keyColumn = "mReleasedYear", valueColumn = "mReleasedYear")
     @RewriteQueriesToDropUnusedColumns
-    fun releaseYearToAlbums(): Map<Int, List<Song>>
+    fun releaseYearToAlbums(): Map<@MapColumn("mReleasedYear") Int, List<Song>>
 
     @Query("SELECT * FROM Album JOIN Song ON Song.mReleasedYear = Album.mAlbumReleaseYear")
-    @MapInfo(keyColumn = "mReleasedYear", valueColumn = "mTitle")
     @RewriteQueriesToDropUnusedColumns
-    fun releaseYearToSongNames(): Map<Int, List<String>>
+    fun releaseYearToSongNames():
+        Map<@MapColumn("mReleasedYear") Int, List<@MapColumn("mTitle") String>>
 
     @RewriteQueriesToDropUnusedColumns
-    @MapInfo(keyColumn = "mArtistName", valueColumn = "mArtist")
     @RawQuery
-    fun getArtistNameToSongsRawQuery(query: RoomRawQuery): Map<String, List<Song>>
+    fun getArtistNameToSongsRawQuery(
+        query: RoomRawQuery
+    ): Map<@MapColumn("mArtistName") String, List<Song>>
 
     @RewriteQueriesToDropUnusedColumns
-    @MapInfo(keyColumn = "mReleasedYear", valueColumn = "mReleasedYear")
     @RawQuery
-    fun getReleaseYearToAlbumsRawQuery(query: RoomRawQuery): Map<Int, List<Song>>
+    fun getReleaseYearToAlbumsRawQuery(
+        query: RoomRawQuery
+    ): Map<@MapColumn("mReleasedYear") Int, List<Song>>
 
     @RewriteQueriesToDropUnusedColumns
-    @MapInfo(keyColumn = "mReleasedYear", valueColumn = "mTitle")
     @RawQuery
-    fun getReleaseYearToSongNamesRawQuery(query: RoomRawQuery): Map<Int, List<String>>
+    fun getReleaseYearToSongNamesRawQuery(
+        query: RoomRawQuery
+    ): Map<@MapColumn("mReleasedYear") Int, List<@MapColumn("mTitle") String>>
 
     @Query(
         "SELECT *, COUNT(mSongId) as songCount FROM Artist JOIN Song ON Artist.mArtistName = " +
             "Song.mArtist GROUP BY mArtistName"
     )
-    @MapInfo(valueColumn = "songCount")
     @RewriteQueriesToDropUnusedColumns
-    fun artistAndSongCountMap(): Map<Artist, Int>
+    fun artistAndSongCountMap(): Map<Artist, @MapColumn("songCount") Int>
 
     @RewriteQueriesToDropUnusedColumns
-    @MapInfo(valueColumn = "songCount")
     @RawQuery
-    fun getArtistAndSongCountMapRawQuery(query: RoomRawQuery): Map<Artist, Int>
+    fun getArtistAndSongCountMapRawQuery(
+        query: RoomRawQuery
+    ): Map<Artist, @MapColumn("songCount") Int>
 
     // Other Map Key/Value Types
     @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
-    @MapInfo(valueColumn = "mAlbumCover")
     @RewriteQueriesToDropUnusedColumns
-    fun allArtistsWithAlbumCovers(): ImmutableMap<Artist, ByteBuffer>
+    fun allArtistsWithAlbumCovers(): ImmutableMap<Artist, @MapColumn("mAlbumCover") ByteBuffer>
 
-    @MapInfo(valueColumn = "mAlbumCover")
     @RawQuery
-    fun getAllArtistsWithAlbumCoversRawQuery(query: RoomRawQuery): ImmutableMap<Artist, ByteBuffer>
+    fun getAllArtistsWithAlbumCoversRawQuery(
+        query: RoomRawQuery
+    ): ImmutableMap<Artist, @MapColumn("mAlbumCover") ByteBuffer>
 
     @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
-    @MapInfo(valueColumn = "mImageYear")
     @RewriteQueriesToDropUnusedColumns
-    fun allArtistsWithAlbumCoverYear(): ImmutableMap<Artist, Long>
+    fun allArtistsWithAlbumCoverYear(): ImmutableMap<Artist, @MapColumn("mImageYear") Long>
 
-    @MapInfo(keyColumn = "mImageYear")
     @RawQuery
-    fun getAllAlbumCoverYearToArtistsWithRawQuery(query: RoomRawQuery): ImmutableMap<Long, Artist>
+    fun getAllAlbumCoverYearToArtistsWithRawQuery(
+        query: RoomRawQuery
+    ): ImmutableMap<@MapColumn("mImageYear") Long, Artist>
 
     @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
-    @MapInfo(keyColumn = "mAlbumCover", valueColumn = "mIsActive")
-    fun albumCoversWithBandActivity(): ImmutableMap<ByteBuffer, Boolean>
+    fun albumCoversWithBandActivity():
+        ImmutableMap<@MapColumn("mAlbumCover") ByteBuffer, @MapColumn("mIsActive") Boolean>
 
-    @MapInfo(keyColumn = "mAlbumCover", valueColumn = "mIsActive")
     @RawQuery
     fun getAlbumCoversWithBandActivityRawQuery(
         query: RoomRawQuery
-    ): ImmutableMap<ByteBuffer, Boolean>
+    ): ImmutableMap<@MapColumn("mAlbumCover") ByteBuffer, @MapColumn("mIsActive") Boolean>
 
     @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
-    @MapInfo(keyColumn = "mDateReleased", valueColumn = "mIsActive")
-    fun albumDateWithBandActivity(): ImmutableMap<Date, Boolean>
+    fun albumDateWithBandActivity():
+        ImmutableMap<@MapColumn("mDateReleased") Date, @MapColumn("mIsActive") Boolean>
 
-    @MapInfo(keyColumn = "mDateReleased", valueColumn = "mIsActive")
     @RawQuery
-    fun getAlbumDateWithBandActivityRawQuery(query: RoomRawQuery): ImmutableMap<Date, Boolean>
+    fun getAlbumDateWithBandActivityRawQuery(
+        query: RoomRawQuery
+    ): ImmutableMap<@MapColumn("mDateReleased") Date, @MapColumn("mIsActive") Boolean>
 
     @Query("SELECT * FROM Image JOIN Artist ON Artist.mArtistName = Image.mArtistInImage")
-    @MapInfo(keyColumn = "mFormat", valueColumn = "mIsActive")
-    fun imageFormatWithBandActivity(): ImmutableMap<ImageFormat, Boolean>
+    fun imageFormatWithBandActivity():
+        ImmutableMap<@MapColumn("mFormat") ImageFormat, @MapColumn("mIsActive") Boolean>
 
-    @MapInfo(keyColumn = "mFormat", valueColumn = "mIsActive")
     @RawQuery
     fun getImageFormatWithBandActivityRawQuery(
         query: RoomRawQuery
-    ): ImmutableMap<ImageFormat, Boolean>
+    ): ImmutableMap<@MapColumn("mFormat") ImageFormat, @MapColumn("mIsActive") Boolean>
 
-    @MapInfo(keyColumn = "dog", valueColumn = "cat")
     @RawQuery
-    fun getMapWithInvalidColumnRawQuery(query: RoomRawQuery): Map<Artist, Int>
+    fun getMapWithInvalidColumnRawQuery(
+        query: RoomRawQuery
+    ): Map<@MapColumn("dog") Artist, @MapColumn("cat") Int>
 
     @Query("SELECT * FROM Artist LEFT JOIN Album ON Artist.mArtistName = Album.mAlbumArtist")
     fun artistAndAlbumsLeftJoin(): Map<Artist, List<Album>>
@@ -278,9 +276,8 @@ interface MusicDao {
     fun artistAndAlbumsLeftJoinGuava(): ImmutableListMultimap<Artist, Album>
 
     @Query("SELECT * FROM Artist LEFT JOIN Album ON Artist.mArtistName = Album.mAlbumArtist")
-    @MapInfo(valueColumn = "mAlbumName")
     @RewriteQueriesToDropUnusedColumns
-    fun artistAndAlbumNamesLeftJoin(): Map<Artist, List<String>>
+    fun artistAndAlbumNamesLeftJoin(): Map<Artist, List<@MapColumn("mAlbumName") String>>
 
     @Query("SELECT * FROM Album LEFT JOIN Artist ON Artist.mArtistName = Album.mAlbumArtist")
     fun albumToArtistLeftJoin(): Map<Album, Artist>
@@ -289,25 +286,23 @@ interface MusicDao {
     fun artistToAlbumLeftJoin(): Map<Artist, Album>
 
     @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
-    @MapInfo(valueColumn = "mImageYear")
     @RewriteQueriesToDropUnusedColumns
-    fun allArtistsWithAlbumCoverYearArrayMap(): ArrayMap<Artist, Long>
+    fun allArtistsWithAlbumCoverYearArrayMap(): ArrayMap<Artist, @MapColumn("mImageYear") Long>
 
-    @MapInfo(keyColumn = "mImageYear")
     @RawQuery
     fun getAllAlbumCoverYearToArtistsWithRawQueryArrayMap(
         query: RoomRawQuery
-    ): ArrayMap<Long, Artist>
+    ): ArrayMap<@MapColumn("mImageYear") Long, Artist>
 
     @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
-    @MapInfo(keyColumn = "mImageYear")
     @RewriteQueriesToDropUnusedColumns
-    fun allAlbumCoverYearToArtistsWithLongSparseArray(): LongSparseArray<Artist>
+    fun allAlbumCoverYearToArtistsWithLongSparseArray():
+        @MapColumn("mImageYear") LongSparseArray<Artist>
 
     @Query("SELECT * FROM Artist JOIN Image ON Artist.mArtistName = Image.mArtistInImage")
-    @MapInfo(keyColumn = "mImageYear")
     @RewriteQueriesToDropUnusedColumns
-    fun allAlbumCoverYearToArtistsWithIntSparseArray(): SparseArrayCompat<Artist>
+    fun allAlbumCoverYearToArtistsWithIntSparseArray():
+        @MapColumn("mImageYear") SparseArrayCompat<Artist>
 
     @Query(
         """
@@ -337,9 +332,9 @@ interface MusicDao {
         LEFT JOIN Song ON (Album.mAlbumName = Song.mAlbum)
         """
     )
-    @MapInfo(valueColumn = "mTitle")
     @RewriteQueriesToDropUnusedColumns
-    fun getArtistToAlbumsMappedToSongNamesMapInfoLeftJoin(): Map<Artist, Map<Album, String>>
+    fun getArtistToAlbumsMappedToSongNamesMapColumnLeftJoin():
+        Map<Artist, Map<Album, @MapColumn("mTitle") String>>
 
     @Query(
         """
@@ -349,9 +344,9 @@ interface MusicDao {
         LEFT JOIN Song ON Album.mAlbumName = Song.mAlbum
         """
     )
-    @MapInfo(keyColumn = "mImageYear")
     @RewriteQueriesToDropUnusedColumns
-    fun getImageYearToArtistToAlbumsMappedToSongs(): Map<Long, Map<Artist, Map<Album, List<Song>>>>
+    fun getImageYearToArtistToAlbumsMappedToSongs():
+        Map<@MapColumn("mImageYear") Long, Map<Artist, Map<Album, List<Song>>>>
 
     @Query(
         """
@@ -361,9 +356,13 @@ interface MusicDao {
         LEFT JOIN Song ON Album.mAlbumName = Song.mAlbum
         """
     )
-    @MapInfo(keyColumn = "mImageYear", valueColumn = "mTitle")
     @RewriteQueriesToDropUnusedColumns
-    fun getNestedMapWithMapInfoKeyAndValue(): Map<Long, Map<Artist, Map<Album, List<String>>>>
+    fun getNestedMapWithMapColumnKeyAndValue():
+        Map<
+            @MapColumn("mImageYear")
+            Long,
+            Map<Artist, Map<Album, List<@MapColumn("mTitle") String>>>,
+        >
 
     @Transaction
     @Query("SELECT * FROM Playlist WHERE mPlaylistId = :id")
@@ -376,11 +375,7 @@ interface MusicDao {
     @Query("SELECT * FROM Artist JOIN Song ON Artist.mArtistName = Song.mArtist")
     @RewriteQueriesToDropUnusedColumns
     fun artistNameToSongsMapColumn():
-        Map<
-            @MapColumn(columnName = "mArtistName")
-            String,
-            List<@MapColumn(columnName = "mReleasedYear") Int>,
-        >
+        Map<@MapColumn("mArtistName") String, List<@MapColumn("mReleasedYear") Int>>
 
     @Query(
         """
@@ -393,9 +388,9 @@ interface MusicDao {
     @RewriteQueriesToDropUnusedColumns
     fun getImageYearToArtistToAlbumsToSongsMapColumn():
         Map<
-            @MapColumn(columnName = "mImageYear")
+            @MapColumn("mImageYear")
             Long,
-            Map<Artist, Map<@MapColumn(columnName = "mAlbumName") String, List<Song>>>,
+            Map<Artist, Map<@MapColumn("mAlbumName") String, List<Song>>>,
         >
 
     @Query(
@@ -410,14 +405,7 @@ interface MusicDao {
     fun getImageYearToArtistToAlbumsToSongsMultiMapColumn():
         Map<
             Image,
-            Map<
-                Artist,
-                Map<
-                    @MapColumn(columnName = "mAlbumName")
-                    String,
-                    List<@MapColumn(columnName = "mReleasedYear") Int>,
-                >,
-            >,
+            Map<Artist, Map<@MapColumn("mAlbumName") String, List<@MapColumn("mReleasedYear") Int>>>,
         >
 
     @RawQuery
@@ -426,13 +414,6 @@ interface MusicDao {
         query: RoomRawQuery
     ): Map<
         Image,
-        Map<
-            Artist,
-            Map<
-                @MapColumn(columnName = "mAlbumName")
-                String,
-                List<@MapColumn(columnName = "mReleasedYear") Int>,
-            >,
-        >,
+        Map<Artist, Map<@MapColumn("mAlbumName") String, List<@MapColumn("mReleasedYear") Int>>>,
     >
 }

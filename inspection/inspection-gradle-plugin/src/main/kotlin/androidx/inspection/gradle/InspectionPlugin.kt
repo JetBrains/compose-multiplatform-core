@@ -210,11 +210,21 @@ open class InspectionExtension(@Suppress("UNUSED_PARAMETER") project: Project) {
      * - "org.jetbrains.kotlin:*"
      * - "org.jetbrains:annotations"
      */
-    val excludedModules: SetProperty<String> = project.objects.setProperty(String::class.java)
+    val excludedModules: SetProperty<String> =
+        project.objects
+            .setProperty(String::class.java)
+            .convention(
+                setOf(
+                    "org.jetbrains.kotlin:kotlin-stdlib*",
+                    "org.jetbrains:annotations",
+                    "org.intellij.lang:annotations",
+                )
+            )
 
     /**
      * Modules to force-keep, even if excludedModules matches them, e.g.
      * - "org.jetbrains.kotlin:kotlin-reflect"
      */
-    val allowedModules: SetProperty<String> = project.objects.setProperty(String::class.java)
+    val allowedModules: SetProperty<String> =
+        project.objects.setProperty(String::class.java).convention(emptySet())
 }
