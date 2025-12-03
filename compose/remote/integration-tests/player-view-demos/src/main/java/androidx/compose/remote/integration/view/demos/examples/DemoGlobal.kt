@@ -54,7 +54,7 @@ fun demoUseOfGlobal(): RemoteComposeWriter {
 }
 
 @Suppress("RestrictedApiAndroidX")
-fun RemoteComposeContextAndroid.date() {
+private fun RemoteComposeContextAndroid.date() {
     box(RecordingModifier().width(500).height(120), BoxLayout.START, BoxLayout.START) {
         beginGlobal()
         val space = addText(":")

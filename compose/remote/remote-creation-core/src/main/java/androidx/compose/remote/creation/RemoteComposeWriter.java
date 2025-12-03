@@ -478,6 +478,20 @@ public class RemoteComposeWriter {
     }
 
     /**
+     * Subtext of a text
+     *
+     * @param txtId     the input text
+     * @param start     the start position 0 = first character
+     * @param len       the length of the subtext -1 = to the end
+     * @param operation the operation to perform
+     */
+    public int textTransform(int txtId, float start, float len, int operation) {
+        int id = mState.createNextAvailableId();
+        mBuffer.textTransform(id, txtId, start, len, operation);
+        return id;
+    }
+
+    /**
      * Measure bitmap font text dimensions.
      *
      * @return float id of the property

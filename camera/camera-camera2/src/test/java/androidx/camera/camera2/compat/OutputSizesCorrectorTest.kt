@@ -35,11 +35,13 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 import org.robolectric.util.ReflectionHelpers
 
 private const val CAMERA_ID_0 = "0"
+private const val CAMERA_ID_1 = "1"
 
 private const val MOTOROLA_BRAND_NAME = "motorola"
 private const val MOTOROLA_E5_PLAY_MODEL_NAME = "moto e5 play"
 private const val SAMSUNG_BRAND_NAME = "SAMSUNG"
 private const val SAMSUNG_J7_DEVICE_NAME = "J7XELTE"
+private const val SAMSUNG_Z_FOLD_4_DEVICE_NAME = "q4q"
 
 private val outputSizes =
     arrayOf(
@@ -58,6 +60,25 @@ private val outputSizes =
         Size(1280, 720),
         Size(640, 480),
         Size(320, 240),
+    )
+
+private val zFold4OutputSizes =
+    arrayOf(
+        Size(1280, 720),
+        Size(1920, 1080),
+        Size(2304, 1296),
+        Size(640, 360),
+        Size(177, 144),
+        Size(2336, 1080),
+        Size(2400, 1080),
+        Size(1920, 824),
+        Size(1088, 1088),
+        Size(1728, 1728),
+        Size(2736, 2736),
+        Size(1824, 712),
+        // Add some other sizes
+        Size(1280, 960),
+        Size(640, 480),
     )
 
 @RunWith(RobolectricTestRunner::class)
@@ -202,6 +223,25 @@ class OutputSizesCorrectorTest {
                     Size(320, 240),
                 )
             )
+            .inOrder()
+    }
+
+    @Test
+    fun canExcludeSamsungZFold4ProblematicSizes() {
+        val outputSizesCorrector =
+            createOutputSizesCorrector(
+                SAMSUNG_BRAND_NAME,
+                SAMSUNG_Z_FOLD_4_DEVICE_NAME,
+                null,
+                CAMERA_ID_1,
+                CameraCharacteristics.LENS_FACING_FRONT,
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_FULL,
+            )
+        val resultList: List<Size> =
+            outputSizesCorrector.applyQuirks(zFold4OutputSizes, ImageFormat.YUV_420_888).toList()
+
+        Truth.assertThat(resultList)
+            .containsExactlyElementsIn(listOf(Size(1280, 960), Size(640, 480)))
             .inOrder()
     }
 

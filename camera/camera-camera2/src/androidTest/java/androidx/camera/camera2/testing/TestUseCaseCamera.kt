@@ -31,7 +31,7 @@ import androidx.camera.camera2.compat.workaround.NoOpInactiveSurfaceCloser
 import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.config.CameraConfig
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseGraphContext
 import androidx.camera.camera2.impl.Camera2Logger
 import androidx.camera.camera2.impl.CameraCallbackMap
 import androidx.camera.camera2.impl.CameraGraphConfigProvider
@@ -88,7 +88,7 @@ class TestUseCaseCamera(
             ),
         )
     val sessionConfigAdapter = SessionConfigAdapter(useCases)
-    val useCaseGraphConfig: UseCaseGraphConfig
+    val useCaseGraphContext: UseCaseGraphContext
 
     init {
         val callbackMap = CameraCallbackMap()
@@ -121,8 +121,8 @@ class TestUseCaseCamera(
         val cameraStateAdapter = CameraStateAdapter()
         val graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter)
 
-        useCaseGraphConfig =
-            UseCaseGraphConfig(
+        useCaseGraphContext =
+            UseCaseGraphContext(
                 cameraGraphProvider = { cameraPipe.createCameraGraph(creationResult.config) },
                 cameraStateAdapter = cameraStateAdapter,
                 streamConfigMap = creationResult.streamConfigMap,
@@ -159,10 +159,10 @@ class TestUseCaseCamera(
                     },
                 state =
                     UseCaseCameraState(
-                        useCaseGraphConfig,
+                        useCaseGraphContext,
                         templateParamsOverride = NoOpTemplateParamsOverride,
                     ),
-                useCaseGraphConfig = useCaseGraphConfig,
+                useCaseGraphContext = useCaseGraphContext,
                 useCaseSurfaceManager = useCaseSurfaceManager,
                 threads = threads,
             )
@@ -174,13 +174,13 @@ class TestUseCaseCamera(
 
     override fun start() {
         threads.confineLaunch {
-            val graph = useCaseGraphConfig.graph
+            val graph = useCaseGraphContext.graph
 
-            useCaseGraphConfig.configureCameraStateListener()
+            useCaseGraphContext.configureCameraStateListener()
 
             graph.start()
 
-            val surfaceToStreamMapResolved = useCaseGraphConfig.surfaceToStreamMap
+            val surfaceToStreamMapResolved = useCaseGraphContext.surfaceToStreamMap
 
             Camera2Logger.debug { "Setting up Surfaces with UseCaseSurfaceManager" }
             if (sessionConfigAdapter.isSessionConfigValid()) {
@@ -216,7 +216,7 @@ class TestUseCaseCamera(
 
     override fun close(): Job {
         return threads.confineLaunch {
-            useCaseGraphConfig.closeGraph()
+            useCaseGraphContext.closeGraph()
             useCaseSurfaceManager.stopAsync().await()
         }
     }

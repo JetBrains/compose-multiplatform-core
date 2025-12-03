@@ -100,22 +100,22 @@ public data class UseCaseCameraConfig(
     }
 
     /**
-     * [UseCaseGraphConfig] would store the CameraGraph and related surface map that would be used
+     * [UseCaseGraphContext] would store the CameraGraph and related surface map that would be used
      * for [UseCaseCamera].
      */
     @UseCaseCameraScope
     @Provides
-    public fun provideUseCaseGraphConfig(
+    public fun provideUseCaseGraphContext(
         cameraStateAdapter: CameraStateAdapter,
         cameraInteropStateCallbackRepository: CameraInteropStateCallbackRepository,
         cameraGraphProvider: Provider<CameraGraph>,
-    ): UseCaseGraphConfig {
+    ): UseCaseGraphContext {
         sessionConfigAdapter.getValidSessionConfigOrNull()?.let { sessionConfig ->
             cameraInteropStateCallbackRepository.updateCallbacks(sessionConfig)
         }
 
-        Camera2Logger.debug { "Prepared UseCaseGraphConfig (Deferred)" }
-        return UseCaseGraphConfig(
+        Camera2Logger.debug { "Prepared UseCaseGraphContext (Deferred)" }
+        return UseCaseGraphContext(
             cameraGraphProvider = cameraGraphProvider,
             cameraStateAdapter = cameraStateAdapter,
             streamConfigMap = streamConfigMap,
@@ -124,7 +124,7 @@ public data class UseCaseCameraConfig(
     }
 }
 
-public class UseCaseGraphConfig(
+public class UseCaseGraphContext(
     private val cameraGraphProvider: Provider<CameraGraph>,
     private val cameraStateAdapter: CameraStateAdapter,
     private val graphStateToCameraStateAdapter: GraphStateToCameraStateAdapter,
@@ -178,7 +178,7 @@ public class UseCaseGraphConfig(
 public interface UseCaseCameraComponent {
     public fun getUseCaseCamera(): UseCaseCamera
 
-    public fun getUseCaseGraphConfig(): UseCaseGraphConfig
+    public fun getUseCaseGraphContext(): UseCaseGraphContext
 
     @Subcomponent.Builder
     public interface Builder {

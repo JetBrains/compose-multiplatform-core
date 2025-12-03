@@ -23,7 +23,7 @@ import androidx.camera.camera2.adapter.GraphStateToCameraStateAdapter
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.config.UseCaseCameraComponent
 import androidx.camera.camera2.config.UseCaseCameraConfig
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseGraphContext
 import androidx.camera.camera2.impl.UseCaseCamera
 import androidx.camera.camera2.impl.UseCaseCameraRequestControl
 import androidx.camera.camera2.impl.toMap
@@ -83,8 +83,8 @@ class FakeUseCaseCameraComponent() : UseCaseCameraComponent {
     private val fakeUseCaseCamera = FakeUseCaseCamera()
     private val cameraGraph = FakeCameraGraph()
     private val cameraStateAdapter = CameraStateAdapter()
-    private val useCaseGraphConfig =
-        UseCaseGraphConfig(
+    private val useCaseGraphContext =
+        UseCaseGraphContext(
             cameraGraphProvider = { cameraGraph },
             cameraStateAdapter = cameraStateAdapter,
             graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
@@ -95,9 +95,9 @@ class FakeUseCaseCameraComponent() : UseCaseCameraComponent {
         return fakeUseCaseCamera
     }
 
-    override fun getUseCaseGraphConfig(): UseCaseGraphConfig {
+    override fun getUseCaseGraphContext(): UseCaseGraphContext {
         // TODO: Implement this properly once we need to use it with SessionProcessor enabled.
-        return useCaseGraphConfig
+        return useCaseGraphContext
     }
 }
 

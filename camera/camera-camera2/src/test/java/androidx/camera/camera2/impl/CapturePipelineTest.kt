@@ -41,7 +41,7 @@ import androidx.camera.camera2.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.compat.workaround.NotUseFlashModeTorchFor3aUpdate
 import androidx.camera.camera2.compat.workaround.NotUseTorchAsFlash
 import androidx.camera.camera2.compat.workaround.UseTorchAsFlash
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseGraphContext
 import androidx.camera.camera2.interop.CaptureRequestOptions
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.camera2.pipe.AeMode
@@ -244,8 +244,8 @@ class CapturePipelineTest {
             FakeCameraMetadata(mapOf(CameraCharacteristics.FLASH_INFO_AVAILABLE to true))
         )
     private val cameraStateAdapter = CameraStateAdapter()
-    private val fakeUseCaseGraphConfig =
-        UseCaseGraphConfig(
+    private val fakeUseCaseGraphContext =
+        UseCaseGraphContext(
             cameraGraphProvider = {
                 FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession)
             },
@@ -297,7 +297,7 @@ class CapturePipelineTest {
     private val fakeCaptureConfigAdapter =
         CaptureConfigAdapter(
             fakeCameraProperties,
-            fakeUseCaseGraphConfig,
+            fakeUseCaseGraphContext,
             fakeZslControl,
             fakeUseCaseThreads,
             NoOpTemplateParamsOverride,
@@ -342,7 +342,7 @@ class CapturePipelineTest {
 
         fakeUseCaseCameraState =
             UseCaseCameraState(
-                fakeUseCaseGraphConfig,
+                fakeUseCaseGraphContext,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
 
@@ -1315,7 +1315,7 @@ class CapturePipelineTest {
             requestListener = comboRequestListener,
             threads = fakeUseCaseThreads,
             torchControl = torchControl,
-            useCaseGraphConfig = fakeUseCaseGraphConfig,
+            useCaseGraphContext = fakeUseCaseGraphContext,
             useCaseCameraState = fakeUseCaseCameraState,
             useTorchAsFlash = useTorchAsFlash,
             flashControl = flashControl,

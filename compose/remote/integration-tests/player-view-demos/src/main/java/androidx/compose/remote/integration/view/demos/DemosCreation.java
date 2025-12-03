@@ -29,6 +29,7 @@ import androidx.compose.remote.integration.view.demos.examples.DemoKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoMetalClockKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoParticlesKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoPaths;
+import androidx.compose.remote.integration.view.demos.examples.DemoTextTransformKt;
 import androidx.compose.remote.integration.view.demos.examples.DemoTouchKt;
 import androidx.compose.remote.integration.view.demos.examples.ExampleNumbersKt;
 import androidx.compose.remote.integration.view.demos.examples.ExampleTimerKt;
@@ -53,10 +54,12 @@ public abstract class DemosCreation {
         return new ArrayList<>(Arrays.asList(
                 getp("5/Server/serverClock", ServerSideKt::serverClock),
                 getp("2/Example/spreadSheet", ExampleNumbersKt::spreadSheet),
-                getp("0/Example/color", DemoColorKt::colorButtons),
+                getp("1/Example/color", DemoColorKt::colorButtons),
                 getp("1/Example/spreadSheet", ExampleNumbersKt::spreadSheet),
-                getp("0/Example/demoUseOfGlobal",
+                getp("1/Example/demoUseOfGlobal",
                         DemoGlobalKt::demoUseOfGlobal),
+                getp("0/Example/demoTextTransform",
+                        DemoTextTransformKt::demoTextTransform),
 
                 getp("0/ThemedPlot1", DemoKt::plot1),
                 getp("0/plot2", DemoKt::plot2),

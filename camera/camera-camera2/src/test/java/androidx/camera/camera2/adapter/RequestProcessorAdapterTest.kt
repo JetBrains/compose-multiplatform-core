@@ -24,7 +24,7 @@ import android.hardware.camera2.CaptureRequest
 import android.os.Looper
 import android.util.Size
 import android.view.Surface
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseGraphContext
 import androidx.camera.camera2.impl.Camera2ImplConfig
 import androidx.camera.camera2.impl.UseCaseThreads
 import androidx.camera.camera2.pipe.CameraGraph
@@ -140,8 +140,8 @@ class RequestProcessorAdapterTest {
                 )
             }
         val cameraStateAdapter = CameraStateAdapter()
-        val useCaseGraphConfig =
-            UseCaseGraphConfig(
+        val useCaseGraphContext =
+            UseCaseGraphContext(
                 cameraGraphProvider = { simulator },
                 defaultSurfaceToStreamMap = surfaceToStreamMap,
                 cameraStateAdapter = cameraStateAdapter,
@@ -152,7 +152,7 @@ class RequestProcessorAdapterTest {
         val dispatcher = executor.asCoroutineDispatcher()
         val useCaseThreads = UseCaseThreads(scope, executor, dispatcher)
         requestProcessorAdapter =
-            RequestProcessorAdapter(useCaseGraphConfig, sessionProcessorSurfaces, useCaseThreads)
+            RequestProcessorAdapter(useCaseGraphContext, sessionProcessorSurfaces, useCaseThreads)
                 .apply { sessionConfig = fakeSessionConfig }
         scope.advanceUntilIdle()
     }

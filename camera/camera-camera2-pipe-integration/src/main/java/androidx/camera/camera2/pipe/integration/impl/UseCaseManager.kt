@@ -39,7 +39,7 @@ import androidx.camera.camera2.pipe.integration.adapter.ZslControl
 import androidx.camera.camera2.pipe.integration.config.CameraScope
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraComponent
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraConfig
-import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.config.UseCaseGraphContext
 import androidx.camera.camera2.pipe.integration.internal.DynamicRangeResolver
 import androidx.camera.camera2.pipe.integration.interop.Camera2CameraControl
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
@@ -164,8 +164,8 @@ constructor(
     public val camera: UseCaseCamera?
         get() = _activeComponent?.getUseCaseCamera()
 
-    public val useCaseGraphConfig: UseCaseGraphConfig?
-        get() = _activeComponent?.getUseCaseGraphConfig()
+    public val useCaseGraphContext: UseCaseGraphContext?
+        get() = _activeComponent?.getUseCaseGraphContext()
 
     private val closingCameraJobs = mutableListOf<Job>()
 

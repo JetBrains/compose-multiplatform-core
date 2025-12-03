@@ -94,6 +94,7 @@ import androidx.compose.remote.core.operations.TextLookupInt;
 import androidx.compose.remote.core.operations.TextMeasure;
 import androidx.compose.remote.core.operations.TextMerge;
 import androidx.compose.remote.core.operations.TextSubtext;
+import androidx.compose.remote.core.operations.TextTransform;
 import androidx.compose.remote.core.operations.Theme;
 import androidx.compose.remote.core.operations.TimeAttribute;
 import androidx.compose.remote.core.operations.TouchExpression;
@@ -2388,6 +2389,19 @@ public class RemoteComposeBuffer {
      */
     public void textSubtext(int id, int txtId, float start, float len) {
         TextSubtext.apply(mBuffer, id, txtId, start, len);
+    }
+
+    /**
+     * Transform text uppercase lowercase etc
+     *
+     * @param id        the text subtext id
+     * @param txtId     the input text
+     * @param start     the start position 0 = first character
+     * @param len       the length of the subtext -1 = to the end
+     * @param operation the operation to perform
+     */
+    public void textTransform(int id, int txtId, float start, float len, int operation) {
+        TextTransform.apply(mBuffer, id, txtId, start, len, operation);
     }
 
     /**

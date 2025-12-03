@@ -27,7 +27,7 @@ import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.core.CoroutineMutex
 import androidx.camera.camera2.pipe.core.withLockLaunch
-import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.config.UseCaseGraphContext
 import androidx.camera.camera2.pipe.integration.impl.CAMERAX_TAG_BUNDLE
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
@@ -41,7 +41,7 @@ import androidx.camera.core.impl.SessionProcessorSurface
 import kotlinx.atomicfu.atomic
 
 public class RequestProcessorAdapter(
-    private val useCaseGraphConfig: UseCaseGraphConfig,
+    private val useCaseGraphContext: UseCaseGraphContext,
     private val processorSurfaces: List<SessionProcessorSurface>,
     private val threads: UseCaseThreads,
 ) : RequestProcessor {
@@ -160,7 +160,7 @@ public class RequestProcessorAdapter(
                     streams =
                         request.targetOutputConfigIds
                             .mapNotNull { findSurface(it) }
-                            .mapNotNull { useCaseGraphConfig.surfaceToStreamMap[it] },
+                            .mapNotNull { useCaseGraphContext.surfaceToStreamMap[it] },
                     listeners =
                         listOf(
                             RequestProcessorCallbackAdapter(
@@ -175,7 +175,7 @@ public class RequestProcessorAdapter(
             }
 
         coroutineMutex.withLockLaunch(threads.scope) {
-            useCaseGraphConfig.graph.acquireSession().use { it.submit(requestsToSubmit) }
+            useCaseGraphContext.graph.acquireSession().use { it.submit(requestsToSubmit) }
         }
         return sequenceId
     }
@@ -199,7 +199,7 @@ public class RequestProcessorAdapter(
                 streams =
                     request.targetOutputConfigIds
                         .mapNotNull { findSurface(it) }
-                        .mapNotNull { useCaseGraphConfig.surfaceToStreamMap[it] },
+                        .mapNotNull { useCaseGraphContext.surfaceToStreamMap[it] },
                 listeners =
                     listOf(
                         RequestProcessorCallbackAdapter(
@@ -216,7 +216,7 @@ public class RequestProcessorAdapter(
                     ),
             )
         coroutineMutex.withLockLaunch(threads.scope) {
-            useCaseGraphConfig.graph.acquireSession().use { it.startRepeating(requestsToSubmit) }
+            useCaseGraphContext.graph.acquireSession().use { it.startRepeating(requestsToSubmit) }
         }
         return sequenceId
     }
@@ -224,14 +224,14 @@ public class RequestProcessorAdapter(
     override fun abortCaptures() {
         Camera2Logger.debug { "$this#abortCaptures" }
         coroutineMutex.withLockLaunch(threads.scope) {
-            useCaseGraphConfig.graph.acquireSession().use { it.abort() }
+            useCaseGraphContext.graph.acquireSession().use { it.abort() }
         }
     }
 
     override fun stopRepeating() {
         Camera2Logger.debug { "$this#stopRepeating" }
         coroutineMutex.withLockLaunch(threads.scope) {
-            useCaseGraphConfig.graph.acquireSession().use { it.stopRepeating() }
+            useCaseGraphContext.graph.acquireSession().use { it.stopRepeating() }
         }
     }
 
@@ -239,7 +239,7 @@ public class RequestProcessorAdapter(
         processorSurfaces.find { it.outputConfigId == outputConfigId }
 
     private fun getDeferrableSurface(stream: StreamId): DeferrableSurface? {
-        for (entry in useCaseGraphConfig.surfaceToStreamMap.entries.iterator()) {
+        for (entry in useCaseGraphContext.surfaceToStreamMap.entries.iterator()) {
             if (entry.value == stream) {
                 return entry.key
             }

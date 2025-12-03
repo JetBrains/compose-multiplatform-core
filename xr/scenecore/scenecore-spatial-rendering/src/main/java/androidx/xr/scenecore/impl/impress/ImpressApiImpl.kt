@@ -669,16 +669,27 @@ public class ImpressApiImpl : ImpressApi {
         nDestroyImpressNode(getViewNativeHandle(view), impressNode.handle)
 
     override fun getGltfModelBoundingBox(impressNode: ImpressNode): BoundingBox {
-        val center = FloatArray(3)
-        val halfExtents = FloatArray(3)
-        nGetGltfModelLocalBounds(getViewNativeHandle(view), impressNode.handle, center, halfExtents)
-
-        return BoundingBox.fromCenterAndHalfExtents(
-            // center
-            Vector3(center[0], center[1], center[2]),
-            // halfExtents
-            FloatSize3d(halfExtents[0], halfExtents[1], halfExtents[2]),
+        val centerData = FloatArray(3)
+        val halfExtentsData = FloatArray(3)
+        nGetGltfModelLocalBounds(
+            getViewNativeHandle(view),
+            impressNode.handle,
+            centerData,
+            halfExtentsData,
         )
+
+        // TODO: b/463842626 - A policy to handle the NaN or negative center / halfExtents of a glTF
+        // model
+        var center = Vector3.Zero
+        if (!centerData[0].isNaN() && !centerData[1].isNaN() && !centerData[2].isNaN()) {
+            center = Vector3(centerData[0], centerData[1], centerData[2])
+        }
+        var halfExtents = FloatSize3d(0f, 0f, 0f)
+        if (halfExtentsData[0] >= 0 && halfExtentsData[1] >= 0 && halfExtentsData[2] >= 0) {
+            halfExtents = FloatSize3d(halfExtentsData[0], halfExtentsData[1], halfExtentsData[2])
+        }
+
+        return BoundingBox.fromCenterAndHalfExtents(center, halfExtents)
     }
 
     override fun setImpressNodeParent(

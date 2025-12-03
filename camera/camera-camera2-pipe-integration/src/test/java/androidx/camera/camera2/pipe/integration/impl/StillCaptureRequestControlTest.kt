@@ -26,7 +26,7 @@ import androidx.camera.camera2.pipe.integration.adapter.ZslControlNoOpImpl
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.compat.workaround.NotUseFlashModeTorchFor3aUpdate
 import androidx.camera.camera2.pipe.integration.compat.workaround.NotUseTorchAsFlash
-import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.config.UseCaseGraphContext
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraGraph
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraGraphSession
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraProperties
@@ -81,7 +81,7 @@ class StillCaptureRequestControlTest {
 
     private lateinit var fakeCameraGraphSession: FakeCameraGraphSession
     private lateinit var fakeCameraGraph: FakeCameraGraph
-    private lateinit var fakeUseCaseGraphConfig: UseCaseGraphConfig
+    private lateinit var fakeUseCaseGraphContext: UseCaseGraphContext
 
     private lateinit var fakeConfigAdapter: CaptureConfigAdapter
     private lateinit var fakeUseCaseCameraState: UseCaseCameraState
@@ -434,8 +434,8 @@ class StillCaptureRequestControlTest {
     private fun initUseCaseCameraScopeObjects(isSurfaceSetupSuccessful: Deferred<Boolean>) {
         fakeCameraGraphSession = FakeCameraGraphSession()
         fakeCameraGraph = FakeCameraGraph(fakeCameraGraphSession = fakeCameraGraphSession)
-        fakeUseCaseGraphConfig =
-            UseCaseGraphConfig(
+        fakeUseCaseGraphContext =
+            UseCaseGraphContext(
                 cameraGraphProvider = { fakeCameraGraph },
                 cameraStateAdapter = cameraStateAdapter,
                 graphStateToCameraStateAdapter = GraphStateToCameraStateAdapter(cameraStateAdapter),
@@ -443,7 +443,7 @@ class StillCaptureRequestControlTest {
             )
         fakeConfigAdapter =
             CaptureConfigAdapter(
-                useCaseGraphConfig = fakeUseCaseGraphConfig,
+                useCaseGraphContext = fakeUseCaseGraphContext,
                 cameraProperties = fakeCameraProperties,
                 zslControl = ZslControlNoOpImpl(),
                 threads = fakeUseCaseThreads,
@@ -451,7 +451,7 @@ class StillCaptureRequestControlTest {
             )
         fakeUseCaseCameraState =
             UseCaseCameraState(
-                useCaseGraphConfig = fakeUseCaseGraphConfig,
+                useCaseGraphContext = fakeUseCaseGraphContext,
                 templateParamsOverride = NoOpTemplateParamsOverride,
             )
         val torchControl =
@@ -470,7 +470,7 @@ class StillCaptureRequestControlTest {
                         requestListener = ComboRequestListener(),
                         threads = fakeUseCaseThreads,
                         torchControl = torchControl,
-                        useCaseGraphConfig = fakeUseCaseGraphConfig,
+                        useCaseGraphContext = fakeUseCaseGraphContext,
                         useCaseCameraState = fakeUseCaseCameraState,
                         useTorchAsFlash = NotUseTorchAsFlash,
                         flashControl =
@@ -484,7 +484,7 @@ class StillCaptureRequestControlTest {
                         videoUsageControl = VideoUsageControl(),
                     ),
                 state = fakeUseCaseCameraState,
-                useCaseGraphConfig = fakeUseCaseGraphConfig,
+                useCaseGraphContext = fakeUseCaseGraphContext,
                 useCaseSurfaceManager = useCaseSurfaceManager,
                 threads = fakeUseCaseThreads,
             )

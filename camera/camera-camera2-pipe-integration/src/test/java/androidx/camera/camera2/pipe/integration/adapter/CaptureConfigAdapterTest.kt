@@ -24,7 +24,7 @@ import androidx.camera.camera2.pipe.integration.compat.quirk.ImageCaptureFailedF
 import androidx.camera.camera2.pipe.integration.compat.workaround.NoOpTemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsQuirkOverride
-import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.config.UseCaseGraphContext
 import androidx.camera.camera2.pipe.integration.impl.CAMERAX_TAG_BUNDLE
 import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.camera2.pipe.integration.impl.UseCaseThreads
@@ -344,8 +344,8 @@ class CaptureConfigAdapterTest {
     ): CaptureConfigAdapter {
         val cameraStateAdapter = CameraStateAdapter()
         return CaptureConfigAdapter(
-            useCaseGraphConfig =
-                UseCaseGraphConfig(
+            useCaseGraphContext =
+                UseCaseGraphContext(
                     cameraGraphProvider = { FakeCameraGraph() },
                     cameraStateAdapter = cameraStateAdapter,
                     graphStateToCameraStateAdapter =

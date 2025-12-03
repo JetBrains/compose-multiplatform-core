@@ -142,7 +142,7 @@ class UseCaseSurfaceManagerDeviceTest {
             .isTrue()
         val cameraOpenedUsageCount = testSessionParameters.deferrableSurface.useCount
         // Act. close CameraGraph
-        testUseCaseCamera.useCaseGraphConfig.closeGraph()
+        testUseCaseCamera.useCaseGraphContext.closeGraph()
         testUseCaseCamera.useCaseSurfaceManager.stopAsync().awaitWithTimeout()
         val cameraClosedUsageCount = testSessionParameters.deferrableSurface.useCount
 
@@ -228,7 +228,7 @@ class UseCaseSurfaceManagerDeviceTest {
 
         // Now that Camera2TestActivity has run and closed, the camera graph should be disconnected.
         // Close the CameraGraph to ensure the usage count goes back down.
-        testUseCaseCamera.useCaseGraphConfig.closeGraph()
+        testUseCaseCamera.useCaseGraphContext.closeGraph()
         testUseCaseCamera.useCaseSurfaceManager.stopAsync().awaitWithTimeout()
         assertThat(surfaceInactiveCountDown.await(3, TimeUnit.SECONDS)).isTrue()
         val cameraClosedUsageCount = testSessionParameters.deferrableSurface.useCount
@@ -269,7 +269,7 @@ class UseCaseSurfaceManagerDeviceTest {
                 .also { it.start() }
 
         // Act.
-        testUseCaseCamera.useCaseGraphConfig.closeGraph()
+        testUseCaseCamera.useCaseGraphContext.closeGraph()
         testUseCaseCamera.useCaseSurfaceManager.stopAsync().awaitWithTimeout()
 
         // Assert, verify the DeferrableSurface is closed.

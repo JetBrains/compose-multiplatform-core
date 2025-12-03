@@ -232,7 +232,7 @@ public class RFloat : Number {
         if (w == null) {
             throw IllegalStateException("writer is null")
         }
-        return w.createTextFromFloat(this.toFloat(), after, after, flags)
+        return w.createTextFromFloat(this.toFloat(), before, after, flags)
     }
 }
 

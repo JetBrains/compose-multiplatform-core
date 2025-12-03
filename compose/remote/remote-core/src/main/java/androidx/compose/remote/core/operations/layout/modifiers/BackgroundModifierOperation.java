@@ -79,7 +79,6 @@ public class BackgroundModifierOperation extends DecoratorModifierOperation impl
         this.mWidth = 0;
         this.mHeight = 0;
         if (flags == COLOR_REF) {
-            Utils.log(" color ref " + colorId);
             mUseColorId = true;
         }
         this.mColorId = colorId;

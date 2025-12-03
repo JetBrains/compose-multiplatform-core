@@ -34,7 +34,7 @@ import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.StreamId
 import androidx.camera.camera2.pipe.integration.compat.workaround.TemplateParamsOverride
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
-import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.config.UseCaseGraphContext
 import javax.inject.Inject
 import kotlin.collections.removeFirst as removeFirstKt
 import kotlinx.atomicfu.atomic
@@ -55,7 +55,7 @@ import kotlinx.coroutines.Deferred
 public class UseCaseCameraState
 @Inject
 constructor(
-    private val useCaseGraphConfig: UseCaseGraphConfig,
+    private val useCaseGraphContext: UseCaseGraphContext,
     private val templateParamsOverride: TemplateParamsOverride,
 ) {
     private val lock = Any()
@@ -210,7 +210,7 @@ constructor(
         var signalToComplete: CompletableDeferred<Unit>? = null
 
         try {
-            useCaseGraphConfig.useGraphSession { session ->
+            useCaseGraphContext.useGraphSession { session ->
                 val request: Request?
                 val result: CompletableDeferred<Unit>?
 

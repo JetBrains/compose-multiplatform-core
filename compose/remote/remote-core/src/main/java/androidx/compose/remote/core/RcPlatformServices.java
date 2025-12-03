@@ -57,6 +57,14 @@ public interface RcPlatformServices {
     boolean isAlpha8Image(@NonNull Object image);
 
     /**
+     * This defines the interface for path array creators.
+     */
+    interface RcPathArrayCreator {
+        /** returns an array of float is remote compose format */
+        float @NonNull [] createFloatArray();
+    }
+
+    /**
      * Converts a platform-specific path object into a platform-independent float buffer
      *
      * @param path path object

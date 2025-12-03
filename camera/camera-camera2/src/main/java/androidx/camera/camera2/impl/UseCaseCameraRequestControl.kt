@@ -22,7 +22,7 @@ import android.hardware.camera2.params.MeteringRectangle
 import androidx.annotation.AnyThread
 import androidx.camera.camera2.adapter.SessionConfigAdapter
 import androidx.camera.camera2.config.UseCaseCameraScope
-import androidx.camera.camera2.config.UseCaseGraphConfig
+import androidx.camera.camera2.config.UseCaseGraphContext
 import androidx.camera.camera2.interop.configureWithUnchecked
 import androidx.camera.camera2.interop.getCamera2CaptureRequestConfigurator
 import androidx.camera.camera2.pipe.AeMode
@@ -272,7 +272,7 @@ public class UseCaseCameraRequestControlImpl
 constructor(
     private val capturePipeline: CapturePipeline,
     private val state: UseCaseCameraState,
-    private val useCaseGraphConfig: UseCaseGraphConfig,
+    private val useCaseGraphContext: UseCaseGraphContext,
     private val useCaseSurfaceManager: UseCaseSurfaceManager,
     private val threads: UseCaseThreads,
     private val cameraXConfig: CameraXConfig? = null,
@@ -407,7 +407,7 @@ constructor(
                     sessionConfig.toInfoBundle(threads.sequentialExecutor)
 
                 val streams =
-                    useCaseGraphConfig.getStreamIdsFromSurfaces(
+                    useCaseGraphContext.getStreamIdsFromSurfaces(
                         sessionConfig.repeatingCaptureConfig.surfaces
                     )
                 Camera2Logger.debug { "UseCaseCameraRequestControlImpl: State update processing." }
@@ -569,7 +569,7 @@ constructor(
                 return true
             }
             captureConfig.surfaces.forEach {
-                if (useCaseGraphConfig.surfaceToStreamMap[it] == null) {
+                if (useCaseGraphContext.surfaceToStreamMap[it] == null) {
                     return true
                 }
             }
@@ -639,7 +639,7 @@ constructor(
         crossinline block: suspend (CameraGraph.Session) -> Deferred<Result3A>
     ): Deferred<Result3A> =
         try {
-            useCaseGraphConfig.useGraphSession { block(it) }
+            useCaseGraphContext.useGraphSession { block(it) }
         } catch (e: CancellationException) {
             Camera2Logger.debug(e) { "Cannot acquire the CameraGraph.Session" }
             submitFailedResult

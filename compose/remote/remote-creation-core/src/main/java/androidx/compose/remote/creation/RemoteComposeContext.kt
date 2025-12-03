@@ -212,6 +212,10 @@ public open class RemoteComposeContext {
         return mRemoteWriter.textSubtext(txtId, start, len)
     }
 
+    public fun textTransform(txtId: Int, operation: Int, start: Float = 0f, len: Float = -1f): Int {
+        return mRemoteWriter.textTransform(txtId, start, len, operation)
+    }
+
     public fun bitmapTextMeasure(textId: Int, bmFontId: Int, measureWidth: Int): Float {
         return mRemoteWriter.bitmapTextMeasure(textId, bmFontId, measureWidth)
     }
