@@ -88,8 +88,8 @@ class PlatformLocalizationTest {
         }
 
         val emptyAction = TextContextMenu.Action(
-            enabled = { true },
-            action = { }
+            enabled = true,
+            execute = { }
         )
 
         val textManager = object: TextContextMenu.TextManager {

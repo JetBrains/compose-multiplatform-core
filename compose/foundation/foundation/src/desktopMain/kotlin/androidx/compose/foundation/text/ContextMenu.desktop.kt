@@ -20,7 +20,6 @@ import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.ContextMenuDataProvider
 import androidx.compose.foundation.ContextMenuItem
-import androidx.compose.foundation.ContextMenuItemWithEnabledState
 import androidx.compose.foundation.ContextMenuState
 import androidx.compose.foundation.DesktopPlatform
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -138,37 +137,37 @@ private val TextFieldSelectionManager.textManager: TextManager get() = object : 
 
     val isPassword get() = visualTransformation is PasswordVisualTransformation
 
-    override val cut: TextContextMenu.Action =
+    override val cut: TextContextMenu.Action get() =
         TextContextMenu.Action(
-            enabled = { !value.selection.collapsed && editable && !isPassword },
-            action = {
+            enabled = !value.selection.collapsed && editable && !isPassword,
+            execute = {
                 cut()
                 focusRequester?.requestFocus()
             }
         )
 
-    override val copy: TextContextMenu.Action =
+    override val copy: TextContextMenu.Action get() =
         TextContextMenu.Action(
-            enabled = { !value.selection.collapsed && !isPassword },
-            action = {
+            enabled = !value.selection.collapsed && !isPassword,
+            execute = {
                 copy(false)
                 focusRequester?.requestFocus()
             }
         )
 
-    override val paste: TextContextMenu.Action =
+    override val paste: TextContextMenu.Action get() =
         TextContextMenu.Action(
-            enabled = { editable && clipboard?.nativeClipboardHasText() == true },
-            action = {
+            enabled = editable && clipboard?.nativeClipboardHasText() == true,
+            execute = {
                 paste()
                 focusRequester?.requestFocus()
             }
         )
 
-    override val selectAll: TextContextMenu.Action =
+    override val selectAll: TextContextMenu.Action get() =
         TextContextMenu.Action(
-            enabled = { value.selection.length != value.text.length },
-            action = {
+            enabled = value.selection.length != value.text.length,
+            execute = {
                 selectAll()
                 focusRequester?.requestFocus()
             }
@@ -195,31 +194,31 @@ private fun TextFieldSelectionState.textManager(coroutineScope: CoroutineScope):
 
         private fun pasteImpl() = launchUndispatched { paste() }
 
-        override val cut: TextContextMenu.Action =
+        override val cut: TextContextMenu.Action get() =
             TextContextMenu.Action(
-                enabled = { canShowCutMenuItem() },
-                action = ::cutImpl
+                enabled = canShowCutMenuItem(),
+                execute = ::cutImpl
             )
 
-        override val copy: TextContextMenu.Action =
+        override val copy: TextContextMenu.Action get() =
             TextContextMenu.Action(
-                enabled = { canShowCopyMenuItem() },
-                action = ::copyImpl
+                enabled = canShowCopyMenuItem(),
+                execute = ::copyImpl
             )
 
-        override val paste: TextContextMenu.Action =
+        override val paste: TextContextMenu.Action get() =
             TextContextMenu.Action(
-                enabled = {
+                enabled = run {
                     launchUndispatched { updateClipboardEntry() }
                     canShowPasteMenuItem()
                 },
-                action = ::pasteImpl
+                execute = ::pasteImpl
             )
 
-        override val selectAll: TextContextMenu.Action =
+        override val selectAll: TextContextMenu.Action get() =
             TextContextMenu.Action(
-                enabled = { canShowSelectAllMenuItem() },
-                action = ::selectAll
+                enabled = canShowSelectAllMenuItem(),
+                execute = ::selectAll
             )
 
         override fun selectWordAtPositionIfNotAlreadySelected(offset: Offset) {
@@ -245,10 +244,10 @@ private fun TextFieldSelectionState.textManager(coroutineScope: CoroutineScope):
 private val SelectionManager.textManager: TextManager get() = object : TextManager {
     override val selectedText get() = getSelectedText() ?: AnnotatedString("")
     override val cut = null
-    override val copy =
+    override val copy get() =
         TextContextMenu.Action(
-            enabled = { isNonEmptySelection() },
-            action = { copy()}
+            enabled = isNonEmptySelection(),
+            execute = { copy()}
         )
     override val paste = null
     override val selectAll = null
@@ -321,7 +320,7 @@ interface TextContextMenu {
     }
 
     @ExperimentalFoundationApi
-    class Action(val enabled: () -> Boolean, val action: () -> Unit)
+    class Action(val enabled: Boolean, val execute: () -> Unit)
 
     companion object {
         /**
@@ -359,8 +358,8 @@ private class BasicTextContextMenu(
                 localization.selectAll to textManager.selectAll,
             ).mapNotNull { (localization, action) ->
                 if (action == null) return@mapNotNull null
-                if (!showDisabledItems && !action.enabled()) return@mapNotNull null
-                ContextMenuItemWithEnabledState(localization, action.enabled, action.action)
+                if (!showDisabledItems && !action.enabled) return@mapNotNull null
+                ContextMenuItem(localization, action.enabled, action.execute)
             }
         }
 

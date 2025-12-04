@@ -274,8 +274,8 @@ private fun swingItem(
 ) = JMenuItem(label).apply {
     icon = circleIcon(color)
     accelerator = KeyStroke.getKeyStroke(key, if (hostOs.isMacOS) META_DOWN_MASK else CTRL_DOWN_MASK)
-    isEnabled = menuItemAction.enabled()
-    addActionListener { menuItemAction.action() }
+    isEnabled = menuItemAction.enabled
+    addActionListener { menuItemAction.execute() }
 }
 
 private fun circleIcon(color: java.awt.Color) = object : Icon {

@@ -88,7 +88,7 @@ class DefaultContextMenuRepresentation(
                     TextContextMenuItemWithComposableLeadingIcon(
                         key = it,
                         label = it.label,
-                        enabled = (it as? ContextMenuItemWithEnabledState)?.enabled() != false,
+                        enabled = it.enabled,
                         onClick = {
                             session.close()
                             it.onClick()
