@@ -38,11 +38,11 @@ internal suspend fun withAnimationProgress(
 ) {
     update(0f)
 
-    var firstFrameTime: Long? = null
+    var firstFrameTime: Long = -1
     var progressDuration = Duration.ZERO
     while (progressDuration < duration) {
         withFrameNanos { frameTime ->
-            if (firstFrameTime == null) {
+            if (firstFrameTime == -1L) {
                 firstFrameTime = frameTime
             }
             progressDuration = (frameTime - firstFrameTime).nanoseconds

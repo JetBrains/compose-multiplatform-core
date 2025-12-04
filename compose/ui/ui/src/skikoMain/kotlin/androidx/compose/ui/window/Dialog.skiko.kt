@@ -21,12 +21,13 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.InternalComposeApi
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -44,6 +45,7 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.isDialogAnimationEnabled
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.MeasurePolicy
 import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.platform.LocalPlatformWindowInsets
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -57,12 +59,9 @@ import androidx.compose.ui.scene.Content
 import androidx.compose.ui.scene.rememberComposeSceneLayer
 import androidx.compose.ui.semantics.dialog
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.center
-import androidx.compose.ui.util.fastForEach
-import androidx.compose.ui.util.fastMap
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -83,7 +82,7 @@ private const val AnimatedLayerDisappearanceDuration = 0.1
 /**
  * Properties used to customize the behavior of a [Dialog].
  *
- * @property dismissOnBackPress whether the popup can be dismissed by pressing the back button
+ * @property dismissOnBackPress whether the dialog can be dismissed by pressing the back button
  *  * on Android or escape key on desktop.
  * If true, pressing the back button will call onDismissRequest.
  * @property dismissOnClickOutside whether the dialog can be dismissed by clicking outside the
@@ -148,6 +147,7 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
         if (usePlatformInsets != other.usePlatformInsets) return false
         if (useSoftwareKeyboardInset != other.useSoftwareKeyboardInset) return false
         if (scrimColor != other.scrimColor) return false
+        if (animateTransition != other.animateTransition) return false
 
         return true
     }
@@ -159,6 +159,7 @@ actual class DialogProperties @ExperimentalComposeUiApi constructor(
         result = 31 * result + usePlatformInsets.hashCode()
         result = 31 * result + useSoftwareKeyboardInset.hashCode()
         result = 31 * result + scrimColor.hashCode()
+        result = 31 * result + animateTransition.hashCode()
         return result
     }
 }
@@ -220,13 +221,14 @@ private fun DialogLayout(
     val graphicsContext = LocalGraphicsContext.current
 
     val animator = remember {
-        if (properties.animateTransition) {
-            AnimatedDialogAppearanceController(layer = layer, graphicsContext = graphicsContext)
-        } else {
-            NonAnimatedDialogAppearanceController(layer = layer)
-        }
+        DialogAppearanceController(
+            layer = layer,
+            graphicsContext = graphicsContext,
+            properties = properties
+        )
     }
-    animator.scrimColor = properties.scrimColor
+
+    animator.properties = properties
     var layerScope: CoroutineScope? = null
 
     layer.Content {
@@ -235,13 +237,11 @@ private fun DialogLayout(
             animator.onDialogShown()
         }
 
-        val platformInsets = properties.platformInsets
         val containerSize = LocalWindowInfo.current.containerSize
         val measurePolicy = rememberDialogMeasurePolicy(
             layer = layer,
             properties = properties,
-            containerSize = containerSize,
-            platformInsets = platformInsets
+            containerSize = containerSize
         )
 
         // TODO: remove exclude in favor of excludeWindowInsets https://youtrack.jetbrains.com/issue/CMP-9379
@@ -268,67 +268,71 @@ private fun DialogLayout(
     }
 }
 
-private interface DialogAppearanceController {
-    var scrimColor: Color?
-    val modifier: Modifier
-    suspend fun onDialogShown()
-    fun hideDialog()
-}
-
-private class AnimatedDialogAppearanceController(
+private class DialogAppearanceController(
     private val layer: ComposeSceneLayer,
-    private val graphicsContext: GraphicsContext
-) : DialogAppearanceController {
-    private var appearanceProgress = mutableStateOf(0f)
+    private val graphicsContext: GraphicsContext,
+    properties: DialogProperties,
+) {
+    private var appearanceProgress by mutableFloatStateOf(0f)
     private val graphicsLayer = graphicsContext.createGraphicsLayer()
-
-    override val modifier = Modifier.drawWithGraphicsLayer(appearanceProgress)
-
-    override var scrimColor: Color? = Color.Transparent
+    var properties: DialogProperties = properties
         set(value) {
             field = value
-            updateScrimLayerColor()
+            updateScrimLayerColor(Snapshot.withoutReadObservation { appearanceProgress })
         }
 
-    override suspend fun onDialogShown() {
-        val durationScale = currentCoroutineContext().durationScale()
-        withAnimationProgress(
-            duration = (durationScale * AnimatedLayerAppearanceDuration).seconds,
-            timingFunction = ::easeOutTimingFunction
-        ) { progress ->
-            appearanceProgress.value = progress
-            updateScrimLayerColor()
+    val modifier = Modifier.drawWithGraphicsLayer { appearanceProgress }
+
+    suspend fun onDialogShown() {
+        if (properties.animateTransition) {
+            val durationScale = currentCoroutineContext().durationScale()
+            withAnimationProgress(
+                duration = (durationScale * AnimatedLayerAppearanceDuration).seconds,
+                timingFunction = ::easeOutTimingFunction
+            ) { progress ->
+                appearanceProgress = progress
+                updateScrimLayerColor(progress)
+            }
         }
-        layer.scrimColor = scrimColor
+        appearanceProgress = 1f
+        layer.scrimColor = properties.scrimColor
     }
 
-    override fun hideDialog() {
+    fun hideDialog() {
+        if (properties.animateTransition) {
+            hideDialogWithAnimation()
+        } else {
+            layer.close()
+        }
+    }
+
+    fun hideDialogWithAnimation() {
         layer.setContent {
+            val containerSize = LocalWindowInfo.current.containerSize
+            val measurePolicy = rememberDialogMeasurePolicy(
+                layer = layer,
+                properties = properties,
+                containerSize = containerSize
+            )
+
             Layout(
-                content = {},
                 modifier = Modifier.drawBehind {
-                    graphicsLayer.applyAnimationProgress(appearanceProgress.value, density)
+                    graphicsLayer.applyAnimationProgress(appearanceProgress, density)
                     drawLayer(graphicsLayer)
                 },
-                measurePolicy = { measurables, constraints ->
-                    val placeables = measurables.fastMap { it.measure(constraints) }
-                    layout(constraints.maxWidth, constraints.maxHeight) {
-                        placeables.fastForEach {
-                            it.place(IntOffset.Zero)
-                        }
-                    }
-                }
+                measurePolicy = measurePolicy
             )
             LaunchedEffect(Unit) {
                 val durationScale = currentCoroutineContext().durationScale()
-                val initialProgress = appearanceProgress.value
+                val initialProgress = appearanceProgress
                 val duration = durationScale * initialProgress * AnimatedLayerDisappearanceDuration
                 withAnimationProgress(
                     duration = duration.seconds,
                     timingFunction = ::easeOutTimingFunction
                 ) { progress ->
-                    appearanceProgress.value = (1f - progress) * initialProgress
-                    updateScrimLayerColor()
+                    val reversedProgress = (1f - progress) * initialProgress
+                    appearanceProgress = reversedProgress
+                    updateScrimLayerColor(reversedProgress)
                 }
                 graphicsContext.releaseGraphicsLayer(graphicsLayer)
                 layer.close()
@@ -336,10 +340,9 @@ private class AnimatedDialogAppearanceController(
         }
     }
 
-    private fun updateScrimLayerColor() {
-        layer.scrimColor = scrimColor?.let {
-            it.copy(it.alpha * contentAlpha(appearanceProgress.value))
-        }
+    private fun updateScrimLayerColor(progress: Float) {
+        layer.scrimColor =
+            properties.scrimColor.copy(properties.scrimColor.alpha * contentAlpha(progress))
     }
 
     private fun contentAlpha(progress: Float): Float =
@@ -354,22 +357,14 @@ private class AnimatedDialogAppearanceController(
         translationY = AnimatedLayerOffsetDp * reversedProgress * density
     }
 
-    private fun Modifier.drawWithGraphicsLayer(progress: State<Float>): Modifier = drawWithContent {
-        graphicsLayer.record {
-            this@drawWithContent.drawContent()
+    private fun Modifier.drawWithGraphicsLayer(getProgress: () -> Float): Modifier =
+        drawWithContent {
+            graphicsLayer.record {
+                this@drawWithContent.drawContent()
+            }
+            graphicsLayer.applyAnimationProgress(getProgress(), density)
+            drawLayer(graphicsLayer)
         }
-        graphicsLayer.applyAnimationProgress(progress.value, density)
-        drawLayer(graphicsLayer)
-    }
-}
-
-private class NonAnimatedDialogAppearanceController(
-    private val layer: ComposeSceneLayer,
-) : DialogAppearanceController {
-    override val modifier: Modifier = Modifier
-    override var scrimColor: Color? by layer::scrimColor
-    override suspend fun onDialogShown() {}
-    override fun hideDialog() = layer.close()
 }
 
 private val DialogProperties.platformInsets: PlatformInsets
@@ -393,19 +388,21 @@ private val DialogProperties.platformInsets: PlatformInsets
 private fun rememberDialogMeasurePolicy(
     layer: ComposeSceneLayer,
     properties: DialogProperties,
-    containerSize: IntSize,
-    platformInsets: PlatformInsets
-) = remember(layer, properties, containerSize, platformInsets) {
-    RootMeasurePolicy(
-        platformInsets = platformInsets,
-        usePlatformDefaultWidth = properties.usePlatformDefaultWidth
-    ) { contentSize ->
-        val positionWithInsets =
-            positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
-                sizeWithoutInsets.center - contentSize.center
-            }
-        layer.boundsInWindow = IntRect(positionWithInsets, contentSize)
-        layer.calculateLocalPosition(positionWithInsets)
+    containerSize: IntSize
+): MeasurePolicy {
+    val platformInsets = properties.platformInsets
+    return remember(layer, properties, containerSize, platformInsets) {
+        RootMeasurePolicy(
+            platformInsets = platformInsets,
+            usePlatformDefaultWidth = properties.usePlatformDefaultWidth
+        ) { contentSize ->
+            val positionWithInsets =
+                positionWithInsets(platformInsets, containerSize) { sizeWithoutInsets ->
+                    sizeWithoutInsets.center - contentSize.center
+                }
+            layer.boundsInWindow = IntRect(positionWithInsets, contentSize)
+            layer.calculateLocalPosition(positionWithInsets)
+        }
     }
 }
 
