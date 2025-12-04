@@ -435,13 +435,13 @@ private constructor(
             // Notify all registered inputs that this dispatcher is being disposed.
             // This gives them a chance to clean up their own state, severing the lifecycle link
             // and preventing them from interacting with a disposed object.
-            for (input in currentDispatcher.inputs) {
+            for (input in currentDispatcher.inputs.toList()) {
                 sharedProcessor.removeInput(input)
             }
             currentDispatcher.inputs.clear()
 
             // Remove handlers directly owned by the currentDispatcher from the shared processor.
-            for (handler in currentDispatcher.handlers) {
+            for (handler in currentDispatcher.handlers.toList()) {
                 // Always use the public API for removal. This ensures the component's internal
                 // state is handled correctly and prevents unexpected behavior.
                 handler.remove()
