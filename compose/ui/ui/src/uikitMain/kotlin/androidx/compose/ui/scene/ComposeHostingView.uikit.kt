@@ -18,7 +18,7 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.platform.ComposeContainerConfiguration
+import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.utils.CMPView
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dpSize

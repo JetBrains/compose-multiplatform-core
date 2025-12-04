@@ -31,7 +31,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.MotionDurationScaleImpl
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformWindowContext
-import androidx.compose.ui.platform.ComposeContainerConfiguration
+import androidx.compose.ui.uikit.ComposeContainerConfiguration
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIViewController
 import androidx.compose.ui.uikit.PlistSanityCheck

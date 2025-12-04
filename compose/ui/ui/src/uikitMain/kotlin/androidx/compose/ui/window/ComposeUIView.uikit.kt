@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.platform
+package androidx.compose.ui.window
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.scene.ComposeHostingView
+import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import platform.UIKit.UIView
-
-/**
- * Configuration of ComposeView behavior.
- */
-class ComposeViewConfiguration: ComposeContainerConfiguration()
 
 /**
  * Creates a UIView that can host Compose content.
@@ -36,8 +32,8 @@ class ComposeViewConfiguration: ComposeContainerConfiguration()
  * @return A UIView instance capable of hosting the specified Compose content.
  */
 @ExperimentalComposeUiApi
-fun ComposeView(content: @Composable () -> Unit): UIView =
-    ComposeView(configure = {}, content = content)
+fun ComposeUIView(content: @Composable () -> Unit): UIView =
+    ComposeUIView(configure = {}, content = content)
 
 /**
  * Creates a UIView capable of hosting Compose content.
@@ -47,10 +43,10 @@ fun ComposeView(content: @Composable () -> Unit): UIView =
  * @return A configured `UIView` instance capable of displaying the provided Compose content.
  */
 @ExperimentalComposeUiApi
-fun ComposeView(
-    configure: ComposeViewConfiguration.() -> Unit = {},
+fun ComposeUIView(
+    configure: ComposeUIViewConfiguration.() -> Unit = {},
     content: @Composable () -> Unit
 ): UIView = ComposeHostingView(
-    configuration = ComposeViewConfiguration().apply(configure),
+    configuration = ComposeUIViewConfiguration().apply(configure),
     content = content,
 )

@@ -17,7 +17,7 @@
 package androidx.compose.ui.integrations
 
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.window.ComposeUIView
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.test.MockAppDelegate
 import androidx.compose.ui.test.delay
@@ -37,7 +37,7 @@ class ComposeViewIntegrationTest {
         appDelegate.setUpWindow(controller)
         var launchesCount = 0
 
-        val composeView = ComposeView(
+        val composeView = ComposeUIView(
             configure = {
                 enforceStrictPlistSanityCheck = false
             }
@@ -70,7 +70,7 @@ class ComposeViewIntegrationTest {
         appDelegate.setUpWindow(controller)
         var compositionsCount = 0
 
-        val composeView = ComposeView(
+        val composeView = ComposeUIView(
             configure = {
                 enforceStrictPlistSanityCheck = false
             }

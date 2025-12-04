@@ -18,8 +18,6 @@ package androidx.compose.ui.test
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.snapshots.Snapshot
-import androidx.compose.ui.platform.ComposeContainerConfiguration
-import androidx.compose.ui.platform.ComposeViewConfiguration
 import androidx.compose.ui.platform.InfiniteAnimationPolicy
 import androidx.compose.ui.scene.ComposeHostingView
 import androidx.compose.ui.scene.ComposeHostingViewController
@@ -29,9 +27,9 @@ import androidx.compose.ui.test.utils.moveToLocationOnWindow
 import androidx.compose.ui.test.utils.toCGPoint
 import androidx.compose.ui.test.utils.touchDown
 import androidx.compose.ui.test.utils.up
+import androidx.compose.ui.uikit.ComposeContainerConfiguration
+import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
-import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
-import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -192,12 +190,14 @@ internal class UIKitInstrumentedTest(
         interfaceOrientation: UIInterfaceOrientationMask = UIInterfaceOrientationMaskPortrait,
         content: @Composable () -> Unit
     ) {
+        val innerConfigure: ComposeContainerConfiguration.() -> Unit = {
+            enforceStrictPlistSanityCheck = false
+            configure()
+        }
+
         val rootViewController: UIViewController = if (useHostingView) {
             hostingView = ComposeHostingView(
-                configuration = ComposeViewConfiguration().apply {
-                    enforceStrictPlistSanityCheck = false
-                    configure()
-                },
+                configuration = ComposeUIViewConfiguration().apply(innerConfigure),
                 content = content,
                 coroutineContext = coroutineContext
             )
@@ -205,23 +205,8 @@ internal class UIKitInstrumentedTest(
                 it.view.embedSubview(hostingView!!)
             }
         } else {
-            val configuration = ComposeContainerConfiguration().apply(configure)
             ComposeHostingViewController(
-                configuration = ComposeUIViewControllerConfiguration().apply {
-                    // Current instrumented test environment doesn't allow providing a plist.
-                    enforceStrictPlistSanityCheck = false
-                    onFocusBehavior = when (configuration.onFocusBehavior) {
-                        androidx.compose.ui.platform.OnFocusBehavior.DoNothing -> OnFocusBehavior.DoNothing
-                        androidx.compose.ui.platform.OnFocusBehavior.FocusableAboveKeyboard -> OnFocusBehavior.FocusableAboveKeyboard
-                    }
-                    opaque = configuration.opaque
-                    parallelRendering = configuration.parallelRendering
-                    endEdgePanGestureBehavior = when (configuration.endEdgePanGestureBehavior) {
-                        androidx.compose.ui.platform.EndEdgePanGestureBehavior.Back -> EndEdgePanGestureBehavior.Back
-                        androidx.compose.ui.platform.EndEdgePanGestureBehavior.Disabled -> EndEdgePanGestureBehavior.Disabled
-                        androidx.compose.ui.platform.EndEdgePanGestureBehavior.Forward -> EndEdgePanGestureBehavior.Forward
-                    }
-                },
+                configuration = ComposeUIViewControllerConfiguration().apply(innerConfigure),
                 content = content,
                 coroutineContext = coroutineContext
             ).also {

@@ -46,12 +46,12 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.OnFocusBehavior
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.findNodeWithTag
 import androidx.compose.ui.test.runUIKitInstrumentedTest
 import androidx.compose.ui.test.utils.dpRectInWindow
 import androidx.compose.ui.test.utils.forEachWithPrevious
+import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpRect

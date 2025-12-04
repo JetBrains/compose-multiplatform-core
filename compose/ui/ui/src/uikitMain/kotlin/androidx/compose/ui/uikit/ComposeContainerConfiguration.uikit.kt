@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package androidx.compose.ui.platform
+package androidx.compose.ui.uikit
 
 import androidx.compose.ui.ExperimentalComposeUiApi
 
 /**
- * Configuration of Compose container behavior.
+ * Base configuration of the Compose container.
  */
-@ExperimentalComposeUiApi
 open class ComposeContainerConfiguration {
     /**
      * Control Compose behaviour on focus changed inside Compose.
@@ -32,6 +31,7 @@ open class ComposeContainerConfiguration {
      * Determines whether the Compose view should have an opaque background.
      * Warning: disabling opaque layer may affect performance.
      */
+    @ExperimentalComposeUiApi
     var opaque: Boolean = true
 
     /**
@@ -48,8 +48,9 @@ open class ComposeContainerConfiguration {
      *
      * It's an experimental API, and the effects of enabling it are not considered stable.
      *
-     * Changing this setting outside of `ComposeUIViewController` `configure` argument scope has no effect.
+     * Changing this setting outside of `configure` argument scope has no effect.
      */
+    @ExperimentalComposeUiApi
     var parallelRendering: Boolean = false
 
     /**
@@ -62,11 +63,10 @@ open class ComposeContainerConfiguration {
      *
      * Default value is [EndEdgePanGestureBehavior.Disabled].
      */
+    @ExperimentalComposeUiApi
     var endEdgePanGestureBehavior: EndEdgePanGestureBehavior = EndEdgePanGestureBehavior.Disabled
 }
 
-
-@ExperimentalComposeUiApi
 sealed interface OnFocusBehavior {
     /**
      * The Compose view will stay on the current position.

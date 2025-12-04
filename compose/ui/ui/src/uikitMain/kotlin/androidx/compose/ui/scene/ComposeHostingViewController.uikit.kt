@@ -18,11 +18,8 @@ package androidx.compose.ui.scene
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.animation.withAnimationProgress
-import androidx.compose.ui.platform.ComposeContainerConfiguration
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.uikit.ComposeUIViewControllerConfiguration
-import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
-import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.utils.CMPViewController
 import androidx.compose.ui.window.ComposeContainerLifecycleDelegate
 import androidx.compose.ui.window.ComposeContainerView
@@ -53,7 +50,7 @@ internal class ComposeHostingViewController(
     private val lifecycleDelegate: ComposeContainerLifecycleDelegate = ComposeContainerLifecycleDelegate()
 ) : CMPViewController(lifecycleDelegate = lifecycleDelegate) {
     private val container = ComposeContainer(
-        configuration = configuration.containerConfiguration,
+        configuration = configuration,
         content = content,
         coroutineContext = coroutineContext,
         lifecycleDelegate = lifecycleDelegate
@@ -212,19 +209,3 @@ internal class ComposeHostingViewController(
         )
     }
 }
-
-private val ComposeUIViewControllerConfiguration.containerConfiguration get() =
-    ComposeContainerConfiguration().also {
-        it.onFocusBehavior = when (onFocusBehavior) {
-            OnFocusBehavior.DoNothing -> androidx.compose.ui.platform.OnFocusBehavior.DoNothing
-            OnFocusBehavior.FocusableAboveKeyboard -> androidx.compose.ui.platform.OnFocusBehavior.FocusableAboveKeyboard
-        }
-        it.opaque = opaque
-        it.enforceStrictPlistSanityCheck = enforceStrictPlistSanityCheck
-        it.parallelRendering = parallelRendering
-        it.endEdgePanGestureBehavior = when (endEdgePanGestureBehavior) {
-            EndEdgePanGestureBehavior.Back -> androidx.compose.ui.platform.EndEdgePanGestureBehavior.Back
-            EndEdgePanGestureBehavior.Disabled -> androidx.compose.ui.platform.EndEdgePanGestureBehavior.Disabled
-            EndEdgePanGestureBehavior.Forward -> androidx.compose.ui.platform.EndEdgePanGestureBehavior.Forward
-        }
-    }

@@ -29,7 +29,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.node.WeakReference
-import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.window.ComposeUIView
 import androidx.compose.ui.test.MockAppDelegate
 import androidx.compose.ui.uikit.embedSubview
 import androidx.compose.ui.window.ComposeUIViewController
@@ -282,7 +282,7 @@ class MemoryLeaksTest {
         var composeLoaded = false
 
         run {
-            val view = ComposeView({
+            val view = ComposeUIView({
                 enforceStrictPlistSanityCheck = false
             }) {
                 Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
@@ -314,7 +314,7 @@ class MemoryLeaksTest {
         val subviewsReferences = mutableListOf<WeakReference<UIView>>()
 
         run {
-            val view = ComposeView({
+            val view = ComposeUIView({
                 enforceStrictPlistSanityCheck = false
             }) {
                 Box(modifier = Modifier.fillMaxSize().background(Color.Blue))
@@ -355,7 +355,7 @@ class MemoryLeaksTest {
         var composeViewRef: WeakReference<UIView>? = null
 
         run {
-            val view = ComposeView({
+            val view = ComposeUIView({
                 enforceStrictPlistSanityCheck = false
             }) {
                 val focusRequester = FocusRequester()
@@ -392,7 +392,7 @@ class MemoryLeaksTest {
             val subviewsReferences = mutableListOf<WeakReference<UIView>>()
 
             run {
-                val view = ComposeView({
+                val view = ComposeUIView({
                     enforceStrictPlistSanityCheck = false
                 }) {
                     val focusRequester = FocusRequester()

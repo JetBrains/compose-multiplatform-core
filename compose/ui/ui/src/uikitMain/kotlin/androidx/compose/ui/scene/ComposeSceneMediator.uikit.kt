@@ -47,10 +47,9 @@ import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.AccessibilityMediator
 import androidx.compose.ui.platform.CUPERTINO_TOUCH_SLOP
 import androidx.compose.ui.platform.DefaultInputModeManager
-import androidx.compose.ui.platform.OnFocusBehavior
+import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformContext
 import androidx.compose.ui.platform.PlatformInsets
-import androidx.compose.ui.platform.PlatformArchitectureComponentsOwner
 import androidx.compose.ui.platform.PlatformScreenReader
 import androidx.compose.ui.platform.PlatformTextInputMethodRequest
 import androidx.compose.ui.platform.PlatformWindowContext
@@ -62,6 +61,7 @@ import androidx.compose.ui.platform.WindowInfo
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.uikit.InterfaceOrientation
 import androidx.compose.ui.uikit.LocalUIView
+import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.uikit.density
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.DpOffset
@@ -83,13 +83,13 @@ import androidx.compose.ui.viewinterop.LocalInteropContainer
 import androidx.compose.ui.viewinterop.TrackInteropPlacementContainer
 import androidx.compose.ui.viewinterop.UIKitInteropContainer
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
+import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.ComposeSceneKeyboardOffsetManager
 import androidx.compose.ui.window.FocusedViewsList
-import androidx.compose.ui.window.BackgroundInputView
 import androidx.compose.ui.window.KeyboardVisibilityListener
 import androidx.compose.ui.window.MetalRedrawer
-import androidx.compose.ui.window.TouchesEventKind
 import androidx.compose.ui.window.OverlayInputView
+import androidx.compose.ui.window.TouchesEventKind
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.cinterop.CValue

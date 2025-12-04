@@ -19,13 +19,13 @@ package androidx.compose.ui.integrations
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.navigationevent.UIKitNavigationEventInput
 import androidx.compose.ui.platform.DefaultArchitectureComponentsOwner
-import androidx.compose.ui.platform.EndEdgePanGestureBehavior
-import androidx.compose.ui.platform.OnFocusBehavior
 import androidx.compose.ui.platform.PlatformWindowContext
 import androidx.compose.ui.scene.ComposeSceneMediator
 import androidx.compose.ui.scene.PlatformLayersComposeScene
 import androidx.compose.ui.test.runUIKitInstrumentedTest
+import androidx.compose.ui.uikit.EndEdgePanGestureBehavior
 import androidx.compose.ui.uikit.InterfaceOrientation
+import androidx.compose.ui.uikit.OnFocusBehavior
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -35,7 +35,6 @@ import androidx.compose.ui.viewinterop.UIKitInteropAction
 import androidx.compose.ui.viewinterop.UIKitInteropTransaction
 import androidx.compose.ui.window.MetalRedrawer
 import kotlin.test.Test
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
