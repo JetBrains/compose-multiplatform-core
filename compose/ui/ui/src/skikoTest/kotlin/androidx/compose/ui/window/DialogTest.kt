@@ -18,10 +18,12 @@ package androidx.compose.ui.window
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -365,5 +367,32 @@ class DialogTest {
         waitForIdle()
 
         captureToImage().assertPixels { Color.Blue }
+    }
+
+    @Test
+    fun testMovableContentWithDialogAnimation_noCrash() = runSkikoComposeUiTest(
+        size = Size(100f, 100f)
+    ) {
+        val text = mutableStateOf("Hello")
+        val content = movableContentOf() { Text(text.value) }
+        val showDialog = mutableStateOf(true)
+        setContent {
+            if (showDialog.value) {
+                Dialog(
+                    onDismissRequest = {},
+                    properties = DialogProperties(animateTransition = true)
+                ) {
+                    content()
+                }
+            } else {
+                content()
+            }
+        }
+
+        waitForIdle()
+        showDialog.value = false
+        waitForIdle()
+
+        // If not crash then test passed
     }
 }
