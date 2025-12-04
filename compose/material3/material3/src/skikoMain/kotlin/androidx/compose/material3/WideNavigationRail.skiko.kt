@@ -61,7 +61,7 @@ internal actual fun ModalWideNavigationRailDialog(
             usePlatformDefaultWidth = false,
             usePlatformInsets = false,
             scrimColor = Color.Transparent,
-            // TODO: animateTransitions = false
+            animateTransition = false
         ),
         content = content
     )
