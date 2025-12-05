@@ -362,8 +362,7 @@ androidXMultiplatform {
 }
 
 androidXForkMultiplatform {
-    // TODO(buildsrc): fix iosInstrumentedTest
-    //iosInstrumentedTest()
+    iosInstrumentedTest()
     configureDarwinFlags()
 }
 

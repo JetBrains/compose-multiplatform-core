@@ -204,7 +204,7 @@ abstract class AndroidXForkMultiplatformExtensionImpl @Inject constructor(
 
     override fun iosInstrumentedTest() {
         project.multiplatformExtension!!.run {
-            val uikitInstrumentedTest = sourceSets.create("uikitInstrumentedTest")
+            val iosInstrumentedTest = sourceSets.create("iosInstrumentedTest")
 
             fun KotlinNativeTargetWithSimulatorTests.configureTestRun() {
                 val testCompilation = compilations.create("instrumentedTest") {
@@ -214,7 +214,7 @@ abstract class AndroidXForkMultiplatformExtensionImpl @Inject constructor(
                     }
 
                     it.associateWith(compilations.getByName("test"))
-                    it.defaultSourceSet.dependsOn(uikitInstrumentedTest)
+                    it.defaultSourceSet.dependsOn(iosInstrumentedTest)
                 }
                 binaries.framework("InstrumentedTest", setOf(DEBUG)) {
                     compilation = testCompilation
@@ -228,7 +228,7 @@ abstract class AndroidXForkMultiplatformExtensionImpl @Inject constructor(
                 KotlinNativeTargetWithSimulatorTests::configureTestRun
             )
             testableTargets.getByName(
-                "iosSimArm64",
+                "iosSimulatorArm64",
                 KotlinNativeTargetWithSimulatorTests::class,
                 KotlinNativeTargetWithSimulatorTests::configureTestRun
             )
