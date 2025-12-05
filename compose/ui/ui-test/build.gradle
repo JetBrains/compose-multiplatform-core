@@ -209,11 +209,11 @@ androidXMultiplatform {
             dependsOn(darwinTest)
         }
 
-        uikitMain {
+        iosMain {
             dependsOn(darwinMain)
         }
 
-        uikitTest {
+        iosTest {
             dependsOn(darwinTest)
         }
 
@@ -232,8 +232,8 @@ androidXMultiplatform {
 
             if (target.platformType == KotlinPlatformType.native) {
                 if (target.konanTarget.family == Family.IOS) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(uikitMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(uikitTest)
+                    target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
                 } else if (target.konanTarget.family == Family.OSX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(macosTest)

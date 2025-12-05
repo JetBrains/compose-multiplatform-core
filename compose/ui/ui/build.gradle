@@ -294,14 +294,14 @@ androidXMultiplatform {
             dependsOn(nativeTest)
         }
 
-        uikitMain {
+        iosMain {
             dependsOn(nativeMain)
             dependencies {
                 implementation(project(":compose:ui:ui-uikit"))
             }
         }
 
-        uikitTest {
+        iosTest {
             dependsOn(nativeTest)
         }
 
@@ -352,8 +352,8 @@ androidXMultiplatform {
 
             if (target.platformType == KotlinPlatformType.native) {
                 if (target.konanTarget.family == Family.IOS) {
-                    target.compilations["main"].defaultSourceSet.dependsOn(uikitMain)
-                    target.compilations["test"].defaultSourceSet.dependsOn(uikitTest)
+                    target.compilations["main"].defaultSourceSet.dependsOn(iosMain)
+                    target.compilations["test"].defaultSourceSet.dependsOn(iosTest)
                 } else if (target.konanTarget.family == Family.OSX) {
                     target.compilations["main"].defaultSourceSet.dependsOn(macosMain)
                     target.compilations["test"].defaultSourceSet.dependsOn(macosTest)
@@ -459,14 +459,14 @@ tasks.register("updateTranslations", UpdateTranslationsTask.class) {
     ]
 }
 
-// This task updates the translations of the localizable strings for the uikitMain target.
+// This task updates the translations of the localizable strings for the iosMain target.
 // It obtains them from compose multiplatform repository.
 // See also `scripts/convertCrowdinToStringsXml.sh`.
 tasks.register("updateTranslationsIos", UpdateTranslationsTask.class) {
     group = "localization"
     gitRepo = "https://github.com/JetBrains/compose-multiplatform-core"
-    repoResDirectories = ["compose/ui/ui/src/uikitMain/res"]
-    targetDirectory = project.file("src/uikitMain/kotlin/androidx/compose/ui/platform/l10n")
+    repoResDirectories = ["compose/ui/ui/src/iosMain/res"]
+    targetDirectory = project.file("src/iosMain/kotlin/androidx/compose/ui/platform/l10n")
     targetPackageName = "androidx.compose.ui.platform.l10n"
     kotlinStringsPackageName = "androidx.compose.ui.platform"
     stringByResourceName = [
