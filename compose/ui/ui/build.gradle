@@ -223,10 +223,15 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
                     implementation("androidx.navigationevent:navigationevent:$navigationEventVersion")
                 }
             }
-            uikitMain {
+            iosMain {
+                kotlin.srcDir("src/uikitMain/kotlin")
+                resources.srcDir("src/uikitMain/resources")
                 dependencies {
                     implementation(project(":compose:ui:ui-uikit"))
                 }
+            }
+            iosTest {
+                kotlin.srcDir("src/uikitTest/kotlin")
             }
             desktopMain {
                 dependsOn(skikoMain)
@@ -237,26 +242,28 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
 
             nonJvmMain.dependsOn(skikoMain)
             nativeMain.dependsOn(nonJvmMain)
-            webMain.dependsOn(nonJvmMain)
-            webMain.dependsOn(skikoMain)
             macosMain.dependsOn(skikoMain)
 
-            jsMain {
-                kotlin.srcDir("src/webCommonW3C/kotlin")
-                dependsOn(webMain)
+            webMain {
+                dependsOn(nonJvmMain)
+                dependsOn(skikoMain)
+
                 dependencies {
-                    api(libs.skikoCommon)
+                    implementation(libs.kotlinStdlib)
+                    implementation(libs.skikoCommon)
+                    api(libs.kotlinXw3c)
                 }
             }
 
+            jsMain {
+                dependsOn(webMain)
+            }
+
             wasmJsMain {
-                kotlin.srcDir("src/webCommonW3C/kotlin")
                 dependsOn(webMain)
                 dependencies {
-                    implementation(libs.kotlinStdlib)
                     implementation(libs.create("skikoWasm"))
                     implementation(libs.create("skikoWasmWasm"))
-                    api(libs.kotlinXw3c)
                 }
             }
 
@@ -331,15 +338,16 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
             nativeTest {
                 dependsOn(skikoTest)
             }
+            webTest {}
             jsTest {
-                kotlin.srcDir("src/webTest/kotlin")
+                dependsOn(webTest)
                 dependsOn(skikoTest)
             }
             wasmJsTest {
-                kotlin.srcDir("src/webTest/kotlin")
+                dependsOn(webTest)
                 dependsOn(skikoTest)
             }
-            uikitInstrumentedTest.dependencies {
+            iosInstrumentedTest.dependencies {
                 implementation(project(":compose:material:material"))
                 implementation(project(":compose:material3:material3"))
                 implementation(project(":compose:foundation:foundation"))
@@ -508,6 +516,23 @@ if(AndroidXComposePlugin.isMultiplatformEnabled(project)) {
     tasks.findByName("desktopTest").configure {
         systemProperties["GOLDEN_PATH"] = project.rootDir.absolutePath + "/golden"
     }
+}
+
+tasks.register("desktopHeadlessTest", Test) {
+    testClassesDirs = sourceSets.desktopTest.output.classesDirs
+    classpath = sourceSets.desktopTest.runtimeClasspath
+
+    useJUnit {
+        includeCategories("androidx.compose.ui.HeadlessTest")
+    }
+    systemProperty("java.awt.headless", "true")
+}
+
+tasks.desktopTest {
+    useJUnit {
+        excludeCategories("androidx.compose.ui.HeadlessTest")
+    }
+    finalizedBy("desktopHeadlessTest")
 }
 
 android {
