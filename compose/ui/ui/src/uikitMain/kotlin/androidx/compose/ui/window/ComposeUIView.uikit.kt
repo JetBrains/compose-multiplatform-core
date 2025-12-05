@@ -23,24 +23,26 @@ import androidx.compose.ui.uikit.ComposeUIViewConfiguration
 import platform.UIKit.UIView
 
 /**
- * Creates a UIView that can host Compose content.
+ * Creates a [UIView] that can host Compose content.
  *
- * This method is a convenience wrapper around the ComposeUIView function with the default
+ * This method is a convenience wrapper around the [ComposeUIView] function with the default
  * configuration.
  *
- * @param content A composable lambda defining the UI content to be displayed within the UIView.
- * @return A UIView instance capable of hosting the specified Compose content.
+ * @param content A composable lambda defining the UI content to be displayed within the
+ * [ComposeUIView].
+ * @return A [UIView] instance capable of hosting the specified Compose content.
  */
 @ExperimentalComposeUiApi
 fun ComposeUIView(content: @Composable () -> Unit): UIView =
     ComposeUIView(configure = {}, content = content)
 
 /**
- * Creates a UIView capable of hosting Compose content.
+ * Creates a [UIView] capable of hosting Compose content.
  *
- * @param configure A lambda function used to configure the behavior of the created `ComposeUIView`.
- * @param content A composable lambda defining the UI content to be displayed within the UIView.
- * @return A configured `UIView` instance capable of displaying the provided Compose content.
+ * @param configure A lambda function used to configure the behavior of the created [ComposeUIView].
+ * @param content A composable lambda defining the UI content to be displayed within the
+ * [ComposeUIView].
+ * @return A configured [UIView] instance capable of displaying the provided Compose content.
  */
 @ExperimentalComposeUiApi
 fun ComposeUIView(
