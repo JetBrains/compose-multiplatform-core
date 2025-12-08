@@ -66,7 +66,14 @@ androidXMultiplatform {
     wasmJs()
 
     defaultPlatform(PlatformIdentifier.ANDROID)
+}
 
+androidXForkMultiplatform {
+    iosInstrumentedTest()
+    configureDarwinFlags()
+}
+
+androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
@@ -360,11 +367,6 @@ androidXMultiplatform {
             languageSettings.optIn("androidx.compose.ui.InternalComposeUiApi")
         }
     }
-}
-
-androidXForkMultiplatform {
-    iosInstrumentedTest()
-    configureDarwinFlags()
 }
 
 dependencies {
