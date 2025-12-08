@@ -82,28 +82,29 @@ private val DefaultFontSize = 16.sp
 // Computed ComputedStyles always have font/letter size in pixels for particular `density`.
 // It's important because density could be changed in runtime, and it should force
 // SkTextStyle to be recalculated. Or we can have different densities in different windows.
+// It must be immutable because it's used as a key in the cache
 @OptIn(ExperimentalTextApi::class)
 private data class ComputedStyle(
-    var textForegroundStyle: TextForegroundStyle = TextForegroundStyle.Unspecified,
-    var brushSize: Size = Size.Unspecified,
-    var fontSize: Float = Float.NaN,
-    var fontWeight: FontWeight? = null,
-    var fontStyle: FontStyle? = null,
-    var fontSynthesis: FontSynthesis? = null,
-    var fontFamily: FontFamily? = null,
-    var fontFeatureSettings: String? = null,
-    var letterSpacing: Float? = null,
-    var baselineShift: BaselineShift? = null,
-    var textGeometricTransform: TextGeometricTransform? = null,
-    var localeList: LocaleList? = null,
-    var background: Color = Color.Unspecified,
-    var textDecoration: TextDecoration? = null,
-    var textDecorationLineStyle: TextDecorationLineStyle? = null,
-    var shadow: Shadow? = null,
-    var drawStyle: DrawStyle? = null,
-    var blendMode: BlendMode = DrawScope.DefaultBlendMode,
-    var lineHeight: Float? = null,
-    var topRatio: Float = -1f,
+    val textForegroundStyle: TextForegroundStyle = TextForegroundStyle.Unspecified,
+    val brushSize: Size = Size.Unspecified,
+    val fontSize: Float = Float.NaN,
+    val fontWeight: FontWeight? = null,
+    val fontStyle: FontStyle? = null,
+    val fontSynthesis: FontSynthesis? = null,
+    val fontFamily: FontFamily? = null,
+    val fontFeatureSettings: String? = null,
+    val letterSpacing: Float? = null,
+    val baselineShift: BaselineShift? = null,
+    val textGeometricTransform: TextGeometricTransform? = null,
+    val localeList: LocaleList? = null,
+    val background: Color = Color.Unspecified,
+    val textDecoration: TextDecoration? = null,
+    val textDecorationLineStyle: TextDecorationLineStyle? = null,
+    val shadow: Shadow? = null,
+    val drawStyle: DrawStyle? = null,
+    val blendMode: BlendMode = DrawScope.DefaultBlendMode,
+    val lineHeight: Float? = null,
+    val topRatio: Float = -1f,
 ) {
     constructor(
         density: Density,
@@ -112,44 +113,32 @@ private data class ComputedStyle(
         blendMode: BlendMode = DrawScope.DefaultBlendMode,
         lineHeight: TextUnit,
         lineHeightStyle: LineHeightStyle?,
-    ) : this() {
-        set(density, spanStyle, brushSize, blendMode, lineHeight, lineHeightStyle)
-    }
-
-    fun set(
-        density: Density,
-        spanStyle: SpanStyle,
-        brushSize: Size = Size.Unspecified,
-        blendMode: BlendMode = DrawScope.DefaultBlendMode,
-        lineHeight: TextUnit,
-        lineHeightStyle: LineHeightStyle?,
-    ) {
-        this.textForegroundStyle = spanStyle.textForegroundStyle
-        this.brushSize = brushSize
-        this.fontSize = with(density) { spanStyle.fontSize.toPx() }
-        this.fontWeight = spanStyle.fontWeight
-        this.fontStyle = spanStyle.fontStyle
-        this.fontSynthesis = spanStyle.fontSynthesis
-        this.fontFamily = spanStyle.fontFamily
-        this.fontFeatureSettings = spanStyle.fontFeatureSettings
-        this.letterSpacing = if (spanStyle.letterSpacing.isSpecified) {
+    ) : this(
+        textForegroundStyle = spanStyle.textForegroundStyle,
+        brushSize = brushSize,
+        fontSize = with(density) { spanStyle.fontSize.toPx() },
+        fontWeight = spanStyle.fontWeight,
+        fontStyle = spanStyle.fontStyle,
+        fontSynthesis = spanStyle.fontSynthesis,
+        fontFamily = spanStyle.fontFamily,
+        fontFeatureSettings = spanStyle.fontFeatureSettings,
+        letterSpacing = if (spanStyle.letterSpacing.isSpecified) {
             with(density) { spanStyle.letterSpacing.toPx() }
-        } else null
-        this.baselineShift = spanStyle.baselineShift
-        this.textGeometricTransform = spanStyle.textGeometricTransform
-        this.localeList = spanStyle.localeList
-        this.background = spanStyle.background
-        this.textDecoration = spanStyle.textDecoration
-        this.textDecorationLineStyle = spanStyle.platformStyle?.textDecorationLineStyle
-        this.shadow = spanStyle.shadow
-        this.drawStyle = spanStyle.drawStyle
-        this.blendMode = blendMode
-        this.lineHeight = if (lineHeight.isSpecified) {
+        } else null,
+        baselineShift = spanStyle.baselineShift,
+        textGeometricTransform = spanStyle.textGeometricTransform,
+        localeList = spanStyle.localeList,
+        background = spanStyle.background,
+        textDecoration = spanStyle.textDecoration,
+        textDecorationLineStyle = spanStyle.platformStyle?.textDecorationLineStyle,
+        shadow = spanStyle.shadow,
+        drawStyle = spanStyle.drawStyle,
+        blendMode = blendMode,
+        lineHeight = if (lineHeight.isSpecified) {
             lineHeight.toPx(density, spanStyle.fontSize)
-        } else null
-        val alignment = lineHeightStyle?.alignment ?: LineHeightStyle.Alignment.Proportional
-        this.topRatio = alignment.topRatio
-    }
+        } else null,
+        topRatio = (lineHeightStyle?.alignment ?: LineHeightStyle.Alignment.Proportional).topRatio,
+    )
 
     private val _foregroundPaint = SkiaTextPaint()
     fun getForegroundPaint(): Paint {
@@ -224,33 +213,32 @@ private data class ComputedStyle(
         return res
     }
 
-    fun merge(density: Density, other: SpanStyle) {
-        val fontSize = other.fontSize.toPx(density, fontSize)
-        textForegroundStyle = textForegroundStyle.merge(other.textForegroundStyle)
-        other.fontFamily?.let { fontFamily = it }
-        this.fontSize = fontSize
-        other.fontWeight?.let { fontWeight = it }
-        other.fontStyle?.let { fontStyle = it }
-        other.fontSynthesis?.let { fontSynthesis = it }
-        other.fontFeatureSettings?.let { fontFeatureSettings = it }
-        if (!other.letterSpacing.isUnspecified) {
-            letterSpacing = other.letterSpacing.toPx(density, fontSize)
-        }
-        other.baselineShift?.let { baselineShift = it }
-        other.textGeometricTransform?.let { textGeometricTransform = it }
-        other.localeList?.let { localeList = it }
-        if (other.background.isSpecified) {
-            background = other.background
-        }
-        other.textDecoration?.let { textDecoration = it }
-        other.shadow?.let { shadow = it }
-        other.drawStyle?.let { drawStyle = it }
-        other.platformStyle?.let { platformStyle ->
-            platformStyle.textDecorationLineStyle?.let {
-                textDecorationLineStyle = it
-            }
-        }
-    }
+    fun merge(density: Density, other: SpanStyle) = ComputedStyle(
+        textForegroundStyle = textForegroundStyle.merge(other.textForegroundStyle),
+        brushSize = brushSize,
+        fontSize = other.fontSize.toPx(density, fontSize),
+        fontWeight = other.fontWeight ?: fontWeight,
+        fontStyle = other.fontStyle ?: fontStyle,
+        fontSynthesis = other.fontSynthesis ?: fontSynthesis,
+        fontFamily = other.fontFamily ?: fontFamily,
+        fontFeatureSettings = other.fontFeatureSettings ?: fontFeatureSettings,
+        letterSpacing = if (other.letterSpacing.isSpecified) {
+            other.letterSpacing.toPx(density, fontSize)
+        } else letterSpacing,
+        baselineShift = other.baselineShift ?: baselineShift,
+        textGeometricTransform = other.textGeometricTransform ?: textGeometricTransform,
+        localeList = other.localeList ?: localeList,
+        background = if (other.background.isSpecified) {
+            other.background
+        } else background,
+        textDecoration = other.textDecoration ?: textDecoration,
+        textDecorationLineStyle = other.platformStyle?.textDecorationLineStyle ?: textDecorationLineStyle,
+        shadow = other.shadow ?: shadow,
+        drawStyle = other.drawStyle ?: drawStyle,
+        blendMode = blendMode,
+        lineHeight = lineHeight,
+        topRatio = topRatio,
+    )
 }
 
 // Building of SkTextStyle is a relatively expensive operation. We enable simple caching by
@@ -273,7 +261,7 @@ internal class ParagraphBuilder(
     var drawStyle: DrawStyle? = null,
     var blendMode: BlendMode = DrawScope.DefaultBlendMode
 ) {
-    private val defaultStyle = ComputedStyle()
+    private var defaultStyle = ComputedStyle()
     private lateinit var initialStyle: SpanStyle
     private lateinit var ops: List<Op>
 
@@ -281,7 +269,7 @@ internal class ParagraphBuilder(
         initialStyle = textStyle.toSpanStyle().copyWithDefaultFontSize(
             drawStyle = drawStyle
         )
-        defaultStyle.set(
+        defaultStyle = ComputedStyle(
             density = density,
             spanStyle = initialStyle,
             brushSize = brushSize,
@@ -383,7 +371,7 @@ internal class ParagraphBuilder(
 
         data class StyleAdd(
             override val position: Int,
-            val style: ComputedStyle
+            var style: ComputedStyle
         ) : Op()
 
         data class PutPlaceholder(
@@ -453,11 +441,11 @@ internal class ParagraphBuilder(
                         ops.add(
                             Op.StyleAdd(
                                 cut.position,
-                                mergeStyles(activeStyles).also { it.merge(density, cut.style) }
+                                mergeStyles(activeStyles).merge(density, cut.style)
                             )
                         )
                     } else {
-                        prev.style.merge(density, cut.style)
+                        prev.style = prev.style.merge(density, cut.style)
                     }
                 }
                 is Cut.StyleRemove -> {
@@ -486,8 +474,8 @@ internal class ParagraphBuilder(
     }
 
     private fun mergeStyles(activeStyles: List<SpanStyle>): ComputedStyle {
-        // there is always at least one active style
-        val style = ComputedStyle(
+        check(activeStyles.isNotEmpty()) { "There should be at least one active style" }
+        var style = ComputedStyle(
             density = density,
             spanStyle = activeStyles[0],
             brushSize = brushSize,
@@ -496,7 +484,7 @@ internal class ParagraphBuilder(
             lineHeightStyle = textStyle.lineHeightStyle
         )
         for (i in 1 until activeStyles.size) {
-            style.merge(density, activeStyles[i])
+            style = style.merge(density, activeStyles[i])
         }
         return style
     }
