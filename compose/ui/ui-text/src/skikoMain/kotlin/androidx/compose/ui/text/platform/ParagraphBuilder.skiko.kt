@@ -262,26 +262,59 @@ private val skTextStylesCache = WeakKeysCache<ComputedStyle, SkTextStyle>()
 internal class ParagraphBuilder(
     val fontFamilyResolver: FontFamily.Resolver,
     val text: String,
-    var textStyle: TextStyle,
-    var brushSize: Size = Size.Unspecified,
+    textStyle: TextStyle,
+    brushSize: Size = Size.Unspecified,
     var ellipsis: String = "",
     var maxLines: Int = Int.MAX_VALUE,
-    var annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
+    val annotations: List<AnnotatedString.Range<out AnnotatedString.Annotation>>,
     val placeholders: List<AnnotatedString.Range<Placeholder>>,
     val density: Density,
     val textDirection: ResolvedTextDirection,
-    var drawStyle: DrawStyle? = null,
-    var blendMode: BlendMode = DrawScope.DefaultBlendMode
+    drawStyle: DrawStyle? = null,
+    blendMode: BlendMode = DrawScope.DefaultBlendMode
 ) {
-    private val defaultStyle = ComputedStyle()
+    private var defaultStyle: ComputedStyle? = null
     private lateinit var initialStyle: SpanStyle
     private lateinit var ops: List<Op>
 
-    private fun prepareDefaultStyle() {
-        initialStyle = textStyle.toSpanStyle().copyWithDefaultFontSize(
-            drawStyle = drawStyle
-        )
-        defaultStyle.set(
+    var textStyle: TextStyle = textStyle
+        set(value) {
+            if (field == value) {
+                field = value
+                defaultStyle = null
+            }
+        }
+
+    var brushSize: Size = brushSize
+        set(value) {
+            if (field == value) {
+                field = value
+                defaultStyle = null
+            }
+        }
+
+    var drawStyle: DrawStyle? = drawStyle
+        set(value) {
+            if (field == value) {
+                field = value
+                defaultStyle = null
+            }
+        }
+
+    var blendMode: BlendMode = blendMode
+        set(value) {
+            if (field == value) {
+                field = value
+                defaultStyle = null
+            }
+        }
+
+    private fun getDefaultStyle(): ComputedStyle {
+        if (defaultStyle == null) {
+            defaultStyle = ComputedStyle()
+        }
+        initialStyle = textStyle.toSpanStyle().copyWithDefaultFontSize(drawStyle = drawStyle)
+        defaultStyle?.set(
             density = density,
             spanStyle = initialStyle,
             brushSize = brushSize,
@@ -289,12 +322,13 @@ internal class ParagraphBuilder(
             lineHeight = textStyle.lineHeight,
             lineHeightStyle = textStyle.lineHeightStyle,
         )
+
+        return defaultStyle!!
     }
 
     fun updateForegroundPaint(paragraph: SkParagraph?) {
         if (paragraph == null) return
-        prepareDefaultStyle()
-        val foregroundPaint = defaultStyle.getForegroundPaint()
+        val foregroundPaint = getDefaultStyle().getForegroundPaint()
         paragraph.updateForegroundPaint(0, text.length, foregroundPaint)
     }
 
@@ -309,7 +343,7 @@ internal class ParagraphBuilder(
      * of active styles is being compiled into single SkParagraph's style for every chunk of text
      */
     fun build(): SkParagraph {
-        prepareDefaultStyle()
+        val defaultStyle = getDefaultStyle()
         ops = makeOps(
             annotations,
             placeholders
@@ -441,7 +475,7 @@ internal class ParagraphBuilder(
             cuts.add(Cut.EndPlaceholder(placeholder.end))
         }
 
-        val ops = mutableListOf<Op>(Op.StyleAdd(0, defaultStyle))
+        val ops = mutableListOf<Op>(Op.StyleAdd(0, getDefaultStyle()))
         cuts.sortBy { it.position }
         val activeStyles = mutableListOf(initialStyle)
         for (cut in cuts) {
@@ -562,11 +596,12 @@ internal class ParagraphBuilder(
 
     internal val defaultFont by lazy {
         val loadResult = textStyle.resolveFontFamily(fontFamilyResolver)
-        SkFont(loadResult?.typeface, defaultStyle.fontSize)
+        SkFont(loadResult?.typeface, getDefaultStyle().fontSize)
     }
 
     // workaround for https://bugs.chromium.org/p/skia/issues/detail?id=11321 :(
     internal fun emptyLineMetrics(paragraph: SkParagraph): Array<LineMetrics> {
+        val defaultStyle = getDefaultStyle()
         val metrics = defaultFont.metrics
         var ascent = metrics.ascent.toDouble()
         var descent = metrics.descent.toDouble()
