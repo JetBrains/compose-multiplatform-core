@@ -16,6 +16,7 @@
 
 package org.jetbrains.androidx.build
 
+import androidx.build.AndroidXMultiplatformExtension
 import androidx.build.multiplatformExtension
 import javax.inject.Inject
 import org.gradle.api.Project
@@ -161,6 +162,8 @@ fun Project.configureTargetsForComposeMultiplatform() {
 abstract class AndroidXForkMultiplatformExtensionImpl @Inject constructor(
     private val project: Project
 ) : AndroidXForkMultiplatformExtension {
+    private val androidxMultiplatformExtension by lazy { project.extensions.findByType(AndroidXMultiplatformExtension::class.java) }
+
     override fun configureDarwinFlags() {
         val darwinFlags = listOf(
             "-linker-option", "-framework", "-linker-option", "Metal",

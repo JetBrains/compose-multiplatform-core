@@ -737,8 +737,19 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                 browser {
                     testTask {
                         it.useKarma {
-                            useChromeHeadless()
-                            useConfigDirectory(File(getSupportRootFolder(), "buildSrc/karmaconfig"))
+                            // TODO(buildSrc) temporary
+                            useChrome()
+                            useFirefox()
+                            useSafari()
+                            useConfigDirectory(
+                                project.rootProject.projectDir.resolve(
+                                    if (platform == PlatformIdentifier.JS) {
+                                        "mpp/karma.config.d/js"
+                                    } else {
+                                        "mpp/karma.config.d/wasm"
+                                    }
+                                )
+                            )
                         }
                     }
                 }
