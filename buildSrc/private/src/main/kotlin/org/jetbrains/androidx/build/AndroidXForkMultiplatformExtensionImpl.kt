@@ -208,6 +208,7 @@ abstract class AndroidXForkMultiplatformExtensionImpl @Inject constructor(
     override fun iosInstrumentedTest() {
         project.multiplatformExtension!!.run {
             val iosInstrumentedTest = sourceSets.create("iosInstrumentedTest")
+            iosInstrumentedTest.kotlin.srcDir("src/uikitInstrumentedTest/kotlin")
 
             fun KotlinNativeTargetWithSimulatorTests.configureTestRun() {
                 val testCompilation = compilations.create("instrumentedTest") {
