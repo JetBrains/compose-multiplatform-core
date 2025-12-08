@@ -86,7 +86,8 @@ getGradle().beforeProject { project ->
     project.ext.supportRootFolder = supportRootFolder
     project.ext.prebuiltsRoot = prebuiltsRoot
     def checkoutRoot = new File("${buildscript.sourceFile.parent}")
-    init.chooseBuildDirectory(checkoutRoot, rootProject.name, project)
+    // TODO(buildSrc) "androidx" required for ios instrumented tests, because it is hardcoded
+    init.chooseBuildDirectory(checkoutRoot, "androidx", project)
 
     /*
     Could not set unknown property 'kotlin.project.persistent.dir' for project ':buildSrc' of type org.gradle.api.Project.
