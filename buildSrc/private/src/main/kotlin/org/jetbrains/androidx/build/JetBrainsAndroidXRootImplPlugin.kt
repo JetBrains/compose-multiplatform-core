@@ -33,7 +33,7 @@ class JetBrainsAndroidXRootImplPlugin @Inject constructor(
     val componentFactory: SoftwareComponentFactory
 ) : Plugin<Project> {
     override fun apply(project: Project) {
-        project.subprojects { subproject ->
+        project.allprojects { subproject ->
             subproject.tasks.configureEach {
                 if (it.name == "kotlinStoreYarnLock") it.enabled = false
                 if (it.name == "kotlinWasmStoreYarnLock") it.enabled = false
