@@ -58,17 +58,10 @@ internal actual fun findInsetsAnimationProperties(
     return NoWindowInsetsAnimation
 }
 
-internal class RulerProviderModifierElement(
+internal data class RulerProviderModifierElement(
     val windowInsets: PlatformWindowInsets
 ): ModifierNodeElement<RulerProviderModifierNode>() {
     override fun create(): RulerProviderModifierNode = RulerProviderModifierNode(windowInsets)
-    override fun hashCode(): Int = windowInsets.hashCode()
-    override fun equals(other: Any?): Boolean {
-        if (other === this) {
-            return true
-        }
-        return (other as? RulerProviderModifierElement)?.windowInsets === windowInsets
-    }
     override fun update(node: RulerProviderModifierNode) {
         node.windowInsets = windowInsets
     }
