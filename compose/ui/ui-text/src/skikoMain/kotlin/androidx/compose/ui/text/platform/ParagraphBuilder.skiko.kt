@@ -14,31 +14,24 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalTextApi::class, InternalTextApi::class)
 @file:JvmName("SkiaParagraph_skikoKt")
 @file:JvmMultifileClass
 
 package androidx.compose.ui.text.platform
 
-import org.jetbrains.skia.Font as SkFont
-import org.jetbrains.skia.FontStyle as SkFontStyle
-import org.jetbrains.skia.paragraph.Alignment as SkAlignment
-import org.jetbrains.skia.paragraph.DecorationLineStyle as SkDecorationLineStyle
-import org.jetbrains.skia.paragraph.DecorationStyle as SkDecorationStyle
-import org.jetbrains.skia.paragraph.Direction as SkDirection
-import org.jetbrains.skia.paragraph.FontRastrSettings as SkFontRastrSettings
-import org.jetbrains.skia.paragraph.Paragraph as SkParagraph
-import org.jetbrains.skia.paragraph.ParagraphBuilder as SkParagraphBuilder
-import org.jetbrains.skia.paragraph.Shadow as SkShadow
-import org.jetbrains.skia.paragraph.TextIndent as SkTextIndent
-import org.jetbrains.skia.paragraph.TextStyle as SkTextStyle
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.isSpecified
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.FontRasterizationSettings
+import androidx.compose.ui.text.InternalTextApi
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.SpanStyle
@@ -67,16 +60,28 @@ import androidx.compose.ui.unit.isUnspecified
 import androidx.compose.ui.unit.sp
 import kotlin.jvm.JvmMultifileClass
 import kotlin.jvm.JvmName
+import org.jetbrains.skia.Font as SkFont
 import org.jetbrains.skia.FontFeature
-import org.jetbrains.skia.Paint
+import org.jetbrains.skia.FontStyle as SkFontStyle
+import org.jetbrains.skia.Paint as SkPaint
 import org.jetbrains.skia.PaintMode
+import org.jetbrains.skia.paragraph.Alignment as SkAlignment
 import org.jetbrains.skia.paragraph.BaselineMode
+import org.jetbrains.skia.paragraph.DecorationLineStyle as SkDecorationLineStyle
+import org.jetbrains.skia.paragraph.DecorationStyle as SkDecorationStyle
+import org.jetbrains.skia.paragraph.Direction as SkDirection
+import org.jetbrains.skia.paragraph.FontRastrSettings as SkFontRastrSettings
 import org.jetbrains.skia.paragraph.HeightMode
 import org.jetbrains.skia.paragraph.LineMetrics
+import org.jetbrains.skia.paragraph.Paragraph as SkParagraph
+import org.jetbrains.skia.paragraph.ParagraphBuilder as SkParagraphBuilder
 import org.jetbrains.skia.paragraph.ParagraphStyle
 import org.jetbrains.skia.paragraph.PlaceholderAlignment
 import org.jetbrains.skia.paragraph.PlaceholderStyle
+import org.jetbrains.skia.paragraph.Shadow as SkShadow
 import org.jetbrains.skia.paragraph.TextBox
+import org.jetbrains.skia.paragraph.TextIndent as SkTextIndent
+import org.jetbrains.skia.paragraph.TextStyle as SkTextStyle
 
 private val DefaultFontSize = 16.sp
 
@@ -129,7 +134,7 @@ private sealed interface ComputedStyle {
         override val topRatio: Float = -1f,
     ) : ComputedStyle {
         private val _foregroundPaint = SkiaTextPaint()
-        fun getForegroundPaint(): Paint {
+        fun getForegroundPaint(): SkPaint {
             // `asFrameworkPaint` doesn't create a copy,
             // so all the changes will be applied to skia paint.
             val paint = _foregroundPaint.asFrameworkPaint()
@@ -160,7 +165,7 @@ private sealed interface ComputedStyle {
                     it.toSkDecorationStyle(textForegroundStyle.color, textDecorationLineStyle)
             }
             if (background != Color.Unspecified) {
-                res.background = Paint().also {
+                res.background = SkPaint().also {
                     it.color = background.toArgb()
                 }
             }
@@ -340,7 +345,6 @@ private fun ComputedStyle(
 // most of the computations before converting Compose paragraph styles to Skia paragraph
 private val skTextStylesCache = WeakKeysCache<ComputedStyle.Immutable, SkTextStyle>()
 
-@OptIn(ExperimentalTextApi::class)
 internal class ParagraphBuilder(
     val fontFamilyResolver: FontFamily.Resolver,
     val text: String,
@@ -569,7 +573,7 @@ internal class ParagraphBuilder(
 
     private fun mergeStyles(activeStyles: List<SpanStyle>): ComputedStyle.Mutable {
         check(activeStyles.isNotEmpty()) { "There should be at least one active style" }
-        var style = ComputedStyle(
+        val style = ComputedStyle(
             density = density,
             spanStyle = activeStyles[0],
             brushSize = brushSize,
@@ -736,24 +740,25 @@ private fun SpanStyle.copyWithDefaultFontSize(drawStyle: DrawStyle? = null): Spa
 }
 
 // TODO: Remove from public
+@InternalTextApi
 fun FontStyle.toSkFontStyle(): SkFontStyle {
     return when (this) {
-        FontStyle.Italic -> org.jetbrains.skia.FontStyle.ITALIC
-        else -> org.jetbrains.skia.FontStyle.NORMAL
+        FontStyle.Italic -> SkFontStyle.ITALIC
+        else -> SkFontStyle.NORMAL
     }
 }
 
-@OptIn(ExperimentalTextApi::class)
+// TODO: Remove from public
 @Suppress("unused")
 @Deprecated(
     message = "This method was not intended to be public",
     level = DeprecationLevel.HIDDEN
 )
+@InternalTextApi
 fun TextDecoration.toSkDecorationStyle(color: Color): SkDecorationStyle {
     return toSkDecorationStyle(color, null)
 }
 
-@OptIn(ExperimentalTextApi::class)
 private fun TextDecoration.toSkDecorationStyle(
     color: Color,
     textDecorationLineStyle: TextDecorationLineStyle?
@@ -776,7 +781,6 @@ private fun TextDecoration.toSkDecorationStyle(
     )
 }
 
-@OptIn(ExperimentalTextApi::class)
 private fun TextDecorationLineStyle.toSkDecorationLineStyle(): SkDecorationLineStyle {
     return when (this) {
         TextDecorationLineStyle.Solid -> SkDecorationLineStyle.SOLID
@@ -789,6 +793,7 @@ private fun TextDecorationLineStyle.toSkDecorationLineStyle(): SkDecorationLineS
 }
 
 // TODO: Remove from public
+@InternalTextApi
 fun PlaceholderVerticalAlign.toSkPlaceholderAlignment(): PlaceholderAlignment {
     return when (this) {
         PlaceholderVerticalAlign.AboveBaseline -> PlaceholderAlignment.ABOVE_BASELINE
