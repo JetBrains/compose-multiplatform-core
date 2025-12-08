@@ -83,9 +83,7 @@ internal class RulerProviderModifierNode(
             }
         }
 
-    val rulerLambda: RulerScope.() -> Unit = {
-        val (width, height) = coordinates.size
-
+    fun rulerLambda(width: Int, height: Int): RulerScope.() -> Unit = {
         provideInsetsValues(CaptionBar, windowInsets.captionBar, width, height)
         provideInsetsValues(DisplayCutout, windowInsets.displayCutout, width, height)
         provideInsetsValues(Ime, windowInsets.ime, width, height)
@@ -151,7 +149,7 @@ internal class RulerProviderModifierNode(
         val placeable = measurable.measure(constraints)
         val width = placeable.width
         val height = placeable.height
-        return layout(width, height, rulers = rulerLambda) { placeable.place(0, 0) }
+        return layout(width, height, rulers = rulerLambda(width, height)) { placeable.place(0, 0) }
     }
 
     override val traverseKey: Any
