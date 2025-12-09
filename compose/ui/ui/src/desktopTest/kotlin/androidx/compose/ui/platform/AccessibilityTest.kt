@@ -34,15 +34,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.ComposeFeatureFlags
+import androidx.compose.ui.LayerType
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.assertThat
+import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.awt.RenderSettings
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.isEqualTo
 import androidx.compose.ui.platform.a11y.AccessibilityController
 import androidx.compose.ui.platform.a11y.ComposeAccessible
 import androidx.compose.ui.platform.a11y.ComposeSceneAccessible
+import androidx.compose.ui.scene.ComposeContainer
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
@@ -67,11 +72,11 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.runApplicationTest
+import java.awt.Dimension
 import java.awt.Point
+import java.awt.Window
 import java.awt.event.HierarchyEvent
 import java.awt.event.HierarchyListener
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
 import javax.accessibility.Accessible
 import javax.accessibility.AccessibleComponent
 import javax.accessibility.AccessibleContext
@@ -80,6 +85,8 @@ import javax.accessibility.AccessibleRole
 import javax.accessibility.AccessibleState
 import javax.accessibility.AccessibleText
 import javax.accessibility.AccessibleValue
+import javax.swing.JLayeredPane
+import javax.swing.SwingUtilities
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFalse
@@ -88,13 +95,13 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.StandardTestDispatcher
+import org.jetbrains.skiko.SkiaLayerAnalytics
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 
 @OptIn(ExperimentalTestApi::class)
 class AccessibilityTest {
-
     @Test
     fun accessibleText() = runDesktopA11yTest {
         test.setContent {
@@ -499,19 +506,15 @@ class AccessibilityTest {
             .isEqualTo(AccessibleRole.PUSH_BUTTON)
     }
 
-    @Test
-    fun verifyA11yHierarchy() = runApplicationTest {
-        launchTestWindowApplication {
-            Text("text")
-        }
-        awaitIdle()
+    private fun verifyA11yHierarchyFromAccessible(
+        window: Window,
+        @Suppress("SameParameterValue") accessibleName: String
+    ) {
+        val accessible = window.findAccessibleNamed(accessibleName)
+        assertNotNull(accessible)
 
-        // Relies on ComposeAccessible.getAccessibleName returning the text
-        val textAccessible = window.findAccessibleNamed("text")
-        assertNotNull(textAccessible)
-
-        // Validate the chain from the text accessible to the window
-        var child: Accessible = textAccessible
+        // Validate the chain from the accessible to the window
+        var child: Accessible = accessible
         while (true) {
             val parent = child.accessibleContext.accessibleParent ?: break
 
@@ -527,13 +530,56 @@ class AccessibilityTest {
             // `externalAccessibleFactory`).
             assertEquals(
                 expected = child.accessibleContext,
-                actual = childAtIndex.accessibleContext
+                actual = childAtIndex.accessibleContext,
+                message = "Wrong actual child of ${parent.accessibleContext}"
             )
 
             child = parent
         }
         assertEquals(window, child)
     }
+
+    @Test
+    fun verifyA11yHierarchy() = runApplicationTest {
+        launchTestWindowApplication {
+            Text("text")
+        }
+        awaitIdle()
+
+        // Relies on ComposeAccessible.getAccessibleName returning the text
+        verifyA11yHierarchyFromAccessible(window = window, accessibleName = "text")
+    }
+
+    @Test
+    fun verifyA11yHierarchyWithComposePanel() = runApplicationTest {
+        val composePanel = ComposePanel().apply {
+            setContent {
+                Text("text")
+            }
+        }
+        val window = ComposeWindow()
+        window.contentPane.add(composePanel)
+        window.size = Dimension(800, 600)
+
+        try {
+            window.isVisible = true
+            awaitIdle()
+            // Relies on ComposeAccessible.getAccessibleName returning the text
+            verifyA11yHierarchyFromAccessible(window = window, accessibleName = "text")
+        } finally {
+            window.dispose()
+        }
+    }
+
+    @Test
+    fun verifyA11yHierarchyWithComposePanelAndOnComponentLayerType() {
+        ComposeFeatureFlags.useSwingGraphicsInComposePanel.withOverride(true) {
+            ComposeFeatureFlags.layerType.withOverride(LayerType.OnComponent) {
+                verifyA11yHierarchyWithComposePanel()
+            }
+        }
+    }
+
 
     @Test
     fun initiallyFocusedElementFiresFocusedPropertyEvent() = runApplicationTest {
@@ -569,6 +615,51 @@ class AccessibilityTest {
         awaitIdle()
 
         assertTrue(textFieldHasFocus)
+    }
+
+    // This test asserts that the component corresponding to ComposeSceneAccessible when using
+    // WindowComposeSceneLayer is a child of ComposeSceneMediator.contentComponent (SkiaLayer),
+    // which is assumed by WindowSkiaLayerComponent.sceneAccessibleParent
+    // The purpose of this test is to make sure that if this implementation detail of SkiaLayer
+    // ever changes, the test will fail and indicate that
+    // WindowSkiaLayerComponent.sceneAccessibleParent needs to be updated.
+    @Test
+    fun assertWindowsSkiaLayerComponentsChildIsAccessibleRoot() = SwingUtilities.invokeAndWait {
+        val container = ComposeContainer(
+            container = JLayeredPane(),
+            skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+            window = null,
+            layerType = LayerType.OnWindow
+        )
+
+        val composeSceneAccessible = container.accessible
+        val matchingChild = container.contentComponent.components.find { // contentComponent is SkiaLayer
+            it.accessibleContext == composeSceneAccessible.accessibleContext
+        }
+        assertNotNull(matchingChild)
+    }
+
+    // This test asserts that the component corresponding to ComposeSceneAccessible when using
+    // SwingComposeSceneLayer is ComposeSceneMediator.contentComponent itself (SkiaSwingLayer),
+    // which is assumed by SwingSkiaLayerComponent.sceneAccessibleParent
+    // The purpose of this test is to make sure that if this implementation detail of SkiaLayer
+    // ever changes, the test will fail and indicate that
+    // SwingSkiaLayerComponent.sceneAccessibleParent needs to be updated.
+    @Test
+    fun assertSwingSkiaLayerComponentIsAccessibleRoot() = SwingUtilities.invokeAndWait {
+        val container = ComposeContainer(
+            container = JLayeredPane(),
+            skiaLayerAnalytics = SkiaLayerAnalytics.Empty,
+            window = null,
+            layerType = LayerType.OnComponent,
+            renderSettings = RenderSettings.SwingGraphics()
+        )
+
+        val composeSceneAccessible = container.accessible
+        assertEquals(
+            composeSceneAccessible.accessibleContext,
+            container.contentComponent.accessibleContext
+        )
     }
 }
 
@@ -731,6 +822,7 @@ internal class ComposeA11yTestScope(
 }
 
 private fun Accessible.findAccessibleNamed(name: String): Accessible? {
+    val accessibleContext = this.accessibleContext
     if (accessibleContext.accessibleName == name) return this
     for (index in 0 until accessibleContext.accessibleChildrenCount) {
         val child = accessibleContext.getAccessibleChild(index)

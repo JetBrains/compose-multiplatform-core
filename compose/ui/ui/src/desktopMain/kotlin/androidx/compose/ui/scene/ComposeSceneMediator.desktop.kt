@@ -138,7 +138,7 @@ internal class ComposeSceneMediator(
     private val semanticsOwnerListener = DesktopSemanticsOwnerListener()
     var rootForTestListener: PlatformContext.RootForTestListener? by DelegateRootForTestListener()
     val accessible: ComposeSceneAccessible = ComposeSceneAccessible(
-        parent = { contentComponent },
+        parent = { skiaLayerComponent.sceneAccessibleParent },
         accessibilityControllersProvider = { semanticsOwnerListener.accessibilityControllers }
     )
 

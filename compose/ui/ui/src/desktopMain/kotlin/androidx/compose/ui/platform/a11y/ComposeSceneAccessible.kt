@@ -53,7 +53,7 @@ import javax.accessibility.AccessibleStateSet
  */
 internal class ComposeSceneAccessible(
     private val forceEnableA11y: Boolean = false,
-    private val parent: () -> Accessible,
+    private val parent: () -> Accessible?,
     private val accessibilityControllersProvider: () -> List<AccessibilityController>,
 ) : Accessible {
     private val a11yEnabled by lazy {
@@ -122,7 +122,7 @@ internal class ComposeSceneAccessible(
             return 0
         }
 
-        override fun getAccessibleParent(): Accessible {
+        override fun getAccessibleParent(): Accessible? {
             return parent()
         }
 
