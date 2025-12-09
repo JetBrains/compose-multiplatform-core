@@ -62,7 +62,7 @@ fun NestedComposeViewportDemo() {
             modifier = Modifier.fillMaxSize(),
             update = { iframe ->
                 iframe.src = if (mapProvider.value == "OSM") ttOSM else ttGoogleMaps
-            },
+            }
         )
 
         NestedComposeViewPort(

@@ -32,14 +32,15 @@ import org.w3c.dom.HTMLDivElement
 internal actual fun TestInteropView(modifier: Modifier, color: Color) {
     val cssColorValue = remember(color) { color.toCssValue() }
     HtmlElementView(
+        modifier = modifier,
         factory = {
             (document.createElement("div") as HTMLDivElement).apply {
                 style.apply {
                     background = cssColorValue
                 }
             }
-        },
-        modifier = modifier)
+        }
+    )
 }
 
 private fun Color.toCssValue(): String {

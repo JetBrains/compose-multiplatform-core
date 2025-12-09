@@ -67,10 +67,11 @@ fun SyncTextState() {
                     }
                 }
             },
-            modifier = Modifier.size(300.dp).padding(50.dp),
             update = { input ->
                 input.value = textState.text.toString()
-            })
+            },
+            modifier = Modifier.size(300.dp).padding(50.dp)
+        )
     }
 }
 

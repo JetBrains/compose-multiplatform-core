@@ -186,8 +186,8 @@ internal fun TestInteropView(modifier: Modifier, id: String) {
         factory = {
             (document.createElement("div") as HTMLDivElement).apply {
                 this.id = id
-                innerText = id
-                style.apply {
+                this.innerText = id
+                this.style.apply {
                     backgroundColor = "gray"
                 }
             }
