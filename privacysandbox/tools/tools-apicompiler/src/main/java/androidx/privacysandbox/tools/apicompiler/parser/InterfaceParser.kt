@@ -20,7 +20,7 @@ import androidx.privacysandbox.tools.core.model.AnnotatedInterface
 import androidx.privacysandbox.tools.core.model.Method
 import androidx.privacysandbox.tools.core.model.Parameter
 import androidx.privacysandbox.tools.core.model.Types.any
-import androidx.privacysandbox.tools.core.model.Types.sandboxedUiAdapter
+import androidx.privacysandbox.tools.core.model.Types.uiAdapters
 import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.getDeclaredProperties
 import com.google.devtools.ksp.isPublic
@@ -28,16 +28,14 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSValueParameter
 import com.google.devtools.ksp.symbol.Modifier
 
-internal class InterfaceParser(
-    private val logger: KSPLogger,
-    private val typeParser: TypeParser,
-) {
+internal class InterfaceParser(private val logger: KSPLogger, private val typeParser: TypeParser) {
     private val validInterfaceModifiers = setOf(Modifier.PUBLIC)
     private val validMethodModifiers = setOf(Modifier.PUBLIC, Modifier.SUSPEND)
-    private val validInterfaceSuperTypes = setOf(sandboxedUiAdapter)
+    private val validInterfaceSuperTypes = uiAdapters.toSet()
 
     fun parseInterface(interfaceDeclaration: KSClassDeclaration): AnnotatedInterface {
         check(interfaceDeclaration.classKind == ClassKind.INTERFACE) {
@@ -55,19 +53,12 @@ internal class InterfaceParser(
         if (
             interfaceDeclaration.declarations
                 .filterIsInstance<KSClassDeclaration>()
-                .any(KSClassDeclaration::isCompanionObject)
-        ) {
-            logger.error("Error in $name: annotated interfaces cannot declare companion objects.")
-        }
-        if (
-            interfaceDeclaration.declarations
-                .filterIsInstance<KSClassDeclaration>()
                 .filter {
                     listOf(
                             ClassKind.OBJECT,
                             ClassKind.INTERFACE,
                             ClassKind.ENUM_CLASS,
-                            ClassKind.CLASS
+                            ClassKind.CLASS,
                         )
                         .contains(it.classKind)
                 }
@@ -75,6 +66,12 @@ internal class InterfaceParser(
         ) {
             logger.error("Error in $name: annotated interfaces cannot declare objects or classes.")
         }
+
+        interfaceDeclaration.declarations
+            .filterIsInstance<KSClassDeclaration>()
+            .filter { it.isCompanionObject }
+            .forEach { validateCompanion(name, it, logger) }
+
         val invalidModifiers =
             interfaceDeclaration.modifiers.filterNot(validInterfaceModifiers::contains)
         if (invalidModifiers.isNotEmpty()) {
@@ -106,6 +103,13 @@ internal class InterfaceParser(
             )
         }
 
+        val inheritedUiAdapters = superTypes.intersect(uiAdapters)
+        if (inheritedUiAdapters.size > 1) {
+            logger.error(
+                "Error in $name: annotated interface inherits more than one UI adapter interface (${inheritedUiAdapters.map { it.simpleName }.sorted().joinToString(limit = 3)})."
+            )
+        }
+
         val methods = interfaceDeclaration.getDeclaredFunctions().map(::parseMethod).toList()
         return AnnotatedInterface(
             type = typeParser.parseFromDeclaration(interfaceDeclaration),
@@ -122,8 +126,8 @@ internal class InterfaceParser(
         if (method.typeParameters.isNotEmpty()) {
             logger.error(
                 "Error in $name: method cannot declare type parameters (<${
-                method.typeParameters.joinToString(limit = 3) { it.name.getShortName() }
-            }>)."
+                    method.typeParameters.joinToString(limit = 3) { it.name.getShortName() }
+                }>)."
             )
         }
         val invalidModifiers = method.modifiers.filterNot(validMethodModifiers::contains)
@@ -147,13 +151,13 @@ internal class InterfaceParser(
             name = method.simpleName.getFullName(),
             parameters = parameters,
             returnType = returnType,
-            isSuspend = method.modifiers.contains(Modifier.SUSPEND)
+            isSuspend = method.modifiers.contains(Modifier.SUSPEND),
         )
     }
 
     private fun parseParameter(
         method: KSFunctionDeclaration,
-        parameter: KSValueParameter
+        parameter: KSValueParameter,
     ): Parameter {
         val name = method.qualifiedName?.getFullName() ?: method.simpleName.getFullName()
         if (parameter.hasDefault) {
@@ -163,6 +167,41 @@ internal class InterfaceParser(
         return Parameter(
             name = parameter.name!!.getFullName(),
             type = typeParser.parseFromTypeReference(parameter.type, name),
+        )
+    }
+}
+
+internal fun validateCompanion(name: String, companionDecl: KSClassDeclaration, logger: KSPLogger) {
+    val nonConstValues =
+        companionDecl.declarations
+            .filterIsInstance<KSPropertyDeclaration>()
+            .filter { !it.modifiers.contains(Modifier.CONST) }
+            .toList()
+    if (nonConstValues.isNotEmpty()) {
+        logger.error(
+            "Error in $name: companion object cannot declare non-const values (${
+                nonConstValues.joinToString(limit = 3) { it.simpleName.getShortName() }
+            })."
+        )
+    }
+    val methods =
+        companionDecl.declarations
+            .filterIsInstance<KSFunctionDeclaration>()
+            .filter { it.simpleName.getFullName() != "<init>" }
+            .toList()
+    if (methods.isNotEmpty()) {
+        logger.error(
+            "Error in $name: companion object cannot declare methods (${
+                methods.joinToString(limit = 3) { it.simpleName.getShortName() }
+            })."
+        )
+    }
+    val classes = companionDecl.declarations.filterIsInstance<KSClassDeclaration>().toList()
+    if (classes.isNotEmpty()) {
+        logger.error(
+            "Error in $name: companion object cannot declare classes (${
+                classes.joinToString(limit = 3) { it.simpleName.getShortName() }
+            })."
         )
     }
 }

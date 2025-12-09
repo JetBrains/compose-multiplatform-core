@@ -13,28 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
+
 package androidx.privacysandbox.sdkruntime.client.loader
 
 import android.annotation.SuppressLint
+import androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException
 import androidx.privacysandbox.sdkruntime.core.Versions
+import java.lang.reflect.InvocationTargetException
 
 /** Performing version handshake. */
 internal class VersionHandshake(
-    /**
-     * Override version by using [overrideApiVersion] as client and sdk version during handshake.
-     */
-    private val overrideApiVersion: Int? = null
+    /** Override client version during handshake. */
+    private val overrideClientVersion: Int? = null,
+    /** Override sdk version during handshake. */
+    private val overrideSdkVersion: Int? = null,
 ) {
 
     @SuppressLint("BanUncheckedReflection") // calling method on Versions class
     fun perform(classLoader: ClassLoader?): Int {
-        val versionsClass = Class.forName(Versions::class.java.name, false, classLoader)
+        val versionsClass =
+            Class.forName(
+                "androidx.privacysandbox.sdkruntime.core.Versions",
+                /* initialize = */ false,
+                classLoader,
+            )
         val handShakeMethod = versionsClass.getMethod("handShake", Int::class.javaPrimitiveType)
 
-        val clientVersion = overrideApiVersion ?: Versions.API_VERSION
-        val sdkVersion = handShakeMethod.invoke(null, clientVersion) as Int
+        val clientVersion = overrideClientVersion ?: Versions.API_VERSION
+        try {
+            val sdkVersion = handShakeMethod.invoke(null, clientVersion) as Int
 
-        return overrideApiVersion ?: sdkVersion
+            return overrideSdkVersion ?: sdkVersion
+        } catch (ex: InvocationTargetException) {
+            throw LoadSdkCompatException(
+                LoadSdkCompatException.LOAD_SDK_NOT_FOUND,
+                "Failed to perform version handshake: " + ex.targetException.message,
+            )
+        }
     }
 
     companion object {

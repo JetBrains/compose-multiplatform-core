@@ -21,21 +21,20 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
 
     implementation("androidx.core:core:1.12.0")
     implementation("androidx.lifecycle:lifecycle-common:2.6.2")
-    implementation("androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha08")
+    implementation("androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha14")
     implementation(project(":privacysandbox:activity:activity-core"))
 
     androidTestImplementation(project(":internal-testutils-runtime"))
@@ -47,16 +46,13 @@ dependencies {
 }
 
 android {
-    namespace "androidx.privacysandbox.activity.client"
-    defaultConfig {
-        minSdk 21
-    }
+    compileSdk = 35
+    namespace = "androidx.privacysandbox.activity.client"
 }
 
 androidx {
     name = "androidx.privacysandbox.activity:activity-client"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "Manage Privacy Sandbox Activities from outside the sandbox."
-    legacyDisableKotlinStrictApiMode = true
 }

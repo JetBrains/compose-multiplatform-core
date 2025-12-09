@@ -21,17 +21,16 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.1.0")
+    api("androidx.annotation:annotation:1.8.1")
 
     implementation(project(":privacysandbox:activity:activity-core"))
     implementation("androidx.core:core:1.12.0")
@@ -45,16 +44,13 @@ dependencies {
 }
 
 android {
-    namespace "androidx.privacysandbox.activity.provider"
-    defaultConfig {
-        minSdk 21
-    }
+    compileSdk = 35
+    namespace = "androidx.privacysandbox.activity.provider"
 }
 
 androidx {
     name = "androidx.privacysandbox.activity:activity-provider"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2023"
     description = "Utilities for launchig Activities from the Privacy Sandbox."
-    legacyDisableKotlinStrictApiMode = true
 }

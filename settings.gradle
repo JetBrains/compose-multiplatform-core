@@ -17,6 +17,8 @@ buildscript {
     repos.addMavenRepositories(repositories)
 }
 
+def supportRootFolder = buildscript.sourceFile.getParentFile()
+
 // Makes strong assumptions about the project structure.
 def prebuiltsRoot = new File(
         buildscript.sourceFile.parentFile,
@@ -24,28 +26,34 @@ def prebuiltsRoot = new File(
 ).absolutePath
 def rootProjectRepositories
 
-apply from: "buildSrc/out.gradle"
-def (outDir, buildSrcOut) = init.getOutDir()
+apply from: "buildSrc/settingsScripts/out-setup.groovy"
 
-getGradle().beforeProject {
+getGradle().beforeProject { project ->
     // Migrate to dependencyResolutionManagement.repositories when
     // https://github.com/gradle/gradle/issues/17295 is fixed
-    if (it.path == ":") {
-        repos.addMavenRepositories(it.repositories)
-        rootProjectRepositories = it.repositories
-
-        // Set buildSrcOut and outDir extras on root project
-        it.ext.buildSrcOut = buildSrcOut
-        it.ext.outDir = outDir
+    if (project.path == ":") {
+        repos.addMavenRepositories(project.repositories)
+        rootProjectRepositories = project.repositories
     } else {
         // Performance optimization because it is more efficient to reuse
         // repositories from the root project than recreate identical ones
         // on each project
-        it.repositories.addAll(rootProjectRepositories)
+        project.repositories.addAll(rootProjectRepositories)
     }
-    it.ext.prebuiltsRoot = prebuiltsRoot
-    // Expected out directory structure for :foo:bar is out/androidx/foo/bar
-    it.buildDir = new File(outDir, "androidx/${it.path.replace(":", "/")}/build")
+    project.ext.supportRootFolder = supportRootFolder
+    project.ext.prebuiltsRoot = prebuiltsRoot
+    def checkoutRoot = new File("${buildscript.sourceFile.parent}")
+    // TODO(buildSrc) "androidx" required for ios instrumented tests, because it is hardcoded
+    init.chooseBuildDirectory(checkoutRoot, "androidx", project)
+
+    /*
+    Could not set unknown property 'kotlin.project.persistent.dir' for project ':buildSrc' of type org.gradle.api.Project.
+
+    // https://youtrack.jetbrains.com/issue/KT-58223
+    def kotlinDir = new File(System.env.OUT_DIR ?: checkoutRoot, ".kotlin")
+    project.setProperty("kotlin.project.persistent.dir", kotlinDir.absolutePath)
+    project.setProperty("kotlin.user.home", kotlinDir.absolutePath)
+     */
 }
 
 rootProject.name = "compose-multiplatform-core"

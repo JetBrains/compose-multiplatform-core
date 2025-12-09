@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.sdkruntime.client.loader.impl.injector
 
@@ -42,9 +43,9 @@ private constructor(private val loadSdkCompatExceptionConstructor: Constructor<o
         fun createFor(classLoader: ClassLoader): LoadSdkCompatExceptionProxyFactory {
             val loadSdkCompatExceptionClass =
                 Class.forName(
-                    LoadSdkCompatException::class.java.name,
+                    "androidx.privacysandbox.sdkruntime.core.LoadSdkCompatException",
                     /* initialize = */ false,
-                    classLoader
+                    classLoader,
                 )
             val loadSdkCompatExceptionConstructor =
                 loadSdkCompatExceptionClass.getConstructor(

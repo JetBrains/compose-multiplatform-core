@@ -26,7 +26,8 @@ import com.android.build.api.artifact.SingleArtifact
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("kotlin-android")
+    // Remove when b/442128557 is fixed
+    id("org.jetbrains.kotlin.android")
     id("androidx.baselineprofile")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
@@ -41,8 +42,8 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
         releaseLibrariesOnly {
@@ -50,11 +51,10 @@ android {
             matchingFallbacks += "release"
         }
     }
-    namespace "androidx.benchmark.integration.baselineprofile.consumer"
+    namespace = "androidx.benchmark.integration.baselineprofile.consumer"
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
     implementation(libs.constraintLayout)
     implementation(libs.hiltAndroid)
     ksp(libs.hiltCompiler)

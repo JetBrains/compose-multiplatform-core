@@ -13,12 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.provider
 
 import android.content.res.Configuration
 import android.os.Bundle
+import androidx.privacysandbox.ui.core.SandboxedSdkViewUiInfo
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
+import androidx.privacysandbox.ui.core.SandboxedUiAdapterSignalOptions
+import androidx.privacysandbox.ui.core.SessionObserver
+import androidx.privacysandbox.ui.core.SessionObserverContext
 import androidx.privacysandbox.ui.core.SessionObserverFactory
 
 /**
@@ -27,27 +32,64 @@ import androidx.privacysandbox.ui.core.SessionObserverFactory
  *
  * UI providers should use this class rather than implementing [SandboxedUiAdapter] directly.
  */
-abstract class AbstractSandboxedUiAdapter : SandboxedUiAdapter {
+@Deprecated("This library is no longer supported.")
+public abstract class AbstractSandboxedUiAdapter :
+    SandboxedUiAdapter, SessionObserverFactoryRegistry {
+    private val registryProvider = SessionObserverFactoryRegistryProvider()
 
-    /** The list of [SessionObserverFactory] instances that have been added to this adapter. */
-    val sessionObserverFactories: List<SessionObserverFactory>
-        get() {
-            synchronized(_sessionObserverFactories) {
-                return _sessionObserverFactories.toList()
-            }
-        }
+    private val delegateMap:
+        MutableMap<SessionObserverFactory, SessionObserverFactorySignalDelegate> =
+        mutableMapOf()
 
-    private val _sessionObserverFactories: MutableList<SessionObserverFactory> = mutableListOf()
+    final override val sessionObserverFactories: List<SessionObserverFactory>
+        get() = registryProvider.sessionObserverFactories
 
     final override fun addObserverFactory(sessionObserverFactory: SessionObserverFactory) {
-        synchronized(_sessionObserverFactories) {
-            _sessionObserverFactories.add(sessionObserverFactory)
-        }
+        val delegateFactory = SessionObserverFactorySignalDelegate(sessionObserverFactory)
+        delegateMap.put(sessionObserverFactory, delegateFactory)
+        registryProvider.addObserverFactory(delegateFactory)
     }
 
     final override fun removeObserverFactory(sessionObserverFactory: SessionObserverFactory) {
-        synchronized(_sessionObserverFactories) {
-            _sessionObserverFactories.remove(sessionObserverFactory)
+        val proxy = delegateMap[sessionObserverFactory]
+        proxy?.let {
+            registryProvider.removeObserverFactory(proxy)
+            delegateMap.remove(sessionObserverFactory)
+        }
+    }
+
+    /**
+     * A wrapper class of [SessionObserverFactory] that delegates calls to the underlying
+     * [SessionObserver]s based on the [signalOptions] specified by the factory.
+     */
+    private class SessionObserverFactorySignalDelegate(
+        val sessionObserverFactory: SessionObserverFactory
+    ) : SessionObserverFactory {
+        override val signalOptions: Set<String> = sessionObserverFactory.signalOptions
+
+        override fun create(): SessionObserver {
+            return SessionObserverSignalDelegate(sessionObserverFactory.create())
+        }
+
+        private inner class SessionObserverSignalDelegate(val sessionObserver: SessionObserver) :
+            SessionObserver {
+            override fun onSessionOpened(sessionObserverContext: SessionObserverContext) {
+                sessionObserver.onSessionOpened(sessionObserverContext)
+            }
+
+            override fun onUiContainerChanged(uiContainerInfo: Bundle) {
+                SandboxedSdkViewUiInfo.pruneBundle(uiContainerInfo, signalOptions)
+                if (
+                    signalOptions.contains(SandboxedUiAdapterSignalOptions.GEOMETRY) ||
+                        signalOptions.contains(SandboxedUiAdapterSignalOptions.OBSTRUCTIONS)
+                ) {
+                    sessionObserver.onUiContainerChanged(uiContainerInfo)
+                }
+            }
+
+            override fun onSessionClosed() {
+                sessionObserver.onSessionClosed()
+            }
         }
     }
 
@@ -57,7 +99,7 @@ abstract class AbstractSandboxedUiAdapter : SandboxedUiAdapter {
      *
      * UI providers should use this class rather than implementing [SandboxedUiAdapter.Session].
      */
-    abstract class AbstractSession : SandboxedUiAdapter.Session {
+    public abstract class AbstractSession : SandboxedUiAdapter.Session {
 
         final override val signalOptions: Set<String>
             get() = setOf()
@@ -69,6 +111,8 @@ abstract class AbstractSandboxedUiAdapter : SandboxedUiAdapter {
         override fun notifyConfigurationChanged(configuration: Configuration) {}
 
         override fun notifyUiChanged(uiContainerInfo: Bundle) {}
+
+        override fun notifySessionRendered(supportedSignalOptions: Set<String>) {}
 
         override fun close() {}
     }

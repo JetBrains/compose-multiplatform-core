@@ -16,7 +16,7 @@
 
 package org.jetbrains.androidx.build
 
-import androidx.build.getProjectsMap
+import androidx.build.AndroidXExtension
 import com.android.utils.mapValuesNotNull
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
@@ -41,7 +41,10 @@ import org.gradle.api.internal.component.SoftwareComponentInternal
 import org.gradle.api.internal.component.UsageContext
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.tasks.AbstractPublishToMaven
+import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 import org.jetbrains.kotlin.gradle.InternalKotlinGradlePluginApi
+import org.jetbrains.kotlin.gradle.plugin.KotlinTargetComponent
+import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinTarget
 
 /**
  * Usage that should be added to rootSoftwareComponent to represent target-specific variants
@@ -61,8 +64,17 @@ internal class CustomUsage(
     override fun getGlobalExcludes(): Set<ExcludeRule> = emptySet()
 }
 
+@OptIn(InternalKotlinGradlePluginApi::class, ExternalKotlinTargetApi::class)
+internal fun Project.setupRedirection(target: DecoratedExternalKotlinTarget, newRootComponent: CustomRootComponent) {
+    setupRedirection(target.kotlinComponents, newRootComponent)
+}
 @OptIn(InternalKotlinGradlePluginApi::class)
-internal fun Project.publishAndroidxReference(target: AbstractKotlinTarget, newRootComponent: CustomRootComponent) {
+internal fun Project.setupRedirection(target: AbstractKotlinTarget, newRootComponent: CustomRootComponent) {
+    setupRedirection(target.kotlinComponents, newRootComponent)
+}
+
+@OptIn(InternalKotlinGradlePluginApi::class)
+internal fun Project.setupRedirection(kotlinComponents: Set<KotlinTargetComponent>, newRootComponent: CustomRootComponent) {
     afterEvaluate {
         extensions.getByType(PublishingExtension::class.java).apply {
             val kotlinMultiplatform = publications
@@ -83,7 +95,7 @@ internal fun Project.publishAndroidxReference(target: AbstractKotlinTarget, newR
             if (it.publication.name == "kotlinMultiplatform") it.enabled = false
         }
 
-        target.kotlinComponents.forEach { component ->
+        kotlinComponents.forEach { component ->
             val componentName = component.name
 
             if (component is KotlinVariant)
@@ -158,6 +170,7 @@ internal class CustomRootComponent(
 }
 
 internal fun Project.originalToRedirectedDependency(
+    extension: AndroidXExtension,
     componentName: String
 ): Map<ModuleIdentifier, ModuleVersionIdentifier> {
     /**
@@ -190,8 +203,7 @@ internal fun Project.originalToRedirectedDependency(
      * ...
      */
     val projectDefined =
-        getProjectsMap()
-            .values
+        JetBrainsPublication.projectPathToLibrary.keys
             .mapNotNull { project.findProject(it) }
             .flatMap { project ->
                 val redirecting = project.artifactRedirection() ?: return@flatMap emptyList()

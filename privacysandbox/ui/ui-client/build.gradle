@@ -21,28 +21,24 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.1.0")
-
-    implementation("androidx.core:core:1.12.0")
-
-    implementation("androidx.lifecycle:lifecycle-common:2.6.2")
-    implementation("androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha08")
-    implementation("androidx.customview:customview-poolingcontainer:1.0.0")
-    implementation(project(":privacysandbox:ui:ui-core"))
+    api("androidx.annotation:annotation:1.8.1")
+    api("androidx.core:core:1.12.0")
+    api("androidx.lifecycle:lifecycle-common:2.6.2")
+    api("androidx.customview:customview-poolingcontainer:1.0.0")
+    api(project(":privacysandbox:ui:ui-core"))
+    implementation("androidx.tracing:tracing:1.3.0")
 
     androidTestImplementation(project(":internal-testutils-runtime"))
     androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.kotlinStdlib)
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
@@ -52,19 +48,27 @@ dependencies {
     androidTestImplementation(libs.espressoCore)
     androidTestImplementation(libs.mockitoCore)
     androidTestImplementation(libs.testUiautomator)
-    androidTestImplementation project(path: ':appcompat:appcompat')
-    androidTestImplementation project(":privacysandbox:ui:ui-provider")
+    androidTestImplementation(project(":appcompat:appcompat"))
+    androidTestImplementation(project(":privacysandbox:ui:ui-provider"))
+    androidTestImplementation(project(":privacysandbox:ui:integration-tests:testingutils"))
 }
 
 android {
-    namespace "androidx.privacysandbox.ui.client"
+    compileSdk = 35
+    namespace = "androidx.privacysandbox.ui.client"
 }
 
 androidx {
     name = "androidx.privacysandbox.ui:ui-client"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
-    description = "show UI from an SDKRuntime aware SDK"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
+    description = "show UI from a Runtime-aware SDK"
+}
+
+configurations.configureEach { configuration ->
+    if (configuration.name == "releaseRuntimeElements" || configuration.name == "releaseApiElements") {
+        configuration.attributes {
+            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+        }
+    }
 }

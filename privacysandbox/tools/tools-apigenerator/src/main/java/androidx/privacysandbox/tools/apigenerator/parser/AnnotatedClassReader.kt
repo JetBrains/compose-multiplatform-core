@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.tools.apigenerator.parser
 
@@ -20,10 +21,13 @@ import androidx.privacysandbox.tools.PrivacySandboxCallback
 import androidx.privacysandbox.tools.PrivacySandboxInterface
 import androidx.privacysandbox.tools.PrivacySandboxService
 import androidx.privacysandbox.tools.PrivacySandboxValue
+import androidx.privacysandbox.tools.core.PrivacySandboxParsingException
+import androidx.privacysandbox.tools.core.model.Constant
+import androidx.privacysandbox.tools.core.model.Types
 import java.nio.file.Path
-import kotlinx.metadata.KmClass
-import kotlinx.metadata.jvm.KotlinClassMetadata
-import kotlinx.metadata.jvm.Metadata
+import kotlin.metadata.KmClass
+import kotlin.metadata.jvm.KotlinClassMetadata
+import kotlin.metadata.jvm.Metadata
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
@@ -31,45 +35,61 @@ import org.objectweb.asm.tree.AnnotationNode
 import org.objectweb.asm.tree.ClassNode
 
 data class AnnotatedClasses(
-    val services: Set<KmClass>,
-    val values: Set<KmClass>,
-    val callbacks: Set<KmClass>,
-    val interfaces: Set<KmClass>,
+    val services: Set<ClassAndConstants>,
+    val values: Set<ClassAndConstants>,
+    val callbacks: Set<ClassAndConstants>,
+    val interfaces: Set<ClassAndConstants>,
 )
+
+data class ClassAndConstants(val kClass: KmClass, val constants: List<Constant>)
 
 internal object AnnotatedClassReader {
     val annotations = listOf(PrivacySandboxService::class)
 
     fun readAnnotatedClasses(stubClassPath: Path): AnnotatedClasses {
-        val services = mutableSetOf<KmClass>()
-        val values = mutableSetOf<KmClass>()
-        val callbacks = mutableSetOf<KmClass>()
-        val interfaces = mutableSetOf<KmClass>()
+        val services = mutableSetOf<ClassAndConstants>()
+        val values = mutableSetOf<ClassAndConstants>()
+        val callbacks = mutableSetOf<ClassAndConstants>()
+        val interfaces = mutableSetOf<ClassAndConstants>()
+
         stubClassPath
             .toFile()
             .walk()
-            .filter { it.extension == "class" }
+            .filter { it.isFile && it.extension == "class" }
             .map { toClassNode(it.readBytes()) }
             .forEach { classNode ->
+                // Data classes and enum classes store their constants on the object itself, rather
+                // than in the companion's class file, so we extract the constants from amongst the
+                // other fields on the annotated value/interface.
+                // Thankfully, data class fields are always non-static, and enum variants are always
+                // of the enum's type (hence not primitive or string, which consts must be).
+                // The const-allowed-types check also filters out the Companion and the VALUES
+                // array.
+                val constants =
+                    classNode.fields
+                        .filter { it.access.hasFlag(PUBLIC_STATIC_FINAL_ACCESS) }
+                        .filter { it.desc in constAllowedTypes.keys }
+                        .map { Constant(it.name, getConstType(it.desc), it.value) }
+                        .toList()
                 if (classNode.isAnnotatedWith<PrivacySandboxService>()) {
-                    services.add(parseKotlinMetadata(classNode))
+                    services.add(ClassAndConstants(parseKotlinMetadata(classNode), constants))
                 }
                 // TODO(b/323369085): Validate that enum variants don't have methods
                 if (classNode.isAnnotatedWith<PrivacySandboxValue>()) {
-                    values.add(parseKotlinMetadata(classNode))
+                    values.add(ClassAndConstants(parseKotlinMetadata(classNode), constants))
                 }
                 if (classNode.isAnnotatedWith<PrivacySandboxCallback>()) {
-                    callbacks.add(parseKotlinMetadata(classNode))
+                    callbacks.add(ClassAndConstants(parseKotlinMetadata(classNode), constants))
                 }
                 if (classNode.isAnnotatedWith<PrivacySandboxInterface>()) {
-                    interfaces.add(parseKotlinMetadata(classNode))
+                    interfaces.add(ClassAndConstants(parseKotlinMetadata(classNode), constants))
                 }
             }
         return AnnotatedClasses(
             services = services.toSet(),
             values = values.toSet(),
             callbacks = callbacks.toSet(),
-            interfaces = interfaces.toSet()
+            interfaces = interfaces.toSet(),
         )
     }
 
@@ -78,7 +98,7 @@ internal object AnnotatedClassReader {
         val classNode = ClassNode(Opcodes.ASM9)
         reader.accept(
             classNode,
-            ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES
+            ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES,
         )
         return classNode
     }
@@ -137,4 +157,32 @@ internal object AnnotatedClassReader {
             }
             return attributes
         }
+
+    private val constAllowedTypes =
+        mapOf(
+            "Ljava/lang/String;" to Types.string,
+            "I" to Types.int,
+            "Z" to Types.boolean,
+            "B" to Types.byte,
+            "C" to Types.char,
+            "D" to Types.double,
+            "F" to Types.float,
+            "J" to Types.long,
+            "S" to Types.short,
+        )
+
+    private fun getConstType(desc: String): androidx.privacysandbox.tools.core.model.Type {
+        return constAllowedTypes[desc]
+            ?: throw PrivacySandboxParsingException("Unrecognised constant type: '$desc'")
+    }
 }
+
+// See https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.5
+// TODO: Once we upgrade to Java 22 we can import these constants from
+//  java.lang.classfile
+private const val PUBLIC_STATIC_FINAL_ACCESS =
+    0x0001 or // public
+        0x0008 or // static
+        0x0010 // final
+
+private fun Int.hasFlag(flag: Int) = flag and this == flag

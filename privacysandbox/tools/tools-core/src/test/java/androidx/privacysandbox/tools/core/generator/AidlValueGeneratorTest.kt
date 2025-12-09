@@ -39,30 +39,33 @@ class AidlValueGeneratorTest {
     fun generate() {
         val innerEnum =
             AnnotatedEnumClass(
-                Type(packageName = "com.mysdk", simpleName = "InnerEnum"),
-                listOf("ONE, TWO, THREE")
+                type = Type(packageName = "com.mysdk", simpleName = "InnerEnum"),
+                variants = listOf("ONE, TWO, THREE"),
             )
         val innerValue =
             AnnotatedDataClass(
-                Type(packageName = "com.mysdk", simpleName = "InnerValue"),
-                listOf(
-                    ValueProperty("intProperty", Types.int),
-                    ValueProperty("booleanProperty", Types.boolean),
-                    ValueProperty("longProperty", Types.long),
-                    ValueProperty("maybeFloatProperty", Types.float.asNullable()),
-                    ValueProperty("enumProperty", innerEnum.type),
-                    ValueProperty("bundleProperty", Types.bundle),
-                    ValueProperty("maybeBundleProperty", Types.bundle.asNullable())
-                )
+                type = Type(packageName = "com.mysdk", simpleName = "InnerValue"),
+                properties =
+                    listOf(
+                        ValueProperty("intProperty", Types.int),
+                        ValueProperty("booleanProperty", Types.boolean),
+                        ValueProperty("longProperty", Types.long),
+                        ValueProperty("maybeFloatProperty", Types.float.asNullable()),
+                        ValueProperty("maybeByteProperty", Types.byte.asNullable()),
+                        ValueProperty("enumProperty", innerEnum.type),
+                        ValueProperty("bundleProperty", Types.bundle),
+                        ValueProperty("maybeBundleProperty", Types.bundle.asNullable()),
+                    ),
             )
         val outerValue =
             AnnotatedDataClass(
-                Type(packageName = "com.mysdk", simpleName = "OuterValue"),
-                listOf(
-                    ValueProperty("innerValue", innerValue.type),
-                    ValueProperty("innerValueList", Types.list(innerValue.type)),
-                    ValueProperty("maybeInnerValue", innerValue.type.asNullable()),
-                )
+                type = Type(packageName = "com.mysdk", simpleName = "OuterValue"),
+                properties =
+                    listOf(
+                        ValueProperty("innerValue", innerValue.type),
+                        ValueProperty("innerValueList", Types.list(innerValue.type)),
+                        ValueProperty("maybeInnerValue", innerValue.type.asNullable()),
+                    ),
             )
 
         val api =
@@ -92,7 +95,7 @@ class AidlValueGeneratorTest {
                                             listOf(
                                                 Parameter(
                                                     "inputValues",
-                                                    Types.list(outerValue.type)
+                                                    Types.list(outerValue.type),
                                                 )
                                             ),
                                         returnType = Types.list(outerValue.type),
@@ -104,7 +107,7 @@ class AidlValueGeneratorTest {
                                             listOf(
                                                 Parameter(
                                                     "maybeValue",
-                                                    outerValue.type.asNullable()
+                                                    outerValue.type.asNullable(),
                                                 )
                                             ),
                                         returnType = outerValue.type.asNullable(),
@@ -114,18 +117,15 @@ class AidlValueGeneratorTest {
                                         name = "methodReceivingValue",
                                         parameters =
                                             listOf(
-                                                Parameter(
-                                                    name = "value",
-                                                    type = outerValue.type,
-                                                ),
+                                                Parameter(name = "value", type = outerValue.type)
                                             ),
                                         returnType = Types.unit,
                                         isSuspend = false,
-                                    )
-                                )
+                                    ),
+                                ),
                         )
                     ),
-                values = setOf(innerEnum, innerValue, outerValue)
+                values = setOf(innerEnum, innerValue, outerValue),
             )
 
         val (aidlGeneratedSources, javaGeneratedSources) = AidlTestHelper.runGenerator(api)

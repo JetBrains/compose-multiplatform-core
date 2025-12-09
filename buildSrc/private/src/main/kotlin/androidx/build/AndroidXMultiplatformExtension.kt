@@ -16,29 +16,97 @@
 
 package androidx.build
 
+import androidx.build.clang.AndroidXClang
+import androidx.build.clang.CombineObjectFilesTask
+import androidx.build.clang.KonanBuildService
+import androidx.build.clang.MultiTargetNativeCompilation
+import androidx.build.clang.NativeLibraryBundler
+import androidx.build.clang.configureCinterop
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
+import com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin
 import groovy.lang.Closure
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.NamedDomainObjectCollection
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.configuration.BuildFeatures
+import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.testing.Test
+import org.gradle.kotlin.dsl.dependencies
+import org.gradle.kotlin.dsl.the
+import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithHostTests
-import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsBrowserDsl
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
+import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinWasmTargetDsl
+import org.jetbrains.kotlin.gradle.targets.js.ir.DefaultIncrementalSyncTask
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsPlugin
+import org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTest
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootEnvSpec
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
+import org.jetbrains.kotlin.gradle.targets.wasm.binaryen.BinaryenEnvSpec
+import org.jetbrains.kotlin.gradle.targets.wasm.binaryen.BinaryenPlugin
+import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsPlugin
+import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnPlugin
+import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnRootEnvSpec
+import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
+import org.jetbrains.kotlin.konan.target.LinkerOutputKind
+import org.tomlj.Toml
 
 /**
- *  [AndroidXMultiplatformExtension] is an extension that wraps specific functionality of the Kotlin
- *  multiplatform extension, and applies the Kotlin multiplatform plugin when it is used. The
- *  purpose of wrapping is to prevent targets from being added when the platform has not been
- *  enabled. e.g. the `macosX64` target is gated on a `project.enableMac` check.
+ * [AndroidXMultiplatformExtension] is an extension that wraps specific functionality of the Kotlin
+ * multiplatform extension, and applies the Kotlin multiplatform plugin when it is used. The purpose
+ * of wrapping is to prevent targets from being added when the platform has not been enabled. e.g.
+ * the `macosX64` target is gated on a `project.enableMac` check.
  */
-open class AndroidXMultiplatformExtension(val project: Project) {
+abstract class AndroidXMultiplatformExtension(val project: Project) {
+
+    @get:Inject abstract val buildFeatures: BuildFeatures
+
+    var enableBinaryCompatibilityValidator = true
+
+    /*
+     * Adds a kotlin stdlib klib directory as an input to test tasks.
+     * This is specifically useful for BCV, but it needs to be set up by our buildSrc code to
+     * make sure we use the correct installation and don't accidentally cause something to be
+     * downloaded from the internet.
+     *
+     * Sets the `kotlin.stdlib.klib.dir` property which can be accessed inside the tests
+     */
+    fun provideKlibStdLibForTests() {
+        val konanBuildService = KonanBuildService.obtain(project)
+        // directory format of stdlib klib for use during tests
+        val stdLibKlibDir =
+            konanBuildService.map { it.parameters.konanHome.dir("klib/common/stdlib") }
+        project.tasks.withType(Test::class.java).configureEach { task ->
+            task.inputs
+                .dir(stdLibKlibDir)
+                .withPropertyName("kotlinStdLib")
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+            task.doFirst {
+                task.systemProperty(
+                    "kotlin.stdlib.klib.dir",
+                    stdLibKlibDir.get().get().asFile.absolutePath,
+                )
+            }
+        }
+    }
 
     // Kotlin multiplatform plugin is only applied if at least one target / sourceset is added.
     private val kotlinExtensionDelegate = lazy {
@@ -47,61 +115,71 @@ open class AndroidXMultiplatformExtension(val project: Project) {
         project.multiplatformExtension!!
     }
     private val kotlinExtension: KotlinMultiplatformExtension by kotlinExtensionDelegate
+    private val agpKmpExtensionDelegate = lazy {
+        // make sure to initialize the kotlin extension by accessing the property
+        val extension = (kotlinExtension as ExtensionAware)
+        project.plugins.apply(KotlinMultiplatformAndroidPlugin::class.java)
+        extension.extensions.getByType(KotlinMultiplatformAndroidLibraryTarget::class.java)
+    }
+
+    val agpKmpExtension: KotlinMultiplatformAndroidLibraryTarget by agpKmpExtensionDelegate
 
     /**
-     * The list of platforms that have been requested in the build configuration.
+     * The list of platforms that have been declared as supported in the build configuration.
      *
-     * The list of enabled platforms in [targetPlatforms] will vary based on the build environment.
-     * For example, a project's build configuration may have requested `mac()` but this is not
-     * available when building on Linux.
+     * This may be a superset of the currently enabled platforms in [targetPlatforms].
      */
-    val requestedPlatforms: MutableSet<PlatformIdentifier> = mutableSetOf()
+    val supportedPlatforms: MutableSet<PlatformIdentifier> = mutableSetOf()
 
     /**
-     * The list of platforms that are enabled.
+     * The list of platforms that are currently enabled.
      *
      * This will vary across build environments. For example, a project's build configuration may
      * have requested `mac()` but this is not available when building on Linux.
      */
     val targetPlatforms: List<String>
-        get() = if (kotlinExtensionDelegate.isInitialized()) {
-            kotlinExtension.targets.mapNotNull {
-                if (it.targetName != "metadata") {
-                    it.targetName
-                } else {
-                    null
+        get() =
+            if (kotlinExtensionDelegate.isInitialized()) {
+                kotlinExtension.targets.mapNotNull {
+                    if (it.targetName != "metadata") {
+                        it.targetName
+                    } else {
+                        null
+                    }
                 }
+            } else {
+                throw GradleException("Kotlin multi-platform extension has not been initialized")
             }
-        } else {
-            throw GradleException("Kotlin multi-platform extension has not been initialized")
-        }
 
     /**
      * Default platform identifier used for specifying POM dependencies.
      *
      * This platform will be added as a dependency to the multi-platform anchor artifact's POM
-     * publication. For example, if the anchor artifact is `collection` and the default platform
-     * is `jvm`, then the POM for `collection` will express a dependency on `collection-jvm`. This
+     * publication. For example, if the anchor artifact is `collection` and the default platform is
+     * `jvm`, then the POM for `collection` will express a dependency on `collection-jvm`. This
      * ensures that developers who are silently upgrade to KMP artifacts but are not using Gradle
      * still see working artifacts.
      *
-     * If no default was specified and a single platform is requested (ex. using [jvm]), returns
-     * the identifier for that platform.
+     * If no default was specified and a single platform is requested (ex. using [jvm]), returns the
+     * identifier for that platform.
      */
     var defaultPlatform: String? = null
-        get() = field ?: requestedPlatforms.singleOrNull()?.id
-
+        get() = field ?: supportedPlatforms.singleOrNull()?.id
         set(value) {
             if (value != null) {
-                if (requestedPlatforms.none { it.id == value }) {
-                    throw GradleException("Platform $value has not been requested as a target. " +
-                        "Available platforms are: " +
-                        requestedPlatforms.joinToString(", ") { it.id })
+                if (supportedPlatforms.none { it.id == value }) {
+                    throw GradleException(
+                        "Platform $value has not been requested as a target. " +
+                            "Available platforms are: " +
+                            supportedPlatforms.joinToString(", ") { it.id }
+                    )
                 }
                 if (targetPlatforms.none { it == value }) {
-                    throw GradleException("Platform $value is not available in this build " +
-                        "environment. Available platforms are: " +
-                        targetPlatforms.joinToString(", "))
+                    throw GradleException(
+                        "Platform $value is not available in this build " +
+                            "environment. Available platforms are: " +
+                            targetPlatforms.joinToString(", ")
+                    )
                 }
             }
             field = value
@@ -110,17 +188,198 @@ open class AndroidXMultiplatformExtension(val project: Project) {
     val targets: NamedDomainObjectCollection<KotlinTarget>
         get() = kotlinExtension.targets
 
+    /** Helper class to access Clang functionality. */
+    private val clang = AndroidXClang(project)
+
+    /** Helper class to bundle outputs of clang compilation into an AAR / JAR. */
+    private val nativeLibraryBundler = NativeLibraryBundler(project)
+
     internal fun hasNativeTarget(): Boolean {
         // it is important to check initialized here not to trigger initialization
-        return kotlinExtensionDelegate.isInitialized() && targets.any {
-            it.platformType == KotlinPlatformType.native
-        }
+        return kotlinExtensionDelegate.isInitialized() &&
+            targets.any { it.platformType == KotlinPlatformType.native }
     }
+
+    internal fun hasAndroidMultiplatform(): Boolean {
+        return agpKmpExtensionDelegate.isInitialized()
+    }
+
     fun sourceSets(closure: Closure<*>) {
         if (kotlinExtensionDelegate.isInitialized()) {
-            kotlinExtension.sourceSets.configure(closure)
+            kotlinExtension.sourceSets.configure(closure).also {
+                kotlinExtension.sourceSets.configureEach { sourceSet ->
+                    if (sourceSet.name == "main" || sourceSet.name == "test") {
+                        throw Exception(
+                            "KMP-enabled projects must use target-prefixed " +
+                                "source sets, e.g. androidMain or commonTest, rather than main or test"
+                        )
+                    }
+                }
+            }
         }
     }
+
+    /**
+     * Creates a multi-target native compilation with the given [archiveName].
+     *
+     * The given [configure] action can be used to add targets, sources, includes etc.
+     *
+     * The outputs of this compilation is not added to any artifact by default.
+     * * To use the outputs via cinterop (kotlin native), use the [createCinterop] function.
+     * * To bundle the outputs inside a JAR (to be loaded at runtime), use the
+     *   [addNativeLibrariesToResources] function.
+     * * To bundle the outputs inside an AAR (to be loaded at runtime), use the
+     *   [addNativeLibrariesToJniLibs] function.
+     *
+     * @param archiveName The archive file name for the native artifacts (.so, .a or .o)
+     * @param outputKind The kind of output it should be produced (library or executable).
+     * @param configure Action block to configure the compilation.
+     */
+    @JvmOverloads
+    fun createNativeCompilation(
+        archiveName: String,
+        outputKind: LinkerOutputKind = LinkerOutputKind.DYNAMIC_LIBRARY,
+        configure: Action<MultiTargetNativeCompilation>,
+    ): MultiTargetNativeCompilation {
+        return clang.createNativeCompilation(
+            archiveName = archiveName,
+            configure = configure,
+            outputKind = outputKind,
+        )
+    }
+
+    /**
+     * Creates a Kotlin Native cinterop configuration for the given [nativeTarget] main compilation
+     * from the outputs of [nativeCompilation].
+     *
+     * @param nativeTarget The kotlin native target for which a new cinterop will be added on the
+     *   main compilation.
+     * @param nativeCompilation The [MultiTargetNativeCompilation] which will be embedded into the
+     *   generated cinterop klib.
+     * @param cinteropName The name of the cinterop definition. A matching "<cinteropName.def>" file
+     *   needs to be present in the default cinterop location
+     *   (src/nativeInterop/cinterop/<cinteropName.def>).
+     */
+    @JvmOverloads
+    fun createCinterop(
+        nativeTarget: KotlinNativeTarget,
+        nativeCompilation: MultiTargetNativeCompilation,
+        cinteropName: String = nativeCompilation.archiveName,
+    ) {
+        createCinterop(
+            kotlinNativeCompilation =
+                nativeTarget.compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME)
+                    as KotlinNativeCompilation,
+            nativeCompilation = nativeCompilation,
+            cinteropName = cinteropName,
+        )
+    }
+
+    /**
+     * Creates a Kotlin Native cinterop configuration for the given [kotlinNativeCompilation] from
+     * the outputs of [nativeCompilation].
+     *
+     * @param kotlinNativeCompilation The kotlin native compilation for which a new cinterop will be
+     *   added
+     * @param nativeCompilation The [MultiTargetNativeCompilation] which will be embedded into the
+     *   generated cinterop klib.
+     * @param cinteropName The name of the cinterop definition. A matching "<cinteropName.def>" file
+     *   needs to be present in the default cinterop location
+     *   (src/nativeInterop/cinterop/<cinteropName.def>).
+     */
+    @JvmOverloads
+    fun createCinterop(
+        kotlinNativeCompilation: KotlinNativeCompilation,
+        nativeCompilation: MultiTargetNativeCompilation,
+        cinteropName: String = nativeCompilation.archiveName,
+    ) {
+        nativeCompilation.configureCinterop(
+            kotlinNativeCompilation = kotlinNativeCompilation,
+            cinteropName = cinteropName,
+        )
+    }
+
+    /**
+     * Creates a Kotlin Native cinterop configuration for the given [kotlinNativeCompilation] from
+     * the single output of a configuration.
+     *
+     * @param kotlinNativeCompilation The kotlin native compilation for which a new cinterop will be
+     *   added
+     * @param configuration The configuration to resolve. It is expected for the configuration to
+     *   contain a single file of the archive file to be referenced in the C interop definition
+     *   file.
+     */
+    fun createCinteropFromArchiveConfiguration(
+        kotlinNativeCompilation: KotlinNativeCompilation,
+        configuration: Configuration,
+    ) {
+        configureCinterop(project, kotlinNativeCompilation, configuration)
+    }
+
+    /**
+     * Adds the native outputs from [nativeCompilation] to the assets of the [androidTarget].
+     *
+     * @see CombineObjectFilesTask for details.
+     */
+    @JvmOverloads
+    fun addNativeLibrariesToVariantAssets(
+        androidTarget: KotlinMultiplatformAndroidLibraryTarget,
+        nativeCompilation: MultiTargetNativeCompilation,
+        forTest: Boolean = false,
+    ) =
+        nativeLibraryBundler.addNativeLibrariesToAndroidVariantSources(
+            androidTarget = androidTarget,
+            nativeCompilation = nativeCompilation,
+            forTest = forTest,
+            provideSourceDirectories = { assets },
+        )
+
+    /**
+     * Adds the native outputs from [nativeCompilation] to the jni libs dependency of the
+     * [androidTarget].
+     *
+     * @see CombineObjectFilesTask for details.
+     */
+    @JvmOverloads
+    fun addNativeLibrariesToJniLibs(
+        androidTarget: KotlinMultiplatformAndroidLibraryTarget,
+        nativeCompilation: MultiTargetNativeCompilation,
+        forTest: Boolean = false,
+    ) =
+        nativeLibraryBundler.addNativeLibrariesToAndroidVariantSources(
+            androidTarget = androidTarget,
+            nativeCompilation = nativeCompilation,
+            forTest = forTest,
+            provideSourceDirectories = { jniLibs },
+        )
+
+    /**
+     * Convenience method to add bundle native libraries with a test jar.
+     *
+     * @see addNativeLibrariesToResources
+     */
+    fun addNativeLibrariesToTestResources(
+        jvmTarget: KotlinJvmTarget,
+        nativeCompilation: MultiTargetNativeCompilation,
+    ) =
+        addNativeLibrariesToResources(
+            jvmTarget = jvmTarget,
+            nativeCompilation = nativeCompilation,
+            compilationName = KotlinCompilation.TEST_COMPILATION_NAME,
+        )
+
+    /** @see NativeLibraryBundler.addNativeLibrariesToResources */
+    @JvmOverloads
+    fun addNativeLibrariesToResources(
+        jvmTarget: KotlinJvmTarget,
+        nativeCompilation: MultiTargetNativeCompilation,
+        compilationName: String = KotlinCompilation.MAIN_COMPILATION_NAME,
+    ) =
+        nativeLibraryBundler.addNativeLibrariesToResources(
+            jvmTarget = jvmTarget,
+            nativeCompilation = nativeCompilation,
+            compilationName = compilationName,
+        )
 
     /**
      * Sets the default target platform.
@@ -136,171 +395,310 @@ open class AndroidXMultiplatformExtension(val project: Project) {
     }
 
     @JvmOverloads
-    fun jvm(
-        block: Action<KotlinJvmTarget>? = null
-    ): KotlinJvmTarget? {
-        requestedPlatforms.add(PlatformIdentifier.JVM)
+    fun jvm(block: Action<KotlinJvmTarget>? = null): KotlinJvmTarget? {
+        supportedPlatforms.add(PlatformIdentifier.JVM)
         return if (project.enableJvm()) {
-            kotlinExtension.jvm {
-                block?.execute(this)
-            }
-        } else { null }
+            kotlinExtension.jvm { block?.execute(this) }
+        } else {
+            null
+        }
     }
 
     @JvmOverloads
-    fun android(
-        block: Action<KotlinAndroidTarget>? = null
-    ): KotlinAndroidTarget? {
-        requestedPlatforms.add(PlatformIdentifier.ANDROID)
+    fun jvmStubs(
+        runTests: Boolean = false,
+        block: Action<KotlinJvmTarget>? = null,
+    ): KotlinJvmTarget? {
+        supportedPlatforms.add(PlatformIdentifier.JVM_STUBS)
         return if (project.enableJvm()) {
-            kotlinExtension.androidTarget {
+            kotlinExtension.jvm("jvmStubs") {
                 block?.execute(this)
+                project.tasks.named("jvmStubsTest").configure {
+                    // don't try running common tests for stubs target if disabled
+                    it.enabled = runTests
+                }
             }
-        } else { null }
+        } else {
+            null
+        }
     }
 
     @JvmOverloads
-    fun desktop(
-        block: Action<KotlinJvmTarget>? = null
-    ): KotlinJvmTarget? {
-        requestedPlatforms.add(PlatformIdentifier.DESKTOP)
+    fun androidNative(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
+        return listOfNotNull(
+            androidNativeX86(block),
+            androidNativeX64(block),
+            androidNativeArm64(block),
+            androidNativeArm32(block),
+        )
+    }
+
+    @JvmOverloads
+    fun androidNativeX86(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.ANDROID_NATIVE_X86)
+        return if (project.enableAndroidNative()) {
+            kotlinExtension.androidNativeX86 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun androidNativeX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.ANDROID_NATIVE_X64)
+        return if (project.enableAndroidNative()) {
+            kotlinExtension.androidNativeX64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun androidNativeArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.ANDROID_NATIVE_ARM64)
+        return if (project.enableAndroidNative()) {
+            kotlinExtension.androidNativeArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun androidNativeArm32(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.ANDROID_NATIVE_ARM32)
+        return if (project.enableAndroidNative()) {
+            kotlinExtension.androidNativeArm32 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun androidLibrary(
+        block: Action<KotlinMultiplatformAndroidLibraryTarget>? = null
+    ): KotlinMultiplatformAndroidLibraryTarget? {
+        supportedPlatforms.add(PlatformIdentifier.ANDROID)
+        return if (project.enableJvm()) {
+            agpKmpExtension.also { block?.execute(it) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun desktop(block: Action<KotlinJvmTarget>? = null): KotlinJvmTarget? {
+        supportedPlatforms.add(PlatformIdentifier.DESKTOP)
         return if (project.enableDesktop()) {
-            kotlinExtension.jvm("desktop") {
+            kotlinExtension.jvm("desktop") { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun mingwX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTargetWithHostTests? {
+        supportedPlatforms.add(PlatformIdentifier.MINGW_X_64)
+        return if (project.enableWindows()) {
+            kotlinExtension.mingwX64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    /** Configures all mac targets supported by AndroidX. */
+    @JvmOverloads
+    fun mac(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
+        return listOfNotNull(macosX64(block), macosArm64(block))
+    }
+
+    @JvmOverloads
+    fun macosX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTargetWithHostTests? {
+        supportedPlatforms.add(PlatformIdentifier.MAC_OSX_64)
+        return if (project.enableMac()) {
+            kotlinExtension.macosX64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun macosArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTargetWithHostTests? {
+        supportedPlatforms.add(PlatformIdentifier.MAC_ARM_64)
+        return if (project.enableMac()) {
+            kotlinExtension.macosArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    /** Configures all ios targets supported by AndroidX. */
+    @JvmOverloads
+    fun ios(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
+        return listOfNotNull(iosX64(block), iosArm64(block), iosSimulatorArm64(block))
+    }
+
+    @JvmOverloads
+    fun iosArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.IOS_ARM_64)
+        return if (project.enableMac()) {
+            kotlinExtension.iosArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun iosX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.IOS_X_64)
+        return if (project.enableMac()) {
+            kotlinExtension.iosX64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun iosSimulatorArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.IOS_SIMULATOR_ARM_64)
+        return if (project.enableMac()) {
+            kotlinExtension.iosSimulatorArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    /** Configures all watchos targets supported by AndroidX. */
+    @JvmOverloads
+    fun watchos(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
+        return listOfNotNull(
+            watchosX64(block),
+            watchosArm32(block),
+            watchosArm64(block),
+            watchosDeviceArm64(block),
+            watchosSimulatorArm64(block),
+        )
+    }
+
+    @JvmOverloads
+    fun watchosArm32(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.WATCHOS_ARM_32)
+        return if (project.enableMac()) {
+            kotlinExtension.watchosArm32 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun watchosArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.WATCHOS_ARM_64)
+        return if (project.enableMac()) {
+            kotlinExtension.watchosArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun watchosDeviceArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.WATCHOS_DEVICE_ARM_64)
+        return if (project.enableMac()) {
+            kotlinExtension.watchosDeviceArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun watchosX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.WATCHOS_X_64)
+        return if (project.enableMac()) {
+            kotlinExtension.watchosX64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun watchosSimulatorArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.WATCHOS_SIMULATOR_ARM_64)
+        return if (project.enableMac()) {
+            kotlinExtension.watchosSimulatorArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    /** Configures all tvos targets supported by AndroidX. */
+    @JvmOverloads
+    fun tvos(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
+        return listOfNotNull(tvosX64(block), tvosArm64(block), tvosSimulatorArm64(block))
+    }
+
+    @JvmOverloads
+    fun tvosArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.TVOS_ARM_64)
+        return if (project.enableMac()) {
+            kotlinExtension.tvosArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun tvosX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.TVOS_X_64)
+        return if (project.enableMac()) {
+            kotlinExtension.tvosX64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun tvosSimulatorArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.TVOS_SIMULATOR_ARM_64)
+        return if (project.enableMac()) {
+            kotlinExtension.tvosSimulatorArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun linux(block: Action<KotlinNativeTarget>? = null): List<KotlinNativeTarget> {
+        return listOfNotNull(linuxArm64(block), linuxX64(block))
+    }
+
+    @JvmOverloads
+    fun linuxArm64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.LINUX_ARM_64)
+        return if (project.enableLinux()) {
+            kotlinExtension.linuxArm64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun linuxX64(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.LINUX_X_64)
+        return if (project.enableLinux()) {
+            kotlinExtension.linuxX64 { block?.execute(this) }
+        } else {
+            null
+        }
+    }
+
+    @JvmOverloads
+    fun linuxX64Stubs(block: Action<KotlinNativeTarget>? = null): KotlinNativeTarget? {
+        supportedPlatforms.add(PlatformIdentifier.LINUX_X_64_STUBS)
+        return if (project.enableLinux()) {
+            kotlinExtension.linuxX64("linuxx64Stubs") {
                 block?.execute(this)
-            }
-        } else { null }
-    }
-
-    /**
-     * Configures all mac targets supported by AndroidX.
-     */
-    @JvmOverloads
-    fun mac(
-        block: Action<KotlinNativeTarget>? = null
-    ): List<KotlinNativeTarget> {
-        return listOfNotNull(
-            macosX64(block),
-            macosArm64(block)
-        )
-    }
-
-    @JvmOverloads
-    fun macosX64(
-        block: Action<KotlinNativeTarget>? = null
-    ): KotlinNativeTargetWithHostTests? {
-        requestedPlatforms.add(PlatformIdentifier.MAC_OSX_64)
-        return if (project.enableMac()) {
-            kotlinExtension.macosX64().also {
-                block?.execute(it)
-            }
-        } else { null }
-    }
-
-    @JvmOverloads
-    fun macosArm64(
-        block: Action<KotlinNativeTarget>? = null
-    ): KotlinNativeTargetWithHostTests? {
-        requestedPlatforms.add(PlatformIdentifier.MAC_ARM_64)
-        return if (project.enableMac()) {
-            kotlinExtension.macosArm64().also {
-                block?.execute(it)
-            }
-        } else { null }
-    }
-
-    @JvmOverloads
-    fun iosArm64(
-        block: Action<KotlinNativeTarget>? = null
-    ): KotlinNativeTarget? {
-        requestedPlatforms.add(PlatformIdentifier.IOS_ARM_64)
-        return if (project.enableMac()) {
-            kotlinExtension.iosArm64().also {
-                block?.execute(it)
-            }
-        } else { null }
-    }
-
-    /**
-     * Configures all ios targets supported by AndroidX.
-     */
-    @JvmOverloads
-    fun ios(
-        block: Action<KotlinNativeTarget>? = null
-    ): List<KotlinNativeTarget> {
-        return listOfNotNull(
-            iosX64(block),
-            iosArm64(block),
-            iosSimulatorArm64(block)
-        )
-    }
-    @JvmOverloads
-    fun iosX64(
-        block: Action<KotlinNativeTarget>? = null
-    ): KotlinNativeTarget? {
-        requestedPlatforms.add(PlatformIdentifier.IOS_X_64)
-        return if (project.enableMac()) {
-            kotlinExtension.iosX64().also {
-                block?.execute(it)
-            }
-        } else { null }
-    }
-
-    @JvmOverloads
-    fun iosSimulatorArm64(
-        block: Action<KotlinNativeTarget>? = null
-    ): KotlinNativeTarget? {
-        requestedPlatforms.add(PlatformIdentifier.IOS_SIMULATOR_ARM_64)
-        return if (project.enableMac()) {
-            kotlinExtension.iosSimulatorArm64().also {
-                block?.execute(it)
-            }
-        } else { null }
-    }
-
-    @JvmOverloads
-    fun linux(
-        block: Action<KotlinNativeTarget>? = null
-    ): List<KotlinNativeTarget> {
-        return listOfNotNull(
-            linuxX64(block),
-            linuxArm64(block),
-        )
-    }
-
-    @JvmOverloads
-    fun linuxX64(
-        block: Action<KotlinNativeTarget>? = null
-    ): KotlinNativeTargetWithHostTests? {
-        requestedPlatforms.add(PlatformIdentifier.LINUX_64)
-        return if (project.enableLinux()) {
-            kotlinExtension.linuxX64().also {
-                block?.execute(it)
-            }
-        } else { null }
-    }
-
-    @JvmOverloads
-    fun linuxArm64(
-        block: Action<KotlinNativeTarget>? = null
-    ): KotlinNativeTarget? {
-        requestedPlatforms.add(PlatformIdentifier.LINUX_ARM_64)
-        return if (project.enableLinux()) {
-            kotlinExtension.linuxArm64().also {
-                block?.execute(it)
-            }
-        } else { null }
-    }
-
-    @JvmOverloads
-    fun js(
-        block: Action<KotlinJsBrowserDsl>? = null
-    ): KotlinJsTargetDsl? {
-        requestedPlatforms.add(PlatformIdentifier.JS)
-        return if (project.enableJs()) {
-            kotlinExtension.js().also {
-                project.configurePinnedKotlinLibraries(PlatformIdentifier.JS)
-                it.browser {
-                    block?.execute(this)
+                project.tasks.named("linuxx64StubsTest").configure {
+                    // don't try running common tests for stubs target
+                    it.enabled = false
                 }
             }
         } else {
@@ -308,29 +706,238 @@ open class AndroidXMultiplatformExtension(val project: Project) {
         }
     }
 
-    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
     @JvmOverloads
-    fun wasm(
-        block: Action<KotlinJsBrowserDsl>? = null
-    ): KotlinJsTargetDsl? {
-        requestedPlatforms.add(PlatformIdentifier.WASM_JS)
-        return if (project.enableWasm()) {
-            kotlinExtension.wasmJs().also {
-                project.configurePinnedKotlinLibraries(PlatformIdentifier.WASM_JS)
-                it.browser {
-                    block?.execute(this)
-                }
+    fun js(block: Action<KotlinJsTargetDsl>? = null): KotlinJsTargetDsl? =
+        project.configureWebTarget(
+            platform = PlatformIdentifier.JS,
+            isEnabled = project.enableJs(),
+            createTarget = { configure -> kotlinExtension.js(configure) },
+            block = block,
+        )
+
+    @OptIn(ExperimentalWasmDsl::class)
+    @JvmOverloads
+    fun wasmJs(block: Action<KotlinJsTargetDsl>? = null): KotlinWasmTargetDsl? =
+        project.configureWebTarget(
+            platform = PlatformIdentifier.WASM_JS,
+            isEnabled = project.enableWasmJs(),
+            createTarget = { configure -> kotlinExtension.wasmJs(configure) },
+            block = block,
+        )
+
+    // TODO(buildSrc) web configuration changed temporary
+    private val toml = Toml.parse(
+        project.rootProject.projectDir.resolve("gradle/libs.versions.toml").toPath()
+    )
+    private val skikoVersion = toml.getTable("versions")!!.getString("skiko")!!
+    private val skikoWasm = project.configurations.findByName("skikoWasm")
+        ?: project.configurations.create("skikoWasm")
+
+    private fun KotlinJsTest.passTestFlagsToEnvironment() {
+        listOf(
+            "jetbrains.androidx.web.tests.enableChrome",
+            "jetbrains.androidx.web.tests.enableChromium",
+            "jetbrains.androidx.web.tests.enableFirefox",
+            "jetbrains.androidx.web.tests.enableSafari",
+        ).forEach { propertyName ->
+            if (project.findProperty(propertyName)?.toString()?.toBoolean() == true) {
+                environment(propertyName, "1")
             }
-        } else {
-            null
         }
     }
+
+    private fun <T> Project.configureWebTarget(
+        platform: PlatformIdentifier,
+        isEnabled: Boolean,
+        createTarget: (KotlinJsTargetDsl.() -> Unit) -> T,
+        block: Action<KotlinJsTargetDsl>? = null,
+    ): T? {
+        if (buildFeatures.isIsolatedProjectsEnabled()) return null
+        supportedPlatforms.add(platform)
+        return if (isEnabled) {
+            val target = createTarget {
+                block?.execute(this)
+                binaries.library()
+                browser {
+                    testTask {
+                        // We need to set up at least one browser here due to kotlin tooling limitations
+                        // Actual browser configuration is set in mpp/karma.config.d/js/config.js
+                        it.passTestFlagsToEnvironment()
+                        it.useKarma {
+                            useChrome()
+                            useFirefox()
+                            useSafari()
+                            useConfigDirectory(
+                                project.rootProject.projectDir.resolve(
+                                    if (platform == PlatformIdentifier.JS) {
+                                        "mpp/karma.config.d/js"
+                                    } else {
+                                        "mpp/karma.config.d/wasm"
+                                    }
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (platform == PlatformIdentifier.JS) {
+                val resourcesDir = project.layout.buildDirectory.asFile.get().resolve("resources/skiko-js")
+
+                // Below code helps configure the tests for k/wasm targets
+                project.dependencies {
+                    skikoWasm("org.jetbrains.skiko:skiko-js-wasm-runtime:${skikoVersion}")
+                }
+
+                val fetchSkikoWasmRuntime = project.tasks.register("fetchSkikoJsWasmRuntime", Copy::class.java) {
+                    it.destinationDir = project.file(resourcesDir)
+                    it.from(skikoWasm.map { artifact ->
+                        project.zipTree(artifact)
+                            .matching { pattern ->
+                                pattern.include("skiko.wasm", "skiko.mjs", "js-reexport-symbols.mjs")
+                            }
+                    })
+                }
+
+                project.tasks.getByName("jsTestProcessResources").apply {
+                    dependsOn(fetchSkikoWasmRuntime)
+                }
+
+                kotlinExtension.sourceSets.getByName("jsTest").also {
+                    it.resources.setSrcDirs(it.resources.srcDirs)
+                    it.resources.srcDirs(fetchSkikoWasmRuntime.map { it.destinationDir })
+                }
+            } else {
+                val resourcesDir = project.layout.buildDirectory.asFile.get().resolve("resources/skiko-wasm")
+
+                // Below code helps configure the tests for k/wasm targets
+                project.dependencies {
+                    skikoWasm("org.jetbrains.skiko:skiko-js-wasm-runtime:${skikoVersion}")
+                }
+
+                val fetchSkikoWasmRuntime = project.tasks.register("fetchSkikoWasmRuntime", Copy::class.java) {
+                    it.destinationDir = project.file(resourcesDir)
+                    it.from(skikoWasm.map { artifact ->
+                        project.zipTree(artifact)
+                            .matching { pattern ->
+                                pattern.include("skiko.wasm", "skiko.mjs")
+                            }
+                    })
+                }
+
+                project.tasks.getByName("wasmJsTestProcessResources").apply {
+                    dependsOn(fetchSkikoWasmRuntime)
+                }
+
+                kotlinExtension.sourceSets.getByName("wasmJsTest").also {
+                    it.resources.setSrcDirs(it.resources.srcDirs)
+                    it.resources.srcDirs(fetchSkikoWasmRuntime.map { it.destinationDir })
+                }
+            }
+
+            target
+        } else null
+    }
+
+    /** Locates a project by path. */
+    // This method is needed for Gradle project isolation to avoid calls to parent projects due to
+    // androidx { samples(project(":foo")) }
+    // Without this method, the call above results into a call to the parent object, because
+    // AndroidXExtension has `val project: Project`, which from groovy `project` call within
+    // `androidx` block tries retrieves that project object and calls to look for :foo property
+    // on it, then checking all the parents for it.
+    fun project(name: String): Project = project.project(name)
 
     companion object {
         const val EXTENSION_NAME = "androidXMultiplatform"
     }
 }
 
+// TODO(https://youtrack.jetbrains.com/issue/KT-76874/):
+// Remove this function when the default destinationDirectory is different for each task
+private fun Project.configureDefaultIncrementalSyncTask() {
+    val destinationPaths =
+        mapOf(
+            "jsDevelopmentLibraryCompileSync" to "js/packages/js/dev/kotlin",
+            "jsProductionLibraryCompileSync" to "js/packages/js/prod/kotlin",
+            "jsTestTestDevelopmentExecutableCompileSync" to "js/packages/js-test/dev/kotlin",
+            "jsTestTestProductionExecutableCompileSync" to "js/packages/js-test/prod/kotlin",
+            "wasmJsDevelopmentLibraryCompileSync" to "js/packages/wasm-js/dev/kotlin",
+            "wasmJsProductionLibraryCompileSync" to "js/packages/wasm-js/prod/kotlin",
+            "wasmJsTestTestDevelopmentExecutableCompileSync" to
+                "js/packages/wasm-js-test/dev/kotlin",
+            "wasmJsTestTestProductionExecutableCompileSync" to
+                "js/packages/wasm-js-test/prod/kotlin",
+        )
+
+    tasks.withType(DefaultIncrementalSyncTask::class.java).configureEach { task ->
+        val relativePath =
+            destinationPaths[task.name]
+                ?: throw IllegalArgumentException(
+                    "No destination path configured for incremental‑sync task '${task.name}'"
+                )
+        task.destinationDirectory.set(file(layout.buildDirectory.dir(relativePath)))
+    }
+}
+
+internal fun Project.configureNode() {
+    val nodeJsPrebuilt =
+        File(project.getPrebuiltsRoot(), "androidx/external/org/nodejs/node").toURI().toString()
+
+    plugins.withType<WasmNodeJsPlugin>().configureEach {
+        the<WasmNodeJsEnvSpec>().let {
+            it.version.set(getVersionByName("node"))
+            if (!ProjectLayoutType.isPlayground(this)) {
+                it.downloadBaseUrl.set(nodeJsPrebuilt)
+            }
+        }
+    }
+    plugins.withType<NodeJsPlugin>().configureEach {
+        the<NodeJsEnvSpec>().let {
+            it.version.set(getVersionByName("node"))
+            if (!ProjectLayoutType.isPlayground(this)) {
+                it.downloadBaseUrl.set(nodeJsPrebuilt)
+            }
+        }
+    }
+
+    if (!ProjectLayoutType.isPlayground(this)) {
+        val javascriptPrebuiltsRoot =
+            File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
+
+        plugins.withType<WasmYarnPlugin>().configureEach {
+            the<WasmYarnRootEnvSpec>().let {
+                it.version.set(getVersionByName("yarn"))
+                it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
+                it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
+            }
+        }
+
+        plugins.withType<YarnPlugin>().configureEach {
+            the<YarnRootEnvSpec>().let {
+                it.version.set(getVersionByName("yarn"))
+                it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
+                it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalWasmDsl::class)
+private fun Project.configureBinaryen() {
+    if (ProjectLayoutType.isPlayground(project)) {
+        return
+    }
+    plugins.withType<BinaryenPlugin>().configureEach {
+        the<BinaryenEnvSpec>()
+            .downloadBaseUrl
+            .set(
+                File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin/binaryen")
+                    .toURI()
+                    .toString()
+            )
+    }
+}
 
 internal fun Project.configurePinnedKotlinLibraries(platform: PlatformIdentifier) {
     multiplatformExtension?.let {
@@ -351,21 +958,42 @@ internal fun Project.configurePinnedKotlinLibraries(platform: PlatformIdentifier
     }
 }
 
-/**
- * Returns a provider that is set to true if and only if this project has at least 1 kotlin native
- * target (mac, linux, ios).
- */
-internal fun Project.hasKotlinNativeTarget() = project.provider {
-    project.extensions.getByType(AndroidXMultiplatformExtension::class.java).hasNativeTarget()
+private fun Project.configureKotlinJsTests() {
+    tasks.withType(KotlinJsTest::class.java).configureEach { task ->
+        if (!ProjectLayoutType.isPlayground(this)) {
+            val unzipChromeBuildServiceProvider =
+                gradle.sharedServices.registrations.getByName("unzipChrome").service
+            task.usesService(unzipChromeBuildServiceProvider)
+            // Remove doFirst and switch to FileProperty property to set browser path when issue
+            // https://youtrack.jetbrains.com/issue/KT-72514 is resolved
+            task.doFirst {
+                task.environment(
+                    "CHROME_BIN",
+                    (unzipChromeBuildServiceProvider.get() as UnzipChromeBuildService).chromePath,
+                )
+            }
+        }
+        // From: https://nodejs.org/api/cli.html
+        task.nodeJsArgs.addAll(listOf("--trace-warnings", "--trace-uncaught", "--trace-sigint"))
+    }
+
+    // Compiler Arg needed for tests only: https://youtrack.jetbrains.com/issue/KT-59081
+    tasks.withType(Kotlin2JsCompile::class.java).configureEach { task ->
+        if (task.name.lowercase().contains("test")) {
+            task.compilerOptions.freeCompilerArgs.add("-Xwasm-enable-array-range-checks")
+        }
+    }
 }
 
 fun Project.validatePublishedMultiplatformHasDefault() {
     val extension = project.extensions.getByType(AndroidXMultiplatformExtension::class.java)
-    if (extension.defaultPlatform == null && extension.requestedPlatforms.isNotEmpty()) {
-        throw GradleException("Project is published and multiple platforms are requested. You " +
-            "must explicitly specify androidXMultiplatform.defaultPlatform as one of: " +
-            extension.targetPlatforms.joinToString(", ") {
-                "PlatformIdentifier.${PlatformIdentifier.fromId(it)!!.name}"
-            })
+    if (extension.defaultPlatform == null && extension.supportedPlatforms.isNotEmpty()) {
+        throw GradleException(
+            "Project is published and multiple platforms are requested. You " +
+                "must explicitly specify androidXMultiplatform.defaultPlatform as one of: " +
+                extension.targetPlatforms.joinToString(", ") {
+                    "PlatformIdentifier.${PlatformIdentifier.fromId(it)!!.name}"
+                }
+        )
     }
 }

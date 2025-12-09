@@ -6,9 +6,8 @@
  * modifying its settings.
  */
 import androidx.build.PlatformIdentifier
-import androidx.build.Publish
+import androidx.build.SoftwareType
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.gradle.plugin.mpp.BitcodeEmbeddingMode
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFrameworkConfig
 
 plugins {
@@ -20,8 +19,6 @@ androidXMultiplatform {
     ios {
         binaries.framework {
             baseName = "AndroidXDarwinBenchmarks"
-            // https://youtrack.jetbrains.com/issue/KT-48552
-            embedBitcode = BitcodeEmbeddingMode.DISABLE
             xcf.add(it)
         }
     }
@@ -34,14 +31,12 @@ androidXMultiplatform {
         darwinMain {
             dependsOn(commonMain)
             dependencies {
-                api(libs.kotlinStdlib)
             }
         }
         darwinTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.kotlinTest)
-                implementation(libs.kotlinTestAnnotationsCommon)
             }
         }
         iosMain {
@@ -87,5 +82,5 @@ androidx {
     name = "Benchmarks - Darwin"
     inceptionYear = "2022"
     description = "AndroidX Benchmarks - Darwin"
-    publish = Publish.SNAPSHOT_ONLY
+    type = SoftwareType.SNAPSHOT_ONLY_LIBRARY
 }

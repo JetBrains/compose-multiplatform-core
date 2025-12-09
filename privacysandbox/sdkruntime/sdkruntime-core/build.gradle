@@ -21,21 +21,20 @@
  * Please use that script when creating a new project, rather than copying an existing project and
  * modifying its settings.
  */
-import androidx.build.LibraryType
+import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
-    api("androidx.annotation:annotation:1.6.0")
+    api("androidx.annotation:annotation:1.8.2")
 
-    implementation("androidx.core:core:1.12.0")
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.activity:activity:1.8.0")
+    implementation("androidx.core:core:1.15.0")
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.activity:activity:1.9.3")
 
     // TODO(b/249982004): cleanup dependencies
     androidTestImplementation(libs.testCore)
@@ -45,26 +44,24 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.junit)
 
-    androidTestImplementation(libs.mockitoCore, excludes.bytebuddy) // DexMaker has it"s own MockMaker
-    androidTestImplementation(libs.dexmakerMockitoInline, excludes.bytebuddy) // DexMaker has it"s own MockMaker
+    androidTestImplementation(libs.mockitoCore)
+    androidTestImplementation(libs.dexmakerMockitoInline)
 }
 
 android {
-    lintOptions {
+    lint {
         // All components could be loaded from another app via client library
-        disable("BanKeepAnnotation")
+        disable.add("BanKeepAnnotation")
     }
 
-    namespace "androidx.privacysandbox.sdkruntime.core"
-    compileSdk = 34
-    compileSdkExtension = 10
+    namespace = "androidx.privacysandbox.sdkruntime.core"
+    compileSdk = 35
+    compileSdkExtension = 14
 }
 
 androidx {
     name = "SdkRuntime Core"
-    type = LibraryType.PUBLISHED_LIBRARY
+    type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2022"
     description = "Provides shared components for SdkRuntime libraries"
-    metalavaK2UastEnabled = true
-    legacyDisableKotlinStrictApiMode = true
 }

@@ -45,9 +45,7 @@ public class TestUtil {
 
     // Run shell command.
     private void runShellCommand(String command) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            mInstrumentation.getUiAutomation().executeShellCommand(command);
-        }
+        mInstrumentation.getUiAutomation().executeShellCommand(command);
     }
 
     public void overrideKillSwitches(boolean override) {
@@ -87,6 +85,12 @@ public class TestUtil {
         String overrideStr = override ? "true" : "null";
         // This flag is only read through system property and not DeviceConfig
         runShellCommand("setprop debug.adservices.consent_manager_debug_mode " + overrideStr);
+    }
+
+    public void overrideConsentNotificationDebugMode(boolean override) {
+        String overrideStr = override ? "true" : "null";
+        // This flag is only read through system property and not DeviceConfig
+        runShellCommand("setprop debug.adservices.consent_notification_debug_mode " + overrideStr);
     }
 
     public void overrideAllowlists(boolean override) {
