@@ -23,6 +23,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.viewinterop.*
+import androidx.compose.ui.viewinterop.HtmlElementView
 import kotlinx.browser.document
 import org.w3c.dom.HTMLDivElement
 
@@ -30,16 +31,15 @@ import org.w3c.dom.HTMLDivElement
 @OptIn(ExperimentalComposeUiApi::class)
 internal actual fun TestInteropView(modifier: Modifier, color: Color) {
     val cssColorValue = remember(color) { color.toCssValue() }
-    WebElementView(
-        modifier = modifier,
+    HtmlElementView(
         factory = {
             (document.createElement("div") as HTMLDivElement).apply {
                 style.apply {
                     background = cssColorValue
                 }
             }
-        }
-    )
+        },
+        modifier = modifier)
 }
 
 private fun Color.toCssValue(): String {

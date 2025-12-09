@@ -49,7 +49,7 @@ class WebInteropTest : OnCanvasTests {
 
         createComposeWindow {
             if (!showDiv.value) return@createComposeWindow
-            WebElementView(
+            HtmlElementView(
                 modifier = Modifier.size(50.dp),
                 factory = {
                     (document.createElement("div") as HTMLDivElement).apply {
@@ -181,13 +181,13 @@ class WebInteropTest : OnCanvasTests {
 
 @Composable
 internal fun TestInteropView(modifier: Modifier, id: String) {
-    WebElementView(
+    HtmlElementView(
         modifier = modifier,
         factory = {
             (document.createElement("div") as HTMLDivElement).apply {
                 this.id = id
-                this.innerText = id
-                this.style.apply {
+                innerText = id
+                style.apply {
                     backgroundColor = "gray"
                 }
             }

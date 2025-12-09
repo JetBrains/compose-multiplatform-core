@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.WebElementView
+import androidx.compose.ui.viewinterop.HtmlElementView
 import kotlinx.browser.document
 import org.w3c.dom.HTMLDivElement
 
@@ -71,8 +71,9 @@ fun LazyDirections() {
                                 ,
                                 contentAlignment = Alignment.Center
                             ) {
-                                WebElementView(
-                                    modifier = Modifier.size(50.dp).background(Color.Yellow).padding(5.dp),
+                                HtmlElementView(
+                                    modifier = Modifier.size(50.dp).background(Color.Yellow)
+                                        .padding(5.dp),
                                     factory = {
                                         (document.createElement("div") as HTMLDivElement).apply {
                                             innerText = elementId
