@@ -72,8 +72,7 @@ fun LazyDirections() {
                                 contentAlignment = Alignment.Center
                             ) {
                                 HtmlElementView(
-                                    modifier = Modifier.size(50.dp).background(Color.Yellow)
-                                        .padding(5.dp),
+                                    modifier = Modifier.size(50.dp).background(Color.Yellow).padding(5.dp),
                                     factory = {
                                         (document.createElement("div") as HTMLDivElement).apply {
                                             innerText = elementId
