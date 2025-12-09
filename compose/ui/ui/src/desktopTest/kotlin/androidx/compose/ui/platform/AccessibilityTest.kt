@@ -28,11 +28,17 @@ import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.Tab
 import androidx.compose.material.TabRow
 import androidx.compose.material.Text
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.assertThat
+import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.isEqualTo
 import androidx.compose.ui.platform.a11y.AccessibilityController
 import androidx.compose.ui.platform.a11y.ComposeAccessible
@@ -62,9 +68,14 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.runApplicationTest
 import java.awt.Point
+import java.awt.event.HierarchyEvent
+import java.awt.event.HierarchyListener
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import javax.accessibility.Accessible
 import javax.accessibility.AccessibleComponent
 import javax.accessibility.AccessibleContext
+import javax.accessibility.AccessibleContext.ACCESSIBLE_STATE_PROPERTY
 import javax.accessibility.AccessibleRole
 import javax.accessibility.AccessibleState
 import javax.accessibility.AccessibleText
@@ -75,6 +86,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -521,6 +533,42 @@ class AccessibilityTest {
             child = parent
         }
         assertEquals(window, child)
+    }
+
+    @Test
+    fun initiallyFocusedElementFiresFocusedPropertyEvent() = runApplicationTest {
+        val deferredWindow = CompletableDeferred<ComposeWindow>()
+        launchTestWindowApplication {
+            val focusRequester = remember { FocusRequester() }
+            TextField(rememberTextFieldState("text"), Modifier.focusRequester(focusRequester))
+            LaunchedEffect(Unit) { focusRequester.requestFocus() }
+            LaunchedEffect(Unit) { deferredWindow.complete(this@launchTestWindowApplication.window) }
+        }
+
+        val window = deferredWindow.await()
+        var textFieldHasFocus = false
+        window.addHierarchyListener(object : HierarchyListener {
+            override fun hierarchyChanged(e: HierarchyEvent?) {
+                if (window.isDisplayable) {
+                    val textFieldAccessible = window.findAccessibleNamed("text")!!
+                    println("Registering property change listener on ${textFieldAccessible.accessibleContext}")
+                    textFieldAccessible.accessibleContext.addPropertyChangeListener { evt ->
+                        if (evt.propertyName == ACCESSIBLE_STATE_PROPERTY) {
+                            if (evt.newValue == AccessibleState.FOCUSED) {
+                                textFieldHasFocus = true
+                            } else if (evt.oldValue == AccessibleState.FOCUSED) {
+                                textFieldHasFocus = false
+                            }
+                        }
+                    }
+                    window.removeHierarchyListener(this)
+                }
+            }
+        })
+
+        awaitIdle()
+
+        assertTrue(textFieldHasFocus)
     }
 }
 

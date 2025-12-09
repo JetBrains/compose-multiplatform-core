@@ -19,6 +19,7 @@ package androidx.compose.ui.platform.a11y
 import androidx.collection.mutableScatterMapOf
 import androidx.compose.ui.platform.PlatformComponent
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsOwner
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -33,6 +34,7 @@ import javax.accessibility.AccessibleContext.ACCESSIBLE_STATE_PROPERTY
 import javax.accessibility.AccessibleContext.ACCESSIBLE_TEXT_PROPERTY
 import javax.accessibility.AccessibleContext.ACCESSIBLE_VALUE_PROPERTY
 import javax.accessibility.AccessibleState
+import javax.swing.SwingUtilities
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CoroutineScope
@@ -89,8 +91,38 @@ internal class AccessibilityController(
     /**
      * Invoked when a new [ComposeAccessible] is created.
      */
-    @Suppress("UNUSED_PARAMETER")
-    private fun onNodeAdded(accessible: ComposeAccessible) {}
+    private fun onNodeAdded(accessible: ComposeAccessible) {
+        for (entry in accessible.semanticsNode.config) {
+            when (entry.key) {
+                SemanticsProperties.Focused -> {
+                    if (entry.value as Boolean) {
+                        invokeLaterOnAccessible(accessible.semanticsNode.id) { accessible, config ->
+                            // Check that it's still focused
+                            if (config.getOrNull(SemanticsProperties.Focused) == true) {
+                                notifyOnFocusReceived(accessible)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Invoke [action] on the next EDT iteration, if the node still exists then.
+     *
+     * This is needed when firing property change events on newly created nodes because [syncNodes],
+     * and consequently [onNodeAdded], can be called as the result of the accessibility system
+     * trying to obtain the [Accessible]. If we fire the event directly in [onNodeAdded], it will
+     * fire before the system had a chance to register the property listener to the event.
+     */
+    private fun invokeLaterOnAccessible(
+        nodeId: Int,
+        action: (ComposeAccessible, SemanticsConfiguration) -> Unit
+    ) = SwingUtilities.invokeLater {
+        val accessible = accessibleByNodeId(nodeId) ?: return@invokeLater
+        action(accessible, accessible.semanticsNode.config)
+    }
 
     /**
      * Invoked when a [ComposeAccessible] is removed.
@@ -103,11 +135,11 @@ internal class AccessibilityController(
      * Invoked when the [SemanticsNode] a [ComposeAccessible] represents changes.
      */
     private fun onNodeChanged(
-        component: ComposeAccessible,
+        accessible: ComposeAccessible,
         previousSemanticsNode: SemanticsNode,
         newSemanticsNode: SemanticsNode
     ) {
-        val accessibleContext by lazy { component.composeAccessibleContext }
+        val accessibleContext by lazy { accessible.composeAccessibleContext }
         for (entry in newSemanticsNode.config) {
             val prev = previousSemanticsNode.config.getOrNull(entry.key)
             if (entry.value != prev) {
@@ -157,13 +189,9 @@ internal class AccessibilityController(
 
                     SemanticsProperties.Focused ->
                         if (entry.value as Boolean) {
-                            component.composeAccessibleContext.firePropertyChange(
-                                ACCESSIBLE_STATE_PROPERTY,
-                                null, AccessibleState.FOCUSED
-                            )
-                            onFocusReceived(component)
+                            notifyOnFocusReceived(accessible)
                         } else {
-                            component.composeAccessibleContext.firePropertyChange(
+                            accessibleContext.firePropertyChange(
                                 ACCESSIBLE_STATE_PROPERTY,
                                 AccessibleState.FOCUSED, null
                             )
@@ -172,13 +200,13 @@ internal class AccessibilityController(
                     SemanticsProperties.ToggleableState -> {
                         when (entry.value as ToggleableState) {
                             ToggleableState.On ->
-                                component.composeAccessibleContext.firePropertyChange(
+                                accessibleContext.firePropertyChange(
                                     ACCESSIBLE_STATE_PROPERTY,
                                     null, AccessibleState.CHECKED
                                 )
 
                             ToggleableState.Off, ToggleableState.Indeterminate ->
-                                component.composeAccessibleContext.firePropertyChange(
+                                accessibleContext.firePropertyChange(
                                     ACCESSIBLE_STATE_PROPERTY,
                                     AccessibleState.CHECKED, null
                                 )
@@ -187,7 +215,7 @@ internal class AccessibilityController(
 
                     SemanticsProperties.ProgressBarRangeInfo -> {
                         val value = entry.value as ProgressBarRangeInfo
-                        component.composeAccessibleContext.firePropertyChange(
+                        accessibleContext.firePropertyChange(
                             ACCESSIBLE_VALUE_PROPERTY,
                             (prev as? ProgressBarRangeInfo)?.current,
                             value.current
@@ -196,6 +224,17 @@ internal class AccessibilityController(
                 }
             }
         }
+    }
+
+    /**
+     * Notifies the system when the given accessible becomes focused.
+     */
+    private fun notifyOnFocusReceived(accessible: ComposeAccessible) {
+        accessible.accessibleContext?.firePropertyChange(
+            ACCESSIBLE_STATE_PROPERTY,
+            null, AccessibleState.FOCUSED
+        )
+        onFocusReceived(accessible)
     }
 
     /**
