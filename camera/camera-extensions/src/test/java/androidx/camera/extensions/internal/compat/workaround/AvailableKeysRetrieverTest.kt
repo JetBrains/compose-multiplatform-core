@@ -39,7 +39,7 @@ import org.robolectric.util.ReflectionHelpers
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
+    sdk = [Config.ALL_SDKS],
     instrumentedPackages = arrayOf("androidx.camera.extensions.internal"),
 )
 class AvailableKeysRetrieverTest {

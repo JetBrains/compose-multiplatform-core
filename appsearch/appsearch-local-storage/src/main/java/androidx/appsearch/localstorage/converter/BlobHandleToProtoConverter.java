@@ -19,7 +19,6 @@ package androidx.appsearch.localstorage.converter;
 
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchBlobHandle;
-import androidx.appsearch.app.ExperimentalAppSearchApi;
 import androidx.appsearch.exceptions.AppSearchException;
 import androidx.appsearch.localstorage.util.PrefixUtil;
 
@@ -34,7 +33,6 @@ import org.jspecify.annotations.NonNull;
  * @exportToFramework:hide
  */
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-@ExperimentalAppSearchApi
 public final class BlobHandleToProtoConverter {
     private BlobHandleToProtoConverter() {}
 

@@ -47,6 +47,7 @@ androidXMultiplatform {
             )
         }
     }
+    wasmJs()
 
     defaultPlatform(PlatformIdentifier.JVM)
 
@@ -57,7 +58,6 @@ androidXMultiplatform {
 
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api(libs.okio)
                 api(project(":datastore:datastore-core"))
                 api(project(":datastore:datastore-core-okio"))
@@ -65,9 +65,7 @@ androidXMultiplatform {
         }
         commonTest {
             dependencies {
-                implementation(libs.kotlinTestCommon)
                 implementation(libs.kotlinTest)
-                implementation(libs.kotlinTestAnnotationsCommon)
                 implementation(libs.kotlinCoroutinesTest)
                 implementation(project(":datastore:datastore-core"))
                 implementation(project(":kruth:kruth"))
@@ -86,8 +84,13 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmAndroidMain)
         }
-        jvmAndroidTest {
+
+        nonWebCommonTest {
             dependsOn(commonTest)
+        }
+
+        jvmAndroidTest {
+            dependsOn(nonWebCommonTest)
             dependencies {
                 implementation(libs.junit)
             }
@@ -99,18 +102,30 @@ androidXMultiplatform {
                 implementation(libs.kotlinSerializationProtobuf)
             }
         }
+
+        wasmJsMain {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.kotlinSerializationJson)
+                implementation("org.jetbrains.kotlinx:kotlinx-browser:0.3")
+            }
+        }
+
+        wasmJsTest {
+            dependsOn(commonTest)
+        }
+
         jvmTest {
             dependsOn(jvmAndroidTest)
         }
         nativeTest {
-            dependsOn(commonTest)
+            dependsOn(nonWebCommonTest)
+        }
+        androidDeviceTest {
             dependencies {
-                implementation(libs.kotlinTest)
-                implementation(project(":internal-testutils-datastore"))
-                implementation(project(":kruth:kruth"))
+                implementation(libs.testRunner)
             }
         }
-
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {

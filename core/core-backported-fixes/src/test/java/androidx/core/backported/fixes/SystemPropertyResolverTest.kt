@@ -69,4 +69,28 @@ class SystemPropertyResolverTest {
         val resolver = SystemPropertyResolver()
         assertThat(resolver.aliases).containsExactly(3)
     }
+
+    @Test
+    fun getStatus_Null() {
+        ShadowSystemProperties.override(ALIAS_BITSET_PROP_NAME, "10") // 1,3
+        ShadowBuild.reset()
+        val resolver = SystemPropertyResolver()
+        assertThat(resolver.getStatus(KnownIssue(123456, null))).isEqualTo(Status.Unknown)
+    }
+
+    @Test
+    fun getStatus_Fixed() {
+        ShadowSystemProperties.override(ALIAS_BITSET_PROP_NAME, "10") // 1,3
+        ShadowBuild.reset()
+        val resolver = SystemPropertyResolver()
+        assertThat(resolver.getStatus(KnownIssue(123456, 1))).isEqualTo(Status.Fixed)
+    }
+
+    @Test
+    fun getStatus_NotFixed() {
+        ShadowSystemProperties.override(ALIAS_BITSET_PROP_NAME, "10") // 1,3
+        ShadowBuild.reset()
+        val resolver = SystemPropertyResolver()
+        assertThat(resolver.getStatus(KnownIssue(123456, 5))).isEqualTo(Status.NotFixed)
+    }
 }

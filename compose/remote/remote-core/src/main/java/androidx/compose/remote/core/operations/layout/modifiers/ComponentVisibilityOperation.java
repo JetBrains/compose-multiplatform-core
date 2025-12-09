@@ -17,6 +17,8 @@ package androidx.compose.remote.core.operations.layout.modifiers;
 
 import static androidx.compose.remote.core.documentation.DocumentedOperation.INT;
 
+import androidx.annotation.RestrictTo;
+import androidx.compose.remote.core.LayoutCompute;
 import androidx.compose.remote.core.Operation;
 import androidx.compose.remote.core.Operations;
 import androidx.compose.remote.core.RemoteContext;
@@ -36,8 +38,9 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /** Allows setting visibility on a component */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class ComponentVisibilityOperation extends Operation
-        implements ModifierOperation, VariableSupport, DecoratorComponent {
+        implements ModifierOperation, VariableSupport, LayoutCompute, DecoratorComponent {
     private static final int OP_CODE = Operations.MODIFIER_VISIBILITY;
 
     int mVisibilityId;
@@ -136,6 +139,7 @@ public class ComponentVisibilityOperation extends Operation
         if (mParent != null) {
             mParent.setVisibility(mVisibility);
         }
+        markNotDirty();
     }
 
     public void setParent(@Nullable LayoutComponent parent) {
@@ -156,5 +160,11 @@ public class ComponentVisibilityOperation extends Operation
                 .addType("ComponentVisibilityOperation")
                 .add("visibilityId", mVisibilityId)
                 .add("visibility", Component.Visibility.toString(mVisibility));
+    }
+
+    @Override
+    public boolean evaluateInLayout(@NonNull RemoteContext context) {
+        updateVariables(context);
+        return isDirty();
     }
 }

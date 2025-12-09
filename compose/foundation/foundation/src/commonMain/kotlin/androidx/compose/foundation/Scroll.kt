@@ -18,6 +18,7 @@ package androidx.compose.foundation
 
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.SpringSpec
+import androidx.compose.foundation.ScrollState.Companion.Saver
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
@@ -29,6 +30,7 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -87,6 +89,7 @@ fun rememberScrollState(initial: Int = 0): ScrollState {
 class ScrollState(initial: Int) : ScrollableState {
 
     /** current scroll position value in pixels */
+    @get:FrequentlyChangingValue
     var value: Int by mutableIntStateOf(initial)
         private set
 
@@ -117,6 +120,12 @@ class ScrollState(initial: Int) : ScrollableState {
     val interactionSource: InteractionSource
         get() = internalInteractionSource
 
+    /**
+     * Size of the content along the scrollable axis, or 0 if still unknown. Note that this value is
+     * only populated after the first measure pass.
+     */
+    internal var contentSize by mutableIntStateOf(0)
+
     internal val internalInteractionSource: MutableInteractionSource = MutableInteractionSource()
 
     private var _maxValueState = mutableIntStateOf(Int.MAX_VALUE)
@@ -140,6 +149,18 @@ class ScrollState(initial: Int) : ScrollableState {
         if (changed) consumed else it
     }
 
+    private val _scrollIndicatorState =
+        object : ScrollIndicatorState {
+            override val scrollOffset: Int
+                get() = value
+
+            override val contentSize: Int
+                get() = this@ScrollState.contentSize
+
+            override val viewportSize: Int
+                get() = this@ScrollState.viewportSize
+        }
+
     override suspend fun scroll(
         scrollPriority: MutatePriority,
         block: suspend ScrollScope.() -> Unit,
@@ -161,6 +182,9 @@ class ScrollState(initial: Int) : ScrollableState {
     @get:Suppress("GetterSetterNames")
     override val lastScrolledBackward: Boolean
         get() = scrollableState.lastScrolledBackward
+
+    override val scrollIndicatorState: ScrollIndicatorState?
+        get() = _scrollIndicatorState
 
     /**
      * Scroll to position in pixels with animation.
@@ -339,17 +363,28 @@ private fun Modifier.scroll(
     overscrollEffect: OverscrollEffect? = null,
 ): Modifier {
     val orientation = if (isVertical) Orientation.Vertical else Orientation.Horizontal
-    return scrollingContainer(
-            state = state,
-            orientation = orientation,
-            enabled = isScrollable,
-            reverseScrolling = reverseScrolling,
-            flingBehavior = flingBehavior,
-            interactionSource = state.internalInteractionSource,
-            useLocalOverscrollFactory = useLocalOverscrollFactory,
-            overscrollEffect = overscrollEffect,
-        )
-        .then(ScrollingLayoutElement(state, reverseScrolling, isVertical))
+    val scrollableArea =
+        if (useLocalOverscrollFactory) {
+            scrollableArea(
+                state = state,
+                orientation = orientation,
+                interactionSource = state.internalInteractionSource,
+                enabled = isScrollable,
+                reverseScrolling = reverseScrolling,
+                flingBehavior = flingBehavior,
+            )
+        } else {
+            scrollableArea(
+                state = state,
+                orientation = orientation,
+                overscrollEffect = overscrollEffect,
+                interactionSource = state.internalInteractionSource,
+                enabled = isScrollable,
+                reverseScrolling = reverseScrolling,
+                flingBehavior = flingBehavior,
+            )
+        }
+    return scrollableArea.then(ScrollingLayoutElement(state, reverseScrolling, isVertical))
 }
 
 internal class ScrollingLayoutElement(
@@ -424,6 +459,7 @@ internal class ScrollNode(
         // measured size.
         state.maxValue = side
         state.viewportSize = if (isVertical) height else width
+        state.contentSize = if (isVertical) placeable.height else placeable.width
         return layout(width, height) {
             val scroll = state.value.fastCoerceIn(0, side)
             val absScroll = if (reverseScrolling) scroll - side else -scroll

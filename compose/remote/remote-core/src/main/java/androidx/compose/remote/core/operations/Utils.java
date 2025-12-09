@@ -15,9 +15,12 @@
  */
 package androidx.compose.remote.core.operations;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 
 /** Utilities to be used across all core operations */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class Utils {
 
     private Utils() {}

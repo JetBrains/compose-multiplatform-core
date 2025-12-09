@@ -28,12 +28,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
     api(libs.jspecify)
-    api(libs.kotlinStdlib)
     // Add dependencies here
     api("androidx.activity:activity:1.2.0")
     api("androidx.annotation:annotation:1.8.1")
@@ -69,15 +68,14 @@ dependencies {
 android {
     defaultConfig {
         minSdk = 26
+        consumerProguardFiles("proguard-rules.pro")
     }
     buildFeatures {
         aidl = true
     }
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
     namespace = "androidx.health.connect.client"
     compileSdk = 36
+    compileSdkExtension = 19
 }
 
 androidx {

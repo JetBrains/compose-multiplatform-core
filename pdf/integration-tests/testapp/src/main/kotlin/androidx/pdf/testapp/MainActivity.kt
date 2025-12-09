@@ -18,16 +18,20 @@ package androidx.pdf.testapp
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.ext.SdkExtensions
 import android.view.View
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
+import androidx.annotation.RequiresExtension
 import androidx.annotation.RestrictTo
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.pdf.featureflag.PdfFeatureFlags
 import androidx.pdf.testapp.databinding.MainActivityBinding
 import androidx.pdf.testapp.databinding.ScenarioButtonsBinding
 import androidx.pdf.testapp.ui.XmlStyledPdfFragment
@@ -46,14 +50,22 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tabsViewButton: MaterialButton
     private lateinit var pdfFragmentV2Button: MaterialButton
     private lateinit var tabsViewV2Button: MaterialButton
+    private lateinit var editableFragmentButton: MaterialButton
     private lateinit var styledPdfFragmentButton: MaterialButton
     private lateinit var xmlStyledPdfFragmentButton: MaterialButton
     private lateinit var pageObjectPdfButton: MaterialButton
     private lateinit var composePdfButton: MaterialButton
     private lateinit var fragmentContainer: FrameLayout
 
+    private val isAnnotationsSupported: Boolean by lazy {
+        SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 18
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        enableFeatureFlags()
 
         val mainActivity = MainActivityBinding.inflate(layoutInflater)
         setContentView(mainActivity.root)
@@ -64,12 +76,21 @@ class MainActivity : AppCompatActivity() {
         tabsViewButton = scenarioButtons.tabView
         pdfFragmentV2Button = scenarioButtons.pdfFragmentV2
         tabsViewV2Button = scenarioButtons.tabViewV2
+        editableFragmentButton = scenarioButtons.editablePdfFragment
         styledPdfFragmentButton = scenarioButtons.styledPdfFragment
         xmlStyledPdfFragmentButton = scenarioButtons.xmlStyledPdfFragment
         composePdfButton = scenarioButtons.composeFragment
 
         pageObjectPdfButton = scenarioButtons.pageObjectPdf
         fragmentContainer = mainActivity.pdfInteractionFragmentContainerView
+
+        if (isAnnotationsSupported) {
+            editableFragmentButton.setOnClickListener {
+                launchPdfViewerFragmentV2(MainActivityV2.Companion.FragmentType.EDITABLE_FRAGMENT)
+            }
+        } else {
+            editableFragmentButton.visibility = View.GONE
+        }
 
         singlePdfButton.setOnClickListener { loadFragment(SinglePdfFragment()) }
         tabsViewButton.setOnClickListener { loadFragment(TabsViewPdfFragment()) }
@@ -98,6 +119,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Enables new feature for test app. */
+    private fun enableFeatureFlags() {
+        PdfFeatureFlags.isExternalHardwareInteractionEnabled = true
+        PdfFeatureFlags.isLayoutStrategyEnabled = true
+    }
+
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
     private fun launchPdfViewerFragmentV2(fragmentType: MainActivityV2.Companion.FragmentType) {
         val intent = Intent(this, MainActivityV2::class.java)
         val bundle = Bundle()
@@ -161,6 +189,7 @@ class MainActivity : AppCompatActivity() {
         styledPdfFragmentButton.visibility = View.VISIBLE
         xmlStyledPdfFragmentButton.visibility = View.VISIBLE
         pageObjectPdfButton.visibility = View.VISIBLE
+        editableFragmentButton.visibility = if (isAnnotationsSupported) View.VISIBLE else View.GONE
     }
 
     private fun hideButtons() {
@@ -168,6 +197,7 @@ class MainActivity : AppCompatActivity() {
         tabsViewButton.visibility = View.GONE
         tabsViewV2Button.visibility = View.GONE
         pdfFragmentV2Button.visibility = View.GONE
+        editableFragmentButton.visibility = View.GONE
         styledPdfFragmentButton.visibility = View.GONE
         xmlStyledPdfFragmentButton.visibility = View.GONE
         pageObjectPdfButton.visibility = View.GONE

@@ -37,7 +37,6 @@ import androidx.camera.video.VideoCapabilities
 import androidx.camera.video.VideoSpec
 import androidx.camera.video.internal.encoder.VideoEncoderDataSpace
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
@@ -54,7 +53,6 @@ import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 21)
 class VideoEncoderConfigVideoProfileResolverTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,
@@ -199,67 +197,6 @@ class VideoEncoderConfigVideoProfileResolverTest(
                         .bitrate
                 )
                 .isLessThan(defaultBitrate)
-        }
-    }
-
-    @Test
-    fun bitrateRangeInVideoSpecClampsBitrate() {
-        dynamicRanges.forEach { dynamicRange ->
-            val profile =
-                videoCapabilities.getProfiles(Quality.HIGHEST, dynamicRange)!!.defaultVideoProfile
-            val surfaceSize = profile.resolution
-
-            val defaultBitrate =
-                VideoEncoderConfigVideoProfileResolver(
-                        profile.mediaType,
-                        timebase,
-                        defaultVideoSpec,
-                        surfaceSize,
-                        profile,
-                        dynamicRange,
-                        SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
-                    )
-                    .get()
-                    .bitrate
-
-            // Create video spec with limit 20% higher than default.
-            val higherBitrate = (defaultBitrate * 1.2).toInt()
-            val higherVideoSpec =
-                VideoSpec.builder().setBitrate(Range(higherBitrate, Int.MAX_VALUE)).build()
-
-            // Create video spec with limit 20% lower than default.
-            val lowerBitrate = (defaultBitrate * 0.8).toInt()
-            val lowerVideoSpec = VideoSpec.builder().setBitrate(Range(0, lowerBitrate)).build()
-
-            assertThat(
-                    VideoEncoderConfigVideoProfileResolver(
-                            profile.mediaType,
-                            timebase,
-                            higherVideoSpec,
-                            surfaceSize,
-                            profile,
-                            dynamicRange,
-                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
-                        )
-                        .get()
-                        .bitrate
-                )
-                .isEqualTo(higherBitrate)
-
-            assertThat(
-                    VideoEncoderConfigVideoProfileResolver(
-                            profile.mediaType,
-                            timebase,
-                            lowerVideoSpec,
-                            surfaceSize,
-                            profile,
-                            dynamicRange,
-                            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED,
-                        )
-                        .get()
-                        .bitrate
-                )
-                .isEqualTo(lowerBitrate)
         }
     }
 

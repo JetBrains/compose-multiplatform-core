@@ -92,7 +92,6 @@ class SecurityStateManagerCompatTest {
         assertNotNull(vendorSpl)
     }
 
-    @Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
     @Test
     fun testGetSecurityPatchLevelSafe_API_Level_Below_M() {
         val result = securityStateManagerCompat.getSecurityPatchLevelSafe()

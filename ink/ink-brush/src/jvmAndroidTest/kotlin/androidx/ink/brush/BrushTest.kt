@@ -370,30 +370,30 @@ class BrushTest {
             BrushFamily(
                 tip =
                     BrushTip(
-                        0.1f,
-                        0.2f,
-                        0.3f,
-                        0.4f,
-                        0.5f,
-                        0.6f,
-                        0.7f,
-                        0.8f,
-                        9L,
-                        listOf(
-                            BrushBehavior(
-                                source = BrushBehavior.Source.TILT_IN_RADIANS,
-                                target = BrushBehavior.Target.HEIGHT_MULTIPLIER,
-                                sourceValueRangeStart = 0.2f,
-                                sourceValueRangeEnd = .8f,
-                                targetModifierRangeStart = 1.1f,
-                                targetModifierRangeEnd = 1.7f,
-                                sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.MIRROR,
-                                responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
-                                responseTimeMillis = 1L,
-                                enabledToolTypes = setOf(InputToolType.STYLUS),
-                                isFallbackFor = BrushBehavior.OptionalInputProperty.TILT_X_AND_Y,
-                            )
-                        ),
+                        scaleX = 0.1f,
+                        scaleY = 0.2f,
+                        cornerRounding = 0.3f,
+                        slantDegrees = 0.4f,
+                        pinch = 0.5f,
+                        rotationDegrees = 0.6f,
+                        particleGapDistanceScale = 0.8f,
+                        particleGapDurationMillis = 9L,
+                        behaviors =
+                            listOf(
+                                BrushBehavior(
+                                    source = BrushBehavior.Source.TILT_IN_RADIANS,
+                                    target = BrushBehavior.Target.HEIGHT_MULTIPLIER,
+                                    sourceValueRangeStart = 0.2f,
+                                    sourceValueRangeEnd = .8f,
+                                    targetModifierRangeStart = 1.1f,
+                                    targetModifierRangeEnd = 1.7f,
+                                    sourceOutOfRangeBehavior = BrushBehavior.OutOfRange.MIRROR,
+                                    responseCurve = EasingFunction.Predefined.EASE_IN_OUT,
+                                    responseTimeMillis = 1L,
+                                    enabledToolTypes = setOf(InputToolType.STYLUS),
+                                    isFallbackFor = BrushBehavior.OptionalInputProperty.TILT_X_AND_Y,
+                                )
+                            ),
                     ),
                 paint = BrushPaint(),
                 clientBrushFamilyId = "/brush-family:marker:1",

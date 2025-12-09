@@ -40,6 +40,7 @@ dependencies {
 
     implementation(project(":appsearch:appsearch"))
     implementation(project(":appsearch:appsearch-local-storage"))
+    implementation(project(":appsearch:appsearch-platform-storage"))
     implementation(project(":appsearch:appsearch-debug-view"))
     implementation("androidx.appcompat:appcompat:1.2.0")
     implementation("androidx.concurrent:concurrent-futures:1.0.0")

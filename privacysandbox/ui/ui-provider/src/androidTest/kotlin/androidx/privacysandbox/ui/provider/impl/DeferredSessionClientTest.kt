@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
 
 package androidx.privacysandbox.ui.provider.impl
 
@@ -22,7 +23,6 @@ import android.view.View
 import androidx.core.util.Consumer
 import androidx.privacysandbox.ui.core.SandboxedUiAdapter
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.atomic.AtomicReference
@@ -32,7 +32,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 23)
 class DeferredSessionClientTest {
 
     @Test

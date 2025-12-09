@@ -229,7 +229,7 @@ class LowLightBoostDeviceTest(
     }
 
     @Test
-    fun turnsOnLowLightBoostThrowsException_when10BitDynamicRangeIsOn() {
+    fun canTurnsOnLowLightBoost_when10BitDynamicRangeIsOn() {
         // Finds 10-bit supported dynamic ranges
         val candidate10BitDynamicRanges =
             setOf(
@@ -250,10 +250,9 @@ class LowLightBoostDeviceTest(
             assumeTrue(preview.attachedStreamSpec!!.dynamicRange == supported10BitDynamicRange)
         }
 
-        // Checks that ExecutionException will be thrown after turning low-light boost on
-        assertThrows<ExecutionException> {
-            camera.cameraControl.enableLowLightBoostAsync(true)[1, TimeUnit.SECONDS]
-        }
+        // Enables low-light boost
+        camera.cameraControl.enableLowLightBoostAsync(true)[1, TimeUnit.SECONDS]
+        verifyLowLightBoostOnStatesReceived()
     }
 
     @Test

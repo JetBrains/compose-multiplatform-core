@@ -19,11 +19,11 @@ package androidx.xr.arcore
 import android.content.ContentResolver
 import android.provider.Settings.System
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.HandJointType as RuntimeHandJoint
 import androidx.xr.runtime.Config
-import androidx.xr.runtime.HandJointType
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Hand as RuntimeHand
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Quaternion
 import androidx.xr.runtime.math.Vector3
@@ -106,11 +106,16 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
      * The representation of the current state of [Hand].
      *
      * @param trackingState the current [TrackingState] of the hand.
+     * @param handJointsBuffer the [FloatBuffer] containing the current state of the hand. It
+     *   contains an array of 182 floats (26 joints * 7 values per joint) which represent the poses
+     *   of all hand joints. Each hand joint pose consists of 7 float values that represent rotation
+     *   (x, y, z, w) and translation (x, y, z) as defined in [Quaternion] and [Vector3]
+     *   respectively.. The order of the joints within the array follows the order in which the
+     *   joints are defined in [HandJointType].
      */
     public class State
     internal constructor(
         public val trackingState: TrackingState,
-        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         public val handJointsBuffer: FloatBuffer,
     ) {
 
@@ -120,11 +125,15 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
         ) : Map<HandJointType, Pose> {
             override val entries: Set<Map.Entry<HandJointType, Pose>>
                 get() =
-                    if (trackingState == TrackingState.TRACKING) {
-                        RuntimeHand.parseHandJoint(trackingState, handJointsBuffer).entries.toSet()
+                    (if (trackingState == TrackingState.TRACKING) {
+                        convertRuntimeHandJointToHandJoint(
+                                RuntimeHand.parseHandJoint(trackingState, handJointsBuffer)
+                            )
+                            .entries
+                            .toSet()
                     } else {
                         emptySet()
-                    }
+                    })
 
             override val keys: Set<HandJointType>
                 get() =
@@ -166,6 +175,15 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
                 val pz = buffer.get()
                 return Pose(Vector3(px, py, pz), Quaternion(qx, qy, qz, qw))
             }
+
+            private fun convertRuntimeHandJointToHandJoint(
+                handJointTypeMap: Map<RuntimeHandJoint, Pose>
+            ): Map<HandJointType, Pose> {
+                return handJointTypeMap.mapKeys { entry ->
+                    val runtimeKey: RuntimeHandJoint = entry.key
+                    HandJointType.valueOf(runtimeKey.name)
+                }
+            }
         }
 
         /**
@@ -199,7 +217,7 @@ public class Hand internal constructor(internal val runtimeHand: RuntimeHand) : 
     /** The current [State] of this hand. */
     public val state: StateFlow<State> = _state.asStateFlow()
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(State(runtimeHand.trackingState, runtimeHand.handJointsBuffer))
     }

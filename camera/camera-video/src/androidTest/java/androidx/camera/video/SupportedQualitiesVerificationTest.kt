@@ -74,9 +74,9 @@ import org.junit.rules.TestRule
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
+@SdkSuppress(minSdkVersion = 23)
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class SupportedQualitiesVerificationTest(
     private val lensFacing: Int,
     private var cameraSelector: CameraSelector,

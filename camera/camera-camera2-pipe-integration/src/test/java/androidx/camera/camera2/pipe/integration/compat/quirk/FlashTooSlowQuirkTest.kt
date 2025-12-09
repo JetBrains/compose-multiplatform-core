@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.integration.compat.quirk
 
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
@@ -35,7 +34,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class FlashTooSlowQuirkTest(
     private val model: String,
     private val lensFacing: Int,

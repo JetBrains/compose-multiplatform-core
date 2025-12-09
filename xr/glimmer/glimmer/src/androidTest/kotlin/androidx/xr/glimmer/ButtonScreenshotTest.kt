@@ -15,7 +15,13 @@
  */
 package androidx.xr.glimmer
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
@@ -23,16 +29,19 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class ButtonScreenshotTest() {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_DIRECTORY)
 
@@ -83,8 +92,14 @@ class ButtonScreenshotTest() {
     fun button_focused() {
         rule.mainClock.autoAdvance = false
         rule.setGlimmerThemeContent {
-            Button(onClick = {}, interactionSource = AlwaysFocusedInteractionSource) {
-                Text("Send")
+            // Add an extra box with a white background around the button to allow capturing depth
+            Box(
+                Modifier.background(color = Color.White, RectangleShape).padding(20.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Button(onClick = {}, interactionSource = AlwaysFocusedInteractionSource) {
+                    Text("Send")
+                }
             }
         }
         // Advance past the animation
@@ -114,8 +129,14 @@ class ButtonScreenshotTest() {
     fun button_focused_and_pressed() {
         rule.mainClock.autoAdvance = false
         rule.setGlimmerThemeContent {
-            Button(onClick = {}, interactionSource = AlwaysFocusedAndPressedInteractionSource) {
-                Text("Send")
+            // Add an extra box with a white background around the button to allow capturing depth
+            Box(
+                Modifier.background(color = Color.White, RectangleShape).padding(20.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Button(onClick = {}, interactionSource = AlwaysFocusedAndPressedInteractionSource) {
+                    Text("Send")
+                }
             }
         }
         // Advance past the animation

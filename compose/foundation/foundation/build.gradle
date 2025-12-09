@@ -24,16 +24,22 @@
 
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
     id("AndroidXComposePlugin")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        compileSdk = 35
+        namespace = "androidx.compose.foundation"
+        optimization {
+            it.consumerKeepRules.publish = true
+            it.consumerKeepRules.files.add(new File("proguard-rules.pro"))
+        }
+        androidResources.enable = true
+    }
     jvmStubs()
     linuxX64Stubs()
 
@@ -42,7 +48,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api("androidx.collection:collection:1.5.0")
                 api(project(":compose:animation:animation"))
                 api(project(":compose:runtime:runtime"))
@@ -88,7 +93,7 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:test-utils"))
@@ -116,7 +121,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
@@ -139,21 +144,13 @@ dependencies {
     lintPublish(project(":compose:foundation:foundation-lint"))
 }
 
-android {
-    compileSdk = 35
-    namespace = "androidx.compose.foundation"
-    buildTypes.configureEach {
-        consumerProguardFiles("proguard-rules.pro")
-    }
-}
-
 androidx {
     name = "Compose Foundation"
     type = SoftwareType.PUBLISHED_LIBRARY_ONLY_USED_BY_KOTLIN_CONSUMERS
     inceptionYear = "2018"
     description = "Higher level abstractions of the Compose UI primitives. This library is design system agnostic, providing the high-level building blocks for both application and design-system developers"
     legacyDisableKotlinStrictApiMode = true
-    metalavaK2UastEnabled = false
     samples(project(":compose:foundation:foundation:foundation-samples"))
     addGoldenImageAssets()
+    deviceTests.minSdkForFtlOverride = 24 // b/437944630
 }

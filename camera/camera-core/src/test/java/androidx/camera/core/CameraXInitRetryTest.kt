@@ -35,6 +35,7 @@ import androidx.camera.core.impl.CameraFactory
 import androidx.camera.core.impl.CameraFactory.Provider
 import androidx.camera.core.impl.CameraInternal
 import androidx.camera.core.impl.CameraThreadConfig
+import androidx.camera.core.impl.Observable
 import androidx.camera.core.impl.UseCaseConfigFactory
 import androidx.camera.core.impl.utils.ContextUtilTest
 import androidx.camera.core.internal.StreamSpecsCalculator
@@ -76,7 +77,7 @@ import org.robolectric.versioning.AndroidVersions
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 @OptIn(ExperimentalCoroutinesApi::class)
 class CameraXInitRetryTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
@@ -559,6 +560,15 @@ class CameraXInitRetryTest {
                                 override fun getCameraManager(): Any? {
                                     throw testException
                                 }
+
+                                override fun getCameraPresenceSource():
+                                    Observable<List<CameraIdentifier?>?> {
+                                    throw testException
+                                }
+
+                                override fun onCameraIdsUpdated(cameraIds: List<String?>) {
+                                    throw testException
+                                }
                             }
                     )
                 )
@@ -624,7 +634,7 @@ class CameraXInitRetryTest {
 
     @Test
     @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE, shadows = [TestShadowVDM::class])
-    fun testInitFailVirtualCameraValidation_NoAvailableDevices() = runTest {
+    fun testInitSucceedsOnVirtualDevice_NoAvailableDevices() = runTest {
         // Arrange. Set up a simulated environment that no accessible cameras.
         var callCount = 0
         val configBuilder: CameraXConfig.Builder =
@@ -653,13 +663,11 @@ class CameraXInitRetryTest {
 
         // Act.
         val cameraX = CameraX(context) { configBuilder.build() }
-        val throwableSubject =
-            assertThrows<InitializationException> { cameraX.initializeFuture.await() }
+        cameraX.initializeFuture.await()
 
         // Assert.
-        throwableSubject.hasCauseThat().isInstanceOf(CameraUnavailableException::class.java)
-        assertThat(cameraX.isInitialized).isFalse()
-        assertThat(callCount).isGreaterThan(0)
+        assertThat(cameraX.isInitialized).isTrue()
+        assertThat(callCount).isEqualTo(0)
         cameraX.shutdown().get()
     }
 
@@ -674,6 +682,7 @@ class CameraXInitRetryTest {
                 _: CameraThreadConfig?,
                 _: CameraSelector?,
                 _: Long,
+                _: CameraXConfig?,
                 _: StreamSpecsCalculator ->
                 cameraFactory
             }

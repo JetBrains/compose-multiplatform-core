@@ -118,7 +118,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 runtimeOnly(libs.testCore)
@@ -128,7 +128,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(jvmCommonTest)
             dependencies {
                 implementation(project(":internal-testutils-navigation"))

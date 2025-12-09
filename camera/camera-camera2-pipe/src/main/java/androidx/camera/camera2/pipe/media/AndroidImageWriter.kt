@@ -21,7 +21,6 @@ import android.media.ImageWriter
 import android.os.Build
 import android.os.Handler
 import android.view.Surface
-import androidx.annotation.RequiresApi
 import androidx.camera.camera2.pipe.InputStreamId
 import androidx.camera.camera2.pipe.StreamFormat
 import androidx.camera.camera2.pipe.compat.Api29Compat
@@ -31,7 +30,6 @@ import kotlin.reflect.KClass
 import kotlinx.atomicfu.atomic
 
 /** Implements an [ImageWriterWrapper] using an [ImageWriter]. */
-@RequiresApi(23)
 public class AndroidImageWriter
 private constructor(
     private val imageWriter: ImageWriter,

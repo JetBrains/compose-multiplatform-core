@@ -17,10 +17,11 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.PerceptionManager
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.CoreState
 import androidx.xr.runtime.StateExtender
-import androidx.xr.runtime.internal.PerceptionManager
-import androidx.xr.runtime.internal.Runtime
+import androidx.xr.runtime.internal.JxrRuntime
 import kotlin.time.ComparableTimeMark
 
 /** [StateExtender] in charge of extending [CoreState] with [PerceptionState]. */
@@ -38,16 +39,25 @@ internal class PerceptionStateExtender : StateExtender {
 
     internal val xrResourcesManager = XrResourcesManager()
 
-    override fun initialize(runtime: Runtime) {
-        perceptionManager = runtime.perceptionManager
-        xrResourcesManager.lifecycleManager = runtime.lifecycleManager
+    override fun initialize(runtimes: List<JxrRuntime>) {
+        val perceptionRuntime = runtimes.filterIsInstance<PerceptionRuntime>().single()
+        perceptionManager = perceptionRuntime.perceptionManager
+        xrResourcesManager.lifecycleManager = perceptionRuntime.lifecycleManager
         xrResourcesManager.initiateHands(perceptionManager.leftHand, perceptionManager.rightHand)
-        xrResourcesManager.initiateArDeviceAndViewCameras(
+        xrResourcesManager.initiateArDeviceAndRenderViewpoints(
             perceptionManager.arDevice,
-            perceptionManager.viewCameras,
+            perceptionManager.leftRenderViewpoint,
+            perceptionManager.rightRenderViewpoint,
+            perceptionManager.monoRenderViewpoint,
         )
-        xrResourcesManager.initiateEarth(perceptionManager.earth)
-        xrResourcesManager.initiateDepthMaps(perceptionManager.depthMaps)
+        xrResourcesManager.initiateGeospatial(perceptionManager.geospatial)
+        xrResourcesManager.initiateDepthMaps(
+            perceptionManager.leftDepthMap,
+            perceptionManager.rightDepthMap,
+            perceptionManager.monoDepthMap,
+        )
+        xrResourcesManager.initiateFace(perceptionManager.userFace)
+        xrResourcesManager.initiateEyes(perceptionManager.leftEye, perceptionManager.rightEye)
     }
 
     override suspend fun extend(coreState: CoreState) {
@@ -58,10 +68,19 @@ internal class PerceptionStateExtender : StateExtender {
         xrResourcesManager.syncTrackables(perceptionManager.trackables)
         xrResourcesManager.update()
 
+        xrResourcesManager.leftEye?.update()
+        xrResourcesManager.rightEye?.update()
         xrResourcesManager.leftHand?.update()
         xrResourcesManager.rightHand?.update()
         xrResourcesManager.arDevice.update()
-        xrResourcesManager.viewCameras.forEach { it.update() }
+        xrResourcesManager.leftRenderViewpoint?.update()
+        xrResourcesManager.rightRenderViewpoint?.update()
+        xrResourcesManager.monoRenderViewpoint?.update()
+        xrResourcesManager.leftDepthMap?.update()
+        xrResourcesManager.rightDepthMap?.update()
+        xrResourcesManager.monoDepthMap?.update()
+
+        xrResourcesManager.userFace?.update()
 
         updatePerceptionStateMap(coreState)
     }
@@ -81,8 +100,15 @@ internal class PerceptionStateExtender : StateExtender {
                 xrResourcesManager.leftHand,
                 xrResourcesManager.rightHand,
                 xrResourcesManager.arDevice,
-                xrResourcesManager.viewCameras,
-                xrResourcesManager.depthMaps,
+                xrResourcesManager.leftRenderViewpoint,
+                xrResourcesManager.rightRenderViewpoint,
+                xrResourcesManager.monoRenderViewpoint,
+                xrResourcesManager.leftDepthMap,
+                xrResourcesManager.rightDepthMap,
+                xrResourcesManager.monoDepthMap,
+                xrResourcesManager.userFace,
+                xrResourcesManager.leftEye,
+                xrResourcesManager.rightEye,
             ),
         )
         timeMarkQueue.add(coreState.timeMark)

@@ -28,7 +28,6 @@ import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth
 import java.util.concurrent.TimeUnit
@@ -41,7 +40,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class SurfaceOrientedMeteringPointFactoryTest(
     private val implName: String,
     private val cameraConfig: CameraXConfig,

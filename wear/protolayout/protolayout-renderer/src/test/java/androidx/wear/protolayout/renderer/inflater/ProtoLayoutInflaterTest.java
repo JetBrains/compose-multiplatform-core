@@ -121,6 +121,7 @@ import androidx.wear.protolayout.proto.ActionProto.AndroidLongExtra;
 import androidx.wear.protolayout.proto.ActionProto.AndroidStringExtra;
 import androidx.wear.protolayout.proto.ActionProto.LaunchAction;
 import androidx.wear.protolayout.proto.ActionProto.LoadAction;
+import androidx.wear.protolayout.proto.ActionProto.PendingIntentAction;
 import androidx.wear.protolayout.proto.AlignmentProto.HorizontalAlignment;
 import androidx.wear.protolayout.proto.AlignmentProto.HorizontalAlignmentProp;
 import androidx.wear.protolayout.proto.AlignmentProto.VerticalAlignment;
@@ -228,11 +229,13 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
+import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowChoreographer;
 import org.robolectric.shadows.ShadowLooper;
@@ -247,6 +250,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(AndroidJUnit4.class)
 public class ProtoLayoutInflaterTest {
@@ -262,6 +266,11 @@ public class ProtoLayoutInflaterTest {
 
     private final StateStore mStateStore = new StateStore(ImmutableMap.of());
     private ProtoLayoutDynamicDataPipeline mDataPipeline;
+
+    @After
+    public void tearDown() {
+        Renderer.cleanUp();
+    }
 
     @Test
     public void inflate_textView() {
@@ -1590,6 +1599,49 @@ public class ProtoLayoutInflaterTest {
         shadowOf(Looper.getMainLooper()).idle();
 
         expect.that(receivedState.getLastClickableId()).isEqualTo("foo");
+    }
+
+    @Test
+    public void inflate_clickableModifier_withPendingIntentAction() {
+        final String textContents = "I am a clickable";
+        final String clickableId = "foo";
+
+        Action action =
+                Action.newBuilder()
+                        .setPendingIntentAction(PendingIntentAction.getDefaultInstance())
+                        .build();
+        Clickable clickable = Clickable.newBuilder().setId(clickableId).setOnClick(action).build();
+        LayoutElement root =
+                LayoutElement.newBuilder()
+                        .setText(
+                                Text.newBuilder()
+                                        .setText(string(textContents))
+                                        .setModifiers(
+                                                Modifiers.newBuilder().setClickable(clickable)))
+                        .build();
+
+        AtomicReference<String> clickedId = new AtomicReference<>("");
+        AtomicReference<@Nullable View> clickedView = new AtomicReference<>(null);
+
+        FrameLayout rootLayout =
+                renderer(
+                                newRendererConfigBuilder(
+                                                fingerprintedLayout(root), resourceResolvers())
+                                        .setPendingIntentActionListener(
+                                                (source, id) -> {
+                                                    clickedId.set(id);
+                                                    clickedView.set(source);
+                                                }))
+                        .inflate();
+
+        // Get the text view from the inflation result, it is the only child of the root.
+        TextView textView = (TextView) rootLayout.getChildAt(0);
+        // Try and fire the intent.
+        textView.performClick();
+        shadowOf(getMainLooper()).idle();
+
+        expect.that(clickedId.get()).isEqualTo(clickableId);
+        expect.that(clickedView.get()).isEqualTo(textView);
     }
 
     @Test
@@ -5090,6 +5142,7 @@ public class ProtoLayoutInflaterTest {
     private static final class Renderer {
         final ProtoLayoutInflater mRenderer;
         final ProtoLayoutDynamicDataPipeline mDataPipeline;
+        static ActivityController<Activity> sActivityController = null;
 
         Renderer(
                 ProtoLayoutInflater.Config rendererConfig,
@@ -5098,10 +5151,20 @@ public class ProtoLayoutInflaterTest {
             this.mDataPipeline = dataPipeline;
         }
 
+        static void cleanUp() {
+            if (sActivityController != null) {
+                sActivityController.destroy();
+                sActivityController = null;
+            }
+        }
+
         FrameLayout inflate() {
+            cleanUp();
+
             FrameLayout rootLayout = new FrameLayout(getApplicationContext());
             // This needs to be an attached view to test animations in data pipeline.
-            Robolectric.buildActivity(Activity.class).setup().get().setContentView(rootLayout);
+            sActivityController = Robolectric.buildActivity(Activity.class).setup();
+            sActivityController.get().setContentView(rootLayout);
             InflateResult inflateResult = mRenderer.inflate(rootLayout);
             if (inflateResult != null) {
                 inflateResult.updateDynamicDataPipeline(/* isReattaching= */ false);

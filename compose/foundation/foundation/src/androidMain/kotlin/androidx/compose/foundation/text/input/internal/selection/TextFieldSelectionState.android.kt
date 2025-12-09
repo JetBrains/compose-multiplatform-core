@@ -17,46 +17,25 @@
 package androidx.compose.foundation.text.input.internal.selection
 
 import android.os.Build
-import androidx.compose.foundation.contextmenu.ContextMenuScope
-import androidx.compose.foundation.contextmenu.ContextMenuState
-import androidx.compose.foundation.text.MenuItemsAvailability
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.text.TextContextMenuItems
 import androidx.compose.foundation.text.TextContextMenuItems.Autofill
 import androidx.compose.foundation.text.TextContextMenuItems.Copy
 import androidx.compose.foundation.text.TextContextMenuItems.Cut
 import androidx.compose.foundation.text.TextContextMenuItems.Paste
 import androidx.compose.foundation.text.TextContextMenuItems.SelectAll
-import androidx.compose.foundation.text.TextItem
+import androidx.compose.foundation.text.TextDragObserver
 import androidx.compose.foundation.text.contextmenu.builder.TextContextMenuBuilderScope
 import androidx.compose.foundation.text.contextmenu.modifier.addTextContextMenuComponentsWithContext
+import androidx.compose.foundation.text.selection.MouseSelectionObserver
 import androidx.compose.foundation.text.selection.addPlatformTextContextMenuItems
 import androidx.compose.foundation.text.textItem
-import androidx.compose.runtime.State
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.platform.Clipboard
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
-
-internal fun TextFieldSelectionState.contextMenuBuilder(
-    state: ContextMenuState,
-    itemsAvailability: State<MenuItemsAvailability>,
-    onMenuItemClicked: TextFieldSelectionState.(TextContextMenuItems) -> Unit,
-): ContextMenuScope.() -> Unit = {
-    fun textFieldItem(label: TextContextMenuItems, enabled: Boolean) {
-        TextItem(state, label, enabled) { onMenuItemClicked(label) }
-    }
-
-    val availability: MenuItemsAvailability = itemsAvailability.value
-
-    textFieldItem(Cut, enabled = availability.canCut)
-    textFieldItem(Copy, enabled = availability.canCopy)
-    textFieldItem(Paste, enabled = availability.canPaste)
-    textFieldItem(SelectAll, enabled = availability.canSelectAll)
-    if (Build.VERSION.SDK_INT >= 26) {
-        textFieldItem(Autofill, enabled = availability.canAutofill)
-    }
-}
 
 // TODO(halilibo): Add a new TextToolbar option "paste as plain text".
 internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
@@ -96,26 +75,47 @@ internal actual fun Modifier.addBasicTextFieldTextContextMenuComponents(
     ) {
         with(state) {
             separator()
-            textFieldSuspendItem(Cut, enabled = canCut()) { cut() }
-            textFieldSuspendItem(Copy, enabled = canCopy()) {
+            textFieldSuspendItem(Cut, enabled = canShowCutMenuItem()) { cut() }
+            textFieldSuspendItem(Copy, enabled = canShowCopyMenuItem()) {
                 copy(cancelSelection = textToolbarShown)
             }
-            textFieldSuspendItem(Paste, enabled = canPaste()) { paste() }
+            textFieldSuspendItem(Paste, enabled = canShowPasteMenuItem()) { paste() }
             textFieldItem(
                 item = SelectAll,
-                enabled = canSelectAll(),
+                enabled = canShowSelectAllMenuItem(),
                 desiredState = TextToolbarState.Selection,
                 closePredicate = { !textToolbarShown },
             ) {
                 selectAll()
             }
             if (Build.VERSION.SDK_INT >= 26) {
-                textFieldItem(Autofill, enabled = canAutofill()) { autofill() }
+                textFieldItem(Autofill, enabled = canShowAutofillMenuItem()) { autofill() }
             }
             separator()
         }
     }
 }
+
+/** Runs platform-specific text tap gestures logic. */
+internal actual suspend fun TextFieldSelectionState.detectTextFieldTapGestures(
+    pointerInputScope: PointerInputScope,
+    interactionSource: MutableInteractionSource?,
+    requestFocus: () -> Unit,
+    showKeyboard: () -> Unit,
+) =
+    defaultDetectTextFieldTapGestures(
+        pointerInputScope,
+        interactionSource,
+        requestFocus,
+        showKeyboard,
+    )
+
+/** Runs platform-specific text selection gestures logic. */
+internal actual suspend fun TextFieldSelectionState.textFieldSelectionGestures(
+    pointerInputScope: PointerInputScope,
+    mouseSelectionObserver: MouseSelectionObserver,
+    textDragObserver: TextDragObserver,
+) = pointerInputScope.defaultTextFieldSelectionGestures(mouseSelectionObserver, textDragObserver)
 
 internal actual class ClipboardPasteState actual constructor(private val clipboard: Clipboard) {
     private var _hasClip: Boolean = false

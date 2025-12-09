@@ -106,7 +106,7 @@ public class MutableBox private constructor(x1: Float, y1: Float, x2: Float, y2:
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun asImmutable(): ImmutableBox =
+    override fun toImmutable(): ImmutableBox =
         ImmutableBox(x1 = xMin, y1 = yMin, x2 = xMax, y2 = yMax)
 
     override fun equals(other: Any?): Boolean =

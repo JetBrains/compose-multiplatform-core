@@ -165,7 +165,13 @@ Step 2: Click on the “Update scuba goldens” below:
 ![alt_text](onboarding_images/image8.png "Update scuba button")
 
 Step 3: Select the tests for which you want to update the golden images. Confirm
-the images look correct and click on “Approve Changes”
+the images look correct and click on “Approve Changes”.
+
+Note: If Scuba isn't loading correctly, you likely need to sign into your Google
+Account. A sign-in prompt should appear in Chrome. If it doesn't, try opening
+Scuba in an incognito window or clear your browser's cookies and then try
+loading Scuba again.
+
 ![alt_text](onboarding_images/image9.png "Button to approve scuba changes")
 
 Step 4: In the Approve changes dialog box, enter the following details and click
@@ -183,8 +189,8 @@ new goldens. And re-run presubmit. Your tests should now pass!
 
 #### Running manually / debugging
 
-Screenshot tests can be run locally using pixel 2 api33 emulator. Start the
-emulator using [these](#emulator) steps.
+Screenshot tests can be run locally using medium phone API 35 emulator. Start
+the emulator using [these](#emulator) steps.
 
 Wait until the emulator is running and run the tests as you would on a regular
 device.

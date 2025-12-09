@@ -17,6 +17,7 @@
 package androidx.text.vertical
 
 import android.graphics.Canvas
+import android.os.Build
 import android.text.TextPaint
 import androidx.annotation.Px
 
@@ -26,24 +27,47 @@ import androidx.annotation.Px
  * This class encapsulates the result of a vertical text layout process. It stores the layout's
  * properties and provides methods to draw the layout on a [Canvas].
  *
- * @property orientation The text orientation used for building this vertical layout.
- * @property paint The [TextPaint] used for building this vertical layout. Do not mutate this paint
- *   instance.
+ * NOTE: Currently, this API leverages a platform feature added in API 36 (Android 16). For older
+ * API levels, it provides a graceful fallback. We will provide a backport to API 31 in the future.
  */
 public class VerticalTextLayout
-private constructor(
-    public val text: CharSequence,
-    public val start: Int,
-    public val end: Int,
-    public val paint: TextPaint,
-    @Px public val height: Float,
-    @OrientationMode public val orientation: Int,
-    private val result: LineBreaker.Result,
+/**
+ * @param text The text to be laid out.
+ * @param start The inclusive start offset of the target text range.
+ * @param end The exclusive end offset of the target text range.
+ * @param paint The [TextPaint] instance used for laying out the text.
+ * @param height The height constraint in pixels.
+ * @param orientation The text orientation used for building this vertical layout.
+ */
+@JvmOverloads
+constructor(
+    text: CharSequence = "",
+    start: Int = 0,
+    end: Int = text.length,
+    paint: TextPaint = TextPaint(),
+    @Px height: Float = 0f,
+    orientation: Int = TextOrientation.MIXED,
 ) {
     /** The width constraint of the vertical text in pixels. */
     @get:Px
     public val width: Float
-        get() = result.width
+        get() = impl.width
+
+    internal val impl: VerticalTextLayoutImpl
+
+    init {
+        require(start <= end && end <= text.length && height >= 0)
+
+        impl =
+            when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA -> {
+                    VerticalTextLayoutApi36Impl(text, start, end, paint, height, orientation)
+                }
+                else -> {
+                    VerticalTextLayoutNoOpImpl()
+                }
+            }
+    }
 
     /**
      * Draws this text layout onto the specified [Canvas].
@@ -53,47 +77,14 @@ private constructor(
      * @param y The vertical offset in pixels. The drawing origin is the top-right corner.
      */
     public fun draw(canvas: Canvas, @Px x: Float, @Px y: Float) {
-        result.draw(canvas, x, y, paint)
+        impl.draw(canvas, x, y)
     }
 
     /**
-     * Builder class for creating instances of [VerticalTextLayout].
-     *
-     * @param text The text to be laid out.
-     * @param start The inclusive start offset of the target text range.
-     * @param end The exclusive end offset of the target text range.
-     * @param paint The [TextPaint] instance used for laying out the text.
-     * @param height The height constraint in pixels.
+     * Capability query to determine whether or not [VerticalTextLayout] supports vertical text
+     * painting. If it is false, calling methods will have no effect.
      */
-    public class Builder(
-        private val text: CharSequence,
-        private val start: Int,
-        private val end: Int,
-        private val paint: TextPaint,
-        @Px private val height: Float,
-    ) {
-        private var _orientation: Int = TextOrientation.MIXED
-
-        /**
-         * Sets the text orientation.
-         *
-         * Defaults to [TextOrientation.MIXED].
-         *
-         * @param orientation The desired text orientation.
-         * @return This [Builder] instance for chaining.
-         */
-        public fun setOrientation(@OrientationMode orientation: Int): Builder = apply {
-            _orientation = orientation
-        }
-
-        /**
-         * Builds the [VerticalTextLayout] instance.
-         *
-         * @return The constructed [VerticalTextLayout].
-         */
-        public fun build(): VerticalTextLayout {
-            val lines = LineBreaker.breakTextIntoLines(text, start, end, paint, height)
-            return VerticalTextLayout(text, start, end, paint, height, _orientation, lines)
-        }
+    public fun isVerticalTextSupported(): Boolean {
+        return impl.isVerticalTextSupported()
     }
 }

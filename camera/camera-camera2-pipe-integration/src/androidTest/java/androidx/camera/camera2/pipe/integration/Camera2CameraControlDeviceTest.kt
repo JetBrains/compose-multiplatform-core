@@ -81,7 +81,6 @@ import org.junit.runner.RunWith
 @LargeTest
 @RunWith(AndroidJUnit4::class)
 @OptIn(ExperimentalCamera2Interop::class)
-@SdkSuppress(minSdkVersion = 21)
 class Camera2CameraControlDeviceTest {
     private lateinit var cameraSelector: CameraSelector
     private lateinit var context: Context

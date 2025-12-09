@@ -26,7 +26,6 @@ import androidx.camera.camera2.pipe.FrameInfo
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.Request
 import androidx.camera.camera2.pipe.RequestMetadata
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.adapter.propagateTo
 import androidx.camera.camera2.pipe.integration.config.CameraScope
 import androidx.camera.core.CameraControl
@@ -132,7 +131,9 @@ constructor(
         lowLightBoost: Boolean,
         cancelPreviousTask: Boolean = true,
     ): Deferred<Unit> {
-        debug { "LowLightBoostControl#setLowLightBoostAsync: lowLightBoost = $lowLightBoost" }
+        Camera2Logger.debug {
+            "LowLightBoostControl#setLowLightBoostAsync: lowLightBoost = $lowLightBoost"
+        }
 
         val signal = CompletableDeferred<Unit>()
 

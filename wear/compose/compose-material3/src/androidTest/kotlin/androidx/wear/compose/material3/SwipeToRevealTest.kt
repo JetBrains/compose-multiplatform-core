@@ -95,6 +95,7 @@ import kotlin.math.abs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.hamcrest.CoreMatchers.equalTo
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -104,7 +105,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class SwipeToRevealTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Before
     fun setUp() {
@@ -725,7 +726,7 @@ class SwipeToRevealTest {
     }
 
     @Test
-    fun onSecondaryActionClick_setsLastClickAction() =
+    fun onSecondaryActionClick_hasUndo_setsLastClickAction() =
         verifyLastClickAction(
             expectedClickType = SecondaryAction,
             initialRevealValue = RightRevealing,
@@ -733,11 +734,48 @@ class SwipeToRevealTest {
         )
 
     @Test
-    fun onPrimaryActionClick_setsLastClickAction() =
+    fun onPrimaryActionClick_hasUndo_setsLastClickAction() =
         verifyLastClickAction(
             expectedClickType = PrimaryAction,
             initialRevealValue = RightRevealing,
         )
+
+    @Test
+    fun onSecondaryActionClick_withoutUndo_setsLastClickActionNone() =
+        verifyLastClickAction(
+            initialRevealValue = RightRevealing,
+            nodeTagToPerformClick = SECONDARY_ACTION_TAG,
+            hasSecondaryUndoAction = false,
+            expectedClickType = None,
+        )
+
+    @Test
+    fun onPrimaryActionClick_withoutUndo_setsLastClickActionPrimary() =
+        verifyLastClickAction(
+            initialRevealValue = RightRevealing,
+            hasPrimaryUndoAction = false,
+            expectedClickType = PrimaryAction,
+        )
+
+    @Test
+    fun onFullSwipe_withoutUndo_setsLastClickActionPrimary() {
+        verifyLastClickAction(
+            initialRevealValue = Covered,
+            shouldFullySwipe = true,
+            hasPrimaryUndoAction = false,
+            expectedClickType = PrimaryAction,
+        )
+    }
+
+    @Test
+    fun onFullSwipe_hasUndo_setsLastClickActionPrimary() {
+        verifyLastClickAction(
+            initialRevealValue = Covered,
+            shouldFullySwipe = true,
+            hasPrimaryUndoAction = true,
+            expectedClickType = PrimaryAction,
+        )
+    }
 
     @Test
     fun onUndoActionClick_setsLastClickAction() =
@@ -804,6 +842,13 @@ class SwipeToRevealTest {
             wrappedInSwipeToDismissBox = true,
             enableTouchSlop = false,
         ) {
+            swipeRight(startX = width / 2f)
+        }
+    }
+
+    @Test
+    fun onSwipeRight_withPartiallyRevealedState_stateToCovered() {
+        verifyGesture(initialRevealValue = RightRevealing, expectedRevealValue = Covered) {
             swipeRight(startX = width / 2f)
         }
     }
@@ -1094,11 +1139,15 @@ class SwipeToRevealTest {
         expectedClickType: RevealActionType,
         initialRevealValue: RevealValue,
         nodeTagToPerformClick: String = PRIMARY_ACTION_TAG,
+        shouldFullySwipe: Boolean = false,
+        hasPrimaryUndoAction: Boolean = true,
+        hasSecondaryUndoAction: Boolean = true,
     ) {
         lateinit var revealState: RevealState
         rule.setContent {
             revealState = rememberRevealState(initialRevealValue)
             SwipeToRevealWithDefaults(
+                modifier = Modifier.testTag(TEST_TAG),
                 primaryAction = {
                     DefaultPrimaryActionButton(
                         modifier = Modifier.testTag(PRIMARY_ACTION_TAG),
@@ -1112,21 +1161,32 @@ class SwipeToRevealTest {
                         onClick = {},
                     )
                 },
-                undoPrimaryAction = {
-                    DefaultUndoActionButton(
-                        modifier = Modifier.testTag(UNDO_PRIMARY_ACTION_TAG),
-                        onClick = {},
-                    )
-                },
-                undoSecondaryAction = {
-                    DefaultUndoActionButton(
-                        modifier = Modifier.testTag(UNDO_SECONDARY_ACTION_TAG),
-                        onClick = {},
-                    )
-                },
+                undoPrimaryAction =
+                    if (hasPrimaryUndoAction) {
+                        @Composable {
+                            DefaultUndoActionButton(
+                                modifier = Modifier.testTag(UNDO_PRIMARY_ACTION_TAG),
+                                onClick = {},
+                            )
+                        }
+                    } else null,
+                undoSecondaryAction =
+                    if (hasSecondaryUndoAction) {
+                        @Composable {
+                            DefaultUndoActionButton(
+                                modifier = Modifier.testTag(UNDO_SECONDARY_ACTION_TAG),
+                                onClick = {},
+                            )
+                        }
+                    } else null,
             )
         }
-        rule.onNodeWithTag(nodeTagToPerformClick).performClick()
+        rule.waitForIdle()
+        if (shouldFullySwipe) {
+            rule.onNodeWithTag(TEST_TAG).performTouchInput { swipeLeft() }
+        } else {
+            rule.onNodeWithTag(nodeTagToPerformClick).performClick()
+        }
         rule.runOnIdle { assertEquals(expectedClickType, revealState.lastActionType) }
     }
 

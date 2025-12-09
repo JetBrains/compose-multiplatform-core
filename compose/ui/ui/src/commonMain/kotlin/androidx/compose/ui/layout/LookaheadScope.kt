@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.UiComposable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.node.LayoutNode
+import androidx.compose.ui.node.LookaheadCapablePlaceable
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.NodeCoordinator
 import androidx.compose.ui.platform.InspectorInfo
@@ -238,6 +239,26 @@ interface LookaheadScope {
             relativeToSource = relativeToSource,
             includeMotionFrameOfReference = includeMotionFrameOfReference,
         )
+}
+
+/**
+ * Obtains the [LayoutCoordinates] for the given [LookaheadScope] using a [LayoutCoordinates] within
+ * the [LookaheadScope].
+ *
+ * **Important:** This must be an actual [LayoutCoordinates] instance from the [PlacementScope] or
+ * [Modifier] APIs. The Layout that associates with the coordinates needs to be within the subtree
+ * of the [LookaheadScope]. Using a custom [LayoutCoordinates] implementation will result in an
+ * [IllegalArgumentException].
+ *
+ * @param sourceCoordinates A [LayoutCoordinates] within the subtree of the given [LookaheadScope].
+ */
+fun LookaheadScope.lookaheadScopeCoordinates(
+    sourceCoordinates: LayoutCoordinates
+): LayoutCoordinates {
+    require(sourceCoordinates is LookaheadCapablePlaceable) {
+        "Invalid LayoutCoordinates: $sourceCoordinates"
+    }
+    return sourceCoordinates.placementScope.lookaheadScopeCoordinates
 }
 
 /** Internal implementation to handle [LookaheadScope.localLookaheadPositionOf]. */

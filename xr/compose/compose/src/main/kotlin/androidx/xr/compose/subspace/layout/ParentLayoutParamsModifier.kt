@@ -47,7 +47,7 @@ package androidx.xr.compose.subspace.layout
  * }
  * ```
  */
-public interface ParentLayoutParamsModifier {
+public interface ParentLayoutParamsModifier : DelegatableSubspaceNode {
 
     /**
      * Adjusts the given [ParentLayoutParamsAdjustable] object.

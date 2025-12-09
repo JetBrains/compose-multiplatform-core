@@ -19,11 +19,10 @@ package androidx.camera.camera2.pipe.integration.adapter
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW
 import android.media.MediaCodec
-import android.os.Build
 import android.util.Range
 import android.view.Surface
 import androidx.camera.camera2.pipe.OutputStream.StreamUseHint
-import androidx.camera.camera2.pipe.integration.impl.STREAM_USE_HINT_OPTION
+import androidx.camera.camera2.pipe.integration.impl.Camera2ImplConfig
 import androidx.camera.core.Preview
 import androidx.camera.core.impl.DeferrableSurface
 import androidx.camera.core.impl.MutableOptionsBundle
@@ -47,7 +46,7 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 @DoNotInstrument
 class SessionConfigAdapterTest {
 
@@ -135,31 +134,6 @@ class SessionConfigAdapterTest {
     }
 
     @Test
-    fun getExpectedFrameRateRange() {
-        // Arrange
-        val testDeferrableSurface = createTestDeferrableSurface()
-
-        // Create an invalid SessionConfig which doesn't set the template
-        val fakeTestUseCase = createFakeTestUseCase {
-            it.setupSessionConfig(
-                SessionConfig.Builder().also { sessionConfigBuilder ->
-                    sessionConfigBuilder.addSurface(testDeferrableSurface)
-                    sessionConfigBuilder.setTemplateType(TEMPLATE_PREVIEW)
-                    sessionConfigBuilder.setExpectedFrameRateRange(Range(15, 24))
-                }
-            )
-        }
-
-        // Act
-        val sessionConfigAdapter = SessionConfigAdapter(useCases = listOf(fakeTestUseCase))
-
-        // Assert
-        assertThat(sessionConfigAdapter.isSessionConfigValid()).isTrue()
-        assertThat(sessionConfigAdapter.getValidSessionConfigOrNull()).isNotNull()
-        assertThat(sessionConfigAdapter.getExpectedFrameRateRange()).isEqualTo(Range(15, 24))
-    }
-
-    @Test
     fun populateSurfaceToStreamUseCaseMappingEmptyUseCase() {
         val mapping = sessionConfigAdapter.getSurfaceToStreamUseCaseMapping(listOf(), listOf())
         TestCase.assertTrue(mapping.isEmpty())
@@ -180,7 +154,10 @@ class SessionConfigAdapterTest {
                 surface = fakeSurface1,
                 options =
                     MutableOptionsBundle.create().apply {
-                        insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.DEFAULT.value)
+                        insertOption(
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION,
+                            StreamUseHint.DEFAULT.value,
+                        )
                     },
             )
         val fakeSurface2 = createTestDeferrableSurface()
@@ -189,7 +166,10 @@ class SessionConfigAdapterTest {
                 surface = fakeSurface2,
                 options =
                     MutableOptionsBundle.create().apply {
-                        insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.VIDEO_RECORD.value)
+                        insertOption(
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION,
+                            StreamUseHint.VIDEO_RECORD.value,
+                        )
                     },
             )
 
@@ -240,7 +220,10 @@ class SessionConfigAdapterTest {
                 surface = fakeSurface1,
                 options =
                     MutableOptionsBundle.create().apply {
-                        insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.VIDEO_RECORD.value)
+                        insertOption(
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION,
+                            StreamUseHint.VIDEO_RECORD.value,
+                        )
                     },
             )
         val fakeSurface2 = createTestDeferrableSurface(containerClass = MediaCodec::class.java)
@@ -249,7 +232,10 @@ class SessionConfigAdapterTest {
                 surface = fakeSurface2,
                 options =
                     MutableOptionsBundle.create().apply {
-                        insertOption(STREAM_USE_HINT_OPTION, StreamUseHint.DEFAULT.value)
+                        insertOption(
+                            Camera2ImplConfig.STREAM_USE_HINT_OPTION,
+                            StreamUseHint.DEFAULT.value,
+                        )
                     },
             )
 

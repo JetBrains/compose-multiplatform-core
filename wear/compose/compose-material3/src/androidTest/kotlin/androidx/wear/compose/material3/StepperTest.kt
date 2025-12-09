@@ -51,12 +51,13 @@ import androidx.compose.ui.unit.height
 import androidx.wear.compose.materialcore.RangeIcons
 import com.google.common.truth.Truth
 import kotlin.math.roundToInt
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class StepperTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {
@@ -544,7 +545,8 @@ class StepperTest {
 }
 
 class IntegerStepperTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule
+    val rule = createComposeRule(effectContext = kotlinx.coroutines.test.StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {

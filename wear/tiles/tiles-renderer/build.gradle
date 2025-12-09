@@ -27,7 +27,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
     id("com.google.protobuf")
 }
 
@@ -69,10 +69,7 @@ dependencies {
 android {
     defaultConfig {
         minSdk = 26
-    }
-
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
+        consumerProguardFiles("proguard-rules.pro")
     }
     namespace = "androidx.wear.tiles.renderer"
 }

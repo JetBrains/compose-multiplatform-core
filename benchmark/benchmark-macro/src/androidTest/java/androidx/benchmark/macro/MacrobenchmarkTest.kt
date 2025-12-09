@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import androidx.annotation.RequiresApi
 import androidx.benchmark.DeviceInfo
+import androidx.benchmark.DeviceMirroring
 import androidx.benchmark.ExperimentalBenchmarkConfigApi
 import androidx.benchmark.ExperimentalConfig
 import androidx.benchmark.json.BenchmarkData
@@ -243,6 +244,56 @@ class MacrobenchmarkTest {
     @LargeTest
     @Test
     fun customConfig_noProcess() = validateSlicesCustomConfig(includeMacroAppTag = false)
+
+    @LargeTest
+    @Test
+    fun macrobenchmark_deviceMirroring_active_throwsError() =
+        try {
+            DeviceMirroring.isAndroidStudioDeviceMirroringActiveOverride = true
+            val exception =
+                assertFailsWith<AssertionError> {
+                    macrobenchmarkWithStartupMode(
+                        uniqueName = "uniqueName", // ignored, uniqueness not important
+                        className = "className",
+                        testName = "testName",
+                        packageName = Packages.TARGET,
+                        metrics = listOf(StartupTimingMetric()),
+                        compilationMode = CompilationMode.Ignore(),
+                        iterations = 1,
+                        startupMode = StartupMode.COLD,
+                        experimentalConfig = null,
+                        setupBlock = {},
+                        measureBlock = {},
+                    )
+                }
+            assertTrue(exception.message!!.contains("Android Studio Device Mirroring is active"))
+        } finally {
+            DeviceMirroring.isAndroidStudioDeviceMirroringActiveOverride = null
+        }
+
+    @LargeTest
+    @Test
+    fun macrobenchmark_deviceMirroring_inactive_runsBenchmark() =
+        try {
+            DeviceMirroring.isAndroidStudioDeviceMirroringActiveOverride = false
+            val result =
+                macrobenchmarkWithStartupMode(
+                    uniqueName = "uniqueName", // ignored, uniqueness not important
+                    className = "className",
+                    testName = "testName",
+                    packageName = Packages.TARGET,
+                    metrics = listOf(TraceSectionMetric(TRACE_LABEL, targetPackageOnly = false)),
+                    compilationMode = CompilationMode.Ignore(),
+                    iterations = 1,
+                    startupMode = StartupMode.COLD,
+                    experimentalConfig = null,
+                    setupBlock = {},
+                    measureBlock = {},
+                )
+            assertEquals(1, result.metrics[TRACE_LABEL + "SumMs"]!!.runs.size)
+        } finally {
+            DeviceMirroring.isAndroidStudioDeviceMirroringActiveOverride = null
+        }
 
     companion object {
         const val TRACE_LABEL = "MacrobencharkTestTraceLabel"

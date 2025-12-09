@@ -136,7 +136,8 @@ class PrivacySandboxApiPackagerTest {
             """
                     .trimMargin(),
             )
-        assertThat(compileWithExtraClasspath(appSource, packagedSdkClasspath)).succeeds()
+        assertThat(compileWithExtraClasspath(appSource, packagedSdkClasspath))
+            .succeedsExcludingOptInWarnings()
     }
 
     @Test
@@ -270,7 +271,7 @@ class PrivacySandboxApiPackagerTest {
     /** Compiles the given source file and returns a classpath with the results. */
     private fun compileAndReturnUnzippedPackagedClasspath(source: Source): File {
         val result = compileAll(listOf(source))
-        assertThat(result).succeeds()
+        assertThat(result).succeedsExcludingOptInWarnings()
         assertThat(result.outputClasspath).hasSize(1)
 
         val originalClasspath = result.outputClasspath.first().toPath()

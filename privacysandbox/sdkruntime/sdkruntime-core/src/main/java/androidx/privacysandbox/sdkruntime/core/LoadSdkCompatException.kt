@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
+
 package androidx.privacysandbox.sdkruntime.core
 
 import android.app.sdksandbox.LoadSdkException
@@ -27,6 +29,7 @@ import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
  *
  * @see [LoadSdkException]
  */
+@Deprecated("This library is no longer supported.")
 public class LoadSdkCompatException : Exception {
 
     /**
@@ -87,7 +90,7 @@ public class LoadSdkCompatException : Exception {
     public constructor(
         cause: Throwable,
         extraInfo: Bundle,
-    ) : this(LOAD_SDK_SDK_DEFINED_ERROR, "", cause, extraInfo)
+    ) : this(LOAD_SDK_SDK_DEFINED_ERROR, cause.message, cause, extraInfo)
 
     @IntDef(
         SDK_SANDBOX_PROCESS_NOT_AVAILABLE,

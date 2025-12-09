@@ -37,9 +37,9 @@ import androidx.annotation.UiThread;
 import androidx.camera.viewfinder.core.ImplementationMode;
 import androidx.camera.viewfinder.core.ScaleType;
 import androidx.camera.viewfinder.core.TransformationInfo;
+import androidx.camera.viewfinder.core.ViewfinderDefaults;
 import androidx.camera.viewfinder.core.ViewfinderSurfaceRequest;
 import androidx.camera.viewfinder.core.ViewfinderSurfaceSession;
-import androidx.camera.viewfinder.core.impl.ImplementationModeCompat;
 import androidx.camera.viewfinder.core.impl.RefCounted;
 import androidx.camera.viewfinder.core.impl.ViewfinderSurfaceSessionImpl;
 import androidx.camera.viewfinder.view.internal.futures.Futures;
@@ -71,7 +71,7 @@ public final class ViewfinderView extends FrameLayout {
 
     @ColorRes private static final int DEFAULT_BACKGROUND_COLOR = android.R.color.black;
     private static final ImplementationMode DEFAULT_IMPL_MODE =
-            ImplementationModeCompat.chooseCompatibleMode();
+            ViewfinderDefaults.getImplementationMode();
 
     // Synthetic access
     @SuppressWarnings("WeakerAccess")
@@ -169,10 +169,11 @@ public final class ViewfinderView extends FrameLayout {
      * <ol>
      *     <li>Set directly in the {@link ViewfinderSurfaceRequest}.</li>
      *     <li>Set via the {@code app:implementationMode} attribute in the layout XML.</li>
-     *     <li>If not specified in either of the above, it defaults to
-     *     {@link ImplementationMode#EXTERNAL}, except on devices with known compatibility
-     *     issues with the {@code EXTERNAL} implementation or on API levels 24 and below, where it
-     *     will default to {@link ImplementationMode#EMBEDDED}.</li>
+     *     <li>If not specified, it uses the default value from
+     *     {@link ViewfinderDefaults#getImplementationMode()}. This default is chosen for
+     *     maximum compatibility, using {@link ImplementationMode#EMBEDDED} on API levels 24
+     *     and below or on devices with known hardware quirks, and the higher-performance
+     *     {@link ImplementationMode#EXTERNAL} on all other devices.</li>
      * </ol>
      *
      * @return The currently active {@link ImplementationMode} for {@link ViewfinderView}.

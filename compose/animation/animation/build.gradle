@@ -44,7 +44,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
 
                 api(project(":compose:animation:animation-core"))
                 api(project(":compose:foundation:foundation-layout"))
@@ -90,7 +89,7 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
@@ -106,7 +105,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)

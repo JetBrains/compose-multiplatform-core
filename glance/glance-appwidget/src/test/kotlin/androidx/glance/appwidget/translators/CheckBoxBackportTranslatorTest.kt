@@ -47,7 +47,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-@Config(minSdk = 23, maxSdk = 30)
+@Config(maxSdk = 30)
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class CheckBoxBackportTranslatorTest {

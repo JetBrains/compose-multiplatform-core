@@ -19,6 +19,7 @@ package androidx.webkit;
 import android.content.Context;
 import android.webkit.WebView;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.RequiresFeature;
 import androidx.annotation.RequiresOptIn;
 import androidx.annotation.RestrictTo;
@@ -47,6 +48,7 @@ import java.util.List;
  * <p>WebView instances constructed by this builder can be used as direct drop-in replacements for
  * WebView's created by the class constructor with no additional code changes.
  */
+@WebViewBuilder.Experimental
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class WebViewBuilder {
     private boolean mRestrictJavascriptInterface;
@@ -58,9 +60,29 @@ public final class WebViewBuilder {
     @RequiresOptIn(level = RequiresOptIn.Level.ERROR)
     public @interface Experimental {}
 
+    /**
+     * Common configuration presets for WebView.
+     */
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({
+        Baseline.LEGACY,
+    })
+    public @interface Baseline {
+        /**
+         * Matches the configuration of a WebView created via the WebView constructor.
+         */
+        int LEGACY = 0;
+    }
+
     @Nullable WebViewBuilderBoundaryInterface mBuilderStateBoundary;
 
-    public WebViewBuilder() {}
+    public WebViewBuilder(@Baseline int baseline) {
+        if (baseline != Baseline.LEGACY) {
+            throw new IllegalArgumentException("Invalid baseline: " + baseline);
+        }
+        // TODO(crbug.com/419726203): We only have the no-op LEGACY baseline right now, so no logic
+        // consumes this argument, yet.
+    }
 
     /**
      * Restrict {@link WebView#addJavascriptInterface(Object, String)} and {@link

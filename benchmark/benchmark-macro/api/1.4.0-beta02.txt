@@ -85,6 +85,7 @@ package androidx.benchmark.macro {
 
   public final class FrameTimingMetric extends androidx.benchmark.macro.Metric {
     ctor public FrameTimingMetric();
+    ctor @SuppressCompatibility @androidx.benchmark.ExperimentalBenchmarkConfigApi public FrameTimingMetric(String processNameSuffix, optional String metricNameSuffix);
   }
 
   public final class MacrobenchmarkScope {

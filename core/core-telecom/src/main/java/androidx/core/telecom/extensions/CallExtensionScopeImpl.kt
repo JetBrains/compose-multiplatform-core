@@ -283,7 +283,7 @@ internal class CallExtensionScopeImpl(
     internal suspend fun resolveCallExtensionsType(): Int {
         var details = call.details
         var type = NONE
-        if (Utils.hasPlatformV2Apis()) {
+        if (!Utils.shouldUseBackwardsCompatImplementation()) {
             // Android CallsManager V+ check
             if (details.hasProperty(CallsManager.PROPERTY_IS_TRANSACTIONAL)) {
                 Log.d(TAG, "resolveCallExtensionsType: PROPERTY_IS_TRANSACTIONAL present")
@@ -396,7 +396,7 @@ internal class CallExtensionScopeImpl(
      * does not support extensions at all.
      */
     private suspend fun performExchangeWithRemote(): CapabilityExchangeResult? {
-        if (Utils.hasPlatformV2Apis()) {
+        if (!Utils.shouldUseBackwardsCompatImplementation()) {
             Log.d(TAG, "performExchangeWithRemote: waiting for call ready signal...")
             withTimeoutOrNull(CALL_READY_TIMEOUT_MS) {
                 // On Android U/V, we must wait for the jetpack lib to send a call ready event to

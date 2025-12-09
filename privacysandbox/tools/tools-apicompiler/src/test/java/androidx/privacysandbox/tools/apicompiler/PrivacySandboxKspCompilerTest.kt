@@ -51,7 +51,7 @@ class PrivacySandboxKspCompilerTest {
                 """,
             )
         val compilationResult = compileWithPrivacySandboxKspCompiler(listOf(source))
-        assertThat(compilationResult).succeeds()
+        assertThat(compilationResult).succeedsExcludingOptInWarnings()
 
         val resourceMap =
             compilationResult.resourceOutputDir

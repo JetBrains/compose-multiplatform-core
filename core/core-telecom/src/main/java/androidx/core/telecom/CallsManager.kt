@@ -48,8 +48,10 @@ import androidx.core.telecom.internal.CallEndpointUuidTracker
 import androidx.core.telecom.internal.CallSession
 import androidx.core.telecom.internal.CallSessionLegacy
 import androidx.core.telecom.internal.CallStateEvent
+import androidx.core.telecom.internal.EndpointAction
+import androidx.core.telecom.internal.EndpointStateHandler
 import androidx.core.telecom.internal.JetpackConnectionService
-import androidx.core.telecom.internal.PreCallEndpointsUpdater
+import androidx.core.telecom.internal.ProductionBluetoothDeviceChecker
 import androidx.core.telecom.internal.utils.Utils
 import androidx.core.telecom.internal.utils.Utils.Companion.hasBluetoothPermissions
 import androidx.core.telecom.internal.utils.Utils.Companion.remapJetpackCapsToPlatformCaps
@@ -60,6 +62,7 @@ import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -169,29 +172,68 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         internal const val ADD_CALL_TIMEOUT = 5000L
         internal const val SWITCH_TO_SPEAKER_TIMEOUT = 1000L
         private val TAG: String = CallsManager::class.java.simpleName.toString()
+
+        /**
+         * Stores the effective upper SDK bound for forcing the legacy implementation. This value is
+         * calculated and set during [registerAppWithTelecom].
+         */
+        @Volatile internal var mBackwardsCompatUpperBound: Int = VERSION_CODES.TIRAMISU // 33
     }
 
     /**
-     * VoIP applications should look at each [Capability] annotated above and call this API in order
-     * to start adding calls via [addCall]. Registering capabilities must be done before calling
-     * [addCall] or an exception will be thrown by [addCall]. The capabilities can be updated by
-     * re-registering.
+     * Registers the application with the Telecom framework.
      *
-     * Note: There is no need to unregister at any point. Telecom will handle unregistering once the
-     * application using core-telecom has been removed from the device.
+     * VoIP applications should call this API during application setup to register their
+     * capabilities (e.g., video) before adding calls via [addCall].The library automatically
+     * handles unregistering any previous configuration.
+     *
+     * **Note:** This method should not be called while there are active calls, as it may cause
+     * unexpected behavior or call disconnection.
+     *
+     * Core-telecom abstracts two platform implementations: the legacy `ConnectionService` APIs and
+     * the modern transactional APIs (introduced in SDK 34). The `backwardsCompatSdkLevel` parameter
+     * allows you to control which implementation is used.
+     *
+     * @param capabilities The set of capabilities your application supports, such as
+     *   [CAPABILITY_SUPPORTS_VIDEO_CALLING].
+     * @param backwardsCompatSdkLevel Sets the highest SDK version (inclusive) that should be forced
+     *   to use the legacy `ConnectionService` implementation.
+     * - **Default:** `VERSION_CODES.TIRAMISU` (33). This default ensures that all devices on SDK 34
+     *   and higher will use the modern transactional APIs.
+     * - **Behavior:** This parameter provides developers with the flexibility to prefer the
+     *   behavior of the legacy implementation on specific OS versions.
+     * - **Clamping:** The provided value is automatically clamped to a safe range: it cannot be
+     *   lower than `33` or higher than the current device's SDK version. For example, to force the
+     *   legacy path on a device running SDK 35, you would pass in `35`. Passing in `40` on an SDK
+     *   35 device would be clamped to `35`.
      *
      * @throws UnsupportedOperationException if the device is on an invalid build
      */
     @RequiresPermission(value = "android.permission.MANAGE_OWN_CALLS")
-    public fun registerAppWithTelecom(@Capability capabilities: Int) {
+    @JvmOverloads
+    public fun registerAppWithTelecom(
+        @Capability capabilities: Int,
+        backwardsCompatSdkLevel: Int = VERSION_CODES.TIRAMISU,
+    ) {
         // verify the build version supports this API and throw an exception if not
         Utils.verifyBuildVersion()
+
+        // unregister any old PhoneAccountHandle from this application because the
+        // handle can change based on the backwardsCompatSdkLevel value.
+        mTelecomManager.unregisterPhoneAccount(getPhoneAccountHandleForPackage())
+
+        setBackwardsCompatSdkUpperBound(backwardsCompatSdkLevel)
 
         val phoneAccountBuilder =
             PhoneAccount.builder(getPhoneAccountHandleForPackage(), PACKAGE_LABEL)
 
         // remap and set capabilities
-        phoneAccountBuilder.setCapabilities(remapJetpackCapsToPlatformCaps(capabilities))
+        phoneAccountBuilder.setCapabilities(
+            remapJetpackCapsToPlatformCaps(
+                clientBitmapSelection = capabilities,
+                useTransactionalApis = !Utils.shouldUseBackwardsCompatImplementation(),
+            )
+        )
         // see b/343674176. Some OEMs expect the PhoneAccount.getExtras() to be non-null
         // see b/352526256. The bundle must contain a placeholder value. otherwise, the bundle
         // empty bundle will be nulled out on reboot.
@@ -202,6 +244,17 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         // build and register the PhoneAccount via the Platform API
         mPhoneAccount = phoneAccountBuilder.build()
         mTelecomManager.registerPhoneAccount(mPhoneAccount)
+    }
+
+    internal fun setBackwardsCompatSdkUpperBound(clientRequestedSdkLevel: Int) {
+        // Calculate the effective SDK level by clamping the input to a valid range.
+        val effectiveSdkLevel =
+            clientRequestedSdkLevel
+                .coerceAtMost(Utils.getCurrentSdk()) // upper is latest sdk released
+                .coerceAtLeast(VERSION_CODES.TIRAMISU) // DO NOT CHANGE. Allowing
+        // clients to set the upperbound to a below TIRAMISU like S_V2 would mean the library
+        // could use the transactional path when the APIs would not exist.
+        mBackwardsCompatUpperBound = effectiveSdkLevel
     }
 
     /**
@@ -380,17 +433,28 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
      */
     public fun getAvailableStartingCallEndpoints(): Flow<List<CallEndpointCompat>> = callbackFlow {
         val id: Int = CallEndpointUuidTracker.startSession()
-        // The emitted endpoints need to be tracked so that when the device list changes,
-        // the added or removed endpoints can be re-emitted as a whole list.  Otherwise, only
-        // the added or removed endpoints will be emitted.
-        val callEndpointsUpdater = PreCallEndpointsUpdater(mSendChannel = this.channel)
+        val actionChannel = Channel<EndpointAction>(Channel.UNLIMITED)
+        val stateHandler = EndpointStateHandler()
+        launch {
+            for (action in actionChannel) {
+                val stateChanged =
+                    when (action) {
+                        is EndpointAction.Add -> stateHandler.add(action.endpoints)
+                        is EndpointAction.Remove -> stateHandler.remove(action.endpoints)
+                    }
+                // Only send an update if the state actually changed
+                if (stateChanged) {
+                    send(stateHandler.getSortedEndpoints())
+                }
+            }
+        }
         // register an audio callback that will listen for updates
-        val audioDeviceListener = AudioDeviceListener(mContext, callEndpointsUpdater, id)
+        val audioDeviceListener = AudioDeviceListener(mContext, actionChannel, id)
         // register a bluetooth listener to surface connected bluetooth devices instead of just
         // the active bluetooth device
         var bluetoothProfileListener =
             if (hasBluetoothPermissions(mContext)) {
-                BluetoothProfileListener(mContext, callEndpointsUpdater, id)
+                BluetoothProfileListener(mContext, actionChannel, id)
             } else {
                 null
             }
@@ -435,7 +499,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         // create a call session based off the build version
         @Suppress("WRONG_ANNOTATION_TARGET") // b/407926117
         @RequiresApi(34)
-        if (Utils.hasPlatformV2Apis()) {
+        if (!Utils.shouldUseBackwardsCompatImplementation()) {
             // CompletableDeferred pauses the execution of this method until the CallControl is
             // returned by the Platform.
             val openResult = CompletableDeferred<AddCallResult>(parent = coroutineContext.job)
@@ -443,6 +507,7 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
             // and propagates CallControlCallbacks that originate in the Platform out to the client.
             val callSession =
                 CallSession(
+                    ProductionBluetoothDeviceChecker(mContext),
                     coroutineContext,
                     callAttributes,
                     onAnswer,
@@ -598,10 +663,10 @@ public class CallsManager(context: Context) : CallsManagerExtensions {
         Utils.verifyBuildVersion()
 
         val className =
-            if (Utils.hasPlatformV2Apis()) {
-                mContext.packageName
-            } else {
+            if (Utils.shouldUseBackwardsCompatImplementation()) {
                 CONNECTION_SERVICE_CLASS
+            } else {
+                mContext.packageName
             }
         return PhoneAccountHandle(
             ComponentName(mContext.packageName, className),

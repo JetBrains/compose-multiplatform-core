@@ -61,13 +61,14 @@ import androidx.wear.compose.material3.IconButtonDefaults.ExtraSmallButtonSize
 import androidx.wear.compose.material3.IconButtonDefaults.LargeButtonSize
 import androidx.wear.compose.material3.IconButtonDefaults.SmallButtonSize
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assume
 import org.junit.Rule
 import org.junit.Test
 
 class IconButtonTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun supports_testtag() {
@@ -347,17 +348,22 @@ class IconButtonTest {
         val baseShape = RoundedCornerShape(20.dp)
         val pressedShape = RoundedCornerShape(0.dp)
 
+        // Ignore the color transition from enabled to disabled color
+        val colors = IconButtonColors(Color.Black, Color.Black, Color.Black, Color.Black)
+
         rule.verifyRoundedButtonTapAnimationEnd(
-            baseShape,
-            pressedShape,
-            0.75f,
-            8,
-            color = { IconButtonDefaults.filledIconButtonColors().containerColor },
+            baseShape = baseShape,
+            pressedShape = pressedShape,
+            targetProgress = 0.75f,
+            expectedFramesUntilTarget = 8,
+            color = { colors.containerColor },
+            antiAliasingGap = 4f,
         ) { modifier ->
             FilledIconButton(
                 onClick = {},
                 shapes = IconButtonShapes(baseShape, pressedShape),
                 modifier = modifier,
+                colors = colors,
             ) {}
         }
     }
@@ -647,7 +653,7 @@ private fun ComposeContentTestRule.isShape(
     setContentWithTheme {
         background = MaterialTheme.colorScheme.surfaceContainer
         Box(Modifier.background(background)) {
-            buttonColor = colors().containerColor(true)
+            buttonColor = colors().containerColor(true).value
             if (buttonColor == Color.Transparent) {
                 buttonColor = background
             }

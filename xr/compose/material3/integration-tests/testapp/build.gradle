@@ -21,34 +21,34 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    implementation(libs.kotlinStdlib)
 
     implementation(project(":appcompat:appcompat"))
     implementation("androidx.activity:activity-compose:1.10.1")
     implementation(project(":compose:foundation:foundation"))
     implementation(project(":compose:foundation:foundation-layout"))
-    implementation("androidx.compose.material3:material3:1.4.0-alpha16")
+    implementation(project(":compose:material3:material3"))
     implementation("androidx.compose.material:material-icons-core:1.6.8")
     implementation(project(":compose:runtime:runtime"))
     implementation(project(":compose:ui:ui"))
     implementation(project(":compose:ui:ui-tooling-preview"))
 
     // Adaptive (CAMAL) dependencies
-    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0-alpha07")
-    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.2.0-alpha07")
-    implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.2.0-alpha07")
-    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0-alpha16")
+    implementation("androidx.compose.material3.adaptive:adaptive:1.2.0-alpha10")
+    implementation("androidx.compose.material3.adaptive:adaptive-layout:1.2.0-alpha10")
+    implementation("androidx.compose.material3.adaptive:adaptive-navigation:1.2.0-alpha10")
+    implementation(project(":compose:material3:material3-adaptive-navigation-suite"))
 
     // XR Adaptive integration library
     implementation(project(":xr:compose:material3:material3"))
     implementation(project(":xr:compose:compose"))
     implementation(project(":xr:scenecore:scenecore"))
+    implementation(project(":xr:scenecore:scenecore-spatial-core"))
 
-    compileOnly(files(new File(AndroidXConfig.getPrebuiltsRoot(project), "androidx/xr/extensions/com.android.extensions.xr.jar")))
+    compileOnly("com.android.extensions.xr:extensions-xr:1.1.0")
 
     // TODO(b/374796755): Write unit-tests for this test app
 }

@@ -134,13 +134,20 @@ class TileServiceViewAdapter(context: Context, attrs: AttributeSet) : FrameLayou
                 tile.state?.let { setState(it.keyToValueMapping) }
             }
         val layout = tile.tileTimeline?.getCurrentLayout() ?: return
+        val scope = tileRequest.scope
 
-        val resourcesRequest =
-            ResourcesRequest.Builder()
-                .setDeviceConfiguration(deviceParams)
-                .setVersion(tile.resourcesVersion)
-                .build()
-        val resources = tilePreview.onTileResourceRequest(resourcesRequest)
+        val resources =
+            if (scope.hasResources()) {
+                scope.collectResources()
+            } else {
+                val resourcesRequest =
+                    ResourcesRequest.Builder()
+                        .setDeviceConfiguration(deviceParams)
+                        .setVersion(tile.resourcesVersion)
+                        .build()
+                tilePreview.onTileResourceRequest(resourcesRequest)
+            }
+        scope.clearAll()
 
         val inflateFuture = inflateAsync(layout, resources, this@TileServiceViewAdapter)
         inflateFuture.addListener(

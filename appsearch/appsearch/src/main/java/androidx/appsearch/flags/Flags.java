@@ -287,6 +287,68 @@ public final class Flags {
     public static final String FLAG_ENABLE_RESET_VISIBILITY_STORE =
             FLAG_PREFIX + "enable_reset_visibility_store";
 
+    /** Enables passing down filters to child iterators for optimized DocHitInfo retrieval. */
+    public static final String FLAG_ENABLE_PASSING_FILTER_TO_CHILDREN =
+            FLAG_PREFIX + "enable_passing_filter_to_children";
+
+    /** Whether to enable using removeByQuery to implement removeById. */
+    public static final String FLAG_ENABLE_REMOVE_BY_ID_USES_QUERY =
+            FLAG_PREFIX + "enable_remove_by_id_uses_query";
+
+    /**
+     * Whether to enable the new header format (refactor legacy format and introduce unsynced tail
+     * checksum) related changes in PortableFileBackedProtoLog.
+     */
+    public static final String FLAG_ENABLE_PROTO_LOG_NEW_HEADER_FORMAT =
+            FLAG_PREFIX + "enable_proto_log_new_header_format";
+
+    /**
+     * Whether to skip interacting with icing if the set schema call is a noop.
+     */
+    public static final String FLAG_ENABLE_EARLY_SET_SCHEMA_EXIT =
+            FLAG_PREFIX + "enable_early_set_schema_exit";
+
+    /**
+     * Whether to enable the new embedding iterator which has improved access order.
+     */
+    public static final String FLAG_ENABLE_EMBEDDING_ITERATOR_V2 =
+            FLAG_PREFIX + "enable_embedding_iterator_v2";
+
+    /**
+     * Whether to enable reusing a single buffer of memory to avoid reallocating a new buffer for
+     * every single document read..
+     */
+    public static final String FLAG_ENABLE_REUSABLE_DECOMPRESSION_BUFFER =
+            FLAG_PREFIX + "enable_reusable_decompression_buffer";
+
+    /**
+     * Whether to enable sharded storage for embedding index.
+     */
+    public static final String FLAG_ENABLE_SHARDED_EMBEDDING_STORAGE =
+            FLAG_PREFIX + "enable_sharded_embedding_storage";
+
+    /**
+     * Whether to directly write data to parcel data for remove and commit blob.
+     */
+    public static final String FLAG_ENABLE_DIRECTLY_WRITE_COMMIT_REMOVE_BLOB_RESPONSE =
+            FLAG_PREFIX + "directly_write_commit_remove_blob_response";
+
+    /**
+     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
+     * existing types will be preserved when possible.
+     */
+    public static final String FLAG_ENABLE_SCHEMA_TYPE_ID_OPTIMIZATION =
+            FLAG_PREFIX + "enable_schema_type_id_optimization";
+
+    /**
+     * Controls whether a few minor improvements to Optimize and Index Merge are enabled:
+     *   * Whether there is an unnecessary PersistToDisk call in Optimize
+     *   * Whether there is an unnecessary PersistToDisk call in Index Merge
+     *   * Whether DocumentStore Optimize will create unnecessary status messages.
+     */
+    public static final String FLAG_ENABLE_OPTIMIZE_IMPROVEMENTS =
+            FLAG_PREFIX + "enable_optimize_improvements";
+
     // Whether the features should be enabled.
     //
     // In Jetpack, those should always return true.
@@ -622,5 +684,91 @@ public final class Flags {
      */
     public static boolean enableResetVisibilityStore() {
         return true;
+    }
+
+    /**
+     * Whether to enable passing down filters to child iterators for optimized DocHitInfo
+     * retrieval.
+     */
+    public static boolean enablePassingFilterToChildren() {
+        return true;
+    }
+
+    /**
+     * Whether to enable using removeByQuery to implement removeById.
+     */
+    public static boolean enableRemoveByIdUsesQuery() {
+        // TODO(b/401245772): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable the new header format (refactor legacy format and introduce unsynced tail
+     * checksum) related changes in PortableFileBackedProtoLog.
+     */
+    public static boolean enableProtoLogNewHeaderFormat() {
+        // TODO(b/415387509): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to skip interacting with icing if the set schema call is a noop.
+     */
+    public static boolean enableEarlySetSchemaExit() {
+        // TODO(b/436813583): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable the new embedding iterator which has improved access order.
+     */
+    public static boolean enableEmbeddingIteratorV2() {
+        // TODO(b/435005853): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable reusing a single buffer of memory to avoid reallocating a new buffer for
+     * every single document read..
+     */
+    public static boolean enableReusableDecompressionBuffer() {
+        // TODO(b/435754056): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable sharded storage for embedding index.
+     */
+    public static boolean enableShardedEmbeddingStorage() {
+        // TODO(b/436237337): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Whether to enable directly write to parcel for commit and remove blob response.
+     */
+    public static boolean enableDirectlyWriteCommitRemoveBlobResponse() {
+        return true;
+    }
+
+    /**
+     * Whether to enable schema-type id optimization for setSchema. When enabled, the type-ids of
+     * existing types will be preserved when possible, and there will be no schema-type id
+     * reassignment for adding new types.
+     */
+    public static boolean enableSchemaTypeIdOptimization() {
+        // TODO(b/434218554): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
+    }
+
+    /**
+     * Controls whether a few minor improvements to Optimize and Index Merge are enabled:
+     *   * Whether there is an unnecessary PersistToDisk call in Optimize
+     *   * Whether there is an unnecessary PersistToDisk call in Index Merge
+     *   * Whether DocumentStore Optimize will create unnecessary status messages.
+     */
+    public static boolean enableOptimizeImprovements() {
+        // TODO(b/455903084): Enable this once the feature is rolled out to Nextfood in platform.
+        return false;
     }
 }

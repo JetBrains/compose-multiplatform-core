@@ -23,7 +23,11 @@ import androidx.compose.material3.adaptive.navigationsuite.samples.NavigationSui
 import androidx.compose.material3.adaptive.navigationsuite.samples.NavigationSuiteScaffoldSample
 import androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSample
 import androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSampleWithExtraPane
-import androidx.compose.material3.adaptive.samples.NavigableListDetailPaneScaffoldSample
+import androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSampleWithExtraPaneLevitatedAsDialog
+import androidx.compose.material3.adaptive.samples.ListDetailWithNavigation2Sample
+import androidx.compose.material3.adaptive.samples.ListDetailWithNavigation3Sample
+import androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSample
+import androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet
 import androidx.compose.material3.catalog.library.util.AdaptiveNavigationSuiteSampleSourceUrl
 import androidx.compose.material3.catalog.library.util.AdaptiveSampleSourceUrl
 import androidx.compose.material3.catalog.library.util.SampleSourceUrl
@@ -108,9 +112,11 @@ import androidx.compose.material3.samples.FilledTonalIconButtonSample
 import androidx.compose.material3.samples.FilledTonalIconToggleButtonSample
 import androidx.compose.material3.samples.FilterChipSample
 import androidx.compose.material3.samples.FilterChipWithLeadingIconSample
+import androidx.compose.material3.samples.FilterChipWithTrailingIconSample
 import androidx.compose.material3.samples.FloatingActionButtonMenuSample
 import androidx.compose.material3.samples.FloatingActionButtonSample
 import androidx.compose.material3.samples.FullScreenSearchBarScaffoldSample
+import androidx.compose.material3.samples.GroupedMenuSample
 import androidx.compose.material3.samples.HorizontalCenteredHeroCarouselSample
 import androidx.compose.material3.samples.HorizontalFloatingToolbarAsScaffoldFabSample
 import androidx.compose.material3.samples.HorizontalFloatingToolbarWithFabSample
@@ -154,10 +160,8 @@ import androidx.compose.material3.samples.MultiAutocompleteExposedDropdownMenuSa
 import androidx.compose.material3.samples.MultiSelectConnectedButtonGroupWithFlowLayoutSample
 import androidx.compose.material3.samples.NavigationBarItemWithBadge
 import androidx.compose.material3.samples.NavigationBarSample
-import androidx.compose.material3.samples.NavigationBarWithOnlySelectedLabelsSample
 import androidx.compose.material3.samples.NavigationRailBottomAlignSample
 import androidx.compose.material3.samples.NavigationRailSample
-import androidx.compose.material3.samples.NavigationRailWithOnlySelectedLabelsSample
 import androidx.compose.material3.samples.OneLineListItem
 import androidx.compose.material3.samples.OutlinedButtonSample
 import androidx.compose.material3.samples.OutlinedButtonWithAnimatedShapeSample
@@ -174,6 +178,11 @@ import androidx.compose.material3.samples.PermanentNavigationDrawerSample
 import androidx.compose.material3.samples.PinnedTopAppBar
 import androidx.compose.material3.samples.PlainTooltipSample
 import androidx.compose.material3.samples.PlainTooltipWithCaret
+import androidx.compose.material3.samples.PlainTooltipWithCaretBelowAnchor
+import androidx.compose.material3.samples.PlainTooltipWithCaretEndOfAnchor
+import androidx.compose.material3.samples.PlainTooltipWithCaretLeftOfAnchor
+import androidx.compose.material3.samples.PlainTooltipWithCaretRightOfAnchor
+import androidx.compose.material3.samples.PlainTooltipWithCaretStartOfAnchor
 import androidx.compose.material3.samples.PlainTooltipWithCustomCaret
 import androidx.compose.material3.samples.PlainTooltipWithManualInvocationSample
 import androidx.compose.material3.samples.PrimaryIconTabs
@@ -264,6 +273,7 @@ import androidx.compose.material3.samples.TonalToggleButtonSample
 import androidx.compose.material3.samples.TriStateCheckboxRoundedStrokesSample
 import androidx.compose.material3.samples.TriStateCheckboxSample
 import androidx.compose.material3.samples.TwoLineListItem
+import androidx.compose.material3.samples.VerticalButtonGroupSample
 import androidx.compose.material3.samples.VerticalCenteredSliderSample
 import androidx.compose.material3.samples.VerticalFloatingToolbarWithFabSample
 import androidx.compose.material3.samples.VerticalSliderSample
@@ -309,12 +319,44 @@ val AdaptiveExamples =
             ListDetailPaneScaffoldSampleWithExtraPane()
         },
         Example(
-            name = "NavigableListDetailPaneScaffoldSample",
+            name = "ListDetailPaneScaffoldSampleWithExtraPaneLevitatedAsDialog",
             description = AdaptiveExampleDescription,
             sourceUrl = AdaptiveExampleSourceUrl,
             isExpressive = false,
         ) {
-            NavigableListDetailPaneScaffoldSample()
+            ListDetailPaneScaffoldSampleWithExtraPaneLevitatedAsDialog()
+        },
+        Example(
+            name = "SupportingPaneScaffoldSample",
+            description = AdaptiveExampleDescription,
+            sourceUrl = AdaptiveExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            SupportingPaneScaffoldSample()
+        },
+        Example(
+            name = "SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet",
+            description = AdaptiveExampleDescription,
+            sourceUrl = AdaptiveExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet()
+        },
+        Example(
+            name = "ListDetailWithNavigation2Sample",
+            description = AdaptiveExampleDescription,
+            sourceUrl = AdaptiveExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            ListDetailWithNavigation2Sample()
+        },
+        Example(
+            name = "ListDetailWithNavigation3Sample",
+            description = AdaptiveExampleDescription,
+            sourceUrl = AdaptiveExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            ListDetailWithNavigation3Sample()
         },
     )
 
@@ -532,6 +574,14 @@ val ButtonGroupsExamples =
         ) {
             MultiSelectConnectedButtonGroupWithFlowLayoutSample()
         },
+        Example(
+            name = "VerticalButtonGroupSample",
+            description = ButtonGroupsExampleDescription,
+            sourceUrl = ButtonGroupsExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            VerticalButtonGroupSample()
+        },
     )
 
 private const val CardsExampleDescription = "Cards examples"
@@ -723,6 +773,14 @@ val ChipsExamples =
             isExpressive = false,
         ) {
             FilterChipWithLeadingIconSample()
+        },
+        Example(
+            name = "FilterChipWithTrailingIconSample",
+            description = ChipsExampleDescription,
+            sourceUrl = ChipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            FilterChipWithTrailingIconSample()
         },
         Example(
             name = "InputChipSample",
@@ -1489,6 +1547,14 @@ val MenusExamples =
             MenuSample()
         },
         Example(
+            name = "GroupedMenuSample",
+            description = MenusExampleDescription,
+            sourceUrl = MenusExampleSourceUrl,
+            isExpressive = true,
+        ) {
+            GroupedMenuSample()
+        },
+        Example(
             name = "MenuWithScrollStateSample",
             description = MenusExampleDescription,
             sourceUrl = MenusExampleSourceUrl,
@@ -1500,7 +1566,7 @@ val MenusExamples =
             name = "ExposedDropdownMenuSample",
             description = MenusExampleDescription,
             sourceUrl = MenusExampleSourceUrl,
-            isExpressive = false,
+            isExpressive = true,
         ) {
             ExposedDropdownMenuSample()
         },
@@ -1549,14 +1615,6 @@ val NavigationBarExamples =
             isExpressive = false,
         ) {
             NavigationBarSample()
-        },
-        Example(
-            name = "NavigationBarWithOnlySelectedLabelsSample",
-            description = NavigationBarExampleDescription,
-            sourceUrl = NavigationBarExampleSourceUrl,
-            isExpressive = false,
-        ) {
-            NavigationBarWithOnlySelectedLabelsSample()
         },
     )
 
@@ -1619,14 +1677,6 @@ val NavigationRailExamples =
             isExpressive = false,
         ) {
             NavigationRailSample()
-        },
-        Example(
-            name = "NavigationRailWithOnlySelectedLabelsSample",
-            description = NavigationRailExampleDescription,
-            sourceUrl = NavigationRailExampleSourceUrl,
-            isExpressive = false,
-        ) {
-            NavigationRailWithOnlySelectedLabelsSample()
         },
         Example(
             name = "NavigationRailBottomAlignSample",
@@ -1854,7 +1904,7 @@ val SearchBarExamples =
             name = "FullScreenSearchBarScaffoldSample",
             description = SearchBarExampleDescription,
             sourceUrl = SearchBarExampleSourceUrl,
-            isExpressive = false,
+            isExpressive = true,
         ) {
             FullScreenSearchBarScaffoldSample()
         },
@@ -1862,7 +1912,7 @@ val SearchBarExamples =
             name = "DockedSearchBarScaffoldSample",
             description = SearchBarExampleDescription,
             sourceUrl = SearchBarExampleSourceUrl,
-            isExpressive = false,
+            isExpressive = true,
         ) {
             DockedSearchBarScaffoldSample()
         },
@@ -2524,6 +2574,46 @@ val TooltipsExamples =
             isExpressive = false,
         ) {
             PlainTooltipWithCaret()
+        },
+        Example(
+            name = "PlainTooltipWithCaretBelowAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretBelowAnchor()
+        },
+        Example(
+            name = "PlainTooltipWithCaretLeftOfAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretLeftOfAnchor()
+        },
+        Example(
+            name = "PlainTooltipWithCaretRightOfAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretRightOfAnchor()
+        },
+        Example(
+            name = "PlainTooltipWithCaretStartOfAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretStartOfAnchor()
+        },
+        Example(
+            name = "PlainTooltipWithCaretEndOfAnchor",
+            description = TooltipsExampleDescription,
+            sourceUrl = TooltipsExampleSourceUrl,
+            isExpressive = false,
+        ) {
+            PlainTooltipWithCaretEndOfAnchor()
         },
         Example(
             name = "PlainTooltipWithCustomCaret",

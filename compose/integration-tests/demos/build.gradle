@@ -11,7 +11,7 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -27,7 +27,6 @@ dependencies {
     implementation(project(":compose:ui:ui:integration-tests:ui-demos"))
 
     implementation(libs.kotlinReflect)
-    implementation(libs.kotlinStdlib)
 
     implementation(project(":activity:activity"))
     implementation("androidx.core:core-ktx:1.15.0")

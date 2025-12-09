@@ -18,7 +18,6 @@ package androidx.benchmark
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -183,7 +182,6 @@ class MicrobenchmarkPhaseConfigTest {
             expectedIterations = null, // iterations are dynamic
         )
 
-    @SdkSuppress(minSdkVersion = 22) // See b/300658578
     @Test
     fun profilerMethodTracing() =
         validateConfig(
@@ -204,7 +202,6 @@ class MicrobenchmarkPhaseConfigTest {
             expectedProfilerIterations = 1,
         )
 
-    @SdkSuppress(minSdkVersion = 22) // See b/300658578
     @Test
     fun profilerMethodTracing_perfCompareMode() =
         validateConfig(

@@ -51,7 +51,7 @@ class AnnotatedParameterizedAppFunctionSerializable(
      * parameterized type information included as a suffix.
      */
     override val jvmQualifiedName: String by lazy {
-        val originalQualifiedName = super.jvmQualifiedName
+        val originalQualifiedName = unparameterizedJvmQualifiedName
         buildString {
             append(originalQualifiedName)
 
@@ -72,8 +72,17 @@ class AnnotatedParameterizedAppFunctionSerializable(
         }
     }
 
+    /**
+     * The JVM qualified name of the parametrized class being annotated with
+     * AppFunctionSerializable, without the parameterized type information
+     */
+    private val unparameterizedJvmQualifiedName: String by lazy { super.jvmQualifiedName }
+
     override val factoryVariableName: String by lazy {
-        val variableName = jvmClassName.replace("$", "").replaceFirstChar { it -> it.lowercase() }
+        val variableName =
+            appFunctionSerializableTypeClassDeclaration.jvmClassName
+                .replace("$", "")
+                .replaceFirstChar { it -> it.lowercase() }
         val typeArgumentSuffix =
             typeParameterMap.values.joinToString { typeArgument ->
                 typeArgument
@@ -86,29 +95,40 @@ class AnnotatedParameterizedAppFunctionSerializable(
         "${variableName}${typeArgumentSuffix}Factory"
     }
 
+    override fun getDescription(sharedDataTypeDescriptionMap: Map<String, String>): String {
+        return docString.ifEmpty {
+            sharedDataTypeDescriptionMap[unparameterizedJvmQualifiedName] ?: ""
+        }
+    }
+
     /**
      * Returns the annotated class's properties as defined in its primary constructor.
      *
      * When the property is generic type, it will try to resolve the actual type reference from
      * [arguments].
      */
-    override fun getProperties(): List<AppFunctionPropertyDeclaration> {
-        return checkNotNull(appFunctionSerializableClass.primaryConstructor).parameters.map {
-            valueParameter ->
-            val valueTypeDeclaration = valueParameter.type.resolve().declaration
+    override fun getProperties(
+        sharedDataTypeDescriptionMap: Map<String, String>
+    ): List<AppFunctionPropertyDeclaration> {
+        return super.getProperties(sharedDataTypeDescriptionMap).map { propertyDeclaration ->
+            val valueTypeDeclaration = propertyDeclaration.type.resolve().declaration
             if (valueTypeDeclaration is KSTypeParameter) {
                 val actualType =
                     typeParameterMap[valueTypeDeclaration.name.asString()]
                         ?: throw ProcessingException(
                             "Unable to resolve actual type",
-                            valueParameter,
+                            propertyDeclaration.type,
                         )
                 AppFunctionPropertyDeclaration(
-                    checkNotNull(valueParameter.name).asString(),
-                    actualType,
+                    name = propertyDeclaration.name,
+                    type = actualType,
+                    description = propertyDeclaration.description,
+                    isRequired = propertyDeclaration.isRequired,
+                    propertyAnnotations = propertyDeclaration.propertyAnnotations,
+                    qualifiedName = propertyDeclaration.qualifiedName,
                 )
             } else {
-                AppFunctionPropertyDeclaration(valueParameter)
+                propertyDeclaration
             }
         }
     }

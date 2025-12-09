@@ -18,7 +18,6 @@ package androidx.camera.testing.fakes;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.os.Build;
 import android.os.Looper;
 
 import androidx.camera.core.FocusMeteringAction;
@@ -58,7 +57,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(RobolectricTestRunner.class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@org.robolectric.annotation.Config(sdk = {org.robolectric.annotation.Config.ALL_SDKS})
 public final class FakeCameraControlTest {
     private FakeCameraControl mCameraControl;
 

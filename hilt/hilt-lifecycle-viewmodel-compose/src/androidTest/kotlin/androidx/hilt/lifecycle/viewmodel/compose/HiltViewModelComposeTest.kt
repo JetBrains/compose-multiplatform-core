@@ -32,6 +32,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
 import javax.inject.Inject
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,7 +42,7 @@ import org.junit.runner.RunWith
 class HiltViewModelComposeTest {
     @get:Rule val testRule = HiltAndroidRule(this)
 
-    @get:Rule val composeTestRule = createAndroidComposeRule<TestActivity>()
+    @get:Rule val composeTestRule = createAndroidComposeRule<TestActivity>(StandardTestDispatcher())
 
     // TODO(kuanyingchou) Remove this after https://github.com/google/dagger/issues/3601 is
     //  resolved.

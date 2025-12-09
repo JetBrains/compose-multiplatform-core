@@ -255,11 +255,17 @@ class SpatialElevation : ComponentActivity() {
                     Modifier.size(250.dp, 100.dp).background(Purple80, RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        "This is a popup: click anywhere to exit",
-                        modifier = Modifier.padding(10.dp),
-                    )
-                    Button(onClick = { showPopup = false }) { Text("Close") }
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "This is a popup: click anywhere to exit",
+                            modifier = Modifier.padding(10.dp),
+                        )
+                        Button(onClick = { showPopup = false }) { Text("Close") }
+                    }
                 }
             }
         }

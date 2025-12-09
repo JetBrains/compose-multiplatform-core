@@ -19,11 +19,10 @@ plugins {
     id("AndroidXPlugin")
     id("AndroidXComposePlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     implementation(project(":text:text-vertical"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.4")
@@ -49,6 +48,6 @@ android {
     compileSdk = 36
     defaultConfig {
         targetSdk = 36
-        minSdk = 36
+        minSdk = 23
     }
 }

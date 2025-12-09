@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("DEPRECATION")
+
 package androidx.privacysandbox.sdkruntime.core
 
 import android.app.sdksandbox.SandboxedSdk
@@ -33,6 +35,7 @@ import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP
  *
  * @see [SandboxedSdk]
  */
+@Deprecated("This library is no longer supported.")
 public class SandboxedSdkCompat private constructor(private val sdkImpl: SandboxedSdkImpl) {
 
     /**

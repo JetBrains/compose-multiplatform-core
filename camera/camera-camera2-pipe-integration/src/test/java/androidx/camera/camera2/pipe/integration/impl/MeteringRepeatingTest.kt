@@ -29,7 +29,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -41,7 +40,7 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class MeteringRepeatingTest {
     companion object {
         val dummyZeroSizeStreamSpec = StreamSpec.builder(Size(0, 0)).build()
@@ -86,12 +85,6 @@ class MeteringRepeatingTest {
                 mapOf(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP to builder.build())
             )
         }
-
-        @JvmStatic
-        @BeforeClass
-        fun classSetUp() {
-            DisplayInfoManager.invalidateLazyFields()
-        }
     }
 
     private lateinit var meteringRepeating: MeteringRepeating
@@ -121,23 +114,14 @@ class MeteringRepeatingTest {
 
         return MeteringRepeating.Builder(
                 FakeCameraProperties(getFakeMetadata(outputSizeList)),
-                DisplayInfoManager(ApplicationProvider.getApplicationContext()),
+                DisplayInfoManager.getInstance(ApplicationProvider.getApplicationContext()),
             )
             .build()
     }
 
     @After
     fun tearDown() {
-        val displayManager =
-            (ApplicationProvider.getApplicationContext() as Context).getSystemService(
-                Context.DISPLAY_SERVICE
-            ) as DisplayManager?
-
-        displayManager?.let {
-            for (display in it.displays) {
-                removeDisplay(display.displayId)
-            }
-        }
+        DisplayInfoManager.releaseInstance()
     }
 
     @Test

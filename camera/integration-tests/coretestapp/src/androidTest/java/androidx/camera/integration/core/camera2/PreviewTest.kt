@@ -31,7 +31,7 @@ import android.util.Rational
 import android.util.Size
 import android.view.Surface
 import androidx.camera.camera2.Camera2Config
-import androidx.camera.camera2.internal.DisplayInfoManager
+import androidx.camera.camera2.impl.DisplayInfoManager
 import androidx.camera.camera2.interop.Camera2Interop
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.camera2.pipe.integration.compat.quirk.DeviceQuirks
@@ -105,7 +105,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class PreviewTest(private val implName: String, private val cameraConfig: CameraXConfig) {
     @get:Rule
     val cameraPipeConfigTestRule =
@@ -792,8 +791,8 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     private fun hasExtraCroppingQuirk(): Boolean {
         return (implName.contains(CameraPipeConfig::class.simpleName!!) &&
             DeviceQuirks[ExtraCroppingQuirk::class.java] != null) ||
-            androidx.camera.camera2.internal.compat.quirk.DeviceQuirks.get(
-                androidx.camera.camera2.internal.compat.quirk.ExtraCroppingQuirk::class.java
+            androidx.camera.camera2.compat.quirk.DeviceQuirks.get(
+                androidx.camera.camera2.compat.quirk.ExtraCroppingQuirk::class.java
             ) != null
     }
 
@@ -809,8 +808,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
             )
         } else {
             quirks.contains(
-                androidx.camera.camera2.internal.compat.quirk.AspectRatioLegacyApi21Quirk::class
-                    .java
+                androidx.camera.camera2.compat.quirk.AspectRatioLegacyApi21Quirk::class.java
             )
         }
     }
@@ -1094,7 +1092,6 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     // Section 4: ResolutionSelector
     // ======================================================
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.M)
     @Test
     fun verifyHighResolutionIsDisabledForPreview() = runBlocking {
         val highResolutionOutputSizes =
@@ -1420,7 +1417,6 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
         }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun getPreviewCapabilitiesStabilizationSupportIsCorrect_whenNotSupportedInExtensions() {
         assumeTrue(isPreviewStabilizationModeSupported(CameraSelector.DEFAULT_BACK_CAMERA))
         val sessionProcessor =
@@ -1446,7 +1442,6 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun getPreviewCapabilitiesStabilizationSupportIsCorrect_whenSupportedInExtensions() {
         assumeFalse(isPreviewStabilizationModeSupported(CameraSelector.DEFAULT_BACK_CAMERA))
         val sessionProcessor =
@@ -1475,7 +1470,6 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23)
     fun previewStabilizationCanBeSet_whenSupportedInExtensions() = runBlocking {
         assumeTrue(isPreviewStabilizationModeSupported(CameraSelector.DEFAULT_BACK_CAMERA))
         val sessionProcessor =
@@ -1507,7 +1501,7 @@ class PreviewTest(private val implName: String, private val cameraConfig: Camera
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 32)
+    @SdkSuppress(maxSdkVersion = 32)
     fun setMirrorModeIsNoOp_priorToAPI33() = runBlocking {
         // Skip for b/404348154
         assumeFalse("Skip test for API 26.", Build.VERSION.SDK_INT == 26)

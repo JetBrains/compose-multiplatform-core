@@ -100,7 +100,7 @@ public class StrokeInput {
      *
      * [NO_ORIENTATION] indicates that orientation is not reported, which can be checked with
      * [hasOrientation]. Note, that this is a separate condition from the orientation being
-     * indeterminant when [tiltRadians] is π/2.
+     * indeterminant when [tiltRadians] is 0.
      */
     public var orientationRadians: Float = NO_ORIENTATION
         private set

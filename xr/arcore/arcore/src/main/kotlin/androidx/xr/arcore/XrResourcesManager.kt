@@ -17,15 +17,17 @@
 package androidx.xr.arcore
 
 import android.annotation.SuppressLint
-import androidx.xr.runtime.internal.ArDevice as RuntimeArDevice
-import androidx.xr.runtime.internal.AugmentedObject as RuntimeObject
-import androidx.xr.runtime.internal.DepthMap as RuntimeDepthMap
-import androidx.xr.runtime.internal.Earth as RuntimeEarth
-import androidx.xr.runtime.internal.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.ArDevice as RuntimeArDevice
+import androidx.xr.arcore.runtime.AugmentedObject as RuntimeObject
+import androidx.xr.arcore.runtime.DepthMap as RuntimeDepthMap
+import androidx.xr.arcore.runtime.Eye as RuntimeEye
+import androidx.xr.arcore.runtime.Face as RuntimeFace
+import androidx.xr.arcore.runtime.Geospatial as RuntimeGeospatial
+import androidx.xr.arcore.runtime.Hand as RuntimeHand
+import androidx.xr.arcore.runtime.Plane as RuntimePlane
+import androidx.xr.arcore.runtime.RenderViewpoint as RuntimeRenderViewpoint
+import androidx.xr.arcore.runtime.Trackable as RuntimeTrackable
 import androidx.xr.runtime.internal.LifecycleManager
-import androidx.xr.runtime.internal.Plane as RuntimePlane
-import androidx.xr.runtime.internal.Trackable as RuntimeTrackable
-import androidx.xr.runtime.internal.ViewCamera as RuntimeViewCamera
 import java.util.Queue
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CopyOnWriteArrayList
@@ -49,6 +51,12 @@ internal class XrResourcesManager {
         java.util.concurrent.ConcurrentHashMap<RuntimeTrackable, Trackable<Trackable.State>>()
     val trackablesMap: Map<RuntimeTrackable, Trackable<Trackable.State>> = _trackablesMap
 
+    /** The data of eyes */
+    private var _leftRuntimeEye: RuntimeEye? = null
+    private var _rightRuntimeEye: RuntimeEye? = null
+    val leftEye: Eye? by lazy { _leftRuntimeEye?.let { Eye(it) } }
+    val rightEye: Eye? by lazy { _rightRuntimeEye?.let { Eye(it) } }
+
     /** The data of hands */
     private var _leftRuntimeHand: RuntimeHand? = null
     private var _rightRuntimeHand: RuntimeHand? = null
@@ -59,24 +67,42 @@ internal class XrResourcesManager {
     lateinit var arDevice: ArDevice
         private set
 
-    /** The view camera data */
-    lateinit var viewCameras: List<ViewCamera>
+    /** The render viewpoint data */
+    var monoRenderViewpoint: RenderViewpoint? = null
         private set
+
+    var leftRenderViewpoint: RenderViewpoint? = null
+        private set
+
+    var rightRenderViewpoint: RenderViewpoint? = null
+        private set
+
+    /** The data of the user's face */
+    private var _userFace: RuntimeFace? = null
+    val userFace: Face? by lazy { _userFace?.let { Face(it, this) } }
 
     /** Geospatial data */
-    private var _earth: Earth? = null
-    val earth: Earth
-        get() = checkNotNull(_earth)
+    private var _geospatial: Geospatial? = null
+    val geospatial: Geospatial
+        get() = checkNotNull(_geospatial)
 
     /** The depth map data */
-    lateinit var _depthMaps: List<DepthMap>
+    var leftDepthMap: DepthMap? = null
         private set
 
-    val depthMaps: List<DepthMap>
-        get() = if (::_depthMaps.isInitialized) _depthMaps else emptyList()
+    var rightDepthMap: DepthMap? = null
+        private set
 
-    internal fun initiateEarth(runtimeEarth: RuntimeEarth) {
-        _earth = Earth(runtimeEarth, this)
+    var monoDepthMap: DepthMap? = null
+        private set
+
+    internal fun initiateGeospatial(runtimeGeospatial: RuntimeGeospatial) {
+        _geospatial = Geospatial(runtimeGeospatial, this)
+    }
+
+    internal fun initiateEyes(leftRuntimeEye: RuntimeEye?, rightRuntimeEye: RuntimeEye?) {
+        _leftRuntimeEye = leftRuntimeEye
+        _rightRuntimeEye = rightRuntimeEye
     }
 
     internal fun initiateHands(leftRuntimeHand: RuntimeHand?, rightRuntimeHand: RuntimeHand?) {
@@ -84,16 +110,36 @@ internal class XrResourcesManager {
         _rightRuntimeHand = rightRuntimeHand
     }
 
-    internal fun initiateArDeviceAndViewCameras(
+    internal fun initiateArDeviceAndRenderViewpoints(
         runtimeArDevice: RuntimeArDevice,
-        runtimeViewCameras: List<RuntimeViewCamera>,
+        runtimeLeftRenderViewpoint: RuntimeRenderViewpoint?,
+        runtimeRightRenderViewpoint: RuntimeRenderViewpoint?,
+        runtimeMonoRenderViewpoint: RuntimeRenderViewpoint?,
     ) {
         arDevice = ArDevice(runtimeArDevice)
-        viewCameras = runtimeViewCameras.map { ViewCamera(it, runtimeArDevice) }
+        runtimeLeftRenderViewpoint?.let {
+            leftRenderViewpoint = RenderViewpoint(it, runtimeArDevice)
+        }
+        runtimeRightRenderViewpoint?.let {
+            rightRenderViewpoint = RenderViewpoint(it, runtimeArDevice)
+        }
+        runtimeMonoRenderViewpoint?.let {
+            monoRenderViewpoint = RenderViewpoint(it, runtimeArDevice)
+        }
     }
 
-    internal fun initiateDepthMaps(runtimeDepthMaps: List<RuntimeDepthMap>) {
-        _depthMaps = runtimeDepthMaps.map { DepthMap(it) }
+    internal fun initiateDepthMaps(
+        runtimeLeftDepthMap: RuntimeDepthMap?,
+        runtimeRightDepthMap: RuntimeDepthMap?,
+        runtimeMonoDepthMap: RuntimeDepthMap?,
+    ) {
+        runtimeLeftDepthMap?.let { leftDepthMap = DepthMap(it) }
+        runtimeRightDepthMap?.let { rightDepthMap = DepthMap(it) }
+        runtimeMonoDepthMap?.let { monoDepthMap = DepthMap(it) }
+    }
+
+    internal fun initiateFace(userFace: RuntimeFace?) {
+        _userFace = userFace
     }
 
     internal fun addUpdatable(updatable: Updatable) {
@@ -117,15 +163,11 @@ internal class XrResourcesManager {
             updatable.update()
         }
 
-        // Earth should always be initialized if a runtime is present. This check should only fail
-        // in
-        // unit tests.
-        if (_earth != null) {
-            earth.update()
-        }
-
-        for (depthMap in depthMaps) {
-            depthMap.update()
+        // Geospatial should always be initialized if a runtime is present. This check should only
+        // fail
+        // in unit tests.
+        if (_geospatial != null) {
+            geospatial.update()
         }
     }
 
@@ -159,6 +201,9 @@ internal class XrResourcesManager {
             when (runtimeTrackable) {
                 is RuntimePlane -> Plane(runtimeTrackable, this)
                 is RuntimeObject -> AugmentedObject(runtimeTrackable, this)
+                // TODO b/452702634: uncomment when API updates are approved and we can make Face a
+                // Trackable
+                // is RuntimeFace -> Face(runtimeTrackable, this)
                 else ->
                     throw IllegalArgumentException(
                         "Unsupported trackable type: ${runtimeTrackable.javaClass}"

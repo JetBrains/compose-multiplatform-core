@@ -21,7 +21,6 @@ import android.graphics.Point
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.pdf.R
 import androidx.pdf.selection.ContextMenuComponent
 import androidx.pdf.selection.PdfSelectionMenuKeys
@@ -54,18 +53,18 @@ class PdfViewSelectionMenuTest {
     fun before() {
         val fakePdfDocument = FakePdfDocument(List(100) { Point(500, 1000) })
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container = FrameLayout(activity)
-            container.addView(
-                PdfView(activity).apply {
-                    pdfDocument = fakePdfDocument
-                    id = R.id.pdf_view
-                },
-                ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            activity.setContentView(container)
+            with(activity) {
+                container.addView(
+                    PdfView(activity).apply {
+                        pdfDocument = fakePdfDocument
+                        id = R.id.pdf_view
+                    },
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    ),
+                )
+            }
         }
     }
 
@@ -82,7 +81,7 @@ class PdfViewSelectionMenuTest {
             Espresso.onView(withId(R.id.pdf_view)).check { view, noViewFoundException ->
                 view ?: throw noViewFoundException
                 val localPdfView = view as PdfView
-                localPdfView.setSelectionMenuItemPreparer(selectionMenuItemPreparer)
+                localPdfView.addSelectionMenuItemPreparer(selectionMenuItemPreparer)
             }
         }
         // long click to trigger selection
@@ -104,7 +103,7 @@ class PdfViewSelectionMenuTest {
 
         val selectionMenuItemPreparer = SelectionMenuItemPreparer { components ->
             components.add(
-                SelectionMenuComponent(AddCommentKey, addCommentLabel) {
+                SelectionMenuComponent(AddCommentKey, addCommentLabel, "add comment") {
                     // Increment counter to assert onClick is called
                     addCommentClickCounter++
                 }
@@ -115,7 +114,7 @@ class PdfViewSelectionMenuTest {
             Espresso.onView(withId(R.id.pdf_view)).check { view, noViewFoundException ->
                 view ?: throw noViewFoundException
                 val localPdfView = view as PdfView
-                localPdfView.setSelectionMenuItemPreparer(selectionMenuItemPreparer)
+                localPdfView.addSelectionMenuItemPreparer(selectionMenuItemPreparer)
             }
         }
         // long click to trigger selection
@@ -147,7 +146,7 @@ class PdfViewSelectionMenuTest {
             Espresso.onView(withId(R.id.pdf_view)).check { view, noViewFoundException ->
                 view ?: throw noViewFoundException
                 val localPdfView = view as PdfView
-                localPdfView.setSelectionMenuItemPreparer(selectionMenuItemPreparer)
+                localPdfView.addSelectionMenuItemPreparer(selectionMenuItemPreparer)
             }
         }
         // long click to trigger selection

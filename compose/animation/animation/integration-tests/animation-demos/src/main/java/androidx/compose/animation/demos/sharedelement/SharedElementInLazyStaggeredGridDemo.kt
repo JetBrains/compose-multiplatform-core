@@ -21,7 +21,6 @@ import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.BoundsTransform
-import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
@@ -68,11 +67,9 @@ internal val listCats =
         Cat("Pepper Take 2", "", R.drawable.pepper),
     )
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 private val boundsTransition = BoundsTransform { _, _ -> tween(500) }
 private val shapeForSharedElement = RoundedCornerShape(16.dp)
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Preview
 @Composable
 fun SharedElementInLazyStaggeredGridDemo() {
@@ -107,19 +104,28 @@ fun SharedElementInLazyStaggeredGridDemo() {
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.CatItem(
     cat: Cat,
     onClick: () -> Unit,
     scope: AnimatedVisibilityScope,
     modifier: Modifier = Modifier,
+    isEnabled: SharedTransitionScope.SharedContentState.() -> Boolean = { true },
 ) {
     Box(
         modifier =
             modifier
                 .sharedBounds(
-                    sharedContentState = rememberSharedContentState(key = "${cat.name}-bounds"),
+                    sharedContentState =
+                        rememberSharedContentState(
+                            key = "${cat.name}-bounds",
+                            config =
+                                object : SharedTransitionScope.SharedContentConfig {
+                                    override val SharedTransitionScope.SharedContentState.isEnabled:
+                                        Boolean
+                                        get() = isEnabled()
+                                },
+                        ),
                     boundsTransform = boundsTransition,
                     animatedVisibilityScope = scope,
                     clipInOverlayDuringTransition = OverlayClip(shapeForSharedElement),
@@ -131,7 +137,15 @@ fun SharedTransitionScope.CatItem(
             cat = cat,
             modifier =
                 Modifier.sharedElement(
-                    rememberSharedContentState(key = cat.name),
+                    rememberSharedContentState(
+                        key = cat.name,
+                        config =
+                            object : SharedTransitionScope.SharedContentConfig {
+                                override val SharedTransitionScope.SharedContentState.isEnabled:
+                                    Boolean
+                                    get() = isEnabled()
+                            },
+                    ),
                     animatedVisibilityScope = scope,
                     boundsTransform = boundsTransition,
                 ),
@@ -141,7 +155,6 @@ fun SharedTransitionScope.CatItem(
 }
 
 @SuppressLint("UnnecessaryLambdaCreation")
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.CatDetails(
     cat: Cat,

@@ -16,9 +16,9 @@
 
 package androidx.xr.arcore.playservices
 
-import android.Manifest
 import android.app.Activity
 import android.util.Range
+import androidx.kruth.assertThrows
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.xr.runtime.Config
@@ -29,17 +29,17 @@ import androidx.xr.runtime.Config.PlaneTrackingMode
 import androidx.xr.runtime.internal.ApkCheckAvailabilityErrorException
 import androidx.xr.runtime.internal.ApkCheckAvailabilityInProgressException
 import androidx.xr.runtime.internal.ApkNotInstalledException
-import androidx.xr.runtime.internal.ConfigurationNotSupportedException
 import androidx.xr.runtime.internal.GooglePlayServicesLocationLibraryNotLinkedException
-import androidx.xr.runtime.internal.PermissionNotGrantedException
 import androidx.xr.runtime.internal.UnsupportedDeviceException
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.ArCoreApk.Availability
+import com.google.ar.core.Camera
 import com.google.ar.core.CameraConfig
 import com.google.ar.core.Config as ArConfig
 import com.google.ar.core.Config.PlaneFindingMode
 import com.google.ar.core.Config.TextureUpdateMode
 import com.google.ar.core.Frame
+import com.google.ar.core.Pose as ARCorePose
 import com.google.ar.core.Session
 import com.google.ar.core.exceptions.FineLocationPermissionNotGrantedException
 import com.google.ar.core.exceptions.GooglePlayServicesLocationLibraryNotLinkedException as ARCore1xGooglePlayServicesLocationLibraryNotLinkedException
@@ -70,6 +70,8 @@ import org.mockito.kotlin.whenever
 class ArCoreManagerTest {
 
     private lateinit var mockSession: Session
+    private lateinit var mockCamera: Camera
+    private lateinit var mockCameraPose: ARCorePose
 
     private val timeSource = ArCoreTimeSource()
 
@@ -92,6 +94,9 @@ class ArCoreManagerTest {
         }
 
         mockSession = mock<Session>()
+        mockCamera = mock<Camera>()
+        mockCameraPose = mock<ARCorePose>()
+        whenever(mockCamera.pose).thenReturn(mockCameraPose)
     }
 
     @Test
@@ -107,6 +112,21 @@ class ArCoreManagerTest {
     }
 
     @Test
+    @org.robolectric.annotation.Config(maxSdk = 26)
+    fun configure_setsTextureUpdateMode_toValue_BIND_TO_TEXTURE_EXTERNAL_OES() {
+        val mockArConfig = mock<ArConfig>()
+        underTest._session = mockSession
+        whenever(mockSession.config).thenReturn(mockArConfig)
+
+        underTest.configure(Config())
+
+        val argumentCaptor = argumentCaptor<TextureUpdateMode>()
+        verify(mockArConfig).setTextureUpdateMode(argumentCaptor.capture())
+        assert(argumentCaptor.firstValue == TextureUpdateMode.BIND_TO_TEXTURE_EXTERNAL_OES)
+    }
+
+    @Test
+    @org.robolectric.annotation.Config(minSdk = 27)
     fun configure_setsTextureUpdateMode_toValue_EXPOSE_HARDWARE_BUFFER() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
@@ -120,12 +140,53 @@ class ArCoreManagerTest {
     }
 
     @Test
+    fun configure_faceTracking_setsAugmentedFaceMode_toValue_Disabled() {
+        val mockArConfig = mock<ArConfig>()
+        underTest._session = mockSession
+        whenever(mockSession.config).thenReturn(mockArConfig)
+
+        val config = Config(faceTracking = Config.FaceTrackingMode.DISABLED)
+        underTest.configure(config)
+
+        val argumentCaptor = argumentCaptor<ArConfig.AugmentedFaceMode>()
+        verify(mockArConfig).augmentedFaceMode = argumentCaptor.capture()
+        assert(argumentCaptor.firstValue == ArConfig.AugmentedFaceMode.DISABLED)
+        assertThat(underTest.config.faceTracking).isEqualTo(Config.FaceTrackingMode.DISABLED)
+    }
+
+    @Test
+    fun configure_faceTracking_setsAugmentedFaceMode_toValue_Mesh3D() {
+        val mockArConfig = mock<ArConfig>()
+        underTest._session = mockSession
+        whenever(mockSession.config).thenReturn(mockArConfig)
+
+        val config = Config(faceTracking = Config.FaceTrackingMode.MESHES)
+        underTest.configure(config)
+
+        val argumentCaptor = argumentCaptor<ArConfig.AugmentedFaceMode>()
+        verify(mockArConfig).augmentedFaceMode = argumentCaptor.capture()
+        assert(argumentCaptor.firstValue == ArConfig.AugmentedFaceMode.MESH3D)
+        assertThat(underTest.config.faceTracking).isEqualTo(Config.FaceTrackingMode.MESHES)
+    }
+
+    @Test
+    fun configure_faceTracking_setsAugmentedFaceMode_toValue_User_throwsUnsupportedOperationException() {
+        val mockArConfig = mock<ArConfig>()
+        underTest._session = mockSession
+        whenever(mockSession.config).thenReturn(mockArConfig)
+
+        val config = Config(faceTracking = Config.FaceTrackingMode.USER)
+
+        assertThrows<UnsupportedOperationException> { underTest.configure(config) }
+    }
+
+    @Test
     fun configure_planeTracking_setsPlaneFindingMode_toValue_Disabled() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
-        val config = Config(planeTracking = Config.PlaneTrackingMode.DISABLED)
+        val config = Config(planeTracking = PlaneTrackingMode.DISABLED)
         underTest.configure(config)
 
         val argumentCaptor = argumentCaptor<PlaneFindingMode>()
@@ -140,7 +201,7 @@ class ArCoreManagerTest {
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
-        val config = Config(planeTracking = Config.PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
+        val config = Config(planeTracking = PlaneTrackingMode.HORIZONTAL_AND_VERTICAL)
         underTest.configure(config)
 
         val argumentCaptor = argumentCaptor<PlaneFindingMode>()
@@ -151,37 +212,39 @@ class ArCoreManagerTest {
     }
 
     @Test
-    fun configure_handTracking_throwsConfigurationNotSupportedException() {
+    fun configure_handTracking_throwsUnsupportedOperationException() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
-        val config = Config(handTracking = Config.HandTrackingMode.BOTH)
-        assertFailsWith<ConfigurationNotSupportedException> { underTest.configure(config) }
+        val config = Config(handTracking = HandTrackingMode.BOTH)
+        assertFailsWith<UnsupportedOperationException> { underTest.configure(config) }
     }
 
     @Test
-    fun configure_depthEstimation_throwsConfigurationNotSupportedException() {
+    fun configure_depthEstimation_throwsUnsupportedOperationException() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
-        val config = Config(depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW)
-        assertFailsWith<ConfigurationNotSupportedException> { underTest.configure(config) }
+        val config = Config(depthEstimation = DepthEstimationMode.SMOOTH_AND_RAW)
+        underTest.configure(config)
+
+        assertThat(underTest.config.depthEstimation).isEqualTo(DepthEstimationMode.SMOOTH_AND_RAW)
     }
 
     @Test
-    fun configure_anchorPersistence_throwsConfigurationNotSupportedException() {
+    fun configure_anchorPersistence_throwsUnsupportedOperationException() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
 
-        val config = Config(anchorPersistence = Config.AnchorPersistenceMode.LOCAL)
-        assertFailsWith<ConfigurationNotSupportedException> { underTest.configure(config) }
+        val config = Config(anchorPersistence = AnchorPersistenceMode.LOCAL)
+        assertFailsWith<UnsupportedOperationException> { underTest.configure(config) }
     }
 
     @Test
-    fun configure_throwsPermissionNotGrantedException_whenFineLocationPermissionNotGranted() {
+    fun configure_throwsSecurityException_whenFineLocationPermissionNotGranted() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
@@ -189,10 +252,8 @@ class ArCoreManagerTest {
             .doThrow(FineLocationPermissionNotGrantedException("Test Exception"))
 
         val config = Config()
-        val exception: PermissionNotGrantedException =
-            assertFailsWith<PermissionNotGrantedException> { underTest.configure(config) }
+        assertFailsWith<SecurityException> { underTest.configure(config) }
 
-        assertThat(exception.permissions).containsExactly(Manifest.permission.ACCESS_FINE_LOCATION)
         verify(mockSession).configure(mockArConfig)
     }
 
@@ -212,7 +273,7 @@ class ArCoreManagerTest {
     }
 
     @Test
-    fun configure_throwsConfigurationNotSupportedException_whenUnsupportedConfiguration() {
+    fun configure_throwsUnsupportedOperationException_whenUnsupportedConfiguration() {
         val mockArConfig = mock<ArConfig>()
         underTest._session = mockSession
         whenever(mockSession.config).thenReturn(mockArConfig)
@@ -220,7 +281,7 @@ class ArCoreManagerTest {
             .doThrow(UnsupportedConfigurationException("Test Exception"))
 
         val config = Config()
-        assertFailsWith<ConfigurationNotSupportedException> { underTest.configure(config) }
+        assertFailsWith<UnsupportedOperationException> { underTest.configure(config) }
         verify(mockSession).configure(mockArConfig)
     }
 
@@ -249,6 +310,7 @@ class ArCoreManagerTest {
     fun update_updatesPerceptionManager() {
         val mockFrame = mock<Frame>()
         val mockCameraConfig = mock<CameraConfig>()
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
         whenever(mockSession.cameraConfig).thenReturn(mockCameraConfig)
         whenever(mockCameraConfig.fpsRange).thenReturn(Range(MIN_FPS, MAX_FPS))
@@ -273,6 +335,8 @@ class ArCoreManagerTest {
         val secondTimestampNs = 2000L
         whenever(mockFrame1.timestamp).thenReturn(firstTimestampNs)
         whenever(mockFrame2.timestamp).thenReturn(secondTimestampNs)
+        whenever(mockFrame1.camera).thenReturn(mockCamera)
+        whenever(mockFrame2.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame1, mockFrame2)
         whenever(mockSession.cameraConfig).thenReturn(mockCameraConfig)
         whenever(mockCameraConfig.fpsRange).thenReturn(Range(MIN_FPS, MAX_FPS))
@@ -292,6 +356,7 @@ class ArCoreManagerTest {
     @Test
     fun update_delaysForExpectedTimeBetweenFrames() {
         val mockFrame = mock<Frame>()
+        whenever(mockFrame.camera).thenReturn(mockCamera)
         whenever(mockSession.update()).thenReturn(mockFrame)
         val mockCameraConfig = mock<CameraConfig>()
         whenever(mockSession.cameraConfig).thenReturn(mockCameraConfig)

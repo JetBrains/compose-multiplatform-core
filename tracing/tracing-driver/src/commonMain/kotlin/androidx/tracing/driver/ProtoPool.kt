@@ -19,16 +19,20 @@ package androidx.tracing.driver
 import androidx.annotation.RestrictTo
 
 // The size of the array
-// This would mean that each pool can queue up to 32 * 32 trace packets
+// This would mean that each pool can queue up to 32 * 256 trace packets
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val TRACE_PACKET_BUFFER_SIZE: Int = 32
 // The size of the pool
-private const val TRACE_PACKET_POOL_ARRAY_POOL_SIZE = 32
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+public const val TRACE_PACKET_POOL_ARRAY_POOL_SIZE: Int = 256
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val INVALID_INT: Int = -1
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_INT: Int = 0
 
-@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val INVALID_LONG: Long = -1L
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_LONG: Long = 0L
+
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) public const val DEFAULT_STRING: String = ""
 
 /** The uber proto pool that knows how to create all the necessary protos. */
+@PublishedApi
 internal class ProtoPool(internal val isDebug: Boolean) {
     internal val tracePacketArrayPool: Pool<PooledTracePacketArray> =
         Pool(size = TRACE_PACKET_POOL_ARRAY_POOL_SIZE, isDebug = isDebug) { pool ->
@@ -39,7 +43,7 @@ internal class ProtoPool(internal val isDebug: Boolean) {
             )
         }
 
-    fun obtainTracePacketArray(): PooledTracePacketArray {
+    fun obtainTracePacketArray(): PooledTracePacketArray? {
         return tracePacketArrayPool.obtain()
     }
 

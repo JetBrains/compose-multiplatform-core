@@ -15,12 +15,15 @@
  */
 package androidx.compose.remote.core.operations.utilities;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class IntMap<T> {
 
     private static final int DEFAULT_CAPACITY = 16;
@@ -67,7 +70,7 @@ public class IntMap<T> {
      *
      * @param map
      */
-    public void putAll(IntMap<T> map) {
+    public void putAll(@NonNull IntMap<T> map) {
         for (int i = 0; i < map.mValues.size(); i++) {
             int key = map.mKeys[i];
             if (key != NOT_PRESENT) {

@@ -401,6 +401,48 @@ class WindowAreaControllerImplTest {
             }
         }
 
+    /**
+     * Tests that we can get a list of [WindowAreaInfo] objects with a type of
+     * [WindowAreaInfo.Type.TYPE_REAR_FACING]. Verifies that updating the status of features on
+     * device returns an updated [WindowAreaInfo] list.
+     */
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    @Test
+    fun testRearFacingWindowAreaInfoList_getRearDisplayMetricsClassCastException(): Unit =
+        testScope.runTest {
+            assumeTrue(Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
+            assumeAtLeastWindowExtensionVersion(minVendorApiLevel)
+            activityScenario.scenario.onActivity {
+                val extensionComponent = FakeWindowAreaComponentClassCastException()
+                val controller = WindowAreaControllerImpl(windowAreaComponent = extensionComponent)
+                extensionComponent.currentRearDisplayStatus = STATUS_UNAVAILABLE
+                extensionComponent.currentRearDisplayPresentationStatus = STATUS_UNAVAILABLE
+                val collector = TestWindowAreaInfoListConsumer()
+                testScope.launch(Job()) { controller.windowAreaInfos.collect(collector::accept) }
+
+                val expectedAreaInfo =
+                    WindowAreaInfo(
+                        metrics = WindowMetricsCalculator.fromDisplayMetrics(DisplayMetrics()),
+                        type = WindowAreaInfo.Type.TYPE_REAR_FACING,
+                        token = Binder(REAR_FACING_BINDER_DESCRIPTION),
+                        windowAreaComponent = extensionComponent,
+                    )
+                val rearDisplayCapability =
+                    WindowAreaCapability(
+                        OPERATION_TRANSFER_ACTIVITY_TO_AREA,
+                        WINDOW_AREA_STATUS_UNAVAILABLE,
+                    )
+                val rearDisplayPresentationCapability =
+                    WindowAreaCapability(OPERATION_PRESENT_ON_AREA, WINDOW_AREA_STATUS_UNAVAILABLE)
+                expectedAreaInfo.capabilityMap[OPERATION_TRANSFER_ACTIVITY_TO_AREA] =
+                    rearDisplayCapability
+                expectedAreaInfo.capabilityMap[OPERATION_PRESENT_ON_AREA] =
+                    rearDisplayPresentationCapability
+
+                assertEquals(listOf(expectedAreaInfo), collector.values[collector.values.size - 1])
+            }
+        }
+
     private class TestWindowAreaInfoListConsumer : Consumer<List<WindowAreaInfo>> {
 
         val values: MutableList<List<WindowAreaInfo>> = mutableListOf()
@@ -410,7 +452,7 @@ class WindowAreaControllerImplTest {
         }
     }
 
-    private class FakeWindowAreaComponent : WindowAreaComponent {
+    private open class FakeWindowAreaComponent : WindowAreaComponent {
         val rearDisplayStatusListeners = mutableListOf<Consumer<Int>>()
         val rearDisplayPresentationStatusListeners =
             mutableListOf<Consumer<ExtensionWindowAreaStatus>>()
@@ -508,6 +550,13 @@ class WindowAreaControllerImplTest {
             for (consumer in rearDisplayPresentationStatusListeners) {
                 consumer.accept(TestExtensionWindowAreaStatus(currentRearDisplayPresentationStatus))
             }
+        }
+    }
+
+    /** Specific extensions fake to simulate [ClassCastException] to test library fix. */
+    private class FakeWindowAreaComponentClassCastException : FakeWindowAreaComponent() {
+        override fun getRearDisplayMetrics(): DisplayMetrics {
+            throw ClassCastException()
         }
     }
 

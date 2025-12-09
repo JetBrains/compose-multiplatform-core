@@ -26,7 +26,7 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
     alias(libs.plugins.kotlinSerialization)
 }
 
@@ -62,9 +62,7 @@ dependencies {
     androidTestImplementation(libs.testExtJunit)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(project(":internal-testutils-runtime"), {
-        exclude group: "androidx.fragment", module: "fragment"
-    })
+    androidTestImplementation(project(":internal-testutils-runtime"))
 }
 
 androidx {

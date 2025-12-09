@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package androidx.xr.runtime
 
 import androidx.annotation.RestrictTo
@@ -33,6 +32,8 @@ import androidx.annotation.RestrictTo
  *   meshes. See [Config.DepthEstimationMode].
  * @property anchorPersistence Feature that allows anchors to be persisted through sessions. See
  *   [Config.AnchorPersistenceMode].
+ * @property geospatial Feature that allows geospatial localization and tracking. See
+ *   [Config.GeospatialMode].
  */
 public class Config
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
@@ -45,8 +46,12 @@ constructor(
     public val deviceTracking: DeviceTrackingMode = DeviceTrackingMode.DISABLED,
     public val depthEstimation: DepthEstimationMode = DepthEstimationMode.DISABLED,
     public val anchorPersistence: AnchorPersistenceMode = AnchorPersistenceMode.DISABLED,
-    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val faceTracking: FaceTrackingMode = FaceTrackingMode.DISABLED,
     public val geospatial: GeospatialMode = GeospatialMode.DISABLED,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val eyeTracking: EyeTrackingMode = EyeTrackingMode.DISABLED,
+    @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public val cameraFacingDirection: CameraFacingDirection = CameraFacingDirection.WORLD,
 ) {
 
     /**
@@ -66,6 +71,10 @@ constructor(
      *   meshes. See [Config.DepthEstimationMode].
      * @param anchorPersistence Feature that allows anchors to be persisted through sessions. See
      *   [Config.AnchorPersistenceMode].
+     * @param faceTracking Feature that allows tracking of human faces. See
+     *   [Config.FaceTrackingMode].
+     * @param geospatial Feature that allows geospatial localization and tracking. See
+     *   [Config.GeospatialMode].
      */
     @JvmOverloads
     public constructor(
@@ -74,6 +83,8 @@ constructor(
         headTracking: HeadTrackingMode = HeadTrackingMode.DISABLED,
         depthEstimation: DepthEstimationMode = DepthEstimationMode.DISABLED,
         anchorPersistence: AnchorPersistenceMode = AnchorPersistenceMode.DISABLED,
+        faceTracking: FaceTrackingMode = FaceTrackingMode.DISABLED,
+        geospatial: GeospatialMode = GeospatialMode.DISABLED,
     ) : this(
         planeTracking,
         /* augmentedObjectCategories= */ listOf(),
@@ -81,7 +92,9 @@ constructor(
         headTracking.toDeviceTrackingMode(),
         depthEstimation,
         anchorPersistence,
-        GeospatialMode.DISABLED,
+        faceTracking,
+        geospatial,
+        eyeTracking = EyeTrackingMode.DISABLED,
     )
 
     /** Feature that allows tracking of the user's head position. See [Config.HeadTrackingMode]. */
@@ -96,8 +109,11 @@ constructor(
         if (deviceTracking != other.deviceTracking) return false
         if (depthEstimation != other.depthEstimation) return false
         if (anchorPersistence != other.anchorPersistence) return false
+        if (faceTracking != other.faceTracking) return false
         if (geospatial != other.geospatial) return false
         if (augmentedObjectCategories != other.augmentedObjectCategories) return false
+        if (eyeTracking != other.eyeTracking) return false
+        if (cameraFacingDirection != other.cameraFacingDirection) return false
 
         return true
     }
@@ -108,8 +124,11 @@ constructor(
         result = 31 * result + deviceTracking.hashCode()
         result = 31 * result + depthEstimation.hashCode()
         result = 31 * result + anchorPersistence.hashCode()
+        result = 31 * result + faceTracking.hashCode()
         result = 31 * result + geospatial.hashCode()
         result = 31 * result + augmentedObjectCategories.hashCode()
+        result = 31 * result + eyeTracking.hashCode()
+        result = 31 * result + cameraFacingDirection.hashCode()
         return result
     }
 
@@ -128,7 +147,10 @@ constructor(
             deviceTracking = headTracking.toDeviceTrackingMode(),
             depthEstimation = depthEstimation,
             anchorPersistence = anchorPersistence,
+            faceTracking = this.faceTracking,
             geospatial = this.geospatial,
+            eyeTracking = this.eyeTracking,
+            cameraFacingDirection = this.cameraFacingDirection,
         )
     }
 
@@ -140,8 +162,11 @@ constructor(
         deviceTracking: DeviceTrackingMode = this.deviceTracking,
         depthEstimation: DepthEstimationMode = this.depthEstimation,
         anchorPersistence: AnchorPersistenceMode = this.anchorPersistence,
+        faceTracking: FaceTrackingMode = this.faceTracking,
         geospatial: GeospatialMode = this.geospatial,
         augmentedObjectCategories: List<AugmentedObjectCategory> = this.augmentedObjectCategories,
+        eyeTracking: EyeTrackingMode = this.eyeTracking,
+        cameraFacingDirection: CameraFacingDirection = this.cameraFacingDirection,
     ): Config {
         return Config(
             planeTracking = planeTracking,
@@ -150,8 +175,26 @@ constructor(
             deviceTracking = deviceTracking,
             depthEstimation = depthEstimation,
             anchorPersistence = anchorPersistence,
+            faceTracking = faceTracking,
             geospatial = geospatial,
+            eyeTracking = eyeTracking,
+            cameraFacingDirection = cameraFacingDirection,
         )
+    }
+
+    /** Describes a specific value used to set the configuration via [Session.configure]. */
+    public interface ConfigMode {
+        /**
+         * Queries whether the [ConfigMode] is supported and is available to be configured for the
+         * [session] via [Session.configure]. Attempting to configure this [ConfigMode] if it is not
+         * supported will result in [Session.configure] returning [UnsupportedOperationException].
+         *
+         * @param session the [Session] to check support for.
+         * @return true if supported, else false.
+         */
+        public fun isSupported(session: Session): Boolean {
+            return session.runtimes.map { it.isSupported(this) }.contains(true)
+        }
     }
 
     /**
@@ -160,10 +203,11 @@ constructor(
      * Setting this feature to [PlaneTrackingMode.HORIZONTAL_AND_VERTICAL] requires that the
      * `SCENE_UNDERSTANDING_COARSE` Android permission is granted.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class PlaneTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** Planes will not be tracked. */
             @JvmField public val DISABLED: PlaneTrackingMode = PlaneTrackingMode(0)
@@ -185,10 +229,11 @@ constructor(
      * Setting this feature to [HandTrackingMode.BOTH] requires that the `HAND_TRACKING` Android
      * permission is granted by the calling application.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class HandTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** Hands will not be tracked. */
             @JvmField public val DISABLED: HandTrackingMode = HandTrackingMode(0)
@@ -205,19 +250,20 @@ constructor(
     }
 
     /**
-     * Feature that allows tracking of the device.
+     * Feature that allows tracking of the AR device.
      *
      * This feature does not require any additional application permissions.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @SuppressWarnings("HiddenSuperclass")
     public class DeviceTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /**
-             * The device pose will not be tracked. In this mode, [androidx.xr.arcore.ViewCamera]
-             * will not emit updates to [androidx.xr.arcore.ViewCamera.State.pose].
+             * The device pose will not be tracked. In this mode,
+             * [androidx.xr.arcore.RenderViewpoint] will not emit updates to
+             * [androidx.xr.arcore.RenderViewpoint.State.pose].
              */
             @JvmField public val DISABLED: DeviceTrackingMode = DeviceTrackingMode(0)
             /**
@@ -228,6 +274,7 @@ constructor(
             @JvmField public val LAST_KNOWN: DeviceTrackingMode = DeviceTrackingMode(1)
         }
 
+        @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
         public fun toHeadTrackingMode(): HeadTrackingMode {
             return if (mode == 0) HeadTrackingMode.DISABLED else HeadTrackingMode.LAST_KNOWN
         }
@@ -243,10 +290,11 @@ constructor(
      * Setting this feature to [HeadTrackingMode.LAST_KNOWN] requires that the `HEAD_TRACKING`
      * Android permission is granted by the calling application.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class HeadTrackingMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** The head pose is not updated. It remains at the origin (an identity pose). */
             @JvmField public val DISABLED: HeadTrackingMode = HeadTrackingMode(0)
@@ -275,10 +323,11 @@ constructor(
      * [DepthEstimationMode.SMOOTH_ONLY] or [DepthEstimationMode.SMOOTH_AND_RAW] requires that the
      * `SCENE_UNDERSTANDING_FINE` Android permission is granted by the calling application.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class DepthEstimationMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** No information about scene depth will be provided. */
             @JvmField public val DISABLED: DepthEstimationMode = DepthEstimationMode(0)
@@ -313,10 +362,11 @@ constructor(
      *
      * This feature does not require any additional application permissions.
      */
+    @SuppressWarnings("HiddenSuperclass")
     public class AnchorPersistenceMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /** Anchors cannot be persisted. */
             @JvmField public val DISABLED: AnchorPersistenceMode = AnchorPersistenceMode(0)
@@ -326,6 +376,35 @@ constructor(
 
         override fun toString(): String {
             return "AnchorPersistence_" + if (mode == 0) "DISABLED" else "LOCAL"
+        }
+    }
+
+    /**
+     * Feature that allows tracking of human faces.
+     *
+     * Setting this feature to [FaceTrackingMode.USER] requires that the `FACE_TRACKING` Android
+     * permission is granted by the calling application.
+     *
+     * Setting this feature to [FaceTrackingMode.MESHES] requires the `CAMERA` Android permission to
+     * be granted and that [CameraFacingDirection] is set to [CameraFacingDirection.USER].
+     */
+    @SuppressWarnings("HiddenSuperclass")
+    public class FaceTrackingMode
+    private constructor(
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
+    ) : ConfigMode {
+        public companion object {
+            /** Faces will not be tracked. */
+            @JvmField public val DISABLED: FaceTrackingMode = FaceTrackingMode(0)
+
+            // TODO b/451663642: Rename Config.FaceTrackingMode.USER to better reflect its use case
+            /** Blend shapes of the user's face will be tracked. */
+            @JvmField public val USER: FaceTrackingMode = FaceTrackingMode(1)
+
+            /** Face meshes will be tracked using the front-facing camera. */
+            @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+            @JvmField
+            public val MESHES: FaceTrackingMode = FaceTrackingMode(2)
         }
     }
 
@@ -342,67 +421,98 @@ constructor(
      *   This can work even where GPS accuracy is low, such as dense urban environments. Under
      *   typical conditions, VPS can be expected to provide positional accuracy typically better
      *   than 5 meters and often around 1 meter, and a rotational accuracy of better than 5 degrees.
-     *   Use [Earth.checkVpsAvailability] to determine if a given location has VPS coverage.
+     *   Use [Geospatial.checkVpsAvailability] to determine if a given location has VPS coverage.
      * - In outdoor environments with few or no overhead obstructions, GPS may be sufficient to
      *   generate high accuracy poses. GPS accuracy may be low in dense urban environments and
      *   indoors.
      *
-     * Setting this feature to [GeospatialMode.EARTH] requires TODO: b/393500151 - permissions.
-     *
      * Note that setting this mode will consume additional runtime resources.
      */
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @SuppressWarnings("HiddenSuperclass")
     public class GeospatialMode
     private constructor(
         @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
-    ) {
+    ) : ConfigMode {
         public companion object {
             /**
              * The Geospatial API is disabled. When GeospatialMode is disabled, current [Anchor]
-             * objects created from [Earth] will stop updating, and have their [TrackingState] set
-             * to [TrackingState.STOPPED].
+             * objects created from [Geospatial] will stop updating, and have their [TrackingState]
+             * set to [TrackingState.STOPPED].
              */
             @JvmField public val DISABLED: GeospatialMode = GeospatialMode(0)
 
             /**
-             * The Geospatial API is enabled. [Earth] should enter the running state shortly after
-             * this mode is set.
+             * The Geospatial API is enabled. [Geospatial] should enter the running state shortly
+             * after this mode is set.
              *
              * Using this mode requires your app do the following, depending on the Runtime:
              *
-             * On Mobile:
+             * On mobile and projected devices:
              * - Include the
              *   [ACCESS_INTERNET](https://developer.android.com/training/basics/network-ops/connecting)
              *   permission to the app's AndroidManifest
+             * - Request and be granted the
+             *   [ACCESS_FINE_LOCATION permission](https://developer.android.com/training/location/permissions);
+             *   otherwise, [Session.configure] throws [SecurityException].
+             *
+             * On mobile devices:
              * - Include the Google Play Services Location Library as a dependency for your app. See
              *   [dependencies for Google Play services](https://developers.google.com/android/guides/setup#declare-dependencies)
              *   for instructions on how to include this library in your app. If this library is not
              *   linked, [Session.configure] returns
-             *   [SessionResultGooglePlayServicesLocationLibraryNotLinked]
-             * - Request and be granted the
-             *   [ACCESS_FINE_LOCATION permission](https://developer.android.com/training/location/permissions);
-             *   otherwise, [Session.configure] returns [SessionConfigurePermissionNotGranted]
+             *   [SessionResultGooglePlayServicesLocationLibraryNotLinked].
              *
              * Location is tracked only while the [Session] is resumed.
              *
-             * For more information, see documentation on
-             * [the Geospatial API on Google Developers](https://developers.google.com/ar/develop/java/geospatial/developer-guide).
+             * On mobile devices, when the Geospatial API and the Depth API are enabled, output
+             * images from the Depth API will include terrain and building geometry when in a
+             * location with VPS coverage.
              *
-             * On Mobile, when the Geospatial API and the Depth API are enabled, output images from
-             * the Depth API will include terrain and building geometry when in a location with VPS
-             * coverage. See the
-             * [Geospatial Depth Developer Guide](https://developers.google.com/ar/develop/java/depth/geospatial-depth)
-             * for more information.
-             *
-             * On mobile, this mode is not compatible with the front-facing (selfie) camera. If
-             * Config.GeospatialMode is Enabled on a session using the front-facing (selfie) camera,
-             * [Session.configure] will return [SessionConfigureConfigurationNotSupported].
-             *
-             * Not all devices support GeospatialMode.Enabled, use [Earth.isGeospatialModeSupported]
-             * to check if the current device and selected camera support enabling this mode. These
+             * Not all devices support GeospatialMode.VPS_AND_GPS, use [ConfigMode.isSupported] to
+             * check if the current device and selected camera support enabling this mode. These
              * checks are done in the call to [Session.configure].
              */
-            @JvmField public val EARTH: GeospatialMode = GeospatialMode(1)
+            @JvmField public val VPS_AND_GPS: GeospatialMode = GeospatialMode(1)
+        }
+
+        override fun toString(): String {
+            return "Geospatial_" + if (mode == 0) "DISABLED" else "VPS_AND_GPS"
+        }
+    }
+
+    /**
+     * Feature that allows tracking of the user's eyes.
+     *
+     * Setting this feature to any mode other than [EyeTrackingMode.DISABLED] requires that the
+     * `EYE_TRACKING` Android permission is granted by the calling application.
+     */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    @SuppressWarnings("HiddenSuperclass")
+    public class EyeTrackingMode private constructor(public val mode: Int) : ConfigMode {
+        public companion object {
+            /** Eye tracking is disabled. */
+            @JvmField public val DISABLED: EyeTrackingMode = EyeTrackingMode(0)
+            /**
+             * Enables coarse eye tracking, providing general gaze direction without high precision.
+             */
+            @JvmField public val COARSE_TRACKING: EyeTrackingMode = EyeTrackingMode(1)
+            /** Enables fine eye tracking, providing more precise gaze direction. */
+            @JvmField public val FINE_TRACKING: EyeTrackingMode = EyeTrackingMode(2)
+        }
+    }
+
+    /** Declare whether the Session should use the world-facing or user-facing camera. */
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+    public class CameraFacingDirection
+    private constructor(
+        @get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX) public val mode: Int
+    ) {
+        public companion object {
+            /** Use the world-facing camera. This is the default behavior across all devices. */
+            @JvmField public val WORLD: CameraFacingDirection = CameraFacingDirection(0)
+
+            /** Use the user-facing camera. */
+            @JvmField public val USER: CameraFacingDirection = CameraFacingDirection(1)
         }
     }
 }

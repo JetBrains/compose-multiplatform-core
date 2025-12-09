@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,22 +27,17 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
-    api(libs.guavaListenableFuture)
-    api(libs.kotlinCoroutinesRx3)
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesCore)
     api(project(":xr:runtime:runtime-manifest"))
     api("androidx.annotation:annotation:1.8.1")
     api("androidx.lifecycle:lifecycle-common:2.8.7")
 
-    implementation(libs.kotlinCoroutinesGuava)
     implementation("androidx.core:core:1.1.0")
     implementation("androidx.lifecycle:lifecycle-runtime:2.8.7")
-    implementation("com.google.ar:impress:0.0.4")
 
     testImplementation(libs.kotlinCoroutinesTest)
     testImplementation(libs.junit)
@@ -50,19 +45,15 @@ dependencies {
     testImplementation(libs.testRunner)
     testImplementation(libs.truth)
     testImplementation(project(":kruth:kruth"))
+    testImplementation(project(":xr:scenecore:scenecore-testing"))
     testImplementation(project(":xr:runtime:runtime-testing"))
     testImplementation("androidx.appcompat:appcompat:1.2.0")
     testImplementation(libs.testRules)
 }
 
 android {
-    defaultConfig {
-        minSdkVersion 23
-    }
     namespace = "androidx.xr.runtime"
-    defaultConfig {
-        consumerProguardFiles 'proguard-rules.pro'
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
 }
 
 androidx {

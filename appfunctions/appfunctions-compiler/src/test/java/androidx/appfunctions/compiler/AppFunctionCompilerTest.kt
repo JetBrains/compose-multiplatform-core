@@ -48,6 +48,26 @@ class AppFunctionCompilerTest {
     }
 
     @Test
+    fun testNoAppFunctionDefined_generatesEmptyXmlFiles() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = emptyList(),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions.xml",
+            goldenFileName = "emptyXml_app_function.xml",
+        )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "emptyXml_app_function.xml",
+        )
+    }
+
+    @Test
     fun testSimpleFunction_genAppFunctionIds_success() {
         val report = compilationTestHelper.compileAll(sourceFileNames = listOf("SimpleFunction.KT"))
 
@@ -359,6 +379,50 @@ class AppFunctionCompilerTest {
     }
 
     @Test
+    fun testIntValueConstraint_Xml_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("IntEnumValueFunctions.KT"),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "intEnumValueFunctions_app_functions_v2.xml",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}AggregatedAppFunctionInventory_Impl.kt",
+            goldenFileName = "${'$'}AggregatedAppFunctionInventory_IntEnum_Impl.KT",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}IntEnumValueFunctions_AppFunctionInventory.kt",
+            goldenFileName = "${'$'}IntEnumValueFunctions_AppFunctionInventory.KT",
+        )
+    }
+
+    @Test
+    fun testStringValueConstraint_Xml_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("StringEnumValueFunctions.KT"),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "stringEnumValueFunctions_app_functions_v2.xml",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName =
+                "${'$'}StringEnumValueFunctions_AppFunctionInventory.kt",
+            goldenFileName = "${'$'}StringEnumValueFunctions_AppFunctionInventory.KT",
+        )
+    }
+
+    @Test
     fun testSerializableOutputFunctions_genAppFunctionInventory_success() {
         val report =
             compilationTestHelper.compileAll(
@@ -656,7 +720,7 @@ class AppFunctionCompilerTest {
     fun testFakeFunction_freeForm_detailedKdocAsDescription_success() {
         val report =
             compilationTestHelper.compileAll(
-                sourceFileNames = listOf("FakeFreeFormFunctionWithDetailedKdoc.KT"),
+                sourceFileNames = listOf("FakeFreeFormFunctionsWithDetailedKdocs.KT"),
                 processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
             )
 
@@ -664,6 +728,21 @@ class AppFunctionCompilerTest {
             report = report,
             expectGeneratedResourceFileName = "app_functions_v2.xml",
             goldenFileName = "fake_freeForm_with_detailed_kdoc_app_function_dynamic_schema.xml",
+        )
+    }
+
+    @Test
+    fun testFakeFunction_freeForm_paramKdocAsDescription_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FakeFreeFormFunctionsWithParamKdocs.KT"),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "fake_freeForm_with_param_kdocs_app_function_dynamic_schema.xml",
         )
     }
 
@@ -764,6 +843,7 @@ class AppFunctionCompilerTest {
                         "AllPrimitiveInputFunctions.KT",
                         "SimpleFunction.KT",
                         "SimpleFunctionDiffPackage.KT",
+                        "FakeFreeFormFunctionsWithDetailedKdocs.KT",
                     )
             )
 
@@ -771,6 +851,20 @@ class AppFunctionCompilerTest {
             report = report,
             expectGeneratedSourceFileName = "${'$'}Main_FunctionComponentRegistry.kt",
             goldenFileName = "${'$'}Main_FunctionComponentRegistry.KT",
+        )
+    }
+
+    @Test
+    fun testGenerateSerializableComponentRegistry() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("FakeFreeFormFunctionsWithDetailedKdocs.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}Main_SerializableComponentRegistry.kt",
+            goldenFileName = "${'$'}Main_SerializableComponentRegistry.KT",
         )
     }
 
@@ -870,6 +964,131 @@ class AppFunctionCompilerTest {
             report = report,
             expectGeneratedResourceFileName = "app_functions_v2.xml",
             goldenFileName = "functionWithEmptySerializable_app_function_dynamic_schema.xml",
+        )
+    }
+
+    @Test
+    fun testAppFunctionWithOptionalNonNullSerializable_fail() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("AppFunctionWithOptionalNonNullSerializable.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            "Type com.testdata.SerializableData cannot be optional",
+        )
+    }
+
+    // One Of Serializable Tests
+
+    @Test
+    fun oneOfSerializable_oneOfSealedInterface_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/OneOfSealedInterface.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "OneOfSealedInterfaceFactory.kt",
+            "oneofserializable/\$OneOfSealedInterfaceFactory.KT",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_oneOfSealedClass_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/OneOfSealedClass.KT")
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "OneOfSealedClassFactory.kt",
+            "oneofserializable/\$OneOfSealedClassFactory.KT",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_nonSerializableSubclasses_fails() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("oneofserializable/NonSerializableSubclasses.KT")
+            )
+
+        compilationTestHelper.assertErrorWithMessage(
+            report,
+            "All subclasses of OneOfSealedInterface should be annotated with @AppFunctionSerializable. Did you forget to annotate OneOfSealedInterface\$ASubclass?",
+        )
+    }
+
+    @Test
+    fun oneOfSerializable_nestedOneOfSerializableWithinSerializable_generatesFactory() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf(
+                        "oneofserializable/OneOfSealedClass.KT",
+                        "oneofserializable/OneOfSealedInterface.KT",
+                        "oneofserializable/NestedOneOfSerializableWithinSerializable.KT",
+                    )
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report,
+            "NestedOneOfSerializableWithinSerializableFactory.kt",
+            "oneofserializable/\$NestedOneOfSerializableWithinSerializableFactory.KT",
+        )
+    }
+
+    @Test
+    fun testOneOfSerializableFunctions_genAppFunctionInventoryXml_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames =
+                    listOf(
+                        "oneofserializable/OneOfSealedClass.KT",
+                        "oneofserializable/OneOfSealedInterface.KT",
+                        "oneofserializable/OneOfFunctions.KT",
+                    ),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}OneOfFunctions_AppFunctionInventory.kt",
+            goldenFileName = "oneofserializable/${'$'}OneOfFunctions_AppFunctionInventory.KT",
+        )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "oneofserializable/oneOfFunctions_app_function_dynamic_schema.xml",
+        )
+    }
+
+    @Test
+    fun testDeprecatedFunction_generatedClass_success() {
+        val report =
+            compilationTestHelper.compileAll(
+                sourceFileNames = listOf("DeprecatedFunction.KT"),
+                processorOptions = mapOf("appfunctions:aggregateAppFunctions" to "true"),
+            )
+
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}DeprecatedFunction_AppFunctionInvoker.kt",
+            goldenFileName = "${'$'}DeprecatedFunction_AppFunctionInvoker.KT",
+        )
+        compilationTestHelper.assertSuccessWithSourceContent(
+            report = report,
+            expectGeneratedSourceFileName = "${'$'}DeprecatedFunction_AppFunctionInventory.kt",
+            goldenFileName = "${'$'}DeprecatedFunction_AppFunctionInventory.KT",
+        )
+        compilationTestHelper.assertSuccessWithResourceContent(
+            report = report,
+            expectGeneratedResourceFileName = "app_functions_v2.xml",
+            goldenFileName = "deprecated_app_function_dynamic_schema.xml",
         )
     }
 }

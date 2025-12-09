@@ -27,6 +27,7 @@ import androidx.camera.camera2.pipe.CameraSurfaceManager
 import androidx.camera.camera2.pipe.ConfigQueryResult
 import androidx.camera.camera2.pipe.FrameGraph
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 
@@ -41,7 +42,7 @@ import kotlinx.coroutines.test.TestScope
 public class CameraPipeSimulator
 private constructor(
     private val cameraPipeInternal: CameraPipe,
-    private val fakeCameraBackend: FakeCameraBackend,
+    public val fakeCameraBackend: FakeCameraBackend,
     public val fakeSurfaces: FakeSurfaces,
     public val fakeImageReaders: FakeImageReaders,
     public val fakeImageSources: FakeImageSources,
@@ -49,12 +50,16 @@ private constructor(
     private val closed = atomic(false)
     private val _cameraGraphs = mutableListOf<CameraGraphSimulator>()
     private val _frameGraphs = mutableListOf<FrameGraphSimulator>()
+    private val _isConfigSupportedHistory = mutableListOf<CameraGraph.Config>()
 
     public val cameraGraphs: List<CameraGraphSimulator>
         get() = _cameraGraphs
 
     public val frameGraphs: List<FrameGraphSimulator>
         get() = _frameGraphs
+
+    public val isConfigSupportedHistory: List<CameraGraph.Config>
+        get() = _isConfigSupportedHistory
 
     @Deprecated(
         "Use createCameraGraph instead.",
@@ -106,8 +111,14 @@ private constructor(
     override fun cameraSurfaceManager(): CameraSurfaceManager =
         cameraPipeInternal.cameraSurfaceManager()
 
-    override fun isConfigSupported(graphConfig: CameraGraph.Config): ConfigQueryResult =
-        cameraPipeInternal.isConfigSupported(graphConfig)
+    override suspend fun isConfigSupported(graphConfig: CameraGraph.Config): ConfigQueryResult {
+        _isConfigSupportedHistory.add(graphConfig)
+        return cameraPipeInternal.isConfigSupported(graphConfig)
+    }
+
+    override fun prewarmIsConfigSupported(graphConfig: CameraGraph.Config) {
+        cameraPipeInternal.prewarmIsConfigSupported(graphConfig)
+    }
 
     override var globalAudioRestrictionMode: AudioRestrictionMode
         get() = cameraPipeInternal.globalAudioRestrictionMode
@@ -183,25 +194,20 @@ private constructor(
     }
 
     public companion object {
+        /**
+         * Create a [CameraPipeSimulator] that intercepts nearly all interactions with the Camera
+         * and allows those interactions to be precisely simulated.
+         */
         public fun create(
-            testScope: TestScope,
             testContext: Context,
-            fakeCameras: List<CameraMetadata> = listOf(FakeCameraMetadata()),
+            testThreads: CameraPipe.ThreadConfig,
+            testCameras: List<CameraMetadata>,
         ): CameraPipeSimulator {
-            val fakeCameraBackend =
-                FakeCameraBackend(fakeCameras = fakeCameras.associateBy { it.camera })
-
-            val testScopeDispatcher =
-                StandardTestDispatcher(testScope.testScheduler, "CXCP-TestScope")
-            val testScopeThreadConfig =
-                CameraPipe.ThreadConfig(
-                    testOnlyDispatcher = testScopeDispatcher,
-                    testOnlyScope = testScope,
-                )
-
             val fakeSurfaces = FakeSurfaces()
             val fakeImageReaders = FakeImageReaders(fakeSurfaces)
             val fakeImageSources = FakeImageSources(fakeImageReaders)
+            val fakeCameraBackend =
+                FakeCameraBackend(fakeCameras = testCameras.associateBy { it.camera })
 
             val cameraPipe =
                 CameraPipe(
@@ -209,7 +215,7 @@ private constructor(
                         testContext,
                         cameraBackendConfig =
                             CameraBackendConfig(internalBackend = fakeCameraBackend),
-                        threadConfig = testScopeThreadConfig,
+                        threadConfig = testThreads,
                         imageSources = fakeImageSources,
                     )
                 )
@@ -219,6 +225,35 @@ private constructor(
                 fakeSurfaces,
                 fakeImageReaders,
                 fakeImageSources,
+            )
+        }
+
+        public fun create(
+            testScope: TestScope,
+            testContext: Context,
+            fakeCameras: List<CameraMetadata> = listOf(FakeCameraMetadata()),
+        ): CameraPipeSimulator {
+            val testScopeDispatcher =
+                StandardTestDispatcher(testScope.testScheduler, "CXCP-TestScope")
+            val testScopeExecutor = testScopeDispatcher.asExecutor()
+
+            val testScopeThreadConfig =
+                CameraPipe.ThreadConfig(
+                    defaultLightweightExecutor = testScopeExecutor,
+                    defaultBackgroundExecutor = testScopeExecutor,
+                    defaultBlockingExecutor = testScopeExecutor,
+                    defaultCameraExecutor = testScopeExecutor,
+                    defaultCameraHandlerFn = {
+                        throw IllegalStateException(
+                            "Handler should never be accessed from simulator."
+                        )
+                    },
+                    testOnlyScope = testScope,
+                )
+            return create(
+                testContext = testContext,
+                testThreads = testScopeThreadConfig,
+                testCameras = fakeCameras,
             )
         }
     }

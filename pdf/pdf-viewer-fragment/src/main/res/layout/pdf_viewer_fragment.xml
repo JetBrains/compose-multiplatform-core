@@ -19,20 +19,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <androidx.pdf.view.PdfView
-        android:id="@+id/pdfView"
+    <androidx.pdf.view.PdfContentLayout
+        android:id="@+id/pdfContentLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:paddingStart="@dimen/pdf_horizontal_padding"
-        android:paddingEnd="@dimen/pdf_horizontal_padding"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:fastScrollVerticalThumbDrawable="@drawable/fast_scroll_thumb_drawable"
-        app:fastScrollPageIndicatorBackgroundDrawable="@drawable/page_indicator_background" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- ProgressBar for loading -->
     <ProgressBar
@@ -54,6 +48,15 @@
         android:text="@string/error_cannot_open_pdf"
         android:textColor="?attr/colorOnSurface"
         android:textAppearance="?attr/textAppearanceBodyMedium"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <include android:id="@+id/savingProgressOverlay"
+        layout="@layout/saving_progress_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

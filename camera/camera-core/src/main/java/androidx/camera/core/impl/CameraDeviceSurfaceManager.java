@@ -21,6 +21,7 @@ import android.util.Size;
 
 import androidx.camera.core.InitializationException;
 import androidx.camera.core.SessionConfig;
+import androidx.camera.core.impl.stabilization.VideoStabilization;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -33,7 +34,7 @@ import java.util.Set;
  * Camera device manager to provide the guaranteed supported stream capabilities related info for
  * all camera devices
  */
-public interface CameraDeviceSurfaceManager {
+public interface CameraDeviceSurfaceManager extends InternalCameraPresenceListener {
 
     /**
      * Interface for deferring creation of a CameraDeviceSurfaceManager.
@@ -56,14 +57,17 @@ public interface CameraDeviceSurfaceManager {
     /**
      * Transform to a SurfaceConfig object with cameraId, image format and size info
      *
-     * @param cameraMode  the working camera mode.
-     * @param cameraId    the camera id of the camera device to transform the object
-     * @param imageFormat the image format info for the surface configuration object
-     * @param size        the size info for the surface configuration object
+     * @param cameraMode    the working camera mode.
+     * @param cameraId      the camera id of the camera device to transform the object
+     * @param imageFormat   the image format info for the surface configuration object
+     * @param size          the size info for the surface configuration object
      * @param streamUseCase the stream use case for the surface configuration object
      * @return new {@link SurfaceConfig} object
+     * @throws IllegalArgumentException if the {@code cameraId} is not found in the supported
+     *                                  combinations, or if there isn't a supported combination of
+     *                                  surfaces available for the given parameters.
      */
-    @Nullable SurfaceConfig transformSurfaceConfig(
+    @NonNull SurfaceConfig transformSurfaceConfig(
             @CameraMode.Mode int cameraMode,
             @NonNull String cameraId,
             int imageFormat,
@@ -82,7 +86,7 @@ public interface CameraDeviceSurfaceManager {
      * @param newUseCaseConfigsSupportedSizeMap  map of configurations of the use cases to the
      *                                           supported output sizes list that will be given a
      *                                           suggested stream specification
-     * @param isPreviewStabilizationOn           whether the preview stabilization is enabled.
+     * @param videoStabilization                 the video stabilization.
      * @param hasVideoCapture                    whether the use cases has video capture.
      * @param isFeatureComboInvocation           whether a code flow invoked through feature combo
      *                                           APIs (e.g. {@link
@@ -107,7 +111,7 @@ public interface CameraDeviceSurfaceManager {
             @NonNull String cameraId,
             @NonNull List<AttachedSurfaceInfo> existingSurfaces,
             @NonNull Map<UseCaseConfig<?>, List<Size>> newUseCaseConfigsSupportedSizeMap,
-            boolean isPreviewStabilizationOn,
+            @NonNull VideoStabilization videoStabilization,
             boolean hasVideoCapture,
             boolean isFeatureComboInvocation,
             boolean findMaxSupportedFrameRate);

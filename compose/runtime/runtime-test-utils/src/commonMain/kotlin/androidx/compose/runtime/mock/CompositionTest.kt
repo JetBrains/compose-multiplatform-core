@@ -67,6 +67,10 @@ fun compositionTest(
                     composition.setContent(block)
                 }
 
+                override fun hasPendingWork(): Boolean {
+                    return recomposer.hasPendingWork
+                }
+
                 @OptIn(ExperimentalComposeRuntimeApi::class)
                 override fun compose(
                     observer: CompositionObserver,
@@ -135,6 +139,8 @@ interface CompositionTestScope : CoroutineScope {
         observer: CompositionObserver,
         block: @Composable () -> Unit,
     ): CompositionObserverHandle?
+
+    fun hasPendingWork(): Boolean
 
     /**
      * Advance the state which executes any pending compositions, if any. Returns true if advancing

@@ -175,11 +175,11 @@ internal data class ColumnMeasurePolicy(
     ): Int {
         val childCrossAlignment = parentData?.crossAxisAlignment
         return childCrossAlignment?.align(
-            size = crossAxisLayoutSize - placeable.width,
+            size = crossAxisLayoutSize,
             layoutDirection = layoutDirection,
             placeable = placeable,
             beforeCrossAxisAlignmentLine = beforeCrossAxisAlignmentLine,
-        ) ?: horizontalAlignment.align(0, crossAxisLayoutSize - placeable.width, layoutDirection)
+        ) ?: horizontalAlignment.align(placeable.width, crossAxisLayoutSize, layoutDirection)
     }
 
     override fun createConstraints(
@@ -354,6 +354,7 @@ interface ColumnScope {
     @Stable fun Modifier.alignBy(alignmentLineBlock: (Measured) -> Int): Modifier
 }
 
+@PublishedApi
 internal object ColumnScopeInstance : ColumnScope {
     @Stable
     override fun Modifier.weight(weight: Float, fill: Boolean): Modifier {

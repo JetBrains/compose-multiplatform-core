@@ -28,15 +28,12 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     namespace = "androidx.core.location.altitude"
-
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
 }
 
 dependencies {
@@ -49,7 +46,6 @@ dependencies {
     implementation("androidx.room:room-common:2.7.1")
     implementation("androidx.sqlite:sqlite:2.5.1")
     implementation(libs.autoValueAnnotations)
-    implementation(libs.kotlinStdlib)
 
     annotationProcessor(libs.autoValue)
     annotationProcessor("androidx.room:room-compiler:2.7.1")

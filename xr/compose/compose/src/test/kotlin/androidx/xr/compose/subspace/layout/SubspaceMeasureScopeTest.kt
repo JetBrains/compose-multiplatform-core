@@ -18,6 +18,7 @@ package androidx.xr.compose.subspace.layout
 
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -29,6 +30,9 @@ class TestSubspaceMeasureScope : SubspaceMeasureScope {
 
     override val fontScale: Float
         get() = 1f
+
+    override val layoutDirection: LayoutDirection
+        get() = LayoutDirection.Ltr
 }
 
 /** Tests for [SubspaceMeasureScope]. */

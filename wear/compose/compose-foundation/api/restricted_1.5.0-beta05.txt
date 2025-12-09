@@ -8,15 +8,12 @@ package androidx.wear.compose.foundation {
   }
 
   public static final class AnchorType.Companion {
-    method public float getCenter();
     method @BytecodeOnly public float getCenter-IUldqTk();
-    method public float getEnd();
     method @BytecodeOnly public float getEnd-IUldqTk();
-    method public float getStart();
     method @BytecodeOnly public float getStart-IUldqTk();
-    property public float Center;
-    property public float End;
-    property public float Start;
+    property public androidx.wear.compose.foundation.AnchorType Center;
+    property public androidx.wear.compose.foundation.AnchorType End;
+    property public androidx.wear.compose.foundation.AnchorType Start;
   }
 
   @androidx.compose.runtime.Stable public interface ArcPaddingValues {
@@ -71,15 +68,12 @@ package androidx.wear.compose.foundation {
   public static final class CurvedAlignment.Angular.Companion {
     method public float Custom(float ratio);
     method @BytecodeOnly public float Custom-MIL3zXU(float);
-    method public float getCenter();
     method @BytecodeOnly public float getCenter-yWRYBYk();
-    method public float getEnd();
     method @BytecodeOnly public float getEnd-yWRYBYk();
-    method public float getStart();
     method @BytecodeOnly public float getStart-yWRYBYk();
-    property public float Center;
-    property public float End;
-    property public float Start;
+    property public androidx.wear.compose.foundation.CurvedAlignment.Angular Center;
+    property public androidx.wear.compose.foundation.CurvedAlignment.Angular End;
+    property public androidx.wear.compose.foundation.CurvedAlignment.Angular Start;
   }
 
   @kotlin.jvm.JvmInline public static final value class CurvedAlignment.Radial {
@@ -91,15 +85,12 @@ package androidx.wear.compose.foundation {
   public static final class CurvedAlignment.Radial.Companion {
     method public float Custom(float ratio);
     method @BytecodeOnly public float Custom-Tt6c-v8(float);
-    method public float getCenter();
     method @BytecodeOnly public float getCenter-BjYtHoc();
-    method public float getInner();
     method @BytecodeOnly public float getInner-BjYtHoc();
-    method public float getOuter();
     method @BytecodeOnly public float getOuter-BjYtHoc();
-    property public float Center;
-    property public float Inner;
-    property public float Outer;
+    property public androidx.wear.compose.foundation.CurvedAlignment.Radial Center;
+    property public androidx.wear.compose.foundation.CurvedAlignment.Radial Inner;
+    property public androidx.wear.compose.foundation.CurvedAlignment.Radial Outer;
   }
 
   public final class CurvedBoxKt {
@@ -129,18 +120,14 @@ package androidx.wear.compose.foundation {
   }
 
   public static final class CurvedDirection.Angular.Companion {
-    method public int getClockwise();
     method @BytecodeOnly public int getClockwise-gmlPZk4();
-    method public int getCounterClockwise();
     method @BytecodeOnly public int getCounterClockwise-gmlPZk4();
-    method public int getNormal();
     method @BytecodeOnly public int getNormal-gmlPZk4();
-    method public int getReversed();
     method @BytecodeOnly public int getReversed-gmlPZk4();
-    property public int Clockwise;
-    property public int CounterClockwise;
-    property public int Normal;
-    property public int Reversed;
+    property public androidx.wear.compose.foundation.CurvedDirection.Angular Clockwise;
+    property public androidx.wear.compose.foundation.CurvedDirection.Angular CounterClockwise;
+    property public androidx.wear.compose.foundation.CurvedDirection.Angular Normal;
+    property public androidx.wear.compose.foundation.CurvedDirection.Angular Reversed;
   }
 
   @androidx.compose.runtime.Immutable @kotlin.jvm.JvmInline public static final value class CurvedDirection.Radial {
@@ -150,12 +137,10 @@ package androidx.wear.compose.foundation {
   }
 
   public static final class CurvedDirection.Radial.Companion {
-    method public int getInsideOut();
     method @BytecodeOnly public int getInsideOut-Ysh6JRM();
-    method public int getOutsideIn();
     method @BytecodeOnly public int getOutsideIn-Ysh6JRM();
-    property public int InsideOut;
-    property public int OutsideIn;
+    property public androidx.wear.compose.foundation.CurvedDirection.Radial InsideOut;
+    property public androidx.wear.compose.foundation.CurvedDirection.Radial OutsideIn;
   }
 
   public final class CurvedDrawKt {
@@ -242,11 +227,12 @@ package androidx.wear.compose.foundation {
 
   public final class CurvedTextStyle {
     ctor public CurvedTextStyle();
+    ctor @KotlinOnly public CurvedTextStyle(optional androidx.compose.ui.graphics.Color background, optional androidx.compose.ui.graphics.Color color, optional androidx.compose.ui.unit.TextUnit fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis, optional androidx.compose.ui.unit.TextUnit letterSpacing, optional androidx.compose.ui.unit.TextUnit letterSpacingCounterClockwise, optional androidx.compose.ui.unit.TextUnit lineHeight);
     ctor public CurvedTextStyle(androidx.compose.ui.text.TextStyle style);
-    ctor @Deprecated public CurvedTextStyle(optional long background, optional long color, optional long fontSize);
-    ctor @Deprecated public CurvedTextStyle(optional long background, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis);
-    ctor @Deprecated public CurvedTextStyle(optional long background, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis, optional long letterSpacing);
-    ctor public CurvedTextStyle(optional long background, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis, optional long letterSpacing, optional long letterSpacingCounterClockwise, optional long lineHeight);
+    ctor @BytecodeOnly @Deprecated public CurvedTextStyle(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public CurvedTextStyle(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly public CurvedTextStyle(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!, long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
+    ctor @BytecodeOnly @Deprecated public CurvedTextStyle(long, long, long, kotlin.jvm.internal.DefaultConstructorMarker!);
     method @Deprecated public androidx.wear.compose.foundation.CurvedTextStyle copy(optional long background, optional long color, optional long fontSize);
     method @Deprecated public androidx.wear.compose.foundation.CurvedTextStyle copy(optional long background, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis);
     method @Deprecated public androidx.wear.compose.foundation.CurvedTextStyle copy(optional long background, optional long color, optional long fontSize, optional androidx.compose.ui.text.font.FontFamily? fontFamily, optional androidx.compose.ui.text.font.FontWeight? fontWeight, optional androidx.compose.ui.text.font.FontStyle? fontStyle, optional androidx.compose.ui.text.font.FontSynthesis? fontSynthesis, optional long letterSpacing);
@@ -255,36 +241,28 @@ package androidx.wear.compose.foundation {
     method @BytecodeOnly @Deprecated public androidx.wear.compose.foundation.CurvedTextStyle! copy-rRnh6Vg(long, long, long);
     method @BytecodeOnly @Deprecated public androidx.wear.compose.foundation.CurvedTextStyle! copy-xgAEyWg(long, long, long, androidx.compose.ui.text.font.FontFamily!, androidx.compose.ui.text.font.FontWeight!, androidx.compose.ui.text.font.FontStyle!, androidx.compose.ui.text.font.FontSynthesis!);
     method @BytecodeOnly public androidx.wear.compose.foundation.CurvedTextStyle copy-zt0DKyk(long, long, long, androidx.compose.ui.text.font.FontFamily?, androidx.compose.ui.text.font.FontWeight?, androidx.compose.ui.text.font.FontStyle?, androidx.compose.ui.text.font.FontSynthesis?, long, long, long);
-    method public long getBackground();
     method @BytecodeOnly public long getBackground-0d7_KjU();
-    method public long getColor();
     method @BytecodeOnly public long getColor-0d7_KjU();
     method public androidx.compose.ui.text.font.FontFamily? getFontFamily();
-    method public long getFontSize();
     method @BytecodeOnly public long getFontSize-XSAIIZE();
-    method public androidx.compose.ui.text.font.FontStyle? getFontStyle();
     method @BytecodeOnly public androidx.compose.ui.text.font.FontStyle? getFontStyle-4Lr2A7w();
-    method public androidx.compose.ui.text.font.FontSynthesis? getFontSynthesis();
     method @BytecodeOnly public androidx.compose.ui.text.font.FontSynthesis? getFontSynthesis-ZQGJjVo();
     method public androidx.compose.ui.text.font.FontWeight? getFontWeight();
-    method public long getLetterSpacing();
     method @BytecodeOnly public long getLetterSpacing-XSAIIZE();
-    method public long getLetterSpacingCounterClockwise();
     method @BytecodeOnly public long getLetterSpacingCounterClockwise-XSAIIZE();
-    method public long getLineHeight();
     method @BytecodeOnly public long getLineHeight-XSAIIZE();
     method public androidx.wear.compose.foundation.CurvedTextStyle merge(optional androidx.wear.compose.foundation.CurvedTextStyle? other);
     method public operator androidx.wear.compose.foundation.CurvedTextStyle plus(androidx.wear.compose.foundation.CurvedTextStyle other);
-    property public long background;
-    property public long color;
+    property public androidx.compose.ui.graphics.Color background;
+    property public androidx.compose.ui.graphics.Color color;
     property public androidx.compose.ui.text.font.FontFamily? fontFamily;
-    property public long fontSize;
+    property public androidx.compose.ui.unit.TextUnit fontSize;
     property public androidx.compose.ui.text.font.FontStyle? fontStyle;
     property public androidx.compose.ui.text.font.FontSynthesis? fontSynthesis;
     property public androidx.compose.ui.text.font.FontWeight? fontWeight;
-    property public long letterSpacing;
-    property public long letterSpacingCounterClockwise;
-    property public long lineHeight;
+    property public androidx.compose.ui.unit.TextUnit letterSpacing;
+    property public androidx.compose.ui.unit.TextUnit letterSpacingCounterClockwise;
+    property public androidx.compose.ui.unit.TextUnit lineHeight;
   }
 
   public final class ExpandableItemsDefaults {
@@ -357,18 +335,14 @@ package androidx.wear.compose.foundation {
   }
 
   @Deprecated public static final class RevealActionType.Companion {
-    method @Deprecated public int getNone();
     method @BytecodeOnly @Deprecated public int getNone-Bxv7xxc();
-    method @Deprecated public int getPrimaryAction();
     method @BytecodeOnly @Deprecated public int getPrimaryAction-Bxv7xxc();
-    method @Deprecated public int getSecondaryAction();
     method @BytecodeOnly @Deprecated public int getSecondaryAction-Bxv7xxc();
-    method @Deprecated public int getUndoAction();
     method @BytecodeOnly @Deprecated public int getUndoAction-Bxv7xxc();
-    property @Deprecated public int None;
-    property @Deprecated public int PrimaryAction;
-    property @Deprecated public int SecondaryAction;
-    property @Deprecated public int UndoAction;
+    property @Deprecated public androidx.wear.compose.foundation.RevealActionType None;
+    property @Deprecated public androidx.wear.compose.foundation.RevealActionType PrimaryAction;
+    property @Deprecated public androidx.wear.compose.foundation.RevealActionType SecondaryAction;
+    property @Deprecated public androidx.wear.compose.foundation.RevealActionType UndoAction;
   }
 
   @Deprecated @SuppressCompatibility @androidx.wear.compose.foundation.ExperimentalWearFoundationApi @kotlin.jvm.JvmInline public final value class RevealDirection {
@@ -380,39 +354,33 @@ package androidx.wear.compose.foundation {
   }
 
   @Deprecated public static final class RevealDirection.Companion {
-    method @Deprecated public int getBoth();
     method @BytecodeOnly @Deprecated public int getBoth-orZwqdU();
-    method @Deprecated public int getRightToLeft();
     method @BytecodeOnly @Deprecated public int getRightToLeft-orZwqdU();
-    property @Deprecated public int Both;
-    property @Deprecated public int RightToLeft;
+    property @Deprecated public androidx.wear.compose.foundation.RevealDirection Both;
+    property @Deprecated public androidx.wear.compose.foundation.RevealDirection RightToLeft;
   }
 
   @Deprecated @SuppressCompatibility @androidx.wear.compose.foundation.ExperimentalWearFoundationApi public final class RevealState {
     method @Deprecated public suspend Object? animateTo(int targetValue, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @BytecodeOnly @Deprecated public Object? animateTo-HVQT5Qc(int, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
-    method @Deprecated public int getCurrentValue();
     method @BytecodeOnly @Deprecated public int getCurrentValue-EhNvi2Q();
-    method @Deprecated public int getLastActionType();
     method @BytecodeOnly @Deprecated public int getLastActionType-Bxv7xxc();
     method @Deprecated public float getOffset();
     method @Deprecated public float getRevealThreshold();
     method @Deprecated public java.util.Map<androidx.wear.compose.foundation.RevealValue,java.lang.Float> getSwipeAnchors();
-    method @Deprecated public int getTargetValue();
     method @BytecodeOnly @Deprecated public int getTargetValue-EhNvi2Q();
     method @Deprecated public androidx.compose.runtime.MutableFloatState getWidth();
     method @Deprecated public boolean isAnimationRunning();
-    method @Deprecated public void setLastActionType(int);
     method @BytecodeOnly @Deprecated public void setLastActionType-zcPJnak(int);
     method @Deprecated public suspend Object? snapTo(int targetValue, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @BytecodeOnly @Deprecated public Object? snapTo-HVQT5Qc(int, kotlin.coroutines.Continuation<? super kotlin.Unit!>);
-    property @Deprecated public int currentValue;
+    property @Deprecated public androidx.wear.compose.foundation.RevealValue currentValue;
     property @Deprecated public boolean isAnimationRunning;
-    property @Deprecated public int lastActionType;
+    property @Deprecated public androidx.wear.compose.foundation.RevealActionType lastActionType;
     property @Deprecated public float offset;
     property @Deprecated public float revealThreshold;
     property @Deprecated public java.util.Map<androidx.wear.compose.foundation.RevealValue,java.lang.Float> swipeAnchors;
-    property @Deprecated public int targetValue;
+    property @Deprecated public androidx.wear.compose.foundation.RevealValue targetValue;
     property @Deprecated public androidx.compose.runtime.MutableFloatState width;
   }
 
@@ -425,21 +393,16 @@ package androidx.wear.compose.foundation {
   }
 
   @Deprecated public static final class RevealValue.Companion {
-    method @Deprecated public int getCovered();
     method @BytecodeOnly @Deprecated public int getCovered-EhNvi2Q();
-    method @Deprecated public int getLeftRevealed();
     method @BytecodeOnly @Deprecated public int getLeftRevealed-EhNvi2Q();
-    method @Deprecated public int getLeftRevealing();
     method @BytecodeOnly @Deprecated public int getLeftRevealing-EhNvi2Q();
-    method @Deprecated public int getRightRevealed();
     method @BytecodeOnly @Deprecated public int getRightRevealed-EhNvi2Q();
-    method @Deprecated public int getRightRevealing();
     method @BytecodeOnly @Deprecated public int getRightRevealing-EhNvi2Q();
-    property @Deprecated public int Covered;
-    property @Deprecated public int LeftRevealed;
-    property @Deprecated public int LeftRevealing;
-    property @Deprecated public int RightRevealed;
-    property @Deprecated public int RightRevealing;
+    property @Deprecated public androidx.wear.compose.foundation.RevealValue Covered;
+    property @Deprecated public androidx.wear.compose.foundation.RevealValue LeftRevealed;
+    property @Deprecated public androidx.wear.compose.foundation.RevealValue LeftRevealing;
+    property @Deprecated public androidx.wear.compose.foundation.RevealValue RightRevealed;
+    property @Deprecated public androidx.wear.compose.foundation.RevealValue RightRevealing;
   }
 
   public interface ScrollInfoProvider {
@@ -465,10 +428,9 @@ package androidx.wear.compose.foundation {
 
   public final class SwipeToDismissBoxDefaults {
     method public androidx.compose.animation.core.SpringSpec<java.lang.Float> getAnimationSpec();
-    method public float getEdgeWidth();
     method @BytecodeOnly public float getEdgeWidth-D9Ej5fM();
     property public androidx.compose.animation.core.SpringSpec<java.lang.Float> AnimationSpec;
-    property public float EdgeWidth;
+    property public androidx.compose.ui.unit.Dp EdgeWidth;
     field public static final androidx.wear.compose.foundation.SwipeToDismissBoxDefaults INSTANCE;
   }
 
@@ -559,12 +521,10 @@ package androidx.wear.compose.foundation.lazy {
   }
 
   public static final class ScalingLazyListAnchorType.Companion {
-    method public int getItemCenter();
     method @BytecodeOnly public int getItemCenter-ZuIr4RU();
-    method public int getItemStart();
     method @BytecodeOnly public int getItemStart-ZuIr4RU();
-    property public int ItemCenter;
-    property public int ItemStart;
+    property public androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType ItemCenter;
+    property public androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType ItemStart;
   }
 
   public sealed interface ScalingLazyListItemInfo {
@@ -595,7 +555,6 @@ package androidx.wear.compose.foundation.lazy {
   public sealed interface ScalingLazyListLayoutInfo {
     method public int getAfterAutoCenteringPadding();
     method public int getAfterContentPadding();
-    method public int getAnchorType();
     method @BytecodeOnly public int getAnchorType-ZuIr4RU();
     method public int getBeforeAutoCenteringPadding();
     method public int getBeforeContentPadding();
@@ -603,20 +562,19 @@ package androidx.wear.compose.foundation.lazy {
     method public boolean getReverseLayout();
     method public int getTotalItemsCount();
     method public int getViewportEndOffset();
-    method public long getViewportSize();
     method @BytecodeOnly public long getViewportSize-YbymL2g();
     method public int getViewportStartOffset();
     method public java.util.List<androidx.wear.compose.foundation.lazy.ScalingLazyListItemInfo> getVisibleItemsInfo();
     property public abstract int afterAutoCenteringPadding;
     property public abstract int afterContentPadding;
-    property public abstract int anchorType;
+    property public abstract androidx.wear.compose.foundation.lazy.ScalingLazyListAnchorType anchorType;
     property public abstract int beforeAutoCenteringPadding;
     property public abstract int beforeContentPadding;
     property public abstract androidx.compose.foundation.gestures.Orientation orientation;
     property public abstract boolean reverseLayout;
     property public abstract int totalItemsCount;
     property public abstract int viewportEndOffset;
-    property public abstract long viewportSize;
+    property public abstract androidx.compose.ui.unit.IntSize viewportSize;
     property public abstract int viewportStartOffset;
     property public abstract java.util.List<androidx.wear.compose.foundation.lazy.ScalingLazyListItemInfo> visibleItemsInfo;
   }
@@ -691,17 +649,15 @@ package androidx.wear.compose.foundation.lazy {
 
   @androidx.wear.compose.foundation.lazy.TransformingLazyColumnScopeMarker public sealed interface TransformingLazyColumnItemScope {
     method public androidx.compose.ui.Modifier animateItem(androidx.compose.ui.Modifier, optional androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float>? fadeInSpec, optional androidx.compose.animation.core.FiniteAnimationSpec<androidx.compose.ui.unit.IntOffset>? placementSpec, optional androidx.compose.animation.core.FiniteAnimationSpec<java.lang.Float>? fadeOutSpec);
-    method public long getScrollProgress(androidx.compose.ui.graphics.drawscope.DrawScope);
-    method public long getScrollProgress(androidx.compose.ui.graphics.GraphicsLayerScope);
     method @BytecodeOnly public long getScrollProgress-CyslRjo(androidx.compose.ui.graphics.drawscope.DrawScope);
     method @BytecodeOnly public long getScrollProgress-CyslRjo(androidx.compose.ui.graphics.GraphicsLayerScope);
     method public androidx.compose.ui.Modifier transformedHeight(androidx.compose.ui.Modifier, kotlin.jvm.functions.Function2<? super java.lang.Integer,? super androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress,java.lang.Integer> heightProvider);
-    property public abstract long androidx.compose.ui.graphics.drawscope.DrawScope.scrollProgress;
-    property public abstract long androidx.compose.ui.graphics.GraphicsLayerScope.scrollProgress;
+    property public abstract androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress androidx.compose.ui.graphics.drawscope.DrawScope.scrollProgress;
+    property public abstract androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress androidx.compose.ui.graphics.GraphicsLayerScope.scrollProgress;
   }
 
   @kotlin.jvm.JvmInline public final value class TransformingLazyColumnItemScrollProgress {
-    ctor public TransformingLazyColumnItemScrollProgress(float topOffsetFraction, float bottomOffsetFraction);
+    ctor @KotlinOnly public TransformingLazyColumnItemScrollProgress(float topOffsetFraction, float bottomOffsetFraction);
     method @BytecodeOnly public static androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress! box-impl(long);
     method @BytecodeOnly public static long constructor-impl(float, float);
     method @BytecodeOnly public static float getBottomOffsetFraction-impl(long);
@@ -717,9 +673,8 @@ package androidx.wear.compose.foundation.lazy {
   }
 
   public static final class TransformingLazyColumnItemScrollProgress.Companion {
-    method public long getUnspecified();
     method @BytecodeOnly public long getUnspecified-xlmz8Ag();
-    property public long Unspecified;
+    property public androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress Unspecified;
   }
 
   public final class TransformingLazyColumnKt {
@@ -731,13 +686,12 @@ package androidx.wear.compose.foundation.lazy {
     method public int getAfterContentPadding();
     method public int getBeforeContentPadding();
     method public int getTotalItemsCount();
-    method public long getViewportSize();
     method @BytecodeOnly public long getViewportSize-YbymL2g();
     method public java.util.List<androidx.wear.compose.foundation.lazy.TransformingLazyColumnVisibleItemInfo> getVisibleItems();
     property public abstract int afterContentPadding;
     property public abstract int beforeContentPadding;
     property public abstract int totalItemsCount;
-    property public abstract long viewportSize;
+    property public abstract androidx.compose.ui.unit.IntSize viewportSize;
     property public abstract java.util.List<androidx.wear.compose.foundation.lazy.TransformingLazyColumnVisibleItemInfo> visibleItems;
   }
 
@@ -784,7 +738,6 @@ package androidx.wear.compose.foundation.lazy {
     method public Object getKey();
     method public int getMeasuredHeight();
     method public int getOffset();
-    method public long getScrollProgress();
     method @BytecodeOnly public long getScrollProgress-xlmz8Ag();
     method public int getTransformedHeight();
     property public abstract Object? contentType;
@@ -792,7 +745,7 @@ package androidx.wear.compose.foundation.lazy {
     property public abstract Object key;
     property public abstract int measuredHeight;
     property public abstract int offset;
-    property public abstract long scrollProgress;
+    property public abstract androidx.wear.compose.foundation.lazy.TransformingLazyColumnItemScrollProgress scrollProgress;
     property public abstract int transformedHeight;
   }
 

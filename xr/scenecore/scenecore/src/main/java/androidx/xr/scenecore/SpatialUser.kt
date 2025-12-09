@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,20 @@
 package androidx.xr.scenecore
 
 import androidx.xr.runtime.Config.HeadTrackingMode
-import androidx.xr.runtime.internal.JxrPlatformAdapter
 import androidx.xr.runtime.internal.LifecycleManager
+import androidx.xr.scenecore.runtime.SceneRuntime
 
 /** SpatialUser represents the user in a spatialized Activity. */
-public class SpatialUser(
+public class SpatialUser
+internal constructor(
     private val lifecycleManager: LifecycleManager,
-    private val runtime: JxrPlatformAdapter,
+    private val sceneRuntime: SceneRuntime,
 ) {
 
     private var leftCamera: CameraView? = null
         get() {
             if (field == null) {
-                field = CameraView.createLeft(runtime)
+                field = CameraView.createLeft(sceneRuntime)
             }
             return field
         }
@@ -37,7 +38,7 @@ public class SpatialUser(
     private var rightCamera: CameraView? = null
         get() {
             if (field == null) {
-                field = CameraView.createRight(runtime)
+                field = CameraView.createRight(sceneRuntime)
             }
             return field
         }
@@ -46,9 +47,9 @@ public class SpatialUser(
         /** Factory function for creating [SpatialUser] instance. */
         internal fun create(
             lifecycleManager: LifecycleManager,
-            runtime: JxrPlatformAdapter,
+            sceneRuntime: SceneRuntime,
         ): SpatialUser {
-            return SpatialUser(lifecycleManager, runtime)
+            return SpatialUser(lifecycleManager, sceneRuntime)
         }
     }
 
@@ -64,7 +65,7 @@ public class SpatialUser(
                 "Config.HeadTrackingMode is set to Disabled."
             }
             if (field == null) {
-                field = Head.create(runtime)
+                field = Head.create(sceneRuntime)
             }
             return field
         }

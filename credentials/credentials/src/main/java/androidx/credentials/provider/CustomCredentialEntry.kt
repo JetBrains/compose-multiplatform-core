@@ -169,7 +169,7 @@ internal constructor(
         subtitle: CharSequence? = null,
         typeDisplayName: CharSequence? = null,
         lastUsedTime: Instant? = null,
-        icon: Icon = Icon.createWithResource(context, R.drawable.ic_other_sign_in),
+        icon: Icon = Icon.createWithResource(context, R.drawable.adx_ic_other_sign_in),
         @Suppress("AutoBoxing") isAutoSelectAllowed: Boolean = false,
     ) : this(
         type = beginGetCredentialOption.type,
@@ -228,7 +228,7 @@ internal constructor(
         subtitle: CharSequence? = null,
         typeDisplayName: CharSequence? = null,
         lastUsedTime: Instant? = null,
-        icon: Icon = Icon.createWithResource(context, R.drawable.ic_other_sign_in),
+        icon: Icon = Icon.createWithResource(context, R.drawable.adx_ic_other_sign_in),
         @Suppress("AutoBoxing") isAutoSelectAllowed: Boolean = false,
         entryGroupId: CharSequence = title,
         isDefaultIconPreferredAsSingleProvider: Boolean = false,
@@ -288,7 +288,7 @@ internal constructor(
         subtitle: CharSequence? = null,
         typeDisplayName: CharSequence? = null,
         lastUsedTime: Instant? = null,
-        icon: Icon = Icon.createWithResource(context, R.drawable.ic_other_sign_in),
+        icon: Icon = Icon.createWithResource(context, R.drawable.adx_ic_other_sign_in),
         @Suppress("AutoBoxing") isAutoSelectAllowed: Boolean = false,
         entryGroupId: CharSequence = title,
         isDefaultIconPreferredAsSingleProvider: Boolean = false,
@@ -412,7 +412,7 @@ internal constructor(
                 return entry.isDefaultIconFromSlice
             }
             return entry.icon.type == Icon.TYPE_RESOURCE &&
-                entry.icon.resId == R.drawable.ic_other_sign_in
+                entry.icon.resId == R.drawable.adx_ic_other_sign_in
         }
 
         @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -676,9 +676,9 @@ internal constructor(
             // TODO: b/356939416 - provide backward compatible timestamp API.
             if (Build.VERSION.SDK_INT >= 26) {
                 this.lastUsedTime?.let {
-                    bundle.putSerializable(
-                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index",
-                        it,
+                    bundle.putLong(
+                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index",
+                        it.toEpochMilli(),
                     )
                 }
             }
@@ -726,9 +726,23 @@ internal constructor(
                 // TODO: b/356939416 - provide backward compatible timestamp API.
                 return if (Build.VERSION.SDK_INT >= 26) {
                     val lastUsedTime: Instant? =
-                        bundle.getSerializable(
-                            "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_PREFIX$index"
-                        ) as Instant?
+                        if (
+                            bundle.containsKey(
+                                "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                            )
+                        ) {
+                            try {
+                                Instant.ofEpochMilli(
+                                    bundle.getLong(
+                                        "$EXTRA_CREDENTIAL_ENTRY_LAST_USED_TIME_MILLIS_PREFIX$index"
+                                    )
+                                )
+                            } catch (_: Exception) {
+                                null
+                            }
+                        } else {
+                            null
+                        }
                     CustomCredentialEntry(
                         type = type,
                         title = title,
@@ -885,7 +899,7 @@ internal constructor(
         /** Builds an instance of [CustomCredentialEntry] */
         fun build(): CustomCredentialEntry {
             if (icon == null && Build.VERSION.SDK_INT >= 23) {
-                icon = Icon.createWithResource(context, R.drawable.ic_other_sign_in)
+                icon = Icon.createWithResource(context, R.drawable.adx_ic_other_sign_in)
             }
             return CustomCredentialEntry(
                 type = type,

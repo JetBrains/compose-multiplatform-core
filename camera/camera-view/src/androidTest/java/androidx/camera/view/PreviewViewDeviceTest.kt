@@ -31,7 +31,6 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.widget.FrameLayout
 import androidx.annotation.GuardedBy
-import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraInfo
@@ -51,6 +50,7 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ParameterizedTestConfigUtil
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.view.PreviewView.ImplementationMode
 import androidx.camera.view.internal.compat.quirk.DeviceQuirks
@@ -61,7 +61,6 @@ import androidx.core.content.ContextCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
@@ -75,7 +74,6 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import org.junit.After
 import org.junit.Assume
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -86,7 +84,6 @@ import org.mockito.Mockito
 /** Instrumented tests for [PreviewView]. */
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class PreviewViewDeviceTest(private val implName: String, private val cameraConfig: CameraXConfig) {
     @get:Rule
     val cameraPipeConfigTestRule =
@@ -1048,6 +1045,7 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
      * An empty implementation of [PreviewViewImplementation] used for testing. It allows mocking
      * [PreviewViewImplementation] since the latter is package private.
      */
+    @Suppress("EXPOSED_PACKAGE_PRIVATE_TYPE_FROM_INTERNAL_WARNING") // b/446693288
     internal open class TestPreviewViewImplementation
     constructor(parent: FrameLayout, previewTransform: PreviewTransformation) :
         PreviewViewImplementation(parent, previewTransform) {
@@ -1086,9 +1084,8 @@ class PreviewViewDeviceTest(private val implName: String, private val cameraConf
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
+            ParameterizedTestConfigUtil.generateCameraXConfigParameterizedTestConfigs(
+                inLabTestRequired = true
             )
     }
 }

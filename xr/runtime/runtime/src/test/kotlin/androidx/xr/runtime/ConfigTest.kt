@@ -68,6 +68,14 @@ class ConfigTest {
     }
 
     @Test
+    fun equals_differentFaceTracking_returnsFalse() {
+        val config1 = Config(faceTracking = Config.FaceTrackingMode.USER)
+        val config2 = Config(faceTracking = Config.FaceTrackingMode.DISABLED)
+
+        assertThat(config1).isNotEqualTo(config2)
+    }
+
+    @Test
     fun equals_differentDepthEstimation_returnsFalse() {
         val config1 = Config(depthEstimation = Config.DepthEstimationMode.SMOOTH_AND_RAW)
         val config2 = Config(depthEstimation = Config.DepthEstimationMode.DISABLED)

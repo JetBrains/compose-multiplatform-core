@@ -63,13 +63,17 @@ fun Project.configureErrorProneForAndroid() {
     val androidComponents = extensions.findByType(AndroidComponentsExtension::class.java)
     androidComponents?.onVariants { variant ->
         if (variant.buildType == "release") {
+            @Suppress("UnstableApiUsage", "USELESS_ELVIS")
+            // b/397707182 this is still @Incubating in AGP
+            // b/328749039 This is being made nullable in AGP
+            val javaCompilation = variant.javaCompilation ?: return@onVariants
             val errorProneConfiguration = createErrorProneConfiguration()
             configurations
                 .getByName(variant.annotationProcessorConfiguration.name)
                 .extendsFrom(errorProneConfiguration)
 
             log.info("Configuring error-prone for ${variant.name}'s java compile")
-            androidComponents.finalizeDsl {
+            afterEvaluate {
                 makeErrorProneTask(
                     compileTaskProvider =
                         tasks
@@ -78,7 +82,7 @@ fun Project.configureErrorProneForAndroid() {
                     taskSuffix = variant.name.camelCase(),
                 ) { javaCompile ->
                     @Suppress("UnstableApiUsage") // JavaCompilation b/397707182
-                    val annotationArgs = variant.javaCompilation.annotationProcessor.arguments
+                    val annotationArgs = javaCompilation.annotationProcessor.arguments
                     javaCompile.options.compilerArgumentProviders.add(
                         CommandLineArgumentProviderAdapter(annotationArgs)
                     )
@@ -102,7 +106,6 @@ class CommandLineArgumentProviderAdapter(@get:Input val arguments: Provider<Map<
 private fun Project.createErrorProneConfiguration(): Configuration =
     configurations.findByName(ERROR_PRONE_CONFIGURATION)
         ?: configurations.create(ERROR_PRONE_CONFIGURATION).apply {
-            isVisible = false
             isCanBeConsumed = false
             isCanBeResolved = true
             exclude(group = "com.google.errorprone", module = "javac")
@@ -290,6 +293,8 @@ private fun Project.makeErrorProneTask(
         tasks.register("$ERROR_PRONE_TASK$taskSuffix", JavaCompile::class.java) {
             it.onlyIf { compileTaskProviderExists.get() }
             val compileTask = compileTaskProvider?.get() ?: return@register
+            it.group = "Build"
+            it.description = "Compile this project's Java code with Error-prone compiler"
             it.classpath = compileTask.classpath
             it.source = compileTask.source
             it.destinationDirectory.set(layout.buildDirectory.dir("errorProne/$taskSuffix"))

@@ -17,7 +17,6 @@ package androidx.camera.camera2.pipe.integration.impl
 
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
-import android.os.Build
 import android.util.Range
 import androidx.camera.camera2.pipe.integration.adapter.RobolectricCameraPipeTestRunner
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
@@ -34,7 +33,7 @@ private const val INVALID_COLOR_CORRECTION_MODE = -1
 @ExperimentalCamera2Interop
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class Camera2ImplConfigTest {
     @Test
     fun emptyConfigurationDoesNotContainTemplateType() {
@@ -91,7 +90,7 @@ class Camera2ImplConfigTest {
         // Act
         val config = builder.build()
         // Assert
-        config.findOptions(CAPTURE_REQUEST_ID_STEM) { option ->
+        config.findOptions(Camera2ImplConfig.CAPTURE_REQUEST_ID_STEM) { option ->
             Truth.assertThat(option.token).isEqualTo(CaptureRequest.CONTROL_AF_MODE)
             Truth.assertThat(config.retrieveOption(option))
                 .isEqualTo(CaptureRequest.CONTROL_AF_MODE_OFF)
@@ -159,7 +158,7 @@ class Camera2ImplConfigTest {
         // Act
         val config: androidx.camera.core.impl.Config = builder.build()
         // Assert
-        config.findOptions(CAPTURE_REQUEST_ID_STEM) {
+        config.findOptions(Camera2ImplConfig.CAPTURE_REQUEST_ID_STEM) {
             option: androidx.camera.core.impl.Config.Option<*>? ->
             Truth.assertThat(config.getOptionPriority(option!!))
                 .isEqualTo(androidx.camera.core.impl.Config.OptionPriority.OPTIONAL)

@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.graph
 
 import android.hardware.camera2.CaptureResult
-import android.os.Build
 import androidx.camera.camera2.pipe.FrameNumber
 import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.testing.FakeFrameMetadata
@@ -32,7 +31,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 internal class Listener3ATest {
     @Test
     fun testListenersInvoked() {

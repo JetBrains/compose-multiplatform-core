@@ -3,7 +3,7 @@
     <appfunction>
         <id>com.testdata.FakeNoArg#noArg</id>
         <enabledByDefault>true</enabledByDefault>
-        <description>A free-form AppFunction without parameters. </description>
+        <description>A free-form AppFunction without parameters.</description>
         <response>
             <id>unused</id>
             <valueType>
@@ -14,7 +14,4 @@
         </response>
         <functionId>com.testdata.FakeNoArg#noArg</functionId>
     </appfunction>
-    <AppFunctionComponentMetadataDocument>
-        <id>unused</id>
-    </AppFunctionComponentMetadataDocument>
 </appfunctions>

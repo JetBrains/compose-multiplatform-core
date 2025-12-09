@@ -22,17 +22,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.xr.runtime.Config
+import androidx.xr.runtime.RequiredCalibrationType
 import androidx.xr.runtime.Session
-import androidx.xr.runtime.SessionConfigureConfigurationNotSupported
+import androidx.xr.runtime.SessionConfigureCalibrationRequired
 import androidx.xr.runtime.SessionConfigureGooglePlayServicesLocationLibraryNotLinked
-import androidx.xr.runtime.SessionConfigurePermissionsNotGranted
 import androidx.xr.runtime.SessionConfigureSuccess
 import androidx.xr.runtime.SessionCreateApkRequired
-import androidx.xr.runtime.SessionCreatePermissionsNotGranted
 import androidx.xr.runtime.SessionCreateResult
 import androidx.xr.runtime.SessionCreateSuccess
 import androidx.xr.runtime.SessionCreateUnsupportedDevice
+import androidx.xr.runtime.manifest.EYE_TRACKING_COARSE
+import androidx.xr.runtime.manifest.EYE_TRACKING_FINE
+import androidx.xr.runtime.manifest.FACE_TRACKING
 import androidx.xr.runtime.manifest.HAND_TRACKING
+import androidx.xr.runtime.manifest.HEAD_TRACKING
 import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_COARSE
 import androidx.xr.runtime.manifest.SCENE_UNDERSTANDING_FINE
 
@@ -45,6 +48,7 @@ class SessionLifecycleHelper(
     val config: Config = Config(),
     val onSessionAvailable: (Session) -> Unit = {},
     val onSessionCreateActionRequired: (SessionCreateResult) -> Unit = {},
+    val onSessionCalibrationRequired: (RequiredCalibrationType) -> Unit = {},
 ) {
 
     /** Accessed through the [onSessionAvailable] callback. */
@@ -80,50 +84,96 @@ class SessionLifecycleHelper(
         if (config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
             permissions.add(SCENE_UNDERSTANDING_COARSE)
         }
+        if (config.depthEstimation != Config.DepthEstimationMode.DISABLED) {
+            permissions.add(SCENE_UNDERSTANDING_FINE)
+        }
         if (config.handTracking != Config.HandTrackingMode.DISABLED) {
             permissions.add(HAND_TRACKING)
         }
-        if (config.depthEstimation != Config.DepthEstimationMode.DISABLED) {
-            permissions.add(SCENE_UNDERSTANDING_FINE)
+        if (config.faceTracking != Config.FaceTrackingMode.DISABLED) {
+            permissions.add(FACE_TRACKING)
+        }
+        if (config.headTracking != Config.HeadTrackingMode.DISABLED) {
+            permissions.add(HEAD_TRACKING)
+        }
+        if (config.eyeTracking == Config.EyeTrackingMode.COARSE_TRACKING) {
+            permissions.add(EYE_TRACKING_COARSE)
+        }
+        if (config.eyeTracking == Config.EyeTrackingMode.FINE_TRACKING) {
+            permissions.add(EYE_TRACKING_FINE)
         }
         return permissions
     }
 
+    // TODO: b/442623996 -- this code needs to be reworked to better convey
+    // the correct usage pattern.
     internal fun tryCreateSession() {
-        when (val result = Session.create(activity)) {
-            is SessionCreateSuccess -> {
-                session = result.session
-                when (val configResult = session.configure(config)) {
-                    is SessionConfigurePermissionsNotGranted -> {
+        try {
+            when (val result = Session.create(activity)) {
+                is SessionCreateSuccess -> {
+                    session = result.session
+                    try {
+                        when (val configResult = session.configure(config)) {
+                            is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
+                                Log.e(
+                                    TAG,
+                                    "Google Play Services Location Library is not linked, this should not happen.",
+                                )
+                            }
+                            is SessionConfigureCalibrationRequired -> {
+                                onSessionCalibrationRequired(configResult.calibrationType)
+                            }
+                            is SessionConfigureSuccess -> {
+                                onSessionAvailable(session)
+                            }
+                        }
+                    } catch (e: SecurityException) {
                         requestPermissionLauncher.launch(
                             getRequiredPermissions(config).toTypedArray()
                         )
-                    }
-                    is SessionConfigureConfigurationNotSupported -> {
+                    } catch (e: UnsupportedOperationException) {
                         showErrorMessage("Session configuration not supported.")
                         activity.finish()
                     }
-                    is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
-                        Log.e(
-                            TAG,
-                            "Google Play Services Location Library is not linked, this should not happen.",
-                        )
-                    }
-                    is SessionConfigureSuccess -> {
-                        onSessionAvailable(session)
-                    }
+                }
+                is SessionCreateApkRequired -> {
+                    onSessionCreateActionRequired(result)
+                }
+                is SessionCreateUnsupportedDevice -> {
+                    showErrorMessage("Session could not be created, device is Unsupported.")
+                    activity.finish()
                 }
             }
-            is SessionCreatePermissionsNotGranted -> {
-                requestPermissionLauncher.launch(result.permissions.toTypedArray())
+        } catch (e: SecurityException) {
+            requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
+        }
+    }
+
+    internal fun tryUpdateConfig(config: Config) {
+        if (!::session.isInitialized) {
+            Log.e(TAG, "Can't update config, session has not been initialized")
+            return
+        }
+        try {
+            when (val result = session.configure(config)) {
+                is SessionConfigureGooglePlayServicesLocationLibraryNotLinked -> {
+                    Log.e(
+                        TAG,
+                        "Google Play Services Location Library is not linked, this should not happen.",
+                    )
+                }
+                is SessionConfigureCalibrationRequired -> {
+                    onSessionCalibrationRequired(result.calibrationType)
+                }
+                is SessionConfigureSuccess -> {
+                    onSessionAvailable(session)
+                }
             }
-            is SessionCreateApkRequired -> {
-                onSessionCreateActionRequired(result)
-            }
-            is SessionCreateUnsupportedDevice -> {
-                showErrorMessage("Session could not be created, device is Unsupported.")
-                activity.finish()
-            }
+        } catch (e: SecurityException) {
+            requestPermissionLauncher.launch(getRequiredPermissions(config).toTypedArray())
+        } catch (e: UnsupportedOperationException) {
+            showErrorMessage("Session configuration not supported.")
+            activity.finish()
         }
     }
 

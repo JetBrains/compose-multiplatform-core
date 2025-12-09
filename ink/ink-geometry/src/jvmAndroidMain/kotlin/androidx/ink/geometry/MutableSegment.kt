@@ -53,7 +53,7 @@ public class MutableSegment(override var start: MutableVec, override var end: Mu
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
-    override fun asImmutable(): ImmutableSegment = ImmutableSegment(this.start, this.end)
+    override fun toImmutable(): ImmutableSegment = ImmutableSegment(this.start, this.end)
 
     override fun equals(other: Any?): Boolean =
         other === this || (other is Segment && areEquivalent(this, other))

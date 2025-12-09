@@ -3198,7 +3198,7 @@ public abstract class AnnotationProcessorTestBase {
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_ENABLE_BLOB_STORE)
     public void testBlobHandleSearch() throws Exception {
-        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.BLOB_STORAGE));
+        assumeTrue(mSession.getFeatures().isFeatureSupported(Features.SCHEMA_BLOB_HANDLE));
 
         mSession.setSchemaAsync(new SetSchemaRequest.Builder()
                 .addDocumentClasses(EmailWithBlobHandle.class)

@@ -27,21 +27,18 @@ import androidx.build.SoftwareType
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
     compileSdk = 35
-    buildTypes.configureEach {
-        consumerProguardFiles "proguard-rules.pro"
-    }
+    defaultConfig.consumerProguardFiles("proguard-rules.pro")
     namespace = "androidx.work.multiprocess"
 }
 
 dependencies {
     api(libs.jspecify)
     api(project(":work:work-runtime"))
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
     api(libs.guavaListenableFuture)
     implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")

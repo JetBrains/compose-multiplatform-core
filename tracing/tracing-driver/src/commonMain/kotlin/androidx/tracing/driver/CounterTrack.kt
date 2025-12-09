@@ -16,28 +16,34 @@
 
 package androidx.tracing.driver
 
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope
+
 /** [Track] representing a numerical value that can change over the duration of the trace. */
+@RestrictTo(Scope.LIBRARY_GROUP)
 public open class CounterTrack(
     /** The name of the counter track */
-    private val name: String,
+    public val name: String,
     /** The parent track the counter belongs to. */
-    private val parent: Track,
+    public val parent: Track,
 ) : Track(context = parent.context, uuid = monotonicId()) {
     internal val packetLock = Any()
 
     init {
         synchronized(packetLock) {
-            emitTraceEvent(immediateDispatch = true) { event ->
+            val event = obtainTraceEvent()
+            if (event != null) {
                 event.setPreamble(
                     TrackDescriptor(
                         name = name,
                         uuid = uuid,
                         parentUuid = parent.uuid,
                         type = TRACK_DESCRIPTOR_TYPE_COUNTER,
-                        pid = INVALID_INT,
-                        tid = INVALID_INT,
+                        pid = DEFAULT_INT,
+                        tid = DEFAULT_INT,
                     )
                 )
+                dispatchTraceEvent(event, immediateDispatch = true)
             }
         }
     }
@@ -45,7 +51,9 @@ public open class CounterTrack(
     public fun setCounter(value: Long) {
         if (context.isEnabled) {
             synchronized(packetLock) {
-                emitTraceEvent { packet -> packet.setCounterLong(uuid, value) }
+                val event = obtainTraceEvent()
+                event?.setCounterLong(trackUuid = uuid, value = value)
+                dispatchTraceEvent(event)
             }
         }
     }
@@ -53,7 +61,9 @@ public open class CounterTrack(
     public fun setCounter(value: Double) {
         if (context.isEnabled) {
             synchronized(packetLock) {
-                emitTraceEvent { packet -> packet.setCounterDouble(uuid, value) }
+                val event = obtainTraceEvent()
+                event?.setCounterDouble(trackUuid = uuid, value = value)
+                dispatchTraceEvent(event)
             }
         }
     }

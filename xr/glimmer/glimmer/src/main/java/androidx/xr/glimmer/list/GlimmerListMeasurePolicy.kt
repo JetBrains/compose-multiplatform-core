@@ -45,7 +45,7 @@ internal fun rememberGlimmerListMeasurePolicy(
     state: ListState,
     /** The inner padding to be added for the whole content(nor for each individual item) */
     contentPadding: PaddingValues,
-    /** reverse the direction of scrolling and layout */
+    /** Reverse the direction of scrolling and layout */
     reverseLayout: Boolean,
     /** Number of items to layout before and after the visible items */
     orientation: Orientation,
@@ -119,25 +119,24 @@ internal fun rememberGlimmerListMeasurePolicy(
 
             val density = this
             with(layoutProperties) {
-                measureGlimmerList(
-                        itemsCount = itemsCount,
-                        measuredItemProvider = measuredItemProvider,
-                        firstVisibleItemIndex = firstVisibleItemIndex,
-                        firstVisibleItemScrollOffset = firstVisibleScrollOffset,
-                        scrollToBeConsumed = state.scrollToBeConsumed,
-                        pinnedIndices = pinnedIndices,
-                        reverseLayout = reverseLayout,
-                        density = density,
-                        layout = { width, height, placement ->
-                            layout(
-                                containerConstraints.constrainWidth(width + totalHorizontalPadding),
-                                containerConstraints.constrainHeight(height + totalVerticalPadding),
-                                emptyMap(),
-                                placement,
-                            )
-                        },
-                    )
-                    .also { state.applyMeasureResult(it) }
+                applyMeasureResult(
+                    state = state,
+                    itemsCount = itemsCount,
+                    measuredItemProvider = measuredItemProvider,
+                    firstVisibleItemIndex = firstVisibleItemIndex,
+                    firstVisibleItemScrollOffset = firstVisibleScrollOffset,
+                    pinnedIndices = pinnedIndices,
+                    reverseLayout = reverseLayout,
+                    density = density,
+                    layout = { width, height, placement ->
+                        layout(
+                            containerConstraints.constrainWidth(width + totalHorizontalPadding),
+                            containerConstraints.constrainHeight(height + totalVerticalPadding),
+                            emptyMap(),
+                            placement,
+                        )
+                    },
+                )
             }
         }
     }

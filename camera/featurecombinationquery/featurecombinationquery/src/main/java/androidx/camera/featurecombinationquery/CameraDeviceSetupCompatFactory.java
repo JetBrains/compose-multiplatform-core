@@ -26,6 +26,7 @@ import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.params.SessionConfiguration;
+import android.os.Build;
 
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -51,20 +52,31 @@ public class CameraDeviceSetupCompatFactory {
     /**
      * Creates a new instance of {@link CameraDeviceSetupCompatFactory}.
      *
+     * <p>The first instance of {@link CameraDeviceSetupCompatFactory} may do some binder
+     * transactions and File IO on a background thread. Calls to
+     * {@link #getCameraDeviceSetupCompat} will be blocked behind this File IO. It is recommended
+     * to create an instance of {@link CameraDeviceSetupCompatFactory} as soon as possible.
+     * Creating subsequent instances are trivial and do not do any extra work.
+     *
      * @param context The context to use for creating {@link CameraDeviceSetupCompat} instances.
      */
     public CameraDeviceSetupCompatFactory(@NonNull Context context) {
         mContext = context;
+        if (SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            mCamera2Provider = new Camera2CameraDeviceSetupCompatProvider(mContext);
+        }
+        mPlayServicesProvider = getPlayServicesCameraDeviceSetupCompatProvider();
     }
 
     /**
      * Gets a new instance of {@link CameraDeviceSetupCompat} for the given camera ID.
      *
-     * <p> The returned instance aggregates the results from both the Play Services and the
+     * <p>The returned instance aggregates the results from both the Play Services and the
      * Android framework. It first checks if a Play Services implementation exists, and if so,
      * return the query result from the Play Services implementation. If no Play Services
      * implementation exists or the result from Play Services is undefined, the returned instance
      * will then query Android framework for the result, if running on a new enough version.
+     * <p>
      * Sample code:
      *
      * <pre><code>
@@ -114,20 +126,13 @@ public class CameraDeviceSetupCompatFactory {
     public @NonNull CameraDeviceSetupCompat getCameraDeviceSetupCompat(@NonNull String cameraId)
             throws CameraAccessException {
         List<CameraDeviceSetupCompat> impls = new ArrayList<>();
-        if (mPlayServicesProvider == null) {
-            // Create Play Services implementation if there isn't a cached one.
-            mPlayServicesProvider = getPlayServicesCameraDeviceSetupCompatProvider();
-        }
         if (mPlayServicesProvider != null) {
             // Add the Play Services implementation if the app contains that dependency.
             impls.add(mPlayServicesProvider.getCameraDeviceSetupCompat(cameraId));
         }
-        if (SDK_INT >= 35) {
+
+        if (mCamera2Provider != null) {
             try {
-                if (mCamera2Provider == null) {
-                    // Create the camera2 implementation if there isn't a cached one.
-                    mCamera2Provider = new Camera2CameraDeviceSetupCompatProvider(mContext);
-                }
                 impls.add(mCamera2Provider.getCameraDeviceSetupCompat(cameraId));
             } catch (UnsupportedOperationException e) {
                 // This can throw UnsupportedOperationException for Android V upgrade devices. In

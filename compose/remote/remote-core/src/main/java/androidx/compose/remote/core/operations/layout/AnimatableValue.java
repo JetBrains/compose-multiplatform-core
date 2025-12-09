@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations.layout;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.PaintContext;
 import androidx.compose.remote.core.operations.Utils;
 import androidx.compose.remote.core.operations.utilities.easing.FloatAnimation;
@@ -25,6 +26,7 @@ import androidx.compose.remote.core.serialize.Serializable;
 import org.jspecify.annotations.NonNull;
 
 /** Value animation for layouts */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AnimatableValue implements Serializable {
     boolean mIsVariable = false;
     int mId = 0;
@@ -81,7 +83,7 @@ public class AnimatableValue implements Serializable {
      * @param context the paint context
      * @return the current value
      */
-    public float evaluate(PaintContext context) {
+    public float evaluate(@NonNull PaintContext context) {
         if (!mIsVariable) {
             return mValue;
         }

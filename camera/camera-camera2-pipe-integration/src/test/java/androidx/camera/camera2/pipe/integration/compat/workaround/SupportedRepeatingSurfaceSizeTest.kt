@@ -29,7 +29,7 @@ import org.robolectric.util.ReflectionHelpers
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class SupportedRepeatingSurfaceSizeTest(
     private val brand: String,
     private val model: String,

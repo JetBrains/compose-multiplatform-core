@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import kotlin.time.ComparableTimeMark
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
 public interface LifecycleManager {
     /**
-     * Executes the [Runtime] initialization logic. It is necessary to call [resume] after calling
+     * Executes the runtime initialization logic. It is necessary to call [resume] after calling
      * this method to start the runtime's execution logic.
      */
     public fun create()

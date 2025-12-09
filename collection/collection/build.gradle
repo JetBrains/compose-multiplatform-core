@@ -25,7 +25,6 @@
 import androidx.build.SoftwareType
 import androidx.build.PlatformIdentifier
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile
 import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
@@ -53,27 +52,35 @@ androidXMultiplatform {
 
         commonMain {
             dependencies {
-                api(libs.kotlinStdlib)
                 api("androidx.annotation:annotation:1.9.1")
             }
         }
 
         commonTest {
             dependencies {
-                implementation(libs.kotlinTestAnnotationsCommon)
-                // TODO(b/375358921) Set to libs.kotlinTest when collection targets Kotlin 2
-                // For KotlinWasm, versions of toolchain and stdlib need to be the same for tests:
-                // https://youtrack.jetbrains.com/issue/KT-71032
-                // So we force kotlin-test to be on Kotlin 2.
-                // Published artifacts are unaffected by this, they continue to target Kotlin 1.9
-                implementation(libs.kotlinTestForWasmTests)
+                implementation(libs.kotlinTest)
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
             }
         }
 
-        jvmTest {
+        nonJsMain {
+            dependsOn(commonMain)
+        }
+
+        nonJsTest {
             dependsOn(commonTest)
+        }
+
+        jvmMain {
+            dependsOn(nonJsMain)
+            dependencies {
+                api(libs.jspecify)
+            }
+        }
+
+        jvmTest {
+            dependsOn(nonJsTest)
             dependencies {
                 implementation(libs.kotlinTestJunit)
                 implementation(libs.truth)
@@ -86,11 +93,12 @@ androidXMultiplatform {
         }
 
         nativeMain {
+            dependsOn(nonJsMain)
             dependsOn(nonJvmMain)
         }
 
         nativeTest {
-            dependsOn(commonTest)
+            dependsOn(nonJsTest)
         }
 
         unixMain {
@@ -118,21 +126,17 @@ androidXMultiplatform {
         }
 
         wasmJsMain {
+            dependsOn(nonJsMain)
             dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibWasm)
-            }
         }
 
         wasmJsTest {
+            dependsOn(nonJsTest)
             dependsOn(webTest)
         }
 
         jsMain {
             dependsOn(webMain)
-            dependencies {
-                implementation(libs.kotlinStdlibJs)
-            }
         }
 
         jsTest {
@@ -142,15 +146,11 @@ androidXMultiplatform {
         targets.configureEach { target ->
             if (target.platformType == KotlinPlatformType.native) {
                 target.compilations["main"].defaultSourceSet {
-                    def konanTargetFamily = target.konanTarget.family
-                    if (konanTargetFamily == Family.OSX ||
-                            konanTargetFamily == Family.IOS ||
-                            konanTargetFamily == Family.WATCHOS ||
-                            konanTargetFamily == Family.TVOS) {
+                    if (target.konanTarget.family.appleFamily) {
                         dependsOn(darwinMain)
-                    } else if (konanTargetFamily == Family.LINUX) {
+                    } else if (target.konanTarget.family == Family.LINUX) {
                         dependsOn(linuxMain)
-                    } else if (konanTargetFamily == Family.MINGW) {
+                    } else if (target.konanTarget.family == Family.MINGW) {
                         dependsOn(mingwMain)
                     } else {
                         throw new GradleException("unknown native target ${target}")
@@ -162,11 +162,16 @@ androidXMultiplatform {
                 }
             }
         }
+    }
+}
 
-        // Workaround for https://youtrack.jetbrains.com/issue/KT-51763
-        // Make sure commonization runs before any compilation task.
-        tasks.withType(KotlinNativeCompile).configureEach {
-            it.dependsOn(tasks.named("commonize"))
+dependencies {
+    constraints {
+        // Prevents symbols duplication with old versions of JetBrains' fork.
+        // Starting with Compose Multiplatform 1.8.0, "collection-internal" published as empty
+        // artifact with dependency to this androidx module.
+        commonMainImplementation("org.jetbrains.compose.collection-internal:collection:1.8.0") {
+            because "prevents symbols duplication"
         }
     }
 }
@@ -176,6 +181,4 @@ androidx {
     type = SoftwareType.PUBLISHED_LIBRARY
     inceptionYear = "2018"
     description = "Standalone efficient collections."
-    // TODO: b/326456246
-    optOutJSpecify = true
 }

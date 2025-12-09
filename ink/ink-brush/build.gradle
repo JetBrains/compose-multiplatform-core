@@ -27,12 +27,14 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
   jvm()
-  androidTarget()
+  androidLibrary {
+    namespace = "androidx.ink.brush"
+    androidResources.enable = true
+  }
 
   defaultPlatform(PlatformIdentifier.JVM)
 
@@ -45,7 +47,6 @@ androidXMultiplatform {
       dependsOn(commonMain)
       dependencies {
         api(libs.androidx.annotation)
-        implementation(libs.kotlinStdlib)
         implementation("androidx.collection:collection:1.4.3")
         implementation(project(":ink:ink-geometry"))
         implementation(project(":ink:ink-nativeloader"))
@@ -65,7 +66,7 @@ androidXMultiplatform {
       dependsOn(jvmAndroidMain)
     }
 
-    androidInstrumentedTest {
+    androidDeviceTest {
       dependsOn(jvmAndroidTest)
       dependencies {
         implementation(libs.testExtJunit)
@@ -87,10 +88,6 @@ androidXMultiplatform {
       //   mysterious SIGSEGV is resolved.
     }
   }
-}
-
-android {
-    namespace = "androidx.ink.brush"
 }
 
 androidx {

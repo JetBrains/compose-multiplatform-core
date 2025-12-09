@@ -16,7 +16,6 @@
 
 package androidx.camera.camera2.pipe.integration.adapter
 
-import android.os.Build
 import androidx.camera.camera2.pipe.CameraError
 import androidx.camera.camera2.pipe.GraphState.GraphStateError
 import androidx.camera.camera2.pipe.GraphState.GraphStateStarted
@@ -26,18 +25,22 @@ import androidx.camera.camera2.pipe.GraphState.GraphStateStopping
 import androidx.camera.camera2.pipe.integration.testing.FakeCameraGraph
 import androidx.camera.core.CameraState
 import androidx.camera.core.CameraState.ERROR_CAMERA_DISABLED
+import androidx.camera.core.CameraState.ERROR_CAMERA_REMOVED
 import androidx.camera.core.CameraState.ERROR_MAX_CAMERAS_IN_USE
 import androidx.camera.core.CameraState.ERROR_OTHER_RECOVERABLE_ERROR
 import androidx.camera.core.impl.CameraInternal
+import androidx.core.util.Consumer
 import com.google.common.truth.Truth.assertThat
+import com.google.common.util.concurrent.MoreExecutors
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
+import org.robolectric.shadows.ShadowLooper
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 internal class CameraStateAdapterTest {
     private val cameraStateAdapter = CameraStateAdapter()
     private val cameraGraph1 = FakeCameraGraph()
@@ -226,7 +229,7 @@ internal class CameraStateAdapterTest {
         // We should transition to OPENING with an error code if we encounter errors during opening.
         cameraStateAdapter.onGraphStateUpdated(
             cameraGraph1,
-            GraphStateError(CameraError.ERROR_CAMERA_DISCONNECTED, willAttemptRetry = true),
+            GraphStateError(CameraError.ERROR_CAMERA_DEVICE, willAttemptRetry = true),
         )
         val cameraStateWillRetry = cameraStateAdapter.cameraState.value!!
         assertThat(cameraStateWillRetry.type).isEqualTo(CameraState.Type.OPENING)
@@ -235,7 +238,7 @@ internal class CameraStateAdapterTest {
         // Now assume we've exceeded retries and will no longer retry.
         cameraStateAdapter.onGraphStateUpdated(
             cameraGraph1,
-            GraphStateError(CameraError.ERROR_CAMERA_DISCONNECTED, willAttemptRetry = false),
+            GraphStateError(CameraError.ERROR_CAMERA_DEVICE, willAttemptRetry = false),
         )
         val cameraStateNotRetry = cameraStateAdapter.cameraState.value!!
         assertThat(cameraStateNotRetry.type).isEqualTo(CameraState.Type.PENDING_OPEN)
@@ -279,7 +282,7 @@ internal class CameraStateAdapterTest {
         // We should transition to OPENING with an error code if we encounter errors during opening.
         cameraStateAdapter.onGraphStateUpdated(
             cameraGraph1,
-            GraphStateError(CameraError.ERROR_CAMERA_DISCONNECTED, willAttemptRetry = false),
+            GraphStateError(CameraError.ERROR_CAMERA_DEVICE, willAttemptRetry = false),
         )
         val cameraState = cameraStateAdapter.cameraState.value!!
         assertThat(cameraState.type).isEqualTo(CameraState.Type.PENDING_OPEN)
@@ -319,10 +322,131 @@ internal class CameraStateAdapterTest {
         // We should update the CLOSING state to include an error code.
         cameraStateAdapter.onGraphStateUpdated(
             cameraGraph1,
-            GraphStateError(CameraError.ERROR_CAMERA_DISCONNECTED, willAttemptRetry = false),
+            GraphStateError(CameraError.ERROR_CAMERA_DEVICE, willAttemptRetry = false),
         )
         val cameraState = cameraStateAdapter.cameraState.value!!
         assertThat(cameraState.type).isEqualTo(CameraState.Type.CLOSING)
         assertThat(cameraState.error?.code).isEqualTo(ERROR_OTHER_RECOVERABLE_ERROR)
+    }
+
+    @Test
+    fun onRemoved_setsStateToClosedWithError() {
+        // Arrange: Camera is in its initial CLOSED state.
+
+        // Act: Signal a removal.
+        cameraStateAdapter.onRemoved()
+        ShadowLooper.idleMainLooper()
+
+        val finalState = cameraStateAdapter.cameraState.value!!
+
+        // Assert: The public state is CLOSED with the correct error.
+        assertThat(finalState.type).isEqualTo(CameraState.Type.CLOSED)
+        assertThat(finalState.error).isNotNull()
+        assertThat(finalState.error!!.code).isEqualTo(ERROR_CAMERA_REMOVED)
+        assertThat(cameraStateAdapter.cameraInternalState.liveData.value?.value)
+            .isEqualTo(CameraInternal.State.CLOSED)
+    }
+
+    @Test
+    fun onRemoved_fromOpenState_transitionsToClosedWithError() {
+        // Arrange: Open the camera first.
+        cameraStateAdapter.onGraphUpdated(cameraGraph1)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarting)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarted)
+        assertThat(cameraStateAdapter.cameraState.value!!.type).isEqualTo(CameraState.Type.OPEN)
+
+        // Act: Signal a removal.
+        cameraStateAdapter.onRemoved()
+        val finalState = cameraStateAdapter.cameraState.value!!
+
+        // Assert: The public state immediately transitions from OPEN to CLOSED with the error.
+        assertThat(finalState.type).isEqualTo(CameraState.Type.CLOSED)
+        assertThat(finalState.error).isNotNull()
+        assertThat(finalState.error!!.code).isEqualTo(ERROR_CAMERA_REMOVED)
+    }
+
+    @Test
+    fun onGraphStateUpdated_isIgnoredAfterRemove() {
+        // Arrange: Open the camera and then remove it.
+        cameraStateAdapter.onGraphUpdated(cameraGraph1)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarted)
+        cameraStateAdapter.onRemoved()
+        val removedState = cameraStateAdapter.cameraState.value!!
+        assertThat(removedState.type).isEqualTo(CameraState.Type.CLOSED)
+        assertThat(removedState.error?.code).isEqualTo(ERROR_CAMERA_REMOVED)
+
+        // Act: Try to send a stale graph event from the old graph.
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStopping)
+
+        // Assert: The state remains unchanged, proving the event was ignored.
+        val finalState = cameraStateAdapter.cameraState.value!!
+        assertThat(finalState.type).isEqualTo(CameraState.Type.CLOSED)
+        assertThat(finalState.error?.code).isEqualTo(ERROR_CAMERA_REMOVED)
+    }
+
+    @Test
+    fun listenerIsCalled_whenStateChanges() {
+        // Arrange
+        val listener = TestStateListener()
+        cameraStateAdapter.addCameraStateListener(MoreExecutors.directExecutor(), listener)
+        ShadowLooper.idleMainLooper()
+
+        // Act
+        cameraStateAdapter.onGraphUpdated(cameraGraph1)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarting)
+        ShadowLooper.idleMainLooper()
+
+        // Assert
+        assertThat(listener.states.last().type).isEqualTo(CameraState.Type.OPENING)
+
+        // Act
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarted)
+        ShadowLooper.idleMainLooper()
+
+        // Assert
+        assertThat(listener.states.last().type).isEqualTo(CameraState.Type.OPEN)
+    }
+
+    @Test
+    fun listenerIsNotCalled_afterRemoval() {
+        // Arrange
+        val listener = TestStateListener()
+        cameraStateAdapter.addCameraStateListener(MoreExecutors.directExecutor(), listener)
+        cameraStateAdapter.removeCameraStateListener(listener)
+        ShadowLooper.idleMainLooper()
+
+        // Act
+        cameraStateAdapter.onGraphUpdated(cameraGraph1)
+        cameraStateAdapter.onGraphStateUpdated(cameraGraph1, GraphStateStarting)
+        ShadowLooper.idleMainLooper()
+
+        // Assert
+        assertThat(listener.states).isEmpty()
+    }
+
+    @Test
+    fun onRemoved_notifiesListener() {
+        // Arrange
+        val listener = TestStateListener()
+        cameraStateAdapter.addCameraStateListener(MoreExecutors.directExecutor(), listener)
+        ShadowLooper.idleMainLooper()
+
+        // Act
+        cameraStateAdapter.onRemoved()
+        ShadowLooper.idleMainLooper()
+
+        // Assert
+        val finalState = listener.states.last()
+        assertThat(finalState.type).isEqualTo(CameraState.Type.CLOSED)
+        assertThat(finalState.error).isNotNull()
+        assertThat(finalState.error!!.code).isEqualTo(ERROR_CAMERA_REMOVED)
+    }
+
+    private class TestStateListener : Consumer<CameraState> {
+        val states = mutableListOf<CameraState>()
+
+        override fun accept(value: CameraState) {
+            states.add(value)
+        }
     }
 }

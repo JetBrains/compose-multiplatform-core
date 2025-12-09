@@ -33,7 +33,6 @@ internal const val WORKMANAGER_NAMESPACE = "androidx.work.systemjobscheduler"
 // SystemJobScheduler
 private val TAG = Logger.tagWithPrefix("SystemJobScheduler")
 
-@get:RequiresApi(21)
 internal val Context.wmJobScheduler: JobScheduler
     get() {
         val defaultJobScheduler = getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
@@ -49,14 +48,12 @@ private object JobScheduler34 {
     }
 }
 
-@RequiresApi(21)
 private object JobScheduler21 {
     fun getAllPendingJobs(jobScheduler: JobScheduler): List<JobInfo> {
         return jobScheduler.allPendingJobs
     }
 }
 
-@get:RequiresApi(21)
 public val JobScheduler.safePendingJobs: List<JobInfo>?
     get() {
         return try {
@@ -72,7 +69,6 @@ public val JobScheduler.safePendingJobs: List<JobInfo>?
         }
     }
 
-@RequiresApi(23)
 internal fun createErrorMessage(
     context: Context,
     workDatabase: WorkDatabase,

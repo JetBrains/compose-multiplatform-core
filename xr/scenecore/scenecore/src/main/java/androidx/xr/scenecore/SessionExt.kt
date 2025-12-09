@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,73 @@
 
 package androidx.xr.scenecore
 
-import androidx.annotation.RestrictTo
+import android.app.Activity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.xr.arcore.runtime.PerceptionRuntime
 import androidx.xr.runtime.Session
+import androidx.xr.scenecore.runtime.RenderingRuntime
+import androidx.xr.scenecore.runtime.SceneRuntime
+import java.util.Collections
+import java.util.WeakHashMap
 
-@get:RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
+/**
+ * A thread-safe, memory-safe cache to store the Scene for each Session instance.
+ *
+ * A [WeakHashMap] is used to prevent memory leaks. It allows the garbage collector to remove
+ * entries when the [Session] key is no longer in use elsewhere. This is wrapped in a
+ * [Collections.synchronizedMap] to ensure thread safety.
+ */
+// TODO: b/437204809 - Change sceneCache to be an AtomicReference.
+private val sceneCache = Collections.synchronizedMap(WeakHashMap<Session, Scene>())
+
+/** Get the Lifecycle associated with the [Activity] attached to the [Session]. */
+private val Activity.lifecycle: Lifecycle
+    get() = (this as LifecycleOwner).lifecycle
+
+/**
+ * Gets the [Scene] associated with this Session.
+ *
+ * Accessing the scene in a destroyed activity can be dangerous.
+ *
+ * The `Scene` is the primary interface for creating and managing spatial content. There is a single
+ * `Scene` instance for each `Session`.
+ *
+ * @see Scene
+ */
 public val Session.scene: Scene
-    get() = this.sessionConnectors.filterIsInstance<Scene>().single()
+    get() = checkAndGetScene(this)
+
+/** Gets the [Scene] associated with the given [Session], using a cache. */
+private fun checkAndGetScene(session: Session): Scene {
+    check(session.activity.lifecycle.currentState != Lifecycle.State.DESTROYED) {
+        "Session has been destroyed."
+    }
+    return sceneCache.getOrPut(session) {
+        // This lambda is executed only once per session instance.
+        session.sessionConnectors.filterIsInstance<Scene>().single()
+    }
+}
+
+internal fun removeSceneFromCache(scene: Scene) {
+    synchronized(sceneCache) {
+        val iterator = sceneCache.entries.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            if (entry.value == scene) {
+                iterator.remove()
+                // Assuming a one-to-one mapping, we can stop after finding the match.
+                break
+            }
+        }
+    }
+}
+
+internal val Session.sceneRuntime: SceneRuntime
+    get() = runtimes.filterIsInstance<SceneRuntime>().single()
+
+internal val Session.renderingRuntime: RenderingRuntime
+    get() = runtimes.filterIsInstance<RenderingRuntime>().single()
+
+internal val Session.perceptionRuntime: PerceptionRuntime
+    get() = runtimes.filterIsInstance<PerceptionRuntime>().single()

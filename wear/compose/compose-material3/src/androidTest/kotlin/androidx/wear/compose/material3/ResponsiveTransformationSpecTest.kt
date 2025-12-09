@@ -31,6 +31,7 @@ import androidx.wear.compose.material3.lazy.TransformationVariableSpec
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.responsiveTransformationSpec
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -40,7 +41,7 @@ import org.junit.runners.JUnit4
 @MediumTest
 @RunWith(JUnit4::class)
 class ResponsiveTransformationSpecTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     private val SPEC1 =
         ResponsiveTransformationSpecImpl(

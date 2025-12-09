@@ -48,7 +48,7 @@ public abstract class StrokeInputBatch internal constructor(nativePointer: Long)
      * [InputToolType.TOUCH], or [InputToolType.STYLUS].
      */
     public fun getToolType(): InputToolType =
-        InputToolType.from(StrokeInputBatchNative.getToolType(nativePointer))
+        InputToolType.fromInt(StrokeInputBatchNative.getToolType(nativePointer))
 
     /** The duration between the first and last input in milliseconds. */
     public fun getDurationMillis(): Long = StrokeInputBatchNative.getDurationMillis(nativePointer)
@@ -96,11 +96,10 @@ public abstract class StrokeInputBatch internal constructor(nativePointer: Long)
      * been set for this input batch, returns the default seed of zero.
      */
     @ExperimentalInkCustomBrushApi
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // PublicApiNotReadyForJetpackReview
     public fun getNoiseSeed(): Int = StrokeInputBatchNative.getNoiseSeed(nativePointer)
 
     /**
-     * Gets the value of the i-th input. Requires that [index] is positive and less than [size].
+     * Gets the value of the i-th input. Requires that [index] is non-negative and less than [size].
      *
      * In performance-sensitive code, prefer to use [populate] to pass in a pre-allocated instance
      * and reuse that instance across multiple calls to this function.
@@ -109,7 +108,7 @@ public abstract class StrokeInputBatch internal constructor(nativePointer: Long)
 
     /**
      * Gets the value of the i-th input and overwrites [outStrokeInput], which it then returns.
-     * Requires that [index] is positive and less than [size].
+     * Requires that [index] is non-negative and less than [size].
      */
     public fun populate(index: Int, outStrokeInput: StrokeInput): StrokeInput {
         require(index < size && index >= 0) { "index ($index) must be in [0, size=$size)" }
@@ -118,10 +117,16 @@ public abstract class StrokeInputBatch internal constructor(nativePointer: Long)
     }
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    public abstract fun asImmutable(): ImmutableStrokeInputBatch
+    public abstract fun toImmutable(): ImmutableStrokeInputBatch
 
+    // NOMUTANTS -- Not tested post garbage collection.
     protected fun finalize() {
-        // NOMUTANTS--Not tested post garbage collection.
+        // Note that the instance becomes finalizable at the conclusion of the Object constructor,
+        // which
+        // in Kotlin is always before any non-default field initialization has been done by a
+        // derived
+        // class constructor.
+        if (nativePointer == 0L) return
         StrokeInputBatchNative.free(nativePointer)
     }
 
@@ -137,7 +142,7 @@ public class ImmutableStrokeInputBatch private constructor(nativePointer: Long) 
     StrokeInputBatch(nativePointer) {
 
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    public override fun asImmutable(): ImmutableStrokeInputBatch = this
+    public override fun toImmutable(): ImmutableStrokeInputBatch = this
 
     public override fun toString(): String = "ImmutableStrokeInputBatch(size=$size)"
 
@@ -330,7 +335,7 @@ public class MutableStrokeInputBatch : StrokeInputBatch(StrokeInputBatchNative.c
 
     /** Create [ImmutableStrokeInputBatch] with the accumulated StrokeInputs. */
     @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP) // NonPublicApi
-    public override fun asImmutable(): ImmutableStrokeInputBatch =
+    public override fun toImmutable(): ImmutableStrokeInputBatch =
         @OptIn(ExperimentalInkCustomBrushApi::class)
         if (isEmpty() && getNoiseSeed() == 0) {
             ImmutableStrokeInputBatch.EMPTY

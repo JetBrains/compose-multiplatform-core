@@ -19,11 +19,13 @@ import androidx.build.PlatformIdentifier
 
 plugins {
     id("AndroidXPlugin")
-    id("com.android.library")
 }
 
 androidXMultiplatform {
-    androidTarget()
+    androidLibrary {
+        namespace = "androidx.ink.geometry.compose"
+        compileSdk = 35
+    }
 
     defaultPlatform(PlatformIdentifier.ANDROID)
 
@@ -39,7 +41,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependencies {
                 implementation(project(":ink:ink-geometry"))
                 implementation("androidx.compose.ui:ui-geometry:1.0.0")
@@ -58,11 +60,6 @@ androidXMultiplatform {
             }
         }
     }
-}
-
-android {
-    namespace = "androidx.ink.geometry.compose"
-    compileSdk = 35
 }
 
 androidx {

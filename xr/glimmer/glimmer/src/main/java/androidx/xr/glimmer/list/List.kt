@@ -16,19 +16,19 @@
 
 package androidx.xr.glimmer.list
 
-import androidx.compose.foundation.clipScrollableContainer
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.ScrollableDefaults
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.layout.LazyLayout
+import androidx.compose.foundation.rememberOverscrollEffect
+import androidx.compose.foundation.scrollableArea
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.xr.glimmer.indirectTouchScrollable
 
 /**
  * This is a scrolling list component that only composes and lays out the currently visible items.
@@ -46,6 +46,9 @@ import androidx.xr.glimmer.indirectTouchScrollable
  *   after it has been clipped, which is not possible via [modifier] param. You can use it to add a
  *   padding before the first item or after the last one.
  * @param userScrollEnabled If user gestures are enabled.
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use Modifier.overscroll separately.
  * @param reverseLayout reverses the direction of scrolling and layout.
  * @param horizontalAlignment aligns items horizontally.
  * @param verticalArrangement is arrangement for items. This only applies if the content is smaller
@@ -59,6 +62,7 @@ public fun VerticalList(
     state: ListState = rememberListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
     userScrollEnabled: Boolean = true,
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     reverseLayout: Boolean = false,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
@@ -71,6 +75,7 @@ public fun VerticalList(
         reverseLayout = reverseLayout,
         contentPadding = contentPadding,
         userScrollEnabled = userScrollEnabled,
+        overscrollEffect = overscrollEffect,
         horizontalAlignment = horizontalAlignment,
         verticalArrangement = verticalArrangement,
         verticalAlignment = null,
@@ -90,6 +95,9 @@ public fun VerticalList(
  *   after it has been clipped, which is not possible via [modifier] param. You can use it to add a
  *   padding before the first item or after the last one.
  * @param userScrollEnabled If user gestures are enabled.
+ * @param overscrollEffect the [OverscrollEffect] that will be used to render overscroll for this
+ *   layout. Note that the [OverscrollEffect.node] will be applied internally as well - you do not
+ *   need to use Modifier.overscroll separately.
  * @param reverseLayout reverses the direction of scrolling and layout.
  * @param horizontalAlignment aligns items horizontally. It's required and used only if
  *   [orientation] is [Orientation.Vertical].
@@ -110,6 +118,7 @@ internal fun List(
     state: ListState = rememberListState(),
     contentPadding: PaddingValues = PaddingValues(0.dp),
     userScrollEnabled: Boolean = true,
+    overscrollEffect: OverscrollEffect? = rememberOverscrollEffect(),
     reverseLayout: Boolean = false,
     horizontalAlignment: Alignment.Horizontal? = null,
     verticalArrangement: Arrangement.Vertical? = null,
@@ -120,6 +129,8 @@ internal fun List(
     val itemProvider = rememberGlimmerListItemProviderLambda(state, content)
 
     val semanticState = rememberGlimmerListSemanticState(state, orientation)
+
+    val scrollEnabled = isScrollEnabled(userScrollEnabled, state)
 
     val measurePolicy =
         rememberGlimmerListMeasurePolicy(
@@ -135,7 +146,7 @@ internal fun List(
         )
 
     val beyondBoundsModifier =
-        if (userScrollEnabled) {
+        if (scrollEnabled) {
             Modifier.lazyLayoutBeyondBoundsModifier(
                 state = rememberGlimmerListBeyondBoundsState(state),
                 beyondBoundsInfo = state.beyondBoundsInfo,
@@ -151,40 +162,37 @@ internal fun List(
             modifier
                 .then(state.remeasurementModifier)
                 .then(state.awaitLayoutModifier)
+                .autoFocus(state.autoFocusBehaviour)
+                // TODO: b/433237949 - Behaviour conflicts between the AutoFocus and D-Pad.
                 .lazyLayoutSemantics(
                     itemProviderLambda = itemProvider,
                     state = semanticState,
                     orientation = orientation,
-                    userScrollEnabled = userScrollEnabled,
+                    userScrollEnabled = scrollEnabled,
                     reverseScrolling = reverseLayout,
                 )
+                // TODO: b/433235501 - Behaviour conflicts between the AutoFocus and BeyondBounds.
                 .then(beyondBoundsModifier)
-                .clipScrollableContainer(orientation)
-                .scrollable(
+                .edgeScrim(state, orientation)
+                .scrollableArea(
                     state = state,
                     orientation = orientation,
-                    enabled = userScrollEnabled,
-                    reverseDirection =
-                        ScrollableDefaults.reverseDirection(
-                            layoutDirection = LocalLayoutDirection.current,
-                            orientation = orientation,
-                            reverseScrolling = reverseLayout,
-                        ),
+                    enabled = scrollEnabled,
                     interactionSource = state.internalInteractionSource,
-                )
-                .indirectTouchScrollable(
-                    state = state,
-                    orientation = orientation,
-                    enabled = userScrollEnabled,
-                    reverseDirection =
-                        ScrollableDefaults.reverseDirection(
-                            layoutDirection = LocalLayoutDirection.current,
-                            orientation = orientation,
-                            reverseScrolling = reverseLayout,
-                        ),
-                    interactionSource = state.internalInteractionSource,
+                    overscrollEffect = overscrollEffect,
                 ),
         itemProvider = itemProvider,
         measurePolicy = measurePolicy,
     )
+}
+
+@Composable
+private fun isScrollEnabled(userScrollEnabled: Boolean, state: ListState): Boolean {
+    if (userScrollEnabled) {
+        val derivedState =
+            remember(state) { derivedStateOf { state.canScrollForward || state.canScrollBackward } }
+        return derivedState.value
+    } else {
+        return false
+    }
 }

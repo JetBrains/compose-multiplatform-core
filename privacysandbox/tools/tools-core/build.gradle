@@ -44,7 +44,6 @@ repackage {
 }
 
 dependencies {
-    api(libs.kotlinStdlib)
     api("com.squareup:kotlinpoet:2.0.0")
     api(project(":privacysandbox:tools:tools-core-external-protobuf"))
     // Must be compileOnly to not bring in protobufLite in runtime
@@ -58,7 +57,8 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(project(":internal-testutils-truth"))
     testImplementation(project(":privacysandbox:tools:tools-testing"))
-    testImplementation(project(":room:room-compiler-processing-testing"))
+    // TODO(b/438455972): Use ToT of compiler-processing-testing
+    testImplementation("androidx.room:room-compiler-processing-testing:2.8.0-rc02")
     // Include android jar for compilation of generated sources.
     testImplementation(SdkHelperKt.getSdkDependency(project))
 }

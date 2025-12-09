@@ -50,6 +50,7 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChild
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performRotaryScrollInput
 import androidx.compose.ui.test.performTouchInput
@@ -66,6 +67,7 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -79,7 +81,7 @@ public class ScalingLazyColumnTest {
     private val scalingLazyColumnTag = "scalingLazyColumnTag"
     private val firstItemTag = "firstItemTag"
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(effectContext = StandardTestDispatcher())
 
     private var itemSizePx: Int = 50
     private var itemSizeDp: Dp = Dp.Infinity
@@ -996,7 +998,8 @@ public class ScalingLazyColumnTest {
             }
         }
 
-        rule.onNodeWithTag("scalingLazyColumn").assertIsFocused()
+        // Child is the one which has items and it needs to hold the focus to perform scrolling.
+        rule.onNodeWithTag("scalingLazyColumn").onChild().assertIsFocused()
     }
 
     @Test

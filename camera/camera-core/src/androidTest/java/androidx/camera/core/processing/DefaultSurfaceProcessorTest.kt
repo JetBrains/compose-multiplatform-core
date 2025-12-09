@@ -45,7 +45,6 @@ import androidx.camera.testing.impl.TestImageUtil.rotateBitmap
 import androidx.concurrent.futures.await
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
 import java.util.Locale
@@ -68,7 +67,6 @@ import org.junit.runner.RunWith
 /** Unit tests for [DefaultSurfaceProcessor]. */
 @RunWith(AndroidJUnit4::class)
 @LargeTest
-@SdkSuppress(minSdkVersion = 21)
 class DefaultSurfaceProcessorTest {
 
     companion object {
@@ -161,7 +159,6 @@ class DefaultSurfaceProcessorTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun snapshot_JpegWrittenToSurface(): Unit = runBlocking {
         // Arrange: create DefaultSurfaceProcessor and setup input/output Surface.
@@ -210,7 +207,7 @@ class DefaultSurfaceProcessorTest {
                     try {
                         val image = reader.acquireNextImage()
                         if (image != null) {
-                            continuation.resume(image, null)
+                            continuation.resume(image) { cause, _, _ -> null }
                         } else {
                             continuation.resumeWithException(IllegalStateException("Image is null"))
                         }
@@ -309,30 +306,13 @@ class DefaultSurfaceProcessorTest {
         assertThat(surfaceOutput.isClosed).isTrue()
     }
 
-    @SdkSuppress(minSdkVersion = 23)
-    @Test
-    fun render(): Unit = runBlocking { testRender(OutputType.IMAGE_READER) }
+    @Test fun render(): Unit = runBlocking { testRender(OutputType.IMAGE_READER) }
 
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 22)
-    @Test
-    fun renderBelowApi23(): Unit = runBlocking { testRender(OutputType.SURFACE_TEXTURE) }
-
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun renderByCustomShader(): Unit = runBlocking {
         val shaderProviderOverride = createCustomShaderProvider()
         testRender(
             OutputType.IMAGE_READER,
-            shaderProviderOverrides = mapOf(InputFormat.DEFAULT to shaderProviderOverride),
-        )
-    }
-
-    @SdkSuppress(minSdkVersion = 21, maxSdkVersion = 22)
-    @Test
-    fun renderByCustomShaderBelowApi23(): Unit = runBlocking {
-        val shaderProviderOverride = createCustomShaderProvider()
-        testRender(
-            OutputType.SURFACE_TEXTURE,
             shaderProviderOverrides = mapOf(InputFormat.DEFAULT to shaderProviderOverride),
         )
     }

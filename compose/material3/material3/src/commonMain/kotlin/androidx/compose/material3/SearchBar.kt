@@ -27,6 +27,7 @@ import androidx.compose.animation.core.AnimationState
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.DecayAnimationSpec
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.animateDecay
@@ -47,9 +48,13 @@ import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -57,6 +62,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.onConsumedWindowInsetsChanged
@@ -79,7 +85,9 @@ import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.foundation.text.selection.TextSelectionColors
+import androidx.compose.material3.SearchBarDefaults.InputField
 import androidx.compose.material3.SearchBarDefaults.InputFieldHeight
+import androidx.compose.material3.SearchBarState.Companion.Saver
 import androidx.compose.material3.internal.BackEventCompat
 import androidx.compose.material3.internal.BackEventProgress
 import androidx.compose.material3.internal.BackHandler
@@ -93,6 +101,8 @@ import androidx.compose.material3.internal.SwipeEdge
 import androidx.compose.material3.internal.getString
 import androidx.compose.material3.internal.systemBarsForVisualComponents
 import androidx.compose.material3.internal.textFieldBackground
+import androidx.compose.material3.tokens.AppBarTokens
+import androidx.compose.material3.tokens.ColorSchemeKeyTokens
 import androidx.compose.material3.tokens.ElevationTokens
 import androidx.compose.material3.tokens.FilledTextFieldTokens
 import androidx.compose.material3.tokens.MotionSchemeKeyTokens
@@ -100,11 +110,13 @@ import androidx.compose.material3.tokens.MotionTokens
 import androidx.compose.material3.tokens.SearchBarTokens
 import androidx.compose.material3.tokens.SearchViewTokens
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.annotation.FrequentlyChangingValue
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -117,9 +129,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.structuralEqualityPolicy
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -147,16 +160,17 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInWindow
-import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -182,13 +196,13 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
+import kotlin.DeprecationLevel.HIDDEN
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sign
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -233,18 +247,15 @@ fun SearchBar(
     tonalElevation: Dp = SearchBarDefaults.TonalElevation,
     shadowElevation: Dp = SearchBarDefaults.ShadowElevation,
 ) {
-    // Disable when collapsed to avoid keyboard flicker when the expanded search bar opens.
-    DisableSoftKeyboard {
-        Surface(
-            modifier = modifier.onGloballyPositioned { state.collapsedCoords = it },
-            shape = shape,
-            color = colors.containerColor,
-            contentColor = contentColorFor(colors.containerColor),
-            tonalElevation = tonalElevation,
-            shadowElevation = shadowElevation,
-            content = inputField,
-        )
-    }
+    Surface(
+        modifier = modifier.onGloballyPositioned { state.collapsedCoords = it },
+        shape = shape,
+        color = colors.containerColor,
+        contentColor = contentColorFor(colors.containerColor),
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
+        content = inputField,
+    )
 }
 
 /**
@@ -282,6 +293,14 @@ fun SearchBar(
  *   content to change the search bar appearance as the content scrolls. If null, the search bar
  *   will not automatically react to scrolling.
  */
+@Deprecated(
+    message = "Renamed to `AppBarWithSearch`",
+    replaceWith =
+        ReplaceWith(
+            "AppBarWithSearch(state, inputField, modifier, navigationIcon, actions, shape " +
+                "colors, tonalElevation, windowInsets, scrollBehavior)"
+        ),
+)
 @Suppress("ComposableLambdaParameterNaming", "ComposableLambdaParameterPosition")
 @ExperimentalMaterial3Api
 @Composable
@@ -296,24 +315,173 @@ fun TopSearchBar(
     windowInsets: WindowInsets = SearchBarDefaults.windowInsets,
     scrollBehavior: SearchBarScrollBehavior? = null,
 ) {
-    SearchBar(
+    AppBarWithSearch(
         state = state,
         inputField = inputField,
+        modifier = modifier,
+        shape = shape,
+        colors =
+            SearchBarDefaults.appBarWithSearchColors(
+                searchBarColors = colors,
+                scrolledSearchBarContainerColor = Color.Unspecified,
+                appBarContainerColor = Color.Transparent,
+                scrolledAppBarContainerColor = Color.Unspecified,
+            ),
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation,
+        windowInsets = windowInsets,
+        scrollBehavior = scrollBehavior,
+    )
+}
+
+/**
+ * [Material Design search](https://m3.material.io/components/search/overview)
+ *
+ * A search bar represents a field that allows users to enter a keyword or phrase and get relevant
+ * information. It can be used as a way to navigate through an app via search queries.
+ *
+ * ![Search bar
+ * image](https://developer.android.com/images/reference/androidx/compose/material3/search-bar.png)
+ *
+ * An [AppBarWithSearch] is a [SearchBar] with additional handling for top app bar behavior, such as
+ * window insets and scrolling. Using an [AppBarWithSearch] as the top bar of a [Scaffold] ensures
+ * that the search bar remains at the top of the screen. Like with [SearchBar], [AppBarWithSearch]
+ * should be used in conjunction with an [ExpandedFullScreenSearchBar] or [ExpandedDockedSearchBar]
+ * to display search results when expanded.
+ *
+ * @sample androidx.compose.material3.samples.FullScreenSearchBarScaffoldSample
+ * @sample androidx.compose.material3.samples.DockedSearchBarScaffoldSample
+ * @param state the state of the search bar. This state should also be passed to the [inputField]
+ *   and the expanded search bar.
+ * @param inputField the input field of this search bar that allows entering a query, typically a
+ *   [SearchBarDefaults.InputField].
+ * @param modifier the [Modifier] to be applied to this search bar when collapsed.
+ * @param navigationIcon the icon displayed at the start of the app bar before the search bar. This
+ *   should typically be an [IconButton] or [IconToggleButton].
+ * @param actions the icons displayed at the end of the app bar after the search bar. This should
+ *   typically be [IconButton]s. The default layout here is a [Row], so icons inside will be placed
+ *   horizontally.
+ * @param shape the shape of this search bar when collapsed.
+ * @param colors [SearchBarColors] that will be used to resolve the colors used for this search bar.
+ *   See [SearchBarDefaults.colors].
+ * @param tonalElevation when [SearchBarColors.containerColor] is [ColorScheme.surface], a
+ *   translucent primary color overlay is applied on top of the container. A higher tonal elevation
+ *   value will result in a darker color in light theme and lighter color in dark theme. See also:
+ *   [Surface].
+ * @param shadowElevation the elevation for the shadow below this search bar.
+ * @param contentPadding the spacing values to apply internally between the container and the
+ *   content.
+ * @param windowInsets the window insets that the search bar will respect when collapsed.
+ * @param scrollBehavior a [SearchBarScrollBehavior] which works in conjunction with a scrolled
+ *   content to change the search bar appearance as the content scrolls. If null, the search bar
+ *   will not automatically react to scrolling.
+ */
+@Suppress("ComposableLambdaParameterNaming", "ComposableLambdaParameterPosition")
+@ExperimentalMaterial3Api
+@Composable
+fun AppBarWithSearch(
+    state: SearchBarState,
+    inputField: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    navigationIcon: @Composable (() -> Unit)? = null,
+    actions: @Composable (RowScope.() -> Unit)? = null,
+    shape: Shape = SearchBarDefaults.inputFieldShape,
+    colors: AppBarWithSearchColors = SearchBarDefaults.appBarWithSearchColors(),
+    tonalElevation: Dp = SearchBarDefaults.TonalElevation,
+    shadowElevation: Dp = SearchBarDefaults.ShadowElevation,
+    contentPadding: PaddingValues = SearchBarDefaults.AppBarContentPadding,
+    windowInsets: WindowInsets = SearchBarDefaults.windowInsets,
+    scrollBehavior: SearchBarScrollBehavior? = null,
+) {
+    // TODO Load the motionScheme tokens from the component tokens file
+    val animationSpec = MotionSchemeKeyTokens.DefaultEffects
+
+    val isContainerTransparent =
+        remember(colors) { colors.appBarContainerColor == Color.Transparent }
+
+    val (targetAppBarContainerColor, targetSearchBarContainerColor) =
+        remember(colors, scrollBehavior) {
+                derivedStateOf {
+                    val overlappingFraction = scrollBehavior?.overlappedFraction() ?: 0f
+                    val colorTransitionFraction = if (overlappingFraction > 0.01f) 1f else 0f
+                    Pair(
+                        colors.appBarContainerColor(colorTransitionFraction),
+                        colors.searchBarContainerColor(colorTransitionFraction),
+                    )
+                }
+            }
+            .value
+
+    val appBarContainerColor by
+        animateColorAsState(targetAppBarContainerColor, animationSpec = animationSpec.value())
+
+    val searchBarColors by
+        remember(targetSearchBarContainerColor) {
+            mutableStateOf(
+                colors.searchBarColors.copy(containerColor = targetSearchBarContainerColor)
+            )
+        }
+
+    Surface(
+        backgroundColor = { appBarContainerColor },
         modifier =
             modifier
                 .then(
                     (scrollBehavior?.let { with(it) { Modifier.searchBarScrollBehavior() } }
                         ?: Modifier)
                 )
-                .windowInsetsPadding(windowInsets)
-                .padding(SearchBarAsTopBarPadding)
                 .fillMaxWidth()
-                .wrapContentWidth(),
-        shape = shape,
-        colors = colors,
-        tonalElevation = tonalElevation,
-        shadowElevation = shadowElevation,
-    )
+                .windowInsetsPadding(windowInsets)
+                .semantics { isTraversalGroup = true },
+        tonalElevation = if (!isContainerTransparent) tonalElevation else 0.dp,
+        shadowElevation = if (!isContainerTransparent) shadowElevation else 0.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(contentPadding),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            navigationIcon?.let {
+                Box(Modifier.padding(start = AppBarWithSearchHorizontalPadding)) {
+                    CompositionLocalProvider(
+                        LocalContentColor provides colors.appBarNavigationIconColor,
+                        content = it,
+                    )
+                }
+            }
+            SearchBar(
+                state = state,
+                inputField = inputField,
+                modifier =
+                    Modifier.padding(
+                            horizontal = SearchBarAsTopBarPadding,
+                            vertical = AppBarWithSearchVerticalPadding,
+                        )
+                        .wrapContentWidth()
+                        .weight(1f),
+                shape = shape,
+                colors = searchBarColors,
+                tonalElevation = if (isContainerTransparent) tonalElevation else 0.dp,
+                shadowElevation = if (isContainerTransparent) shadowElevation else 0.dp,
+            )
+            actions?.let {
+                // Wrap the given action icons in a Row.
+                val actionsRow =
+                    @Composable {
+                        Row(
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically,
+                            content = it,
+                        )
+                    }
+                Box(Modifier.padding(end = AppBarWithSearchHorizontalPadding)) {
+                    CompositionLocalProvider(
+                        LocalContentColor provides colors.appBarActionIconColor,
+                        content = actionsRow,
+                    )
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -357,7 +525,14 @@ fun ExpandedFullScreenSearchBar(
     properties: DialogProperties = DialogProperties(),
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (!state.isExpanded) return
+    if (
+        !state.isExpanded
+        // Workaround for b/442852007.
+        // Don't remove the window until the soft keyboard has finished its hide animation.
+        && !isImeVisible()
+    ) {
+        return
+    }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -439,7 +614,14 @@ fun ExpandedDockedSearchBar(
     properties: PopupProperties = PopupProperties(focusable = true, clippingEnabled = false),
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (!state.isExpanded) return
+    if (
+        !state.isExpanded
+        // Workaround for b/442852007.
+        // Don't remove the window until the soft keyboard has finished its hide animation.
+        && !isImeVisible()
+    ) {
+        return
+    }
 
     val positionProvider =
         remember(state) {
@@ -771,12 +953,12 @@ private constructor(
 
     /** Animate the search bar to its expanded state. */
     suspend fun animateToExpanded() {
-        animatable.animateTo(targetValue = 1f, animationSpec = animationSpecForExpand)
+        animatable.animateTo(targetValue = Expanded, animationSpec = animationSpecForExpand)
     }
 
     /** Animate the search bar to its collapsed state. */
     suspend fun animateToCollapsed() {
-        animatable.animateTo(targetValue = 0f, animationSpec = animationSpecForCollapse)
+        animatable.animateTo(targetValue = Collapsed, animationSpec = animationSpecForCollapse)
     }
 
     /**
@@ -828,7 +1010,7 @@ fun rememberSearchBarState(
         animationSpecForExpand,
         animationSpecForCollapse,
         saver =
-            SearchBarState.Saver(
+            Saver(
                 animationSpecForExpand = animationSpecForExpand,
                 animationSpecForCollapse = animationSpecForCollapse,
             ),
@@ -850,6 +1032,7 @@ fun rememberSearchBarState(
 @ExperimentalMaterial3Api
 @Stable
 interface SearchBarScrollBehavior {
+
     /**
      * The search bar's current offset due to scrolling, in pixels. This offset is applied to the
      * fixed size of the search bar to control the displayed size when content is being scrolled.
@@ -858,7 +1041,7 @@ interface SearchBarScrollBehavior {
      *
      * Updates to the [scrollOffset] value are coerced between [scrollOffsetLimit] and 0.
      */
-    var scrollOffset: Float
+    @get:FrequentlyChangingValue var scrollOffset: Float
 
     /**
      * The limit that a search bar can be offset due to scrolling, in pixels.
@@ -870,37 +1053,81 @@ interface SearchBarScrollBehavior {
     var scrollOffsetLimit: Float
 
     /**
+     * The total offset of the content scrolled under the search bar.
+     *
+     * The content offset is used to compute the [overlappedFraction], which can later be read by an
+     * implementation.
+     *
+     * This value is updated by a [SearchBarScrollBehavior] whenever a nested scroll connection
+     * consumes scroll events. A common implementation would update the value to be the sum of all
+     * [NestedScrollConnection.onPostScroll] `consumed.y` values.
+     */
+    @get:FrequentlyChangingValue var contentOffset: Float
+
+    /**
      * A [NestedScrollConnection] that should be attached to a [Modifier.nestedScroll] in order to
      * keep track of scroll events.
      */
     val nestedScrollConnection: NestedScrollConnection
 
     /**
-     * The modifier that adds scrolling behavior to the search bar component. [TopSearchBar] applies
-     * this automatically.
+     * The modifier that adds scrolling behavior to the search bar component. [AppBarWithSearch]
+     * applies this automatically.
      */
     fun Modifier.searchBarScrollBehavior(): Modifier
 }
+
+/**
+ * A value that represents the percentage of the search bar area that is overlapping with the
+ * content scrolled behind it.
+ *
+ * A `0.0` indicates that the search bar does not overlap any content, while `1.0` indicates that
+ * the entire visible search bar area overlaps the scrolled content.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+internal fun SearchBarScrollBehavior.overlappedFraction(): Float =
+    if (scrollOffsetLimit != 0f) {
+        1 -
+            ((scrollOffsetLimit - contentOffset).coerceIn(
+                minimumValue = scrollOffsetLimit,
+                maximumValue = 0f,
+            ) / scrollOffsetLimit)
+    } else {
+        0f
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Stable
 private class EnterAlwaysSearchBarScrollBehavior(
     initialOffset: Float,
     initialOffsetLimit: Float,
+    initialContentOffset: Float,
     val canScroll: () -> Boolean,
     val reverseLayout: Boolean,
     val snapAnimationSpec: AnimationSpec<Float>,
     val flingAnimationSpec: DecayAnimationSpec<Float>,
 ) : SearchBarScrollBehavior {
-    private var _offset = mutableFloatStateOf(initialOffset)
+    private var _scrollOffset by mutableFloatStateOf(initialOffset)
+    private var _scrollOffsetLimit by mutableFloatStateOf(initialOffsetLimit)
+    private var _contentOffset by mutableFloatStateOf(initialContentOffset)
 
     override var scrollOffset: Float
-        get() = _offset.floatValue
+        @FrequentlyChangingValue get() = _scrollOffset
         set(newOffset) {
-            _offset.floatValue = newOffset.coerceIn(scrollOffsetLimit, 0f)
+            _scrollOffset = newOffset.coerceIn(scrollOffsetLimit, 0f)
         }
 
-    override var scrollOffsetLimit by mutableFloatStateOf(initialOffsetLimit)
+    override var scrollOffsetLimit: Float
+        get() = _scrollOffsetLimit
+        set(newOffset) {
+            _scrollOffsetLimit = newOffset
+        }
+
+    override var contentOffset: Float
+        @FrequentlyChangingValue get() = _contentOffset
+        set(newOffset) {
+            _contentOffset = newOffset
+        }
 
     override fun Modifier.searchBarScrollBehavior(): Modifier {
         return this.draggable(
@@ -948,9 +1175,13 @@ private class EnterAlwaysSearchBarScrollBehavior(
                     // In a reversed layout, consume scroll if it's a pull down
                     // to reveal the search bar but not if it's a pull up to hide.
                     scrollOffset += available.y
+                    contentOffset += available.y
                     return available.copy(x = 0f)
                 }
-                if (!reverseLayout) scrollOffset += consumed.y
+                if (!reverseLayout) {
+                    scrollOffset += consumed.y
+                    contentOffset += consumed.y
+                }
                 return Offset.Zero
             }
 
@@ -1006,12 +1237,20 @@ private class EnterAlwaysSearchBarScrollBehavior(
             flingAnimationSpec: DecayAnimationSpec<Float>,
         ): Saver<EnterAlwaysSearchBarScrollBehavior, *> =
             listSaver(
-                save = { listOf(it.scrollOffset, it.scrollOffsetLimit, it.reverseLayout) },
+                save = {
+                    listOf(
+                        it.scrollOffset,
+                        it.scrollOffsetLimit,
+                        it.contentOffset,
+                        it.reverseLayout,
+                    )
+                },
                 restore = {
                     EnterAlwaysSearchBarScrollBehavior(
                         initialOffset = it[0] as Float,
                         initialOffsetLimit = it[1] as Float,
-                        reverseLayout = it[2] as Boolean,
+                        initialContentOffset = it[2] as Float,
+                        reverseLayout = it[3] as Boolean,
                         canScroll = canScroll,
                         snapAnimationSpec = snapAnimationSpec,
                         flingAnimationSpec = flingAnimationSpec,
@@ -1052,7 +1291,10 @@ object SearchBarDefaults {
     val dockedShape: Shape
         @Composable get() = SearchViewTokens.DockedContainerShape.value
 
-    /** Default window insets for a [TopSearchBar]. */
+    /** Default padding used for [AppBarWithSearch] content */
+    val AppBarContentPadding = PaddingValues(all = 0.dp)
+
+    /** Default window insets for an [AppBarWithSearch]. */
     val windowInsets: WindowInsets
         @Composable
         get() =
@@ -1076,6 +1318,7 @@ object SearchBarDefaults {
      * @param initialOffsetLimit the initial value for [SearchBarScrollBehavior.scrollOffsetLimit],
      *   which represents the pixel limit that a search bar is allowed to scroll off-screen when the
      *   content is scrolled.
+     * @param initialContentOffset the initial value for [SearchBarScrollBehavior.contentOffset].
      * @param canScroll a callback used to determine whether scroll events are to be handled by this
      *   [SearchBarScrollBehavior].
      * @param snapAnimationSpec an [AnimationSpec] that defines how the search bar's scroll offset
@@ -1091,6 +1334,7 @@ object SearchBarDefaults {
     fun enterAlwaysSearchBarScrollBehavior(
         initialOffset: Float = 0f,
         initialOffsetLimit: Float = -Float.MAX_VALUE,
+        initialContentOffset: Float = 0f,
         canScroll: () -> Boolean = { true },
         // TODO Load the motionScheme tokens from the component tokens file
         snapAnimationSpec: AnimationSpec<Float> = MotionSchemeKeyTokens.DefaultEffects.value(),
@@ -1112,6 +1356,7 @@ object SearchBarDefaults {
             EnterAlwaysSearchBarScrollBehavior(
                 initialOffset = initialOffset,
                 initialOffsetLimit = initialOffsetLimit,
+                initialContentOffset = initialContentOffset,
                 canScroll = canScroll,
                 reverseLayout = reverseLayout,
                 snapAnimationSpec = snapAnimationSpec,
@@ -1119,9 +1364,31 @@ object SearchBarDefaults {
             )
         }
 
+    @Deprecated(message = "Maintained for binary compatibility", level = HIDDEN)
+    @ExperimentalMaterial3Api
+    @Composable
+    fun enterAlwaysSearchBarScrollBehavior(
+        initialOffset: Float = 0f,
+        initialOffsetLimit: Float = -Float.MAX_VALUE,
+        canScroll: () -> Boolean = { true },
+        // TODO Load the motionScheme tokens from the component tokens file
+        snapAnimationSpec: AnimationSpec<Float> = MotionSchemeKeyTokens.DefaultEffects.value(),
+        flingAnimationSpec: DecayAnimationSpec<Float> = rememberSplineBasedDecay(),
+        reverseLayout: Boolean = false,
+    ): SearchBarScrollBehavior =
+        enterAlwaysSearchBarScrollBehavior(
+            initialOffset = initialOffset,
+            initialOffsetLimit = initialOffsetLimit,
+            initialContentOffset = 0f,
+            canScroll = canScroll,
+            reverseLayout = reverseLayout,
+            snapAnimationSpec = snapAnimationSpec,
+            flingAnimationSpec = flingAnimationSpec,
+        )
+
     /**
      * Creates a [SearchBarColors] that represents the different colors used in parts of the search
-     * bar in different states.
+     * bar.
      *
      * @param containerColor the container color of the search bar
      * @param dividerColor the color of the divider between the input field and the search results
@@ -1133,17 +1400,43 @@ object SearchBarDefaults {
     fun colors(
         containerColor: Color = SearchBarTokens.ContainerColor.value,
         dividerColor: Color = SearchViewTokens.DividerColor.value,
-        inputFieldColors: TextFieldColors =
-            inputFieldColors(
-                focusedContainerColor = containerColor,
-                unfocusedContainerColor = containerColor,
-                disabledContainerColor = containerColor,
-            ),
+        inputFieldColors: TextFieldColors = inputFieldColors(),
     ): SearchBarColors =
         SearchBarColors(
             containerColor = containerColor,
             dividerColor = dividerColor,
             inputFieldColors = inputFieldColors,
+        )
+
+    /**
+     * Creates an [AppBarWithSearchColors] that represents the different colors used in parts of the
+     * [AppBarWithSearch].
+     *
+     * @param searchBarColors the search bar colors
+     * @param scrolledSearchBarContainerColor the container color of the search bar when content is
+     *   scrolled
+     * @param appBarContainerColor the app bar container color
+     * @param scrolledAppBarContainerColor the app bar container color when content is scrolled
+     * @param appBarNavigationIconColor the color used for the app bar navigation icon
+     * @param appBarActionIconColor the color used for the app bar action icons
+     */
+    @Composable
+    fun appBarWithSearchColors(
+        searchBarColors: SearchBarColors = colors(),
+        // TODO Load the color tokens from the component tokens file
+        scrolledSearchBarContainerColor: Color = ColorSchemeKeyTokens.SurfaceContainerHighest.value,
+        appBarContainerColor: Color = AppBarTokens.ContainerColor.value,
+        scrolledAppBarContainerColor: Color = AppBarTokens.OnScrollContainerColor.value,
+        appBarNavigationIconColor: Color = AppBarTokens.LeadingIconColor.value,
+        appBarActionIconColor: Color = AppBarTokens.TrailingIconColor.value,
+    ): AppBarWithSearchColors =
+        AppBarWithSearchColors(
+            searchBarColors = searchBarColors,
+            scrolledSearchBarContainerColor = scrolledSearchBarContainerColor,
+            appBarContainerColor = appBarContainerColor,
+            scrolledAppBarContainerColor = scrolledAppBarContainerColor,
+            appBarNavigationIconColor = appBarNavigationIconColor,
+            appBarActionIconColor = appBarActionIconColor,
         )
 
     /**
@@ -1219,9 +1512,9 @@ object SearchBarDefaults {
             FilledTextFieldTokens.InputSuffixColor.value.copy(
                 alpha = FilledTextFieldTokens.DisabledInputOpacity
             ),
-        focusedContainerColor: Color = SearchBarTokens.ContainerColor.value,
-        unfocusedContainerColor: Color = SearchBarTokens.ContainerColor.value,
-        disabledContainerColor: Color = SearchBarTokens.ContainerColor.value,
+        focusedContainerColor: Color = Color.Transparent,
+        unfocusedContainerColor: Color = Color.Transparent,
+        disabledContainerColor: Color = Color.Transparent,
     ): TextFieldColors =
         TextFieldDefaults.colors(
             focusedTextColor = focusedTextColor,
@@ -1247,6 +1540,56 @@ object SearchBarDefaults {
             focusedContainerColor = focusedContainerColor,
             unfocusedContainerColor = unfocusedContainerColor,
             disabledContainerColor = disabledContainerColor,
+        )
+
+    @Deprecated(
+        message =
+            "Maintained for binary compatibility. Use version with keyboardOptions and lineLimits params instead.",
+        level = HIDDEN,
+    )
+    @ExperimentalMaterial3Api
+    @Composable
+    fun InputField(
+        textFieldState: TextFieldState,
+        searchBarState: SearchBarState,
+        onSearch: (String) -> Unit,
+        modifier: Modifier = Modifier,
+        enabled: Boolean = true,
+        readOnly: Boolean = false,
+        textStyle: TextStyle = LocalTextStyle.current,
+        placeholder: @Composable (() -> Unit)? = null,
+        leadingIcon: @Composable (() -> Unit)? = null,
+        trailingIcon: @Composable (() -> Unit)? = null,
+        prefix: @Composable (() -> Unit)? = null,
+        suffix: @Composable (() -> Unit)? = null,
+        inputTransformation: InputTransformation? = null,
+        outputTransformation: OutputTransformation? = null,
+        scrollState: ScrollState = rememberScrollState(),
+        shape: Shape = inputFieldShape,
+        colors: TextFieldColors = inputFieldColors(),
+        interactionSource: MutableInteractionSource? = null,
+    ) =
+        InputField(
+            textFieldState = textFieldState,
+            searchBarState = searchBarState,
+            onSearch = onSearch,
+            modifier = modifier,
+            enabled = enabled,
+            readOnly = readOnly,
+            textStyle = textStyle,
+            placeholder = placeholder,
+            leadingIcon = leadingIcon,
+            trailingIcon = trailingIcon,
+            prefix = prefix,
+            suffix = suffix,
+            inputTransformation = inputTransformation,
+            outputTransformation = outputTransformation,
+            keyboardOptions = KeyboardOptions.Default,
+            lineLimits = TextFieldLineLimits.SingleLine,
+            scrollState = scrollState,
+            shape = shape,
+            colors = colors,
+            interactionSource = interactionSource,
         )
 
     /**
@@ -1283,6 +1626,12 @@ object SearchBarDefaults {
      *   edit. The transformation will not immediately affect the current [textFieldState].
      * @param outputTransformation optional [OutputTransformation] that transforms how the contents
      *   of the text field are presented.
+     * @param keyboardOptions software keyboard options that contains configuration such as
+     *   [KeyboardType]. Note that the [ImeAction] will always be overwritten with
+     *   [ImeAction.Search].
+     * @param lineLimits whether the text field should be [TextFieldLineLimits.SingleLine], scroll
+     *   horizontally, and ignore newlines; or [TextFieldLineLimits.MultiLine] and grow and scroll
+     *   vertically.
      * @param scrollState scroll state that manages the horizontal scroll of the input field.
      * @param shape the shape of the input field.
      * @param colors [TextFieldColors] that will be used to resolve the colors used for this input
@@ -1309,6 +1658,8 @@ object SearchBarDefaults {
         suffix: @Composable (() -> Unit)? = null,
         inputTransformation: InputTransformation? = null,
         outputTransformation: OutputTransformation? = null,
+        keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+        lineLimits: TextFieldLineLimits = TextFieldLineLimits.SingleLine,
         scrollState: ScrollState = rememberScrollState(),
         shape: Shape = inputFieldShape,
         colors: TextFieldColors = inputFieldColors(),
@@ -1351,6 +1702,11 @@ object SearchBarDefaults {
                             coroutineScope.launch { searchBarState.animateToExpanded() }
                             return@onPreviewKeyEvent true
                         }
+                        // Make sure arrow key down moves to list of suggestions.
+                        if (searchBarState.isExpanded && it.key == Key.DirectionDown) {
+                            focusManager.moveFocus(FocusDirection.Down)
+                            return@onPreviewKeyEvent true
+                        }
                         false
                     }
                     .sizeIn(
@@ -1371,10 +1727,10 @@ object SearchBarDefaults {
                     },
             enabled = enabled,
             readOnly = readOnly,
-            lineLimits = TextFieldLineLimits.SingleLine,
+            lineLimits = lineLimits,
             textStyle = mergedTextStyle,
             cursorBrush = SolidColor(colors.cursorColor(isError = false)),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardOptions = keyboardOptions.merge(KeyboardOptions(imeAction = ImeAction.Search)),
             onKeyboardAction = { onSearch(textFieldState.text.toString()) },
             interactionSource = interactionSource,
             inputTransformation = inputTransformation,
@@ -1384,7 +1740,7 @@ object SearchBarDefaults {
                 TextFieldDefaults.decorator(
                     state = textFieldState,
                     enabled = enabled,
-                    lineLimits = TextFieldLineLimits.SingleLine,
+                    lineLimits = lineLimits,
                     outputTransformation = outputTransformation,
                     interactionSource = interactionSource,
                     placeholder = placeholder,
@@ -1712,7 +2068,7 @@ object SearchBarDefaults {
                             trailingIcon?.let { trailing ->
                                 { Box(Modifier.offset(x = -SearchBarIconOffsetX)) { trailing() } }
                             },
-                        shape = SearchBarDefaults.inputFieldShape,
+                        shape = inputFieldShape,
                         colors = colors,
                         contentPadding = TextFieldDefaults.contentPaddingWithoutLabel(),
                         container = {
@@ -1745,7 +2101,7 @@ object SearchBarDefaults {
         }
     }
 
-    @Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    @Deprecated(message = "Maintained for binary compatibility", level = HIDDEN)
     @Composable
     fun colors(
         containerColor: Color = SearchBarTokens.ContainerColor.value,
@@ -1762,7 +2118,7 @@ object SearchBarDefaults {
                 ),
         )
 
-    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    @Deprecated("Maintained for binary compatibility", level = HIDDEN)
     @Composable
     fun inputFieldColors(
         focusedTextColor: Color = SearchBarTokens.InputTextColor.value,
@@ -1824,7 +2180,7 @@ object SearchBarDefaults {
             disabledContainerColor = SearchBarTokens.ContainerColor.value,
         )
 
-    @Deprecated("Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
+    @Deprecated("Maintained for binary compatibility", level = HIDDEN)
     @Composable
     fun inputFieldColors(
         textColor: Color = SearchBarTokens.InputTextColor.value,
@@ -1871,7 +2227,7 @@ object SearchBarDefaults {
 }
 
 /**
- * Represents the colors used by a search bar in different states.
+ * Represents the colors used by a search bar.
  *
  * See [SearchBarDefaults.colors] for the default implementation that follows Material
  * specifications.
@@ -1884,13 +2240,25 @@ class SearchBarColors(
     val inputFieldColors: TextFieldColors,
 ) {
     @Deprecated(
-        message = "Use overload that takes `inputFieldColors",
+        message = "Use overload that takes `inputFieldColors`",
         replaceWith = ReplaceWith("SearchBarColors(containerColor, dividerColor, inputFieldColors)"),
     )
     constructor(
         containerColor: Color,
         dividerColor: Color,
     ) : this(containerColor, dividerColor, UnspecifiedTextFieldColors)
+
+    /** Returns a copy of this SearchBarColors, optionally overriding some of the values. */
+    fun copy(
+        containerColor: Color = this.containerColor,
+        dividerColor: Color = this.dividerColor,
+        inputFieldColors: TextFieldColors = this.inputFieldColors,
+    ) =
+        SearchBarColors(
+            containerColor = containerColor,
+            dividerColor = dividerColor,
+            inputFieldColors = inputFieldColors,
+        )
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -1911,6 +2279,113 @@ class SearchBarColors(
     }
 }
 
+/**
+ * Represents the colors used by an [AppBarWithSearch].
+ *
+ * See [SearchBarDefaults.appBarWithSearchColors] for the default implementation that follows
+ * Material specifications.
+ *
+ * @param searchBarColors the color used for the [SearchBar] of this app bar.
+ * @param scrolledSearchBarContainerColor the container color of the search bar when content is
+ *   scrolled
+ * @param appBarContainerColor the app bar container color. Use [Color.Transparent] to have no
+ *   color.
+ * @param scrolledAppBarContainerColor the app bar container color when content is scrolled.
+ * @param appBarNavigationIconColor the color used for the app bar navigation icon
+ * @param appBarActionIconColor the color used for the app bar action icons
+ */
+@ExperimentalMaterial3Api
+@Immutable
+class AppBarWithSearchColors(
+    val searchBarColors: SearchBarColors,
+    val scrolledSearchBarContainerColor: Color,
+    val appBarContainerColor: Color,
+    val scrolledAppBarContainerColor: Color,
+    val appBarNavigationIconColor: Color,
+    val appBarActionIconColor: Color,
+) {
+
+    constructor(
+        searchBarColors: SearchBarColors,
+        appBarContainerColor: Color,
+        appBarNavigationIconColor: Color,
+        appBarActionIconColor: Color,
+    ) : this(
+        searchBarColors,
+        Color.Unspecified,
+        appBarContainerColor,
+        Color.Unspecified,
+        appBarNavigationIconColor,
+        appBarActionIconColor,
+    )
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AppBarWithSearchColors) return false
+
+        if (searchBarColors != other.searchBarColors) return false
+        if (scrolledSearchBarContainerColor != other.scrolledSearchBarContainerColor) return false
+        if (appBarContainerColor != other.appBarContainerColor) return false
+        if (scrolledAppBarContainerColor != other.scrolledAppBarContainerColor) return false
+        if (appBarNavigationIconColor != other.appBarNavigationIconColor) return false
+        if (appBarActionIconColor != other.appBarActionIconColor) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = searchBarColors.hashCode()
+        result = 31 * result + scrolledSearchBarContainerColor.hashCode()
+        result = 31 * result + appBarContainerColor.hashCode()
+        result = 31 * result + scrolledAppBarContainerColor.hashCode()
+        result = 31 * result + appBarNavigationIconColor.hashCode()
+        result = 31 * result + appBarActionIconColor.hashCode()
+        return result
+    }
+}
+
+/**
+ * Represents the container color used for the search bar.
+ *
+ * A [colorTransitionFraction] provides a percentage value that can be used to generate a color.
+ *
+ * @param colorTransitionFraction a `0.0` to `1.0` value that represents a color transition
+ *   percentage
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Stable
+internal fun AppBarWithSearchColors.searchBarContainerColor(colorTransitionFraction: Float): Color {
+    if (scrolledSearchBarContainerColor == Color.Unspecified) {
+        return searchBarColors.containerColor
+    }
+    return androidx.compose.ui.graphics.lerp(
+        searchBarColors.containerColor,
+        scrolledSearchBarContainerColor,
+        FastOutLinearInEasing.transform(colorTransitionFraction),
+    )
+}
+
+/**
+ * Represents the container color used for the app bar.
+ *
+ * A [colorTransitionFraction] provides a percentage value that can be used to generate a color.
+ *
+ * @param colorTransitionFraction a `0.0` to `1.0` value that represents a color transition
+ *   percentage
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Stable
+internal fun AppBarWithSearchColors.appBarContainerColor(colorTransitionFraction: Float): Color {
+    if (scrolledAppBarContainerColor == Color.Unspecified) {
+        return appBarContainerColor
+    }
+    return androidx.compose.ui.graphics.lerp(
+        appBarContainerColor,
+        scrolledAppBarContainerColor,
+        FastOutLinearInEasing.transform(colorTransitionFraction),
+    )
+}
+
 @Suppress("DEPRECATION")
 @Deprecated(
     message = "Use overload which takes inputField as a parameter",
@@ -1919,16 +2394,25 @@ class SearchBarColors(
             "SearchBar(\n" +
                 "    inputField = {\n" +
                 "        SearchBarDefaults.InputField(\n" +
-                "            query = query,\n" +
-                "            onQueryChange = onQueryChange,\n" +
+                "            textFieldState = textFieldState,\n" +
+                "            searchBarState = searchBarState,\n" +
                 "            onSearch = onSearch,\n" +
-                "            expanded = active,\n" +
-                "            onExpandedChange = onActiveChange,\n" +
+                "            modifier = modifier,\n" +
                 "            enabled = enabled,\n" +
+                "            readOnly = readOnly,\n" +
+                "            textStyle = textStyle,\n" +
                 "            placeholder = placeholder,\n" +
                 "            leadingIcon = leadingIcon,\n" +
                 "            trailingIcon = trailingIcon,\n" +
-                "            colors = colors.inputFieldColors,\n" +
+                "            prefix = prefix,\n" +
+                "            suffix = suffix,\n" +
+                "            inputTransformation = inputTransformation,\n" +
+                "            outputTransformation = outputTransformation,\n" +
+                "            keyboardOptions = keyboardOptions,\n" +
+                "            lineLimits = lineLimits,\n" +
+                "            scrollState = scrollState,\n" +
+                "            shape = shape,\n" +
+                "            colors = colors,\n" +
                 "            interactionSource = interactionSource,\n" +
                 "        )\n" +
                 "    },\n" +
@@ -1967,7 +2451,7 @@ fun SearchBar(
 ) =
     SearchBar(
         inputField = {
-            SearchBarDefaults.InputField(
+            InputField(
                 modifier = Modifier.fillMaxWidth(),
                 query = query,
                 onQueryChange = onQueryChange,
@@ -2001,16 +2485,25 @@ fun SearchBar(
             "DockedSearchBar(\n" +
                 "    inputField = {\n" +
                 "        SearchBarDefaults.InputField(\n" +
-                "            query = query,\n" +
-                "            onQueryChange = onQueryChange,\n" +
+                "            textFieldState = textFieldState,\n" +
+                "            searchBarState = searchBarState,\n" +
                 "            onSearch = onSearch,\n" +
-                "            expanded = active,\n" +
-                "            onExpandedChange = onActiveChange,\n" +
+                "            modifier = modifier,\n" +
                 "            enabled = enabled,\n" +
+                "            readOnly = readOnly,\n" +
+                "            textStyle = textStyle,\n" +
                 "            placeholder = placeholder,\n" +
                 "            leadingIcon = leadingIcon,\n" +
                 "            trailingIcon = trailingIcon,\n" +
-                "            colors = colors.inputFieldColors,\n" +
+                "            prefix = prefix,\n" +
+                "            suffix = suffix,\n" +
+                "            inputTransformation = inputTransformation,\n" +
+                "            outputTransformation = outputTransformation,\n" +
+                "            keyboardOptions = keyboardOptions,\n" +
+                "            lineLimits = lineLimits,\n" +
+                "            scrollState = scrollState,\n" +
+                "            shape = shape,\n" +
+                "            colors = colors,\n" +
                 "            interactionSource = interactionSource,\n" +
                 "        )\n" +
                 "    },\n" +
@@ -2047,7 +2540,7 @@ fun DockedSearchBar(
 ) =
     DockedSearchBar(
         inputField = {
-            SearchBarDefaults.InputField(
+            InputField(
                 modifier = Modifier.fillMaxWidth(),
                 query = query,
                 onQueryChange = onQueryChange,
@@ -2111,6 +2604,7 @@ internal fun SearchBarImpl(
                             }
                         addRoundRect(RoundRect(size.toRect(), CornerRadius(radius)))
                     }
+
                 useFullScreenShape -> defaultFullScreenShape
                 else -> shape
             }
@@ -2580,12 +3074,6 @@ private fun FullScreenSearchBarLayout(
 private fun BackEventProgress.InProgress?.transform(): Float =
     if (this == null) 0f else PredictiveBack.transform(this.progress)
 
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun DisableSoftKeyboard(content: @Composable () -> Unit) {
-    InterceptPlatformTextInput(interceptor = { _, _ -> awaitCancellation() }, content = content)
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 private val SearchBarState.collapsedBounds: IntRect
     get() =
@@ -2706,18 +3194,31 @@ private val UnspecifiedTextFieldColors: TextFieldColors =
 // TODO: Replace to `WindowInfo.containerSize` once available
 @Composable internal expect fun getWindowContainerHeight(): Dp
 
+// WindowInsets.isImeVisible is experimental (and Android-only)
+@Composable
+private fun isImeVisible(): Boolean {
+    val density = LocalDensity.current
+    val ime = WindowInsets.ime
+    val isImeVisible = remember(ime, density) { derivedStateOf { ime.getBottom(density) > 0 } }
+    return isImeVisible.value
+}
+
 private const val LayoutIdInputField = "InputField"
 private const val LayoutIdSurface = "Surface"
 private const val LayoutIdSearchContent = "Content"
 
 // Measurement specs
 internal val SearchBarAsTopBarPadding = 8.dp
+private val AppBarWithSearchHorizontalPadding = 4.dp
+internal val AppBarWithSearchVerticalPadding = 4.dp
+
 @OptIn(ExperimentalMaterial3Api::class) private val SearchBarCornerRadius: Dp = InputFieldHeight / 2
 internal val DockedExpandedTableMinHeight: Dp = 240.dp
 private const val DockedExpandedTableMaxHeightScreenRatio: Float = 2f / 3f
 internal val SearchBarMinWidth: Dp = 360.dp
 private val SearchBarMaxWidth: Dp = 720.dp
 internal val SearchBarVerticalPadding: Dp = 8.dp
+
 // Search bar has 16dp padding between icons and start/end, while by default text field has 12dp.
 private val SearchBarIconOffsetX: Dp = 4.dp
 private const val SearchBarPredictiveBackMinScale: Float = 9f / 10f

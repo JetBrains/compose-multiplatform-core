@@ -32,7 +32,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
@@ -60,11 +60,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.focused
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.scrollToIndex
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -81,6 +86,8 @@ import androidx.wear.compose.foundation.lazy.ScalingParams
 import androidx.wear.compose.foundation.rotary.RotaryScrollableBehavior
 import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
 import androidx.wear.compose.foundation.rotary.RotarySnapLayoutInfoProvider
+import androidx.wear.compose.material3.internal.Strings
+import androidx.wear.compose.material3.internal.getString
 import kotlinx.coroutines.launch
 
 /**
@@ -154,6 +161,12 @@ public fun Picker(
         MaterialTheme.motionScheme.slowEffectsSpec()
     val animatedShimColorAlpha = remember { Animatable(if (readOnly) 1f else 0f) }
     val latestContentDescription by rememberUpdatedState(contentDescription)
+    val pickerClickHintString =
+        if (readOnly) {
+            getString(Strings.PickerClickToAdjustHint)
+        } else {
+            getString(Strings.PickerClickToSelectHint)
+        }
 
     LaunchedEffect(readOnly) {
         val targetAlpha = if (readOnly) 1f else 0f
@@ -164,14 +177,15 @@ public fun Picker(
         }
     }
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.semantics(mergeDescendants = true) {}) {
         ScalingLazyColumn(
             modifier =
                 Modifier.clearAndSetSemantics {
-                        onClick {
+                        onClick(pickerClickHintString) {
                             coroutineScope.launch { onSelected() }
                             true
                         }
+                        role = Role.ValuePicker
                         scrollToIndex {
                             coroutineScope.launch {
                                 state.scrollToOption(it)
@@ -242,16 +256,14 @@ public fun Picker(
             readOnlyLabel()
         }
     }
-    SideEffect {
-        if (!readOnly) {
-            forceScrollWhenReadOnly = true
-        }
+    if (!readOnly) {
+        SideEffect { forceScrollWhenReadOnly = true }
     }
     // If a Picker switches to read-only during animation, the ScalingLazyColumn can be
     // out of position, so we force an instant scroll to the selected option so that it is
     // correctly lined up when the Picker is next displayed.
-    LaunchedEffect(readOnly, forceScrollWhenReadOnly) {
-        if (readOnly && forceScrollWhenReadOnly) {
+    if (readOnly && forceScrollWhenReadOnly) {
+        LaunchedEffect(Unit) {
             state.scrollToOption(state.selectedOptionIndex)
             forceScrollWhenReadOnly = false
         }
@@ -568,6 +580,7 @@ internal fun pickerTextOption(
     textStyle: TextStyle,
     indexToText: (Int) -> String,
     optionHeight: Dp,
+    optionBaseline: Int,
     selectedContentColor: Color,
     unselectedContentColor: Color,
     invalidContentColor: Color = unselectedContentColor,
@@ -575,8 +588,17 @@ internal fun pickerTextOption(
 ): (@Composable PickerScope.(optionIndex: Int, pickerSelected: Boolean) -> Unit) =
     { value: Int, pickerSelected: Boolean ->
         Box(
-            modifier = Modifier.fillMaxSize().height(optionHeight),
-            contentAlignment = Alignment.Center,
+            modifier =
+                Modifier.fillMaxWidth().height(optionHeight).layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    val baseline = placeable[FirstBaseline]
+                    layout(constraints.maxWidth, constraints.maxHeight) {
+                        placeable.placeRelative(
+                            x = (constraints.maxWidth - placeable.width) / 2,
+                            y = optionBaseline - baseline,
+                        )
+                    }
+                }
         ) {
             Text(
                 text = indexToText(value),

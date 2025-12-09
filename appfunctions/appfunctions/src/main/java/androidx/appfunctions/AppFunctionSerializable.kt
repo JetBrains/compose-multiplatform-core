@@ -22,10 +22,10 @@ package androidx.appfunctions
  *
  * When a class is annotated with `@AppFunctionSerializable` and is used as a parameter or return
  * type (directly or as a nested entity) in an AppFunction, the shape of the entity defined within
- * its primary constructor will be exposed to the caller as an
- * [androidx.appfunctions.metadata.AppFunctionMetadataDocument]. This information allows the caller
- * to construct the structured input to call an AppFunction or understand what properties are
- * provided in the structured output.
+ * its primary constructor will be exposed to the caller as part of an
+ * [androidx.appfunctions.metadata.AppFunctionMetadata]. This information allows the caller to
+ * construct the structured input to call an AppFunction or understand what properties are provided
+ * in the structured output.
  *
  * **Constraints for Classes Annotated with `@AppFunctionSerializable`:**
  * * **Primary Constructor Parameters:** Only properties declared in the primary constructor that
@@ -53,13 +53,15 @@ package androidx.appfunctions
  *   visibility to allow instantiation.
  * * **
  *
- * **IMPORTANT:** The default value set in the constructor parameter is ignored when the value is
- * missing from the function calling request. Instead, the specified rule is always used:
- * * **Non-nullable Properties:** If a value is missing for a non-nullable property from the caller,
- *   the library will throw an exception to notify the caller automatically.
- * * **Nullable Properties:** If a value is missing for a nullable property, `null` will be used.
- * * **Collection Properties:** If a value is missing for a collection property, an empty collection
- *   will be used.
+ * **IMPORTANT:** When the default value is set in the constructor parameter, the field would be
+ * exposed to the caller as optional in the
+ * [androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata]. However, the default value is
+ * ignored when the value is missing from the function calling request. Instead, the specified rule
+ * is always used:
+ * * For non-nullable primitive types, the JVM default for that type is used (e.g., `0` for `Int`).
+ * * For non-nullable collection types, an empty collection is provided.
+ * * For nullable types, the value will be `null`.
+ * * Any other types are not allowed to be optional.
  *
  * **Example:**
  *
@@ -86,8 +88,21 @@ package androidx.appfunctions
  *   uri: String // Putting constructor parameter without getter will result in compiler error
  * )
  * ```
+ *
+ * @see androidx.appfunctions.metadata.AppFunctionObjectTypeMetadata
  */
 // Use BINARY here so that the annotation is kept around at the aggregation stage.
 @Retention(AnnotationRetention.BINARY)
 @Target(AnnotationTarget.CLASS)
-public annotation class AppFunctionSerializable
+public annotation class AppFunctionSerializable(
+    /**
+     * Whether to use the serializable's KDoc as the type's description to the agent. The default
+     * value is `false`.
+     *
+     * If set to `true`, the serializable's KDoc will be set as the type's
+     * [androidx.appfunctions.metadata.AppFunctionDataTypeMetadata.description]. The class's
+     * properties' KDoc will also be set as their corresponding descriptions. The caller will use
+     * the descriptions to interpret when and how to use the class and its properties.
+     */
+    public val isDescribedByKdoc: Boolean = false
+)

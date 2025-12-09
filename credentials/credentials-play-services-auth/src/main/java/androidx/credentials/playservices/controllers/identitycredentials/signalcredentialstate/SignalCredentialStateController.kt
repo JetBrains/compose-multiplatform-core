@@ -72,9 +72,7 @@ internal class SignalCredentialStateController(private val context: Context) :
     public override fun convertRequestToPlayServices(
         request: androidx.credentials.SignalCredentialStateRequest
     ): SignalCredentialStateRequest {
-        val bundle = request.bundle
-        bundle.putString(SIGNAL_REQUEST_JSON_KEY, request.requestJson)
-        return SignalCredentialStateRequest(request.type, request.origin, bundle)
+        return SignalCredentialStateRequest(request.type, request.origin, request.requestData)
     }
 
     override fun convertResponseToCredentialManager(

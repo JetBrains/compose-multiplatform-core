@@ -16,20 +16,17 @@
 
 package androidx.wear.compose.material3
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.testutils.assertAgainstGolden
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.DeviceConfigurationOverride
 import androidx.compose.ui.test.LayoutDirection
-import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.filters.MediumTest
 import androidx.test.filters.SdkSuppress
@@ -39,6 +36,7 @@ import androidx.wear.compose.material3.PageIndicatorTest.Companion.PAGE_COUNT
 import androidx.wear.compose.material3.PageIndicatorTest.Companion.SELECTED_PAGE_INDEX
 import com.google.testing.junit.testparameterinjector.TestParameter
 import com.google.testing.junit.testparameterinjector.TestParameterInjector
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
@@ -46,10 +44,10 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(TestParameterInjector::class)
-@SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class PageIndicatorScreenshotTest {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(SCREENSHOT_GOLDEN_PATH)
 
@@ -216,10 +214,7 @@ class PageIndicatorScreenshotTest {
         }
         rule.waitForIdle()
 
-        rule
-            .onNodeWithTag(TEST_TAG)
-            .captureToImage()
-            .assertAgainstGolden(screenshotRule, testName.goldenIdentifier())
+        rule.verifyScreenshot(testName, screenshotRule)
     }
 
     @Composable
@@ -231,7 +226,10 @@ class PageIndicatorScreenshotTest {
         selectedPageIndex: Int,
     ) {
         ScreenConfiguration(screenSize.size, isRound = true) {
-            Box(modifier = Modifier.testTag(TEST_TAG).fillMaxSize().background(Color.White)) {
+            Box(
+                modifier = Modifier.testTag(TEST_TAG).fillMaxSize().background(Color.White),
+                contentAlignment = if (isHorizontal) Alignment.BottomCenter else Alignment.CenterEnd,
+            ) {
                 val pagerState =
                     PagerState(
                         currentPage = selectedPageIndex,

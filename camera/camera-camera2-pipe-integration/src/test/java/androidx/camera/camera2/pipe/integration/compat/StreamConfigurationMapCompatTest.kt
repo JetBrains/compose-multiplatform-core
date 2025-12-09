@@ -18,7 +18,6 @@ package androidx.camera.camera2.pipe.integration.compat
 
 import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
-import android.os.Build
 import android.util.Size
 import androidx.camera.camera2.pipe.integration.compat.workaround.OutputSizesCorrector
 import androidx.camera.camera2.pipe.testing.FakeCameraMetadata
@@ -36,7 +35,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 /** Unit tests for [StreamConfigurationMapCompat]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class StreamConfigurationMapCompatTest {
 
     companion object {

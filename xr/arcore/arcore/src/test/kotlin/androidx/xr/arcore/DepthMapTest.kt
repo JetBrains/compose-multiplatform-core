@@ -17,7 +17,7 @@
 package androidx.xr.arcore
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.runtime.testing.FakeRuntimeDepthMap
+import androidx.xr.arcore.testing.FakeRuntimeDepthMap
 import com.google.common.truth.Truth.assertThat
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer

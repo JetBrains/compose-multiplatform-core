@@ -85,7 +85,7 @@ class AppFunctionInventoryProcessor(private val codeGenerator: CodeGenerator) : 
                 generatedInventoryComponents,
             )
         return resolvedAnnotatedSerializableProxies.resolvedAnnotatedSerializableProxies.map {
-            it.appFunctionSerializableProxyClass
+            it.classDeclaration
         }
     }
 
@@ -143,9 +143,11 @@ class AppFunctionInventoryProcessor(private val codeGenerator: CodeGenerator) : 
     companion object {
         const val APP_FUNCTION_METADATA_PROPERTY_NAME = "APP_FUNCTION_METADATA"
         const val SCHEMA_METADATA_PROPERTY_NAME = "SCHEMA_METADATA"
+        const val DEPRECATION_METADATA_PROPERTY_NAME = "DEPRECATION_METADATA"
         const val PARAMETER_METADATA_LIST_PROPERTY_NAME = "PARAMETER_METADATA_LIST"
         const val RESPONSE_METADATA_PROPERTY_NAME = "RESPONSE_METADATA"
         const val COMPONENT_METADATA_PROPERTY_NAME = "COMPONENTS_METADATA"
         const val FUNCTION_ID_TO_METADATA_MAP_PROPERTY_NAME = "functionIdToMetadataMap"
+        const val INVENTORY_COMPONENTS_METADATA_PROPERTY_NAME = "componentsMetadata"
     }
 }

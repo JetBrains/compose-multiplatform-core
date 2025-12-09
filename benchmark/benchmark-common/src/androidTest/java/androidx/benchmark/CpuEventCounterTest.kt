@@ -19,7 +19,6 @@ package androidx.benchmark
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
@@ -33,7 +32,6 @@ import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class CpuEventCounterTest {
     @Before
     fun before() {

@@ -15,6 +15,9 @@
  */
 package androidx.compose.remote.core.semantics;
 
+import androidx.annotation.RestrictTo;
+
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -25,6 +28,7 @@ import org.jspecify.annotations.Nullable;
  * <p>This is similar to {@link CoreSemantics} but handles built in operations that also expose
  * those core semantics.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public interface AccessibleComponent extends AccessibilitySemantics {
     /**
      * Returns the ID of the content description for this item.
@@ -97,7 +101,7 @@ public interface AccessibleComponent extends AccessibilitySemantics {
      *
      * @return The mode of the operation, which defaults to {@link CoreSemantics.Mode#SET}.
      */
-    default CoreSemantics.Mode getMode() {
+    default CoreSemantics.@NonNull Mode getMode() {
         return CoreSemantics.Mode.SET;
     }
 
@@ -140,7 +144,7 @@ public interface AccessibleComponent extends AccessibilitySemantics {
          * @param i int value
          * @return corresponding enum value
          */
-        public static Role fromInt(int i) {
+        public static @NonNull Role fromInt(int i) {
             if (i < UNKNOWN.ordinal()) {
                 return Role.values()[i];
             }

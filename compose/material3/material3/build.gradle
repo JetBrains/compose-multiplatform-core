@@ -44,7 +44,6 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 // Keep pinned unless there is a need for tip of tree behavior
                 implementation("androidx.collection:collection:1.4.5")
                 implementation("androidx.compose.animation:animation-core:1.8.1")
@@ -52,7 +51,7 @@ androidXMultiplatform {
                 api("androidx.compose.foundation:foundation-layout:1.8.1")
                 api("androidx.compose.foundation:foundation:1.8.1")
                 api("androidx.compose.material:material-ripple:1.8.1")
-                api("androidx.compose.runtime:runtime:1.8.1")
+                api("androidx.compose.runtime:runtime:1.9.0-rc01")
                 api("androidx.compose.ui:ui:1.8.2")
                 api("androidx.compose.ui:ui-text:1.8.1")
                 api("androidx.graphics:graphics-shapes:1.0.1")
@@ -85,6 +84,7 @@ androidXMultiplatform {
         }
 
         jvmStubsMain {
+            dependsOn(jvmMain)
             dependsOn(commonStubsMain)
         }
 
@@ -92,7 +92,7 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.testRules)
@@ -102,7 +102,7 @@ androidXMultiplatform {
             }
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:material3:material3:material3-samples"))

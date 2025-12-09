@@ -39,7 +39,6 @@ import androidx.camera.testing.impl.fakes.FakeUseCaseConfig
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import com.google.common.truth.Truth
 import com.google.common.util.concurrent.ListenableFuture
 import java.util.concurrent.TimeUnit
@@ -61,7 +60,6 @@ private const val DEFAULT_LENS_FACING_SELECTOR = CameraSelector.LENS_FACING_BACK
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class CaptureConfigAdapterDeviceTest {
 
     @get:Rule val useCamera: TestRule = CameraUtil.grantCameraPermissionAndPreTestAndPostTest()

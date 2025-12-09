@@ -45,15 +45,14 @@ androidXMultiplatform {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlinStdlib)
                 api(project(":compose:material3:adaptive:adaptive"))
-                api("androidx.compose.animation:animation-core:1.7.8")
-                api("androidx.compose.ui:ui:1.8.2")
-                implementation("androidx.compose.animation:animation:1.7.8")
-                implementation("androidx.compose.foundation:foundation:1.7.8")
-                implementation("androidx.compose.foundation:foundation-layout:1.7.8")
-                implementation("androidx.compose.ui:ui-geometry:1.7.8")
-                implementation("androidx.window:window-core:1.4.0-rc01")
+                api("androidx.compose.animation:animation-core:1.9.0")
+                api("androidx.compose.ui:ui:1.9.0")
+                implementation("androidx.compose.animation:animation:1.9.0")
+                implementation("androidx.compose.foundation:foundation:1.9.0")
+                implementation("androidx.compose.foundation:foundation-layout:1.9.0")
+                implementation("androidx.compose.ui:ui-geometry:1.9.0")
+                implementation("androidx.window:window-core:1.4.0")
             }
         }
 
@@ -71,9 +70,9 @@ androidXMultiplatform {
         androidMain {
             dependsOn(jvmMain)
             dependencies {
-                api("androidx.annotation:annotation:1.8.1")
-                api("androidx.annotation:annotation-experimental:1.4.1")
-                implementation("androidx.compose.runtime:runtime:1.7.8")
+                api("androidx.annotation:annotation:1.9.1")
+                api("androidx.annotation:annotation-experimental:1.5.1")
+                implementation("androidx.compose.runtime:runtime:1.9.0")
                 implementation("androidx.core:core:1.15.0")
             }
         }
@@ -90,12 +89,14 @@ androidXMultiplatform {
             dependsOn(commonStubsMain)
         }
 
-        androidInstrumentedTest {
+        androidDeviceTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(project(":compose:material3:material3"))
                 implementation(project(":compose:test-utils"))
                 implementation(project(":window:window-testing"))
+                implementation(project(":compose:foundation:foundation"))
+                implementation(project(":compose:ui:ui"))
                 implementation(libs.junit)
                 implementation(libs.kotlinTest)
                 implementation(libs.testRunner)
@@ -103,7 +104,7 @@ androidXMultiplatform {
             }
         }
 
-        androidUnitTest {
+        androidHostTest {
             dependsOn(commonTest)
             dependencies {
                 implementation(libs.junit)

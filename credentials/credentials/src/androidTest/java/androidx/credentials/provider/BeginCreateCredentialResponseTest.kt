@@ -28,7 +28,6 @@ import androidx.credentials.provider.ui.UiUtils.Companion.constructCreateEntryWi
 import androidx.credentials.provider.ui.UiUtils.Companion.constructRemoteEntryDefault
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import java.time.Instant
@@ -37,7 +36,6 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 @SmallTest
-@SdkSuppress(minSdkVersion = 23)
 class BeginCreateCredentialResponseTest {
 
     @Test
@@ -108,7 +106,6 @@ class BeginCreateCredentialResponseTest {
         assertThat(actualRemoteEntry).isEqualTo(expectedRemoteEntry)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun bundleConversions_success() {
         val expected =
@@ -125,7 +122,6 @@ class BeginCreateCredentialResponseTest {
         assertEquals(ApplicationProvider.getApplicationContext(), actual!!, expected)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun bundleConversions_multipleCreateEntries_success() {
         val context: Context = ApplicationProvider.getApplicationContext()
@@ -176,7 +172,6 @@ class BeginCreateCredentialResponseTest {
         assertEquals(context, actual!!, expected)
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun bundleConversions_emptyBundle_returnsNull() {
         val actual = BeginCreateCredentialResponse.fromBundle(Bundle())

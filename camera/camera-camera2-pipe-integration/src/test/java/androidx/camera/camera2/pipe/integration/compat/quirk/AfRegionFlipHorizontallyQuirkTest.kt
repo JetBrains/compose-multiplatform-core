@@ -34,7 +34,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class AfRegionFlipHorizontallyQuirkTest(
     private val brand: String,
     private val lensFacing: Int,

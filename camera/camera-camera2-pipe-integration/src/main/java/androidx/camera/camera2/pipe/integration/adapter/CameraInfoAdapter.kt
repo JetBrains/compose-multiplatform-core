@@ -24,6 +24,7 @@ import android.os.Build
 import android.util.Range
 import android.util.Size
 import android.view.Surface
+import androidx.annotation.VisibleForTesting
 import androidx.camera.camera2.pipe.CameraId
 import androidx.camera.camera2.pipe.CameraMetadata
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.isHardwareLevelLegacy
@@ -36,8 +37,6 @@ import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsPrivateRepr
 import androidx.camera.camera2.pipe.CameraMetadata.Companion.supportsTorchStrength
 import androidx.camera.camera2.pipe.CameraPipe
 import androidx.camera.camera2.pipe.UnsafeWrapper
-import androidx.camera.camera2.pipe.core.Log
-import androidx.camera.camera2.pipe.core.Log.debug
 import androidx.camera.camera2.pipe.integration.compat.DynamicRangeProfilesCompat
 import androidx.camera.camera2.pipe.integration.compat.StreamConfigurationMapCompat
 import androidx.camera.camera2.pipe.integration.compat.quirk.CameraQuirks
@@ -46,18 +45,22 @@ import androidx.camera.camera2.pipe.integration.compat.quirk.ZslDisablerQuirk
 import androidx.camera.camera2.pipe.integration.compat.workaround.isFlashAvailable
 import androidx.camera.camera2.pipe.integration.config.CameraConfig
 import androidx.camera.camera2.pipe.integration.config.CameraScope
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger.warn
 import androidx.camera.camera2.pipe.integration.impl.CameraCallbackMap
 import androidx.camera.camera2.pipe.integration.impl.CameraPipeCameraProperties
 import androidx.camera.camera2.pipe.integration.impl.CameraProperties
 import androidx.camera.camera2.pipe.integration.impl.DeviceInfoLogger
 import androidx.camera.camera2.pipe.integration.impl.FocusMeteringControl
-import androidx.camera.camera2.pipe.integration.internal.CameraFovInfo
+import androidx.camera.camera2.pipe.integration.internal.IntrinsicZoomCalculator
 import androidx.camera.camera2.pipe.integration.interop.Camera2CameraInfo
 import androidx.camera.camera2.pipe.integration.interop.ExperimentalCamera2Interop
 import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraState
 import androidx.camera.core.DynamicRange
+import androidx.camera.core.ExperimentalLensFacing
+import androidx.camera.core.ExperimentalZeroShutterLag
 import androidx.camera.core.ExposureState
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.UseCase
@@ -70,6 +73,7 @@ import androidx.camera.core.impl.Quirks
 import androidx.camera.core.impl.Timebase
 import androidx.camera.core.impl.utils.CameraOrientationUtil
 import androidx.camera.core.internal.StreamSpecsCalculator
+import androidx.core.util.Consumer
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import java.util.concurrent.Executor
@@ -77,9 +81,6 @@ import javax.inject.Inject
 import kotlin.reflect.KClass
 
 /** Adapt the [CameraInfoInternal] interface to [CameraPipe]. */
-@SuppressLint(
-    "UnsafeOptInUsageError" // Suppressed due to experimental ExposureState
-)
 @CameraScope
 public class CameraInfoAdapter
 @Inject
@@ -93,7 +94,7 @@ constructor(
     private val cameraQuirks: CameraQuirks,
     private val encoderProfilesProvider: EncoderProfilesProvider,
     private val streamConfigurationMapCompat: StreamConfigurationMapCompat,
-    private val cameraFovInfo: CameraFovInfo,
+    private val intrinsicZoomCalculator: IntrinsicZoomCalculator,
     private val streamSpecsCalculator: StreamSpecsCalculator,
 ) : CameraInfoInternal, UnsafeWrapper {
     init {
@@ -127,8 +128,15 @@ constructor(
 
     override fun getCameraId(): String = cameraConfig.cameraId.value
 
-    override fun getLensFacing(): Int =
+    override fun getLensFacing(): @CameraSelector.LensFacing Int =
         getCameraSelectorLensFacing(cameraProperties.metadata[CameraCharacteristics.LENS_FACING]!!)
+
+    @androidx.annotation.OptIn(ExperimentalLensFacing::class)
+    override fun isExternalCamera(): Boolean {
+        return lensFacing == CameraSelector.LENS_FACING_EXTERNAL ||
+            cameraProperties.metadata[CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL] ==
+                CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_EXTERNAL
+    }
 
     override fun getCameraCharacteristics(): CameraCharacteristics =
         cameraProperties.metadata.unwrapAs(CameraCharacteristics::class)!!
@@ -143,6 +151,7 @@ constructor(
             .unwrapAs(CameraCharacteristics::class)
     }
 
+    @androidx.annotation.OptIn(ExperimentalLensFacing::class)
     private fun getCameraSelectorLensFacing(lensFacingInt: Int): @CameraSelector.LensFacing Int {
         return when (lensFacingInt) {
             CameraCharacteristics.LENS_FACING_FRONT -> CameraSelector.LENS_FACING_FRONT
@@ -201,6 +210,16 @@ constructor(
     override fun getExposureState(): ExposureState = cameraControlStateAdapter.exposureState
 
     override fun getCameraState(): LiveData<CameraState> = cameraStateAdapter.cameraState
+
+    @VisibleForTesting
+    override fun addCameraStateListener(executor: Executor, listener: Consumer<CameraState>) {
+        cameraStateAdapter.addCameraStateListener(executor, listener)
+    }
+
+    @VisibleForTesting
+    override fun removeCameraStateListener(listener: Consumer<CameraState>) {
+        cameraStateAdapter.removeCameraStateListener(listener)
+    }
 
     override fun addSessionCaptureCallback(
         executor: Executor,
@@ -264,10 +283,9 @@ constructor(
         cameraProperties.metadata[CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES]
             ?.toSet() ?: emptySet()
 
+    @androidx.annotation.OptIn(ExperimentalZeroShutterLag::class)
     override fun isZslSupported(): Boolean {
-        return Build.VERSION.SDK_INT >= 23 &&
-            isPrivateReprocessingSupported &&
-            DeviceQuirks[ZslDisablerQuirk::class.java] == null
+        return isPrivateReprocessingSupported && DeviceQuirks[ZslDisablerQuirk::class.java] == null
     }
 
     override fun isPrivateReprocessingSupported(): Boolean {
@@ -279,8 +297,7 @@ constructor(
             .supportedDynamicRanges
     }
 
-    override fun isHighSpeedSupported(): Boolean =
-        Build.VERSION.SDK_INT >= 23 && cameraProperties.metadata.supportsHighSpeedVideo
+    override fun isHighSpeedSupported(): Boolean = cameraProperties.metadata.supportsHighSpeedVideo
 
     override fun getSupportedHighSpeedFrameRateRanges(): Set<Range<Int>> {
         return streamConfigurationMapCompat.getHighSpeedVideoFpsRanges()?.toSet() ?: emptySet()
@@ -331,18 +348,12 @@ constructor(
             availableVideoStabilizationModes.contains(CONTROL_VIDEO_STABILIZATION_MODE_ON)
     }
 
-    override fun getIntrinsicZoomRatio(): Float {
-        var intrinsicZoomRatio = CameraInfo.INTRINSIC_ZOOM_RATIO_UNKNOWN
-        try {
-            intrinsicZoomRatio =
-                cameraFovInfo.getDefaultCameraDefaultViewAngleDegrees().toFloat() /
-                    cameraFovInfo.getDefaultViewAngleDegrees().toFloat()
-        } catch (e: Exception) {
-            Log.error(e) { "Failed to get the intrinsic zoom ratio" }
-        }
-
-        return intrinsicZoomRatio
-    }
+    override fun getIntrinsicZoomRatio(): Float =
+        intrinsicZoomCalculator.calculateIntrinsicZoomRatio(cameraProperties.metadata)
+            ?: run {
+                warn { "Failed to calculate intrinsic zoom ratio for ${cameraProperties.cameraId}" }
+                CameraInfo.INTRINSIC_ZOOM_RATIO_UNKNOWN
+            }
 
     override fun isUseCaseCombinationSupported(
         useCases: List<UseCase>,
@@ -360,13 +371,18 @@ constructor(
                 isFeatureComboInvocation = isFeatureComboInvocation,
             )
         } catch (e: IllegalArgumentException) {
-            debug(e) {
+            Camera2Logger.debug(e) {
                 "CameraInfoAdapter#isUseCaseCombinationSupported:" +
                     " calculateSuggestedStreamSpecs failed"
             }
             return false
         }
         return true
+    }
+
+    override fun getAvailableCapabilities(): Set<Int> {
+        return cameraProperties.metadata[CameraCharacteristics.REQUEST_AVAILABLE_CAPABILITIES]
+            ?.toSet() ?: emptySet()
     }
 
     public companion object {

@@ -19,9 +19,7 @@ package androidx.camera.lifecycle
 import android.app.Application
 import android.content.Context
 import android.content.ContextWrapper
-import androidx.test.filters.SdkSuppress
 
-@SdkSuppress(minSdkVersion = 21)
 internal class TestAppContextWrapper(
     base: Context,
     private val app: Application? = null,

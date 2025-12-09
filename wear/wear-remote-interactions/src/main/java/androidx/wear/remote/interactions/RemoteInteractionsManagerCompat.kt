@@ -19,6 +19,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.OutcomeReceiver
 import androidx.wear.remote.interactions.RemoteInteractionsUtil.isCurrentDeviceAWatch
+import androidx.wear.utils.WearApiVersionHelper
 import com.google.wear.Sdk
 import com.google.wear.services.remoteinteractions.RemoteInteractionsManager
 import java.util.concurrent.Executor
@@ -27,22 +28,18 @@ import java.util.function.Consumer
 /** Forwards remote interactions to [RemoteInteractionsManager]. */
 internal open class RemoteInteractionsManagerCompat(context: Context) : IRemoteInteractionsManager {
 
-    // TODO(b/411162268): Use `WearApiVersionHelper` for the SDK version check.
-    private val wearApiVersion: WearApiVersion = WearApiVersion(context)
+    override val isAvailabilityStatusApiSupported =
+        isCurrentDeviceAWatch(context) &&
+            WearApiVersionHelper.isApiVersionAtLeast(WearApiVersionHelper.WEAR_TIRAMISU_4)
 
     private val remoteInteractionsManager: RemoteInteractionsManager? =
         if (isAvailabilityStatusApiSupported)
             Sdk.getWearManager(context, RemoteInteractionsManager::class.java)
         else null
 
-    override val isAvailabilityStatusApiSupported: Boolean
-        get() = wearApiVersion.wearSdkVersion >= 4
-
-    // TODO(b/411160115): Use `WearApiVersionHelper` once available.
     override val isWearSdkApiStartRemoteActivitySupported =
         isCurrentDeviceAWatch(context) &&
-            android.os.Build.VERSION.SDK_INT >= 36 &&
-            Sdk.isApiVersionAtLeast(Sdk.VERSION_CODES.WEAR_BAKLAVA_0)
+            WearApiVersionHelper.isApiVersionAtLeast(WearApiVersionHelper.WEAR_BAKLAVA_0)
 
     override fun registerRemoteActivityHelperStatusListener(
         executor: Executor,

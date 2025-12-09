@@ -16,18 +16,24 @@
 
 package androidx.appsearch.platformstorage.converter;
 
+import android.annotation.SuppressLint;
 import android.os.Build;
+import android.os.ext.SdkExtensions;
 
 import androidx.annotation.DoNotInline;
 import androidx.annotation.RequiresApi;
+import androidx.annotation.RequiresExtension;
 import androidx.annotation.RestrictTo;
 import androidx.appsearch.app.AppSearchSchema;
 import androidx.appsearch.app.GenericDocument;
 import androidx.appsearch.app.Migrator;
 import androidx.appsearch.app.PackageIdentifier;
 import androidx.appsearch.app.SchemaVisibilityConfig;
+import androidx.appsearch.app.SetBlobVisibilityRequest;
 import androidx.appsearch.app.SetSchemaRequest;
 import androidx.appsearch.app.SetSchemaResponse;
+import androidx.appsearch.platformstorage.util.AppSearchVersionUtil;
+import androidx.core.os.BuildCompat;
 import androidx.core.util.Preconditions;
 
 import org.jspecify.annotations.NonNull;
@@ -90,33 +96,35 @@ public final class SetSchemaRequestToPlatformConverter {
         }
 
         if (!jetpackRequest.getPubliclyVisibleSchemas().isEmpty()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.V_BASE) {
+                for (Map.Entry<String, PackageIdentifier> entry :
+                        jetpackRequest.getPubliclyVisibleSchemas().entrySet()) {
+                    PackageIdentifier publiclyVisibleTargetPackage = entry.getValue();
+                    ApiHelperForSdkExtensionVBase.setPubliclyVisibleSchema(
+                            platformBuilder,
+                            entry.getKey(),
+                            new android.app.appsearch.PackageIdentifier(
+                                    publiclyVisibleTargetPackage.getPackageName(),
+                                    publiclyVisibleTargetPackage.getSha256Certificate()));
+                }
+            } else {
                 throw new UnsupportedOperationException(
                         "Publicly visible schema are not supported on this AppSearch "
                                 + "implementation.");
             }
-            for (Map.Entry<String, PackageIdentifier> entry :
-                    jetpackRequest.getPubliclyVisibleSchemas().entrySet()) {
-                PackageIdentifier publiclyVisibleTargetPackage = entry.getValue();
-                ApiHelperForV.setPubliclyVisibleSchema(
-                        platformBuilder,
-                        entry.getKey(),
-                        new android.app.appsearch.PackageIdentifier(
-                                publiclyVisibleTargetPackage.getPackageName(),
-                                publiclyVisibleTargetPackage.getSha256Certificate()));
-            }
         }
 
         if (!jetpackRequest.getSchemasVisibleToConfigs().isEmpty()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.V_BASE) {
+                for (Map.Entry<String, Set<SchemaVisibilityConfig>> entry :
+                        jetpackRequest.getSchemasVisibleToConfigs().entrySet()) {
+                    ApiHelperForSdkExtensionVBase.addSchemaTypeVisibleToConfig(
+                            platformBuilder, entry.getKey(), entry.getValue());
+                }
+            } else {
                 throw new UnsupportedOperationException(
                         "Schema visible to config are not supported on this AppSearch "
                                 + "implementation.");
-            }
-            for (Map.Entry<String, Set<SchemaVisibilityConfig>> entry :
-                    jetpackRequest.getSchemasVisibleToConfigs().entrySet()) {
-                ApiHelperForV.addSchemaTypeVisibleToConfig(
-                        platformBuilder, entry.getKey(), entry.getValue());
             }
         }
 
@@ -194,6 +202,42 @@ public final class SetSchemaRequestToPlatformConverter {
         return jetpackBuilder.build();
     }
 
+    /**
+     * Translates a jetpack {@link androidx.appsearch.app.SetBlobVisibilityRequest} into a platform
+     * {@link android.app.appsearch.SetBlobVisibilityRequest}.
+     */
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
+    public static android.app.appsearch.@NonNull SetBlobVisibilityRequest
+            toPlatformSetBlobVisibilityRequest(@NonNull SetBlobVisibilityRequest jetpackRequest) {
+        Preconditions.checkNotNull(jetpackRequest);
+        android.app.appsearch.SetBlobVisibilityRequest.Builder platformRequestBuilder =
+                new android.app.appsearch.SetBlobVisibilityRequest.Builder();
+        for (String namespacesNotDisplayedBySystem :
+                jetpackRequest.getNamespacesNotDisplayedBySystem()) {
+            platformRequestBuilder.setNamespaceDisplayedBySystem(
+                    namespacesNotDisplayedBySystem, /*displayed=*/false);
+        }
+        for (Map.Entry<String, Set<SchemaVisibilityConfig>> entry :
+                jetpackRequest.getNamespacesVisibleToConfigs().entrySet()) {
+            String namespace = entry.getKey();
+            for (SchemaVisibilityConfig schemaVisibilityConfig : entry.getValue()) {
+                if (BuildCompat.T_EXTENSION_INT >= AppSearchVersionUtil.TExtensionVersions.V_BASE) {
+                    android.app.appsearch.SchemaVisibilityConfig platformSchemaVisibilityConfig =
+                            ApiHelperForSdkExtensionVBase.toPlatformSchemaVisibilityConfig(
+                                    schemaVisibilityConfig);
+                    platformRequestBuilder.addNamespaceVisibleToConfig(namespace,
+                            platformSchemaVisibilityConfig);
+                } else {
+                    throw new UnsupportedOperationException(
+                            "Schema visibility config is not supported on this version of Android"
+                                    + " Platform.");
+                }
+            }
+        }
+
+        return platformRequestBuilder.build();
+    }
+
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private static class ApiHelperForT {
         private ApiHelperForT() {
@@ -208,9 +252,13 @@ public final class SetSchemaRequestToPlatformConverter {
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
-    private static class ApiHelperForV {
-        private ApiHelperForV() {}
+    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU,
+            version = AppSearchVersionUtil.TExtensionVersions.V_BASE)
+    @RequiresApi(Build.VERSION_CODES.S)
+    private static class ApiHelperForSdkExtensionVBase {
+        private ApiHelperForSdkExtensionVBase() {
+            // This class is not instantiable.
+        }
 
         @DoNotInline
         static void setPubliclyVisibleSchema(
@@ -236,7 +284,7 @@ public final class SetSchemaRequestToPlatformConverter {
          * Translates a jetpack {@link SchemaVisibilityConfig} into a platform
          * {@link android.app.appsearch.SchemaVisibilityConfig}.
          */
-        private static android.app.appsearch.@NonNull SchemaVisibilityConfig
+        public static android.app.appsearch.@NonNull SchemaVisibilityConfig
                 toPlatformSchemaVisibilityConfig(@NonNull SchemaVisibilityConfig jetpackConfig) {
             Preconditions.checkNotNull(jetpackConfig);
             android.app.appsearch.SchemaVisibilityConfig.Builder platformBuilder =

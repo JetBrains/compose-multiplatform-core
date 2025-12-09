@@ -19,8 +19,10 @@ package androidx.wear.tiles;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters;
+import androidx.wear.protolayout.ProtoLayoutScope;
 import androidx.wear.protolayout.StateBuilders.State;
 import androidx.wear.protolayout.expression.RequiresSchemaVersion;
+import androidx.wear.protolayout.expression.VersionBuilders;
 import androidx.wear.protolayout.proto.DeviceParametersProto;
 import androidx.wear.protolayout.proto.StateProto;
 import androidx.wear.tiles.proto.RequestProto;
@@ -42,10 +44,6 @@ public final class RequestBuilders {
     @RequiresSchemaVersion(major = 1, minor = 0)
     public static final class TileRequest {
         private final RequestProto.TileRequest mImpl;
-
-        TileRequest(RequestProto.TileRequest impl) {
-            this.mImpl = impl;
-        }
 
         /**
          * Gets the {@link androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters}
@@ -80,6 +78,32 @@ public final class RequestBuilders {
          */
         public int getTileId() {
             return mImpl.getTileId();
+        }
+
+        private final ProtoLayoutScope mScope;
+
+        TileRequest(RequestProto.TileRequest impl) {
+            this(impl, /* scope= */ null);
+        }
+
+        @SuppressWarnings("RestrictedApiAndroidX") // Tiles is allowed to use ProtoLayout's APIs
+        TileRequest(RequestProto.TileRequest impl, @Nullable ProtoLayoutScope scope) {
+            this.mImpl = impl;
+            if (scope != null) {
+                this.mScope = scope;
+                return;
+            }
+
+            // If no scope is provided, check the device configuration for a schema version.
+            if (impl.getDeviceConfiguration().hasRendererSchemaVersion()) {
+                this.mScope =
+                        new ProtoLayoutScope(
+                                VersionBuilders.VersionInfo.fromProto(
+                                        impl.getDeviceConfiguration().getRendererSchemaVersion()));
+            } else {
+                // If no schema version is present, create a default scope.
+                this.mScope = new ProtoLayoutScope();
+            }
         }
 
         /**
@@ -126,6 +150,21 @@ public final class RequestBuilders {
         @RequiresSchemaVersion(major = 1, minor = 600)
         public @NonNull Instant getLastVisibleTime() {
             return Instant.ofEpochMilli(mImpl.getLastVisibleMillis());
+        }
+
+        /**
+         * Returns {@link ProtoLayoutScope} object that is required for methods to create resources
+         * or pending intents, and it will automatically register them for a tile.
+         */
+        public @NonNull ProtoLayoutScope getScope() {
+            return mScope;
+        }
+
+        /** Creates a new wrapper instance from the proto. */
+        @RestrictTo(Scope.LIBRARY_GROUP)
+        public static @NonNull TileRequest fromProto(
+                RequestProto.@NonNull TileRequest proto, @NonNull ProtoLayoutScope scope) {
+            return new TileRequest(proto, scope);
         }
 
         /** Creates a new wrapper instance from the proto. */

@@ -27,8 +27,13 @@ import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ModifiersBuilders.Clickable
+import androidx.wear.protolayout.ProtoLayoutScope
+import androidx.wear.protolayout.ResourceBuilders.LottieProperty.colorForSlot
+import androidx.wear.protolayout.TriggerBuilders.createOnVisibleTrigger
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicFloat
 import androidx.wear.protolayout.expression.DynamicBuilders.DynamicString
+import androidx.wear.protolayout.layout.imageResource
+import androidx.wear.protolayout.layout.lottieResource
 import androidx.wear.protolayout.material3.AppCardStyle
 import androidx.wear.protolayout.material3.CardDefaults.filledTonalCardColors
 import androidx.wear.protolayout.material3.CardDefaults.filledVariantCardColors
@@ -58,6 +63,7 @@ import androidx.wear.protolayout.material3.iconDataCard
 import androidx.wear.protolayout.material3.iconEdgeButton
 import androidx.wear.protolayout.material3.imageButton
 import androidx.wear.protolayout.material3.materialScope
+import androidx.wear.protolayout.material3.materialScopeWithResources
 import androidx.wear.protolayout.material3.primaryLayout
 import androidx.wear.protolayout.material3.segmentedCircularProgressIndicator
 import androidx.wear.protolayout.material3.text
@@ -70,6 +76,7 @@ import androidx.wear.protolayout.modifiers.background
 import androidx.wear.protolayout.modifiers.clearSemantics
 import androidx.wear.protolayout.modifiers.clickable
 import androidx.wear.protolayout.modifiers.contentDescription
+import androidx.wear.protolayout.modifiers.fadeInOnVisibleModifier
 import androidx.wear.protolayout.types.LayoutString
 import androidx.wear.protolayout.types.asLayoutConstraint
 import androidx.wear.protolayout.types.layoutString
@@ -549,5 +556,36 @@ fun primaryLayoutWithTextNotImportantForAccessibility(
             labelForBottomSlot = {
                 text("Bottom label".layoutString, modifier = LayoutModifier.clearSemantics())
             },
+        )
+    }
+
+@Suppress("ResourceType") // Just a sample, not a real resource.
+@Sampled
+fun lottieWithFadeIn(
+    context: Context,
+    deviceConfiguration: DeviceParameters,
+    scope: ProtoLayoutScope,
+) =
+    materialScopeWithResources(
+        context = context,
+        protoLayoutScope = scope,
+        deviceConfiguration = deviceConfiguration,
+    ) {
+        primaryLayout(
+            mainSlot = {
+                backgroundImage(
+                    resource =
+                        imageResource(
+                            lottie =
+                                lottieResource(
+                                    rawResourceId = 1234, // Lottie Raw Resource ID,
+                                    startTrigger = createOnVisibleTrigger(),
+                                    properties =
+                                        listOf(colorForSlot("slotID", colorScheme.tertiary.prop)),
+                                )
+                        ),
+                    modifier = LayoutModifier.fadeInOnVisibleModifier(),
+                )
+            }
         )
     }

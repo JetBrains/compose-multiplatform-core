@@ -17,7 +17,7 @@
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="mr_system_route_name" msgid="7449553026175453403">"సిస్టమ్"</string>
-    <string name="mr_user_route_category_name" msgid="4088331695424166162">"పరికరాలు"</string>
+    <string name="mr_user_route_category_name" msgid="4088331695424166162">"డివైజ్‌లు"</string>
     <string name="mr_button_content_description" msgid="2939063992730535343">"ప్రసారం చేయండి"</string>
     <string name="mr_cast_button_disconnected" msgid="8071109333469380363">"ప్రసారం చేయండి. డిస్‌కనెక్ట్ అయింది"</string>
     <string name="mr_cast_button_connecting" msgid="6629927151350192407">"ప్రసారం చేయండి. కనెక్ట్ అవుతోంది"</string>

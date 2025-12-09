@@ -39,7 +39,6 @@ import androidx.pdf.content.SelectionBoundary
 import androidx.pdf.models.FormEditRecord
 import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.models.ListItem
-import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -82,6 +81,9 @@ internal open class FakePdfDocument(
     override val pageCount: Int = pages.size
 
     @get:Synchronized @set:Synchronized internal var layoutReach: Int = 0
+
+    override val formEditRecords: List<FormEditRecord>
+        get() = editHistory.toList()
 
     private val bitmapRequestsLock = Object()
     private val _bitmapRequests = mutableMapOf<Int, SizeParams>()
@@ -153,17 +155,23 @@ internal open class FakePdfDocument(
         stop: PointF,
     ): PageSelection {
         // TODO(b/376136631) provide a useful implementation when it's needed for testing
+        val selectedTextContents =
+            if (textContents.isEmpty()) {
+                listOf(PdfPageTextContent(listOf(RectF(0f, 0f, 10f, 10f)), "test"))
+            } else {
+                listOf(textContents[pageNumber])
+            }
         return PageSelection(
-            0,
+            pageNumber,
             SelectionBoundary(0),
             SelectionBoundary(0),
-            listOf(PdfPageTextContent(listOf(RectF(0f, 0f, 10f, 10f)), "test")),
+            selectedTextContents,
         )
     }
 
     override suspend fun getSelectAllSelectionBounds(pageNumber: Int): PageSelection? {
         return PageSelection(
-            0,
+            pageNumber,
             SelectionBoundary(0),
             SelectionBoundary(Int.MAX_VALUE),
             listOf(textContents[pageNumber]),
@@ -229,15 +237,13 @@ internal open class FakePdfDocument(
                 else scaledPageSizePx
             val bitmap = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.ARGB_8888)
             bitmap.apply {
-                val colorRng = Random(System.currentTimeMillis())
-                eraseColor(
-                    Color.argb(
-                        255,
-                        colorRng.nextInt(256),
-                        colorRng.nextInt(256),
-                        colorRng.nextInt(256),
-                    )
-                )
+                // Use a deterministic, varied color based on the page number to ensure
+                // consistent and distinct screenshots.
+                val r = ((pageNumber + 1) * 50) % 255
+                val g = ((pageNumber + 1) * 90) % 255
+                val b = ((pageNumber + 1) * 30) % 255
+                val color = Color.rgb(r, g, b)
+                eraseColor(color)
             }
             return bitmap
         }
@@ -408,6 +414,20 @@ internal suspend fun FakePdfDocument.waitForFormDataFetch(
     withContext(Dispatchers.Default.limitedParallelism(1)) {
         withTimeout(timeoutMillis) {
             while (!(0..untilPage).all { pageNum -> formWidgetRequests.contains(pageNum) }) {
+                delay(100)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalCoroutinesApi::class)
+internal suspend fun FakePdfDocument.waitForApplyEdit(
+    expectedNumEdits: Int,
+    timeoutMillis: Long = 1000,
+) {
+    withContext(Dispatchers.Default.limitedParallelism(1)) {
+        withTimeout(timeoutMillis) {
+            while (editHistory.size < expectedNumEdits) {
                 delay(100)
             }
         }

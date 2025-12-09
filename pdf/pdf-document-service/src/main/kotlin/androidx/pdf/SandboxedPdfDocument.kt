@@ -34,6 +34,17 @@ import androidx.pdf.PdfDocument.BitmapSource
 import androidx.pdf.PdfDocument.Companion.INCLUDE_FORM_WIDGET_INFO
 import androidx.pdf.PdfDocument.DocumentClosedException
 import androidx.pdf.PdfDocument.PdfPageContent
+import androidx.pdf.annotation.EditablePdfDocument
+import androidx.pdf.annotation.manager.InMemoryAnnotationsManager
+import androidx.pdf.annotation.models.AnnotationResult
+import androidx.pdf.annotation.models.EditId
+import androidx.pdf.annotation.models.EditsResult
+import androidx.pdf.annotation.models.PdfAnnotation
+import androidx.pdf.annotation.models.PdfAnnotationData
+import androidx.pdf.annotation.models.PdfEdit
+import androidx.pdf.annotation.models.PdfEditEntry
+import androidx.pdf.annotation.models.PdfEdits
+import androidx.pdf.annotation.processor.PdfAnnotationsProcessor
 import androidx.pdf.content.PageMatchBounds
 import androidx.pdf.content.PageSelection
 import androidx.pdf.content.SelectionBoundary
@@ -42,12 +53,15 @@ import androidx.pdf.models.FormWidgetInfo
 import androidx.pdf.service.connect.PdfServiceConnection
 import androidx.pdf.utils.toAndroidClass
 import androidx.pdf.utils.toContentClass
+import java.util.Collections
 import java.util.concurrent.TimeoutException
 import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -85,7 +99,17 @@ public class SandboxedPdfDocument(
     override val pageCount: Int,
     override val isLinearized: Boolean,
     override val formType: Int,
-) : PdfDocument {
+    private val annotationsProcessor: PdfAnnotationsProcessor,
+) : EditablePdfDocument() {
+
+    private val annotationsManager =
+        InMemoryAnnotationsManager(::getAnnotationsForPage, annotationsProcessor)
+
+    public override val formEditRecords: List<FormEditRecord>
+        get() = _formEditRecords.toList()
+
+    private val _formEditRecords: MutableList<FormEditRecord> =
+        Collections.synchronizedList(mutableListOf<FormEditRecord>())
 
     /** The [CoroutineScope] we use to close [BitmapSource]s asynchronously */
     private val closeScope = CoroutineScope(coroutineContext + SupervisorJob())
@@ -220,7 +244,11 @@ public class SandboxedPdfDocument(
     }
 
     override suspend fun applyEdit(pageNum: Int, record: FormEditRecord): List<Rect> {
-        return withDocument { document -> document.applyEdit(pageNum, record.toAndroidClass()) }
+        val invalidatedAreas = withDocument { document ->
+            document.applyEdit(pageNum, record.toAndroidClass())
+        }
+        _formEditRecords.add(record)
+        return invalidatedAreas
     }
 
     override suspend fun write(destination: ParcelFileDescriptor) {
@@ -366,6 +394,90 @@ public class SandboxedPdfDocument(
             taskJob.complete()
 
             return@withContext result
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun <T : PdfEditEntry<out PdfEdit>> getEditsForPage(pageNum: Int): List<T> =
+        annotationsManager.getAnnotationsForPage(pageNum) as List<T>
+
+    override suspend fun applyEdits(annotations: List<PdfAnnotationData>): AnnotationResult {
+        // Wrapping the process method inside withDocument is important because if the service
+        // disconnected/crashed, withDocument is responsible for retrying the request.
+        return withDocument { annotationsProcessor.process(annotations) }
+    }
+
+    override suspend fun applyEdits(sourcePfd: ParcelFileDescriptor): AnnotationResult {
+        val annotationResult = withDocument { pdfDocumentRemote ->
+            pdfDocumentRemote.addAnnotations(sourcePfd)
+        }
+        if (annotationResult != null) {
+            return annotationResult
+        }
+
+        return AnnotationResult(listOf(), listOf())
+    }
+
+    override fun <T : PdfEdit> addPdfEditEntry(entry: PdfEditEntry<T>) {
+        when (entry) {
+            is PdfAnnotationData -> annotationsManager.addAnnotationById(entry.id, entry.annotation)
+            else ->
+                throw UnsupportedOperationException("Unsupported edit type: ${entry.edit::class}")
+        }
+    }
+
+    override fun addEdit(edit: PdfEdit): EditId {
+        return when (edit) {
+            is PdfAnnotation -> annotationsManager.addAnnotation(edit)
+            else -> throw UnsupportedOperationException("Unsupported edit type: ${edit::class}")
+        }
+    }
+
+    override fun removeEdit(editId: EditId): PdfEdit = annotationsManager.removeAnnotation(editId)
+
+    override fun updateEdit(editId: EditId, edit: PdfEdit): PdfEdit {
+        return when (edit) {
+            is PdfAnnotation -> annotationsManager.updateAnnotation(editId, edit)
+            else -> throw UnsupportedOperationException("Unsupported edit type: ${edit::class}")
+        }
+    }
+
+    override fun clearUncommittedEdits() {
+        return annotationsManager.clearUncommittedEdits()
+    }
+
+    // TODO: b/438309514 - Remove GetAnnotationsFromDraftState from SandboxPdfDocument
+    internal suspend fun getAnnotationsFromDraftState(pageNum: Int): List<PdfAnnotationData> {
+        return annotationsManager.getAnnotationsForPage(pageNum)
+    }
+
+    override suspend fun commitEdits(): EditsResult {
+        return annotationsManager.commitEdits()
+    }
+
+    override fun getAllEdits(): PdfEdits = annotationsManager.getSnapshot()
+
+    private suspend fun getAnnotationsForPage(pageNum: Int): List<PdfAnnotation> {
+        val firstBatch = withDocument { it.getAllPageAnnotations(pageNum) } ?: return emptyList()
+        if (firstBatch.totalBatchCount <= 1) {
+            return firstBatch.annotations.map { it.annotation }
+        }
+
+        return coroutineScope {
+            val firstAnnotations = firstBatch.annotations.map { it.annotation }
+            val deferredRemainingBatches =
+                (1 until firstBatch.totalBatchCount).map { batchIndex ->
+                    async {
+                        withDocument { remote ->
+                            remote.getBatchedPageAnnotations(pageNum, batchIndex).annotations.map {
+                                it.annotation
+                            }
+                        }
+                    }
+                }
+
+            val remainingAnnotations = deferredRemainingBatches.awaitAll().flatten()
+            firstAnnotations + remainingAnnotations
         }
     }
 

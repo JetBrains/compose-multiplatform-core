@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import android.os.Build;
 
 import androidx.biometric.BiometricPrompt;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,22 +37,24 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.internal.DoNotInstrument;
 
 import javax.crypto.Cipher;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(AndroidJUnit4.class)
 @DoNotInstrument
 public class AuthenticationCallbackProviderTest {
     @Rule
     public final MockitoRule mocks = MockitoJUnit.rule();
 
-    @Mock private AuthenticationCallbackProvider.Listener mListener;
-    @Mock private Cipher mCipher;
+    @Mock
+    private AuthenticationCallbackProvider.Listener mListener;
+    @Mock
+    private Cipher mCipher;
 
-    @Captor private ArgumentCaptor<BiometricPrompt.AuthenticationResult> mResultCaptor;
+    @Captor
+    private ArgumentCaptor<BiometricPrompt.AuthenticationResult> mResultCaptor;
 
     private AuthenticationCallbackProvider mAuthenticationCallbackProvider;
 
@@ -135,7 +138,7 @@ public class AuthenticationCallbackProviderTest {
                         mCipher);
         final androidx.core.hardware.fingerprint.FingerprintManagerCompat.AuthenticationResult
                 result = new androidx.core.hardware.fingerprint.FingerprintManagerCompat
-                        .AuthenticationResult(crypto);
+                .AuthenticationResult(crypto);
 
         mAuthenticationCallbackProvider.getFingerprintCallback().onAuthenticationSucceeded(result);
 

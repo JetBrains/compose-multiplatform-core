@@ -16,7 +16,6 @@
 
 package androidx.camera.video
 
-import android.os.Build
 import android.util.Size
 import androidx.camera.core.AspectRatio.RATIO_16_9
 import androidx.camera.core.AspectRatio.RATIO_4_3
@@ -34,7 +33,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class QualityRatioToResolutionsTableTest {
 
     companion object {

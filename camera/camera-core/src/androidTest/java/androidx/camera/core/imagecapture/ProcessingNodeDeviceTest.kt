@@ -43,7 +43,6 @@ import androidx.camera.core.internal.CameraCaptureResultImageInfo
 import androidx.camera.core.internal.compat.quirk.IncorrectJpegMetadataQuirk
 import androidx.camera.core.internal.utils.ImageUtil.jpegImageToJpegByteArray
 import androidx.camera.core.processing.InternalImageProcessor
-import androidx.camera.testing.impl.AndroidUtil
 import androidx.camera.testing.impl.ExifUtil
 import androidx.camera.testing.impl.TestImageUtil.COLOR_GRAY
 import androidx.camera.testing.impl.TestImageUtil.COLOR_WHITE
@@ -62,15 +61,12 @@ import androidx.test.filters.SdkSuppress
 import androidx.test.filters.SmallTest
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.runBlocking
-import org.junit.Assume.assumeFalse
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 /** Instrumented tests for [ProcessingNode]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 21)
 class ProcessingNodeDeviceTest {
 
     // The color before and after the encoding/decoding process on API 23 or below devices might
@@ -83,11 +79,6 @@ class ProcessingNodeDeviceTest {
         } else {
             1
         }
-
-    @Before
-    fun setUp() {
-        assumeFalse(AndroidUtil.isEmulatorAndAPI21())
-    }
 
     @Test
     fun applyBitmapEffectInMemory_effectApplied() = runBlocking {

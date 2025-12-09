@@ -98,10 +98,14 @@ class CompilationResultSubject(private val result: TestCompilationResult) {
                 result.success &&
                     getRawErrorMessages()
                         .filterNot { message ->
-                            message.kind == Diagnostic.Kind.WARNING &&
-                                message.msg.contains(
-                                    "This API is experimental. It may be changed in the future without notice."
-                                )
+                            val isWarning =
+                                message.kind == Diagnostic.Kind.WARNING ||
+                                    message.kind == Diagnostic.Kind.MANDATORY_WARNING
+                            val isOptInWarning =
+                                message.msg.contains("This API is experimental.") ||
+                                    message.msg.contains("This library is no longer supported.") ||
+                                    message.msg.contains("has been deprecated")
+                            isWarning && isOptInWarning
                         }
                         .isEmpty()
             )

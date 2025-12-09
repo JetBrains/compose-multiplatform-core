@@ -16,7 +16,6 @@
 
 package androidx.camera.video
 
-import android.os.Build
 import android.util.Range
 import android.util.Size
 import androidx.camera.core.AspectRatio
@@ -35,10 +34,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
 
-@OptIn(ExperimentalHighSpeedVideo::class)
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class HighSpeedVideoSessionConfigTest {
 
     private val defaultVideoCapture = createVideoCapture()
@@ -176,6 +174,38 @@ class HighSpeedVideoSessionConfigTest {
 
         assertThat(config.preview).isEqualTo(defaultPreview)
         assertThat(config.useCases).containsExactly(defaultVideoCapture, defaultPreview)
+    }
+
+    @Test
+    fun toString_containsAllPropertiesCorrectly() {
+        // Test with all properties
+        val config1 =
+            HighSpeedVideoSessionConfig(
+                defaultVideoCapture,
+                defaultPreview,
+                FPS_120_120,
+                isSlowMotionEnabled = true,
+            )
+        assertThat(config1.toString()).apply {
+            contains("videoCapture=$defaultVideoCapture")
+            contains("preview=$defaultPreview")
+            contains("frameRateRange=$FPS_120_120")
+            contains("isSlowMotionEnabled=true")
+        }
+
+        // Test with null preview and default slow motion
+        val config2 =
+            HighSpeedVideoSessionConfig(
+                defaultVideoCapture,
+                preview = null,
+                frameRateRange = FPS_120_120,
+            )
+        assertThat(config2.toString()).apply {
+            contains("videoCapture=$defaultVideoCapture")
+            contains("preview=null")
+            contains("frameRateRange=$FPS_120_120")
+            contains("isSlowMotionEnabled=false")
+        }
     }
 
     private fun createRecorder() = Recorder.Builder().build()

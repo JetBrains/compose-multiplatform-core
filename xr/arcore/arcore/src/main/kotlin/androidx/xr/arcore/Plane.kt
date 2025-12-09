@@ -17,12 +17,13 @@
 package androidx.xr.arcore
 
 import androidx.annotation.RestrictTo
+import androidx.xr.arcore.runtime.Anchor as RuntimeAnchor
+import androidx.xr.arcore.runtime.AnchorResourcesExhaustedException
+import androidx.xr.arcore.runtime.Plane as RuntimePlane
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Session
 import androidx.xr.runtime.TrackingState
-import androidx.xr.runtime.internal.Anchor as RuntimeAnchor
-import androidx.xr.runtime.internal.AnchorResourcesExhaustedException
-import androidx.xr.runtime.internal.Plane as RuntimePlane
+import androidx.xr.runtime.math.FloatSize2d
 import androidx.xr.runtime.math.Pose
 import androidx.xr.runtime.math.Vector2
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +53,10 @@ internal constructor(
          */
         @JvmStatic
         public fun subscribe(session: Session): StateFlow<Collection<Plane>> {
-            check(session.config.planeTracking != Config.PlaneTrackingMode.DISABLED) {
+            check(
+                session.perceptionRuntime.lifecycleManager.config.planeTracking !=
+                    Config.PlaneTrackingMode.DISABLED
+            ) {
                 "Config.PlaneTrackingMode is set to DISABLED."
             }
 
@@ -92,7 +96,7 @@ internal constructor(
         public override val trackingState: TrackingState,
         public val label: Label,
         public val centerPose: Pose,
-        public val extents: Vector2,
+        public val extents: FloatSize2d,
         public val vertices: List<Vector2>,
         public val subsumedBy: Plane?,
     ) : Trackable.State {
@@ -213,7 +217,7 @@ internal constructor(
         return AnchorCreateSuccess(anchor)
     }
 
-    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+    @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP_PREFIX)
     override suspend fun update() {
         _state.emit(
             State(

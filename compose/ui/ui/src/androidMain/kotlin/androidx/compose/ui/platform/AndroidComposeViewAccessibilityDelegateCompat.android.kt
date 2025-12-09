@@ -16,6 +16,7 @@
 
 package androidx.compose.ui.platform
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_ALL_MASK
 import android.content.Context
 import android.content.res.Resources
@@ -32,6 +33,7 @@ import android.text.SpannableString
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.View.OnAttachStateChangeListener
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityManager.AccessibilityStateChangeListener
@@ -56,22 +58,25 @@ import androidx.collection.mutableIntListOf
 import androidx.collection.mutableIntObjectMapOf
 import androidx.collection.mutableIntSetOf
 import androidx.collection.mutableObjectIntMapOf
-import androidx.compose.ui.ComposeUiFlags.isFocusActionExitsTouchModeEnabled
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.R
 import androidx.compose.ui.contentcapture.ContentCaptureManager
 import androidx.compose.ui.focus.FocusDirection.Companion.Exit
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asAndroidPath
 import androidx.compose.ui.internal.checkPreconditionNotNull
 import androidx.compose.ui.layout.boundsInParent
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.node.HitTestResult
 import androidx.compose.ui.node.LayoutNode
 import androidx.compose.ui.node.Nodes
+import androidx.compose.ui.node.requireLayoutCoordinates
 import androidx.compose.ui.node.requireLayoutNode
 import androidx.compose.ui.platform.accessibility.hasCollectionInfo
 import androidx.compose.ui.platform.accessibility.setCollectionInfo
@@ -96,8 +101,11 @@ import androidx.compose.ui.semantics.SemanticsNodeWithAdjustedBounds
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsProperties.IsSensitiveData
 import androidx.compose.ui.semantics.SemanticsPropertiesAndroid
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.getAllUncoveredSemanticsNodesToIntObjectMap
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.semantics.isAccessibilityIgnoredLink
 import androidx.compose.ui.semantics.isHidden
 import androidx.compose.ui.semantics.isImportantForAccessibility
 import androidx.compose.ui.semantics.subtreeSortedByGeometryGrouping
@@ -151,10 +159,12 @@ private fun LayoutNode.findClosestParentNode(selector: (LayoutNode) -> Boolean):
     return null
 }
 
-@Suppress("NullAnnotationGroup")
 @OptIn(InternalTextApi::class)
 internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidComposeView) :
-    AccessibilityDelegateCompat() {
+    AccessibilityDelegateCompat(),
+    OnAttachStateChangeListener,
+    AccessibilityStateChangeListener,
+    TouchExplorationStateChangeListener {
     @Suppress("ConstPropertyName")
     companion object {
         /** Virtual node identifier value for invalid nodes. */
@@ -256,23 +266,18 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
      */
     internal var SendRecurringAccessibilityEventsIntervalMillis = 100L
 
-    private val enabledStateListener = AccessibilityStateChangeListener { enabled ->
-        // `getEnabledAccessibilityServiceList` returns an empty list if there are no services
-        enabledServices =
-            if (enabled) {
-                accessibilityManager.getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
-            } else {
-                emptyList()
-            }
+    private var _enabledServices: List<AccessibilityServiceInfo>? = null
+
+    private fun resetEnabledAccessibilityServiceList() {
+        _enabledServices = null
     }
 
-    private val touchExplorationStateListener = TouchExplorationStateChangeListener {
-        // `getEnabledAccessibilityServiceList` returns an empty list if there are no services
-        enabledServices = accessibilityManager.getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
-    }
-
-    private var enabledServices =
-        accessibilityManager.getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK)
+    private val enabledServices: List<AccessibilityServiceInfo>
+        get() =
+            _enabledServices
+                ?: accessibilityManager.getEnabledAccessibilityServiceList(FEEDBACK_ALL_MASK).also {
+                    _enabledServices = it
+                }
 
     /**
      * True if any accessibility service enabled in the system, except the UIAutomator (as it
@@ -343,7 +348,8 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 currentSemanticsNodesInvalidated = false
                 field =
                     view.semanticsOwner.getAllUncoveredSemanticsNodesToIntObjectMap(
-                        customRootNodeId = AccessibilityNodeProviderCompat.HOST_VIEW_ID
+                        customRootNodeId = AccessibilityNodeProviderCompat.HOST_VIEW_ID,
+                        shouldIgnoreNode = { it.isAccessibilityIgnoredLink },
                     )
                 if (isEnabled) {
                     setTraversalValues(field, idToBeforeMap, idToAfterMap, view.context.resources)
@@ -380,32 +386,33 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
     private val drawingOrder = mutableIntIntMapOf()
 
     init {
-        // Remove callbacks that rely on view being attached to a window when we become detached.
-        view.addOnAttachStateChangeListener(
-            object : View.OnAttachStateChangeListener {
-                override fun onViewAttachedToWindow(view: View) {
-                    // Whenever the window is reattached, update the `enabledServices` value in case
-                    // there have been changes while the window was detached that the listeners
-                    // might not catch.
-                    with(accessibilityManager) {
-                        enabledServices =
-                            accessibilityManager.getEnabledAccessibilityServiceList(
-                                FEEDBACK_ALL_MASK
-                            )
-                        addAccessibilityStateChangeListener(enabledStateListener)
-                        addTouchExplorationStateChangeListener(touchExplorationStateListener)
-                    }
-                }
+        // Remove callbacks that rely on view being attached to a window when we become
+        // detached.
+        view.addOnAttachStateChangeListener(this)
+    }
 
-                override fun onViewDetachedFromWindow(view: View) {
-                    handler.removeCallbacks(semanticsChangeChecker)
-                    with(accessibilityManager) {
-                        removeAccessibilityStateChangeListener(enabledStateListener)
-                        removeTouchExplorationStateChangeListener(touchExplorationStateListener)
-                    }
-                }
-            }
-        )
+    override fun onViewAttachedToWindow(view: View) {
+        // Whenever the window is reattached, update the `enabledServices` value in
+        // case
+        // there have been changes while the window was detached that the listeners
+        // might not catch.
+        if (accessibilityManager.isEnabled) resetEnabledAccessibilityServiceList()
+        accessibilityManager.addAccessibilityStateChangeListener(this)
+        accessibilityManager.addTouchExplorationStateChangeListener(this)
+    }
+
+    override fun onViewDetachedFromWindow(view: View) {
+        handler.removeCallbacks(semanticsChangeChecker)
+        accessibilityManager.removeAccessibilityStateChangeListener(this)
+        accessibilityManager.removeTouchExplorationStateChangeListener(this)
+    }
+
+    override fun onAccessibilityStateChanged(enabled: Boolean) {
+        resetEnabledAccessibilityServiceList()
+    }
+
+    override fun onTouchExplorationStateChanged(enabled: Boolean) {
+        resetEnabledAccessibilityServiceList()
     }
 
     /**
@@ -547,12 +554,25 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         } else null
     }
 
-    private fun boundsInScreen(node: SemanticsNodeWithAdjustedBounds): android.graphics.Rect {
+    private fun boundsInScreen(node: SemanticsNodeWithAdjustedBounds): AndroidRect {
         val boundsInRoot = node.adjustedBounds
-        val topLeftInScreen =
-            view.localToScreen(Offset(boundsInRoot.left.toFloat(), boundsInRoot.top.toFloat()))
-        val bottomRightInScreen =
-            view.localToScreen(Offset(boundsInRoot.right.toFloat(), boundsInRoot.bottom.toFloat()))
+        return toBoundsInScreen(
+            left = boundsInRoot.left.toFloat(),
+            top = boundsInRoot.top.toFloat(),
+            right = boundsInRoot.right.toFloat(),
+            bottom = boundsInRoot.bottom.toFloat(),
+        )
+    }
+
+    private fun toBoundsInScreen(
+        left: Float,
+        top: Float,
+        right: Float,
+        bottom: Float,
+    ): AndroidRect {
+        val topLeftInScreen: Offset = view.localToScreen(Offset(left, top))
+        val bottomRightInScreen = view.localToScreen(Offset(right, bottom))
+
         // Due to rotation, the top left corner of the local bounds may not be the top left corner
         // of the screen bounds.
         return android.graphics.Rect(
@@ -1582,12 +1602,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 // We considered calling super.performAccessibilityAction() which would put the
                 // system in keyboard mode, but it only works when AndroidComposeView did not have
                 // focus.
-                if (
-                    @OptIn(ExperimentalComposeUiApi::class) isFocusActionExitsTouchModeEnabled &&
-                        view.isInTouchMode
-                ) {
-                    view.requestFocusFromTouch()
-                }
+                if (view.isInTouchMode) view.requestFocusFromTouch()
 
                 return node.unmergedConfig.getOrNull(RequestFocus)?.action?.invoke() ?: false
             }
@@ -1785,18 +1800,25 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             info.extras.putInt(extraDataKey, node.id)
         } else if (extraDataKey == ExtraDataShapeTypeKey) {
             node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
-                val outline = shape.createOutline(node)
+                val shapeBounds = getShapeBounds(node, info.boundsInScreen, shape)
+                val outline = shape.createOutline(shapeBounds.size, node.layoutInfo.layoutDirection)
                 // We set not only the shape type but also the shape data itself, as an
                 // optimization, since we already need to create an Outline to get the shape type
                 // and to avoid another request for the shape data.
                 when (outline) {
                     is Outline.Rectangle -> {
                         info.extras.putInt(ExtraDataShapeTypeKey, ExtraDataShapeTypeRectangle)
-                        info.extras.putParcelable(ExtraDataShapeRectKey, outline.toAndroidRect())
+                        info.extras.putParcelable(
+                            ExtraDataShapeRectKey,
+                            outline.toAndroidRect(shapeBounds.left, shapeBounds.top),
+                        )
                     }
                     is Outline.Rounded -> {
                         info.extras.putInt(ExtraDataShapeTypeKey, ExtraDataShapeTypeRounded)
-                        info.extras.putParcelable(ExtraDataShapeRectKey, outline.toAndroidRect())
+                        info.extras.putParcelable(
+                            ExtraDataShapeRectKey,
+                            outline.toAndroidRect(shapeBounds.left, shapeBounds.top),
+                        )
                         info.extras.putFloatArray(
                             ExtraDataShapeRectCornersKey,
                             outline.toCornerArray(),
@@ -1804,27 +1826,38 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                     }
                     is Outline.Generic -> {
                         info.extras.putInt(ExtraDataShapeTypeKey, ExtraDataShapeTypeGeneric)
-                        info.extras.putParcelable(ExtraDataShapeRegionKey, outline.toRegion())
+                        info.extras.putParcelable(
+                            ExtraDataShapeRegionKey,
+                            outline.toRegion(shapeBounds.left, shapeBounds.top),
+                        )
                     }
                 }
             }
         } else if (extraDataKey == ExtraDataShapeRectKey) {
             node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
-                shape.createOutline(node).toAndroidRect()?.let { rect ->
-                    info.extras.putParcelable(ExtraDataShapeRectKey, rect)
-                }
+                val shapeBounds = getShapeBounds(node, info.boundsInScreen, shape)
+                shape
+                    .createOutline(shapeBounds.size, node.layoutInfo.layoutDirection)
+                    .toAndroidRect(shapeBounds.left, shapeBounds.top)
+                    ?.let { rect -> info.extras.putParcelable(ExtraDataShapeRectKey, rect) }
             }
         } else if (extraDataKey == ExtraDataShapeRectCornersKey) {
             node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
-                shape.createOutline(node).toCornerArray()?.let { corners ->
-                    info.extras.putFloatArray(ExtraDataShapeRectCornersKey, corners)
-                }
+                val shapeBounds = getShapeBounds(node, info.boundsInScreen, shape)
+                shape
+                    .createOutline(shapeBounds.size, node.layoutInfo.layoutDirection)
+                    .toCornerArray()
+                    ?.let { corners ->
+                        info.extras.putFloatArray(ExtraDataShapeRectCornersKey, corners)
+                    }
             }
         } else if (extraDataKey == ExtraDataShapeRegionKey) {
             node.unmergedConfig.getOrNull(SemanticsProperties.Shape)?.let { shape ->
-                shape.createOutline(node).toRegion()?.let { region ->
-                    info.extras.putParcelable(ExtraDataShapeRegionKey, region)
-                }
+                val shapeBounds = getShapeBounds(node, info.boundsInScreen, shape)
+                shape
+                    .createOutline(shapeBounds.size, node.layoutInfo.layoutDirection)
+                    .toRegion(shapeBounds.left, shapeBounds.top)
+                    ?.let { region -> info.extras.putParcelable(ExtraDataShapeRegionKey, region) }
             }
         } else {
             node.unmergedConfig.accessibilityExtraKeys?.forEach { key ->
@@ -1844,6 +1877,61 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
                 }
             }
         }
+    }
+
+    private val AccessibilityNodeInfoCompat.boundsInScreen: AndroidRect
+        get() {
+            val boundsInScreen = AndroidRect()
+            getBoundsInScreen(boundsInScreen)
+            return boundsInScreen
+        }
+
+    private fun getShapeBounds(
+        node: SemanticsNode,
+        nodeBoundsInScreen: AndroidRect,
+        shape: Shape,
+    ): Rect {
+        val shapeNodeMatcher =
+            object : SemanticsPropertyReceiver {
+                var hasMatchedShape: Boolean = false
+
+                override fun <T> set(key: SemanticsPropertyKey<T>, value: T) {
+                    if (value === shape) hasMatchedShape = true
+                }
+            }
+        val layoutNode = node.layoutNode
+        val shapeSemanticsModifierNode =
+            layoutNode.nodes.firstFromHead(Nodes.Semantics) {
+                with(it) {
+                    shapeNodeMatcher.run {
+                        applySemantics()
+                        return@firstFromHead hasMatchedShape
+                    }
+                }
+            }
+        if (shapeSemanticsModifierNode?.node?.isAttached != true) {
+            return layoutNode.outerCoordinator.boundsInWindow(clipBounds = false)
+        }
+        val shapeBoundsInRoot = shapeSemanticsModifierNode.requireLayoutCoordinates().boundsInRoot()
+        val shapeBoundsInScreen =
+            toBoundsInScreen(
+                left = shapeBoundsInRoot.left,
+                top = shapeBoundsInRoot.top,
+                right = shapeBoundsInRoot.right,
+                bottom = shapeBoundsInRoot.bottom,
+            )
+        return shapeBoundsInScreen.toBoundsRelativeToNodeBounds(nodeBoundsInScreen)
+    }
+
+    private fun AndroidRect.toBoundsRelativeToNodeBounds(nodeBoundsInScreen: AndroidRect): Rect {
+        val leftOffset = (this.left - nodeBoundsInScreen.left).toFloat()
+        val topOffset = (this.top - nodeBoundsInScreen.top).toFloat()
+        return Rect(
+            left = leftOffset,
+            top = topOffset,
+            right = leftOffset + this.width(),
+            bottom = topOffset + this.height(),
+        )
     }
 
     private fun toScreenCoords(textNode: SemanticsNode?, bounds: Rect): RectF? {
@@ -1876,11 +1964,13 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
         }
     }
 
-    private fun Shape.createOutline(node: SemanticsNode) =
-        createOutline(node.size.toSize(), node.layoutInfo.layoutDirection, view.density)
+    private fun Shape.createOutline(size: Size, layoutDirection: LayoutDirection) =
+        createOutline(size, layoutDirection, view.density)
 
-    private fun Outline.toAndroidRect(): AndroidRect? =
-        if (this is Outline.Rectangle || this is Outline.Rounded) bounds.toAndroidRect() else null
+    private fun Outline.toAndroidRect(leftOffset: Float, topOffset: Float): AndroidRect? =
+        if (this is Outline.Rectangle || this is Outline.Rounded)
+            bounds.toAndroidRect(leftOffset, topOffset)
+        else null
 
     /**
      * Returns a radii array for each corner (top-left, top-right, bottom-right, bottom-left) if the
@@ -1900,14 +1990,24 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             )
         } else null
 
-    private fun Outline.toRegion(): Region? =
+    private fun Outline.toRegion(leftOffset: Float, topOffset: Float): Region? =
         if (this is Outline.Generic) {
-            val boundingRectangle = Region(bounds.toAndroidRect())
-            Region().apply { setPath(path.asAndroidPath(), boundingRectangle) }
+            val boundingRectangle = Region(bounds.translate(leftOffset, topOffset).toAndroidRect())
+            Region().apply {
+                setPath(
+                    path.asAndroidPath().apply { offset(leftOffset, topOffset) },
+                    boundingRectangle,
+                )
+            }
         } else null
 
-    private fun Rect.toAndroidRect(): AndroidRect =
-        AndroidRect(left.toInt(), top.toInt(), right.toInt(), bottom.toInt())
+    private fun Rect.toAndroidRect(leftOffset: Float = 0f, topOffset: Float = 0f): AndroidRect =
+        AndroidRect(
+            (left + leftOffset).toInt(),
+            (top + topOffset).toInt(),
+            (right + leftOffset).toInt(),
+            (bottom + topOffset).toInt(),
+        )
 
     /**
      * Dispatches hover {@link android.view.MotionEvent}s to the virtual view hierarchy when the
@@ -2006,7 +2106,7 @@ internal class AndroidComposeViewAccessibilityDelegateCompat(val view: AndroidCo
             // Links in text nodes are semantics children. But for Android accessibility support
             // we don't publish them to the accessibility services because they are exposed
             // as UrlSpan/ClickableSpan spans instead
-            if (semanticsNode.config.contains(SemanticsProperties.LinkTestMarker)) {
+            if (semanticsNode.isAccessibilityIgnoredLink) {
                 continue
             }
 
@@ -3344,7 +3444,7 @@ private fun AccessibilityAction<*>.accessibilityEquals(other: Any?): Boolean {
         ),
     level = DeprecationLevel.WARNING,
 )
-@Suppress("GetterSetterNames", "NullAnnotationGroup")
+@Suppress("GetterSetterNames")
 @ExperimentalComposeUiApi
 var DisableContentCapture: Boolean
     get() = ContentCaptureManager.isEnabled

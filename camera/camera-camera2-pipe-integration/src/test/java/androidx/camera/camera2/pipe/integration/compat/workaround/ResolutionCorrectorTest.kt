@@ -40,7 +40,7 @@ private val SUPPORTED_RESOLUTIONS = listOf(RESOLUTION_1, RESOLUTION_2)
 /** Unit test for [ResolutionCorrector]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class ResolutionCorrectorTest {
 
     private var mResolutionCorrector: ResolutionCorrector? = null

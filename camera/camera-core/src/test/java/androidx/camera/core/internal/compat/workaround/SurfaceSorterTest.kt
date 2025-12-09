@@ -17,7 +17,6 @@
 package androidx.camera.core.internal.compat.workaround
 
 import android.media.MediaCodec
-import android.os.Build
 import android.view.Surface
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -37,7 +36,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class SurfaceSorterTest {
 
     private val deferrableSurfaces: MutableList<DeferrableSurface> = mutableListOf()

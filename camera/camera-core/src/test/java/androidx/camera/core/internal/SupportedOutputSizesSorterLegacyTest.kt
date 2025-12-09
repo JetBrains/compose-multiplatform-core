@@ -17,7 +17,6 @@
 package androidx.camera.core.internal
 
 import android.graphics.ImageFormat
-import android.os.Build
 import android.util.Size
 import android.view.Surface
 import androidx.camera.core.AspectRatio
@@ -54,7 +53,7 @@ private val DEFAULT_SUPPORTED_SIZES =
 /** Unit tests for [SupportedOutputSizesSorterLegacy]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@org.robolectric.annotation.Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@org.robolectric.annotation.Config(sdk = [org.robolectric.annotation.Config.ALL_SDKS])
 class SupportedOutputSizesSorterLegacyTest {
     private val cameraInfoInternal = FakeCameraInfoInternal()
     private val supportedOutputSizesSorterLegacy =
@@ -74,30 +73,33 @@ class SupportedOutputSizesSorterLegacyTest {
 
     @Test
     fun canPrioritize4x3SizesByTargetAspectRatio() {
-        val useCaseConfig = createUseCaseConfig(targetAspectRatio = AspectRatio.RATIO_4_3)
-        val resultList =
-            supportedOutputSizesSorterLegacy.sortSupportedOutputSizes(
-                DEFAULT_SUPPORTED_SIZES,
-                useCaseConfig,
-            )
-        // 4:3 items are prioritized in the result list
-        assertThat(resultList)
-            .containsExactlyElementsIn(
-                arrayOf(
-                    // 4:3 items
-                    Size(4032, 3024),
-                    Size(1920, 1440),
-                    Size(1280, 960),
-                    Size(640, 480),
-                    // 16:9 items
-                    Size(3840, 2160),
-                    Size(1920, 1080),
-                    Size(1280, 720),
-                    Size(960, 544),
-                    Size(800, 450),
+        // Using RATIO_DEFAULT should obtain the same result as RATIO_4_3
+        listOf(AspectRatio.RATIO_4_3, AspectRatio.RATIO_DEFAULT).forEach {
+            val useCaseConfig = createUseCaseConfig(targetAspectRatio = it)
+            val resultList =
+                supportedOutputSizesSorterLegacy.sortSupportedOutputSizes(
+                    DEFAULT_SUPPORTED_SIZES,
+                    useCaseConfig,
                 )
-            )
-            .inOrder()
+            // 4:3 items are prioritized in the result list
+            assertThat(resultList)
+                .containsExactlyElementsIn(
+                    arrayOf(
+                        // 4:3 items
+                        Size(4032, 3024),
+                        Size(1920, 1440),
+                        Size(1280, 960),
+                        Size(640, 480),
+                        // 16:9 items
+                        Size(3840, 2160),
+                        Size(1920, 1080),
+                        Size(1280, 720),
+                        Size(960, 544),
+                        Size(800, 450),
+                    )
+                )
+                .inOrder()
+        }
     }
 
     @Test

@@ -32,7 +32,7 @@ import androidx.core.util.Preconditions
 import com.google.common.util.concurrent.ListenableFuture
 
 /**
- * An class that provides ability to interoperate with the [android.hardware.camera2] APIs.
+ * A class that provides ability to interoperate with the [android.hardware.camera2] APIs.
  *
  * Camera2 specific controls, like capture request options, can be applied through this class. A
  * Camera2CameraControl can be created from a general [CameraControl] which is associated to a

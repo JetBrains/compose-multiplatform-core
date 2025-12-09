@@ -52,8 +52,6 @@ import androidx.camera.camera2.pipe.RequestNumber
 import androidx.camera.camera2.pipe.RequestTemplate
 import androidx.camera.camera2.pipe.Result3A
 import androidx.camera.camera2.pipe.StreamId
-import androidx.camera.camera2.pipe.core.Log.debug
-import androidx.camera.camera2.pipe.core.Log.info
 import androidx.camera.camera2.pipe.integration.adapter.CaptureConfigAdapter
 import androidx.camera.camera2.pipe.integration.adapter.CaptureResultAdapter
 import androidx.camera.camera2.pipe.integration.adapter.future
@@ -62,6 +60,7 @@ import androidx.camera.camera2.pipe.integration.compat.workaround.isFlashAvailab
 import androidx.camera.camera2.pipe.integration.compat.workaround.shouldStopRepeatingBeforeCapture
 import androidx.camera.camera2.pipe.integration.config.UseCaseCameraScope
 import androidx.camera.camera2.pipe.integration.config.UseCaseGraphConfig
+import androidx.camera.camera2.pipe.integration.impl.Camera2Logger.debug
 import androidx.camera.camera2.pipe.integration.impl.CapturePipelineImpl.PipelineTask.MAIN_CAPTURE
 import androidx.camera.camera2.pipe.integration.impl.CapturePipelineImpl.PipelineTask.POST_CAPTURE
 import androidx.camera.camera2.pipe.integration.impl.CapturePipelineImpl.PipelineTask.PRE_CAPTURE
@@ -137,13 +136,6 @@ constructor(
     private val useCaseCameraState: UseCaseCameraState,
     useCaseGraphConfig: UseCaseGraphConfig,
 ) : CapturePipeline {
-    private val graph = useCaseGraphConfig.graph
-
-    // If there is no flash unit, skip the flash related task instead of failing the pipeline.
-    private val hasFlashUnit = cameraProperties.isFlashAvailable()
-
-    override var template: Int = CameraDevice.TEMPLATE_PREVIEW
-
     private enum class PipelineTask {
         PRE_CAPTURE,
         MAIN_CAPTURE,
@@ -155,6 +147,36 @@ constructor(
         val requestTemplate: RequestTemplate,
         val sessionConfigOptions: Config,
     )
+
+    private val graph = useCaseGraphConfig.graph
+
+    // If there is no flash unit, skip the flash related task instead of failing the pipeline.
+    private val hasFlashUnit = cameraProperties.isFlashAvailable()
+
+    override var template: Int = CameraDevice.TEMPLATE_PREVIEW
+
+    /**
+     * A [FrameMetadata] that pipeline tasks can use to determine various info, e.g. whether the
+     * flash is required.
+     */
+    private var frameMetadata: FrameMetadata? = null
+
+    /**
+     * Returns a [FrameMetadata] that pipeline tasks can use to determine various info, e.g. whether
+     * the flash is required.
+     *
+     * If [frameMetadata] is not already cached, this function will wait for a new [FrameInfo] from
+     * the camera and cache its [FrameMetadata] for the duration of a whole capture. The cache is
+     * invalidated at the start of each new capture.
+     */
+    private suspend fun getFrameMetadata(): FrameMetadata? {
+        if (frameMetadata == null) {
+            debug { "getFrameMetadata: waiting for result" }
+            frameMetadata = waitForResult(CHECK_FLASH_REQUIRED_TIMEOUT_IN_NS)?.metadata
+        }
+        debug { "getFrameMetadata: frameMetadata = $frameMetadata" }
+        return frameMetadata
+    }
 
     /**
      * Invokes various capture pipelines (e.g. pre-capture or main capture or post-capture).
@@ -177,6 +199,13 @@ constructor(
             "CapturePipeline#invokeCaptureTasks: tasks = $pipelineTasks" +
                 ", captureMode = $captureMode, flashMode = $flashMode, flashType = $flashType"
         }
+
+        // frameMetadata is cleared for each new capture pipeline invocation. It is assumed that
+        // different captures are not intertwined. Usually, camera-core ImageCapture ensures that
+        // captures are queued, so we can assume individual captures are processed one-by-one
+        // through this class. If this changes in future, we should ensure each different capture
+        // has its own pipeline properties, specially the frameMetadata.
+        frameMetadata = null
 
         if (pipelineTasks.contains(MAIN_CAPTURE)) {
             checkNotNull(mainCaptureParams) { "Must not be null for PipelineType.MAIN_CAPTURE" }
@@ -260,10 +289,15 @@ constructor(
     ): List<Deferred<Void?>> {
         debug { "CapturePipeline#List<PipelineTask>.invoke: tasks = $this" }
         if (contains(PRE_CAPTURE)) {
+            debug { "CapturePipeline#List<PipelineTask>.invoke: starting PRE_CAPTURE" }
             preCapture()
+            debug { "CapturePipeline#List<PipelineTask>.invoke: PRE_CAPTURE completed" }
         }
         return if (contains(MAIN_CAPTURE)) {
-                submitRequestInternal(checkNotNull(mainCaptureParams))
+                debug { "CapturePipeline#List<PipelineTask>.invoke: starting MAIN_CAPTURE" }
+                submitRequestInternal(checkNotNull(mainCaptureParams)).also {
+                    debug { "CapturePipeline#List<PipelineTask>.invoke: MAIN_CAPTURE completed" }
+                }
             } else {
                 listOf(CompletableDeferred(value = null))
             }
@@ -271,12 +305,13 @@ constructor(
                 if (contains(POST_CAPTURE)) {
                     threads.sequentialScope.launch {
                         debug {
-                            "CapturePipeline#List<PipelineTask>.invoke: Waiting for capture signal"
+                            "CapturePipeline#List<PipelineTask>.invoke:" +
+                                " Waiting for POST_CAPTURE signal"
                         }
                         captureSignal.joinAll()
                         debug {
                             "CapturePipeline#List<PipelineTask>.invoke:" +
-                                " Waiting for capture signal done"
+                                " Waiting for POST_CAPTURE signal done"
                         }
                         postCapture()
                     }
@@ -297,9 +332,9 @@ constructor(
                 captureMode,
                 CHECK_3A_WITH_FLASH_TIMEOUT_IN_NS,
                 pipelineTasks,
-                // TODO: b/339846763 - Disable AE precap only for the quirks where AE precapture
-                //  is problematic, instead of all TorchAsFlash quirks.
-                !useTorchAsFlash.shouldUseTorchAsFlash() && !videoUsageControl.isInVideoUsage(),
+                // TODO: b/339846763 - Further refine AE precap disabling for specific
+                //  legacy quirks, instead of disabling for all older UseTorchAsFlash quirks.
+                !useTorchAsFlash.shouldDisableAePrecapture() && !videoUsageControl.isInVideoUsage(),
             )
         } else {
             defaultNoFlashCapture(mainCaptureParams, captureMode, pipelineTasks)
@@ -662,7 +697,7 @@ constructor(
                         ),
                     )
                 } catch (e: IllegalStateException) {
-                    info(e) {
+                    Camera2Logger.info(e) {
                         "CapturePipeline#submitRequestInternal: configAdapter.mapToRequest failed!"
                     }
                     completeSignal.completeExceptionally(
@@ -691,7 +726,7 @@ constructor(
             try {
                 cameraGraphSession = graph.acquireSession()
             } catch (_: CancellationException) {
-                info {
+                Camera2Logger.info {
                     "CapturePipeline#submitRequestInternal: " +
                         "CameraGraph.Session could not be acquired, requests may need re-submission"
                 }
@@ -731,9 +766,8 @@ constructor(
         when (flashMode) {
             FLASH_MODE_ON -> true
             FLASH_MODE_AUTO -> {
-                waitForResult(CHECK_FLASH_REQUIRED_TIMEOUT_IN_NS)
-                    ?.metadata
-                    ?.get(CaptureResult.CONTROL_AE_STATE) == CONTROL_AE_STATE_FLASH_REQUIRED
+                getFrameMetadata()?.get(CaptureResult.CONTROL_AE_STATE) ==
+                    CONTROL_AE_STATE_FLASH_REQUIRED
             }
             FLASH_MODE_OFF -> false
             FLASH_MODE_SCREEN -> false
@@ -765,10 +799,10 @@ constructor(
             }
     }
 
-    private fun isTorchAsFlash(@FlashType flashType: Int): Boolean {
+    private suspend fun isTorchAsFlash(@FlashType flashType: Int): Boolean {
         return template == CameraDevice.TEMPLATE_RECORD ||
             flashType == FLASH_TYPE_USE_TORCH_AS_FLASH ||
-            useTorchAsFlash.shouldUseTorchAsFlash()
+            useTorchAsFlash.shouldUseTorchAsFlash({ getFrameMetadata() })
     }
 }
 

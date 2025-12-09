@@ -18,6 +18,7 @@ package androidx.build
 
 import androidx.build.clang.AndroidXClang
 import androidx.build.clang.CombineObjectFilesTask
+import androidx.build.clang.KonanBuildService
 import androidx.build.clang.MultiTargetNativeCompilation
 import androidx.build.clang.NativeLibraryBundler
 import androidx.build.clang.configureCinterop
@@ -33,29 +34,35 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.plugins.ExtensionAware
-import org.gradle.kotlin.dsl.findByType
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.testing.Test
+import org.gradle.kotlin.dsl.the
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinMultiplatformPluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTargetWithHostTests
-import org.jetbrains.kotlin.gradle.targets.js.binaryen.BinaryenRootExtension
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinJsTargetDsl
 import org.jetbrains.kotlin.gradle.targets.js.dsl.KotlinWasmTargetDsl
 import org.jetbrains.kotlin.gradle.targets.js.ir.DefaultIncrementalSyncTask
 import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsPlugin
 import org.jetbrains.kotlin.gradle.targets.js.testing.KotlinJsTest
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnLockMismatchReport
+import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnPlugin
 import org.jetbrains.kotlin.gradle.targets.js.yarn.YarnRootEnvSpec
-import org.jetbrains.kotlin.gradle.targets.js.yarn.yarn
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
+import org.jetbrains.kotlin.gradle.targets.wasm.binaryen.BinaryenEnvSpec
+import org.jetbrains.kotlin.gradle.targets.wasm.binaryen.BinaryenPlugin
+import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsEnvSpec
+import org.jetbrains.kotlin.gradle.targets.wasm.nodejs.WasmNodeJsPlugin
+import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnPlugin
+import org.jetbrains.kotlin.gradle.targets.wasm.yarn.WasmYarnRootEnvSpec
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 import org.jetbrains.kotlin.konan.target.LinkerOutputKind
 
@@ -70,6 +77,33 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
     @get:Inject abstract val buildFeatures: BuildFeatures
 
     var enableBinaryCompatibilityValidator = true
+
+    /*
+     * Adds a kotlin stdlib klib directory as an input to test tasks.
+     * This is specifically useful for BCV, but it needs to be set up by our buildSrc code to
+     * make sure we use the correct installation and don't accidentally cause something to be
+     * downloaded from the internet.
+     *
+     * Sets the `kotlin.stdlib.klib.dir` property which can be accessed inside the tests
+     */
+    fun provideKlibStdLibForTests() {
+        val konanBuildService = KonanBuildService.obtain(project)
+        // directory format of stdlib klib for use during tests
+        val stdLibKlibDir =
+            konanBuildService.map { it.parameters.konanHome.dir("klib/common/stdlib") }
+        project.tasks.withType(Test::class.java).configureEach { task ->
+            task.inputs
+                .dir(stdLibKlibDir)
+                .withPropertyName("kotlinStdLib")
+                .withPathSensitivity(PathSensitivity.RELATIVE)
+            task.doFirst {
+                task.systemProperty(
+                    "kotlin.stdlib.klib.dir",
+                    stdLibKlibDir.get().get().asFile.absolutePath,
+                )
+            }
+        }
+    }
 
     // Kotlin multiplatform plugin is only applied if at least one target / sourceset is added.
     private val kotlinExtensionDelegate = lazy {
@@ -286,7 +320,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      */
     @JvmOverloads
     fun addNativeLibrariesToVariantAssets(
-        androidTarget: KotlinAndroidTarget,
+        androidTarget: KotlinMultiplatformAndroidLibraryTarget,
         nativeCompilation: MultiTargetNativeCompilation,
         forTest: Boolean = false,
     ) =
@@ -305,7 +339,7 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
      */
     @JvmOverloads
     fun addNativeLibrariesToJniLibs(
-        androidTarget: KotlinAndroidTarget,
+        androidTarget: KotlinMultiplatformAndroidLibraryTarget,
         nativeCompilation: MultiTargetNativeCompilation,
         forTest: Boolean = false,
     ) =
@@ -380,24 +414,6 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                     // don't try running common tests for stubs target if disabled
                     it.enabled = runTests
                 }
-            }
-        } else {
-            null
-        }
-    }
-
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    @JvmOverloads
-    fun androidTarget(block: Action<KotlinAndroidTarget>? = null): KotlinAndroidTarget? {
-        supportedPlatforms.add(PlatformIdentifier.ANDROID)
-        return if (project.enableJvm()) {
-            kotlinExtension.androidTarget {
-                publishLibraryVariants(Release.DEFAULT_PUBLISH_CONFIG)
-                // we need to allow instrumented test to depend on commonTest/jvmTest, which is not
-                // default.
-                // see https://youtrack.jetbrains.com/issue/KT-62594
-                instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
-                block?.execute(this)
             }
         } else {
             null
@@ -732,6 +748,10 @@ abstract class AndroidXMultiplatformExtension(val project: Project) {
                 configureDefaultIncrementalSyncTask()
                 configureKotlinJsTests()
                 configureNode()
+
+                // For KotlinWasm/Js, versions of toolchain and stdlib need to be the same:
+                // https://youtrack.jetbrains.com/issue/KT-71032
+                configurePinnedKotlinLibraries(platform)
             }
         } else null
     }
@@ -777,38 +797,81 @@ private fun Project.configureDefaultIncrementalSyncTask() {
     }
 }
 
-private fun Project.configureNode() {
-    extensions.findByType<NodeJsEnvSpec>()?.let { nodeJs ->
-        nodeJs.version.set(getVersionByName("node"))
-        if (!ProjectLayoutType.isPlayground(this)) {
-            nodeJs.downloadBaseUrl.set(
-                File(project.getPrebuiltsRoot(), "androidx/external/org/nodejs/node")
-                    .toURI()
-                    .toString()
-            )
+internal fun Project.configureNode() {
+    val nodeJsPrebuilt =
+        File(project.getPrebuiltsRoot(), "androidx/external/org/nodejs/node").toURI().toString()
+
+    plugins.withType<WasmNodeJsPlugin>().configureEach {
+        the<WasmNodeJsEnvSpec>().let {
+            it.version.set(getVersionByName("node"))
+            if (!ProjectLayoutType.isPlayground(this)) {
+                it.downloadBaseUrl.set(nodeJsPrebuilt)
+            }
+        }
+    }
+    plugins.withType<NodeJsPlugin>().configureEach {
+        the<NodeJsEnvSpec>().let {
+            it.version.set(getVersionByName("node"))
+            if (!ProjectLayoutType.isPlayground(this)) {
+                it.downloadBaseUrl.set(nodeJsPrebuilt)
+            }
         }
     }
 
-    // https://youtrack.jetbrains.com/issue/KT-73913/K-Wasm-yarn-version-per-project
-    rootProject.extensions.findByType(YarnRootEnvSpec::class.java)?.let {
-        it.version.set(getVersionByName("yarn"))
-        it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
-    }
-
     if (!ProjectLayoutType.isPlayground(this)) {
-        // https://youtrack.jetbrains.com/issue/KT-73913/K-Wasm-yarn-version-per-project
-        yarn.lockFileDirectory = File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
+        val javascriptPrebuiltsRoot =
+            File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin")
+
+        plugins.withType<WasmYarnPlugin>().configureEach {
+            the<WasmYarnRootEnvSpec>().let {
+                it.version.set(getVersionByName("yarn"))
+                it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
+                it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
+            }
+        }
+
+        plugins.withType<YarnPlugin>().configureEach {
+            the<YarnRootEnvSpec>().let {
+                it.version.set(getVersionByName("yarn"))
+                it.yarnLockMismatchReport.set(YarnLockMismatchReport.FAIL)
+                it.downloadBaseUrl.set(javascriptPrebuiltsRoot.toURI().toString())
+            }
+        }
     }
 }
 
+@OptIn(ExperimentalWasmDsl::class)
 private fun Project.configureBinaryen() {
-    // https://youtrack.jetbrains.com/issue/KT-74840
-    rootProject.extensions.findByType<BinaryenRootExtension>()?.let { binaryen ->
-        @Suppress("DEPRECATION")
-        binaryen.downloadBaseUrl =
-            File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin/binaryen")
-                .toURI()
-                .toString()
+    if (ProjectLayoutType.isPlayground(project)) {
+        return
+    }
+    plugins.withType<BinaryenPlugin>().configureEach {
+        the<BinaryenEnvSpec>()
+            .downloadBaseUrl
+            .set(
+                File(project.getPrebuiltsRoot(), "androidx/javascript-for-kotlin/binaryen")
+                    .toURI()
+                    .toString()
+            )
+    }
+}
+
+private fun Project.configurePinnedKotlinLibraries(platform: PlatformIdentifier) {
+    multiplatformExtension?.let {
+        val kotlinLibSuffix =
+            when (platform) {
+                PlatformIdentifier.JS -> "js"
+                PlatformIdentifier.WASM_JS -> "wasm-js"
+                else -> throw IllegalStateException("Unsupported platform: $platform")
+            }
+        val kotlinVersion = project.getVersionByName("kotlin")
+        it.sourceSets.getByName("${platform.id}Main").dependencies {
+            implementation("org.jetbrains.kotlin:kotlin-stdlib-$kotlinLibSuffix:$kotlinVersion")
+        }
+        it.sourceSets.getByName("${platform.id}Test").dependencies {
+            implementation("org.jetbrains.kotlin:kotlin-stdlib-$kotlinLibSuffix:$kotlinVersion")
+            implementation("org.jetbrains.kotlin:kotlin-test-$kotlinLibSuffix:$kotlinVersion")
+        }
     }
 }
 
@@ -827,7 +890,6 @@ private fun Project.configureKotlinJsTests() {
                 )
             }
         }
-        task.testLogging.showStandardStreams = true
         // From: https://nodejs.org/api/cli.html
         task.nodeJsArgs.addAll(listOf("--trace-warnings", "--trace-uncaught", "--trace-sigint"))
     }

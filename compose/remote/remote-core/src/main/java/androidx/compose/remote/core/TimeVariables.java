@@ -15,6 +15,8 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
+
 import org.jspecify.annotations.NonNull;
 
 import java.time.Clock;
@@ -24,6 +26,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 /** This generates the standard system variables for time. */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class TimeVariables {
     private @NonNull Clock mClock;
 
@@ -44,6 +47,8 @@ public class TimeVariables {
      * This class populates all time variables in the system
      *
      * @param context
+     * @param zoneId
+     * @param dateTime
      */
     public void updateTime(
             @NonNull RemoteContext context,

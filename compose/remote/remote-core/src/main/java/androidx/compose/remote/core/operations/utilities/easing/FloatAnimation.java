@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core.operations.utilities.easing;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.serialize.MapSerializer;
 import androidx.compose.remote.core.serialize.Serializable;
 
@@ -22,6 +23,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 /** Support Animation of the FloatExpression */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FloatAnimation extends Easing implements Serializable {
     float[] mSpec;
     // mSpec[0] = duration
@@ -62,7 +64,7 @@ public class FloatAnimation extends Easing implements Serializable {
      *
      * @param description the float encoding of the animation
      */
-    public FloatAnimation(float... description) {
+    public FloatAnimation(float @NonNull ... description) {
         mType = CUBIC_STANDARD;
         setAnimationDescription(description);
     }
@@ -93,6 +95,7 @@ public class FloatAnimation extends Easing implements Serializable {
      * @param type
      * @param spec
      * @param initialValue
+     * @param wrap
      * @return
      */
     public static float @NonNull [] packToFloatArray(
@@ -156,7 +159,7 @@ public class FloatAnimation extends Easing implements Serializable {
      * @param description the float encoding of the animation
      * @return a string describing the animation
      */
-    public static String unpackAnimationToString(float[] description) {
+    public static @NonNull String unpackAnimationToString(float @NonNull [] description) {
         float[] spec = description;
         float mDuration = (spec.length == 0) ? 1 : spec[0];
         int len = 0;

@@ -17,10 +17,10 @@
 package androidx.compose.material3.adaptive.layout
 
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
-import kotlin.jvm.JvmInline
 
 /**
  * Provides the information about how the associated pane should be adapted if not all panes can be
@@ -55,100 +55,105 @@ sealed interface AdaptStrategy {
      * To provide custom adapt strategies, see the following sample:
      *
      * @sample androidx.compose.material3.adaptive.samples.reflowAdaptStrategySample
-     * @param targetPane the target pane of the reflowing, i.e., the pane that the reflowed pane
-     *   will be put under.
+     * @param reflowUnder the pane that the reflowed pane will be put under; within the context of
+     *   three pane scaffolds, the type of this parameter is supposed to be [ThreePaneScaffoldRole].
      */
     @Immutable
-    class Reflow(val targetPane: Any) : AdaptStrategy {
-        override fun toString() = "AdaptStrategy[Reflow to $targetPane]"
+    class Reflow(internal val reflowUnder: PaneScaffoldRole) : AdaptStrategy {
+        override fun toString() = "AdaptStrategy[Reflow to $reflowUnder]"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Reflow) return false
-            return targetPane == other.targetPane
+            return reflowUnder == other.reflowUnder
         }
 
         override fun hashCode(): Int {
-            return targetPane.hashCode()
+            return reflowUnder.hashCode()
         }
     }
 
     /**
-     * Indicate the associated pane should be levitated when certain conditions are met. A levitated
-     * pane will be rendered above other panes in the pane scaffold like a pop-up, may or may not
-     * cast a scrim to block interaction with the underlying panes.
+     * Indicate the associated pane should be levitated when it's the current destination.
      *
-     * With the default calculation functions [calculateThreePaneScaffoldValue] we provide. A pane
-     * with a levitate strategy will be adapted to either:
+     * A levitated pane will be rendered above other panes in the pane scaffold like a pop-up or a
+     * sheet (for example, as a bottom sheet or a side sheet.) A [scrim] can be provided to block
+     * interaction with the underlying panes.
+     *
+     * With the default [calculateThreePaneScaffoldValue] we provide, a pane with a levitate
+     * strategy will be adapted to either:
      * 1. [PaneAdaptedValue.Levitated] with specified [alignment], when the levitated pane is the
-     *    current destination, and the provided [Strategy] is [Strategy.Always] or it's a
-     *    single-pane layout;
-     * 2. [PaneAdaptedValue.Expanded], when the levitated pane is one of the most recent
-     *    destinations, and the provided [Strategy] is [Strategy.SinglePaneOnly] and it's not a
-     *    single-pane layout; or
-     * 3. [PaneAdaptedValue.Hidden] otherwise.
+     *    current destination; or
+     * 2. [PaneAdaptedValue.Hidden] otherwise.
      *
-     * @sample androidx.compose.material3.adaptive.samples.levitateAdaptStrategySample
-     * @sample androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet
-     * @param strategy the strategy that specifies when the associated pane should be levitated; see
-     *   [Strategy] for more detailed descriptions.
      * @param alignment the alignment of the associated pane when it's levitated, relatively to the
      *   pane scaffold.
      * @param scrim the scrim to show when the pane is levitated to block user interaction with the
      *   underlying layout and emphasize the levitated pane; by default it will be `null` and no
-     *   scrim will show.
+     *   scrim will show; to display a scrim, we recommend to use [LevitatedPaneScrim] as a default
+     *   implementation.
+     * @param dragToResizeState the optional state to enable the levitated pane to be resizable by
+     *   dragging; it will be used to store and control current dragging; see
+     *   [rememberDragToResizeState] for more details about how to implement the drag-to-resize
+     *   behavior.
+     * @sample androidx.compose.material3.adaptive.samples.levitateAsBottomSheetSample
+     * @sample androidx.compose.material3.adaptive.samples.levitateAsDialogSample
+     * @sample androidx.compose.material3.adaptive.samples.ListDetailPaneScaffoldSampleWithExtraPaneLevitatedAsDialog
+     * @sample androidx.compose.material3.adaptive.samples.SupportingPaneScaffoldSampleWithExtraPaneLevitatedAsBottomSheet
+     * @see [onlyIf] and [onlyIfSinglePane] for finer control over when the pane should be
+     *   levitated.
      */
     @Immutable
     class Levitate(
-        val strategy: Strategy = Strategy.Always,
-        val alignment: Alignment = Alignment.Center,
-        val scrim: Scrim? = null,
+        internal val alignment: Alignment = Alignment.Center,
+        internal val scrim: (@Composable () -> Unit)? = null,
+        internal val dragToResizeState: DragToResizeState? = null,
     ) : AdaptStrategy {
-        override fun toString() =
-            "AdaptStrategy[Levitate, type=$strategy, alignment=$alignment, scrim=$scrim]"
+
+        @Deprecated(
+            message = "Keep the old constructor for binary compatibility",
+            level = DeprecationLevel.HIDDEN,
+        )
+        constructor(
+            alignment: Alignment = Alignment.Center,
+            scrim: (@Composable () -> Unit)? = null,
+        ) : this(alignment, scrim, null)
+
+        override fun toString() = "AdaptStrategy[Levitate, alignment=$alignment, scrim=$scrim]"
 
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Levitate) return false
-            if (strategy != other.strategy) return false
             if (alignment != other.alignment) return false
-            if (scrim != other.scrim) return false
+            if (scrim !== other.scrim) return false
+            if (dragToResizeState !== other.dragToResizeState) return false
             return true
         }
 
         override fun hashCode(): Int {
-            var result = strategy.hashCode()
-            result = 31 * result + alignment.hashCode()
+            var result = alignment.hashCode()
             result = 31 * result + scrim.hashCode()
+            result = 31 * result + dragToResizeState.hashCode()
             return result
         }
 
         /**
-         * The strategy that specifies when the associated pane should be levitated. Currently two
-         * strategies are supported - [Always] and [SinglePaneOnly]. A pane with [Always] strategy
-         * is supposed to be levitated whenever it's the current destination; on the other hand, one
-         * with [SinglePaneOnly] strategy is only supposed to be levitated when it's a single-pane
-         * layout.
+         * This is a convenient function to only levitate the associated pane when the provided
+         * condition is met. If the condition is not met, the pane will be expanded instead, if
+         * there's enough room; otherwise it will be hidden.
+         *
+         * @see onlyIfSinglePane
          */
-        @JvmInline
-        value class Strategy private constructor(private val description: String) {
-            override fun toString() = description
+        @Composable fun onlyIf(condition: Boolean): AdaptStrategy = if (condition) this else Hide
 
-            companion object {
-                /**
-                 * Specifies that the associated pane should always be levitated when it's the
-                 * current navigation destination, no matter it's a single-pane or multi-pane
-                 * layout.
-                 */
-                val Always = Strategy("Always")
-
-                /**
-                 * Specifies that the associated pane should only be levitated when it's a
-                 * single-pane layout and the associated pane is the current navigation destination.
-                 */
-                val SinglePaneOnly = Strategy("SinglePaneOnly")
-            }
-        }
+        /**
+         * This is a convenient function to only levitate the associated pane when it's a
+         * single-pane layout. On multi-pane layouts, the pane will be expanded instead, if it's one
+         * of the recent destinations.
+         */
+        @Composable
+        fun onlyIfSinglePane(scaffoldDirective: PaneScaffoldDirective): AdaptStrategy =
+            onlyIf(scaffoldDirective.isSinglePaneLayout())
     }
 
     companion object {

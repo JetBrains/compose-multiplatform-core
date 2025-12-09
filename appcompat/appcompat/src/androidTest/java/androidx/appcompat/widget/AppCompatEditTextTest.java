@@ -127,14 +127,12 @@ public class AppCompatEditTextTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testHyphenationFrequencyDefaultValue_withDefaultConstructor() {
         final AppCompatEditText editText = new AppCompatEditText(mActivityTestRule.getActivity());
         assertEquals(Layout.HYPHENATION_FREQUENCY_NONE, editText.getHyphenationFrequency());
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testHyphenationFrequencyDefaultValue_withInflator() {
         final AppCompatEditText editText = mActivityTestRule.getActivity().findViewById(
@@ -142,7 +140,6 @@ public class AppCompatEditTextTest {
         assertEquals(Layout.HYPHENATION_FREQUENCY_NONE, editText.getHyphenationFrequency());
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testHyphenationFrequencyOverride_withInflator() {
         final AppCompatEditText editText = mActivityTestRule.getActivity().findViewById(
@@ -150,14 +147,12 @@ public class AppCompatEditTextTest {
         assertEquals(Layout.HYPHENATION_FREQUENCY_FULL, editText.getHyphenationFrequency());
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testBreakStrategyDefaultValue_withDefaultConstructor() {
         final AppCompatEditText editText = new AppCompatEditText(mActivityTestRule.getActivity());
         assertEquals(Layout.BREAK_STRATEGY_SIMPLE, editText.getBreakStrategy());
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testBreakStrategyDefaultValue_withInflator() {
         final AppCompatEditText editText = mActivityTestRule.getActivity().findViewById(
@@ -165,7 +160,6 @@ public class AppCompatEditTextTest {
         assertEquals(Layout.BREAK_STRATEGY_SIMPLE, editText.getBreakStrategy());
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     public void testBreakStrategyOverride_withInflator() {
         final AppCompatEditText editText = mActivityTestRule.getActivity().findViewById(

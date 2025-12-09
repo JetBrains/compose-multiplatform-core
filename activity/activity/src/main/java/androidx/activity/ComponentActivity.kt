@@ -15,14 +15,12 @@
  */
 package androidx.activity
 
-import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.IntentSender.SendIntentException
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
@@ -65,7 +63,6 @@ import androidx.core.app.OnNewIntentProvider
 import androidx.core.app.OnPictureInPictureModeChangedProvider
 import androidx.core.app.OnUserLeaveHintProvider
 import androidx.core.app.PictureInPictureModeChangedInfo
-import androidx.core.content.ContextCompat
 import androidx.core.content.OnConfigurationChangedProvider
 import androidx.core.content.OnTrimMemoryProvider
 import androidx.core.util.Consumer
@@ -91,6 +88,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.MutableCreationExtras
+import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventDispatcher
 import androidx.navigationevent.NavigationEventDispatcherOwner
 import androidx.navigationevent.setViewTreeNavigationEventDispatcherOwner
@@ -243,6 +241,14 @@ open class ComponentActivity() :
     private var dispatchingOnMultiWindowModeChanged = false
     private var dispatchingOnPictureInPictureModeChanged = false
 
+    // Inputs from `ComponentActivity.onBackPressed()`, which can get called when API < 33 or
+    // when `android:enableOnBackInvokedCallback` is `false`.
+    private val onBackPressedInput: DirectNavigationEventInput by lazy {
+        val input = DirectNavigationEventInput()
+        navigationEventDispatcher.addInput(input)
+        input
+    }
+
     /**
      * Default constructor for ComponentActivity. All Activities must have a default constructor for
      * API 27 and lower devices or when using the default [android.app.AppComponentFactory].
@@ -288,7 +294,7 @@ open class ComponentActivity() :
         )
         savedStateRegistryController.performAttach()
         enableSavedStateHandles()
-        if (Build.VERSION.SDK_INT <= 23) {
+        if (Build.VERSION.SDK_INT == 23) {
             @Suppress("LeakingThis") lifecycle.addObserver(ImmLeaksCleaner(this))
         }
         savedStateRegistry.registerSavedStateProvider(ACTIVITY_RESULT_TAG) {
@@ -589,7 +595,7 @@ open class ComponentActivity() :
       to one or more {@link OnBackPressedCallback} objects."""
     )
     override fun onBackPressed() {
-        navigationEventDispatcher.dispatchOnCompleted()
+        onBackPressedInput.backCompleted()
     }
 
     /**
@@ -798,9 +804,7 @@ open class ComponentActivity() :
                     .putExtra(EXTRA_PERMISSION_GRANT_RESULTS, grantResults),
             )
         ) {
-            if (Build.VERSION.SDK_INT >= 23) {
-                super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-            }
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         }
     }
 
@@ -1022,20 +1026,7 @@ open class ComponentActivity() :
             if (Trace.isEnabled()) {
                 Trace.beginSection("reportFullyDrawn() for ComponentActivity")
             }
-            if (Build.VERSION.SDK_INT > 19) {
-                super.reportFullyDrawn()
-            } else if (
-                Build.VERSION.SDK_INT == 19 &&
-                    ContextCompat.checkSelfPermission(
-                        this,
-                        Manifest.permission.UPDATE_DEVICE_STATS,
-                    ) == PackageManager.PERMISSION_GRANTED
-            ) {
-                // On API 19, the Activity.reportFullyDrawn() method requires the
-                // UPDATE_DEVICE_STATS permission, otherwise it throws an exception. Instead of
-                // throwing, we fall back to a no-op call.
-                super.reportFullyDrawn()
-            }
+            super.reportFullyDrawn()
             // Activity.reportFullyDrawn() was added in API 19, so we can't call super
             // prior to that, but we still need to update our FullyLoadedReporter's state
             fullyDrawnReporter.fullyDrawnReported()

@@ -22,6 +22,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@Suppress("DEPRECATION") // Tests must still test deprecated fields/methods.
 @RunWith(RobolectricTestRunner::class)
 class SectionedItemTemplateTest {
     class MyCustomSection : Section<Row>()
@@ -84,6 +85,42 @@ class SectionedItemTemplateTest {
         val template = SectionedItemTemplate.Builder().setAlphabeticalIndexingAllowed(true).build()
 
         assertThat(template.isAlphabeticalIndexingAllowed).isTrue()
+    }
+
+    // This is a compat layer test to verify that apps still setting the old field will have the
+    // setting respected in the new field.
+    @Test
+    fun getAlphabeticalIndexingStrategy_returnsIgnoreArticlesAndSymbols_whenDeprecatedAlphabeticalIndexingAllowedFieldIsSet() {
+        val template = SectionedItemTemplate.Builder().setAlphabeticalIndexingAllowed(true).build()
+
+        assertThat(template.alphabeticalIndexingStrategy)
+            .isEqualTo(
+                SectionedItemTemplate.ALPHABETICAL_INDEXING_TITLE_IGNORE_ARTICLES_AND_SYMBOLS
+            )
+        assertThat(template.isAlphabeticalIndexingAllowed).isTrue()
+    }
+
+    @Test
+    fun getAlphabeticalIndexingStrategy() {
+        val template =
+            SectionedItemTemplate.Builder()
+                .setAlphabeticalIndexingStrategy(
+                    SectionedItemTemplate.ALPHABETICAL_INDEXING_TITLE_AS_IS
+                )
+                .build()
+
+        assertThat(template.alphabeticalIndexingStrategy)
+            .isEqualTo(SectionedItemTemplate.ALPHABETICAL_INDEXING_TITLE_AS_IS)
+        assertThat(template.isAlphabeticalIndexingAllowed).isTrue()
+    }
+
+    @Test
+    fun getAlphabeticalIndexingStrategy_defaultValue_returnsDisabled() {
+        val template = SectionedItemTemplate.Builder().build()
+
+        assertThat(template.alphabeticalIndexingStrategy)
+            .isEqualTo(SectionedItemTemplate.ALPHABETICAL_INDEXING_DISABLED)
+        assertThat(template.isAlphabeticalIndexingAllowed).isFalse()
     }
 
     @Test

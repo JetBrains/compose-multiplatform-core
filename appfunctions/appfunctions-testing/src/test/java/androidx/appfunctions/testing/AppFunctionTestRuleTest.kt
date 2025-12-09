@@ -22,21 +22,25 @@ import androidx.appfunctions.AppFunctionManagerCompat
 import androidx.appfunctions.AppFunctionSearchSpec
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
+import androidx.appfunctions.metadata.AppFunctionLongTypeMetadata
+import androidx.appfunctions.metadata.AppFunctionParameterMetadata
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertIs
-import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +51,7 @@ import org.robolectric.junit.rules.TimeoutRule
 @RunWith(RobolectricTestRunner::class)
 @Config(minSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SdkSuppress(minSdkVersion = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+@OptIn(FlowPreview::class)
 class AppFunctionTestRuleTest {
     private val context = InstrumentationRegistry.getInstrumentation().context
     private val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
@@ -56,22 +61,21 @@ class AppFunctionTestRuleTest {
     @get:Rule val timeoutRule = TimeoutRule(10, TimeUnit.SECONDS)
 
     private val appFunctionManagerCompat: AppFunctionManagerCompat =
-        assertNotNull(AppFunctionManagerCompat.getInstance(context))
+        appFunctionTestRule.getAppFunctionManagerCompat()
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_observeApiNoFilter_returnsAllAppFunctions() =
         runBlocking<Unit> {
             val results =
                 appFunctionManagerCompat
                     .observeAppFunctions(AppFunctionSearchSpec())
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
-            assertThat(results.single()).hasSize(8)
+            assertThat(results.single().single().appFunctions).hasSize(8)
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_observeApi_returnsNewValueOnUpdate() =
         runBlocking<Unit> {
@@ -95,17 +99,28 @@ class AppFunctionTestRuleTest {
             )
 
             // Collect in a separate scope to avoid deadlock within the testcase.
-            runBlocking(Dispatchers.Default) { emittedValues.take(2).collect {} }
+            runBlocking(Dispatchers.Default) {
+                emittedValues.timeout(FLOW_COLLECTION_TIMEOUT).take(2).collect {}
+            }
             assertThat(emittedValues.replayCache).hasSize(2)
             // Assert first result to be default value.
-            assertThat(emittedValues.replayCache[0].single { it.id == functionIdToTest }.isEnabled)
+            assertThat(
+                    emittedValues.replayCache[0]
+                        .flatMap { it.appFunctions }
+                        .single { it.id == functionIdToTest }
+                        .isEnabled
+                )
                 .isFalse()
             // Assert next update has updated value.
-            assertThat(emittedValues.replayCache[1].single { it.id == functionIdToTest }.isEnabled)
+            assertThat(
+                    emittedValues.replayCache[1]
+                        .flatMap { it.appFunctions }
+                        .single { it.id == functionIdToTest }
+                        .isEnabled
+                )
                 .isTrue()
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_filterBySchemaName_success() =
         runBlocking<Unit> {
@@ -117,14 +132,14 @@ class AppFunctionTestRuleTest {
                             schemaName = "createNote",
                         )
                     )
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
-            assertThat(results.single().map { it.id })
+            assertThat(results.single().flatMap { it.appFunctions }.map { it.id })
                 .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_filterByPackageName_success() =
         runBlocking<Unit> {
@@ -133,13 +148,13 @@ class AppFunctionTestRuleTest {
                     .observeAppFunctions(
                         AppFunctionSearchSpec(packageNames = setOf(context.packageName))
                     )
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
-            assertThat(results.single()).hasSize(8)
+            assertThat(results.single().single().appFunctions).hasSize(8)
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_filterBySchemaCategory_success() =
         runBlocking<Unit> {
@@ -151,14 +166,14 @@ class AppFunctionTestRuleTest {
                             schemaCategory = "myNotes",
                         )
                     )
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
-            assertThat(results.single().map { it.id })
+            assertThat(results.single().flatMap { it.appFunctions }.map { it.id })
                 .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_filterByMinSchemaVersion_success() =
         runBlocking<Unit> {
@@ -170,14 +185,14 @@ class AppFunctionTestRuleTest {
                             minSchemaVersion = 2,
                         )
                     )
+                    .timeout(FLOW_COLLECTION_TIMEOUT)
                     .take(1)
                     .toList()
 
-            assertThat(results.single().map { it.id })
+            assertThat(results.single().flatMap { it.appFunctions }.map { it.id })
                 .containsExactly("androidx.appfunctions.testing.NotesFunctions#createNote")
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_currentPackage_enabledByDefault_modified_success() =
         runBlocking<Unit> {
@@ -192,7 +207,6 @@ class AppFunctionTestRuleTest {
             assertThat(appFunctionManagerCompat.isAppFunctionEnabled(functionId)).isFalse()
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_currentPackage_disabledByDefault_modified_success() =
         runBlocking<Unit> {
@@ -207,7 +221,6 @@ class AppFunctionTestRuleTest {
             assertThat(appFunctionManagerCompat.isAppFunctionEnabled(functionId)).isTrue()
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun executeAppFunction_success() =
         runBlocking<Unit> {
@@ -217,7 +230,23 @@ class AppFunctionTestRuleTest {
                         ExecuteAppFunctionRequest(
                             context.packageName,
                             "androidx.appfunctions.testing.TestFunctions#add",
-                            AppFunctionData.Builder("")
+                            AppFunctionData.Builder(
+                                    listOf(
+                                        AppFunctionParameterMetadata(
+                                            name = "num1",
+                                            isRequired = true,
+                                            dataType =
+                                                AppFunctionLongTypeMetadata(isNullable = false),
+                                        ),
+                                        AppFunctionParameterMetadata(
+                                            name = "num2",
+                                            isRequired = true,
+                                            dataType =
+                                                AppFunctionLongTypeMetadata(isNullable = false),
+                                        ),
+                                    ),
+                                    AppFunctionComponentsMetadata(),
+                                )
                                 .setLong("num1", 1)
                                 .setLong("num2", 2)
                                 .build(),
@@ -233,7 +262,6 @@ class AppFunctionTestRuleTest {
                 .isEqualTo(3)
         }
 
-    @Ignore // b/427554444
     @Test(timeout = 5000)
     fun returnedAppFunctionManagerCompat_currentPackage_disabledByDefault_modifiedAndRestoredToDefault_success() =
         runBlocking<Unit> {
@@ -252,4 +280,8 @@ class AppFunctionTestRuleTest {
             )
             assertThat(appFunctionManagerCompat.isAppFunctionEnabled(functionId)).isFalse()
         }
+
+    private companion object {
+        val FLOW_COLLECTION_TIMEOUT = 2.seconds
+    }
 }

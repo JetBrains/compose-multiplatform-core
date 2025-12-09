@@ -16,12 +16,15 @@
 
 package androidx.test.uiautomator.testapp;
 
+import static android.content.pm.PackageManager.FEATURE_FREEFORM_WINDOW_MANAGEMENT;
+
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -106,5 +109,13 @@ public abstract class BaseTest {
         } finally {
             configurator.setWaitForSelectorTimeout(timeout);
         }
+    }
+
+    protected static boolean isDesktopWindowing() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                && InstrumentationRegistry.getInstrumentation()
+                .getContext()
+                .getPackageManager()
+                .hasSystemFeature(FEATURE_FREEFORM_WINDOW_MANAGEMENT);
     }
 }

@@ -19,10 +19,14 @@ package androidx.core.telecom.reference.view
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.core.telecom.reference.CallRepository
 import androidx.core.telecom.reference.Constants.ACTION_ANSWER_AND_SHOW_UI
 import androidx.core.telecom.reference.Constants.DEEP_LINK_BASE_URI
@@ -110,7 +114,11 @@ fun DialerApp(lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current, cont
     }
 
     // Define the navigation graph for the application.
-    NavHost(navController = navController, startDestination = NavRoutes.DIALER) {
+    NavHost(
+        navController = navController,
+        startDestination = NavRoutes.DIALER,
+        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
+    ) {
         // Define the Dialer screen destination.
         composable(NavRoutes.DIALER) {
             DialerScreen(

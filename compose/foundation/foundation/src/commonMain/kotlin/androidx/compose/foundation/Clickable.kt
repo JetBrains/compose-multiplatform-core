@@ -35,6 +35,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.indirect.IndirectPointerEvent
+import androidx.compose.ui.input.indirect.IndirectPointerInputChange
+import androidx.compose.ui.input.indirect.IndirectPointerInputModifierNode
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType.Companion.KeyDown
@@ -77,6 +80,7 @@ import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.toOffset
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
@@ -202,53 +206,17 @@ fun Modifier.clickable(
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
 ): Modifier {
-    @OptIn(ExperimentalFoundationApi::class)
-    return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
-        this.then(
-            ClickableElement(
-                interactionSource = interactionSource,
-                indicationNodeFactory = null,
-                useLocalIndication = true,
-                enabled = enabled,
-                onClickLabel = onClickLabel,
-                role = role,
-                onClick = onClick,
-            )
+    return this.then(
+        ClickableElement(
+            interactionSource = interactionSource,
+            indicationNodeFactory = null,
+            useLocalIndication = true,
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            role = role,
+            onClick = onClick,
         )
-    } else {
-        composed(
-            inspectorInfo =
-                debugInspectorInfo {
-                    name = "clickable"
-                    properties["enabled"] = enabled
-                    properties["onClickLabel"] = onClickLabel
-                    properties["role"] = role
-                    properties["interactionSource"] = interactionSource
-                    properties["onClick"] = onClick
-                }
-        ) {
-            val localIndication = LocalIndication.current
-            val intSource =
-                interactionSource
-                    ?: if (localIndication is IndicationNodeFactory) {
-                        // We can fast path here as it will be created inside clickable lazily
-                        null
-                    } else {
-                        // We need an interaction source to pass between the indication modifier and
-                        // clickable, so
-                        // by creating here we avoid another composed down the line
-                        remember { MutableInteractionSource() }
-                    }
-            Modifier.clickable(
-                enabled = enabled,
-                onClickLabel = onClickLabel,
-                onClick = onClick,
-                role = role,
-                indication = localIndication,
-                interactionSource = intSource,
-            )
-        }
-    }
+    )
 }
 
 /**
@@ -461,63 +429,21 @@ fun Modifier.combinedClickable(
     interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
 ): Modifier {
-    @OptIn(ExperimentalFoundationApi::class)
-    return if (ComposeFoundationFlags.isNonComposedClickableEnabled) {
-        this.then(
-            CombinedClickableElement(
-                enabled = enabled,
-                onClickLabel = onClickLabel,
-                onLongClickLabel = onLongClickLabel,
-                onLongClick = onLongClick,
-                onDoubleClick = onDoubleClick,
-                onClick = onClick,
-                role = role,
-                interactionSource = interactionSource,
-                indicationNodeFactory = null,
-                useLocalIndication = true,
-                hapticFeedbackEnabled = hapticFeedbackEnabled,
-            )
+    return this.then(
+        CombinedClickableElement(
+            enabled = enabled,
+            onClickLabel = onClickLabel,
+            onLongClickLabel = onLongClickLabel,
+            onLongClick = onLongClick,
+            onDoubleClick = onDoubleClick,
+            onClick = onClick,
+            role = role,
+            interactionSource = interactionSource,
+            indicationNodeFactory = null,
+            useLocalIndication = true,
+            hapticFeedbackEnabled = hapticFeedbackEnabled,
         )
-    } else
-        composed(
-            inspectorInfo =
-                debugInspectorInfo {
-                    name = "combinedClickable"
-                    properties["enabled"] = enabled
-                    properties["onClickLabel"] = onClickLabel
-                    properties["role"] = role
-                    properties["onClick"] = onClick
-                    properties["onDoubleClick"] = onDoubleClick
-                    properties["onLongClick"] = onLongClick
-                    properties["onLongClickLabel"] = onLongClickLabel
-                    properties["hapticFeedbackEnabled"] = hapticFeedbackEnabled
-                }
-        ) {
-            val localIndication = LocalIndication.current
-            val intSource =
-                interactionSource
-                    ?: if (localIndication is IndicationNodeFactory) {
-                        // We can fast path here as it will be created inside clickable lazily
-                        null
-                    } else {
-                        // We need an interaction source to pass between the indication modifier and
-                        // clickable, so
-                        // by creating here we avoid another composed down the line
-                        remember { MutableInteractionSource() }
-                    }
-            Modifier.combinedClickable(
-                enabled = enabled,
-                onClickLabel = onClickLabel,
-                onLongClickLabel = onLongClickLabel,
-                onLongClick = onLongClick,
-                onDoubleClick = onDoubleClick,
-                onClick = onClick,
-                role = role,
-                indication = localIndication,
-                interactionSource = intSource,
-                hapticFeedbackEnabled = hapticFeedbackEnabled,
-            )
-        }
+    )
 }
 
 @Deprecated(message = "Maintained for binary compatibility", level = DeprecationLevel.HIDDEN)
@@ -997,7 +923,7 @@ internal open class ClickableNode(
                     change.consume()
                     this.downEvent = change
                     if (enabled) {
-                        handlePressInteractionStart(change.position)
+                        handlePressInteractionStart(change.position, indirectPointer = false)
                     }
                 }
             } else if (pointerEvent.changes.fastAll { it.changedToUp() }) {
@@ -1005,7 +931,7 @@ internal open class ClickableNode(
                 val up = pointerEvent.changes[0]
                 up.consume()
                 if (enabled) {
-                    handlePressInteractionRelease(downEvent.position)
+                    handlePressInteractionRelease(downEvent.position, indirectPointer = false)
                     onClick()
                 }
                 this.downEvent = null
@@ -1018,7 +944,7 @@ internal open class ClickableNode(
                 ) {
                     // Canceled
                     this.downEvent = null
-                    handlePressInteractionCancel()
+                    handlePressInteractionCancel(indirectPointer = false)
                 }
             }
         } else if (pass == PointerEventPass.Final && downEvent != null) {
@@ -1027,7 +953,7 @@ internal open class ClickableNode(
             if (pointerEvent.changes.fastAny { it.isConsumed && it != downEvent }) {
                 // Canceled
                 downEvent = null
-                handlePressInteractionCancel()
+                handlePressInteractionCancel(indirectPointer = false)
             }
         }
     }
@@ -1036,7 +962,7 @@ internal open class ClickableNode(
         super.onCancelPointerInput()
         if (downEvent != null) {
             downEvent = null
-            handlePressInteractionCancel()
+            handlePressInteractionCancel(indirectPointer = false)
         }
     }
 
@@ -1330,7 +1256,8 @@ internal abstract class AbstractClickableNode(
     SemanticsModifierNode,
     TraversableNode,
     CompositionLocalConsumerModifierNode,
-    ObserverModifierNode {
+    ObserverModifierNode,
+    IndirectPointerInputModifierNode {
     protected var enabled = enabled
         private set
 
@@ -1356,6 +1283,9 @@ internal abstract class AbstractClickableNode(
     private val currentKeyPressInteractions = mutableLongObjectMapOf<PressInteraction.Press>()
     private var centerOffset: Offset = Offset.Zero
 
+    private var indirectPointerPressInteraction: PressInteraction.Press? = null
+    private var indirectPointerEventPressPosition: Offset? = null
+
     // Track separately from interactionSource, as we will create our own internal
     // InteractionSource if needed
     private var userProvidedInteractionSource: MutableInteractionSource? = interactionSource
@@ -1363,6 +1293,8 @@ internal abstract class AbstractClickableNode(
     private var lazilyCreateIndication = shouldLazilyCreateIndication()
 
     private fun shouldLazilyCreateIndication() = userProvidedInteractionSource == null
+
+    private var indirectPointerClickDetector: IndirectPointerClickDetector? = null
 
     /**
      * Handles subclass-specific click related pointer input logic. Hover is already handled
@@ -1435,6 +1367,20 @@ internal abstract class AbstractClickableNode(
         focusableNode.update(this.interactionSource)
     }
 
+    override fun onIndirectPointerEvent(event: IndirectPointerEvent, pass: PointerEventPass) {
+        initializeIndicationAndInteractionSourceIfNeeded()
+        if (enabled) {
+            if (indirectPointerClickDetector == null) {
+                indirectPointerClickDetector = IndirectPointerClickDetector(this)
+            }
+            indirectPointerClickDetector?.processRawEvent(event, pass, onClick)
+        }
+    }
+
+    override fun onCancelIndirectPointerInput() {
+        indirectPointerClickDetector?.resetDetector()
+    }
+
     final override fun onAttach() {
         onObservedReadsChanged()
         if (!lazilyCreateIndication) {
@@ -1482,6 +1428,10 @@ internal abstract class AbstractClickableNode(
                 val interaction = PressInteraction.Cancel(oldValue)
                 interactionSource.tryEmit(interaction)
             }
+            indirectPointerPressInteraction?.let { oldValue ->
+                val interaction = PressInteraction.Cancel(oldValue)
+                interactionSource.tryEmit(interaction)
+            }
             hoverInteraction?.let { oldValue ->
                 val interaction = HoverInteraction.Exit(oldValue)
                 interactionSource.tryEmit(interaction)
@@ -1491,6 +1441,8 @@ internal abstract class AbstractClickableNode(
             }
         }
         pressInteraction = null
+        indirectPointerPressInteraction = null
+        indirectPointerEventPressPosition = null
         hoverInteraction = null
         currentKeyPressInteractions.clear()
     }
@@ -1505,8 +1457,12 @@ internal abstract class AbstractClickableNode(
                 currentKeyPressInteractions.forEachValue {
                     coroutineScope.launch { interactionSource?.emit(PressInteraction.Cancel(it)) }
                 }
+                indirectPointerPressInteraction?.let {
+                    coroutineScope.launch { interactionSource?.emit(PressInteraction.Cancel(it)) }
+                }
             }
             currentKeyPressInteractions.clear()
+            indirectPointerPressInteraction = null
             onCancelKeyInput()
         }
     }
@@ -1652,7 +1608,14 @@ internal abstract class AbstractClickableNode(
 
     private var delayJob: Job? = null
 
-    protected fun handlePressInteractionStart(offset: Offset) {
+    /**
+     * Handles emitting a [PressInteraction.Press].
+     *
+     * @param offset offset of the press
+     * @param indirectPointer whether the source of this press was indirect pointer. False for
+     *   pointer input.
+     */
+    protected fun handlePressInteractionStart(offset: Offset, indirectPointer: Boolean) {
         interactionSource?.let { interactionSource ->
             val press = PressInteraction.Press(offset)
             if (delayPressInteraction()) {
@@ -1660,20 +1623,50 @@ internal abstract class AbstractClickableNode(
                     coroutineScope.launch {
                         delay(TapIndicationDelay)
                         interactionSource.emit(press)
-                        pressInteraction = press
+                        if (indirectPointer) {
+                            indirectPointerPressInteraction = press
+                        } else {
+                            pressInteraction = press
+                        }
                     }
             } else {
-                pressInteraction = press
+                if (indirectPointer) {
+                    indirectPointerPressInteraction = press
+                } else {
+                    pressInteraction = press
+                }
                 coroutineScope.launch { interactionSource.emit(press) }
             }
         }
     }
 
-    protected fun handlePressInteractionRelease(offset: Offset) {
+    /**
+     * Handles emitting a [PressInteraction.Release].
+     *
+     * @param offset offset of the press
+     * @param indirectPointer whether the source of this press was indirect pointer. False for
+     *   pointer input.
+     */
+    protected fun handlePressInteractionRelease(offset: Offset, indirectPointer: Boolean) {
         interactionSource?.let { interactionSource ->
-            if (delayJob?.isActive == true) {
+            // To resolve b/414319919 it is important that we capture a reference to `delayJob`
+            // outside the coroutine block - when the CPU is busy we can end up handling
+            // press-release-press before the coroutine starts to execute, which means we can launch
+            // two jobs and mutate delayJob twice. At the time this function is called, delayJob
+            // points to the correct corresponding press event, so we just reference this instance
+            // to make sure that there is no issue if coroutines are executed after the next set of
+            // gestures have been processed.
+            val job = delayJob
+            if (job?.isActive == true) {
+                // Immediately cancel the job to avoid a race condition from coroutine launching -
+                // if we wait until inside the launch to cancel it could be executed after the job
+                // is no longer active. An alternative approach would be to launch with
+                // start = CoroutineStart.UNDISPATCHED, but it is more reasonable to cancel
+                // outside the coroutine in any case.
+                job.cancel()
                 coroutineScope.launch {
-                    delayJob?.cancelAndJoin()
+                    // Wait for cancelling the job to finish if needed
+                    job.join()
                     // The press released successfully, before the timeout duration - emit the press
                     // interaction instantly.
                     val press = PressInteraction.Press(offset)
@@ -1682,32 +1675,64 @@ internal abstract class AbstractClickableNode(
                     interactionSource.emit(release)
                 }
             } else {
-                pressInteraction?.let { pressInteraction ->
+                val interaction =
+                    if (indirectPointer) indirectPointerPressInteraction else pressInteraction
+                interaction?.let {
                     coroutineScope.launch {
-                        val endInteraction = PressInteraction.Release(pressInteraction)
+                        // Important that we capture `interaction` outside the `launch`, rather than
+                        // referring to it in here - the underlying fields are mutable and could
+                        // change by the time this coroutine is executed
+                        val endInteraction = PressInteraction.Release(it)
                         interactionSource.emit(endInteraction)
                     }
                 }
             }
-            pressInteraction = null
+            if (indirectPointer) {
+                indirectPointerPressInteraction = null
+            } else {
+                pressInteraction = null
+            }
         }
     }
 
-    protected fun handlePressInteractionCancel() {
+    /**
+     * Handles emitting a [PressInteraction.Cancel].
+     *
+     * @param indirectPointer whether the source of this press was indirect pointer. False for
+     *   pointer input.
+     */
+    protected fun handlePressInteractionCancel(indirectPointer: Boolean) {
         interactionSource?.let { interactionSource ->
             if (delayJob?.isActive == true) {
                 // We didn't finish sending the press, and we are cancelled, so we don't emit
                 // any interaction.
                 delayJob?.cancel()
             } else {
-                pressInteraction?.let { pressInteraction ->
+                val interaction =
+                    if (indirectPointer) indirectPointerPressInteraction else pressInteraction
+                interaction?.let {
+                    val endInteraction = PressInteraction.Cancel(it)
+                    // If this is being called from inside onDetach(), we are still attached, but
+                    // the scope will be cancelled soon after - so the launch {} might not even
+                    // start before it is cancelled. We don't want to use
+                    // CoroutineStart.UNDISPATCHED, or always call tryEmit() as this will break
+                    // other timing / cause some events to be missed for other cases. Instead just
+                    // make sure we call tryEmit if we cancel the scope, before we finish emitting.
+                    val handler =
+                        coroutineScope.coroutineContext[Job]?.invokeOnCompletion {
+                            interactionSource.tryEmit(endInteraction)
+                        }
                     coroutineScope.launch {
-                        val endInteraction = PressInteraction.Cancel(pressInteraction)
                         interactionSource.emit(endInteraction)
+                        handler?.dispose()
                     }
                 }
             }
-            pressInteraction = null
+            if (indirectPointer) {
+                indirectPointerPressInteraction = null
+            } else {
+                pressInteraction = null
+            }
         }
     }
 
@@ -1775,6 +1800,62 @@ internal abstract class AbstractClickableNode(
 
     override val traverseKey: Any = TraverseKey
 
+    class IndirectPointerClickDetector(val node: AbstractClickableNode) {
+        private var downEvent: IndirectPointerInputChange? = null
+
+        // TODO(b/449944873): Align PointerInput and IndirectTouchInput implementations
+        fun processRawEvent(
+            pointerEvent: IndirectPointerEvent,
+            pass: PointerEventPass,
+            onClick: () -> Unit,
+        ) {
+            if (pass == PointerEventPass.Main) {
+                val downEvent = this.downEvent
+                if (downEvent == null) {
+                    if (pointerEvent.changes.fastAny { it.changedToDownIgnoreConsumed() }) {
+                        val change = pointerEvent.changes[0]
+                        this.downEvent = change
+                        node.handlePressInteractionStart(change.position, indirectPointer = true)
+                        change.consume()
+                    }
+                } else if (pointerEvent.changes.fastAny { it.isMovingIgnoreConsumed() }) {
+                    val change = pointerEvent.changes[0]
+                    val distanceFromPress = change.position - downEvent.position
+                    val touchSlop = node.currentValueOf(LocalViewConfiguration).touchSlop
+                    if (abs(distanceFromPress.getDistance()) > touchSlop) {
+                        resetDetector()
+                    }
+                } else if (pointerEvent.changes.fastAll { it.changedToUp() }) {
+                    // All pointers are up
+                    val up = pointerEvent.changes[0]
+                    up.consume()
+                    node.handlePressInteractionRelease(downEvent.position, indirectPointer = true)
+                    onClick()
+                    this.downEvent = null
+                } else {
+                    if (pointerEvent.changes.fastAny { it.isConsumed }) {
+                        // Canceled
+                        resetDetector()
+                    }
+                }
+            } else if (pass == PointerEventPass.Final && downEvent != null) {
+                // Check for cancel by position consumption. We can look on the Final pass of the
+                // existing pointer event because it comes after the pass we checked above.
+                if (pointerEvent.changes.fastAny { it.isConsumed && it != downEvent }) {
+                    // Canceled
+                    resetDetector()
+                }
+            }
+        }
+
+        fun resetDetector() {
+            if (downEvent != null) {
+                downEvent = null
+                node.handlePressInteractionCancel(indirectPointer = true)
+            }
+        }
+    }
+
     companion object TraverseKey
 }
 
@@ -1791,8 +1872,12 @@ private fun unsupportedIndicationExceptionMessage(indication: Indication): Strin
     return "clickable only supports IndicationNodeFactory instances provided to LocalIndication, " +
         "but Indication was provided instead. Either migrate the Indication implementation to " +
         "implement IndicationNodeFactory, or use the other clickable overload that takes an " +
-        "Indication parameter, and explicitly pass LocalIndication.current there. You can also " +
-        "use ComposeFoundationFlags.isNonComposedClickableEnabled to temporarily opt-out; note " +
-        "that this flag will be removed in a future release and is only intended to be a " +
-        "temporary migration aid. The Indication instance provided here was: $indication"
+        "Indication parameter, and explicitly pass LocalIndication.current there. The Indication" +
+        " instance provided here was: $indication"
 }
+
+private fun IndirectPointerInputChange.changedToUp() = !isConsumed && previousPressed && !pressed
+
+private fun IndirectPointerInputChange.changedToDownIgnoreConsumed() = !previousPressed && pressed
+
+private fun IndirectPointerInputChange.isMovingIgnoreConsumed() = previousPressed && pressed

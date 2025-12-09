@@ -73,13 +73,11 @@ class ShellTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdout_trivial() {
         Assert.assertEquals("foo\n", Shell.executeScriptCaptureStdout("echo foo"))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdoutStderr_trivial() {
         Assert.assertEquals(
@@ -88,7 +86,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdoutStderr_stderrFirstLine() {
         Assert.assertEquals(
@@ -103,7 +100,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdoutStderr_invalidCommand() {
         val shellOutput = Shell.executeScriptCaptureStdoutStderr("invalidCommand")
@@ -121,7 +117,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun executeScriptCaptureStdout_pipe_xargs() {
         // validate piping works with xargs
@@ -138,7 +133,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun executeScriptCaptureStdout_stdinArg_xargs() {
         // validate stdin to first command in script
@@ -158,7 +152,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun executeScriptCaptureStdout_multilineRedirect() {
         Assert.assertEquals(
@@ -173,7 +166,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun executeScriptCaptureStdout_multilineRedirectStdin_xargs() {
         Assert.assertEquals(
@@ -205,7 +197,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun createRunnableExecutable_simpleScript() {
         val path =
@@ -220,7 +211,6 @@ class ShellTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun isPackageAlive() {
         // this package is certainly alive...
@@ -230,14 +220,12 @@ class ShellTest {
         assertNotNull(Shell.isPackageAlive(Packages.FAKE))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun pidof() {
         assertNotNull(pidof(Packages.TEST))
         assertNull(pidof(Packages.FAKE))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun isPidAlive() {
         val pid = pidof(Packages.TEST)!!
@@ -248,7 +236,6 @@ class ShellTest {
         assertFalse(Shell.isProcessAlive(pid + 1, Packages.TEST))
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait() {
         // validate that killTermProcessesAndWait kills bg process
@@ -258,7 +245,6 @@ class ShellTest {
         assertFalse(backgroundProcess.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_nonExistentProcess() {
         Shell.killProcessesAndWait(
@@ -267,7 +253,6 @@ class ShellTest {
         )
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_failure() {
         // validate that killTermProcessesAndWait kills bg process
@@ -291,7 +276,6 @@ class ShellTest {
         assertTrue(backgroundProcess.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_allowBackground() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
@@ -313,7 +297,6 @@ class ShellTest {
         assertFalse(backgroundProcess2.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_multi() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
@@ -329,7 +312,6 @@ class ShellTest {
         assertFalse(backgroundProcess2.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 23)
     @Test
     fun killProcessesAndWait_processName() {
         val backgroundProcess1 = getBackgroundSpinningProcess()
@@ -344,14 +326,12 @@ class ShellTest {
         assertFalse(backgroundProcess2.isAlive())
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun getRunningSubPackages() {
         assertEquals(emptyList(), Shell.getRunningProcessesForPackage("not.a.real.packagename"))
         assertEquals(listOf(Packages.TEST), Shell.getRunningProcessesForPackage(Packages.TEST))
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun checkRootStatus() {
         if (Shell.isSessionRooted()) {
@@ -364,7 +344,6 @@ class ShellTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = 23) // xargs added api 23
     @Test
     fun shellReuse() {
         val script = Shell.createShellScript("xargs echo $1", stdin = "foo")
@@ -376,7 +355,6 @@ class ShellTest {
         script.cleanUp()
     }
 
-    @SdkSuppress(minSdkVersion = 21)
     @Test
     fun getChecksum() {
         val emptyPaths = listOf("/data/local/tmp/emptyfile1", "/data/local/tmp/emptyfile2")
@@ -554,7 +532,7 @@ class ShellTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 23, maxSdkVersion = 35)
+    @SdkSuppress(maxSdkVersion = 35)
     fun pgrepLFBelowApi36() {
         val processPids = Shell.pgrepLF(Packages.TEST)
         assertTrue(

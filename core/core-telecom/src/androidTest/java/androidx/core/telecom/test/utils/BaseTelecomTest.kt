@@ -51,6 +51,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert
+import org.junit.Assert.assertFalse
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
@@ -77,6 +78,7 @@ abstract class BaseTelecomTest {
     val mSpeakerEndpoint = CallEndpointCompat("SPEAKER", TYPE_SPEAKER, mBaseSessionId)
     val mBluetoothEndpoint = CallEndpointCompat("BLUETOOTH", TYPE_BLUETOOTH, mBaseSessionId)
     val mWiredEndpoint = CallEndpointCompat("WIRED", TYPE_WIRED_HEADSET, mBaseSessionId)
+    val mWatchEndpoint = CallEndpointCompat("Watch", TYPE_BLUETOOTH, mBaseSessionId)
 
     @Before
     fun setUpBase() {
@@ -104,17 +106,13 @@ abstract class BaseTelecomTest {
         CallEndpointUuidTracker.endSession(mBaseSessionId)
     }
 
-    fun setUpV2Test() {
-        Log.i(L_TAG, "setUpV2Test: core-telecom w/ [V2] APIs")
-        Utils.setUtils(TestUtils.mV2Build)
-        mCallsManager.registerAppWithTelecom(CallsManager.CAPABILITY_SUPPORTS_VIDEO_CALLING)
-        logTelecomState()
-    }
-
+    /** NOTE: This should only be called on test devices running Oreo(26)+ */
     fun setUpBackwardsCompatTest() {
         Log.i(L_TAG, "setUpBackwardsCompatTest: core-telecom w/ [ConnectionService] APIs")
-        Utils.setUtils(TestUtils.mBackwardsCompatBuild)
-        mCallsManager.registerAppWithTelecom(CallsManager.CAPABILITY_SUPPORTS_VIDEO_CALLING)
+        mCallsManager.registerAppWithTelecom(
+            capabilities = CallsManager.CAPABILITY_SUPPORTS_VIDEO_CALLING,
+            backwardsCompatSdkLevel = Utils.getCurrentSdk(), /*override up to the DUTs currentSdk*/
+        )
         logTelecomState()
     }
 
@@ -163,7 +161,7 @@ abstract class BaseTelecomTest {
         }
     }
 
-    private fun logTelecomState() {
+    fun logTelecomState() {
         val telecomDumpsysString = TestUtils.runShellCommand(TestUtils.COMMAND_DUMP_TELECOM)
         val isInCallXmCallsDump = isInCallFromTelDumpsys(telecomDumpsysString)
 

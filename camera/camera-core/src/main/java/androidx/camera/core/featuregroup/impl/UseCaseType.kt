@@ -22,10 +22,17 @@ import android.view.SurfaceHolder
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCase
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.DYNAMIC_RANGE
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.FPS_RANGE
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.IMAGE_FORMAT
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.RECORDING_QUALITY
+import androidx.camera.core.featuregroup.impl.feature.FeatureTypeInternal.VIDEO_STABILIZATION
+import androidx.camera.core.impl.ImageCaptureConfig
 import androidx.camera.core.impl.ImageFormatConstants.INTERNAL_DEFINED_IMAGE_FORMAT_PRIVATE
 import androidx.camera.core.impl.UseCaseConfig
 import androidx.camera.core.impl.UseCaseConfigFactory.CaptureType
-import androidx.camera.core.internal.CameraUseCaseAdapter.isVideoCapture
+import androidx.camera.core.impl.utils.UseCaseUtil.isVideoCapture
 import androidx.camera.core.streamsharing.StreamSharing
 
 /**
@@ -98,7 +105,7 @@ public enum class UseCaseType(
                 PREVIEW
             } else if (this is ImageCapture) {
                 IMAGE_CAPTURE
-            } else if (isVideoCapture(this)) {
+            } else if (this.isVideoCapture()) {
                 VIDEO_CAPTURE
             } else if (this is StreamSharing) {
                 STREAM_SHARING
@@ -127,5 +134,38 @@ public enum class UseCaseType(
                 else -> UNDEFINED
             }
         }
+
+        /**
+         * Gets the [FeatureTypeInternal] that app has configured to a [UseCase] directly, null if
+         * none found.
+         */
+        internal fun UseCase.getAppConfiguredGroupableFeatureType(): FeatureTypeInternal? =
+            FeatureTypeInternal.entries.find { it.isConfiguredToUseCaseByApp(this) }
+
+        private fun FeatureTypeInternal.isConfiguredToUseCaseByApp(useCase: UseCase): Boolean =
+            when (this) {
+                DYNAMIC_RANGE -> useCase.isDynamicRangeConfiguredByApp()
+                FPS_RANGE -> useCase.isFpsRangeConfiguredByApp()
+                VIDEO_STABILIZATION -> useCase.isStabilizationModeConfiguredByApp()
+                IMAGE_FORMAT -> useCase.isImageFormatConfiguredByApp()
+                RECORDING_QUALITY -> useCase.isRecordingQualityConfiguredByApp()
+            }
+
+        private fun UseCase.isDynamicRangeConfiguredByApp() = appConfig.hasDynamicRange()
+
+        private fun UseCase.isFpsRangeConfiguredByApp() = appConfig.hasTargetFrameRate()
+
+        private fun UseCase.isStabilizationModeConfiguredByApp() =
+            appConfig.containsOption(UseCaseConfig.OPTION_PREVIEW_STABILIZATION_MODE) ||
+                appConfig.containsOption(UseCaseConfig.OPTION_VIDEO_STABILIZATION_MODE)
+
+        private fun UseCase.isImageFormatConfiguredByApp() =
+            appConfig.containsOption(ImageCaptureConfig.OPTION_OUTPUT_FORMAT)
+
+        private fun UseCase.isRecordingQualityConfiguredByApp(): Boolean =
+            appConfig.retrieveOption(
+                UseCaseConfig.OPTION_IS_VIDEO_QUALITY_SELECTOR_DEFAULT,
+                true,
+            ) == false
     }
 }

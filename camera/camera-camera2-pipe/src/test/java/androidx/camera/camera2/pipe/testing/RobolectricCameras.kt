@@ -25,7 +25,6 @@ import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.camera.camera2.pipe.CameraId
@@ -162,7 +161,7 @@ public object RobolectricCameras {
 }
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class RobolectricCamerasTest {
     private val mainLooper = shadowOf(Looper.getMainLooper())
 

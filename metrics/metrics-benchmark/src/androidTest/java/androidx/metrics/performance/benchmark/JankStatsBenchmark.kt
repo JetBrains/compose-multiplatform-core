@@ -69,7 +69,10 @@ class JankStatsBenchmark {
     @Before
     fun setup() {
         activityRule.runOnUiThread {
-            textview = activityRule.activity.findViewById(R.id.textview)
+            textview =
+                activityRule.activity.findViewById(
+                    androidx.metrics.performance.benchmark.R.id.textview
+                )
             metricsStateHolder = PerformanceMetricsState.getHolderForHierarchy(textview)
             jankStats = JankStats.createAndTrack(activityRule.activity.window, frameListener)
             jankStatsImpl = JankStatsInternalsForTesting(jankStats)

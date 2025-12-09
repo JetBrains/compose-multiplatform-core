@@ -19,7 +19,6 @@ package androidx.appsearch.builtintypes;
 import android.os.Build;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.IntRange;
 import androidx.annotation.OptIn;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.RestrictTo;
@@ -32,10 +31,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-
 import java.time.Duration;
 import java.time.Instant;
-
 import java.util.List;
 
 /**
@@ -315,7 +312,7 @@ public class SportsEvent extends Event {
      * Returns whether the home team should be placed at the start for
      * a visual representation of the sports event.
      */
-    public @NonNull boolean isPlaceHomeTeamAtStart() {
+    public boolean isPlaceHomeTeamAtStart() {
         return mPlaceHomeTeamAtStart;
     }
 
@@ -498,8 +495,7 @@ public class SportsEvent extends Event {
          *
          * Must be a range from 0 to 1.
          */
-        public @NonNull T setHomeTeamWinProbability(
-            @NonNull double homeTeamWinProbability) {
+        public @NonNull T setHomeTeamWinProbability(double homeTeamWinProbability) {
             Preconditions.checkArgumentInRange(homeTeamWinProbability, 0, 1,
                 "homeTeamWinProbability");
             mHomeTeamWinProbability = homeTeamWinProbability;
@@ -566,6 +562,7 @@ public class SportsEvent extends Event {
             return (T) this;
         }
 
+        @Override
         public @NonNull SportsEvent build() {
             return new SportsEvent(
                     mNamespace,

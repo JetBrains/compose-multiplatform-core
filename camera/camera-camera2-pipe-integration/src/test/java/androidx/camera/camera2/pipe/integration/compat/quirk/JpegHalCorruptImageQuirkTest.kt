@@ -30,7 +30,7 @@ import org.robolectric.shadows.StreamConfigurationMapBuilder
 
 @RunWith(ParameterizedRobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = 21)
+@Config(sdk = [Config.ALL_SDKS])
 class JpegHalCorruptImageQuirkTest(
     private val device: String,
     private val quirkEnablingExpected: Boolean,

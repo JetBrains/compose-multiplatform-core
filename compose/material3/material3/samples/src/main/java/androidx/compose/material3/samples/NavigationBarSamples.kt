@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.StarBorder
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -46,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -74,7 +72,6 @@ fun ShortNavigationBarSample() {
     }
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Preview
 @Sampled
 @Composable
@@ -135,32 +132,6 @@ fun NavigationBarSample() {
                 label = { Text(item) },
                 selected = selectedItem == index,
                 onClick = { selectedItem = index },
-            )
-        }
-    }
-}
-
-@Composable
-fun NavigationBarWithOnlySelectedLabelsSample() {
-    var selectedItem by remember { mutableIntStateOf(0) }
-    val items = listOf("Songs", "Artists", "Playlists")
-    val selectedIcons = listOf(Icons.Filled.Home, Icons.Filled.Favorite, Icons.Filled.Star)
-    val unselectedIcons =
-        listOf(Icons.Outlined.Home, Icons.Outlined.FavoriteBorder, Icons.Outlined.StarBorder)
-
-    NavigationBar {
-        items.forEachIndexed { index, item ->
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        if (selectedItem == index) selectedIcons[index] else unselectedIcons[index],
-                        contentDescription = item,
-                    )
-                },
-                label = { Text(item) },
-                selected = selectedItem == index,
-                onClick = { selectedItem = index },
-                alwaysShowLabel = false,
             )
         }
     }

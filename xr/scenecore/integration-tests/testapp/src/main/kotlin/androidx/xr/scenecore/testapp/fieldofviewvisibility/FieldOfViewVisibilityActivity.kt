@@ -33,6 +33,10 @@ import androidx.xr.scenecore.scene
 import androidx.xr.scenecore.testapp.R
 import androidx.xr.scenecore.testapp.common.DebugTextLinearView
 import androidx.xr.scenecore.testapp.common.createSession
+import androidx.xr.scenecore.testapp.common.managers.GltfManager
+import androidx.xr.scenecore.testapp.common.managers.PanelEntityManager
+import androidx.xr.scenecore.testapp.common.managers.SpatialEnvironmentManager
+import androidx.xr.scenecore.testapp.common.managers.SurfaceEntityManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.util.function.Consumer
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,8 +51,7 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
     private lateinit var mPanelEntityManager: PanelEntityManager
     private lateinit var mPerceivedResolutionManager: PerceivedResolutionManager
     private lateinit var mHeadLockedPanelView: DebugTextLinearView
-    private val _mSpatialVisibilityFlow =
-        MutableStateFlow(SpatialVisibility(SpatialVisibility.UNKNOWN))
+    private val _mSpatialVisibilityFlow = MutableStateFlow(SpatialVisibility.UNKNOWN)
     var mSpatialVisibility: SpatialVisibility
         get() = _mSpatialVisibilityFlow.value
         set(value) {
@@ -91,12 +94,6 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         setupMainPanel()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        session!!.scene.clearSpatialVisibilityChangedListener()
-        session!!.scene.removePerceivedResolutionChangedListener(mPerceivedResolutionListener)
-    }
-
     private fun createHeadLockedPanel() {
         mHeadLockedPanelView = DebugTextLinearView(context = this)
         mHeadLockedPanelView.setName("Spatial Visibility")
@@ -106,10 +103,13 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
         session!!.scene.setSpatialVisibilityChangedListener { visibility: SpatialVisibility ->
             mSpatialVisibility = visibility
             Log.i(TAG, "Spatial visibility changed listener called $visibility")
-            mHeadLockedPanelView.setLine("State", "$visibility")
+            mHeadLockedPanelView.setLine("State", visibility.toString())
             updateTextViews()
         }
-        session!!.scene.addPerceivedResolutionChangedListener(mPerceivedResolutionListener)
+        session!!
+            .scene
+            .mainPanelEntity
+            .addPerceivedResolutionChangedListener(mPerceivedResolutionListener)
     }
 
     private fun updateTextViews() {
@@ -144,10 +144,8 @@ class FieldOfViewVisibilityActivity : AppCompatActivity() {
             it.setOnClickListener { session!!.scene.requestHomeSpaceMode() }
         }
 
-        // Set the main panel size and make the main panel movable.
-        session!!.scene.mainPanelEntity.sizeInPixels = IntSize2d(width = 1500, height = 2000)
-        val movableComponent =
-            MovableComponent.create(session!!, systemMovable = true, scaleInZ = false)
+        // Make the main panel movable.
+        val movableComponent = MovableComponent.createSystemMovable(session!!, scaleInZ = false)
         session!!.scene.mainPanelEntity.addComponent(movableComponent)
 
         // Create the UI component managers.

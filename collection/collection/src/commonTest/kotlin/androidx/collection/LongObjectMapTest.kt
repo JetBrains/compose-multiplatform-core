@@ -591,7 +591,7 @@ class LongObjectMapTest {
         )
         assertEquals(
             "x${order[0].toLong()}=${order[0]}, ${order[1].toLong()}=${order[1]}, " +
-                "${order[2].toLong()}=${order[2]}...",
+                "${order[2].toLong()}=${order[2]}, ...y",
             map.joinToString(prefix = "x", postfix = "y", limit = 3),
         )
         assertEquals(
@@ -602,7 +602,7 @@ class LongObjectMapTest {
         )
         val names = arrayOf("one", "two", "three", "four", "five")
         assertEquals(
-            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}...",
+            "${names[order[0]]}, ${names[order[1]]}, ${names[order[2]]}, ...",
             map.joinToString(limit = 3) { key, _ -> names[key.toInt()] },
         )
     }

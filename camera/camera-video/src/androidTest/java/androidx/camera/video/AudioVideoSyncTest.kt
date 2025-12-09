@@ -35,12 +35,9 @@ import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraXUtil
 import androidx.camera.testing.impl.LabTestRule
 import androidx.camera.testing.impl.SurfaceTextureProvider
-import androidx.camera.video.internal.compat.quirk.DeactivateEncoderSurfaceBeforeStopEncoderQuirk
-import androidx.camera.video.internal.compat.quirk.DeviceQuirks
 import androidx.core.util.Consumer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.Truth.assertThat
@@ -59,7 +56,6 @@ import org.mockito.Mockito
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class AudioVideoSyncTest(private val implName: String, private val cameraConfig: CameraXConfig) {
 
     @get:Rule
@@ -197,7 +193,7 @@ class AudioVideoSyncTest(private val implName: String, private val cameraConfig:
         val timeDiff = abs(firstAudioTime - firstVideoTime)
         assertThat(timeDiff).isLessThan(diffThresholdUs)
 
-        recording.stopSafely()
+        recording.stop()
         inOrder
             .verify(videoRecordEventListener, Mockito.timeout(5000L))
             .accept(ArgumentMatchers.any(VideoRecordEvent.Finalize::class.java))
@@ -210,21 +206,6 @@ class AudioVideoSyncTest(private val implName: String, private val cameraConfig:
                 recorder.onSurfaceRequested(request)
             }
             recorder.onSourceStateChanged(VideoOutput.SourceState.ACTIVE_STREAMING)
-        }
-    }
-
-    // It fails on devices with certain chipset if the codec is stopped when the camera is still
-    // producing frames to the provided surface. This method first stop the camera from
-    // producing frames then stops the recording safely on the problematic devices.
-    private fun Recording.stopSafely() {
-        val deactivateSurfaceBeforeStop =
-            DeviceQuirks.get(DeactivateEncoderSurfaceBeforeStopEncoderQuirk::class.java) != null
-        if (deactivateSurfaceBeforeStop) {
-            instrumentation.runOnMainSync { preview.setSurfaceProvider(null) }
-        }
-        stop()
-        if (deactivateSurfaceBeforeStop && Build.VERSION.SDK_INT >= 23) {
-            invokeSurfaceRequest(recorder)
         }
     }
 

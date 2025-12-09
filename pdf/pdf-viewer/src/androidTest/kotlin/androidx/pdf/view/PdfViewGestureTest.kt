@@ -18,7 +18,6 @@ package androidx.pdf.view
 
 import android.graphics.Point
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.ViewAction
@@ -45,18 +44,18 @@ class PdfViewGestureTest {
     fun before() {
         val fakePdfDocument = FakePdfDocument(List(100) { Point(500, 1000) })
         PdfViewTestActivity.onCreateCallback = { activity ->
-            val container = FrameLayout(activity)
-            container.addView(
-                PdfView(activity).apply {
-                    pdfDocument = fakePdfDocument
-                    id = PDF_VIEW_ID
-                },
-                ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                ),
-            )
-            activity.setContentView(container)
+            with(activity) {
+                container.addView(
+                    PdfView(activity).apply {
+                        pdfDocument = fakePdfDocument
+                        id = PDF_VIEW_ID
+                    },
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    ),
+                )
+            }
         }
     }
 

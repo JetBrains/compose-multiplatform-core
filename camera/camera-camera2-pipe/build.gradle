@@ -22,23 +22,24 @@
  * modifying its settings.
  */
 
-import androidx.build.KotlinTarget
 import androidx.build.SoftwareType
 
 plugins {
     id("AndroidXPlugin")
     id("com.android.library")
+    // Remove when b/442128557 is fixed
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
 
 dependencies {
     api("androidx.annotation:annotation:1.8.1")
-    api(libs.kotlinStdlib)
     api(libs.kotlinCoroutinesAndroid)
 
     implementation(libs.atomicFu)
     implementation(libs.dagger)
+    implementation(project(":camera:featurecombinationquery:featurecombinationquery"))
+
 
     ksp(libs.daggerCompiler)
 
@@ -52,10 +53,6 @@ dependencies {
     testImplementation(libs.mockitoKotlin4)
     testImplementation(project(":camera:camera-camera2-pipe-testing"))
     testImplementation(project(":internal-testutils-truth"))
-    testImplementation("org.robolectric:annotations:4.14")
-    testImplementation("org.robolectric:sandbox:4.14")
-    testImplementation("org.robolectric:shadowapi:4.14")
-    testImplementation("org.robolectric:shadows-framework:4.14")
     testImplementation(libs.kotlinCoroutinesCore)
 
     kspTest(libs.daggerCompiler)
@@ -66,7 +63,7 @@ dependencies {
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     lint {
         enable.add("CameraXQuirksClassDetector")

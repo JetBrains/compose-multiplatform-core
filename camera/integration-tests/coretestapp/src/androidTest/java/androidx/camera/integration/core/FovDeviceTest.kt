@@ -46,7 +46,6 @@ private val DEFAULT_CAMERA_ID_GROUP = Collections.unmodifiableSet(setOf("0", "1"
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class FovDeviceTest(
     private val cameraId: String,
     private val implName: String,

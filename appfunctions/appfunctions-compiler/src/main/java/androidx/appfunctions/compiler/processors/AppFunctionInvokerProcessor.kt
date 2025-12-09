@@ -21,23 +21,30 @@ import androidx.appfunctions.compiler.core.AnnotatedAppFunctions
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator
 import androidx.appfunctions.compiler.core.AppFunctionComponentRegistryGenerator.AppFunctionComponent
 import androidx.appfunctions.compiler.core.AppFunctionSymbolResolver
+import androidx.appfunctions.compiler.core.IntrospectionHelper
 import androidx.appfunctions.compiler.core.IntrospectionHelper.APP_FUNCTION_FUNCTION_NOT_FOUND_EXCEPTION_CLASS
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionComponentRegistryAnnotation
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionContextClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.AppFunctionInvokerClass
 import androidx.appfunctions.compiler.core.IntrospectionHelper.ConfigurableAppFunctionFactoryClass
+import androidx.appfunctions.compiler.core.findAnnotation
+import androidx.appfunctions.compiler.core.isOfType
 import androidx.appfunctions.compiler.core.toTypeName
 import com.google.devtools.ksp.KspExperimental
+import com.google.devtools.ksp.getConstructors
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSTypeReference
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.LIST
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
@@ -264,6 +271,7 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
         contextSpec: ParameterSpec,
         functionParametersSpec: ParameterSpec,
     ) {
+        val isDeprecated = appFunction.isDeprecated()
         val functionParameterStatement =
             appFunction.getAppFunctionParametersStatement(contextSpec, functionParametersSpec)
         val formatStringMap =
@@ -280,15 +288,33 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
             )
         addNamed("\"%function_id:L\" -> {\n", formatStringMap)
         indent()
+        if (isDeprecated) {
+            add("@Suppress(\"DEPRECATION\")\n")
+        }
         addNamed("%factory_class:T<%enclosing_class:T>(\n", formatStringMap)
         indent()
         addNamed("%context_param:L.%context_property:L\n", formatStringMap)
         unindent()
-        add(")\n")
+        if (annotatedAppFunctions.containsPublicNoArgConstructor()) {
+            addNamed(") { %enclosing_class:T() }\n", formatStringMap)
+        } else {
+            add(")\n")
+        }
         addNamed(".%create_method:L(%enclosing_class:T::class.java)\n", formatStringMap)
         addNamed(".%function_name:L(%parameters:L)\n", formatStringMap)
         unindent()
         add("}\n")
+    }
+
+    private fun AnnotatedAppFunctions.containsPublicNoArgConstructor(): Boolean {
+        return classDeclaration.getConstructors().firstOrNull { constructor ->
+            constructor.modifiers.contains(Modifier.PUBLIC) && constructor.parameters.isEmpty()
+        } != null
+    }
+
+    private fun KSFunctionDeclaration.isDeprecated(): Boolean {
+        return annotations.findAnnotation(IntrospectionHelper.DeprecatedAnnotation.CLASS_NAME) !=
+            null
     }
 
     private fun KSFunctionDeclaration.getAppFunctionParametersStatement(
@@ -304,9 +330,15 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
                     } else {
                         val parameterName = checkNotNull(value.name).asString()
                         val parameterType = value.type.toTypeName()
-                        add(
-                            "${functionParametersSpec.name}[\"${parameterName}\"] as $parameterType"
-                        )
+                        if (value.type.isOfType(LIST) || isParametrized(value.type)) {
+                            add(
+                                "@Suppress(\"UNCHECKED_CAST\") (${functionParametersSpec.name}[\"${parameterName}\"] as $parameterType)"
+                            )
+                        } else {
+                            add(
+                                "${functionParametersSpec.name}[\"${parameterName}\"] as $parameterType"
+                            )
+                        }
                     }
                 }
             }
@@ -315,5 +347,9 @@ class AppFunctionInvokerProcessor(private val codeGenerator: CodeGenerator) : Sy
 
     private fun getAppFunctionInvokerClassName(functionClassName: String): String {
         return "$%s_AppFunctionInvoker".format(functionClassName)
+    }
+
+    private fun isParametrized(type: KSTypeReference): Boolean {
+        return type.resolve().arguments.isNotEmpty()
     }
 }

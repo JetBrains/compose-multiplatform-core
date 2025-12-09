@@ -55,6 +55,10 @@ internal class GlimmerListMeasureResult(
     override val afterContentPadding: Int,
     override val mainAxisItemSpacing: Int,
 ) : ListLayoutInfo, MeasureResult by measureResult {
+
+    val canScrollBackward
+        get() = (firstVisibleItem?.index ?: 0) != 0 || firstVisibleItemScrollOffset != 0
+
     override val viewportSize: IntSize
         get() = IntSize(width, height)
 

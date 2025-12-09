@@ -49,10 +49,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.xr.compose.platform.LocalSpatialCapabilities
 import androidx.xr.compose.platform.LocalSpatialConfiguration
-import androidx.xr.compose.spatial.ApplicationSubspace
-import androidx.xr.compose.spatial.ConstraintsBehavior
-import androidx.xr.compose.subspace.MainPanel
+import androidx.xr.compose.spatial.Subspace
 import androidx.xr.compose.subspace.SpatialColumn
+import androidx.xr.compose.subspace.SpatialMainPanel
 import androidx.xr.compose.subspace.SpatialPanel
 import androidx.xr.compose.subspace.SpatialRow
 import androidx.xr.compose.subspace.SubspaceComposable
@@ -60,7 +59,6 @@ import androidx.xr.compose.subspace.layout.SubspaceModifier
 import androidx.xr.compose.subspace.layout.height
 import androidx.xr.compose.subspace.layout.width
 import androidx.xr.compose.testapp.ui.components.CommonTestScaffold
-import androidx.xr.compose.unit.VolumeConstraints
 
 class SpatialComposeWindowManager : ComponentActivity() {
     private val mediaUriState: MutableState<Uri?> = mutableStateOf(null)
@@ -79,12 +77,7 @@ class SpatialComposeWindowManager : ComponentActivity() {
             // 2D Content rendered to the MainPanel
             MainPanelContent()
 
-            ApplicationSubspace(
-                constraints = VolumeConstraints(),
-                constraintsBehavior = ConstraintsBehavior.FieldOfView,
-            ) {
-                SpatialLayout()
-            }
+            Subspace(allowUnboundedSubspace = true) { SpatialLayout() }
         }
     }
 
@@ -132,7 +125,7 @@ class SpatialComposeWindowManager : ComponentActivity() {
             }
             PanelGrid()
             if (showMainPanel) {
-                MainPanel(modifier = SubspaceModifier.height(800.dp).width(680.dp))
+                SpatialMainPanel(modifier = SubspaceModifier.height(800.dp).width(680.dp))
             }
         }
     }

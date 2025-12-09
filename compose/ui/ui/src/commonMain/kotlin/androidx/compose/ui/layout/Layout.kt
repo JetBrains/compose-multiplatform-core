@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.materialize
 import androidx.compose.ui.materializeWithCompositionLocalInjectionInternal
 import androidx.compose.ui.node.ComposeUiNode
+import androidx.compose.ui.node.ComposeUiNode.Companion.ApplyOnDeactivatedNodeAssertion
 import androidx.compose.ui.node.ComposeUiNode.Companion.SetCompositeKeyHash
 import androidx.compose.ui.node.ComposeUiNode.Companion.SetMeasurePolicy
 import androidx.compose.ui.node.ComposeUiNode.Companion.SetModifier
@@ -86,7 +87,8 @@ inline fun Layout(
         update = {
             set(measurePolicy, SetMeasurePolicy)
             set(localMap, SetResolvedCompositionLocals)
-            set(compositeKeyHash, SetCompositeKeyHash)
+            init(compositeKeyHash, SetCompositeKeyHash)
+            reconcile(ApplyOnDeactivatedNodeAssertion)
             set(materialized, SetModifier)
         },
         content = content,
@@ -128,8 +130,9 @@ inline fun Layout(modifier: Modifier = Modifier, measurePolicy: MeasurePolicy) {
         update = {
             set(measurePolicy, SetMeasurePolicy)
             set(localMap, SetResolvedCompositionLocals)
+            reconcile(ApplyOnDeactivatedNodeAssertion)
             set(materialized, SetModifier)
-            set(compositeKeyHash, SetCompositeKeyHash)
+            init(compositeKeyHash, SetCompositeKeyHash)
         },
     )
 }
@@ -179,7 +182,7 @@ internal fun combineAsVirtualLayouts(
         val compositeKeyHash = currentCompositeKeyHashCode.hashCode()
         ReusableComposeNode<ComposeUiNode, Applier<Any>>(
             factory = ComposeUiNode.VirtualConstructor,
-            update = { set(compositeKeyHash, SetCompositeKeyHash) },
+            update = { init(compositeKeyHash, SetCompositeKeyHash) },
             content = content,
         )
     }
@@ -199,7 +202,7 @@ internal fun materializerOf(
     val materialized = currentComposer.materialize(modifier)
     update {
         set(materialized, SetModifier)
-        set(compositeKeyHash, SetCompositeKeyHash)
+        init(compositeKeyHash, SetCompositeKeyHash)
     }
 }
 
@@ -221,7 +224,7 @@ internal fun materializerOfWithCompositionLocalInjection(
     val materialized = currentComposer.materializeWithCompositionLocalInjectionInternal(modifier)
     update {
         set(materialized, SetModifier)
-        set(compositeKeyHash, SetCompositeKeyHash)
+        init(compositeKeyHash, SetCompositeKeyHash)
     }
 }
 
@@ -247,8 +250,9 @@ fun MultiMeasureLayout(
             set(measurePolicy, SetMeasurePolicy)
             set(localMap, SetResolvedCompositionLocals)
             @Suppress("DEPRECATION") init { this.canMultiMeasure = true }
+            reconcile(ApplyOnDeactivatedNodeAssertion)
             set(materialized, SetModifier)
-            set(compositeKeyHash, SetCompositeKeyHash)
+            init(compositeKeyHash, SetCompositeKeyHash)
         },
         content = content,
     )

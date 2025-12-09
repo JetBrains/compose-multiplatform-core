@@ -15,10 +15,9 @@
  */
 package androidx.camera.lifecycle
 
-import android.os.Build
 import androidx.camera.core.CameraEffect
+import androidx.camera.core.CameraIdentifier
 import androidx.camera.core.CompositionSettings
-import androidx.camera.core.ExperimentalSessionConfig
 import androidx.camera.core.LegacySessionConfig
 import androidx.camera.core.UseCase
 import androidx.camera.core.ViewPort
@@ -48,8 +47,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
-@OptIn(ExperimentalSessionConfig::class)
+@Config(sdk = [Config.ALL_SDKS])
 class LifecycleCameraRepositoryTest {
     private lateinit var lifecycleOwner: FakeLifecycleOwner
     private lateinit var repository: LifecycleCameraRepository
@@ -410,8 +408,9 @@ class LifecycleCameraRepositoryTest {
         val retrieved =
             repository.getLifecycleCamera(
                 lifecycleOwner,
-                CameraUseCaseAdapter.CameraId.create(
+                CameraIdentifier.Factory.create(
                     camera.getCameraInfoInternal().getCameraId(),
+                    null,
                     CameraConfigs.defaultConfig().getCompatibilityId(),
                 ),
             )
@@ -423,10 +422,18 @@ class LifecycleCameraRepositoryTest {
     fun removeLifecycleCameras_removedFromRepository() {
         repository.createLifecycleCamera(lifecycleOwner, cameraUseCaseAdapter)
         val key =
-            LifecycleCameraRepository.Key.create(lifecycleOwner, cameraUseCaseAdapter.cameraId)
+            LifecycleCameraRepository.Key.create(
+                lifecycleOwner,
+                cameraUseCaseAdapter.adapterIdentifier,
+            )
         repository.removeLifecycleCameras(setOf(key))
 
-        assertThat(repository.getLifecycleCamera(lifecycleOwner, cameraUseCaseAdapter.cameraId))
+        assertThat(
+                repository.getLifecycleCamera(
+                    lifecycleOwner,
+                    cameraUseCaseAdapter.adapterIdentifier,
+                )
+            )
             .isNull()
     }
 
@@ -440,10 +447,10 @@ class LifecycleCameraRepositoryTest {
             repository.createLifecycleCamera(lifecycleOwner, newCameraUseCaseAdapter)
 
         val retrieved1 =
-            repository.getLifecycleCamera(lifecycleOwner, cameraUseCaseAdapter.cameraId)
+            repository.getLifecycleCamera(lifecycleOwner, cameraUseCaseAdapter.adapterIdentifier)
 
         val retrieved2 =
-            repository.getLifecycleCamera(lifecycleOwner, newCameraUseCaseAdapter.cameraId)
+            repository.getLifecycleCamera(lifecycleOwner, newCameraUseCaseAdapter.adapterIdentifier)
 
         assertThat(lifecycleCamera1).isSameInstanceAs(retrieved1)
         assertThat(lifecycleCamera2).isSameInstanceAs(retrieved2)
@@ -453,12 +460,16 @@ class LifecycleCameraRepositoryTest {
     @Test
     fun keys() {
         val key0 =
-            LifecycleCameraRepository.Key.create(lifecycleOwner, cameraUseCaseAdapter.cameraId)
+            LifecycleCameraRepository.Key.create(
+                lifecycleOwner,
+                cameraUseCaseAdapter.adapterIdentifier,
+            )
         val key1 =
             LifecycleCameraRepository.Key.create(
                 lifecycleOwner,
-                CameraUseCaseAdapter.CameraId.create(
+                CameraIdentifier.Factory.create(
                     camera.getCameraInfoInternal().getCameraId(),
+                    null,
                     CameraConfigs.defaultConfig().getCompatibilityId(),
                 ),
             )

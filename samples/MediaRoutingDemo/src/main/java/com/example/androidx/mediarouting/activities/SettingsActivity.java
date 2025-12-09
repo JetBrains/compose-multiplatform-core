@@ -196,7 +196,7 @@ public final class SettingsActivity extends AppCompatActivity {
         setUpServiceEnabledSwitch(
                 dynamicProviderEnabledSwitch,
                 SampleDynamicGroupMediaRouteProviderService.class,
-                /* onEnableRunnable= */ this::bindToDynamicProviderService,
+                /* onEnabledRunnable= */ this::bindToDynamicProviderService,
                 /* onDisabledRunnable= */ () -> {}); // Will unbind automatically.
     }
 
@@ -205,7 +205,7 @@ public final class SettingsActivity extends AppCompatActivity {
         setUpServiceEnabledSwitch(
                 simpleProviderEnabledSwitch,
                 SampleMediaRouteProviderService.class,
-                /* onEnableRunnable= */ () -> {},
+                /* onEnabledRunnable= */ () -> {},
                 /* onDisabledRunnable= */ () -> {});
     }
 
@@ -214,7 +214,7 @@ public final class SettingsActivity extends AppCompatActivity {
         setUpServiceEnabledSwitch(
                 wrapperProviderEnabledSwitch,
                 WrapperMediaRouteProviderService.class,
-                /* onEnableRunnable= */ () -> {
+                /* onEnabledRunnable= */ () -> {
                     updateMediaTransferRestrictedToSelfProviders(true);
                     mMediaTransferRestrictedToSelfProvidersToast.show();
                 },

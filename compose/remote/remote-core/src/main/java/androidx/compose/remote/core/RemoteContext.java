@@ -15,6 +15,7 @@
  */
 package androidx.compose.remote.core;
 
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.FloatExpression;
 import androidx.compose.remote.core.operations.ShaderData;
 import androidx.compose.remote.core.operations.Theme;
@@ -33,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 
 /**
  * Specify an abstract context used to playback RemoteCompose documents
@@ -41,6 +43,7 @@ import java.time.ZoneOffset;
  *
  * <p>We also contain a PaintContext, so that any operation can draw as needed.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public abstract class RemoteContext {
     private static final int MAX_OP_COUNT = 20_000; // Maximum cmds per frame
     private @NonNull Clock mClock;
@@ -143,7 +146,7 @@ public abstract class RemoteContext {
      * @param instanceId the id to save this path under
      * @param floatPath the path as a float array
      */
-    public abstract void loadPathData(int instanceId, float @NonNull [] floatPath);
+    public abstract void loadPathData(int instanceId, int winding, float @NonNull [] floatPath);
 
     /**
      * Load a path under an id. Paths can be use in clip drawPath and drawTweenPath
@@ -212,6 +215,23 @@ public abstract class RemoteContext {
      * @param stringName the name of the string to override
      */
     public abstract void clearNamedStringOverride(@NonNull String stringName);
+
+    /**
+     * Set the value of a named Boolean. This overrides the boolean in the document
+     *
+     * @param booleanName the name of the boolean to override
+     * @param value Override the default boolean
+     */
+    public abstract void setNamedBooleanOverride(@NonNull String booleanName, boolean value);
+
+    /**
+     * Allows to clear a named Boolean.
+     *
+     * <p>If an override exists, we revert back to the default value in the document.
+     *
+     * @param booleanName the name of the boolean to override
+     */
+    public abstract void clearNamedBooleanOverride(@NonNull String booleanName);
 
     /**
      * Set the value of a named Integer. This overrides the integer in the document
@@ -309,26 +329,26 @@ public abstract class RemoteContext {
     /**
      * Run an action with a named parameter
      *
-     * @param textId the text id of the action
+     * @param id the text id of the action
      * @param value the value of the parameter
      */
-    public abstract void runNamedAction(int textId, @NonNull Object value);
+    public abstract void runNamedAction(int id, @Nullable Object value);
 
     /**
      * Put an object under an id
      *
-     * @param mId the id of the object
-     * @param command the object
+     * @param id the id of the object
+     * @param value the object
      */
-    public abstract void putObject(int mId, @NonNull Object command);
+    public abstract void putObject(int id, @NonNull Object value);
 
     /**
      * Get an object given an id
      *
-     * @param mId the id of the object
+     * @param id the id of the object
      * @return the object
      */
-    public abstract @Nullable Object getObject(int mId);
+    public abstract @Nullable Object getObject(int id);
 
     /**
      * Add a touch listener to the context
@@ -501,7 +521,7 @@ public abstract class RemoteContext {
             int width,
             int height,
             long capabilities,
-            @NonNull IntMap<Object> properties) {
+            @Nullable IntMap<Object> properties) {
         mRemoteComposeState.setWindowWidth(width);
         mRemoteComposeState.setWindowHeight(height);
         mDocument.setVersion(majorVersion, minorVersion, patchVersion);
@@ -540,6 +560,14 @@ public abstract class RemoteContext {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Data handling
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Mark the variable as dirty
+     * @param id
+     */
+    public void markVariableDirty(int id) {
+        // empty
+    }
 
     /**
      * Save a bitmap under an imageId
@@ -672,7 +700,18 @@ public abstract class RemoteContext {
     public abstract void listensTo(int id, @NonNull VariableSupport variableSupport);
 
     /**
+     * Get the listeners for a given id
+     *
+     * @param id
+     * @return
+     */
+    public @Nullable ArrayList<VariableSupport> getListeners(int id) {
+        return null;
+    }
+
+    /**
      * Notify commands with variables have changed
+     *
      *
      * @return the number of ms to next update
      */
@@ -742,6 +781,12 @@ public abstract class RemoteContext {
 
     /** The YEAR e.g. 2026 */
     public static final int ID_YEAR = 35;
+
+    /** First baseline (for alignment) */
+    public static final int ID_FIRST_BASELINE = 36;
+
+    /** last baseline (for alignment) */
+    public static final int ID_LAST_BASELINE = 37;
 
     public static final float FLOAT_DENSITY = Utils.asNan(ID_DENSITY);
 
@@ -840,6 +885,12 @@ public abstract class RemoteContext {
     /** The time in seconds since the epoch. */
     public static final long INT_EPOCH_SECOND = ((long) ID_EPOCH_SECOND) + 0x100000000L;
 
+    /** First Baseline */
+    public static final float FIRST_BASELINE = Utils.asNan(ID_FIRST_BASELINE);
+
+    /** Last Baseline */
+    public static final float LAST_BASELINE = Utils.asNan(ID_LAST_BASELINE);
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Click handling
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -914,7 +965,7 @@ public abstract class RemoteContext {
      * Add a click area to the doc
      *
      * @param id the id of the click area
-     * @param contentDescription the content description of the click area
+     * @param contentDescriptionId the content description of the click area
      * @param left the left bounds of the click area
      * @param top the top bounds of the click area
      * @param right the right bounds of the click area
@@ -923,7 +974,7 @@ public abstract class RemoteContext {
      */
     public abstract void addClickArea(
             int id,
-            int contentDescription,
+            int contentDescriptionId,
             float left,
             float top,
             float right,

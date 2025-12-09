@@ -17,11 +17,11 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 android {
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "androidx.camera.integration.diagnose"
@@ -50,7 +50,10 @@ dependencies {
     implementation(libs.material)
 
     testImplementation(libs.truth)
-    testImplementation(project(":camera:camera-testing"))
+    implementation(project(":camera:camera-testing")) {
+        // Ensure camera-testing does not pull in androidx.test dependencies
+        exclude(group:"androidx.test")
+    }
     testImplementation("androidx.test:core:1.4.0")
     testImplementation("junit:junit:4.12")
 
@@ -58,13 +61,15 @@ dependencies {
     androidTestImplementation(libs.testCore)
     androidTestImplementation(libs.testRunner)
     androidTestImplementation(libs.testRules)
+    androidTestImplementation("androidx.concurrent:concurrent-futures-ktx:1.1.0")
+    androidTestImplementation("androidx.concurrent:concurrent-futures:1.1.0")
     debugImplementation(libs.testCore)
-
+    
     // Transitive dependencies
     implementation 'androidx.lifecycle:lifecycle-common:2.3.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.3.0'
-    implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:18.0.0'
-    implementation 'com.google.mlkit:barcode-scanning-common:17.0.0'
+    implementation("com.google.android.gms:play-services-mlkit-barcode-scanning:18.0.0")
+    implementation("com.google.mlkit:barcode-scanning-common:17.0.0")
     implementation 'com.google.mlkit:vision-interfaces:16.0.0'
     implementation libs.androidx.annotation
     implementation libs.androidx.core

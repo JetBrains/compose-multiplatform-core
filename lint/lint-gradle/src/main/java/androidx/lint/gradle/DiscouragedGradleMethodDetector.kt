@@ -32,7 +32,6 @@ import org.jetbrains.kotlin.psi.KtStringTemplateEntry
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
-import org.jetbrains.uast.util.isInstanceOf
 
 /**
  * Checks for usages of
@@ -171,6 +170,7 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
         private const val CONFIGURABLE_FILE_COLLECTION =
             "org.gradle.api.file.ConfigurableFileCollection"
         private const val PROJECT = "org.gradle.api.Project"
+        private const val TASK = "org.gradle.api.Task"
         private const val TASK_CONTAINER = "org.gradle.api.tasks.TaskContainer"
         private const val TASK_PROVIDER = "org.gradle.api.tasks.TaskProvider"
         private const val DOMAIN_OBJECT_COLLECTION = "org.gradle.api.DomainObjectCollection"
@@ -219,6 +219,20 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                     Calling Provider.toString() will return you a generic hash of the instance of this provider.
                     You most likely want to call Provider.get() method to get the actual value instead of the
                     provider.
+                    """,
+                Category.CORRECTNESS,
+                5,
+                Severity.ERROR,
+                Implementation(DiscouragedGradleMethodDetector::class.java, Scope.JAVA_FILE_SCOPE),
+            )
+
+        val PERFORMANCE_ISSUE =
+            Issue.create(
+                "GradlePerformance",
+                "Use of this API is expensive",
+                """
+                    Calling Task.mustRunAfter and Task.shouldRunAfter is expensive as it causes Gradle to traverse
+                    the task graph a second time in order to re-order tasks and fix these constraints.
                     """,
                 Category.CORRECTNESS,
                 5,
@@ -295,8 +309,12 @@ class DiscouragedGradleMethodDetector : Detector(), Detector.UastScanner {
                         CONFIGURATION_CONTAINER to
                             Replacement("register", EAGER_CONFIGURATION_ISSUE)
                     ),
+                "mustRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
                 "replace" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
                 "remove" to mapOf(TASK_CONTAINER to Replacement(null, EAGER_CONFIGURATION_ISSUE)),
+                "setMustRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
+                "setShouldRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
+                "shouldRunAfter" to mapOf(TASK to Replacement(null, PERFORMANCE_ISSUE)),
                 "toString" to mapOf(PROVIDER to Replacement("get", TO_STRING_ON_PROVIDER_ISSUE)),
                 "whenTaskAdded" to
                     mapOf(

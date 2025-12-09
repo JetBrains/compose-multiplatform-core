@@ -77,7 +77,7 @@ class FormWidgetInteractionHandlerTest {
         Dispatchers.setMain(testDispatcher)
         val applicationContext = ApplicationProvider.getApplicationContext<Context>()
         handler =
-            FormWidgetInteractionHandler(applicationContext, pdfDocument, testScope, errorFlow)
+            FormWidgetInteractionHandler(applicationContext, pdfDocument, testScope, errorFlow) {}
     }
 
     @Test

@@ -364,7 +364,8 @@ class GLFrameBufferRendererTest {
         }
     }
 
-    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q)
+    // maxSdkVersion due to b/427258439
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.Q, maxSdkVersion = 34)
     @Test
     fun testRenderFrameBuffer() {
         val renderLatch = CountDownLatch(1)

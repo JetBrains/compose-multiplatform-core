@@ -19,7 +19,6 @@ package androidx.camera.view
 import android.content.Context
 import android.graphics.Matrix
 import android.graphics.PointF
-import android.os.Build
 import android.os.Looper.getMainLooper
 import android.util.Range
 import android.util.Rational
@@ -72,20 +71,20 @@ import java.util.concurrent.TimeUnit
 import org.junit.Assert
 import org.junit.Assume.assumeTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.internal.DoNotInstrument
+import org.robolectric.shadows.ShadowLog
 import org.robolectric.shadows.ShadowSystemClock
 
 /** Unit tests for [CameraController]. */
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
 @Config(
-    minSdk = Build.VERSION_CODES.LOLLIPOP,
+    sdk = [Config.ALL_SDKS],
     instrumentedPackages = ["androidx.camera.view"], // required for shadow clock to work
 )
 class CameraControllerTest {
@@ -138,24 +137,28 @@ class CameraControllerTest {
     fun setEffects_unbindInvoked() {
         // Arrange.
         completeCameraInitialization()
-        assertThat(processCameraProviderWrapper.unbindInvoked()).isFalse()
+        val originalUseCases = processCameraProviderWrapper.getBoundUseCases()
+        processCameraProviderWrapper.resetUnbindInvokedUseCases()
         // Act.
         controller.setEffects(
             setOf(FakeSurfaceEffect(directExecutor(), FakeSurfaceProcessor(directExecutor())))
         )
         // Assert.
-        assertThat(processCameraProviderWrapper.unbindInvoked()).isTrue()
+        assertThat(processCameraProviderWrapper.getUnbindInvokedUseCases())
+            .containsAtLeastElementsIn(originalUseCases)
     }
 
     @Test
     fun clearEffects_unbindInvoked() {
         // Arrange.
         completeCameraInitialization()
-        assertThat(processCameraProviderWrapper.unbindInvoked()).isFalse()
+        val originalUseCases = processCameraProviderWrapper.getBoundUseCases()
+        processCameraProviderWrapper.resetUnbindInvokedUseCases()
         // Act.
         controller.clearEffects()
         // Assert.
-        assertThat(processCameraProviderWrapper.unbindInvoked()).isTrue()
+        assertThat(processCameraProviderWrapper.getUnbindInvokedUseCases())
+            .containsAtLeastElementsIn(originalUseCases)
     }
 
     @Test
@@ -530,6 +533,26 @@ class CameraControllerTest {
         assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_180)
         val videoConfig = controller.mVideoCapture.currentConfig as ImageOutputConfig
         assertThat(videoConfig.targetRotation).isEqualTo(Surface.ROTATION_180)
+    }
+
+    @Test
+    fun useCaseIsRecreated_rotationIsRetained() {
+        // Act: Manually trigger the rotation listener to set the internal state.
+        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_90)
+
+        // Assert: The existing ImageCapture instance has the correct rotation.
+        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_90)
+
+        // --- Test with ROTATION_270 ---
+
+        // Act: Manually trigger the listener with a different rotation.
+        controller.mDeviceRotationListener.onRotationChanged(Surface.ROTATION_270)
+
+        // Act: Recreate the ImageCapture use case by setting a different capture mode.
+        controller.imageCaptureMode = ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+
+        // Assert: The new ImageCapture instance has the updated rotation.
+        assertThat(controller.mImageCapture.targetRotation).isEqualTo(Surface.ROTATION_270)
     }
 
     @UiThreadTest
@@ -1004,7 +1027,6 @@ class CameraControllerTest {
             .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
     }
 
-    @Ignore // b/425365173
     @Test
     fun setTapToFocusAutoCancelDuration_stateNeverResetsToNotStarted_whenDurationIsZero() {
         completeCameraInitialization()
@@ -1023,7 +1045,12 @@ class CameraControllerTest {
 
         // State is still the previous STARTED state
         shadowOf(getMainLooper()).idle()
-        assertThat(controller.tapToFocusInfoState.value?.focusState).isEqualTo(TAP_TO_FOCUS_STARTED)
+        // The tap-to-focus operation might be executed but the result is TAP_TO_FOCUS_NOT_FOCUSED.
+        // If the value is posted to the mTapToFocusInfoState before
+        // shadowOf(getMainLooper()).idle() is called, the focusState will be
+        // TAP_TO_FOCUS_NOT_FOCUSED.
+        assertThat(controller.tapToFocusInfoState.value?.focusState)
+            .isAnyOf(TAP_TO_FOCUS_STARTED, TAP_TO_FOCUS_NOT_FOCUSED)
     }
 
     @Test
@@ -1074,5 +1101,28 @@ class CameraControllerTest {
         shadowOf(getMainLooper()).idle()
         assertThat(controller.tapToFocusInfoState.value?.focusState)
             .isEqualTo(TAP_TO_FOCUS_NOT_STARTED)
+    }
+
+    @Test
+    fun attachPreview_doesNotCrashAndLogsWarning_whenCameraInfoIsUnavailable() {
+        // Arrange: Configure the fake provider to throw an exception when getCameraInfo is called.
+        processCameraProviderWrapper.setShouldThrowOnGetCameraInfo(true)
+        lifecycleCameraProviderCompleter.set(processCameraProviderWrapper)
+        controller.clearPreviewSurface()
+
+        // Act:
+        // This call will trigger the internal getViewportAspectRatioInt method, which should now
+        // catch the exception instead of crashing.
+        controller.attachPreviewSurface({}, fakeViewPort)
+        shadowOf(getMainLooper()).idle()
+
+        // Assert:
+        // 1. Verify that a warning was logged to the "CameraController" tag.
+        val logs = ShadowLog.getLogsForTag("CameraController")
+        assertThat(logs).isNotEmpty()
+
+        // 2. Verify the content of the log.
+        val lastLog = logs.last()
+        assertThat(lastLog.throwable).isInstanceOf(IllegalArgumentException::class.java)
     }
 }

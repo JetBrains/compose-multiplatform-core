@@ -18,20 +18,24 @@ package androidx.xr.glimmer
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
+import androidx.test.filters.SdkSuppress
 import androidx.test.screenshot.AndroidXScreenshotTestRule
 import androidx.xr.glimmer.samples.ColorsSample
+import androidx.xr.glimmer.samples.DepthLevelsSample
 import androidx.xr.glimmer.samples.IconSizesSample
 import androidx.xr.glimmer.samples.ShapesSample
 import androidx.xr.glimmer.samples.TypographySample
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @MediumTest
 @RunWith(AndroidJUnit4::class)
+@SdkSuppress(minSdkVersion = 35, maxSdkVersion = 35)
 class GlimmerThemeScreenshotTest() {
 
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @get:Rule val screenshotRule = AndroidXScreenshotTestRule(GOLDEN_DIRECTORY)
 
@@ -51,6 +55,12 @@ class GlimmerThemeScreenshotTest() {
     fun shapes() {
         rule.setGlimmerThemeContent { ShapesSample() }
         rule.assertRootAgainstGolden("glimmerTheme_shapes", screenshotRule)
+    }
+
+    @Test
+    fun depthLevels() {
+        rule.setGlimmerThemeContent { DepthLevelsSample() }
+        rule.assertRootAgainstGolden("glimmerTheme_depthLevels", screenshotRule)
     }
 
     @Test

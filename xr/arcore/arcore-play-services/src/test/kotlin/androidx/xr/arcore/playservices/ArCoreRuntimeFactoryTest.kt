@@ -19,9 +19,11 @@ package androidx.xr.arcore.playservices
 import android.app.Activity
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.xr.runtime.internal.RuntimeFactory
+import androidx.xr.runtime.internal.PerceptionRuntimeFactory
 import com.google.common.truth.Truth.assertThat
 import java.util.ServiceLoader
+import kotlin.coroutines.EmptyCoroutineContext
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,11 +34,12 @@ class ArCoreRuntimeFactoryTest {
     @get:Rule val activityRule = ActivityScenarioRule(Activity::class.java)
 
     @Test
+    @Ignore("TODO(b/436933956) - temporary disabled until dependencies are fixed")
     fun class_isDiscoverableViaServiceLoader() {
         // FakeRuntimeFactory is also included, so look for the correct factory.
         var pass = false
-        for (runtime in ServiceLoader.load(RuntimeFactory::class.java)) {
-            if (ArCoreRuntimeFactory::class.java.isInstance(runtime)) {
+        for (runtimeFactory in ServiceLoader.load(PerceptionRuntimeFactory::class.java)) {
+            if (ArCoreRuntimeFactory::class.java.isInstance(runtimeFactory)) {
                 pass = true
             }
         }
@@ -48,7 +51,7 @@ class ArCoreRuntimeFactoryTest {
         val factory = ArCoreRuntimeFactory()
 
         activityRule.scenario.onActivity {
-            val runtime = factory.createRuntime(it)
+            val runtime = factory.createRuntime(it, EmptyCoroutineContext)
 
             assertThat(runtime).isInstanceOf(ArCoreRuntime::class.java)
         }

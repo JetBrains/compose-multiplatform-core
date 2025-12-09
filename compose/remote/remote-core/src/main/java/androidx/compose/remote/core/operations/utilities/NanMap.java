@@ -15,6 +15,9 @@
  */
 package androidx.compose.remote.core.operations.utilities;
 
+import static androidx.compose.remote.core.operations.utilities.AnimatedFloatExpression.VAR1;
+
+import androidx.annotation.RestrictTo;
 import androidx.compose.remote.core.operations.Utils;
 
 /**
@@ -25,6 +28,7 @@ import androidx.compose.remote.core.operations.Utils;
  * 4xxxxx,5xxxxx,7xxxxx are reserved for future use 0x1000-0x1100 are used for path operations in
  * PathData 0x1100-0x1200 are used for math operations in Animated float 0x
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class NanMap {
 
     public static final int MOVE = 0x300_000;
@@ -72,6 +76,16 @@ public class NanMap {
      */
     public static boolean isDataVariable(float value) {
         return (fromNaN(value) >> 20) == 2;
+    }
+
+    /**
+     * Returns true if the float id is a var1
+     *
+     * @param value the id encoded as float NaN
+     * @return true if the float id is a var1
+     */
+    public static boolean isVar1(float value) {
+        return Float.floatToRawIntBits(value) == Float.floatToRawIntBits(VAR1);
     }
 
     /**

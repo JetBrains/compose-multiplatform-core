@@ -23,7 +23,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.GraphicsContext
 import androidx.compose.ui.internal.checkPrecondition
 import androidx.compose.ui.internal.checkPreconditionNotNull
+import androidx.compose.ui.layout.BeyondBoundsLayout
+import androidx.compose.ui.layout.BeyondBoundsLayoutProviderModifierNode
 import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.ModifierLocalBeyondBoundsLayout
+import androidx.compose.ui.modifier.ModifierLocalModifierNode
 import androidx.compose.ui.semantics.SemanticsInfo
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -185,7 +189,7 @@ internal inline fun DelegatableNode.visitSubtreeIf(
         val branch = branches.removeAt(branches.size - 1)
         if (branch.aggregateChildKindSet and mask != 0) {
             var node: Modifier.Node? = branch
-            while (node != null) {
+            while (node != null && node.isAttached) {
                 if (node.kindSet and mask != 0) {
                     val diveDeeper = block(node)
                     if (!diveDeeper) continue@outer
@@ -265,11 +269,26 @@ internal inline fun <reified T> DelegatableNode.visitSelfAndAncestors(
     }
 }
 
-internal inline fun <reified T> DelegatableNode.ancestors(type: NodeKind<T>): List<T>? {
+internal inline fun <reified T> DelegatableNode.ancestors(
+    type: NodeKind<T>,
+    includeSelf: Boolean = false,
+): List<T>? {
     var result: MutableList<T>? = null
-    visitAncestors(type) {
+    visitAncestors(type, includeSelf) {
         if (result == null) result = mutableListOf()
         result?.add(it)
+    }
+    return result
+}
+
+internal inline fun <reified T> DelegatableNode.setOfAncestors(
+    type: NodeKind<T>,
+    includeSelf: Boolean = false,
+): Set<T>? {
+    var result: MutableSet<T>? = null
+    visitAncestors(type, includeSelf) {
+        if (result == null) result = mutableSetOf()
+        result.add(it)
     }
     return result
 }
@@ -381,11 +400,54 @@ fun DelegatableNode.requireLayoutCoordinates(): LayoutCoordinates {
  *
  * Calling this method can be a relatively expensive operation as it will cause the entire subtree
  * to relayout and redraw instead of just parts that are otherwise invalidated. Its use should be
- * limited to structural changes.
+ * limited to structural changes. This might be necessary in certain situations where you are
+ * updating some data which you know descendant nodes use, but you are not relaying on automatic
+ * snapshot observation through [androidx.compose.runtime.MutableState].
  */
 fun DelegatableNode.invalidateSubtree() {
     if (node.isAttached) {
         requireLayoutNode().invalidateSubtree()
+    }
+}
+
+/**
+ * Invalidates measurements for the entire subtree of this node.
+ *
+ * Note that [invalidateMeasurement] is preferable in most cases, however it is only guaranteed to
+ * invalidate measurement for that specific node, and it is possible that layout nodes that are
+ * underneath it could be cached and thus their measure policies will not get re-executed. Use this
+ * API if you need to ensure that measure is called for all layout nodes below this one. This might
+ * be necessary in certain situations where you are updating some data which you know descendant
+ * nodes use, but you are not relaying on automatic snapshot observation through
+ * [androidx.compose.runtime.MutableState].
+ *
+ * Calling this method can be a relatively expensive operation as it will cause the entire subtree
+ * to relayout instead of just parts that are otherwise invalidated. [invalidateMeasurement] is
+ * preferable in most cases, and this should only be used when absolutely necessary.
+ */
+fun DelegatableNode.invalidateMeasurementForSubtree() {
+    if (node.isAttached) {
+        requireLayoutNode().invalidateMeasurementForSubtree()
+    }
+}
+
+/**
+ * Invalidates draw for the entire subtree of this node.
+ *
+ * Note that [invalidateDraw] is preferable in most cases, however it is only guaranteed to
+ * invalidate draw for that specific node, and it is possible that draw nodes that are underneath it
+ * could be cached and thus their draw methods will not get re-executed. Use this API if you need to
+ * ensure that draw is called for all draw nodes below this one. This might be necessary in certain
+ * situations where you are updating some data which you know descendant nodes use, but you are not
+ * relaying on automatic snapshot observation through [androidx.compose.runtime.MutableState].
+ *
+ * Calling this method can be a relatively expensive operation as it will cause the entire subtree
+ * to redraw instead of just parts that are otherwise invalidated. [invalidateDraw] is preferable in
+ * most cases, and this should only be used when absolutely necessary.
+ */
+fun DelegatableNode.invalidateDrawForSubtree() {
+    if (node.isAttached) {
+        requireLayoutNode().invalidateDrawForSubtree()
     }
 }
 
@@ -400,6 +462,50 @@ fun DelegatableNode.invalidateSubtree() {
  */
 fun DelegatableNode.dispatchOnScrollChanged(delta: Offset) =
     requireOwner().dispatchOnScrollChanged(delta)
+
+/** Call this function to find the nearest [BeyondBoundsLayout] to the current node. */
+@Suppress("DEPRECATION")
+fun DelegatableNode.findNearestBeyondBoundsLayoutAncestor(): BeyondBoundsLayout? {
+    visitAncestors(Nodes.BeyondBoundsLayout or Nodes.Locals) {
+        if (it.isKind(Nodes.BeyondBoundsLayout)) {
+            var beyondBoundsNode: BeyondBoundsLayoutProviderModifierNode? = null
+            if (it is BeyondBoundsLayoutProviderModifierNode) {
+                beyondBoundsNode = it
+            } else if (it is DelegatingNode) {
+                it.forEachImmediateDelegate {
+                    if (it is BeyondBoundsLayoutProviderModifierNode) {
+                        beyondBoundsNode = it
+                        return@forEachImmediateDelegate
+                    }
+                }
+            }
+
+            return beyondBoundsNode?.beyondBoundsLayout
+        }
+
+        if (it.isKind(Nodes.Locals)) {
+            var modifierLocalNode: ModifierLocalModifierNode? = null
+            if (it is ModifierLocalModifierNode) {
+                modifierLocalNode = it
+            } else if (it is DelegatingNode) {
+                it.forEachImmediateDelegate {
+                    if (it is ModifierLocalModifierNode) {
+                        modifierLocalNode = it
+                        return@forEachImmediateDelegate
+                    }
+                }
+            }
+            val localNode = modifierLocalNode
+            if (
+                localNode != null &&
+                    localNode.providedValues.contains(ModifierLocalBeyondBoundsLayout)
+            )
+                return localNode.providedValues.get(ModifierLocalBeyondBoundsLayout)
+        }
+    }
+
+    return null
+}
 
 // It is safe to do this for LayoutModifierNode because we enforce only a single delegate is
 // a LayoutModifierNode, however for other NodeKinds that is not true. As a result, this function

@@ -19,7 +19,11 @@ package androidx.webkit;
 import android.content.Context;
 
 import androidx.annotation.GuardedBy;
+import androidx.annotation.IntDef;
+import androidx.annotation.OptIn;
 import androidx.annotation.RequiresFeature;
+import androidx.annotation.RestrictTo;
+import androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp;
 import androidx.webkit.internal.ApiHelperForP;
 import androidx.webkit.internal.StartupApiFeature;
 import androidx.webkit.internal.WebViewFeatureInternal;
@@ -28,6 +32,8 @@ import org.chromium.support_lib_boundary.ProcessGlobalConfigConstants;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -69,6 +75,9 @@ public class ProcessGlobalConfig {
     String mDataDirectoryBasePath;
     String mCacheDirectoryBasePath;
     Boolean mPartitionedCookiesEnabled;
+
+    @ExperimentalAsyncStartUp @UiThreadStartupMode
+    int mUiThreadStartupMode = UI_THREAD_STARTUP_MODE_DEFAULT;
 
     /**
      * Creates a {@link ProcessGlobalConfig} object.
@@ -211,6 +220,88 @@ public class ProcessGlobalConfig {
         return this;
     }
 
+    @IntDef(
+            value = {
+                UI_THREAD_STARTUP_MODE_DEFAULT,
+                UI_THREAD_STARTUP_MODE_SYNC,
+                UI_THREAD_STARTUP_MODE_ASYNC_LONG_TASKS,
+                UI_THREAD_STARTUP_MODE_ASYNC_SHORT_TASKS,
+                UI_THREAD_STARTUP_MODE_ASYNC_VERY_SHORT_TASKS
+            })
+    @Retention(RetentionPolicy.SOURCE)
+    @RestrictTo(RestrictTo.Scope.LIBRARY)
+    @ExperimentalAsyncStartUp
+    public @interface UiThreadStartupMode {}
+
+    /**
+     * WebView's UI thread initialization may or may not block the UI thread, depending on the
+     * internal implementation.
+     */
+    @ExperimentalAsyncStartUp
+    public static final int UI_THREAD_STARTUP_MODE_DEFAULT =
+            ProcessGlobalConfigConstants.UI_THREAD_STARTUP_MODE_DEFAULT;
+
+    /**
+     * WebView's UI thread initialization will run in a single, continuous block. This can
+     * negatively impact responsiveness and may lead to ANRs.
+     */
+    @ExperimentalAsyncStartUp
+    public static final int UI_THREAD_STARTUP_MODE_SYNC =
+            ProcessGlobalConfigConstants.UI_THREAD_STARTUP_MODE_SYNC;
+
+    /**
+     * WebView's UI thread initialization will run in multiple blocks to improve
+     * responsiveness. However, some of these blocks may still be long enough to cause ANRs
+     */
+    @ExperimentalAsyncStartUp
+    public static final int UI_THREAD_STARTUP_MODE_ASYNC_LONG_TASKS =
+            ProcessGlobalConfigConstants.UI_THREAD_STARTUP_MODE_ASYNC_LONG_TASKS;
+
+    /**
+     * WebView's UI thread initialization will run in multiple short blocks to improve
+     * responsiveness, reducing the risk of ANRs compared to {@link
+     * #UI_THREAD_STARTUP_MODE_ASYNC_LONG_TASKS}.
+     */
+    @ExperimentalAsyncStartUp
+    public static final int UI_THREAD_STARTUP_MODE_ASYNC_SHORT_TASKS =
+            ProcessGlobalConfigConstants.UI_THREAD_STARTUP_MODE_ASYNC_SHORT_TASKS;
+
+    /**
+     * WebView's UI thread initialization will run in multiple very short blocks to improve app
+     * responsiveness and make ANRs unlikely compared to {@link
+     * #UI_THREAD_STARTUP_MODE_ASYNC_LONG_TASKS} or {@link
+     * #UI_THREAD_STARTUP_MODE_ASYNC_SHORT_TASKS}
+     */
+    @ExperimentalAsyncStartUp
+    public static final int UI_THREAD_STARTUP_MODE_ASYNC_VERY_SHORT_TASKS =
+            ProcessGlobalConfigConstants.UI_THREAD_STARTUP_MODE_ASYNC_VERY_SHORT_TASKS;
+
+    /**
+     * Configures how WebView's UI thread initialization should be run. See the different modes in
+     * {@code UI_THREAD_STARTUP_MODE_*}.
+     *
+     * @param context a Context to access application assets. This value cannot be null.
+     * @param startupMode the mode to run WebView's UI thread initialization in.
+     * @return the ProcessGlobalConfig that has the value set to allow chaining of setters
+     * @throws UnsupportedOperationException if underlying WebView does not support the use of the
+     *     method.
+     */
+    @ExperimentalAsyncStartUp
+    @RequiresFeature(
+            name = WebViewFeature.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE,
+            enforcement =
+                    "androidx.webkit.WebViewFeature#isConfigFeatureSupported(String, Context)")
+    public @NonNull ProcessGlobalConfig setUiThreadStartupMode(
+            @NonNull Context context, @UiThreadStartupMode int startupMode) {
+        final StartupApiFeature.NoFramework feature =
+                WebViewFeatureInternal.STARTUP_FEATURE_SET_UI_THREAD_STARTUP_MODE;
+        if (!feature.isSupported(context)) {
+            throw WebViewFeatureInternal.getUnsupportedOperationException();
+        }
+        mUiThreadStartupMode = startupMode;
+        return this;
+    }
+
     /**
      * Applies the configuration to be used by WebView on loading.
      * <p>
@@ -223,6 +314,7 @@ public class ProcessGlobalConfig {
      * @throws IllegalStateException if WebView has already been initialized
      *                               in the current process or if this method was called before
      */
+    @OptIn(markerClass = androidx.webkit.WebViewCompat.ExperimentalAsyncStartUp.class)
     public static void apply(@NonNull ProcessGlobalConfig config) {
         // TODO(crbug.com/1355297): We can check if we are storing the config in the place that
         //  WebView is going to look for it, and throw if they are not the same.
@@ -272,6 +364,10 @@ public class ProcessGlobalConfig {
         if (config.mPartitionedCookiesEnabled != null) {
             configMap.put(ProcessGlobalConfigConstants.CONFIGURE_PARTITIONED_COOKIES,
                     config.mPartitionedCookiesEnabled);
+        }
+        if (config.mUiThreadStartupMode != UI_THREAD_STARTUP_MODE_DEFAULT) {
+            configMap.put(ProcessGlobalConfigConstants.UI_THREAD_STARTUP_MODE,
+                    config.mUiThreadStartupMode);
         }
         if (!sProcessGlobalConfig.compareAndSet(null, configMap)) {
             throw new RuntimeException("Attempting to set ProcessGlobalConfig"

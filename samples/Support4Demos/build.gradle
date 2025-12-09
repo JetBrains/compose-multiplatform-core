@@ -8,7 +8,7 @@
 plugins {
     id("AndroidXPlugin")
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("com.android.experimental.built-in-kotlin")
 }
 
 dependencies {
@@ -23,7 +23,6 @@ dependencies {
     implementation(project(":lifecycle:lifecycle-runtime-ktx"))
     implementation(project(":media:media"))
     implementation(project(":viewpager:viewpager"))
-    implementation(libs.kotlinStdlib)
     implementation(libs.kotlinCoroutinesAndroid)
     implementation(project(":coordinatorlayout:coordinatorlayout"))
     implementation("com.google.android.material:material:1.6.0")

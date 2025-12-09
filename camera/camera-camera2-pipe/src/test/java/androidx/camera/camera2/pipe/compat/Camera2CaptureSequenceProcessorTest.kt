@@ -96,10 +96,10 @@ internal class Camera2CaptureSequenceProcessorTest {
             sessionMode = CameraGraph.OperatingMode.HIGH_SPEED,
         )
 
-    private val streamGraph = StreamGraphImpl(testCamera.metadata, graphConfig, mock())
+    private val streamGraph = StreamGraphImpl(testCamera.metadata, graphConfig, mock(), mock())
 
     private val highSpeedStreamGraph =
-        StreamGraphImpl(testCamera.metadata, highSpeedGraphConfig, mock())
+        StreamGraphImpl(testCamera.metadata, highSpeedGraphConfig, mock(), mock())
 
     private val surface1 =
         Surface(

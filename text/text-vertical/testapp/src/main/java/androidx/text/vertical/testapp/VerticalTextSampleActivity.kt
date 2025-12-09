@@ -140,14 +140,13 @@ fun VerticalText(text: Spanned, paint: TextPaint, modifier: Modifier = Modifier)
         content = {},
     ) { _, constraints ->
         vTextLayout =
-            VerticalTextLayout.Builder(
-                    text = text,
-                    start = 0,
-                    end = text.length,
-                    paint = paint,
-                    height = constraints.maxHeight.toFloat(),
-                )
-                .build()
+            VerticalTextLayout(
+                text = text,
+                start = 0,
+                end = text.length,
+                paint = paint,
+                height = constraints.maxHeight.toFloat(),
+            )
         layout(constraints.maxWidth, constraints.maxHeight) {}
     }
 }
@@ -231,6 +230,9 @@ fun ComplexText(paint: TextPaint, modifier: Modifier = Modifier) {
                 }
             )
             text("年もよろしくお願いいたします。")
+
+            withFontShear { text("日本語の斜体はEnglishのItalicとは少し違います。") }
+            withEmphasis { text("傍点もSupportされてます。") }
         },
         paint,
         modifier,

@@ -47,10 +47,13 @@
         <xs:element name="properties" cardinality="1"
             type="appfn:AppFunctionNamedDataTypeMetadataDocument" />
         <xs:element name="allOf" cardinality="1" type="appfn:AppFunctionDataTypeMetadataDocument" />
+        <xs:element name="oneOf" cardinality="1" type="appfn:AppFunctionDataTypeMetadataDocument" />
         <xs:element name="required" cardinality="1" type="xs:string" />
         <xs:element name="dataTypeReference" cardinality="2" type="xs:string" />
         <xs:element name="isNullable" cardinality="2" type="xs:boolean" />
         <xs:element name="objectQualifiedName" cardinality="2" type="xs:string" />
+        <xs:element name="description" cardinality="2" type="xs:string" />
+        <xs:element name="enumValues" cardinality="1" type="xs:string" />
     </xs:documentType>
 
     <!-- Definition for AppFunctionParameterMetadataDocument -->
@@ -59,6 +62,7 @@
         <xs:element name="isRequired" cardinality="2" type="xs:boolean" />
         <xs:element name="dataTypeMetadata" cardinality="2"
             type="appfn:AppFunctionDataTypeMetadataDocument" />
+        <xs:element name="description" cardinality="2" type="xs:string" />
     </xs:documentType>
 
     <!-- Definition for AppFunctionResponseMetadataDocument -->
@@ -66,6 +70,12 @@
         <xs:element name="isNullable" cardinality="2" type="xs:boolean" />
         <xs:element name="valueType" cardinality="2"
             type="appfn:AppFunctionDataTypeMetadataDocument" />
+        <xs:element name="description" cardinality="2" type="xs:string" />
+    </xs:documentType>
+
+    <!-- Definition for AppFunctionDeprecationMetadataDocument -->
+    <xs:documentType name="AppFunctionDeprecationMetadataDocument">
+        <xs:element name="message" cardinality="2" type="xs:string" />
     </xs:documentType>
 
     <!-- Definition for AppFunctionComponentMetadataDocument -->
@@ -104,5 +114,7 @@
             type="appfn:AppFunctionParameterMetadataDocument" />
         <xs:element name="response" cardinality="2"
             type="appfn:AppFunctionResponseMetadataDocument" />
+        <xs:element name="deprecation" cardinality="2"
+            type="appfn:AppFunctionDeprecationMetadataDocument" />
     </xs:documentType>
 </xs:schema>

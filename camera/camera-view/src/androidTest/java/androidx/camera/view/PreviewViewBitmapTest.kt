@@ -18,7 +18,6 @@ package androidx.camera.view
 import android.content.Context
 import android.os.Build
 import android.view.WindowManager
-import androidx.camera.camera2.Camera2Config
 import androidx.camera.camera2.pipe.integration.CameraPipeConfig
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
@@ -30,13 +29,13 @@ import androidx.camera.testing.impl.CameraPipeConfigTestRule
 import androidx.camera.testing.impl.CameraUtil
 import androidx.camera.testing.impl.CameraUtil.PreTestCameraIdList
 import androidx.camera.testing.impl.CoreAppTestUtil
+import androidx.camera.testing.impl.ParameterizedTestConfigUtil
 import androidx.camera.testing.impl.fakes.FakeActivity
 import androidx.camera.testing.impl.fakes.FakeLifecycleOwner
 import androidx.camera.testing.impl.testrule.CameraTestActivityScenarioRule
 import androidx.lifecycle.Observer
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.filters.LargeTest
-import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth
 import java.util.concurrent.Semaphore
@@ -52,7 +51,6 @@ import org.junit.runners.Parameterized
 
 @LargeTest
 @RunWith(Parameterized::class)
-@SdkSuppress(minSdkVersion = 21)
 class PreviewViewBitmapTest(private val implName: String, private val cameraConfig: CameraXConfig) {
     @get:Rule val activityRule = CameraTestActivityScenarioRule(FakeActivity::class.java)
 
@@ -359,9 +357,8 @@ class PreviewViewBitmapTest(private val implName: String, private val cameraConf
         @JvmStatic
         @Parameterized.Parameters(name = "{0}")
         fun data() =
-            listOf(
-                arrayOf(Camera2Config::class.simpleName, Camera2Config.defaultConfig()),
-                arrayOf(CameraPipeConfig::class.simpleName, CameraPipeConfig.defaultConfig()),
+            ParameterizedTestConfigUtil.generateCameraXConfigParameterizedTestConfigs(
+                inLabTestRequired = true
             )
     }
 }

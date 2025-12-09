@@ -42,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -75,12 +77,13 @@ import androidx.test.filters.SdkSuppress
 import androidx.wear.compose.material3.samples.FilledTonalCompactButtonSample
 import androidx.wear.compose.material3.samples.SimpleButtonSample
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class ButtonTest {
-    @get:Rule val rule = createComposeRule()
+    @get:Rule val rule = createComposeRule(StandardTestDispatcher())
 
     @Test
     fun simple_button_sample_builds() {
@@ -452,7 +455,7 @@ class ButtonTest {
             status = Status.Enabled,
             expectedContainerColor = { MaterialTheme.colorScheme.surfaceContainer },
             expectedContentColor = { MaterialTheme.colorScheme.onSurface },
-            content = { FilledTonalButton(Status.Enabled) },
+            content = { filledTonalButton(Status.Enabled) },
         )
     }
 
@@ -467,7 +470,7 @@ class ButtonTest {
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
             },
-            content = { FilledTonalButton(Status.Disabled) },
+            content = { filledTonalButton(Status.Disabled) },
         )
     }
 
@@ -478,7 +481,7 @@ class ButtonTest {
             status = Status.Enabled,
             expectedContainerColor = { MaterialTheme.colorScheme.primaryContainer },
             expectedContentColor = { MaterialTheme.colorScheme.onPrimaryContainer },
-            content = { FilledVariantButton(Status.Enabled) },
+            content = { filledVariantButton(Status.Enabled) },
         )
     }
 
@@ -493,7 +496,7 @@ class ButtonTest {
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
             },
-            content = { FilledVariantButton(Status.Disabled) },
+            content = { filledVariantButton(Status.Disabled) },
         )
     }
 
@@ -504,7 +507,7 @@ class ButtonTest {
             status = Status.Enabled,
             expectedContainerColor = { Color.Transparent },
             expectedContentColor = { MaterialTheme.colorScheme.onSurface },
-            content = { OutlinedButton(Status.Enabled) },
+            content = { outlinedButton(Status.Enabled) },
         )
     }
 
@@ -517,7 +520,7 @@ class ButtonTest {
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
             },
-            content = { OutlinedButton(Status.Disabled) },
+            content = { outlinedButton(Status.Disabled) },
         )
     }
 
@@ -528,7 +531,7 @@ class ButtonTest {
             status = Status.Enabled,
             expectedContainerColor = { Color.Transparent },
             expectedContentColor = { MaterialTheme.colorScheme.onSurface },
-            content = { ChildButton(Status.Enabled) },
+            content = { childButton(Status.Enabled) },
         )
     }
 
@@ -541,7 +544,71 @@ class ButtonTest {
             expectedContentColor = {
                 MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
             },
-            content = { ChildButton(Status.Disabled) },
+            content = { childButton(Status.Disabled) },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun gives_enabled_image_button_correct_colors() {
+        rule.verifyButtonColors(
+            status = Status.Enabled,
+            expectedContainerColor = { Color.Red },
+            expectedContentColor = {
+                ButtonDefaults.buttonWithContainerPainterColors().contentColor
+            },
+            content = { imageButton(Status.Enabled, containerPainter = ColorPainter(Color.Red)) },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun gives_disabled_image_button_correct_colors() {
+        rule.verifyButtonColors(
+            status = Status.Disabled,
+            expectedContainerColor = { Color.Red.copy(alpha = DisabledContainerAlpha) },
+            expectedContentColor = {
+                ButtonDefaults.buttonWithContainerPainterColors().disabledContentColor
+            },
+            content = { imageButton(Status.Disabled, containerPainter = ColorPainter(Color.Red)) },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun enabled_image_button_uses_correct_container_painter() {
+        rule.verifyButtonColors(
+            status = Status.Enabled,
+            expectedContainerColor = { Color.Red },
+            expectedContentColor = {
+                ButtonDefaults.buttonWithContainerPainterColors().contentColor
+            },
+            content = {
+                imageButton(
+                    Status.Enabled,
+                    containerPainter = ColorPainter(Color.Red),
+                    disabledContainerPainter = ColorPainter(Color.Yellow),
+                )
+            },
+        )
+    }
+
+    @SdkSuppress(minSdkVersion = Build.VERSION_CODES.O)
+    @Test
+    fun disabled_image_button_uses_correct_container_painter() {
+        rule.verifyButtonColors(
+            status = Status.Disabled,
+            expectedContainerColor = { Color.Yellow },
+            expectedContentColor = {
+                ButtonDefaults.buttonWithContainerPainterColors().disabledContentColor
+            },
+            content = {
+                imageButton(
+                    Status.Disabled,
+                    containerPainter = ColorPainter(Color.Red),
+                    disabledContainerPainter = ColorPainter(Color.Yellow),
+                )
+            },
         )
     }
 
@@ -551,7 +618,7 @@ class ButtonTest {
         rule.verifyThreeSlotButtonColors(
             status = Status.Enabled,
             expectedColor = { ButtonDefaults.buttonColors() },
-            content = { ThreeSlotFilledButton(Status.Enabled) },
+            content = { threeSlotFilledButton(Status.Enabled) },
         )
     }
 
@@ -561,7 +628,7 @@ class ButtonTest {
         rule.verifyThreeSlotButtonColors(
             status = Status.Disabled,
             expectedColor = { ButtonDefaults.buttonColors() },
-            content = { ThreeSlotFilledButton(Status.Disabled) },
+            content = { threeSlotFilledButton(Status.Disabled) },
         )
     }
 
@@ -571,7 +638,7 @@ class ButtonTest {
         rule.verifyThreeSlotButtonColors(
             status = Status.Enabled,
             expectedColor = { ButtonDefaults.filledTonalButtonColors() },
-            content = { ThreeSlotFilledTonalButton(Status.Enabled) },
+            content = { threeSlotFilledTonalButton(Status.Enabled) },
         )
     }
 
@@ -581,7 +648,7 @@ class ButtonTest {
         rule.verifyThreeSlotButtonColors(
             status = Status.Disabled,
             expectedColor = { ButtonDefaults.filledTonalButtonColors() },
-            content = { ThreeSlotFilledTonalButton(Status.Disabled) },
+            content = { threeSlotFilledTonalButton(Status.Disabled) },
         )
     }
 
@@ -591,7 +658,7 @@ class ButtonTest {
         rule.verifyThreeSlotButtonColors(
             status = Status.Enabled,
             expectedColor = { ButtonDefaults.outlinedButtonColors() },
-            content = { ThreeSlotOutlinedButton(Status.Enabled) },
+            content = { threeSlotOutlinedButton(Status.Enabled) },
         )
     }
 
@@ -601,7 +668,7 @@ class ButtonTest {
         rule.verifyThreeSlotButtonColors(
             status = Status.Disabled,
             expectedColor = { ButtonDefaults.outlinedButtonColors() },
-            content = { ThreeSlotOutlinedButton(Status.Disabled) },
+            content = { threeSlotOutlinedButton(Status.Disabled) },
         )
     }
 
@@ -611,7 +678,7 @@ class ButtonTest {
         rule.verifyThreeSlotButtonColors(
             status = Status.Enabled,
             expectedColor = { ButtonDefaults.childButtonColors() },
-            content = { ThreeSlotChildButton(Status.Enabled) },
+            content = { threeSlotChildButton(Status.Enabled) },
         )
     }
 
@@ -621,7 +688,7 @@ class ButtonTest {
         rule.verifyThreeSlotButtonColors(
             status = Status.Disabled,
             expectedColor = { ButtonDefaults.childButtonColors() },
-            content = { ThreeSlotChildButton(Status.Disabled) },
+            content = { threeSlotChildButton(Status.Disabled) },
         )
     }
 
@@ -1340,7 +1407,7 @@ private fun ComposeContentTestRule.verifyButtonColors(
     status: Status,
     expectedContainerColor: @Composable () -> Color,
     expectedContentColor: @Composable () -> Color,
-    content: @Composable () -> Color = { FilledButton(status) },
+    content: @Composable () -> Color = { filledButton(status) },
 ) {
     verifyColors(
         status = status,
@@ -1354,7 +1421,7 @@ private fun ComposeContentTestRule.verifyButtonColors(
 }
 
 @Composable
-private fun FilledButton(status: Status): Color {
+private fun filledButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     Button(onClick = {}, enabled = status.enabled(), modifier = Modifier.testTag(TEST_TAG)) {
         actualContentColor = LocalContentColor.current
@@ -1363,7 +1430,7 @@ private fun FilledButton(status: Status): Color {
 }
 
 @Composable
-private fun FilledTonalButton(status: Status): Color {
+private fun filledTonalButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     FilledTonalButton(
         onClick = {},
@@ -1376,7 +1443,7 @@ private fun FilledTonalButton(status: Status): Color {
 }
 
 @Composable
-private fun FilledVariantButton(status: Status): Color {
+private fun filledVariantButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     Button(
         onClick = {},
@@ -1390,7 +1457,7 @@ private fun FilledVariantButton(status: Status): Color {
 }
 
 @Composable
-private fun OutlinedButton(status: Status): Color {
+private fun outlinedButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     OutlinedButton(
         onClick = {},
@@ -1403,9 +1470,28 @@ private fun OutlinedButton(status: Status): Color {
 }
 
 @Composable
-private fun ChildButton(status: Status): Color {
+private fun childButton(status: Status): Color {
     var actualContentColor = Color.Transparent
     ChildButton(onClick = {}, enabled = status.enabled(), modifier = Modifier.testTag(TEST_TAG)) {
+        actualContentColor = LocalContentColor.current
+    }
+    return actualContentColor
+}
+
+@Composable
+private fun imageButton(
+    status: Status,
+    containerPainter: Painter,
+    disabledContainerPainter: Painter = ButtonDefaults.disabledContainerPainter(containerPainter),
+): Color {
+    var actualContentColor = Color.Transparent
+    Button(
+        onClick = {},
+        containerPainter = containerPainter,
+        disabledContainerPainter = disabledContainerPainter,
+        enabled = status.enabled(),
+        modifier = Modifier.testTag(TEST_TAG),
+    ) {
         actualContentColor = LocalContentColor.current
     }
     return actualContentColor
@@ -1449,7 +1535,7 @@ private fun ComposeContentTestRule.verifyThreeSlotButtonColors(
 }
 
 @Composable
-private fun ThreeSlotFilledButton(status: Status): ThreeSlotButtonColors {
+private fun threeSlotFilledButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -1465,7 +1551,7 @@ private fun ThreeSlotFilledButton(status: Status): ThreeSlotButtonColors {
 }
 
 @Composable
-private fun ThreeSlotFilledTonalButton(status: Status): ThreeSlotButtonColors {
+private fun threeSlotFilledTonalButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -1481,7 +1567,7 @@ private fun ThreeSlotFilledTonalButton(status: Status): ThreeSlotButtonColors {
 }
 
 @Composable
-private fun ThreeSlotOutlinedButton(status: Status): ThreeSlotButtonColors {
+private fun threeSlotOutlinedButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent
@@ -1497,7 +1583,7 @@ private fun ThreeSlotOutlinedButton(status: Status): ThreeSlotButtonColors {
 }
 
 @Composable
-private fun ThreeSlotChildButton(status: Status): ThreeSlotButtonColors {
+private fun threeSlotChildButton(status: Status): ThreeSlotButtonColors {
     var actualLabelColor: Color = Color.Transparent
     var actualSecondaryLabelColor: Color = Color.Transparent
     var actualIconColor: Color = Color.Transparent

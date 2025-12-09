@@ -18,7 +18,6 @@ package androidx.appfunctions.service
 
 import android.content.Context
 import android.os.Build
-import android.os.OutcomeReceiver
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.annotation.RestrictTo
@@ -29,98 +28,80 @@ import androidx.appfunctions.AppFunctionException
 import androidx.appfunctions.AppFunctionFunctionNotFoundException
 import androidx.appfunctions.ExecuteAppFunctionRequest
 import androidx.appfunctions.ExecuteAppFunctionResponse
+import androidx.appfunctions.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.internal.Constants.APP_FUNCTIONS_TAG
 import androidx.appfunctions.internal.Translator
 import androidx.appfunctions.internal.TranslatorSelector
+import androidx.appfunctions.metadata.AppFunctionComponentsMetadata
 import androidx.appfunctions.metadata.AppFunctionSchemaMetadata
 import androidx.appfunctions.metadata.CompileTimeAppFunctionMetadata
-import androidx.appfunctions.service.internal.AggregatedAppFunctionInventory
 import androidx.appfunctions.service.internal.AggregatedAppFunctionInvoker
 import androidx.appfunctions.service.internal.unsafeBuildReturnValue
 import androidx.appfunctions.service.internal.unsafeGetParameterValue
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class AppFunctionServiceDelegate(
     context: Context,
-    workerCoroutineContext: CoroutineContext,
     private val mainCoroutineContext: CoroutineContext,
     private val aggregatedInventory: AggregatedAppFunctionInventory,
     private val aggregatedInvoker: AggregatedAppFunctionInvoker,
     private val translatorSelector: TranslatorSelector,
 ) {
-
-    private val job = Job()
-    private val workerCoroutineScope = CoroutineScope(workerCoroutineContext + job)
     private val appContext = context.applicationContext
 
-    public fun onExecuteFunction(
-        executeAppFunctionRequest: ExecuteAppFunctionRequest,
-        callback: OutcomeReceiver<ExecuteAppFunctionResponse, AppFunctionException>,
-    ): Job =
-        workerCoroutineScope.launch {
-            try {
-                val appFunctionMetadata =
-                    aggregatedInventory.functionIdToMetadataMap[
-                            executeAppFunctionRequest.functionIdentifier]
-                if (appFunctionMetadata == null) {
-                    Log.d(
-                        APP_FUNCTIONS_TAG,
-                        "${executeAppFunctionRequest.functionIdentifier} is not available",
-                    )
-                    callback.onError(
-                        AppFunctionFunctionNotFoundException(
-                            "${executeAppFunctionRequest.functionIdentifier} is not available"
-                        )
-                    )
-                    return@launch
-                }
-                val translator =
-                    getTranslator(executeAppFunctionRequest, appFunctionMetadata.schema)
-
-                val parameters =
-                    extractParameters(executeAppFunctionRequest, appFunctionMetadata, translator)
-                callback.onResult(
-                    unsafeInvokeFunction(
-                        executeAppFunctionRequest,
-                        appFunctionMetadata,
-                        parameters,
-                        translator,
-                    )
-                )
-            } catch (e: CancellationException) {
+    public suspend fun executeFunction(
+        executeAppFunctionRequest: ExecuteAppFunctionRequest
+    ): ExecuteAppFunctionResponse =
+        try {
+            val appFunctionMetadata =
+                aggregatedInventory.functionIdToMetadataMap[
+                        executeAppFunctionRequest.functionIdentifier]
+            if (appFunctionMetadata == null) {
                 Log.d(
                     APP_FUNCTIONS_TAG,
-                    "Invocation of ${executeAppFunctionRequest.functionIdentifier} was cancelled",
-                    e,
+                    "${executeAppFunctionRequest.functionIdentifier} is not available",
                 )
-                callback.onError(AppFunctionCancelledException(e.message))
-            } catch (e: AppFunctionException) {
-                Log.d(
-                    APP_FUNCTIONS_TAG,
-                    "Failed to invoke ${executeAppFunctionRequest.functionIdentifier}",
-                    e,
+                throw AppFunctionFunctionNotFoundException(
+                    "${executeAppFunctionRequest.functionIdentifier} is not available"
                 )
-                callback.onError(e)
-            } catch (e: Exception) {
-                Log.d(
-                    APP_FUNCTIONS_TAG,
-                    "Failed to invoke ${executeAppFunctionRequest.functionIdentifier}",
-                    e,
-                )
-                callback.onError(AppFunctionAppUnknownException(e.message))
             }
-        }
+            val translator = getTranslator(executeAppFunctionRequest, appFunctionMetadata.schema)
 
-    internal fun onDestroy() {
-        job.cancel()
-    }
+            val parameters =
+                extractParameters(executeAppFunctionRequest, appFunctionMetadata, translator)
+            unsafeInvokeFunction(
+                executeAppFunctionRequest,
+                appFunctionMetadata,
+                aggregatedInventory.componentsMetadata,
+                parameters,
+                translator,
+            )
+        } catch (e: CancellationException) {
+            Log.d(
+                APP_FUNCTIONS_TAG,
+                "Invocation of ${executeAppFunctionRequest.functionIdentifier} was cancelled",
+                e,
+            )
+            throw AppFunctionCancelledException(e.message)
+        } catch (e: AppFunctionException) {
+            Log.d(
+                APP_FUNCTIONS_TAG,
+                "Failed to invoke ${executeAppFunctionRequest.functionIdentifier}",
+                e,
+            )
+            throw e
+        } catch (e: Exception) {
+            Log.d(
+                APP_FUNCTIONS_TAG,
+                "Failed to invoke ${executeAppFunctionRequest.functionIdentifier}",
+                e,
+            )
+            throw AppFunctionAppUnknownException(e.message)
+        }
 
     private fun getTranslator(
         request: ExecuteAppFunctionRequest,
@@ -152,6 +133,7 @@ public class AppFunctionServiceDelegate(
     private suspend fun unsafeInvokeFunction(
         request: ExecuteAppFunctionRequest,
         appFunctionMetadata: CompileTimeAppFunctionMetadata,
+        componentsMetadata: AppFunctionComponentsMetadata,
         parameters: Map<String, Any?>,
         translator: Translator?,
     ): ExecuteAppFunctionResponse {
@@ -163,7 +145,9 @@ public class AppFunctionServiceDelegate(
                     parameters,
                 )
             }
-        val returnValue = appFunctionMetadata.response.unsafeBuildReturnValue(result)
+        val returnValue =
+            appFunctionMetadata.response.unsafeBuildReturnValue(result, componentsMetadata)
+
         // Downgrade the return value from the agents, if they are using the old format.
         val translatedReturnValue = translator?.downgradeResponse(returnValue) ?: returnValue
         return ExecuteAppFunctionResponse.Success(translatedReturnValue)

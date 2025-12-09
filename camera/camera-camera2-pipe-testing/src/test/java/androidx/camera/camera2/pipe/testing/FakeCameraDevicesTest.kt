@@ -17,7 +17,6 @@
 package androidx.camera.camera2.pipe.testing
 
 import android.hardware.camera2.CameraCharacteristics
-import android.os.Build
 import androidx.camera.camera2.pipe.CameraBackendId
 import androidx.camera.camera2.pipe.testing.FakeCameraBackend.Companion.FAKE_CAMERA_BACKEND_ID
 import com.google.common.truth.Truth.assertThat
@@ -27,7 +26,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricCameraPipeTestRunner::class)
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class FakeCameraDevicesTest {
     private val EXTERNAL_BACKEND_ID =
         CameraBackendId("androidx.camera.camera2.pipe.testing.FakeCameraDevicesTest")

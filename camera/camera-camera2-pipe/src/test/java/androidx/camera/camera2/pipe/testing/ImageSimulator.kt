@@ -36,7 +36,8 @@ class ImageSimulator(
 
     val cameraMetadata = defaultCameraMetadata ?: FakeCameraMetadata()
     val graphConfig = CameraGraph.Config(camera = cameraMetadata.camera, streams = streamConfigs)
-    val streamGraph = defaultStreamGraph ?: StreamGraphImpl(cameraMetadata, graphConfig, mock())
+    val streamGraph =
+        defaultStreamGraph ?: StreamGraphImpl(cameraMetadata, graphConfig, mock(), mock())
 
     private val fakeImageSources = buildMap {
         for (config in graphConfig.streams) {

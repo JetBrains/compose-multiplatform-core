@@ -28,8 +28,9 @@ import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 
-// TODO(b/249982507) Rewrite test to use real SDK in sandbox instead of mocking controller
-@SdkSuppress(minSdkVersion = 34)
+// TODO(b/315321962) Migrate to Robolectric to remove usage of dexmakerMockito.
+// maxSdkVersion due to b/430688215
+@SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
 class SdkSandboxControllerClientPackageNameTest {
 
     @Rule @JvmField val sdkSandboxControllerMockRule = SdkSandboxControllerMockRule()
@@ -52,7 +53,8 @@ class SdkSandboxControllerClientPackageNameTest {
     }
 
     @Test
-    @SdkSuppress(minSdkVersion = 34)
+    // maxSdkVersion due to b/430688215
+    @SdkSuppress(minSdkVersion = 34, maxSdkVersion = 34)
     @RequiresExtension(extension = SdkExtensions.AD_SERVICES, version = 8)
     fun getClientPackageName_withApiAvailable_returnsResultFromPlatformApi() {
         Assume.assumeTrue(

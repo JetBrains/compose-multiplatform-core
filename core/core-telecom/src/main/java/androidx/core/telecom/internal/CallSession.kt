@@ -32,7 +32,6 @@ import androidx.core.telecom.CallControlScope
 import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.internal.utils.EndpointUtils
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.getSpeakerEndpoint
-import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isBluetoothAvailable
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isEarpieceEndpoint
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isSpeakerEndpoint
 import androidx.core.telecom.internal.utils.EndpointUtils.Companion.isWiredHeadsetOrBtEndpoint
@@ -50,7 +49,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
 @RequiresApi(34)
-internal class CallSession(
+internal open class CallSession(
+    val bluetoothDeviceChecker: BluetoothDeviceChecker,
     val coroutineContext: CoroutineContext,
     val attributes: CallAttributesCompat,
     val onAnswerCallback: suspend (callType: Int) -> Unit,
@@ -89,6 +89,7 @@ internal class CallSession(
      * been processed.
      */
     private var mWasPreferredOverrideChecked: Boolean = false
+    private val mVideoCallSpeakerManager = VideoCallSpeakerManager(bluetoothDeviceChecker)
 
     init {
         CoroutineScope(coroutineContext).launch {
@@ -100,11 +101,7 @@ internal class CallSession(
 
     companion object {
         private val TAG: String = CallSession::class.java.simpleName
-        private const val WAIT_FOR_BT_TO_CONNECT_TIMEOUT: Long = 1000L
-        private const val SWITCH_TO_SPEAKER_TIMEOUT: Long = WAIT_FOR_BT_TO_CONNECT_TIMEOUT + 1000L
-
-        // TODO:: b/369153472 , remove delay and instead wait until onCallEndpointChanged
-        //    provides the bluetooth endpoint before requesting the switch
+        private const val SWITCH_TO_SPEAKER_TIMEOUT: Long = 2000L
         private const val DELAY_INITIAL_ENDPOINT_SWITCH: Long = 2000L
         private const val INITIAL_ENDPOINT_SWITCH_TIMEOUT: Long =
             DELAY_INITIAL_ENDPOINT_SWITCH + 1000L
@@ -307,67 +304,40 @@ internal class CallSession(
         if (preferredStartingCallEndpoint != null) {
             switchStartingCallEndpointOnCallStart(preferredStartingCallEndpoint)
         } else {
-            maybeSwitchToSpeakerOnCallStart()
+            switchToSpeakerForVideoCallIfNeeded()
         }
     }
 
-    /**
-     * Due to the fact that OEMs may diverge from AOSP telecom platform behavior, Core-Telecom needs
-     * to ensure that video calls start with speaker phone if the earpiece is the initial audio
-     * route.
-     */
-    suspend fun maybeSwitchToSpeakerOnCallStart() {
-        if (!attributes.isVideoCall()) {
-            return
-        }
-        try {
+    internal suspend fun switchToSpeakerForVideoCallIfNeeded(): Boolean {
+        return try {
             withTimeout(SWITCH_TO_SPEAKER_TIMEOUT) {
-                Log.i(TAG, "maybeSwitchToSpeaker: before awaitAll")
+                // Await the necessary states before making a decision.
                 awaitAll(mIsCurrentEndpointSet, mIsAvailableEndpointsSet)
-                Log.i(TAG, "maybeSwitchToSpeaker: after awaitAll")
-                val speakerCompat = getSpeakerEndpoint(mAvailableEndpoints)
-                if (isEarpieceEndpoint(mCurrentCallEndpoint) && speakerCompat != null) {
-                    Log.i(
-                        TAG,
-                        "maybeSwitchToSpeaker: detected a video call that started" +
-                            " with the earpiece audio route. requesting switch to speaker.",
+
+                // Delegate the decision to the manager class.
+                if (
+                    mVideoCallSpeakerManager.shouldSwitchToSpeaker(
+                        isVideoCall = attributes.isVideoCall(),
+                        currentEndpoint = mCurrentCallEndpoint,
+                        availableEndpoints = mAvailableEndpoints,
                     )
-                    maybeDelaySwitchToSpeaker(speakerCompat)
+                ) {
+                    // If the manager approves, find the speaker and request the change.
+                    val speakerEndpoint = getSpeakerEndpoint(mAvailableEndpoints)
+                    if (speakerEndpoint != null) {
+                        Log.i(TAG, "Requesting switch to speaker for video call.")
+                        requestEndpointChange(speakerEndpoint)
+                        return@withTimeout true
+                    }
                 }
+                // If conditions are not met, do nothing.
+                return@withTimeout false
             }
         } catch (e: Exception) {
-            Log.e(TAG, "maybeSwitchToSpeaker: hit exception=[$e]")
-        }
-    }
-
-    // Users reported in b/345309071 that the call started on speakerphone instead
-    // of bluetooth.  Upon inspection, the platform was echoing the earpiece audio
-    // route first while BT was still connecting. Avoid overriding the BT route by
-    // waiting a second. TODO:: b/351899854
-    suspend fun maybeDelaySwitchToSpeaker(speakerCompat: CallEndpointCompat): Boolean {
-        if (isBluetoothAvailable(mAvailableEndpoints)) {
-            // The platform could potentially be connecting to BT. wait...
-            delay(WAIT_FOR_BT_TO_CONNECT_TIMEOUT)
-            // only switch to speaker if BT did not connect
-            if (!isBluetoothConnected()) {
-                Log.i(TAG, "maybeDelaySwitchToSpeaker: BT did not connect in time!")
-                requestEndpointChange(speakerCompat)
-                return true
-            }
-            Log.i(TAG, "maybeDelaySwitchToSpeaker: BT connected! voiding speaker switch.")
+            // This will catch TimeoutCancellationException from withTimeout, and others.
+            Log.e(TAG, "switchToSpeakerForVideoCallIfNeeded: Hit exception=[$e]", e)
             return false
-        } else {
-            // otherwise, immediately change from earpiece to speaker because the platform is
-            // not in the process of connecting a BT device.
-            Log.i(TAG, "maybeDelaySwitchToSpeaker: no BT route available.")
-            requestEndpointChange(speakerCompat)
-            return true
         }
-    }
-
-    private fun isBluetoothConnected(): Boolean {
-        return mCurrentCallEndpoint != null &&
-            mCurrentCallEndpoint!!.type == CallEndpoint.TYPE_BLUETOOTH
     }
 
     suspend fun switchStartingCallEndpointOnCallStart(startingCallEndpoint: CallEndpointCompat) {

@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.xr.arcore.ArDevice
 import androidx.xr.runtime.Config
 import androidx.xr.runtime.Config.HeadTrackingMode
 import androidx.xr.runtime.Session
@@ -46,6 +47,7 @@ import kotlinx.coroutines.launch
 class HitTestActivity : AppCompatActivity() {
 
     private var session: Session? = null
+    private lateinit var device: ArDevice
     private var transformWidgetModel: GltfModel? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +57,7 @@ class HitTestActivity : AppCompatActivity() {
         session = createSession(this)
         if (session == null) this.finish()
         session!!.configure(Config(headTracking = HeadTrackingMode.LAST_KNOWN))
+        device = ArDevice.getInstance(session!!)
 
         // toolbar
         findViewById<Toolbar>(R.id.top_app_bar).also {
@@ -79,7 +82,7 @@ class HitTestActivity : AppCompatActivity() {
                 Pose(Vector3(0f, -0.5f, .5f)),
             )
         panelEntity.parent = session!!.scene.activitySpace
-        val movableComponent = MovableComponent.create(session!!)
+        val movableComponent = MovableComponent.createSystemMovable(session!!)
         if (!panelEntity.addComponent(movableComponent)) {
             Log.e("HitTestActivity", "Error adding MovableComponent to panelEntity")
         }
@@ -92,41 +95,38 @@ class HitTestActivity : AppCompatActivity() {
         val buttonHitTest: Button = panelContentView.findViewById(R.id.buttonHitTest)
         buttonHitTest.text = "Hit Test"
         buttonHitTest.setOnClickListener {
-            if (session!!.scene.spatialUser.head != null) {
-
-                val hitTestFuture =
-                    session!!
-                        .scene
-                        .spatialUser
-                        .head!!
-                        .hitTestAsync(Vector3(), Vector3(0f, 0f, -1f))
-                        .get()
-                if (hitTestFuture.hitPosition != null && hitTestFuture.surfaceNormal != null) {
-                    val updatedRotation =
-                        Quaternion.fromLookTowards(
-                            hitTestFuture.surfaceNormal!!,
+            device.state.value.devicePose.let { headPose ->
+                lifecycleScope.launch {
+                    val headScenePose =
+                        session!!.scene.perceptionSpace.getScenePoseFromPerceptionPose(headPose)
+                    val hitTest = headScenePose.hitTest(Vector3(), Vector3(0f, 0f, -1f))
+                    if (hitTest != null && hitTest.surfaceNormal != null) {
+                        val updatedRotation =
+                            Quaternion.fromLookTowards(
+                                hitTest.surfaceNormal!!,
+                                session!!
+                                    .scene
+                                    .spatialUser
+                                    .head!!
+                                    .transformPoseTo(
+                                        Pose(Vector3(0f, 1f, 0f)),
+                                        session!!.scene.activitySpace,
+                                    )
+                                    .translation,
+                            )
+                        val hitTestPose =
                             session!!
                                 .scene
                                 .spatialUser
                                 .head!!
                                 .transformPoseTo(
-                                    Pose(Vector3(0f, 1f, 0f)),
+                                    Pose(hitTest.hitPosition!!, updatedRotation),
                                     session!!.scene.activitySpace,
                                 )
-                                .translation,
-                        )
-                    val hitTestPose =
-                        session!!
-                            .scene
-                            .spatialUser
-                            .head!!
-                            .transformPoseTo(
-                                Pose(hitTestFuture.hitPosition!!, updatedRotation),
-                                session!!.scene.activitySpace,
-                            )
-                    transformWidgetModel?.let {
-                        val gltfEntity = GltfModelEntity.create(session!!, it, hitTestPose)
-                        gltfEntity.parent = session!!.scene.activitySpace
+                        transformWidgetModel?.let {
+                            val gltfEntity = GltfModelEntity.create(session!!, it, hitTestPose)
+                            gltfEntity.parent = session!!.scene.activitySpace
+                        }
                     }
                 }
             }
@@ -136,7 +136,7 @@ class HitTestActivity : AppCompatActivity() {
             val dragonModel =
                 GltfModel.create(session!!, Paths.get("models", "Dragon_Evolved.gltf"))
             val gltfEntity =
-                GltfModelEntity.create(session!!, dragonModel, Pose(Vector3(1f, 0f, 0f)))
+                GltfModelEntity.create(session!!, dragonModel, Pose(Vector3(1f, 1f, -2f)))
             gltfEntity.parent = session!!.scene.activitySpace
             val interactableComponent = InteractableComponent.create(session!!, mainExecutor) {}
             if (!gltfEntity.addComponent(interactableComponent)) {

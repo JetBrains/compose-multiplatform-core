@@ -18,7 +18,6 @@ package androidx.camera.lifecycle
 
 import android.content.Context
 import android.content.pm.PackageManager.FEATURE_CAMERA_CONCURRENT
-import android.os.Build
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraSelector.LENS_FACING_BACK
 import androidx.camera.core.CameraSelector.LENS_FACING_FRONT
@@ -53,7 +52,7 @@ import org.robolectric.annotation.internal.DoNotInstrument
 
 @RunWith(RobolectricTestRunner::class)
 @DoNotInstrument
-@Config(minSdk = Build.VERSION_CODES.LOLLIPOP)
+@Config(sdk = [Config.ALL_SDKS])
 class ConcurrentCameraTest {
     private val context = ApplicationProvider.getApplicationContext() as Context
     private lateinit var provider: ProcessCameraProvider
@@ -338,7 +337,7 @@ class ConcurrentCameraTest {
         cameraCoordinator.addConcurrentCameraIdsAndCameraSelectors(combination0)
         cameraCoordinator.addConcurrentCameraIdsAndCameraSelectors(combination1)
         val cameraFactoryProvider =
-            CameraFactory.Provider { _, _, _, _, _ ->
+            CameraFactory.Provider { _, _, _, _, _, _ ->
                 val cameraFactory = FakeCameraFactory()
                 cameraFactory.insertCamera(LENS_FACING_BACK, "0") {
                     FakeCamera("0", null, FakeCameraInfoInternal("0", 0, LENS_FACING_BACK))
